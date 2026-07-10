@@ -4,6 +4,7 @@ import { listVisibleServices } from "../registry.js";
 import type { AuthContext, GatewayConfig } from "../types.js";
 import { getTokenBroker, type TokenRequestInput } from "../tokens.js";
 import { GatewayError } from "../errors.js";
+import { executeServiceRequest, type ServiceRequestInput } from "../gateway.js";
 import {
   emptyInputSchema,
   errorOutputSchema,
@@ -124,7 +125,12 @@ export const toolDescriptors: ToolDescriptor[] = [
   },
 ];
 
-export function callTool(name: string, args: Record<string, unknown> | undefined, config: GatewayConfig, auth: AuthContext): ToolResult {
+export async function callTool(
+  name: string,
+  args: Record<string, unknown> | undefined,
+  config: GatewayConfig,
+  auth: AuthContext,
+): Promise<ToolResult> {
   const descriptor = toolDescriptors.find((tool) => tool.name === name);
   if (!descriptor) {
     return toolError("not_implemented", `Tool ${name} is not available.`);
@@ -137,6 +143,10 @@ export function callTool(name: string, args: Record<string, unknown> | undefined
     if (name === "request_tokens") {
       const result = getTokenBroker(config).issueTokens(auth, parseTokenRequest(args));
       return toolSuccess({ tokens: result.tokens }, `Issued ${result.tokens.length} opaque token(s).`);
+    }
+    if (name === "service_request") {
+      const result = await executeServiceRequest(config, auth, parseServiceRequest(args));
+      return toolSuccess(result as unknown as Record<string, unknown>, `Request ${result.request_id} completed with HTTP ${result.status_code}.`);
     }
   } catch (error) {
     if (error instanceof GatewayError) return toolError(error.code, error.message);
@@ -173,4 +183,49 @@ function readOptionalString(args: Record<string, unknown>, name: string): string
   if (value === undefined) return undefined;
   if (typeof value !== "string") throw new GatewayError("token_invalid", `${name} must be a string.`);
   return value;
+}
+
+function parseServiceRequest(args: Record<string, unknown> | undefined): ServiceRequestInput {
+  if (args === undefined) throw new GatewayError("destination_not_allowed", "service_request arguments are required.");
+  const service = readString(args, "service");
+  const destination = readOptionalString(args, "destination");
+  const method = readString(args, "method");
+  const path = readOptionalString(args, "path");
+  const url = readOptionalString(args, "url");
+  const reason = readString(args, "reason");
+  const headers = readOptionalStringMap(args, "headers");
+  const query = readOptionalRecord(args, "query");
+  return {
+    service,
+    ...(destination === undefined ? {} : { destination }),
+    method,
+    ...(path === undefined ? {} : { path }),
+    ...(url === undefined ? {} : { url }),
+    ...(headers === undefined ? {} : { headers }),
+    ...(query === undefined ? {} : { query }),
+    ...(args["body"] === undefined ? {} : { body: args["body"] }),
+    reason,
+  };
+}
+
+function readOptionalStringMap(args: Record<string, unknown>, name: string): Record<string, string> | undefined {
+  const value = args[name];
+  if (value === undefined) return undefined;
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new GatewayError("destination_not_allowed", `${name} must be an object.`);
+  }
+  const entries = Object.entries(value);
+  if (!entries.every(([, item]) => typeof item === "string")) {
+    throw new GatewayError("destination_not_allowed", `${name} values must be strings.`);
+  }
+  return Object.fromEntries(entries) as Record<string, string>;
+}
+
+function readOptionalRecord(args: Record<string, unknown>, name: string): Record<string, unknown> | undefined {
+  const value = args[name];
+  if (value === undefined) return undefined;
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new GatewayError("destination_not_allowed", `${name} must be an object.`);
+  }
+  return value as Record<string, unknown>;
 }

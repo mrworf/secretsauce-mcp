@@ -114,7 +114,7 @@ describe("MCP surface", () => {
     }
   });
 
-  it("keeps later milestone tools as safe stubs without configured secrets", async () => {
+  it("keeps explain_denial as a safe stub without configured secrets", async () => {
     const fixture = await startFixtureServer();
     try {
       const initialize = await postMcp(fixture.url, {
@@ -133,12 +133,9 @@ describe("MCP surface", () => {
         id: 3,
         method: "tools/call",
         params: {
-          name: "service_request",
+          name: "explain_denial",
           arguments: {
-            service: "demo-service",
-            method: "GET",
-            path: "/api",
-            reason: "test",
+            request_id: "req_test",
           },
         },
       }, sessionId ?? undefined);

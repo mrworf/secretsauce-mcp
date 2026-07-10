@@ -114,6 +114,40 @@ describe("MCP surface", () => {
     }
   });
 
+  it("returns visible services through list_services without raw credentials", async () => {
+    const fixture = await startFixtureServer();
+    try {
+      const initialize = await postMcp(fixture.url, {
+        jsonrpc: "2.0",
+        id: 1,
+        method: "initialize",
+        params: {
+          protocolVersion: "2025-06-18",
+          capabilities: {},
+          clientInfo: { name: "mcp-surface-test", version: "1.0.0" },
+        },
+      });
+      const sessionId = initialize.response.headers.get("mcp-session-id");
+      const call = await postMcp(fixture.url, {
+        jsonrpc: "2.0",
+        id: 4,
+        method: "tools/call",
+        params: {
+          name: "list_services",
+          arguments: {},
+        },
+      }, sessionId ?? undefined);
+      const serialized = JSON.stringify(call.body);
+
+      expect(call.body.result.structuredContent.services).toHaveLength(1);
+      expect(call.body.result.structuredContent.services[0].id).toBe("demo-service");
+      expect(serialized).not.toContain("super-secret-api-key");
+    } finally {
+      await fixture.close();
+    }
+  });
+
+
   it("returns a safe error for unknown MCP paths", async () => {
     const fixture = await startFixtureServer();
     try {
@@ -146,6 +180,7 @@ async function startFixtureServer() {
           usage: { kind: "header", name: "X-API-Key" },
           source: { kind: "env", name: "DEMO_API_KEY" },
         }],
+        access: { users: ["bearer-dev"] },
       },
     },
   }, {

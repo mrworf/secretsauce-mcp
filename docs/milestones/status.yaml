@@ -30,10 +30,10 @@ milestones:
   - id: "04"
     title: "Service Registry And Destination Validation"
     file: "docs/milestones/04-service-registry-destinations.md"
-    status: "pending"
-    completed_at: null
+    status: "completed"
+    completed_at: "2026-07-10T04:56:31Z"
     commit_hash: null
-    notes: ""
+    notes: "Implemented service summaries, access filtering, credential lookup, destination URL validation; npm test and npm run build pass."
   - id: "05"
     title: "Token Broker"
     file: "docs/milestones/05-token-broker.md"

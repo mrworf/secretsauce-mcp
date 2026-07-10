@@ -29,7 +29,7 @@ export function createGatewayServer(config: GatewayConfig) {
         const body = await readJsonBody(request);
         requiredScopes = requiredScopesForMcpBody(body);
         (request as AuthenticatedRequest).auth = await authenticateRequest(request, config, requiredScopes);
-        await handleMcpRequest(request, response, body);
+        await handleMcpRequest(config, request, response, body);
       } catch (error) {
         if (error instanceof Error && error.name === "GatewayError") {
           writeAuthError(response, buildAuthenticateChallenge(config, request, requiredScopes));

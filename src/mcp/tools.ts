@@ -1,5 +1,7 @@
 import type { ToolResult } from "./results.js";
-import { toolError } from "./results.js";
+import { toolError, toolSuccess } from "./results.js";
+import { listVisibleServices } from "../registry.js";
+import type { AuthContext, GatewayConfig } from "../types.js";
 import {
   emptyInputSchema,
   errorOutputSchema,
@@ -120,10 +122,14 @@ export const toolDescriptors: ToolDescriptor[] = [
   },
 ];
 
-export function callStubTool(name: string): ToolResult {
+export function callTool(name: string, config: GatewayConfig, auth: AuthContext): ToolResult {
   const descriptor = toolDescriptors.find((tool) => tool.name === name);
   if (!descriptor) {
     return toolError("not_implemented", `Tool ${name} is not available.`);
+  }
+  if (name === "list_services") {
+    const services = listVisibleServices(config, auth);
+    return toolSuccess({ services }, `Found ${services.length} configured service(s).`);
   }
   return toolError("not_implemented", `${descriptor.name} is registered but not implemented in this milestone.`);
 }

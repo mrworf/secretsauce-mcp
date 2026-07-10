@@ -1,0 +1,78 @@
+import { GatewayError } from "./errors.js";
+import type { AuthContext, CredentialConfig, GatewayConfig, ServiceConfig } from "./types.js";
+import { resolveDestinationTarget, type ResolvedTarget, type TargetInput } from "./urlValidation.js";
+
+export interface ServiceSummary {
+  id: string;
+  name: string;
+  description?: string;
+  destinations: Array<{
+    id: string;
+    base_url_hint: string;
+    tls_verify: boolean;
+  }>;
+  credentials: Array<{
+    id: string;
+    usage_hint: string;
+  }>;
+  policy_summary: string;
+}
+
+export function listVisibleServices(config: GatewayConfig, auth: AuthContext): ServiceSummary[] {
+  return Object.values(config.services)
+    .filter((service) => canAccessService(service, auth))
+    .map(serviceSummary);
+}
+
+export function getService(config: GatewayConfig, serviceId: string, auth?: AuthContext): ServiceConfig {
+  const service = config.services[serviceId];
+  if (!service) throw new GatewayError("unknown_service", `Unknown service: ${serviceId}`);
+  if (auth !== undefined && !canAccessService(service, auth)) {
+    throw new GatewayError("unauthorized_service", `Not authorized for service: ${serviceId}`);
+  }
+  return service;
+}
+
+export function getCredential(service: ServiceConfig, credentialId: string): CredentialConfig {
+  const credential = service.credentials.find((candidate) => candidate.id === credentialId);
+  if (!credential) throw new GatewayError("unknown_credential", `Unknown credential: ${credentialId}`);
+  return credential;
+}
+
+export function resolveDestination(
+  config: GatewayConfig,
+  auth: AuthContext,
+  serviceId: string,
+  destinationId: string | undefined,
+  input: TargetInput,
+): ResolvedTarget {
+  const service = getService(config, serviceId, auth);
+  return resolveDestinationTarget(service, destinationId, input);
+}
+
+function canAccessService(service: ServiceConfig, auth: AuthContext): boolean {
+  return service.access.users.includes(auth.subject);
+}
+
+function serviceSummary(service: ServiceConfig): ServiceSummary {
+  const summary: ServiceSummary = {
+    id: service.id,
+    name: service.name,
+    destinations: service.destinations.map((destination) => ({
+      id: destination.id,
+      base_url_hint: destination.baseUrl,
+      tls_verify: destination.tls.verify,
+    })),
+    credentials: service.credentials.map((credential) => ({
+      id: credential.id,
+      usage_hint: usageHint(credential),
+    })),
+    policy_summary: `mode=${service.policy.mode}`,
+  };
+  return service.description === undefined ? summary : { ...summary, description: service.description };
+}
+
+function usageHint(credential: CredentialConfig): string {
+  if (credential.usage.name) return `Use token as ${credential.usage.name} ${credential.usage.kind}`;
+  return `Use token as ${credential.usage.kind}`;
+}

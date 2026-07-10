@@ -9,13 +9,14 @@ import {
 import { randomUUID } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { MCP_INSTRUCTIONS } from "./instructions.js";
-import { callStubTool, toolDescriptors } from "./tools.js";
+import { callTool, toolDescriptors } from "./tools.js";
+import type { AuthContext, GatewayConfig } from "../types.js";
 
 type NodeRequestWithBody = IncomingMessage & { body?: unknown };
 
 const transports = new Map<string, StreamableHTTPServerTransport>();
 
-export function createMcpServer(): Server {
+export function createMcpServer(config: GatewayConfig): Server {
   const server = new Server(
     {
       name: "agent-credential-gateway-mcp",
@@ -35,12 +36,32 @@ export function createMcpServer(): Server {
     tools: toolDescriptors,
   }));
 
-  server.setRequestHandler(CallToolRequestSchema, (request) => callStubTool(request.params.name));
+  server.setRequestHandler(CallToolRequestSchema, (request, extra) => {
+    const auth = extra.authInfo as AuthContext | undefined;
+    if (auth === undefined) {
+      return {
+        structuredContent: {
+          error: {
+            code: "unauthenticated",
+            message: "Authentication context is required.",
+          },
+        },
+        content: [{ type: "text", text: "Authentication context is required." }],
+        isError: true,
+      };
+    }
+    return callTool(request.params.name, config, auth);
+  });
 
   return server;
 }
 
-export async function handleMcpRequest(request: IncomingMessage, response: ServerResponse, parsedBody: unknown): Promise<void> {
+export async function handleMcpRequest(
+  config: GatewayConfig,
+  request: IncomingMessage,
+  response: ServerResponse,
+  parsedBody: unknown,
+): Promise<void> {
   const sessionId = readHeader(request, "mcp-session-id");
   const existingTransport = sessionId === undefined ? undefined : transports.get(sessionId);
   if (existingTransport !== undefined) {
@@ -65,7 +86,7 @@ export async function handleMcpRequest(request: IncomingMessage, response: Serve
     if (closedSessionId !== undefined) transports.delete(closedSessionId);
   };
 
-  const server = createMcpServer();
+  const server = createMcpServer(config);
   // SDK transport typings are not exactOptionalPropertyTypes-clean in this version.
   await server.connect(transport as Parameters<Server["connect"]>[0]);
   await transport.handleRequest(request as NodeRequestWithBody, response, parsedBody);

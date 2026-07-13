@@ -9,3 +9,4 @@
 - MVP redaction does not detect URL-encoded values, base64 values, derived secrets, private keys, or newly generated downstream tokens.
 - Avoid allowing endpoints that return backups, complete config dumps, token lists, private keys, or other bulk secret material.
 - Audit events do not include raw credentials, opaque token values, Authorization headers, cookies, request bodies, or response bodies.
+- Debug logging is opt-in through `logging.level: debug` and is sanitized before writing. It is intended for setup diagnostics and records structural details such as methods, service IDs, destination IDs, target hosts and paths, status codes, durations, and redaction counts.

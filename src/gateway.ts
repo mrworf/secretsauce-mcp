@@ -3,6 +3,7 @@ import { evaluatePolicy } from "./policy.js";
 import { getService, resolveDestination } from "./registry.js";
 import { audit } from "./audit.js";
 import { denialStore } from "./denials.js";
+import { bodySummary, createLogger, headerNames } from "./logger.js";
 import { redactResponse } from "./redaction.js";
 import { substituteTokens } from "./substitution.js";
 import { getTokenBroker } from "./tokens.js";
@@ -43,6 +44,7 @@ export async function executeServiceRequest(
   auth: AuthContext,
   input: ServiceRequestInput,
 ): Promise<ServiceResponse> {
+  const logger = createLogger(config.logging);
   validateRequestInput(input);
   const service = getService(config, input.service, auth);
   const target = resolveDestination(config, auth, input.service, input.destination, {
@@ -80,6 +82,20 @@ export async function executeServiceRequest(
       error_code: "policy_denied",
       error_message: policy.reason,
     });
+    logger.debug("service_request.denied", {
+      request_id: denial.request_id,
+      subject: auth.subject,
+      session_present: auth.sessionId !== undefined,
+      service: service.id,
+      destination: target.destination.id,
+      method: input.method.toUpperCase(),
+      target_host: target.url.hostname,
+      target_path: target.methodPath,
+      policy_mode: policy.policyMode,
+      matched_policy_rule: policy.matchedRule,
+      tls_verify: target.tls.verify,
+      error_code: "policy_denied",
+    });
     throw new GatewayError("policy_denied", policy.reason, denial.request_id);
   }
 
@@ -95,6 +111,26 @@ export async function executeServiceRequest(
   const tokenRecords = [...headerSubstitution.records, ...querySubstitution.records, ...bodySubstitution.records];
 
   const downstream = buildDownstreamRequest(config, target.url, input.method, substitutedHeaders, substitutedQuery, substitutedBody);
+  logger.debug("service_request.downstream_ready", {
+    subject: auth.subject,
+    session_present: auth.sessionId !== undefined,
+    service: service.id,
+    destination: target.destination.id,
+    method: input.method.toUpperCase(),
+    target_scheme: target.url.protocol.replace(/:$/, ""),
+    target_host: target.url.hostname,
+    target_port: target.url.port || defaultPort(target.url.protocol),
+    target_path: target.methodPath,
+    tls_verify: target.tls.verify,
+    matched_policy_rule: policy.matchedRule,
+    credential_count: new Set(tokenRecords.map((record) => record.credentialId)).size,
+    placeholder_count: new Set(tokenRecords.map((record) => record.id)).size,
+    request_shape: {
+      header_names: headerNames(headers),
+      query_keys: Object.keys(input.query ?? {}).sort(),
+      body: bodySummary(input.body),
+    },
+  });
   const started = Date.now();
   const response = await fetchWithTimeout(downstream.url, downstream.init, config.limits.timeoutMs);
   const responseHeaders = Object.fromEntries(response.headers.entries());
@@ -120,6 +156,21 @@ export async function executeServiceRequest(
     request_duration_ms: Date.now() - started,
     tls_verify: target.tls.verify,
     redaction_count: redacted.redaction_count,
+  });
+  logger.debug("service_request.completed", {
+    request_id: requestId,
+    subject: auth.subject,
+    service: service.id,
+    destination: target.destination.id,
+    method: input.method.toUpperCase(),
+    target_host: target.url.hostname,
+    target_path: target.methodPath,
+    status_code: response.status,
+    duration_ms: Date.now() - started,
+    tls_verify: target.tls.verify,
+    redacted: redacted.redacted,
+    redaction_count: redacted.redaction_count,
+    truncated: rawBody.truncated,
   });
 
   return {
@@ -204,4 +255,8 @@ async function limitedResponseText(response: Response, maxBytes: number): Promis
 function hasHeader(headers: Record<string, string>, name: string): boolean {
   const lower = name.toLowerCase();
   return Object.keys(headers).some((key) => key.toLowerCase() === lower);
+}
+
+function defaultPort(protocol: string): string {
+  return protocol === "https:" ? "443" : "80";
 }

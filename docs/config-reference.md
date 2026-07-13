@@ -34,6 +34,16 @@ auth:
 
 Bearer mode is simpler and useful for local deployments, but OAuth is the production path.
 
+## Logging
+`logging.level` defaults to `info`. Set it to `debug` while setting up the MCP server to emit structured setup diagnostics such as MCP method names, required scopes, service IDs, destination IDs, target hosts and paths, TLS verification state, status codes, durations, and redaction counts.
+
+Debug logs are sanitized before writing. They do not include raw credentials, opaque token values, Authorization headers, cookies, request bodies, or response bodies.
+
+```yaml
+logging:
+  level: debug
+```
+
 ## Services
 Each service defines destinations, credentials, access users, TLS behavior, and policy. Credential sources support:
 

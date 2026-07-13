@@ -12,6 +12,7 @@ import type {
   GatewayConfig,
   HostMatcherConfig,
   LimitsConfig,
+  LoggingConfig,
   PolicyConfig,
   PolicyRuleConfig,
   ServiceConfig,
@@ -69,6 +70,9 @@ const rawConfigSchema = z.object({
     max_response_body: z.string().default("5mb"),
     timeout: z.string().default("30s"),
   }).default({ max_request_body: "1mb", max_response_body: "5mb", timeout: "30s" }),
+  logging: z.object({
+    level: z.enum(["info", "debug"]).default("info"),
+  }).default({ level: "info" }),
   audit: z.object({
     file: z.string().min(1).optional(),
   }).default({}),
@@ -134,10 +138,11 @@ export function validateConfig(raw: unknown, env: NodeJS.ProcessEnv = process.en
   const auth = normalizeAuth(parsed.auth, env);
   const tokens = normalizeTokens(parsed.tokens);
   const limits = normalizeLimits(parsed.limits);
+  const logging: LoggingConfig = { level: parsed.logging.level };
   const audit: AuditConfig = parsed.audit.file === undefined ? {} : { file: parsed.audit.file };
   const services = normalizeServices(parsed.services, env, warnings);
 
-  return { server, auth, tokens, limits, audit, services, warnings };
+  return { server, auth, tokens, limits, logging, audit, services, warnings };
 }
 
 function parseRawConfig(raw: unknown): RawConfig {

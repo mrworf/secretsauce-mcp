@@ -72,7 +72,17 @@ describe("config validation", () => {
     const config = loadConfig("test/fixtures/config.valid.yaml");
     expect(config.server.host).toBe("127.0.0.1");
     expect(config.server.port).toBe(8080);
+    expect(config.logging.level).toBe("info");
     expect(config.services["portainer-prod"]?.credentials[0]?.secret).toBe("portainer-secret");
+  });
+
+  it("accepts debug logging level", () => {
+    const raw = validRaw();
+    raw.logging = { level: "debug" };
+
+    const config = validateConfig(raw, validEnv);
+
+    expect(config.logging.level).toBe("debug");
   });
 
   it("resolves file credential sources", () => {
@@ -153,6 +163,13 @@ describe("config validation", () => {
     const sizeRaw = validRaw();
     sizeRaw.limits.max_request_body = "1gb";
     expectConfigError(() => validateConfig(sizeRaw, validEnv), "limits.max_request_body");
+  });
+
+  it("fails invalid logging levels", () => {
+    const raw = validRaw();
+    raw.logging = { level: "trace" };
+
+    expectConfigError(() => validateConfig(raw, validEnv), "Invalid config");
   });
 
   it("fails missing env secrets", () => {

@@ -3,6 +3,7 @@ export interface GatewayConfig {
   auth: AuthConfig;
   tokens: TokenConfig;
   limits: LimitsConfig;
+  logging: LoggingConfig;
   audit: AuditConfig;
   services: Record<string, ServiceConfig>;
   warnings: string[];
@@ -53,6 +54,10 @@ export interface LimitsConfig {
   maxRequestBodyBytes: number;
   maxResponseBodyBytes: number;
   timeoutMs: number;
+}
+
+export interface LoggingConfig {
+  level: "info" | "debug";
 }
 
 export interface AuditConfig {

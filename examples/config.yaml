@@ -17,6 +17,9 @@ limits:
   max_response_body: 5mb
   timeout: 30s
 
+logging:
+  level: info
+
 services:
   portainer-prod:
     type: http

@@ -3,14 +3,17 @@ import { authenticateRequest, buildAuthenticateChallenge } from "./auth.js";
 import { loadConfig } from "./config.js";
 import { handleMcpRequest, isMcpGet, isMcpPost, readJsonBody } from "./mcp/server.js";
 import { handleOAuthMetadataRequest, isOAuthMetadataRequest } from "./oauthMetadata.js";
+import { createLogger } from "./logger.js";
 import type { GatewayConfig } from "./types.js";
 import type { AuthContext } from "./types.js";
 
 type AuthenticatedRequest = IncomingMessage & { auth?: AuthContext };
 
 export function createGatewayServer(config: GatewayConfig) {
+  const logger = createLogger(config.logging);
   return createServer(async (request, response) => {
     if (request.method === "GET" && request.url === "/health") {
+      logger.debug("http.health", { method: request.method, path: "/health", service_count: Object.keys(config.services).length });
       writeJson(response, 200, {
         status: "ready",
         service_count: Object.keys(config.services).length,
@@ -19,6 +22,7 @@ export function createGatewayServer(config: GatewayConfig) {
     }
 
     if (isOAuthMetadataRequest(request)) {
+      logger.debug("oauth.metadata_request", { method: request.method, path: request.url });
       handleOAuthMetadataRequest(config, request, response);
       return;
     }
@@ -28,10 +32,27 @@ export function createGatewayServer(config: GatewayConfig) {
       try {
         const body = await readJsonBody(request);
         requiredScopes = requiredScopesForMcpBody(body);
-        (request as AuthenticatedRequest).auth = await authenticateRequest(request, config, requiredScopes);
+        const auth = await authenticateRequest(request, config, requiredScopes);
+        (request as AuthenticatedRequest).auth = auth;
+        logger.debug("mcp.request_authenticated", {
+          method: request.method,
+          path: config.server.mcpPath,
+          rpc: summarizeMcpBody(body),
+          required_scopes: requiredScopes,
+          subject: auth.subject,
+          session_present: auth.sessionId !== undefined,
+          auth_mode: auth.mode,
+        });
         await handleMcpRequest(config, request, response, body);
       } catch (error) {
         if (error instanceof Error && error.name === "GatewayError") {
+          logger.debug("mcp.request_rejected", {
+            method: request.method,
+            path: config.server.mcpPath,
+            required_scopes: requiredScopes,
+            error_code: "unauthenticated",
+            message: error.message,
+          });
           writeAuthError(response, buildAuthenticateChallenge(config, request, requiredScopes));
           return;
         }
@@ -100,6 +121,7 @@ function writeJson(response: ServerResponse, statusCode: number, body: unknown):
 
 export async function startServer(config: GatewayConfig): Promise<void> {
   const server = createGatewayServer(config);
+  const logger = createLogger(config.logging);
   await new Promise<void>((resolve, reject) => {
     server.once("error", reject);
     server.listen(config.server.port, config.server.host, () => {
@@ -107,12 +129,21 @@ export async function startServer(config: GatewayConfig): Promise<void> {
       resolve();
     });
   });
-  console.log(JSON.stringify({
-    level: "info",
-    message: "gateway server started",
+  logger.info("server.started", {
     listen: config.server.listen,
     mcp_path: config.server.mcpPath,
-  }));
+  });
+}
+
+function summarizeMcpBody(body: unknown): Record<string, unknown> {
+  const messages = Array.isArray(body) ? body : [body];
+  const methods = messages
+    .filter((message): message is { method?: unknown; params?: { name?: unknown } } => Boolean(message) && typeof message === "object")
+    .map((message) => ({
+      method: typeof message.method === "string" ? message.method : "unknown",
+      ...(typeof message.params?.name === "string" ? { tool: message.params.name } : {}),
+    }));
+  return { message_count: methods.length, methods };
 }
 
 export function requestBody(_request: IncomingMessage): never {

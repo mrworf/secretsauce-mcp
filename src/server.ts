@@ -74,6 +74,37 @@ export function createGatewayServer(config: GatewayConfig) {
     }
 
     if (isMcpGet(request, config.server.mcpPath)) {
+      try {
+        const auth = await authenticateRequest(request, config);
+        (request as AuthenticatedRequest).auth = auth;
+        logger.debug("mcp.request_authenticated", {
+          method: request.method,
+          path: config.server.mcpPath,
+          required_scopes: [],
+          subject: auth.subject,
+          session_present: auth.sessionId !== undefined,
+          auth_mode: auth.mode,
+        });
+      } catch (error) {
+        if (error instanceof Error && error.name === "GatewayError") {
+          logger.debug("mcp.request_rejected", {
+            method: request.method,
+            path: config.server.mcpPath,
+            required_scopes: [],
+            error_code: "unauthenticated",
+            message: error.message,
+          });
+          writeAuthError(response, buildAuthenticateChallenge(config, request));
+          return;
+        }
+        writeJson(response, 400, {
+          error: {
+            code: "invalid_request",
+            message: "Invalid MCP request.",
+          },
+        });
+        return;
+      }
       writeJson(response, 400, {
         error: {
           code: "invalid_request",

@@ -405,6 +405,41 @@ describe("auth", () => {
     }
   });
 
+  it("challenges unauthenticated MCP GET requests with protected resource metadata", async () => {
+    const config = await builtinOAuthConfig();
+    const fixture = await startServer(config);
+    try {
+      const response = await fetch(`${fixture.baseUrl}/mcp`);
+      const body = await response.json() as { error: { code: string; message: string } };
+
+      expect(response.status).toBe(401);
+      expect(response.headers.get("www-authenticate")).toBe(
+        "Bearer resource_metadata=\"https://mcp.example.org/.well-known/oauth-protected-resource\"",
+      );
+      expect(body.error).toEqual({ code: "unauthenticated", message: "Authentication required." });
+    } finally {
+      await fixture.close();
+    }
+  });
+
+  it("keeps the MCP session-streaming error for authenticated MCP GET requests", async () => {
+    const fixture = await startServer(bearerConfig());
+    try {
+      const response = await fetch(`${fixture.baseUrl}/mcp`, {
+        headers: { authorization: "Bearer dev-token" },
+      });
+      const body = await response.json() as { error: { code: string; message: string } };
+
+      expect(response.status).toBe(400);
+      expect(body.error).toEqual({
+        code: "invalid_request",
+        message: "MCP session streaming is not available before initialization.",
+      });
+    } finally {
+      await fixture.close();
+    }
+  });
+
   it("accepts valid OAuth JWTs from JWKS and enforces scopes", async () => {
     const jwks = await startJwks();
     try {

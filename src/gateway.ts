@@ -86,7 +86,7 @@ export async function executeServiceRequest(
       redaction_count: 0,
       error_code: "policy_denied",
       error_message: policy.reason,
-    });
+    }, config);
     logger.debug("service_request.denied", {
       request_id: denial.request_id,
       subject: auth.subject,
@@ -161,7 +161,7 @@ export async function executeServiceRequest(
     request_duration_ms: Date.now() - started,
     tls_verify: target.tls.verify,
     redaction_count: redacted.redaction_count,
-  });
+  }, config);
   logger.debug("service_request.completed", {
     request_id: requestId,
     subject: auth.subject,

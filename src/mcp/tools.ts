@@ -1,5 +1,6 @@
 import type { ToolResult } from "./results.js";
 import { toolError, toolSuccess } from "./results.js";
+import { audit } from "../audit.js";
 import { listVisibleServices } from "../registry.js";
 import type { AuthContext, GatewayConfig } from "../types.js";
 import { getTokenBroker, type TokenRequestInput } from "../tokens.js";
@@ -139,27 +140,61 @@ export async function callTool(
   try {
     if (name === "list_services") {
       const services = listVisibleServices(config, auth);
+      auditTool(config, auth, name, "allow");
       return toolSuccess({ services }, `Found ${services.length} configured service(s).`);
     }
     if (name === "request_tokens") {
-      const result = getTokenBroker(config).issueTokens(auth, parseTokenRequest(args));
+      const input = parseTokenRequest(args);
+      const result = getTokenBroker(config).issueTokens(auth, input);
+      auditTool(config, auth, name, "allow", { service: input.service });
       return toolSuccess({ tokens: result.tokens }, `Issued ${result.tokens.length} opaque token(s).`);
     }
     if (name === "service_request") {
-      const result = await executeServiceRequest(config, auth, parseServiceRequest(args));
+      const input = parseServiceRequest(args);
+      const result = await executeServiceRequest(config, auth, input);
+      auditTool(config, auth, name, "allow", { service: input.service, request_id: result.request_id });
       return toolSuccess(result as unknown as Record<string, unknown>, `Request ${result.request_id} completed with HTTP ${result.status_code}.`);
     }
     if (name === "explain_denial") {
       const requestId = readString(args ?? {}, "request_id");
       const explanation = explainDenial(auth, requestId);
-      if (explanation === undefined) return toolError("unknown_service", "No denial context found for this request.");
+      if (explanation === undefined) {
+        auditTool(config, auth, name, "deny", { request_id: requestId, error_code: "unknown_service" });
+        return toolError("unknown_service", "No denial context found for this request.");
+      }
+      auditTool(config, auth, name, "allow", { request_id: requestId });
       return toolSuccess(explanation as unknown as Record<string, unknown>, `Denial ${requestId} explained.`);
     }
   } catch (error) {
-    if (error instanceof GatewayError) return toolError(error.code, error.message, error.requestId);
+    if (error instanceof GatewayError) {
+      auditTool(config, auth, descriptor.name, "error", {
+        ...(error.requestId === undefined ? {} : { request_id: error.requestId }),
+        error_code: error.code,
+      });
+      return toolError(error.code, error.message, error.requestId);
+    }
     throw error;
   }
   return toolError("not_implemented", `${descriptor.name} is registered but not implemented in this milestone.`);
+}
+
+function auditTool(
+  config: GatewayConfig,
+  auth: AuthContext,
+  tool: ToolDescriptor["name"],
+  outcome: "allow" | "deny" | "error",
+  fields: { service?: string; request_id?: string; error_code?: string } = {},
+): void {
+  if (tool !== "list_services" && tool !== "request_tokens" && tool !== "service_request" && tool !== "explain_denial") return;
+  audit({
+    type: "tool_invocation",
+    subject: auth.subject,
+    ...(auth.sessionId === undefined ? {} : { session_id: auth.sessionId }),
+    tool,
+    outcome,
+    ...fields,
+    timestamp: new Date().toISOString(),
+  }, config);
 }
 
 function parseTokenRequest(args: Record<string, unknown> | undefined): TokenRequestInput {

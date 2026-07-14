@@ -101,7 +101,7 @@ export class TokenBroker {
       internal_token_ids: internalTokenIds,
       reason: input.reason,
       timestamp: new Date(now).toISOString(),
-    });
+    }, this.config);
     this.auditEvents.push(audit);
     return { tokens: issued, audit };
   }

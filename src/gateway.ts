@@ -109,7 +109,7 @@ export async function executeServiceRequest(
   const broker = getTokenBroker(config);
   const tokenTarget = { service: service.id, destination: target.destination.id };
   const headers = input.headers ?? {};
-  rejectCallerControlledAuthority(headers);
+  rejectCallerControlledHeaders(headers);
   const requestCookieHeaders = prohibitedCookieHeaderNames(headers);
   if (requestCookieHeaders.length > 0) {
     logger.warn("service_request.cookie_rejected", {
@@ -256,9 +256,6 @@ function buildDownstreamRequest(
   }
 
   const requestHeaders = { ...headers };
-  if (hasHeader(requestHeaders, "transfer-encoding")) {
-    throw new GatewayError("unsupported_transfer_encoding", "Caller-supplied Transfer-Encoding is not allowed.");
-  }
   removeHeader(requestHeaders, "transfer-encoding");
   removeHeader(requestHeaders, "content-length");
   requestHeaders["host"] = targetUrl.host;
@@ -293,10 +290,30 @@ const CALLER_CONTROLLED_AUTHORITY_HEADERS = new Set([
   "x-forwarded-proto",
 ]);
 
-function rejectCallerControlledAuthority(headers: Record<string, string>): void {
-  const rejected = Object.keys(headers).find((name) => CALLER_CONTROLLED_AUTHORITY_HEADERS.has(name.toLowerCase()));
-  if (rejected !== undefined) {
-    throw new GatewayError("destination_not_allowed", `Caller-supplied ${rejected} header is not allowed.`);
+const HOP_BY_HOP_HEADERS = new Set([
+  "connection",
+  "keep-alive",
+  "proxy-authenticate",
+  "proxy-authorization",
+  "proxy-connection",
+  "te",
+  "trailer",
+  "transfer-encoding",
+  "upgrade",
+]);
+
+function rejectCallerControlledHeaders(headers: Record<string, string>): void {
+  for (const name of Object.keys(headers)) {
+    const normalized = name.toLowerCase();
+    if (CALLER_CONTROLLED_AUTHORITY_HEADERS.has(normalized) || normalized.startsWith("x-forwarded-")) {
+      throw new GatewayError("destination_not_allowed", `Caller-supplied ${name} header is not allowed.`);
+    }
+    if (HOP_BY_HOP_HEADERS.has(normalized)) {
+      if (normalized === "transfer-encoding") {
+        throw new GatewayError("unsupported_transfer_encoding", "Caller-supplied Transfer-Encoding is not allowed.");
+      }
+      throw new GatewayError("destination_not_allowed", `Caller-supplied ${name} header is not allowed.`);
+    }
   }
 }
 

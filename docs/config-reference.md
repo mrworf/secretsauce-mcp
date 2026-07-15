@@ -149,8 +149,8 @@ Scanner capacity defaults to `min(4, availableParallelism)` workers, a 32-job gl
 
 ## Proxied HTTP Constraints
 
-- Caller-supplied HTTP authority headers (`Host`, `:authority`, `Forwarded`, `X-Forwarded-Host`, and `X-Forwarded-Proto`) are rejected before credential substitution. The outbound `Host` header is derived from the validated destination URL.
+- Caller-supplied HTTP authority, forwarding, and hop-by-hop headers are rejected before credential substitution. This includes `Host`, `:authority`, `Forwarded`, every `X-Forwarded-*` header, `Connection`, `Keep-Alive`, proxy authorization headers, `TE`, `Trailer`, `Transfer-Encoding`, and `Upgrade`. The outbound `Host` header is derived from the validated destination URL.
 - `Cookie`, `Cookie2`, `Set-Cookie`, and `Set-Cookie2` are prohibited. Request occurrences are rejected; response occurrences are removed with sanitized warnings.
-- Caller-supplied `Transfer-Encoding` is rejected. `Content-Length` is recomputed after request substitution and response transformation.
+- Caller-supplied `Content-Length` is discarded and recomputed after request substitution and response transformation.
 - `Content-Transfer-Encoding: base64` declares a whole Base64 response body. Other transfer encodings fail closed.
 - Ordinary and decoded Base64 response bodies must be valid UTF-8.

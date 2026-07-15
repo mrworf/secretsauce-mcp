@@ -93,6 +93,30 @@ describe("HTTP gateway", () => {
     }
   });
 
+  it("rejects hop-by-hop and forwarding headers before substitution or I/O", async () => {
+    const downstream = await startDownstream();
+    try {
+      const config = gatewayConfig(downstream.baseUrl);
+      const broker = installBroker(config);
+      const token = broker.issueTokens(actor(), {
+        service: "demo-service", destination: "primary", credential_ids: ["api_key"], reason: "Test hop-by-hop rejection.",
+      }).tokens[0]?.token ?? "";
+
+      for (const name of [
+        "Connection", "Keep-Alive", "Proxy-Authenticate", "Proxy-Authorization", "Proxy-Connection",
+        "TE", "Trailer", "Upgrade", "X-Forwarded-For", "x-forwarded-custom",
+      ]) {
+        await expectGatewayError(() => executeServiceRequest(config, actor(), {
+          service: "demo-service", destination: "primary", method: "GET", path: "/api/echo",
+          headers: { [name]: token }, reason: "Reject hop-by-hop header.",
+        }), "destination_not_allowed");
+      }
+      expect(downstream.requests).toHaveLength(0);
+    } finally {
+      await downstream.close();
+    }
+  });
+
   it("allows self-signed HTTPS downstream requests when TLS verification is disabled", async () => {
     const downstream = await startHttpsDownstream();
     try {

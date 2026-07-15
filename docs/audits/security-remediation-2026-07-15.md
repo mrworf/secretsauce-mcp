@@ -4,7 +4,7 @@ This companion record tracks remediation of the findings in `security-review-202
 
 | Finding | Status | Verification |
 |---|---|---|
-| SEC-001 | In progress | Authority override headers are rejected before substitution and HTTP/HTTPS I/O. |
+| SEC-001 | Remediated | Authority, forwarding, and hop-by-hop headers are rejected before substitution and HTTP/HTTPS I/O; outbound authority is derived from the validated URL. |
 | SEC-002 | Pending | |
 | SEC-003 | Pending | |
 | SEC-004 | Pending | |

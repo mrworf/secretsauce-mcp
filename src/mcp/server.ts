@@ -106,8 +106,8 @@ export function isMcpGet(request: IncomingMessage, mcpPath: string): boolean {
   return request.method === "GET" && request.url?.split("?")[0] === mcpPath;
 }
 
-export async function readJsonBody(request: IncomingMessage, maxBytes: number): Promise<JSONRPCMessage | unknown> {
-  const body = await readBoundedBody(request, maxBytes);
+export async function readJsonBody(request: IncomingMessage, maxBytes: number, timeoutMs?: number): Promise<JSONRPCMessage | unknown> {
+  const body = await readBoundedBody(request, maxBytes, timeoutMs);
   if (body.byteLength === 0) return undefined;
   return JSON.parse(body.toString("utf8")) as unknown;
 }

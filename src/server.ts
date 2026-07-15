@@ -40,7 +40,7 @@ export function createGatewayServer(config: GatewayConfig) {
       let requiredScopes = configuredMcpScopes(config);
       try {
         const auth = await authenticateRequest(request, config);
-        const body = await readJsonBody(request, config.limits.maxInboundBodyBytes);
+        const body = await readJsonBody(request, config.limits.maxInboundBodyBytes, config.limits.inboundBodyTimeoutMs);
         requiredScopes = requiredScopesForMcpBody(body);
         requireScopes(auth, requiredScopes);
         (request as AuthenticatedRequest).auth = auth;
@@ -56,6 +56,8 @@ export function createGatewayServer(config: GatewayConfig) {
         await handleMcpRequest(config, request, response, body);
       } catch (error) {
         if (error instanceof RequestBodyError) {
+          response.setHeader("connection", "close");
+          response.once("finish", () => request.destroy());
           writeJson(response, error.statusCode, { error: { code: error.code, message: error.message } });
           return;
         }

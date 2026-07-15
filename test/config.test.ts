@@ -98,6 +98,15 @@ describe("config validation", () => {
     expectConfigError(() => validateConfig(configured, validEnv), "limits.max_inbound_body");
   });
 
+  it("defaults and validates the inbound body timeout", () => {
+    const defaults = validRaw();
+    expect(validateConfig(defaults, validEnv).limits.inboundBodyTimeoutMs).toBe(10_000);
+    defaults.limits.inbound_body_timeout = "25ms";
+    expect(validateConfig(defaults, validEnv).limits.inboundBodyTimeoutMs).toBe(25);
+    defaults.limits.inbound_body_timeout = "forever";
+    expectConfigError(() => validateConfig(defaults, validEnv), "limits.inbound_body_timeout");
+  });
+
   it("accepts service API documentation URLs", () => {
     const raw = validRaw();
     raw.services["portainer-prod"].api_docs_url = "https://api.example.org/openapi.json";

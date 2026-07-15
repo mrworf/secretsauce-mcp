@@ -135,10 +135,11 @@ async function handleAuthorizePost(config: GatewayConfig, request: IncomingMessa
 
   let body: URLSearchParams;
   try {
-    body = await readFormBody(request, config.limits.maxInboundBodyBytes);
+    body = await readFormBody(request, config.limits.maxInboundBodyBytes, config.limits.inboundBodyTimeoutMs);
   } catch (error) {
     if (error instanceof RequestBodyError) {
-      writeOAuthError(response, error.statusCode, error.code === "request_too_large" ? "request_too_large" : "invalid_request");
+      closeAfterResponse(request, response);
+      writeOAuthError(response, error.statusCode, oauthBodyError(error));
       return;
     }
     throw error;
@@ -207,10 +208,11 @@ async function handleTokenPost(config: GatewayConfig, request: IncomingMessage, 
 
   let body: URLSearchParams;
   try {
-    body = await readFormBody(request, config.limits.maxInboundBodyBytes);
+    body = await readFormBody(request, config.limits.maxInboundBodyBytes, config.limits.inboundBodyTimeoutMs);
   } catch (error) {
     if (error instanceof RequestBodyError) {
-      writeOAuthError(response, error.statusCode, error.code === "request_too_large" ? "request_too_large" : "invalid_request");
+      closeAfterResponse(request, response);
+      writeOAuthError(response, error.statusCode, oauthBodyError(error));
       return;
     }
     throw error;
@@ -398,15 +400,26 @@ function getPublicKey(publicKeyPem: string): ReturnType<typeof importSPKI> {
   return key;
 }
 
-async function readFormBody(request: IncomingMessage, maxBytes?: number): Promise<URLSearchParams> {
+async function readFormBody(request: IncomingMessage, maxBytes?: number, timeoutMs?: number): Promise<URLSearchParams> {
   if (maxBytes !== undefined) {
-    return new URLSearchParams((await readBoundedBody(request, maxBytes)).toString("utf8"));
+    return new URLSearchParams((await readBoundedBody(request, maxBytes, timeoutMs)).toString("utf8"));
   }
   const chunks: Buffer[] = [];
   for await (const chunk of request) {
     chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
   }
   return new URLSearchParams(Buffer.concat(chunks).toString("utf8"));
+}
+
+function oauthBodyError(error: RequestBodyError): string {
+  if (error.code === "request_too_large") return "request_too_large";
+  if (error.code === "request_timeout") return "request_timeout";
+  return "invalid_request";
+}
+
+function closeAfterResponse(request: IncomingMessage, response: ServerResponse): void {
+  response.setHeader("connection", "close");
+  response.once("finish", () => request.destroy());
 }
 
 function writeJson(response: ServerResponse, statusCode: number, body: unknown): void {

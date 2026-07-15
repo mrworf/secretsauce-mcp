@@ -163,6 +163,17 @@ describe("config validation", () => {
     expectConfigError(() => validateConfig(raw, validEnv), "must not exceed");
   });
 
+  it("defaults and validates denial retention limits", () => {
+    const raw = validRaw();
+    const defaults = validateConfig(raw, validEnv).limits;
+    expect(defaults).toMatchObject({ maxDenialRecords: 1000, denialTtlMs: 900_000, stateSweepIntervalMs: 60_000 });
+    raw.limits.max_denial_records = 0;
+    expectConfigError(() => validateConfig(raw, validEnv), "Invalid config");
+    raw.limits.max_denial_records = 2;
+    raw.limits.denial_ttl = "never";
+    expectConfigError(() => validateConfig(raw, validEnv), "limits.denial_ttl");
+  });
+
   it("accepts service API documentation URLs", () => {
     const raw = validRaw();
     raw.services["portainer-prod"].api_docs_url = "https://api.example.org/openapi.json";

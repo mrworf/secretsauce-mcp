@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { explainDenial } from "../src/denials.js";
+import { DenialStore, explainDenial } from "../src/denials.js";
 import { GatewayError } from "../src/errors.js";
 import { executeServiceRequest } from "../src/gateway.js";
 import { TokenBroker, defaultTokenBrokers } from "../src/tokens.js";
@@ -24,7 +24,7 @@ describe("denial explanations", () => {
       requestId = (error as GatewayError).requestId ?? "";
     }
 
-    const explanation = explainDenial(auth("henric@example.com"), requestId);
+    const explanation = explainDenial(config, auth("henric@example.com"), requestId);
     expect(explanation).toMatchObject({
       request_id: requestId,
       reason: "Denied by default policy mode.",
@@ -51,7 +51,21 @@ describe("denial explanations", () => {
       requestId = (error as GatewayError).requestId ?? "";
     }
 
-    expect(explainDenial(auth("ada@example.com", "session-a"), requestId)).toBeUndefined();
-    expect(explainDenial(auth("henric@example.com", "session-b"), requestId)).toBeUndefined();
+    expect(explainDenial(config, auth("ada@example.com", "session-a"), requestId)).toBeUndefined();
+    expect(explainDenial(config, auth("henric@example.com", "session-b"), requestId)).toBeUndefined();
+  });
+
+  it("expires denial records and evicts the least recently used record", () => {
+    let now = 0;
+    const store = new DenialStore(2, 10, () => now);
+    const first = store.record({ subject: "actor", reason: "first", policy_mode: "deny" });
+    const second = store.record({ subject: "actor", reason: "second", policy_mode: "deny" });
+    expect(store.get(first.request_id)?.reason).toBe("first");
+    const third = store.record({ subject: "actor", reason: "third", policy_mode: "deny" });
+    expect(store.get(second.request_id)).toBeUndefined();
+    expect(store.get(third.request_id)?.reason).toBe("third");
+    now = 11;
+    store.sweep(now);
+    expect(store.get(first.request_id)).toBeUndefined();
   });
 });

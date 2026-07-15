@@ -4,7 +4,7 @@ import { GatewayError } from "./errors.js";
 import { evaluatePolicy } from "./policy.js";
 import { getService, resolveDestination } from "./registry.js";
 import { audit } from "./audit.js";
-import { denialStore } from "./denials.js";
+import { getDenialStore } from "./denials.js";
 import { bodySummary, createLogger, headerNames } from "./logger.js";
 import { prohibitedCookieHeaderNames, stripCookieHeaders } from "./cookies.js";
 import { getResponseTokenizer, getResponseTokenizerRuleIds, getSecretScannerPoolStats } from "./secretRuntime.js";
@@ -60,7 +60,7 @@ export async function executeServiceRequest(
   });
   const policy = evaluatePolicy(service, target, input.method);
   if (!policy.allowed) {
-    const denial = denialStore.record({
+    const denial = getDenialStore(config).record({
       subject: auth.subject,
       ...(auth.sessionId === undefined ? {} : { session_id: auth.sessionId }),
       reason: policy.reason,

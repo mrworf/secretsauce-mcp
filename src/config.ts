@@ -100,6 +100,9 @@ const rawConfigSchema = z.object({
     max_unauthenticated_inflight_per_source: z.number().int().positive().default(4),
     max_password_verifications: z.number().int().positive().default(2),
     max_password_verifications_per_source: z.number().int().positive().default(1),
+    max_denial_records: z.number().int().positive().default(1000),
+    denial_ttl: z.string().default("15m"),
+    state_sweep_interval: z.string().default("1m"),
     max_request_body: z.string().default("1mb"),
     max_response_body: z.string().default("5mb"),
     timeout: z.string().default("30s"),
@@ -107,6 +110,7 @@ const rawConfigSchema = z.object({
     max_inbound_body: "1mb", inbound_body_timeout: "10s",
     max_unauthenticated_inflight: 32, max_unauthenticated_inflight_per_source: 4,
     max_password_verifications: 2, max_password_verifications_per_source: 1,
+    max_denial_records: 1000, denial_ttl: "15m", state_sweep_interval: "1m",
     max_request_body: "1mb", max_response_body: "5mb", timeout: "30s",
   }),
   logging: z.object({
@@ -329,7 +333,9 @@ function normalizeLimits(raw: RawConfig["limits"]): LimitsConfig {
   const maxRequestBodyBytes = parseSize(raw.max_request_body, "limits.max_request_body");
   const maxResponseBodyBytes = parseSize(raw.max_response_body, "limits.max_response_body");
   const timeoutMs = parseDuration(raw.timeout, "limits.timeout");
-  if (maxInboundBodyBytes <= 0 || inboundBodyTimeoutMs <= 0 || maxRequestBodyBytes <= 0 || maxResponseBodyBytes <= 0 || timeoutMs <= 0) {
+  const denialTtlMs = parseDuration(raw.denial_ttl, "limits.denial_ttl");
+  const stateSweepIntervalMs = parseDuration(raw.state_sweep_interval, "limits.state_sweep_interval");
+  if (maxInboundBodyBytes <= 0 || inboundBodyTimeoutMs <= 0 || maxRequestBodyBytes <= 0 || maxResponseBodyBytes <= 0 || timeoutMs <= 0 || denialTtlMs <= 0 || stateSweepIntervalMs <= 0) {
     throw configError("limits values must be positive");
   }
   if (raw.max_unauthenticated_inflight_per_source > raw.max_unauthenticated_inflight) {
@@ -345,6 +351,9 @@ function normalizeLimits(raw: RawConfig["limits"]): LimitsConfig {
     maxUnauthenticatedInflightPerSource: raw.max_unauthenticated_inflight_per_source,
     maxPasswordVerifications: raw.max_password_verifications,
     maxPasswordVerificationsPerSource: raw.max_password_verifications_per_source,
+    maxDenialRecords: raw.max_denial_records,
+    denialTtlMs,
+    stateSweepIntervalMs,
     maxRequestBodyBytes,
     maxResponseBodyBytes,
     timeoutMs,

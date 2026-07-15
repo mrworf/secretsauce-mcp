@@ -9,12 +9,14 @@ import type { GatewayConfig } from "./types.js";
 import type { AuthContext } from "./types.js";
 import { initializeSecretRuntime } from "./secretRuntime.js";
 import { RequestBodyError } from "./httpBody.js";
+import { startMaintenance } from "./maintenance.js";
 
 type AuthenticatedRequest = IncomingMessage & { auth?: AuthContext };
 
 export function createGatewayServer(config: GatewayConfig) {
   const logger = createLogger(config.logging);
-  return createServer(async (request, response) => {
+  const stopMaintenance = startMaintenance(config);
+  const server = createServer(async (request, response) => {
     if (request.method === "GET" && request.url === "/health") {
       logger.debug("http.health", { method: request.method, path: "/health", service_count: Object.keys(config.services).length });
       writeJson(response, 200, {
@@ -130,6 +132,8 @@ export function createGatewayServer(config: GatewayConfig) {
       },
     });
   });
+  server.once("close", stopMaintenance);
+  return server;
 }
 
 function writeAuthError(response: ServerResponse, challenge: string): void {

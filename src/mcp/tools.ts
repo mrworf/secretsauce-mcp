@@ -184,7 +184,7 @@ export async function callTool(
     }
     if (name === "explain_denial") {
       const requestId = readString(args ?? {}, "request_id");
-      const explanation = explainDenial(auth, requestId);
+      const explanation = explainDenial(config, auth, requestId);
       if (explanation === undefined) {
         auditTool(config, auth, name, "deny", { request_id: requestId, error_code: "unknown_service" });
         return toolError("unknown_service", "No denial context found for this request.");

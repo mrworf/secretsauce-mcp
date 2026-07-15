@@ -1,4 +1,6 @@
 import { randomUUID } from "node:crypto";
+import { registerMaintenanceTask } from "./maintenance.js";
+import type { GatewayConfig } from "./types.js";
 
 export interface DenialRecord {
   request_id: string;
@@ -11,11 +13,22 @@ export interface DenialRecord {
 }
 
 export class DenialStore {
-  private readonly records = new Map<string, DenialRecord>();
+  private readonly records = new Map<string, DenialRecord & { expiresAt: number }>();
+
+  constructor(
+    private readonly capacity = 1000,
+    private readonly ttlMs = 15 * 60_000,
+    private readonly now: () => number = () => Date.now(),
+  ) {}
 
   record(input: Omit<DenialRecord, "request_id">): DenialRecord {
     const requestId = `req_${randomUUID()}`;
-    const record: DenialRecord = {
+    this.sweep(this.now());
+    if (this.records.size >= this.capacity) {
+      const oldest = this.records.keys().next().value as string | undefined;
+      if (oldest !== undefined) this.records.delete(oldest);
+    }
+    const record: DenialRecord & { expiresAt: number } = {
       request_id: requestId,
       subject: input.subject,
       ...(input.session_id === undefined ? {} : { session_id: input.session_id }),
@@ -23,17 +36,41 @@ export class DenialStore {
       policy_mode: input.policy_mode,
       ...(input.matched_rule === undefined ? {} : { matched_rule: input.matched_rule }),
       ...(input.suggestion === undefined ? {} : { suggestion: input.suggestion }),
+      expiresAt: this.now() + this.ttlMs,
     };
     this.records.set(requestId, record);
     return record;
   }
 
   get(requestId: string): DenialRecord | undefined {
-    return this.records.get(requestId);
+    const record = this.records.get(requestId);
+    if (record === undefined) return undefined;
+    if (record.expiresAt <= this.now()) {
+      this.records.delete(requestId);
+      return undefined;
+    }
+    this.records.delete(requestId);
+    this.records.set(requestId, record);
+    const { expiresAt: _expiresAt, ...result } = record;
+    return result;
+  }
+
+  sweep(now = this.now()): void {
+    for (const [requestId, record] of this.records) if (record.expiresAt <= now) this.records.delete(requestId);
   }
 }
 
-export const denialStore = new DenialStore();
+const denialStores = new WeakMap<GatewayConfig, DenialStore>();
+
+export function getDenialStore(config: GatewayConfig): DenialStore {
+  let store = denialStores.get(config);
+  if (store === undefined) {
+    store = new DenialStore(config.limits.maxDenialRecords, config.limits.denialTtlMs);
+    denialStores.set(config, store);
+    registerMaintenanceTask(config, (now) => store?.sweep(now));
+  }
+  return store;
+}
 
 export interface DenialExplanation {
   request_id: string;
@@ -43,8 +80,8 @@ export interface DenialExplanation {
   suggestion?: string;
 }
 
-export function explainDenial(auth: { subject: string; sessionId?: string }, requestId: string): DenialExplanation | undefined {
-  const record = denialStore.get(requestId);
+export function explainDenial(config: GatewayConfig, auth: { subject: string; sessionId?: string }, requestId: string): DenialExplanation | undefined {
+  const record = getDenialStore(config).get(requestId);
   if (!record) return undefined;
   if (record.subject !== auth.subject) return undefined;
   if (record.session_id !== undefined && record.session_id !== auth.sessionId) return undefined;

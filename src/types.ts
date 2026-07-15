@@ -84,6 +84,9 @@ export interface LimitsConfig {
   maxUnauthenticatedInflightPerSource: number;
   maxPasswordVerifications: number;
   maxPasswordVerificationsPerSource: number;
+  maxDenialRecords: number;
+  denialTtlMs: number;
+  stateSweepIntervalMs: number;
   maxRequestBodyBytes: number;
   maxResponseBodyBytes: number;
   timeoutMs: number;

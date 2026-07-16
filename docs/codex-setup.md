@@ -69,6 +69,8 @@ For the built-in private OAuth mode:
 
 The signing key must survive container restarts. If it is generated inside the container or stored on ephemeral media, ChatGPT's existing OAuth access token cannot be verified after restart and the app may require reconnecting.
 
+The built-in server issues rotating refresh tokens so ChatGPT and Codex can renew expired access tokens without another login. Refresh grants are held in memory and are lost when the gateway restarts; clients then start a new authorization-code flow.
+
 Use these values in the ChatGPT developer-mode app form:
 
 1. Set Connection to Server URL.

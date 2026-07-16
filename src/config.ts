@@ -23,7 +23,7 @@ import type {
 } from "./types.js";
 import { SECRET_RULE_IDS } from "./secretlintConfig.js";
 
-const durationPattern = /^(\d+)(ms|s|m|h)$/;
+const durationPattern = /^(\d+)(ms|s|m|h|d)$/;
 const sizePattern = /^(\d+)(b|kb|mb)$/i;
 const broadHostRegexes = new Set([".*", "^.*$", ".*internal.*"]);
 
@@ -66,6 +66,8 @@ const rawConfigSchema = z.object({
         signing_key_file: z.string().min(1),
         access_token_ttl: z.string().default("1h"),
         authorization_code_ttl: z.string().default("5m"),
+        refresh_token_idle_ttl: z.string().default("30d"),
+        refresh_token_max_ttl: z.string().default("90d"),
         allowed_clients: z.array(z.string().min(1)).min(1),
         required_scopes: z.array(z.string().min(1)).default(["gateway.read", "gateway.tokens", "gateway.request"]),
         login_rate_limit: z.object({
@@ -107,6 +109,7 @@ const rawConfigSchema = z.object({
     max_token_records: z.number().int().positive().default(10000),
     max_token_records_per_subject: z.number().int().positive().default(1000),
     max_authorization_codes: z.number().int().positive().default(1000),
+    max_refresh_token_records: z.number().int().positive().default(10000),
     max_mcp_transports: z.number().int().positive().default(1000),
     mcp_transport_idle_ttl: z.string().default("30m"),
     max_request_body: z.string().default("1mb"),
@@ -118,7 +121,7 @@ const rawConfigSchema = z.object({
     max_password_verifications: 2, max_password_verifications_per_source: 1,
     max_denial_records: 1000, denial_ttl: "15m", state_sweep_interval: "1m",
     max_token_records: 10000, max_token_records_per_subject: 1000,
-    max_authorization_codes: 1000,
+    max_authorization_codes: 1000, max_refresh_token_records: 10000,
     max_mcp_transports: 1000, mcp_transport_idle_ttl: "30m",
     max_request_body: "1mb", max_response_body: "5mb", timeout: "30s",
   }),
@@ -277,6 +280,17 @@ function normalizeAuth(raw: RawConfig["auth"], env: NodeJS.ProcessEnv): AuthConf
       throw configError("auth.builtin_oauth.signing_key_file must contain a valid private key");
     }
 
+    const accessTokenTtlMs = parseDuration(raw.builtin_oauth.access_token_ttl, "auth.builtin_oauth.access_token_ttl");
+    const authorizationCodeTtlMs = parseDuration(raw.builtin_oauth.authorization_code_ttl, "auth.builtin_oauth.authorization_code_ttl");
+    const refreshTokenIdleTtlMs = parseDuration(raw.builtin_oauth.refresh_token_idle_ttl, "auth.builtin_oauth.refresh_token_idle_ttl");
+    const refreshTokenMaxTtlMs = parseDuration(raw.builtin_oauth.refresh_token_max_ttl, "auth.builtin_oauth.refresh_token_max_ttl");
+    if (accessTokenTtlMs <= 0 || authorizationCodeTtlMs <= 0 || refreshTokenIdleTtlMs <= 0 || refreshTokenMaxTtlMs <= 0) {
+      throw configError("auth.builtin_oauth token TTL values must be positive");
+    }
+    if (refreshTokenIdleTtlMs > refreshTokenMaxTtlMs) {
+      throw configError("auth.builtin_oauth.refresh_token_idle_ttl must not exceed refresh_token_max_ttl");
+    }
+
     return {
       mode: "builtin_oauth",
       builtinOAuth: {
@@ -286,8 +300,10 @@ function normalizeAuth(raw: RawConfig["auth"], env: NodeJS.ProcessEnv): AuthConf
         signingPrivateKeyPem,
         signingPublicKeyPem,
         signingKeyId: keyIdForPublicKey(signingPublicKeyPem),
-        accessTokenTtlMs: parseDuration(raw.builtin_oauth.access_token_ttl, "auth.builtin_oauth.access_token_ttl"),
-        authorizationCodeTtlMs: parseDuration(raw.builtin_oauth.authorization_code_ttl, "auth.builtin_oauth.authorization_code_ttl"),
+        accessTokenTtlMs,
+        authorizationCodeTtlMs,
+        refreshTokenIdleTtlMs,
+        refreshTokenMaxTtlMs,
         allowedClients: raw.builtin_oauth.allowed_clients,
         requiredScopes: raw.builtin_oauth.required_scopes,
         loginRateLimit: normalizeLoginRateLimit(raw.builtin_oauth.login_rate_limit),
@@ -371,6 +387,7 @@ function normalizeLimits(raw: RawConfig["limits"]): LimitsConfig {
     maxTokenRecords: raw.max_token_records,
     maxTokenRecordsPerSubject: raw.max_token_records_per_subject,
     maxAuthorizationCodes: raw.max_authorization_codes,
+    maxRefreshTokenRecords: raw.max_refresh_token_records,
     maxMcpTransports: raw.max_mcp_transports,
     mcpTransportIdleTtlMs,
     maxRequestBodyBytes,
@@ -531,10 +548,10 @@ function defaultPortForScheme(protocol: string): string {
 
 function parseDuration(value: string, label: string): number {
   const match = durationPattern.exec(value);
-  if (!match) throw configError(`${label} must be a duration like 500ms, 30s, 10m, or 1h`);
+  if (!match) throw configError(`${label} must be a duration like 500ms, 30s, 10m, 1h, or 1d`);
   const amount = Number(match[1] ?? 0);
   const unit = match[2] ?? "";
-  const multipliers: Record<string, number> = { ms: 1, s: 1000, m: 60_000, h: 3_600_000 };
+  const multipliers: Record<string, number> = { ms: 1, s: 1000, m: 60_000, h: 3_600_000, d: 86_400_000 };
   const multiplier = multipliers[unit];
   if (multiplier === undefined) throw configError(`${label} has unsupported duration unit`);
   return amount * multiplier;

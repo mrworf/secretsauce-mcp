@@ -49,6 +49,8 @@ export interface BuiltinOAuthAuthConfig {
     signingKeyId: string;
     accessTokenTtlMs: number;
     authorizationCodeTtlMs: number;
+    refreshTokenIdleTtlMs: number;
+    refreshTokenMaxTtlMs: number;
     allowedClients: string[];
     requiredScopes: string[];
     loginRateLimit: LoginRateLimitConfig;
@@ -91,6 +93,7 @@ export interface LimitsConfig {
   maxTokenRecords: number;
   maxTokenRecordsPerSubject: number;
   maxAuthorizationCodes: number;
+  maxRefreshTokenRecords: number;
   maxMcpTransports: number;
   mcpTransportIdleTtlMs: number;
   maxRequestBodyBytes: number;

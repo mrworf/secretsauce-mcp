@@ -25,7 +25,27 @@ interface AuthorizationCode {
   expiresAt: number;
 }
 
-interface BuiltinOAuthState { authorizationCodes: Map<string, AuthorizationCode> }
+interface RefreshGrant {
+  id: string;
+  clientId: string;
+  resource: string;
+  scopes: string[];
+  subject: string;
+  createdAt: number;
+  idleExpiresAt: number;
+  expiresAt: number;
+}
+
+interface RefreshTokenRecord {
+  grantId: string;
+  status: "active" | "rotating" | "used";
+}
+
+interface BuiltinOAuthState {
+  authorizationCodes: Map<string, AuthorizationCode>;
+  refreshGrants: Map<string, RefreshGrant>;
+  refreshTokens: Map<string, RefreshTokenRecord>;
+}
 const oauthStates = new WeakMap<GatewayConfig, BuiltinOAuthState>();
 const privateKeyCache = new Map<string, ReturnType<typeof importPKCS8>>();
 const publicKeyCache = new Map<string, ReturnType<typeof importSPKI>>();
@@ -93,7 +113,7 @@ function authorizationServerMetadata(config: GatewayConfig): Record<string, unkn
     token_endpoint: `${issuer}${TOKEN_PATH}`,
     jwks_uri: `${issuer}${JWKS_PATH}`,
     response_types_supported: ["code"],
-    grant_types_supported: ["authorization_code"],
+    grant_types_supported: ["authorization_code", "refresh_token"],
     code_challenge_methods_supported: ["S256"],
     token_endpoint_auth_methods_supported: ["none"],
     client_id_metadata_document_supported: true,
@@ -289,13 +309,30 @@ async function handleTokenPost(config: GatewayConfig, request: IncomingMessage, 
     }
     throw error;
   }
-  if (body.get("grant_type") !== "authorization_code") {
-    logTokenOutcome(logger, "error", 400, "unsupported_grant_type", "unavailable", "unavailable");
-    writeOAuthError(response, 400, "unsupported_grant_type");
+  const grantType = body.get("grant_type");
+  if (grantType === "authorization_code") {
+    await exchangeAuthorizationCode(config, body, response, logger);
     return;
   }
+  if (grantType === "refresh_token") {
+    await exchangeRefreshToken(config, body, response, logger);
+    return;
+  }
+  logTokenOutcome(logger, "error", 400, "unsupported_grant_type", "unavailable", "unavailable");
+  writeOAuthError(response, 400, "unsupported_grant_type");
+}
+
+async function exchangeAuthorizationCode(
+  config: GatewayConfig,
+  body: URLSearchParams,
+  response: ServerResponse,
+  logger: ReturnType<typeof createLogger>,
+): Promise<void> {
+  const auth = config.auth.mode === "builtin_oauth" ? config.auth.builtinOAuth : undefined;
+  if (auth === undefined) throw new Error("Expected built-in OAuth config");
   const code = body.get("code") ?? "";
-  const authorizationCodes = getOAuthState(config).authorizationCodes;
+  const oauthState = getOAuthState(config);
+  const authorizationCodes = oauthState.authorizationCodes;
   const record = authorizationCodes.get(code);
   if (record === undefined || record.expiresAt <= Date.now()) {
     authorizationCodes.delete(code);
@@ -323,37 +360,178 @@ async function handleTokenPost(config: GatewayConfig, request: IncomingMessage, 
     return;
   }
 
-  const now = Math.floor(Date.now() / 1000);
-  const accessToken = await new SignJWT({ scope: record.scopes.join(" ") })
-    .setProtectedHeader({ alg: "RS256", kid: auth.signingKeyId })
-    .setSubject(record.subject)
-    .setIssuer(auth.issuer)
-    .setAudience(record.resource)
-    .setIssuedAt(now)
-    .setExpirationTime(now + Math.floor(auth.accessTokenTtlMs / 1000))
-    .sign(await getPrivateKey(auth.signingPrivateKeyPem));
+  const now = Date.now();
+  sweepRefreshGrants(oauthState, now);
+  if (oauthState.refreshTokens.size >= config.limits.maxRefreshTokenRecords) {
+    logTokenOutcome(logger, "error", 503, "temporarily_unavailable", resourceStatus(requestedResource, record.resource), record.scopes.length);
+    writeOAuthError(response, 503, "temporarily_unavailable");
+    return;
+  }
+  const accessToken = await signAccessToken(auth, record.subject, record.resource, record.scopes, now);
+  const refreshToken = issueRefreshGrant(oauthState, auth, record, now);
 
   logTokenOutcome(logger, "success", 200, undefined, resourceStatus(requestedResource, record.resource), record.scopes.length);
   writeJson(response, 200, {
     access_token: accessToken,
+    refresh_token: refreshToken,
     token_type: "Bearer",
     expires_in: Math.floor(auth.accessTokenTtlMs / 1000),
     scope: record.scopes.join(" "),
   });
 }
 
+async function exchangeRefreshToken(
+  config: GatewayConfig,
+  body: URLSearchParams,
+  response: ServerResponse,
+  logger: ReturnType<typeof createLogger>,
+): Promise<void> {
+  const auth = config.auth.mode === "builtin_oauth" ? config.auth.builtinOAuth : undefined;
+  if (auth === undefined) throw new Error("Expected built-in OAuth config");
+  const oauthState = getOAuthState(config);
+  const now = Date.now();
+  sweepRefreshGrants(oauthState, now);
+
+  const tokenHash = hashRefreshToken(body.get("refresh_token") ?? "");
+  const tokenRecord = oauthState.refreshTokens.get(tokenHash);
+  const grant = tokenRecord === undefined ? undefined : oauthState.refreshGrants.get(tokenRecord.grantId);
+  if (tokenRecord === undefined || grant === undefined) {
+    logTokenOutcome(logger, "error", 400, "invalid_grant", "unavailable", "unavailable");
+    writeOAuthError(response, 400, "invalid_grant");
+    return;
+  }
+  if (tokenRecord.status !== "active") {
+    revokeRefreshGrant(oauthState, grant.id);
+    logger.warn("oauth.refresh_token_reuse_detected", { client_status: "bound", resource_status: "bound" });
+    logTokenOutcome(logger, "error", 400, "invalid_grant", "unavailable", grant.scopes.length);
+    writeOAuthError(response, 400, "invalid_grant");
+    return;
+  }
+  if (body.get("client_id") !== grant.clientId) {
+    logTokenOutcome(logger, "error", 400, "invalid_grant", resourceStatus(body.get("resource"), grant.resource), grant.scopes.length);
+    writeOAuthError(response, 400, "invalid_grant");
+    return;
+  }
+  const requestedResource = body.get("resource");
+  if (requestedResource !== null && requestedResource !== grant.resource) {
+    logTokenOutcome(logger, "error", 400, "invalid_target", "mismatch", grant.scopes.length);
+    writeOAuthError(response, 400, "invalid_target");
+    return;
+  }
+  const scopes = scopesFromRequest(body.get("scope"), grant.scopes);
+  if (scopes.some((scope) => !grant.scopes.includes(scope))) {
+    logTokenOutcome(logger, "error", 400, "invalid_scope", resourceStatus(requestedResource, grant.resource), scopes.length);
+    writeOAuthError(response, 400, "invalid_scope");
+    return;
+  }
+  if (oauthState.refreshTokens.size >= config.limits.maxRefreshTokenRecords) {
+    logTokenOutcome(logger, "error", 503, "temporarily_unavailable", resourceStatus(requestedResource, grant.resource), scopes.length);
+    writeOAuthError(response, 503, "temporarily_unavailable");
+    return;
+  }
+
+  tokenRecord.status = "rotating";
+  const rotatedToken = randomBytes(32).toString("base64url");
+  const rotatedHash = hashRefreshToken(rotatedToken);
+  let accessToken: string;
+  try {
+    accessToken = await signAccessToken(auth, grant.subject, grant.resource, scopes, now);
+  } catch (error) {
+    if (oauthState.refreshGrants.has(grant.id) && tokenRecord.status === "rotating") tokenRecord.status = "active";
+    throw error;
+  }
+  if (!oauthState.refreshGrants.has(grant.id) || tokenRecord.status !== "rotating") {
+    logTokenOutcome(logger, "error", 400, "invalid_grant", "unavailable", scopes.length);
+    writeOAuthError(response, 400, "invalid_grant");
+    return;
+  }
+  tokenRecord.status = "used";
+  oauthState.refreshTokens.set(rotatedHash, { grantId: grant.id, status: "active" });
+  grant.idleExpiresAt = Math.min(now + auth.refreshTokenIdleTtlMs, grant.expiresAt);
+
+  logTokenOutcome(logger, "success", 200, undefined, resourceStatus(requestedResource, grant.resource), scopes.length);
+  writeJson(response, 200, {
+    access_token: accessToken,
+    refresh_token: rotatedToken,
+    token_type: "Bearer",
+    expires_in: Math.floor(auth.accessTokenTtlMs / 1000),
+    scope: scopes.join(" "),
+  });
+}
+
 function getOAuthState(config: GatewayConfig): BuiltinOAuthState {
   let state = oauthStates.get(config);
   if (state === undefined) {
-    state = { authorizationCodes: new Map() };
+    state = { authorizationCodes: new Map(), refreshGrants: new Map(), refreshTokens: new Map() };
     oauthStates.set(config, state);
-    registerMaintenanceTask(config, (now) => sweepAuthorizationCodes(state!, now));
+    registerMaintenanceTask(config, (now) => {
+      sweepAuthorizationCodes(state!, now);
+      sweepRefreshGrants(state!, now);
+    });
   }
   return state;
 }
 
 function sweepAuthorizationCodes(state: BuiltinOAuthState, now: number): void {
   for (const [code, record] of state.authorizationCodes) if (record.expiresAt <= now) state.authorizationCodes.delete(code);
+}
+
+function issueRefreshGrant(
+  state: BuiltinOAuthState,
+  auth: BuiltinOAuthAuthConfig["builtinOAuth"],
+  authorizationCode: AuthorizationCode,
+  now: number,
+): string {
+  const token = randomBytes(32).toString("base64url");
+  const grantId = randomBytes(16).toString("base64url");
+  const expiresAt = now + auth.refreshTokenMaxTtlMs;
+  state.refreshGrants.set(grantId, {
+    id: grantId,
+    clientId: authorizationCode.clientId,
+    resource: authorizationCode.resource,
+    scopes: [...authorizationCode.scopes],
+    subject: authorizationCode.subject,
+    createdAt: now,
+    idleExpiresAt: Math.min(now + auth.refreshTokenIdleTtlMs, expiresAt),
+    expiresAt,
+  });
+  state.refreshTokens.set(hashRefreshToken(token), { grantId, status: "active" });
+  return token;
+}
+
+function sweepRefreshGrants(state: BuiltinOAuthState, now: number): void {
+  for (const grant of state.refreshGrants.values()) {
+    if (grant.idleExpiresAt <= now || grant.expiresAt <= now) revokeRefreshGrant(state, grant.id);
+  }
+}
+
+function revokeRefreshGrant(state: BuiltinOAuthState, grantId: string): void {
+  state.refreshGrants.delete(grantId);
+  for (const [tokenHash, record] of state.refreshTokens) {
+    if (record.grantId === grantId) state.refreshTokens.delete(tokenHash);
+  }
+}
+
+function hashRefreshToken(token: string): string {
+  return createHash("sha256").update(token).digest("base64url");
+}
+
+async function signAccessToken(
+  auth: BuiltinOAuthAuthConfig["builtinOAuth"],
+  subject: string,
+  resource: string,
+  scopes: string[],
+  nowMs: number,
+): Promise<string> {
+  const now = Math.floor(nowMs / 1000);
+  return new SignJWT({ scope: scopes.join(" ") })
+    .setProtectedHeader({ alg: "RS256", kid: auth.signingKeyId })
+    .setSubject(subject)
+    .setIssuer(auth.issuer)
+    .setAudience(resource)
+    .setIssuedAt(now)
+    .setExpirationTime(now + Math.floor(auth.accessTokenTtlMs / 1000))
+    .sign(await getPrivateKey(auth.signingPrivateKeyPem));
 }
 
 async function validateAuthorizationRequest(

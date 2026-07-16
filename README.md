@@ -80,6 +80,6 @@ services:
       SENSITIVE_NAMES_CONFIG_PATH: /config/sensitive-names.yaml
 ```
 
-Use the writable audit mount for `audit.file`, for example `/var/lib/agent-credential-gateway/audit/audit.jsonl`. When using `auth.mode: builtin_oauth`, keep `auth.builtin_oauth.signing_key_file` on stable mounted storage such as `/run/oauth/oauth_signing_key.pem`; changing that key forces clients to reauthenticate.
+Use the writable audit mount for `audit.file`, for example `/var/lib/agent-credential-gateway/audit/audit.jsonl`. When using `auth.mode: builtin_oauth`, keep `auth.builtin_oauth.signing_key_file` on stable mounted storage such as `/run/oauth/oauth_signing_key.pem`; changing that key forces clients to reauthenticate. Built-in OAuth access tokens can be renewed with rotating refresh tokens, but refresh grants are currently held in memory and require reauthorization after a gateway restart.
 
 Expose the service through an HTTPS endpoint such as `https://gateway.example.org/mcp` when using remote MCP clients.

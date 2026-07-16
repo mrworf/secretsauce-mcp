@@ -52,6 +52,8 @@ auth:
     signing_key_file: /run/secrets/oauth_signing_key.pem
     access_token_ttl: 1h
     authorization_code_ttl: 5m
+    refresh_token_idle_ttl: 30d
+    refresh_token_max_ttl: 90d
     allowed_clients:
       - https://chatgpt.com
     required_scopes:
@@ -60,12 +62,15 @@ auth:
       - gateway.request
 ```
 
-`builtin_oauth` is intended for a private single-admin deployment. It publishes authorization server discovery from this gateway, accepts ChatGPT's CIMD public-client flow with PKCE, and issues JWT access tokens for the MCP resource. Store `AGENT_GATEWAY_ADMIN_PASSWORD_HASH` as `pbkdf2-sha256$iterations$saltBase64url$hashBase64url`, not as a raw password. The signing key file must contain an RSA private key PEM and must be mounted from stable storage. If the signing key is regenerated inside an ephemeral container, existing ChatGPT OAuth tokens become invalid after every restart.
+`builtin_oauth` is intended for a private single-admin deployment. It publishes authorization server discovery from this gateway, accepts ChatGPT's CIMD public-client flow with PKCE, and issues JWT access tokens plus rotating opaque refresh tokens for the MCP resource. Refresh tokens are bound to the authorized client, resource, subject, and scope ceiling. Reusing a rotated token revokes its active family. Store `AGENT_GATEWAY_ADMIN_PASSWORD_HASH` as `pbkdf2-sha256$iterations$saltBase64url$hashBase64url`, not as a raw password. The signing key file must contain an RSA private key PEM and must be mounted from stable storage. If the signing key is regenerated inside an ephemeral container, existing ChatGPT OAuth access tokens become invalid after every restart.
+
+Durations accept `ms`, `s`, `m`, `h`, and `d`. Refresh grants expire after 30 days without use and after 90 days regardless of use by default; both values are configurable, and the idle lifetime must not exceed the maximum lifetime.
 
 Password verification uses asynchronous PBKDF2 so expensive login checks do not block MCP traffic or health checks. At most `limits.max_password_verifications` checks run globally (default `2`) and `limits.max_password_verifications_per_source` per direct socket address (default `1`); excess checks receive `429` before PBKDF2 starts.
 
 Built-in login failures are limited over a 15-minute window to 10 per direct source, 10 per account, and 100 globally. Lockouts start at 15 minutes and double on repetition up to one hour. Override these values under `auth.builtin_oauth.login_rate_limit`; forwarding headers are ignored and failures never log submitted usernames or passwords.
 Built-in authorization codes are isolated per gateway configuration and capped by `limits.max_authorization_codes` (default `1000`). Expired codes are reaped before allocation and during state maintenance; capacity rejects new authorization with `429` without disturbing live codes.
+Built-in refresh-token hashes and grant metadata are held in memory and capped by `limits.max_refresh_token_records` (default `10000`). Expired grants are reaped during token operations and state maintenance. Refresh grants do not survive a gateway restart in this mode.
 
 ## Logging
 `logging.level` defaults to `info`. Set it to `debug` while setting up the MCP server to emit sanitized structural diagnostics and response-tokenization counts.

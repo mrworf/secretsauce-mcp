@@ -127,9 +127,31 @@ describe("config validation", () => {
     expect(defaults.mode).toBe("builtin_oauth");
     if (defaults.mode !== "builtin_oauth") throw new Error("Expected built-in OAuth");
     expect(defaults.builtinOAuth.loginRateLimit).toMatchObject({ perSource: 10, perAccount: 10, global: 100, maxEntries: 1000 });
+    expect(defaults.builtinOAuth).toMatchObject({
+      refreshTokenIdleTtlMs: 30 * 86_400_000,
+      refreshTokenMaxTtlMs: 90 * 86_400_000,
+    });
+
+    raw.auth.builtin_oauth.refresh_token_idle_ttl = "48h";
+    raw.auth.builtin_oauth.refresh_token_max_ttl = "1d";
+    expectConfigError(() => validateConfig(raw, env), "must not exceed");
+    raw.auth.builtin_oauth.refresh_token_idle_ttl = "0d";
+    raw.auth.builtin_oauth.refresh_token_max_ttl = "90d";
+    expectConfigError(() => validateConfig(raw, env), "must be positive");
+    raw.auth.builtin_oauth.refresh_token_idle_ttl = "30d";
 
     raw.auth.builtin_oauth.login_rate_limit = { initial_lockout: "1h", max_lockout: "15m" };
     expectConfigError(() => validateConfig(raw, env), "max_lockout");
+  });
+
+  it("accepts hour and day duration units and rejects unsupported durations", () => {
+    const raw = validRaw();
+    raw.tokens = { idle_ttl: "24h", max_ttl: "1d" };
+    expect(validateConfig(raw, validEnv).tokens).toEqual({ idleTtlMs: 86_400_000, maxTtlMs: 86_400_000 });
+    raw.tokens.max_ttl = "90d";
+    expect(validateConfig(raw, validEnv).tokens.maxTtlMs).toBe(90 * 86_400_000);
+    raw.tokens.max_ttl = "1w";
+    expectConfigError(() => validateConfig(raw, validEnv), "tokens.max_ttl");
   });
 
   it("defaults and validates the inbound request body limit", () => {
@@ -199,7 +221,11 @@ describe("config validation", () => {
   it("defaults and validates authorization-code capacity", () => {
     const raw = validRaw();
     expect(validateConfig(raw, validEnv).limits.maxAuthorizationCodes).toBe(1000);
+    expect(validateConfig(raw, validEnv).limits.maxRefreshTokenRecords).toBe(10_000);
     raw.limits.max_authorization_codes = 0;
+    expectConfigError(() => validateConfig(raw, validEnv), "Invalid config");
+    raw.limits.max_authorization_codes = 1;
+    raw.limits.max_refresh_token_records = 0;
     expectConfigError(() => validateConfig(raw, validEnv), "Invalid config");
   });
 

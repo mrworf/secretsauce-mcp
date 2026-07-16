@@ -90,6 +90,7 @@ describe("auth", () => {
       });
       expect(metadataBody.code_challenge_methods_supported).toEqual(["S256"]);
       expect(metadataBody.token_endpoint_auth_methods_supported).toEqual(["none"]);
+      expect(metadataBody.grant_types_supported).toEqual(["authorization_code", "refresh_token"]);
 
       const jwks = await fetch(`${fixture.baseUrl}/oauth/jwks.json`);
       const jwksBody = await jwks.json() as { keys: unknown[] };
@@ -141,12 +142,138 @@ describe("auth", () => {
         }).toString(),
       });
       expect(token.status).toBe(200);
-      const tokenBody = JSON.parse(token.body) as { access_token: string; token_type: string; scope: string };
+      const tokenBody = JSON.parse(token.body) as { access_token: string; refresh_token: string; token_type: string; scope: string };
       expect(tokenBody.token_type).toBe("Bearer");
       expect(tokenBody.scope).toBe("gateway.read");
+      expect(tokenBody.refresh_token).toBeTruthy();
 
       const context = await authenticateRequest(requestWithBearer(tokenBody.access_token), config, ["gateway.read"]);
       expect(context).toMatchObject({ subject: "admin@example.com", mode: "builtin_oauth" });
+    } finally {
+      await fixture.close();
+    }
+  });
+
+  it("rotates built-in OAuth refresh tokens and permits reduced access-token scopes", async () => {
+    const config = await builtinOAuthConfig();
+    const fixture = await startServer(config);
+    const redirectUri = "https://chatgpt.com/oauth/callback";
+    vi.stubGlobal("fetch", async () => new Response(JSON.stringify({ redirect_uris: [redirectUri] }), { status: 200 }));
+    try {
+      const verifier = "refresh-verifier";
+      const code = await authorizeCode(fixture.baseUrl, redirectUri, verifier, "gateway.read gateway.tokens");
+      const issued = await localRequest(`${fixture.baseUrl}/oauth/token`, {
+        method: "POST", body: tokenBody(code, redirectUri, verifier),
+      });
+      const issuedBody = JSON.parse(issued.body) as { refresh_token: string };
+
+      const refreshed = await localRequest(`${fixture.baseUrl}/oauth/token`, {
+        method: "POST", body: refreshBody(issuedBody.refresh_token, { scope: "gateway.read" }),
+      });
+      expect(refreshed.status).toBe(200);
+      const refreshedBody = JSON.parse(refreshed.body) as { access_token: string; refresh_token: string; scope: string };
+      expect(refreshedBody.refresh_token).not.toBe(issuedBody.refresh_token);
+      expect(refreshedBody.scope).toBe("gateway.read");
+      await expect(authenticateRequest(requestWithBearer(refreshedBody.access_token), config, ["gateway.read"])).resolves.toMatchObject({ subject: "admin@example.com" });
+      await expect(authenticateRequest(requestWithBearer(refreshedBody.access_token), config, ["gateway.tokens"])).rejects.toThrow("required scopes");
+    } finally {
+      await fixture.close();
+    }
+  });
+
+  it("rejects refresh-token escalation and revokes a family when a rotated token is reused", async () => {
+    const config = await builtinOAuthConfig();
+    const fixture = await startServer(config);
+    const redirectUri = "https://chatgpt.com/oauth/callback";
+    vi.stubGlobal("fetch", async () => new Response(JSON.stringify({ redirect_uris: [redirectUri] }), { status: 200 }));
+    try {
+      const verifier = "refresh-reuse-verifier";
+      const code = await authorizeCode(fixture.baseUrl, redirectUri, verifier, "gateway.read");
+      const issued = await localRequest(`${fixture.baseUrl}/oauth/token`, { method: "POST", body: tokenBody(code, redirectUri, verifier) });
+      const first = JSON.parse(issued.body) as { refresh_token: string };
+
+      const escalation = await localRequest(`${fixture.baseUrl}/oauth/token`, {
+        method: "POST", body: refreshBody(first.refresh_token, { scope: "gateway.read gateway.tokens" }),
+      });
+      expect(escalation.status).toBe(400);
+      expect(JSON.parse(escalation.body)).toEqual({ error: "invalid_scope" });
+
+      const rotated = await localRequest(`${fixture.baseUrl}/oauth/token`, { method: "POST", body: refreshBody(first.refresh_token) });
+      const second = JSON.parse(rotated.body) as { refresh_token: string };
+      const replay = await localRequest(`${fixture.baseUrl}/oauth/token`, { method: "POST", body: refreshBody(first.refresh_token) });
+      expect(replay.status).toBe(400);
+      expect(JSON.parse(replay.body)).toEqual({ error: "invalid_grant" });
+      const revoked = await localRequest(`${fixture.baseUrl}/oauth/token`, { method: "POST", body: refreshBody(second.refresh_token) });
+      expect(revoked.status).toBe(400);
+      expect(JSON.parse(revoked.body)).toEqual({ error: "invalid_grant" });
+    } finally {
+      await fixture.close();
+    }
+  });
+
+  it("binds refresh tokens to their client and resource without consuming them on mismatch", async () => {
+    const config = await builtinOAuthConfig();
+    const fixture = await startServer(config);
+    const redirectUri = "https://chatgpt.com/oauth/callback";
+    vi.stubGlobal("fetch", async () => new Response(JSON.stringify({ redirect_uris: [redirectUri] }), { status: 200 }));
+    try {
+      const verifier = "refresh-binding-verifier";
+      const code = await authorizeCode(fixture.baseUrl, redirectUri, verifier);
+      const issued = await localRequest(`${fixture.baseUrl}/oauth/token`, { method: "POST", body: tokenBody(code, redirectUri, verifier) });
+      const token = (JSON.parse(issued.body) as { refresh_token: string }).refresh_token;
+
+      const wrongClient = await localRequest(`${fixture.baseUrl}/oauth/token`, {
+        method: "POST", body: refreshBody(token, { client_id: "https://codex.example.org/oauth/client" }),
+      });
+      expect(wrongClient.status).toBe(400);
+      expect(JSON.parse(wrongClient.body)).toEqual({ error: "invalid_grant" });
+      const wrongResource = await localRequest(`${fixture.baseUrl}/oauth/token`, {
+        method: "POST", body: refreshBody(token, { resource: "https://other.example.org" }),
+      });
+      expect(wrongResource.status).toBe(400);
+      expect(JSON.parse(wrongResource.body)).toEqual({ error: "invalid_target" });
+      const valid = await localRequest(`${fixture.baseUrl}/oauth/token`, { method: "POST", body: refreshBody(token) });
+      expect(valid.status).toBe(200);
+    } finally {
+      await fixture.close();
+    }
+  });
+
+  it("expires inactive refresh grants", async () => {
+    const config = await builtinOAuthConfig({ refreshTokenIdleTtl: "1ms", refreshTokenMaxTtl: "1d" });
+    const fixture = await startServer(config);
+    const redirectUri = "https://chatgpt.com/oauth/callback";
+    vi.stubGlobal("fetch", async () => new Response(JSON.stringify({ redirect_uris: [redirectUri] }), { status: 200 }));
+    try {
+      const verifier = "refresh-expiry-verifier";
+      const code = await authorizeCode(fixture.baseUrl, redirectUri, verifier);
+      const issued = await localRequest(`${fixture.baseUrl}/oauth/token`, { method: "POST", body: tokenBody(code, redirectUri, verifier) });
+      const token = (JSON.parse(issued.body) as { refresh_token: string }).refresh_token;
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      const expired = await localRequest(`${fixture.baseUrl}/oauth/token`, { method: "POST", body: refreshBody(token) });
+      expect(expired.status).toBe(400);
+      expect(JSON.parse(expired.body)).toEqual({ error: "invalid_grant" });
+    } finally {
+      await fixture.close();
+    }
+  });
+
+  it("preserves the active refresh token when record capacity is exhausted", async () => {
+    const config = await builtinOAuthConfig({ maxRefreshTokenRecords: 1 });
+    const fixture = await startServer(config);
+    const redirectUri = "https://chatgpt.com/oauth/callback";
+    vi.stubGlobal("fetch", async () => new Response(JSON.stringify({ redirect_uris: [redirectUri] }), { status: 200 }));
+    try {
+      const verifier = "refresh-capacity-verifier";
+      const code = await authorizeCode(fixture.baseUrl, redirectUri, verifier);
+      const issued = await localRequest(`${fixture.baseUrl}/oauth/token`, { method: "POST", body: tokenBody(code, redirectUri, verifier) });
+      const token = (JSON.parse(issued.body) as { refresh_token: string }).refresh_token;
+      const full = await localRequest(`${fixture.baseUrl}/oauth/token`, { method: "POST", body: refreshBody(token) });
+      expect(full.status).toBe(503);
+      expect(JSON.parse(full.body)).toEqual({ error: "temporarily_unavailable" });
+      config.limits.maxRefreshTokenRecords = 2;
+      const retry = await localRequest(`${fixture.baseUrl}/oauth/token`, { method: "POST", body: refreshBody(token) });
+      expect(retry.status).toBe(200);
     } finally {
       await fixture.close();
     }
@@ -803,6 +930,8 @@ function oauthConfig(jwksUri: string, principalClaim?: string): GatewayConfig {
 
 async function builtinOAuthConfig(options: {
   authorizationCodeTtl?: string;
+  refreshTokenIdleTtl?: string;
+  refreshTokenMaxTtl?: string;
   allowedClients?: string[];
   loggingLevel?: "info" | "debug";
   signingKeyPath?: string;
@@ -818,6 +947,7 @@ async function builtinOAuthConfig(options: {
     initial_lockout: string; max_lockout: string; max_entries: number;
   };
   maxAuthorizationCodes?: number;
+  maxRefreshTokenRecords?: number;
 } = {}): Promise<GatewayConfig> {
   const keyPath = options.signingKeyPath ?? await createSigningKeyFile();
   return validateConfig({
@@ -830,6 +960,8 @@ async function builtinOAuthConfig(options: {
         signing_key_file: keyPath,
         access_token_ttl: "1h",
         authorization_code_ttl: options.authorizationCodeTtl ?? "5m",
+        refresh_token_idle_ttl: options.refreshTokenIdleTtl ?? "30d",
+        refresh_token_max_ttl: options.refreshTokenMaxTtl ?? "90d",
         allowed_clients: options.allowedClients ?? ["https://chatgpt.com"],
         required_scopes: ["gateway.read", "gateway.tokens", "gateway.request"],
         ...(options.loginRateLimit === undefined ? {} : { login_rate_limit: options.loginRateLimit }),
@@ -848,6 +980,7 @@ async function builtinOAuthConfig(options: {
       max_password_verifications: options.maxPasswordVerifications ?? 2,
       max_password_verifications_per_source: options.maxPasswordVerificationsPerSource ?? 1,
       max_authorization_codes: options.maxAuthorizationCodes ?? 1000,
+      max_refresh_token_records: options.maxRefreshTokenRecords ?? 10_000,
     },
   }, {
     ADMIN_USERNAME: "admin@example.com",
@@ -942,6 +1075,15 @@ function tokenBody(code: string, redirectUri: string, verifier: string, override
   }).toString();
 }
 
+function refreshBody(refreshToken: string, overrides: Record<string, string> = {}): string {
+  return new URLSearchParams({
+    grant_type: "refresh_token",
+    refresh_token: refreshToken,
+    client_id: "https://chatgpt.com/oauth/client",
+    ...overrides,
+  }).toString();
+}
+
 function pkceChallenge(verifier: string): string {
   return Buffer.from(createHash("sha256").update(verifier).digest()).toString("base64url");
 }
@@ -976,12 +1118,13 @@ async function localRequest(urlText: string, options: { method: string; body?: s
   });
 }
 
-async function authorizeCode(baseUrl: string, redirectUri: string, verifier: string): Promise<string> {
+async function authorizeCode(baseUrl: string, redirectUri: string, verifier: string, scope = "gateway.read"): Promise<string> {
   const authorize = await localRequest(`${baseUrl}/oauth/authorize`, {
     method: "POST",
     body: authorizationBody({
       redirect_uri: redirectUri,
       code_challenge: pkceChallenge(verifier),
+      scope,
       username: "admin@example.com",
       password: "correct horse battery staple",
     }),

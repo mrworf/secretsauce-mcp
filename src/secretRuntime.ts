@@ -4,6 +4,7 @@ import { ResponseTokenizer } from "./responseTokenizer.js";
 import { SecretScannerPool } from "./secretScannerPool.js";
 import { getTokenBroker } from "./tokens.js";
 import type { GatewayConfig } from "./types.js";
+import { loadSensitiveNameConfig, resolveSensitiveNameConfig, SensitiveNameMatcher } from "./sensitiveNames.js";
 
 interface SecretRuntime {
   pool: SecretScannerPool;
@@ -19,12 +20,20 @@ export function initializeSecretRuntime(config: GatewayConfig): SecretRuntime {
   const bundledPath = fileURLToPath(new URL("../config/secretlint.yaml", import.meta.url));
   const bundled = loadSecretlintConfig(bundledPath);
   const configured = process.env.SECRETLINT_CONFIG_PATH ? loadSecretlintConfig(process.env.SECRETLINT_CONFIG_PATH) : bundled;
+  const bundledSensitivePath = fileURLToPath(new URL("../config/sensitive-names.yaml", import.meta.url));
+  const bundledSensitive = loadSensitiveNameConfig(bundledSensitivePath);
+  const configuredSensitive = process.env.SENSITIVE_NAMES_CONFIG_PATH
+    ? loadSensitiveNameConfig(process.env.SENSITIVE_NAMES_CONFIG_PATH)
+    : bundledSensitive;
+  const sensitiveNames = new SensitiveNameMatcher(resolveSensitiveNameConfig(configuredSensitive, bundledSensitive));
   const rules = resolveSecretlintRules(configured, bundled.rules);
   const pool = new SecretScannerPool();
   const runtime = {
     pool,
     rules,
-    tokenizer: new ResponseTokenizer(getTokenBroker(config), pool, rules, configured.limits.maxUniqueSecrets, configured.limits.timeoutMs),
+    tokenizer: new ResponseTokenizer(
+      getTokenBroker(config), pool, rules, configured.limits.maxUniqueSecrets, configured.limits.timeoutMs, sensitiveNames,
+    ),
   };
   runtimes.set(config, runtime);
   return runtime;

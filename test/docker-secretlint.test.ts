@@ -8,6 +8,9 @@ describe("Secretlint container packaging", () => {
     expect(dockerfile).toContain("COPY config/secretlint.yaml /app/config/secretlint.yaml");
     expect(dockerfile).toContain("COPY config/secretlint.yaml /config/secretlint.yaml");
     expect(dockerfile).toContain("ENV SECRETLINT_CONFIG_PATH=/config/secretlint.yaml");
+    expect(dockerfile).toContain("COPY config/sensitive-names.yaml /app/config/sensitive-names.yaml");
+    expect(dockerfile).toContain("COPY config/sensitive-names.yaml /config/sensitive-names.yaml");
+    expect(dockerfile).toContain("ENV SENSITIVE_NAMES_CONFIG_PATH=/config/sensitive-names.yaml");
   });
 
   it("mounts the rules file read-only in the compose example", () => {
@@ -15,5 +18,7 @@ describe("Secretlint container packaging", () => {
     const service = compose.services["agent-credential-gateway"];
     expect(service.volumes).toContain("./config/secretlint.yaml:/config/secretlint.yaml:ro");
     expect(service.environment.SECRETLINT_CONFIG_PATH).toBe("/config/secretlint.yaml");
+    expect(service.volumes).toContain("./config/sensitive-names.yaml:/config/sensitive-names.yaml:ro");
+    expect(service.environment.SENSITIVE_NAMES_CONFIG_PATH).toBe("/config/sensitive-names.yaml");
   });
 });

@@ -5,6 +5,8 @@ import type { SecretFinding } from "./secretScanner.js";
 import { SecretScanBusyError, type SecretScannerPool } from "./secretScannerPool.js";
 import type { AuthContext, ServiceConfig } from "./types.js";
 import type { TokenBroker, TokenInspectionReason } from "./tokens.js";
+import { findSensitiveJsonProperties } from "./sensitiveJson.js";
+import type { SensitiveNameMatcher } from "./sensitiveNames.js";
 
 const tokenCandidatePattern = /\b(?:tok|sec)_[^\s"'<>()[\]{},;]+/g;
 
@@ -13,6 +15,7 @@ interface Range {
   end: number;
   ruleIds: Set<string>;
   configuredSecret?: string;
+  secretValue?: string;
 }
 
 interface CollectedText {
@@ -38,6 +41,7 @@ export class ResponseTokenizer {
     private readonly rules: SecretlintRuleConfig[],
     private readonly maxUniqueSecrets: number,
     private readonly timeoutMs: number,
+    private readonly sensitiveNames: SensitiveNameMatcher,
   ) {}
 
   async tokenize(
@@ -48,11 +52,20 @@ export class ResponseTokenizer {
   ): Promise<TokenizedResponseText> {
     const headerEntries: Array<readonly [string, CollectedText]> = [];
     for (const [name, value] of Object.entries(response.headers)) {
-      headerEntries.push([name, await this.collect(value, auth, service, disabledRuleIds)] as const);
+      const ruleIds = this.sensitiveNames.match(name);
+      const sensitive = value.length > 0 && ruleIds.length > 0
+        ? [{ start: 0, end: value.length, secretValue: value, ruleIds: new Set(ruleIds) }]
+        : [];
+      headerEntries.push([name, await this.collect(value, auth, service, disabledRuleIds, sensitive)] as const);
     }
-    const body = await this.collect(response.body, auth, service, disabledRuleIds);
+    const bodyRanges = isJsonResponse(response.headers, response.body)
+      ? findSensitiveJsonProperties(response.body, this.sensitiveNames).map((finding) => ({
+        start: finding.start, end: finding.end, secretValue: finding.secretValue, ruleIds: new Set(finding.ruleIds),
+      }))
+      : [];
+    const body = await this.collect(response.body, auth, service, disabledRuleIds, bodyRanges);
     const all = [...headerEntries.map(([, collected]) => collected), body];
-    const uniqueSecrets = new Set(all.flatMap((collected) => collected.ranges.map((range) => collected.original.slice(range.start, range.end))));
+    const uniqueSecrets = new Set(all.flatMap((collected) => collected.ranges.map((range) => range.secretValue ?? collected.original.slice(range.start, range.end))));
     if (uniqueSecrets.size > this.maxUniqueSecrets) {
       throw new GatewayError("secret_scan_failed", "Response contains too many unique secrets.");
     }
@@ -65,8 +78,9 @@ export class ResponseTokenizer {
       let value = collected.original;
       for (const range of [...collected.ranges].sort((left, right) => right.start - left.start)) {
         const raw = collected.original.slice(range.start, range.end);
-        const configured = this.broker.findConfiguredTokenForSecret(auth, service.id, range.configuredSecret ?? raw);
-        const issued = configured ?? this.broker.issueOrReuseResponseSecret(auth, service.id, raw);
+        const secret = range.configuredSecret ?? range.secretValue ?? raw;
+        const configured = this.broker.findConfiguredTokenForSecret(auth, service.id, secret);
+        const issued = configured ?? this.broker.issueOrReuseResponseSecret(auth, service.id, secret);
         internalRecordIds.add(issued.record.id);
         for (const ruleId of range.ruleIds) ruleIds.add(ruleId);
         value = value.slice(0, range.start) + issued.token + value.slice(range.end);
@@ -105,7 +119,13 @@ export class ResponseTokenizer {
     return { ...tokenized, body: encodeBase64Body(tokenized.body) };
   }
 
-  private async collect(text: string, auth: AuthContext, service: ServiceConfig, disabledRuleIds: ReadonlySet<string>): Promise<CollectedText> {
+  private async collect(
+    text: string,
+    auth: AuthContext,
+    service: ServiceConfig,
+    disabledRuleIds: ReadonlySet<string>,
+    additionalRanges: Range[] = [],
+  ): Promise<CollectedText> {
     let findings: SecretFinding[];
     try {
       findings = await this.scanner.scan(auth.subject, text, this.rules.filter((rule) => !disabledRuleIds.has(rule.id)), this.timeoutMs);
@@ -114,7 +134,10 @@ export class ResponseTokenizer {
       if (error instanceof SecretScanBusyError) throw new GatewayError("secret_scan_busy", "Response secret scanner is busy.");
       throw new GatewayError("secret_scan_failed", "Response secret scanning failed.");
     }
-    const ranges: Range[] = findings.map((finding) => ({ start: finding.start, end: finding.end, ruleIds: new Set([finding.ruleId]) }));
+    const ranges: Range[] = [
+      ...findings.map((finding) => ({ start: finding.start, end: finding.end, ruleIds: new Set([finding.ruleId]) })),
+      ...additionalRanges,
+    ];
     for (const credential of service.credentials) {
       addExactRanges(ranges, text, credential.secret, "gateway:configured-credential", credential.secret);
       const escaped = JSON.stringify(credential.secret).slice(1, -1);
@@ -155,6 +178,15 @@ function addExactRanges(ranges: Range[], text: string, secret: string, ruleId: s
   }
 }
 
+function isJsonResponse(headers: Record<string, string>, body: string): boolean {
+  const contentTypes = Object.entries(headers)
+    .filter(([name]) => name.toLowerCase() === "content-type")
+    .map(([, value]) => value.split(";", 1)[0]?.trim().toLowerCase() ?? "");
+  if (contentTypes.some((value) => value === "application/json" || value.endsWith("+json"))) return true;
+  const first = body.trimStart()[0];
+  return first === "{" || first === "[";
+}
+
 function overlaps(left: { start: number; end: number }, right: { start: number; end: number }): boolean {
   return left.start < right.end && right.start < left.end;
 }
@@ -165,13 +197,22 @@ function mergeRanges(ranges: Range[]): Range[] {
   for (const range of sorted) {
     const previous = merged.at(-1);
     if (!previous || range.start >= previous.end) {
-      merged.push({ start: range.start, end: range.end, ruleIds: new Set(range.ruleIds), ...(range.configuredSecret === undefined ? {} : { configuredSecret: range.configuredSecret }) });
+      merged.push({
+        start: range.start, end: range.end, ruleIds: new Set(range.ruleIds),
+        ...(range.configuredSecret === undefined ? {} : { configuredSecret: range.configuredSecret }),
+        ...(range.secretValue === undefined ? {} : { secretValue: range.secretValue }),
+      });
       continue;
     }
     const sameBounds = previous.start === range.start && previous.end === range.end;
     previous.end = Math.max(previous.end, range.end);
-    if (!sameBounds) delete previous.configuredSecret;
-    else if (previous.configuredSecret === undefined && range.configuredSecret !== undefined) previous.configuredSecret = range.configuredSecret;
+    if (!sameBounds) {
+      delete previous.configuredSecret;
+      delete previous.secretValue;
+    } else {
+      if (previous.configuredSecret === undefined && range.configuredSecret !== undefined) previous.configuredSecret = range.configuredSecret;
+      if (previous.secretValue === undefined && range.secretValue !== undefined) previous.secretValue = range.secretValue;
+    }
     for (const id of range.ruleIds) previous.ruleIds.add(id);
   }
   return merged;

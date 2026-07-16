@@ -1,0 +1,14 @@
+version: 1
+mode: extend
+allow_patterns: []
+patterns:
+  - id: passwords
+    regex: "(?:^|_)(?:password|passwd|passphrase)(?:_|$)"
+  - id: secrets
+    regex: "(?:^|_)(?:secret|secrets|credential|credentials|authorization)(?:_|$)"
+  - id: keys
+    regex: "(?:^|_)(?:private|signing|encryption|decryption|api|access|ssh)_key(?:_|$)"
+  - id: tokens
+    regex: "(?:^|_)(?:access|refresh|session|id|bearer|auth|oauth)_token(?:_|$)"
+  - id: connections
+    regex: "(?:^|_)(?:connection_string|database_(?:url|uri)|dsn)(?:_|$)"

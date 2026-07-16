@@ -4,6 +4,7 @@ import { ResponseTokenizer } from "../src/responseTokenizer.js";
 import { SecretScannerPool } from "../src/secretScannerPool.js";
 import { TokenBroker } from "../src/tokens.js";
 import type { AuthContext } from "../src/types.js";
+import { loadSensitiveNameConfig, SensitiveNameMatcher } from "../src/sensitiveNames.js";
 
 const rules = [{ id: "@secretlint/secretlint-rule-github" as const }];
 
@@ -50,6 +51,24 @@ describe("plain-text response tokenizer", () => {
       const result = await fixture.tokenizer.tokenize({ headers: {}, body }, fixture.auth, fixture.service);
       expect(result.body).toBe(`{ "value" : "${tok}", "number": 1.00 }`);
       expect(result.body).not.toContain(escaped);
+    } finally { await fixture.pool.close(); }
+  });
+
+  it("tokenizes regex-matched JSON properties and response headers by source range", async () => {
+    const fixture = setup();
+    try {
+      const body = '{ /* odd */ "AGENT_GATEWAY_OAUTH_SIGNING_KEY_PEM_B64" : "cGVtLWtleQ==" "public_key":"visible", "adminPasswordHashB64":"hash-value", "empty_password":"" }';
+      const result = await fixture.tokenizer.tokenize({ headers: { "X-Api-Key": "header-value" }, body }, fixture.auth, fixture.service);
+      expect(result.headers["X-Api-Key"]).toMatch(/^sec_/);
+      expect(result.ruleIds).toContain("gateway:sensitive-name:keys");
+      expect(result.ruleIds).toContain("gateway:sensitive-name:passwords");
+      expect(result.body).toContain('"public_key":"visible"');
+      expect(result.body).toContain('"empty_password":""');
+      const restoredBody = result.body.replace(/sec_[A-Za-z0-9_-]+/g, (token) =>
+        fixture.broker.validateResponseSecretUse(fixture.auth, "service-a", token).secret);
+      expect(restoredBody).toBe(body);
+      const headerToken = result.headers["X-Api-Key"] ?? "";
+      expect(fixture.broker.validateResponseSecretUse(fixture.auth, "service-a", headerToken).secret).toBe("header-value");
     } finally { await fixture.pool.close(); }
   });
 
@@ -128,5 +147,9 @@ function setup(max = 100, maxTokenRecords = 10_000) {
   const broker = new TokenBroker(config);
   const pool = new SecretScannerPool({ workers: 1, queueMax: 4, subjectActiveMax: 1, subjectQueueMax: 4, queueTimeoutMs: 1_000 });
   const auth: AuthContext = { subject: "alice", scopes: [], mode: "bearer" };
-  return { config, broker, pool, auth, service: config.services["service-a"]!, tokenizer: new ResponseTokenizer(broker, pool, rules, max, 5_000) };
+  const sensitiveNames = new SensitiveNameMatcher(loadSensitiveNameConfig("config/sensitive-names.yaml"));
+  return {
+    config, broker, pool, auth, service: config.services["service-a"]!,
+    tokenizer: new ResponseTokenizer(broker, pool, rules, max, 5_000, sensitiveNames),
+  };
 }

@@ -72,6 +72,54 @@ describe("plain-text response tokenizer", () => {
     } finally { await fixture.pool.close(); }
   });
 
+  it("tokenizes valid HTTP Basic credentials by value when Secretlint is disabled", async () => {
+    const fixture = setup();
+    try {
+      const jsonBasic = `Basic ${Buffer.from("json-user:json-password", "utf8").toString("base64")}`;
+      const headerBasic = `bAsIc  ${Buffer.from("header-user:header:password", "utf8").toString("base64")}`;
+      const plainBasic = `Basic ${Buffer.from("plain-user:plain-password", "utf8").toString("base64")}`;
+      const disabled = new Set(rules.map((rule) => rule.id));
+      const jsonBody = `{  "label" : "${jsonBasic}", "number": 1.00 }`;
+      const jsonResult = await fixture.tokenizer.tokenize({
+        headers: { "X-Info": headerBasic }, body: jsonBody,
+      }, fixture.auth, fixture.service, disabled);
+      const plainBody = `prefix ${plainBasic} suffix`;
+      const plainResult = await fixture.tokenizer.tokenize({
+        headers: {}, body: plainBody,
+      }, fixture.auth, fixture.service, disabled);
+
+      expect(jsonResult.headers["X-Info"]).toMatch(/^sec_/);
+      expect(jsonResult.body).toMatch(/^\{  "label" : "sec_[A-Za-z0-9_-]+", "number": 1\.00 \}$/);
+      expect(plainResult.body).toMatch(/^prefix sec_[A-Za-z0-9_-]+ suffix$/);
+      expect(jsonResult.ruleIds).toContain("gateway:http-basic-credential");
+      expect(plainResult.ruleIds).toContain("gateway:http-basic-credential");
+      expect(restoreTokens(jsonResult.body, fixture)).toBe(jsonBody);
+      expect(restoreTokens(jsonResult.headers["X-Info"] ?? "", fixture)).toBe(headerBasic);
+      expect(restoreTokens(plainResult.body, fixture)).toBe(plainBody);
+    } finally { await fixture.pool.close(); }
+  });
+
+  it("leaves invalid and incomplete HTTP Basic candidates visible", async () => {
+    const fixture = setup();
+    try {
+      const nonCanonical = Buffer.from("user:password", "utf8").toString("base64").replace(/=+$/, "");
+      const candidates = [
+        "Basic %%%",
+        `Basic ${nonCanonical}`,
+        `Basic ${Buffer.from("user-password", "utf8").toString("base64")}`,
+        `Basic ${Buffer.from(":password", "utf8").toString("base64")}`,
+        `Basic ${Buffer.from("user:", "utf8").toString("base64")}`,
+        `Bearer ${Buffer.from("user:password", "utf8").toString("base64")}`,
+        "Basic authentication is enabled",
+      ];
+      const body = candidates.join("\n");
+      const result = await fixture.tokenizer.tokenize({ headers: {}, body }, fixture.auth, fixture.service);
+      expect(result.body).toBe(body);
+      expect(result.secretTokenized).toBe(false);
+      expect(result.ruleIds).not.toContain("gateway:http-basic-credential");
+    } finally { await fixture.pool.close(); }
+  });
+
   it("leaves valid same-scope opaque references unchanged", async () => {
     const fixture = setup();
     try {
@@ -152,4 +200,9 @@ function setup(max = 100, maxTokenRecords = 10_000) {
     config, broker, pool, auth, service: config.services["service-a"]!,
     tokenizer: new ResponseTokenizer(broker, pool, rules, max, 5_000, sensitiveNames),
   };
+}
+
+function restoreTokens(value: string, fixture: ReturnType<typeof setup>): string {
+  return value.replace(/sec_[A-Za-z0-9_-]+/g, (token) =>
+    fixture.broker.validateResponseSecretUse(fixture.auth, "service-a", token).secret);
 }

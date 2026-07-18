@@ -16,3 +16,4 @@
 - Persist built-in OAuth refresh state as atomic hash-only snapshots; never store raw refresh tokens, and treat the configured state file as single-process writable state.
 - Do not reintroduce `docker/metadata-action` in CI: it unconditionally calls the GitHub repository API, so transient Unicorn HTML responses can fail healthy image builds. Keep Docker tag and label generation local and tested.
 - Sensitive-name JSON handling must use tolerant scanner offsets and source-range replacement; never deserialize and reserialize response or raw request JSON because comments, duplicate keys, malformed separators, and original formatting must survive outside replaced values.
+- Do not rely on Secretlint's `basicauth` rule for `Authorization: Basic ...` values; it detects credential-bearing URLs, so valid HTTP Basic response values require the gateway-owned detector and qualified API auth names require sensitive-name coverage.

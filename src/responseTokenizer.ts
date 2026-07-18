@@ -9,6 +9,8 @@ import { findSensitiveJsonValues, isJsonLikeText } from "./sensitiveJson.js";
 import type { SensitiveNameMatcher } from "./sensitiveNames.js";
 
 const tokenCandidatePattern = /\b(?:gref|sec)_[^\s"'<>()[\]{},;]+/g;
+const httpBasicCredentialPattern = /\bBasic +(?<encoded>(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?)(?![A-Za-z0-9+/=])/gi;
+const HTTP_BASIC_CREDENTIAL_RULE_ID = "gateway:http-basic-credential";
 
 interface Range {
   start: number;
@@ -138,6 +140,7 @@ export class ResponseTokenizer {
       ...findings.map((finding) => ({ start: finding.start, end: finding.end, ruleIds: new Set([finding.ruleId]) })),
       ...additionalRanges,
     ];
+    addHttpBasicCredentialRanges(ranges, text);
     for (const credential of service.credentials) {
       addExactRanges(ranges, text, credential.secret, "gateway:configured-credential", credential.secret);
       const escaped = JSON.stringify(credential.secret).slice(1, -1);
@@ -164,6 +167,22 @@ export class ResponseTokenizer {
     }
     const withoutValidCandidates = ranges.filter((range) => !validCandidates.some((valid) => overlaps(range, valid)));
     return { original: text, ranges: mergeRanges(withoutValidCandidates), warnings };
+  }
+}
+
+function addHttpBasicCredentialRanges(ranges: Range[], text: string): void {
+  for (const match of text.matchAll(httpBasicCredentialPattern)) {
+    const encoded = match.groups?.encoded;
+    if (!encoded) continue;
+    const decoded = Buffer.from(encoded, "base64");
+    if (decoded.toString("base64") !== encoded) continue;
+    const separator = decoded.indexOf(0x3a);
+    if (separator <= 0 || separator >= decoded.length - 1) continue;
+    ranges.push({
+      start: match.index,
+      end: match.index + match[0].length,
+      ruleIds: new Set([HTTP_BASIC_CREDENTIAL_RULE_ID]),
+    });
   }
 }
 

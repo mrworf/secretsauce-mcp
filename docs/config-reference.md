@@ -188,6 +188,8 @@ The bundled catalog conservatively covers passwords, secrets, credentials, autho
 
 For JSON and JSON-like response source text, matching applies to complete, non-empty double-quoted values in direct properties, objects with one string `name` or `key` property and one string `value` property, and complete `NAME=value` JSON strings. The scanner tolerates comments, duplicate keys, trailing or missing commas, and truncated outer containers. It replaces only the original value-content ranges; order, whitespace, duplicate keys, comments, and all bytes outside those ranges are retained. Numbers, booleans, objects, empty strings, single-quoted strings, and unquoted keys are not selected by sensitive names. A recognized sensitive string without a safe closing range fails closed with `secret_scan_failed`.
 
+Independently of Secretlint and sensitive-name matching, response headers and bodies protect HTTP Basic credentials whose case-insensitive `Basic ` scheme is followed by canonical Base64 that decodes to a non-empty `username:password`. The complete scheme and encoded credential are replaced under the `gateway:http-basic-credential` rule ID. Malformed or noncanonical Base64, decoded values without a colon, and empty usernames or passwords are not selected by this detector.
+
 ## Proxied HTTP Constraints
 
 - `limits.max_inbound_body` defaults to `1mb` and is enforced while reading authenticated MCP POST bodies and both built-in OAuth form endpoints, including chunked requests and inaccurate `Content-Length` values. Oversize requests receive `413` before JSON or form parsing and cannot consume an authorization code.

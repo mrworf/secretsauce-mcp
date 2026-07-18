@@ -19,10 +19,15 @@ describe("sensitive-name configuration", () => {
       "SECRETSAUCE_ADMIN_PASSWORD_HASH_B64",
       "clientSecret",
       "X-API-Key",
+      "OPNSENSE_API_AUTH",
+      "serviceApiAuth",
       "refresh-token",
       "databaseUrl",
     ]) expect(matcher.match(name)).not.toEqual([]);
-    for (const name of ["public_key", "key_id", "key_name", "signing_algorithm", "token_type", "payload_b64", "hash"]) {
+    for (const name of [
+      "auth", "auth_mode", "auth_type", "api_authority",
+      "public_key", "key_id", "key_name", "signing_algorithm", "token_type", "payload_b64", "hash",
+    ]) {
       expect(matcher.match(name)).toEqual([]);
     }
     expect(normalizeSensitiveName("adminPassword-HASH.b64")).toBe("admin_Password_HASH_b64");

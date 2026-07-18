@@ -8,7 +8,9 @@ describe("tolerant sensitive JSON scanning", () => {
   it("finds direct, duplicate, name/value, and environment-string values without normalizing source", () => {
     const source = `{ /* keep */
  "SECRETSAUCE_OAUTH_SIGNING_KEY_PEM_B64" : "pem-key"
+ "OPNSENSE_API_AUTH" : "encoded-auth",
  "duplicate_password":"first", "duplicate_password" : "second",
+ "auth":"visible", "auth_mode":"basic", "auth_type":"header", "api_authority":"visible",
  "public_key":"visible", "token_type":"Bearer", "empty_password":"", "password_count":2,
  "nested":{"clientSecret":"nested-secret"},
  "environment":[
@@ -20,7 +22,7 @@ describe("tolerant sensitive JSON scanning", () => {
 
     const findings = findSensitiveJsonValues(source, matcher);
     expect(findings.map((finding) => finding.secretValue)).toEqual([
-      "pem-key", "first", "second", "nested-secret", "admin-hash", "signing-key", "array-hash",
+      "pem-key", "encoded-auth", "first", "second", "nested-secret", "admin-hash", "signing-key", "array-hash",
     ]);
     expect(findings.flatMap((finding) => finding.ruleIds)).toEqual(expect.arrayContaining([
       "gateway:sensitive-name:keys", "gateway:sensitive-name:passwords", "gateway:sensitive-name:secrets",
@@ -28,6 +30,10 @@ describe("tolerant sensitive JSON scanning", () => {
 
     for (const finding of findings) expect(source.slice(finding.start, finding.end)).toBe(finding.secretValue);
     const transformed = expectOutsideRangesPreserved(source, findings);
+    expect(transformed).toContain('"auth":"visible"');
+    expect(transformed).toContain('"auth_mode":"basic"');
+    expect(transformed).toContain('"auth_type":"header"');
+    expect(transformed).toContain('"api_authority":"visible"');
     expect(transformed).toContain('"public_key":"visible"');
     expect(transformed).toContain('"empty_password":""');
   });

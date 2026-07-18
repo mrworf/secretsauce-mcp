@@ -5,7 +5,7 @@ patterns:
   - id: passwords
     regex: "(?:^|_)(?:password|passwd|passphrase)(?:_|$)"
   - id: secrets
-    regex: "(?:^|_)(?:secret|secrets|credential|credentials|authorization)(?:_|$)"
+    regex: "(?:^|_)(?:secret|secrets|credential|credentials|authorization|api_auth)(?:_|$)"
   - id: keys
     regex: "(?:^|_)(?:private|signing|encryption|decryption|api|access|ssh)_key(?:_|$)"
   - id: tokens

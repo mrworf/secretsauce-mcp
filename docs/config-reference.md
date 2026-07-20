@@ -104,6 +104,8 @@ Expired configured-access and response-secret reference records are removed befo
 ## Services
 Each service defines LLM-facing metadata, destinations, credentials, access users, TLS behavior, and policy. `description` should briefly explain what the service is for. `api_docs_url` may point to human or machine-readable API documentation, such as an OpenAPI JSON file; the gateway exposes the URL but does not fetch or proxy it.
 
+Destination host matchers may be exact names, DNS suffixes, or regular expressions. A suffix is matched on DNS-label boundaries and includes its apex: `suffix: example.org` and `suffix: .example.org` both allow `example.org` and `api.example.org`, but never `attackerexample.org`. Suffixes are IDN-canonicalized and cannot be IP literals; use an exact matcher for an IP address.
+
 ```yaml
 services:
   example-api:

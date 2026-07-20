@@ -53,6 +53,29 @@ describe("HTTP gateway", () => {
     }
   });
 
+  it("rejects a suffix sibling host before credential substitution or downstream I/O", async () => {
+    const downstream = await startDownstream();
+    try {
+      const config = gatewayConfig(downstream.baseUrl);
+      const destination = config.services["demo-service"]?.destinations[0];
+      if (destination === undefined) throw new Error("Expected destination");
+      destination.hosts = [{ type: "suffix", value: "example.org" }];
+      const broker = installBroker(config);
+      const auth = actor();
+      const token = broker.issueTokens(auth, {
+        service: "demo-service", destination: "primary", access_ids: ["api_key"], reason: "Test suffix boundary.",
+      }).tokens[0]?.token ?? "";
+
+      await expect(executeServiceRequest(config, auth, {
+        service: "demo-service", destination: "primary", method: "GET",
+        url: "http://attackerexample.org/api/echo", headers: { "X-API-Key": token }, reason: "Reject sibling host.",
+      })).rejects.toMatchObject({ code: "host_not_allowed" });
+      expect(downstream.requests).toHaveLength(0);
+    } finally {
+      await downstream.close();
+    }
+  });
+
   it("round trips response-generated sec tokens through headers, query, and nested bodies", async () => {
     const downstream = await startDownstream();
     try {

@@ -1,5 +1,7 @@
 import { createHash, createPublicKey } from "node:crypto";
 import { readFileSync } from "node:fs";
+import { isIP } from "node:net";
+import { domainToASCII } from "node:url";
 import { parse as parseYaml } from "yaml";
 import { z } from "zod";
 import { configError } from "./errors.js";
@@ -446,7 +448,7 @@ function normalizeHosts(rawHosts: RawDestination["hosts"], baseHost: string, war
   const hosts = rawHosts ?? [{ exact: baseHost }];
   return hosts.map((matcher) => {
     if ("exact" in matcher) return { type: "exact", value: normalizeHost(matcher.exact) };
-    if ("suffix" in matcher) return { type: "suffix", value: normalizeHost(matcher.suffix) };
+    if ("suffix" in matcher) return { type: "suffix", value: normalizeHostSuffix(matcher.suffix) };
 
     validateRegex(matcher.regex, "host regex");
     if (broadHostRegexes.has(matcher.regex)) {
@@ -454,6 +456,22 @@ function normalizeHosts(rawHosts: RawDestination["hosts"], baseHost: string, war
     }
     return { type: "regex", value: matcher.regex, regex: new RegExp(matcher.regex) };
   });
+}
+
+function normalizeHostSuffix(raw: string): string {
+  const withoutLeadingDot = raw.startsWith(".") ? raw.slice(1) : raw;
+  const withoutTrailingDot = withoutLeadingDot.endsWith(".") ? withoutLeadingDot.slice(0, -1) : withoutLeadingDot;
+  const ascii = domainToASCII(withoutTrailingDot);
+  if (
+    ascii === ""
+    || ascii.startsWith(".")
+    || ascii.endsWith(".")
+    || ascii.split(".").some((label) => label === "")
+    || isIP(ascii) !== 0
+  ) {
+    throw configError("destination host suffix must be a valid DNS name, not an IP address");
+  }
+  return normalizeHost(ascii);
 }
 
 function normalizeCredentials(rawCredentials: RawService["credentials"], env: NodeJS.ProcessEnv): CredentialConfig[] {

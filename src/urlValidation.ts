@@ -1,5 +1,7 @@
 import { GatewayError } from "./errors.js";
 import type { DestinationConfig, HostMatcherConfig, ServiceConfig, TlsConfig } from "./types.js";
+import { isIP } from "node:net";
+import { domainToASCII } from "node:url";
 
 export interface TargetInput {
   path?: string;
@@ -34,13 +36,16 @@ export function resolveDestinationTarget(
 }
 
 export function normalizeHost(host: string): string {
-  return host.toLowerCase().replace(/\.$/, "");
+  const normalized = host.toLowerCase().replace(/\.$/, "");
+  const ipCandidate = normalized.startsWith("[") && normalized.endsWith("]") ? normalized.slice(1, -1) : normalized;
+  if (isIP(ipCandidate) !== 0) return normalized;
+  return domainToASCII(normalized) || normalized;
 }
 
 export function matchesHost(matcher: HostMatcherConfig, host: string): boolean {
   const normalized = normalizeHost(host);
   if (matcher.type === "exact") return normalized === matcher.value;
-  if (matcher.type === "suffix") return normalized.endsWith(matcher.value);
+  if (matcher.type === "suffix") return normalized === matcher.value || normalized.endsWith(`.${matcher.value}`);
   return matcher.regex.test(normalized);
 }
 

@@ -86,6 +86,19 @@ describe("config validation", () => {
     expect(config.logging.level).toBe("debug");
   });
 
+  it("canonicalizes DNS suffix matchers and rejects malformed or IP suffixes", () => {
+    const raw = validRaw();
+    raw.services["portainer-prod"].destinations[0].hosts = [{ suffix: ".BÜCHER.Example." }];
+    expect(validateConfig(raw, validEnv).services["portainer-prod"].destinations[0].hosts[0]).toMatchObject({
+      type: "suffix", value: "xn--bcher-kva.example",
+    });
+
+    for (const suffix of [".", "..example.org", "bad..example.org", "127.0.0.1", "::1"]) {
+      raw.services["portainer-prod"].destinations[0].hosts = [{ suffix }];
+      expectConfigError(() => validateConfig(raw, validEnv), "host suffix");
+    }
+  });
+
   it("defaults and validates the external OAuth principal claim", () => {
     const raw = validRaw();
     raw.auth = { mode: "oauth", oauth: { issuer: "https://auth.example.org", audience: "gateway" } };

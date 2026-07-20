@@ -24,8 +24,22 @@ describe("destination validation", () => {
       url: "https://service.home.arpa:9443/api/stacks",
     }).url.hostname).toBe("service.home.arpa");
     expect(resolveDestination(config, auth("henric@example.com"), "portainer-prod", "primary", {
+      url: "https://HOME.ARPA.:9443/api/stacks",
+    }).url.hostname).toBe("home.arpa.");
+    expect(resolveDestination(config, auth("henric@example.com"), "portainer-prod", "primary", {
       url: "https://portainer-lab.internal:9443/api/stacks",
     }).url.hostname).toBe("portainer-lab.internal");
+  });
+
+  it("enforces DNS label boundaries for suffix matches", () => {
+    const config = registryConfig();
+    const user = auth("henric@example.com");
+
+    for (const hostname of ["attackerhome.arpa", "home.arpa.attacker.invalid"]) {
+      expectGatewayError(() => resolveDestination(config, user, "portainer-prod", "primary", {
+        url: `https://${hostname}:9443/api/stacks`,
+      }), "host_not_allowed");
+    }
   });
 
   it("denies wrong scheme, host, port, and outside absolute URLs", () => {

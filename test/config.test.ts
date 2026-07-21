@@ -113,6 +113,104 @@ describe("config validation", () => {
     expectConfigError(() => validateConfig(raw, validEnv), "Invalid config");
   });
 
+  it("warns for non-loopback HTTP OAuth resource, issuer, and JWKS URLs", () => {
+    const raw = validRaw();
+    raw.server.resource = "http://mcp.example.org";
+    raw.auth = {
+      mode: "oauth",
+      oauth: {
+        issuer: "http://auth.example.org",
+        audience: "gateway",
+        jwks_uri: "http://keys.example.org/jwks.json",
+      },
+    };
+
+    const warnings = validateConfig(raw, validEnv).warnings;
+
+    expect(warnings).toEqual([
+      "server.resource uses HTTP for a non-loopback URL; use HTTPS for production deployments.",
+      "auth.oauth.issuer uses HTTP for a non-loopback URL; use HTTPS for production deployments.",
+      "The effective auth.oauth JWKS URL uses HTTP for a non-loopback URL; use HTTPS to protect OAuth signing-key retrieval.",
+    ]);
+    expect(warnings.join("\n")).not.toContain("mcp.example.org");
+    expect(warnings.join("\n")).not.toContain("auth.example.org");
+    expect(warnings.join("\n")).not.toContain("keys.example.org");
+  });
+
+  it("warns when OAuth omits server.resource and checks an issuer-derived HTTP JWKS URL", () => {
+    const raw = validRaw();
+    raw.auth = { mode: "oauth", oauth: { issuer: "http://auth.example.org", audience: "gateway" } };
+
+    expect(validateConfig(raw, validEnv).warnings).toEqual([
+      "server.resource is missing in OAuth mode; configure the public HTTPS origin explicitly when using a reverse proxy.",
+      "auth.oauth.issuer uses HTTP for a non-loopback URL; use HTTPS for production deployments.",
+      "The effective auth.oauth JWKS URL uses HTTP for a non-loopback URL; use HTTPS to protect OAuth signing-key retrieval.",
+    ]);
+  });
+
+  it("warns for a non-loopback HTTP built-in OAuth issuer", () => {
+    const keyPath = join(mkdtempSync(join(tmpdir(), "gateway-http-warning-")), "key.pem");
+    const { privateKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
+    writeFileSync(keyPath, privateKey.export({ type: "pkcs8", format: "pem" }));
+    const raw = validRaw();
+    raw.auth = {
+      mode: "builtin_oauth",
+      builtin_oauth: {
+        issuer: "http://mcp.example.org",
+        admin_username_env: "ADMIN_USERNAME",
+        admin_password_hash_env: "ADMIN_HASH",
+        signing_key_file: keyPath,
+        allowed_clients: ["https://chatgpt.com"],
+      },
+    };
+
+    expect(validateConfig(raw, {
+      ...validEnv,
+      ADMIN_USERNAME: "admin@example.com",
+      ADMIN_HASH: "pbkdf2-sha256$1000$salt$hash",
+    }).warnings).toEqual([
+      "server.resource is missing in OAuth mode; configure the public HTTPS origin explicitly when using a reverse proxy.",
+      "auth.builtin_oauth.issuer uses HTTP for a non-loopback URL; use HTTPS for production deployments.",
+    ]);
+  });
+
+  it("does not warn for HTTPS or explicit loopback HTTP OAuth URLs", () => {
+    for (const urls of [
+      {
+        resource: "https://mcp.example.org",
+        issuer: "https://auth.example.org",
+        jwks: "https://auth.example.org/jwks.json",
+      },
+      {
+        resource: "http://localhost:8080",
+        issuer: "http://127.0.0.2:9000",
+        jwks: "http://[::1]:9000/jwks.json",
+      },
+    ]) {
+      const raw = validRaw();
+      raw.server.resource = urls.resource;
+      raw.auth = {
+        mode: "oauth",
+        oauth: { issuer: urls.issuer, audience: "gateway", jwks_uri: urls.jwks },
+      };
+      expect(validateConfig(raw, validEnv).warnings).toEqual([]);
+    }
+  });
+
+  it("does not treat the HTTP listener or downstream destination as public OAuth URLs", () => {
+    const raw = validRaw();
+    raw.server.listen = "0.0.0.0:8080";
+    raw.services["portainer-prod"].destinations[0] = {
+      name: "primary",
+      base_url: "http://service.example.org:8081",
+      schemes: ["http"],
+      hosts: [{ exact: "service.example.org" }],
+      ports: [8081],
+    };
+
+    expect(validateConfig(raw, validEnv).warnings).toEqual([]);
+  });
+
   it("defaults and validates the in-memory audit capacity", () => {
     const raw = validRaw();
     expect(validateConfig(raw, validEnv).audit.memoryEvents).toBe(1000);

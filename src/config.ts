@@ -207,6 +207,7 @@ export function validateConfig(raw: unknown, env: NodeJS.ProcessEnv = process.en
     memoryEvents: parsed.audit.memory_events,
     ...(parsed.audit.file === undefined ? {} : { file: parsed.audit.file }),
   };
+  appendPublicHttpsWarnings(server, auth, warnings);
   const services = normalizeServices(parsed.services, env, warnings);
 
   return { server, auth, tokens, limits, logging, audit, services, warnings };
@@ -345,6 +346,38 @@ function normalizeAuth(raw: RawConfig["auth"], env: NodeJS.ProcessEnv): AuthConf
   }
 
   return { mode: "bearer", bearer: { token: readSecretFile(tokenFile), source: "file" } };
+}
+
+function appendPublicHttpsWarnings(server: ServerConfig, auth: AuthConfig, warnings: string[]): void {
+  if (auth.mode !== "bearer" && server.resource === undefined) {
+    warnings.push("server.resource is missing in OAuth mode; configure the public HTTPS origin explicitly when using a reverse proxy.");
+  } else if (server.resource !== undefined && isNonLoopbackHttpUrl(server.resource)) {
+    warnings.push("server.resource uses HTTP for a non-loopback URL; use HTTPS for production deployments.");
+  }
+
+  if (auth.mode === "oauth") {
+    if (isNonLoopbackHttpUrl(auth.oauth.issuer)) {
+      warnings.push("auth.oauth.issuer uses HTTP for a non-loopback URL; use HTTPS for production deployments.");
+    }
+    const jwksUri = auth.oauth.jwksUri ?? `${auth.oauth.issuer.replace(/\/$/, "")}/.well-known/jwks.json`;
+    if (isNonLoopbackHttpUrl(jwksUri)) {
+      warnings.push("The effective auth.oauth JWKS URL uses HTTP for a non-loopback URL; use HTTPS to protect OAuth signing-key retrieval.");
+    }
+  } else if (auth.mode === "builtin_oauth" && isNonLoopbackHttpUrl(auth.builtinOAuth.issuer)) {
+    warnings.push("auth.builtin_oauth.issuer uses HTTP for a non-loopback URL; use HTTPS for production deployments.");
+  }
+}
+
+function isNonLoopbackHttpUrl(value: string): boolean {
+  const url = new URL(value);
+  return url.protocol === "http:" && !isLoopbackHost(url.hostname);
+}
+
+function isLoopbackHost(hostname: string): boolean {
+  const normalized = hostname.toLowerCase().replace(/^\[|\]$/g, "").replace(/\.$/, "");
+  if (normalized === "localhost" || normalized === "::1") return true;
+  if (isIP(normalized) !== 4) return false;
+  return normalized.split(".")[0] === "127";
 }
 
 function normalizeLoginRateLimit(raw: {

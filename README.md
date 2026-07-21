@@ -74,6 +74,49 @@ The CI workflow runs `npm ci`, `npm run build`, and `npm test` first. The Docker
 
 The workflow reports the `quality-gates` check on pull requests. To make failed checks block merges into `main`, configure a GitHub branch protection rule or ruleset that requires `quality-gates` before merging.
 
+## Production HTTPS with HAProxy
+
+Remote production deployments must expose SecretSauce through HTTPS. Put a TLS-terminating reverse proxy such as HAProxy in front of the gateway, keep the gateway's HTTP listener private, and do not publish the backend port directly to untrusted networks. Equivalent TLS reverse proxies are supported; HAProxy is shown here as a compact same-host example:
+
+```haproxy
+frontend secretsauce_https
+  bind :443 ssl crt /etc/haproxy/certs/mcp.example.org.pem
+  mode http
+  default_backend secretsauce_backend
+
+backend secretsauce_backend
+  mode http
+  option httpchk GET /health
+  http-check expect status 200
+  server secretsauce 127.0.0.1:8080 check
+```
+
+The loopback HTTP hop above is acceptable because HAProxy and SecretSauce share a host and the backend listener is not remotely reachable. If the reverse proxy and gateway run on different hosts, protect that hop with TLS or an isolated, authenticated network. Firewall the gateway so only the reverse proxy can reach it.
+
+Configure public OAuth values explicitly with HTTPS. The gateway does not use `Forwarded` or `X-Forwarded-Proto` to infer its public origin:
+
+```yaml
+server:
+  listen: 127.0.0.1:8080
+  mcp_path: /mcp
+  resource: https://mcp.example.org
+
+auth:
+  mode: oauth
+  oauth:
+    issuer: https://auth.example.org
+    audience: https://mcp.example.org
+    jwks_uri: https://auth.example.org/.well-known/jwks.json
+    required_scopes:
+      - gateway.read
+      - gateway.references
+      - gateway.request
+```
+
+For built-in OAuth, set `auth.builtin_oauth.issuer` to the same public HTTPS origin as `server.resource`. The origin values do not include the MCP path; ChatGPT and other remote clients use the full MCP Server URL `https://mcp.example.org/mcp`.
+
+At startup, SecretSauce logs `config.warning` events when public OAuth configuration is missing `server.resource` or uses non-loopback HTTP resource, issuer, or JWKS URLs. These warnings do not block startup so local development and trusted proxy backends remain supported.
+
 ## Local Docker Example
 
 ```yaml

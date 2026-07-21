@@ -16,6 +16,9 @@ type AuthenticatedRequest = IncomingMessage & { auth?: AuthContext };
 
 export function createGatewayServer(config: GatewayConfig) {
   const logger = createLogger(config.logging);
+  for (const message of config.warnings) {
+    logger.warn("config.warning", { message });
+  }
   initializeBuiltinOAuthState(config);
   const stopMaintenance = startMaintenance(config);
   const server = createServer(async (request, response) => {

@@ -60,6 +60,23 @@ describe("documentation examples", () => {
     expect(chatgptWeb).not.toMatch(/Server URL to `https:\/\/mcp\.example\.org`/);
   });
 
+  it("documents the production HTTPS reverse-proxy boundary", () => {
+    const readme = readFileSync("README.md", "utf8");
+    const production = readme.slice(readme.indexOf("## Production HTTPS with HAProxy"), readme.indexOf("## Local Docker Example"));
+
+    expect(production).toContain("Remote production deployments must expose SecretSauce through HTTPS");
+    expect(production).toContain("Equivalent TLS reverse proxies are supported");
+    expect(production).toContain("bind :443 ssl crt /etc/haproxy/certs/mcp.example.org.pem");
+    expect(production).toContain("server secretsauce 127.0.0.1:8080 check");
+    expect(production).toContain("do not publish the backend port directly");
+    expect(production).toContain("different hosts, protect that hop with TLS or an isolated, authenticated network");
+    expect(production).toContain("resource: https://mcp.example.org");
+    expect(production).toContain("issuer: https://auth.example.org");
+    expect(production).toContain("jwks_uri: https://auth.example.org/.well-known/jwks.json");
+    expect(production).toContain("does not use `Forwarded` or `X-Forwarded-Proto`");
+    expect(production).toContain("full MCP Server URL `https://mcp.example.org/mcp`");
+  });
+
   it("uses the SecretSauce identity outside preserved historical records", () => {
     const readme = readFileSync("README.md", "utf8");
     expect(readme).toContain("SecretSauce MCP — Give agents access, not secrets");

@@ -1,5 +1,5 @@
 import { once } from "node:events";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { validateConfig } from "../src/config.js";
 import { createGatewayServer } from "../src/server.js";
 import { BRAND_ICON_PATH, BRAND_LOCKUP_PATH } from "../src/brandAssets.js";
@@ -52,6 +52,46 @@ describe("health server", () => {
     } finally {
       server.close();
     }
+  });
+
+  it("emits every sanitized configuration warning once at server startup", async () => {
+    const config = serverConfig();
+    config.server.resource = "http://mcp.example.org/private?access_token=do-not-log";
+    config.services["demo-service"]!.destinations[0]!.hosts = [{ type: "regex", value: ".*", regex: /.*/ }];
+    config.warnings.push(
+      "server.resource uses HTTP for a non-loopback URL; use HTTPS for production deployments.",
+      "Broad host regex warning: .*",
+    );
+    const lines: string[] = [];
+    const log = vi.spyOn(console, "log").mockImplementation((line) => lines.push(String(line)));
+    let server: ReturnType<typeof createGatewayServer> | undefined;
+
+    try {
+      server = createGatewayServer(config);
+      server.listen(0, "127.0.0.1");
+      await once(server, "listening");
+    } finally {
+      server?.close();
+      log.mockRestore();
+    }
+
+    const warningRecords = lines.map((line) => JSON.parse(line) as Record<string, unknown>)
+      .filter((record) => record.event === "config.warning");
+    expect(warningRecords).toEqual([
+      expect.objectContaining({
+        level: "warn",
+        event: "config.warning",
+        message: "server.resource uses HTTP for a non-loopback URL; use HTTPS for production deployments.",
+      }),
+      expect.objectContaining({
+        level: "warn",
+        event: "config.warning",
+        message: "Broad host regex warning: .*",
+      }),
+    ]);
+    const serialized = lines.join("\n");
+    expect(serialized).not.toContain("mcp.example.org");
+    expect(serialized).not.toContain("do-not-log");
   });
 });
 

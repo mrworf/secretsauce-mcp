@@ -228,6 +228,7 @@ export function validateConfig(raw: unknown, env: NodeJS.ProcessEnv = process.en
   const warnings: string[] = [];
   const debugDiagnostics: ConfigDebugDiagnostic[] = [];
   const parsed = parseRawConfig(raw);
+  validateOAuthTrustUrls(parsed);
   const server = normalizeServer(parsed.server);
   const auth = normalizeAuth(parsed.auth, env);
   const tokens = normalizeTokens(parsed.tokens);
@@ -251,6 +252,30 @@ function parseRawConfig(raw: unknown): RawConfig {
     throw configError(`Invalid config: ${diagnostics.map((issue) => issue.detail).join("; ")}`, diagnostics);
   }
   return result.data;
+}
+
+function validateOAuthTrustUrls(raw: RawConfig): void {
+  if (raw.server.resource !== undefined) {
+    validateOAuthTrustUrl(raw.server.resource, ["server", "resource"]);
+  }
+  if (raw.auth.mode === "oauth") {
+    validateOAuthTrustUrl(raw.auth.oauth.issuer, ["auth", "oauth", "issuer"]);
+    if (raw.auth.oauth.jwks_uri !== undefined) {
+      validateOAuthTrustUrl(raw.auth.oauth.jwks_uri, ["auth", "oauth", "jwks_uri"]);
+    }
+  } else if (raw.auth.mode === "builtin_oauth") {
+    validateOAuthTrustUrl(raw.auth.builtin_oauth.issuer, ["auth", "builtin_oauth", "issuer"]);
+  }
+}
+
+function validateOAuthTrustUrl(value: string, path: ConfigPath): void {
+  const url = new URL(value);
+  if (url.username.length > 0 || url.password.length > 0) {
+    throw configValidationError(`${path.join(".")} must not include URL userinfo`, path);
+  }
+  if (url.hash.length > 0) {
+    throw configValidationError(`${path.join(".")} must not include a URL fragment`, path);
+  }
 }
 
 function rejectRemovedMcpTransportLimits(raw: unknown): void {

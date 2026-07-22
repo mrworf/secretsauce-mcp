@@ -153,6 +153,88 @@ describe("config validation", () => {
     expectConfigError(() => validateConfig(raw, validEnv), "Invalid config");
   });
 
+  it("accepts OAuth trust URLs without userinfo or fragments", () => {
+    const raw = validRaw();
+    raw.server.resource = "https://mcp.example.org";
+    raw.auth = {
+      mode: "oauth",
+      oauth: {
+        issuer: "https://auth.example.org/tenant",
+        audience: "gateway",
+        jwks_uri: "https://keys.example.org/jwks.json?generation=2",
+      },
+    };
+
+    expect(validateConfig(raw, validEnv).warnings).toEqual([]);
+  });
+
+  it("rejects userinfo and fragments in every OAuth trust URL without echoing values", () => {
+    const fields: Array<{ path: string; configure: (raw: any, value: string) => void }> = [
+      {
+        path: "server.resource",
+        configure: (raw, value) => {
+          raw.server.resource = value;
+          raw.auth = { mode: "oauth", oauth: { issuer: "https://auth.example.org", audience: "gateway" } };
+        },
+      },
+      {
+        path: "auth.oauth.issuer",
+        configure: (raw, value) => {
+          raw.auth = { mode: "oauth", oauth: { issuer: value, audience: "gateway" } };
+        },
+      },
+      {
+        path: "auth.oauth.jwks_uri",
+        configure: (raw, value) => {
+          raw.auth = {
+            mode: "oauth",
+            oauth: {
+              issuer: "https://auth.example.org",
+              audience: "gateway",
+              jwks_uri: value,
+            },
+          };
+        },
+      },
+      {
+        path: "auth.builtin_oauth.issuer",
+        configure: (raw, value) => {
+          raw.auth = {
+            mode: "builtin_oauth",
+            builtin_oauth: {
+              issuer: value,
+              admin_username_env: "ADMIN_USERNAME",
+              admin_password_hash_env: "ADMIN_HASH",
+              signing_key_file: "/not-read-before-trust-validation.pem",
+              allowed_clients: ["https://chatgpt.com"],
+            },
+          };
+        },
+      },
+    ];
+    const unsafeValues = [
+      "https://embedded:do-not-log@mcp.example.org",
+      "https://mcp.example.org/#do-not-log",
+    ];
+
+    for (const field of fields) {
+      for (const value of unsafeValues) {
+        const raw = validRaw();
+        field.configure(raw, value);
+        try {
+          validateConfig(raw, { ...validEnv, ADMIN_USERNAME: "admin", ADMIN_HASH: "unused" });
+          throw new Error("Expected config error");
+        } catch (error) {
+          expect(error).toBeInstanceOf(GatewayError);
+          const gatewayError = error as GatewayError;
+          expect(gatewayError.diagnostics?.[0]?.path).toBe(field.path);
+          expect(gatewayError.message).toContain(field.path);
+          expect(JSON.stringify(gatewayError)).not.toContain("do-not-log");
+        }
+      }
+    }
+  });
+
   it("warns for non-loopback HTTP OAuth resource, issuer, and JWKS URLs", () => {
     const raw = validRaw();
     raw.server.resource = "http://mcp.example.org";

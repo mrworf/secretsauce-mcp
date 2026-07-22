@@ -77,6 +77,27 @@ describe("source-located configuration diagnostics", () => {
     });
   });
 
+  it("locates unsafe OAuth trust URLs without exposing their values", () => {
+    process.env.TEST_GATEWAY_TOKEN = "dev-token";
+    process.env.PORTAINER_API_KEY = "portainer-secret";
+    const source = readFileSync("test/fixtures/config.valid.yaml", "utf8").replace(
+      "  mcp_path: /mcp",
+      "  mcp_path: /mcp\n  resource: \"https://mcp.example.org/#do-not-log\"",
+    );
+    const file = temporaryYaml("gateway-oauth-trust", source);
+
+    const error = captureConfigError(() => loadConfig(file));
+    const trustUrl = diagnostic(error, "server.resource");
+
+    expect(trustUrl).toMatchObject({
+      line: 4,
+      detail: "server.resource must not include a URL fragment",
+    });
+    expect(trustUrl.source).toMatch(/^  resource: /);
+    expect(trustUrl.source).not.toContain("mcp.example.org");
+    expect(JSON.stringify(error.diagnostics)).not.toContain("do-not-log");
+  });
+
   it("provides syntax and validation locations for Secretlint YAML", () => {
     const malformed = temporaryYaml("secretlint-malformed", "version: 1\nrules: ]credential-value\n");
     expect(captureConfigError(() => loadSecretlintConfig(malformed)).diagnostics?.[0]).toMatchObject({ line: 2, column: 8 });

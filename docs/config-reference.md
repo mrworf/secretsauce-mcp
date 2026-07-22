@@ -13,6 +13,8 @@ Source excerpts preserve indentation, field names, and YAML punctuation, but mas
 - `server.mcp_path`: Streamable HTTP MCP path, usually `/mcp`.
 - `server.resource`: public resource URL used in OAuth metadata and challenges.
 
+OAuth trust URLs (`server.resource`, external OAuth issuer and JWKS URL, and the built-in OAuth issuer) must not contain URL userinfo or fragments. Invalid values stop startup with a field-specific diagnostic that does not echo the configured URL.
+
 ## Auth
 Production OAuth mode:
 

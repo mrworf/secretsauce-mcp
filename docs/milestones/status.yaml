@@ -51,10 +51,10 @@ milestones:
   - id: "07"
     title: "User Administration And Lifecycle"
     file: "docs/milestones/07-user-administration-lifecycle.md"
-    status: "pending"
+    status: "in_progress"
     completed_at: null
     commit_hash: null
-    notes: ""
+    notes: "Decision-complete implementation planning and review in progress."
   - id: "08"
     title: "Generic OIDC Provider"
     file: "docs/milestones/08-generic-oidc-provider.md"

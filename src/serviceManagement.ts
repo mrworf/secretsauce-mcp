@@ -174,15 +174,55 @@ export class ServiceRelationshipRepository implements UserRelationshipResolver {
   }
 
   async relatedServiceIds(actorUserId: string, targetUserId?: string): Promise<readonly string[]> {
-    if (!isUuidV7(actorUserId) || targetUserId !== undefined) return [];
+    if (
+      !isUuidV7(actorUserId) ||
+      (targetUserId !== undefined && !isUuidV7(targetUserId))
+    ) return [];
     try {
       return await this.owner.execute({
-        run: (database) => database.read((query) => query.all<{ service_id: string }>(`
+        run: (database) => database.read((query) => query.all<{ service_id: string }>(targetUserId === undefined ? `
           SELECT sa.service_id
           FROM service_admins sa JOIN users u ON u.id = sa.user_id
           WHERE sa.user_id = ? AND u.role = 'admin' AND u.status = 'active'
           ORDER BY sa.service_id
-        `, [actorUserId]).map(({ service_id }) => service_id)),
+        ` : `
+          SELECT sa.service_id
+          FROM service_admins sa
+          JOIN users actor ON actor.id = sa.user_id
+          JOIN users target ON target.id = ?
+          WHERE sa.user_id = ?
+            AND actor.role = 'admin' AND actor.status = 'active'
+            AND target.role = 'user'
+            AND (
+              EXISTS (
+                SELECT 1 FROM service_principal_assignments all_assignment
+                WHERE all_assignment.service_id = sa.service_id
+                  AND all_assignment.selector_kind = 'all'
+              )
+              OR EXISTS (
+                SELECT 1 FROM service_principal_assignments direct
+                WHERE direct.service_id = sa.service_id
+                  AND direct.selector_kind = 'user'
+                  AND direct.user_id = target.id
+              )
+              OR EXISTS (
+                SELECT 1
+                FROM service_principal_assignments selected
+                JOIN service_groups g
+                  ON g.service_id = selected.service_id
+                  AND g.id = selected.group_id
+                JOIN service_group_members gm
+                  ON gm.service_id = g.service_id AND gm.group_id = g.id
+                WHERE selected.service_id = sa.service_id
+                  AND selected.selector_kind = 'group'
+                  AND g.lifecycle = 'active'
+                  AND gm.user_id = target.id
+              )
+            )
+          ORDER BY sa.service_id
+        `, targetUserId === undefined
+          ? [actorUserId]
+          : [targetUserId, actorUserId]).map(({ service_id }) => service_id)),
       });
     } catch {
       return [];
@@ -213,7 +253,11 @@ export class ServiceManagementAuthorization implements ControlAuthorizationSeam 
       }
       return false;
     }
-    if (outcome === "service_names_only" || outcome === "scoped_service") return false;
+    if (outcome === "service_names_only") {
+      return context.role === "user" &&
+        request.routeOptions.url === "/api/v2/users/me/services";
+    }
+    if (outcome === "scoped_service") return false;
     return this.delegate.authorizeScope(context, capability, outcome, request);
   }
 

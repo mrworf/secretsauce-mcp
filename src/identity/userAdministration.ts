@@ -231,9 +231,47 @@ export class UserAdministrationRepository {
     status?: IdentityStatus;
     lastEmail?: string;
     lastId?: string;
+    serviceIds?: readonly string[];
   }): Promise<{ users: UserAdministrationView[]; last?: { email: string; id: string } }> {
     const clauses: string[] = [];
     const parameters: (string | number)[] = [];
+    if (input.serviceIds !== undefined) {
+      if (
+        input.serviceIds.length < 1 ||
+        input.serviceIds.length > 200 ||
+        input.serviceIds.some((serviceId) => !isUuidV7(serviceId))
+      ) throw new UserAdministrationError("invalid_request");
+      const placeholders = input.serviceIds.map(() => "?").join(",");
+      clauses.push(`u.role = 'user' AND EXISTS (
+        SELECT 1
+        FROM services related_service
+        WHERE related_service.id IN (${placeholders})
+          AND (
+            EXISTS (
+              SELECT 1 FROM service_principal_assignments all_assignment
+              WHERE all_assignment.service_id = related_service.id
+                AND all_assignment.selector_kind = 'all'
+            )
+            OR EXISTS (
+              SELECT 1 FROM service_principal_assignments direct
+              WHERE direct.service_id = related_service.id
+                AND direct.selector_kind = 'user' AND direct.user_id = u.id
+            )
+            OR EXISTS (
+              SELECT 1
+              FROM service_principal_assignments selected
+              JOIN service_groups g
+                ON g.service_id = selected.service_id AND g.id = selected.group_id
+              JOIN service_group_members gm
+                ON gm.service_id = g.service_id AND gm.group_id = g.id
+              WHERE selected.service_id = related_service.id
+                AND selected.selector_kind = 'group'
+                AND g.lifecycle = 'active' AND gm.user_id = u.id
+            )
+          )
+      )`);
+      parameters.push(...input.serviceIds);
+    }
     if (input.q !== undefined) {
       clauses.push(`(
         u.normalized_email LIKE ? ESCAPE '\\'
@@ -430,13 +468,9 @@ export class UserAdministrationService {
       lastEmail = cursor.lastEmail;
       lastId = cursor.lastId;
     }
-    if (actor.role === "admin") {
-      // Milestone 10 replaces the empty production resolver and adds the
-      // relationship join. Never widen this placeholder to an unscoped query.
-      throw new UserAdministrationError("forbidden");
-    }
     const page = await this.repository.list({
       limit: parsed.limit,
+      ...(actor.role === "admin" ? { serviceIds: scopeIds } : {}),
       ...(parsed.q === undefined ? {} : { q: parsed.q }),
       ...(parsed.role === undefined ? {} : { role: parsed.role }),
       ...(parsed.status === undefined ? {} : { status: parsed.status }),

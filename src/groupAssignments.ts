@@ -1,4 +1,5 @@
 import type { ControlAuthenticationContext } from "./control/authentication.js";
+import type { ControlIdempotencyHasher } from "./control/idempotency.js";
 import type { AdministrativeAuditEventInput } from "./persistence/administrativeAudit.js";
 import { PersistenceError } from "./persistence/errors.js";
 import type {
@@ -13,6 +14,7 @@ import { isUuidV7, UuidV7Generator } from "./persistence/uuidV7.js";
 import type { PersistenceOwner } from "./persistence/worker.js";
 import {
   type NormalizedPrincipalSelector,
+  normalizePrincipalSelector,
   selectorContributions,
 } from "./principalSelectors.js";
 
@@ -42,11 +44,28 @@ export interface ServiceAssignmentView {
 export interface EffectiveServiceAccess {
   serviceId: string;
   userId: string;
+  email?: string;
+  givenName?: string;
+  familyName?: string;
   contributions: Array<
     | { kind: "all" }
     | { kind: "direct" }
     | { kind: "group"; groupId: string; groupName: string }
   >;
+}
+
+export interface GroupMemberView {
+  id: string;
+  email: string;
+  givenName: string;
+  familyName: string;
+  status: string;
+}
+
+export interface OwnServiceView {
+  id: string;
+  slug: string;
+  name: string;
 }
 
 interface GroupRow {
@@ -173,6 +192,37 @@ export class GroupAssignmentRepository {
     return this.read((query) => {
       requireScopedService(query, actor, serviceId, false);
       return projectGroup(requiredGroup(query, serviceId, groupId));
+    });
+  }
+
+  async members(
+    actor: ControlAuthenticationContext,
+    serviceId: string,
+    groupId: string,
+  ): Promise<GroupMemberView[]> {
+    return this.read((query) => {
+      requireScopedService(query, actor, serviceId, false);
+      requiredGroup(query, serviceId, groupId);
+      return query.all<{
+        id: string;
+        email: string;
+        given_name: string;
+        family_name: string;
+        status: string;
+      }>(`
+        SELECT u.id, u.email, u.given_name, u.family_name, u.status
+        FROM service_group_members gm
+        JOIN users u ON u.id = gm.user_id
+        WHERE gm.service_id = ? AND gm.group_id = ? AND u.role = 'user'
+        ORDER BY u.normalized_email, u.id
+        LIMIT ?
+      `, [serviceId, groupId, MAX_GROUP_MEMBERS]).map((row) => ({
+        id: row.id,
+        email: row.email,
+        givenName: row.given_name,
+        familyName: row.family_name,
+        status: row.status,
+      }));
     });
   }
 
@@ -545,6 +595,102 @@ export class GroupAssignmentRepository {
     });
   }
 
+  async effectiveAccessList(
+    actor: ControlAuthenticationContext,
+    serviceId: string,
+  ): Promise<EffectiveServiceAccess[]> {
+    return this.read((query) => {
+      requireScopedService(query, actor, serviceId, false);
+      return effectiveUserIds(query, serviceId).map((userId) => {
+        const user = query.get<{
+          email: string;
+          given_name: string;
+          family_name: string;
+        }>(
+          "SELECT email, given_name, family_name FROM users WHERE id = ?",
+          [userId],
+        );
+        if (user === undefined) throw new PersistenceError("database_unavailable");
+        const memberships = query.all<{ id: string; name: string }>(`
+          SELECT g.id, g.name
+          FROM service_groups g
+          JOIN service_group_members gm
+            ON gm.service_id = g.service_id AND gm.group_id = g.id
+          WHERE g.service_id = ? AND gm.user_id = ? AND g.lifecycle = 'active'
+          ORDER BY g.id
+        `, [serviceId, userId]);
+        const selector = assignmentView(query, serviceId).selector;
+        if (selector === undefined) throw new PersistenceError("database_unavailable");
+        const names = new Map(memberships.map((group) => [group.id, group.name]));
+        return {
+          serviceId,
+          userId,
+          email: user.email,
+          givenName: user.given_name,
+          familyName: user.family_name,
+          contributions: selectorContributions({
+            selector,
+            userId,
+            role: "user",
+            status: "active",
+            activeGroupIds: memberships.map(({ id }) => id),
+          }).map((contribution) => contribution.kind === "group"
+            ? {
+                ...contribution,
+                groupName: names.get(contribution.groupId) ?? contribution.groupId,
+              }
+            : contribution),
+        };
+      });
+    });
+  }
+
+  async ownServices(actor: ControlAuthenticationContext): Promise<OwnServiceView[]> {
+    if (actor.method !== "browser_session" || actor.role !== "user") {
+      throw new GroupAssignmentError("not_found");
+    }
+    return this.read((query) => {
+      const user = query.get<UserRow>(
+        "SELECT id, role, status FROM users WHERE id = ?",
+        [actor.principalId],
+      );
+      if (user?.role !== "user" || user.status !== "active") {
+        throw new PersistenceError("identity_not_found");
+      }
+      return query.all<OwnServiceView>(`
+        SELECT s.id, s.slug, s.name
+        FROM services s
+        WHERE s.lifecycle <> 'archived' AND (
+          EXISTS (
+            SELECT 1 FROM service_principal_assignments all_assignment
+            WHERE all_assignment.service_id = s.id
+              AND all_assignment.selector_kind = 'all'
+          )
+          OR EXISTS (
+            SELECT 1 FROM service_principal_assignments direct
+            WHERE direct.service_id = s.id
+              AND direct.selector_kind = 'user'
+              AND direct.user_id = ?
+          )
+          OR EXISTS (
+            SELECT 1
+            FROM service_principal_assignments selected
+            JOIN service_groups g
+              ON g.service_id = selected.service_id AND g.id = selected.group_id
+            JOIN service_group_members gm
+              ON gm.service_id = g.service_id AND gm.group_id = g.id
+            WHERE selected.service_id = s.id
+              AND selected.selector_kind = 'group'
+              AND g.lifecycle = 'active'
+              AND gm.user_id = ?
+          )
+        )
+        ORDER BY s.slug, s.id
+        LIMIT 500
+      `, [actor.principalId, actor.principalId]);
+    });
+  }
+
   private async read<T>(operation: (query: PersistenceQuery) => T): Promise<T> {
     try {
       return await this.owner.execute({
@@ -567,6 +713,248 @@ export class GroupAssignmentRepository {
       });
     } catch (error) {
       throw mapError(error);
+    }
+  }
+}
+
+export class GroupAssignmentService {
+  readonly #uuid: () => string;
+
+  constructor(
+    private readonly repository: GroupAssignmentRepository,
+    private readonly idempotency: ControlIdempotencyHasher,
+    now: () => number = Date.now,
+  ) {
+    this.#uuid = defaultUuid(now);
+  }
+
+  groups(actor: ControlAuthenticationContext, serviceId: string): Promise<ServiceGroupView[]> {
+    return this.repository.groups(actor, requiredUuid(serviceId));
+  }
+
+  group(
+    actor: ControlAuthenticationContext,
+    serviceId: string,
+    groupId: string,
+  ): Promise<ServiceGroupView> {
+    return this.repository.group(actor, requiredUuid(serviceId), requiredUuid(groupId));
+  }
+
+  members(
+    actor: ControlAuthenticationContext,
+    serviceId: string,
+    groupId: string,
+  ): Promise<GroupMemberView[]> {
+    return this.repository.members(actor, requiredUuid(serviceId), requiredUuid(groupId));
+  }
+
+  async createGroup(
+    actor: ControlAuthenticationContext,
+    serviceId: string,
+    body: unknown,
+    idempotencyKey: string,
+    correlationId: string,
+  ): Promise<{ group: ServiceGroupView; replayed: boolean }> {
+    const parsed = groupBody(body);
+    const id = this.#uuid();
+    const normalizedServiceId = requiredUuid(serviceId);
+    const result = await this.repository.createGroup({
+      actor,
+      serviceId: normalizedServiceId,
+      groupId: id,
+      ...parsed,
+      correlationId: requiredCorrelation(correlationId),
+      idempotency: this.idempotencyInput(
+        actor,
+        "groups.create",
+        idempotencyKey,
+        { serviceId: normalizedServiceId, ...parsed },
+      ),
+    });
+    const groupId = result.kind === "executed" ? result.value : result.resultReference;
+    return {
+      group: await this.repository.group(actor, normalizedServiceId, groupId),
+      replayed: result.kind === "replayed",
+    };
+  }
+
+  updateGroup(
+    actor: ControlAuthenticationContext,
+    serviceId: string,
+    groupId: string,
+    expectedVersion: number,
+    body: unknown,
+    correlationId: string,
+  ): Promise<ServiceGroupView> {
+    return this.repository.updateGroup({
+      actor,
+      serviceId: requiredUuid(serviceId),
+      groupId: requiredUuid(groupId),
+      expectedVersion: requiredVersion(expectedVersion),
+      ...groupBody(body),
+      correlationId: requiredCorrelation(correlationId),
+    });
+  }
+
+  async replaceMembers(
+    actor: ControlAuthenticationContext,
+    serviceId: string,
+    groupId: string,
+    expectedVersion: number,
+    body: unknown,
+    idempotencyKey: string,
+    correlationId: string,
+  ): Promise<{ group: ServiceGroupView; replayed: boolean }> {
+    const userIds = memberBody(body);
+    const normalizedServiceId = requiredUuid(serviceId);
+    const normalizedGroupId = requiredUuid(groupId);
+    const result = await this.repository.replaceMembers({
+      actor,
+      serviceId: normalizedServiceId,
+      groupId: normalizedGroupId,
+      expectedVersion: requiredVersion(expectedVersion),
+      userIds,
+      correlationId: requiredCorrelation(correlationId),
+      idempotency: this.idempotencyInput(
+        actor,
+        "groups.members.replace",
+        idempotencyKey,
+        { serviceId: normalizedServiceId, groupId: normalizedGroupId, userIds },
+      ),
+    });
+    return {
+      group: await this.repository.group(actor, normalizedServiceId, normalizedGroupId),
+      replayed: result.kind === "replayed",
+    };
+  }
+
+  async archiveGroup(
+    actor: ControlAuthenticationContext,
+    serviceId: string,
+    groupId: string,
+    expectedVersion: number,
+    body: unknown,
+    idempotencyKey: string,
+    correlationId: string,
+  ): Promise<{ group: ServiceGroupView; replayed: boolean }> {
+    const justification = justificationBody(body);
+    const normalizedServiceId = requiredUuid(serviceId);
+    const normalizedGroupId = requiredUuid(groupId);
+    const result = await this.repository.archiveGroup({
+      actor,
+      serviceId: normalizedServiceId,
+      groupId: normalizedGroupId,
+      expectedVersion: requiredVersion(expectedVersion),
+      justification,
+      correlationId: requiredCorrelation(correlationId),
+      idempotency: this.idempotencyInput(
+        actor,
+        "groups.archive",
+        idempotencyKey,
+        { serviceId: normalizedServiceId, groupId: normalizedGroupId, justification },
+      ),
+    });
+    return {
+      group: await this.repository.group(actor, normalizedServiceId, normalizedGroupId),
+      replayed: result.kind === "replayed",
+    };
+  }
+
+  async deleteGroup(
+    actor: ControlAuthenticationContext,
+    serviceId: string,
+    groupId: string,
+    expectedVersion: number,
+    body: unknown,
+    idempotencyKey: string,
+    correlationId: string,
+  ): Promise<{ groupId: string; deleted: true; replayed: boolean }> {
+    const justification = justificationBody(body);
+    const normalizedServiceId = requiredUuid(serviceId);
+    const normalizedGroupId = requiredUuid(groupId);
+    const result = await this.repository.deleteGroup({
+      actor,
+      serviceId: normalizedServiceId,
+      groupId: normalizedGroupId,
+      expectedVersion: requiredVersion(expectedVersion),
+      justification,
+      correlationId: requiredCorrelation(correlationId),
+      idempotency: this.idempotencyInput(
+        actor,
+        "groups.delete",
+        idempotencyKey,
+        { serviceId: normalizedServiceId, groupId: normalizedGroupId, justification },
+      ),
+    });
+    return { groupId: normalizedGroupId, deleted: true, replayed: result.kind === "replayed" };
+  }
+
+  assignments(
+    actor: ControlAuthenticationContext,
+    serviceId: string,
+  ): Promise<ServiceAssignmentView> {
+    return this.repository.assignments(actor, requiredUuid(serviceId));
+  }
+
+  async replaceAssignments(
+    actor: ControlAuthenticationContext,
+    serviceId: string,
+    expectedVersion: number,
+    body: unknown,
+    idempotencyKey: string,
+    correlationId: string,
+  ): Promise<{ assignments: ServiceAssignmentView; replayed: boolean }> {
+    const selector = normalizePrincipalSelector(body);
+    const normalizedServiceId = requiredUuid(serviceId);
+    const result = await this.repository.replaceAssignments({
+      actor,
+      serviceId: normalizedServiceId,
+      expectedVersion: requiredVersion(expectedVersion),
+      selector,
+      correlationId: requiredCorrelation(correlationId),
+      idempotency: this.idempotencyInput(
+        actor,
+        "services.assignments.replace",
+        idempotencyKey,
+        { serviceId: normalizedServiceId, selector },
+      ),
+    });
+    return {
+      assignments: await this.repository.assignments(actor, normalizedServiceId),
+      replayed: result.kind === "replayed",
+    };
+  }
+
+  access(
+    actor: ControlAuthenticationContext,
+    serviceId: string,
+  ): Promise<EffectiveServiceAccess[]> {
+    return this.repository.effectiveAccessList(actor, requiredUuid(serviceId));
+  }
+
+  ownServices(actor: ControlAuthenticationContext): Promise<OwnServiceView[]> {
+    return this.repository.ownServices(actor);
+  }
+
+  private idempotencyInput(
+    actor: ControlAuthenticationContext,
+    routeId: string,
+    key: string,
+    body: unknown,
+  ): IdempotencyExecutionInput {
+    try {
+      return {
+        keyHash: this.idempotency.keyHash({
+          key,
+          principalId: actor.principalId,
+          routeId,
+        }),
+        principalId: actor.principalId,
+        routeId,
+        requestDigest: this.idempotency.requestDigest(body),
+      };
+    } catch {
+      throw new GroupAssignmentError("invalid_request");
     }
   }
 }
@@ -999,4 +1387,69 @@ function mapError(error: unknown): GroupAssignmentError {
 function defaultUuid(now: () => number): () => string {
   const generator = new UuidV7Generator({ now });
   return () => generator.next();
+}
+
+function groupBody(value: unknown): { name: string; description?: string } {
+  if (!isPlainObject(value)) throw new GroupAssignmentError("invalid_request");
+  const allowed = new Set(["name", "description"]);
+  if (Object.keys(value).some((key) => !allowed.has(key))) {
+    throw new GroupAssignmentError("invalid_request");
+  }
+  const profile = normalizeGroupProfile(value.name, value.description);
+  return {
+    name: profile.name,
+    ...(profile.description === undefined ? {} : { description: profile.description }),
+  };
+}
+
+function memberBody(value: unknown): string[] {
+  if (
+    !isPlainObject(value) ||
+    Object.keys(value).length !== 1 ||
+    !Object.hasOwn(value, "user_ids") ||
+    !Array.isArray(value.user_ids) ||
+    value.user_ids.length > 200
+  ) throw new GroupAssignmentError("invalid_request");
+  return uniqueUuidList(value.user_ids, 200);
+}
+
+function justificationBody(value: unknown): string {
+  if (
+    !isPlainObject(value) ||
+    Object.keys(value).length !== 1 ||
+    !Object.hasOwn(value, "justification")
+  ) throw new GroupAssignmentError("invalid_request");
+  return normalizeJustification(value.justification);
+}
+
+function requiredUuid(value: unknown): string {
+  if (typeof value !== "string" || !isUuidV7(value)) {
+    throw new GroupAssignmentError("invalid_request");
+  }
+  return value;
+}
+
+function requiredVersion(value: unknown): number {
+  if (!Number.isSafeInteger(value) || Number(value) < 1) {
+    throw new GroupAssignmentError("invalid_request");
+  }
+  return Number(value);
+}
+
+function requiredCorrelation(value: unknown): string {
+  if (
+    typeof value !== "string" ||
+    value.length < 1 ||
+    value.length > 128 ||
+    !/^(?:req_)?[0-9a-f-]{36}$/u.test(value)
+  ) throw new GroupAssignmentError("invalid_request");
+  return value;
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    return false;
+  }
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
 }

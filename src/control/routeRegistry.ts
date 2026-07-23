@@ -317,6 +317,9 @@ async function authorizeRoute(
       permissionNeedsScope(outcome) &&
       !(await authorization.authorizeScope(authentication, capability!, outcome, request))
     ) {
+      if (scopeDenialHidesResource(outcome, request)) {
+        throw new ControlContractError(404, "not_found", "The resource was not found.");
+      }
       throw new ControlContractError(403, "forbidden", "The operation is not permitted.");
     }
   }
@@ -331,6 +334,27 @@ async function authorizeRoute(
       throw new ControlContractError(403, "step_up_required", "Additional authentication is required.");
     }
   }
+}
+
+function scopeDenialHidesResource(
+  outcome: PermissionOutcome,
+  request: FastifyRequest,
+): boolean {
+  if (
+    ![
+      "assigned_services",
+      "assigned_services_step_up",
+      "scoped_service",
+      "related_users",
+      "related_users_not_self",
+      "related_users_step_up",
+    ].includes(outcome)
+  ) return false;
+  const params = request.params;
+  return params !== null &&
+    typeof params === "object" &&
+    Object.entries(params as Record<string, unknown>).some(([key, value]) =>
+      key.endsWith("_id") && typeof value === "string");
 }
 
 function stepUpOperation(

@@ -102,6 +102,11 @@ import {
   ServiceRelationshipRepository,
 } from "../serviceManagement.js";
 import { registerServiceManagementRoutes } from "./serviceRoutes.js";
+import {
+  GroupAssignmentRepository,
+  GroupAssignmentService,
+} from "../groupAssignments.js";
+import { registerGroupAssignmentRoutes } from "./groupRoutes.js";
 
 export interface ControlApplicationOptions {
   authenticator?: ControlAuthenticator;
@@ -116,6 +121,7 @@ export interface ControlApplicationOptions {
   identityReadiness?: () => Promise<"ready" | "unavailable" | "unsupported">;
   localIdentity?: LocalIdentityControl;
   serviceManagement?: ServiceManagementService;
+  groupAssignments?: GroupAssignmentService;
 }
 
 export function createControlApplication(
@@ -178,6 +184,9 @@ export function createControlApplication(
   }
   if (options.serviceManagement !== undefined) {
     registerServiceManagementRoutes(routeRegistry, options.serviceManagement);
+  }
+  if (options.groupAssignments !== undefined) {
+    registerGroupAssignmentRoutes(routeRegistry, options.groupAssignments);
   }
   options.registerControlRoutes?.(routeRegistry);
   installControlRoutes(
@@ -264,6 +273,7 @@ export async function startControlServer(
   let oidcLogin: OidcLoginService | undefined;
   let oidcLink: OidcLinkService | undefined;
   let serviceManagement: ServiceManagementService | undefined;
+  let groupAssignments: GroupAssignmentService | undefined;
   let identityKeyRing: IdentityKeyRing | undefined;
   try {
     let localIdentity: LocalIdentityControl | undefined;
@@ -317,6 +327,10 @@ export async function startControlServer(
           serviceRelationships,
           idempotencyHasher,
           sessionKey,
+        );
+        groupAssignments = new GroupAssignmentService(
+          new GroupAssignmentRepository(persistence),
+          idempotencyHasher,
         );
         const serviceAuthorization = new ServiceManagementAuthorization(
           serviceRelationships,
@@ -393,6 +407,7 @@ export async function startControlServer(
         : { identityReadiness: async () => "ready" as const }),
       ...(localIdentity === undefined ? {} : { localIdentity }),
       ...(serviceManagement === undefined ? {} : { serviceManagement }),
+      ...(groupAssignments === undefined ? {} : { groupAssignments }),
     });
     await server.listen({
       host: config.control.host,

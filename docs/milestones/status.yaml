@@ -44,10 +44,10 @@ milestones:
   - id: "06"
     title: "Enrollment, Recovery, And Self-Service"
     file: "docs/milestones/06-enrollment-recovery-self-service.md"
-    status: "pending"
+    status: "in_progress"
     completed_at: null
     commit_hash: null
-    notes: ""
+    notes: "Decision-complete implementation planning and review in progress."
   - id: "07"
     title: "User Administration And Lifecycle"
     file: "docs/milestones/07-user-administration-lifecycle.md"

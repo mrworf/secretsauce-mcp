@@ -139,6 +139,17 @@ describe("authorized user profiles", () => {
     const fixture = await userFixture("profile");
     const target = await fixture.create("target@example.org", "user");
     await addSessions(fixture.worker, target.id);
+    await fixture.worker.execute({
+      run: (database) => database.withOperationalTransaction((transaction) => {
+        transaction.run(`
+          UPDATE users
+          SET email_source = 'oidc:workforce',
+              given_name_source = 'oidc:workforce',
+              family_name_source = 'oidc:workforce'
+          WHERE id = ?
+        `, [target.id]);
+      }),
+    });
 
     const renamed = await fixture.service.updateOther(
       fixture.superadmin,
@@ -156,6 +167,20 @@ describe("authorized user profiles", () => {
       givenName: "Grace",
       familyName: "Hopper",
       version: target.version + 1,
+    });
+    await expect(fixture.worker.execute({
+      run: (database) => database.read((query) => query.get<{
+        email_source: string;
+        given_name_source: string;
+        family_name_source: string;
+      }>(`
+        SELECT email_source, given_name_source, family_name_source
+        FROM users WHERE id = ?
+      `, [target.id])),
+    })).resolves.toEqual({
+      email_source: "local",
+      given_name_source: "local",
+      family_name_source: "local",
     });
     expect(await securitySnapshot(fixture.worker, target.id)).toMatchObject({
       security_epoch: 1,

@@ -15,6 +15,7 @@ export const CONTROL_BROWSER_PREFIX = "/control";
 export const CONTROL_BODY_LIMIT_BYTES = 1_048_576;
 export const CONTROL_SESSION_COOKIE = "__Host-secretsauce_session";
 export const CONTROL_ENROLLMENT_COOKIE = "__Host-secretsauce_enrollment";
+export const CONTROL_OIDC_FLOW_COOKIE = "__Host-secretsauce_oidc";
 
 export interface ControlRouteSecurity {
   public: boolean;
@@ -159,6 +160,29 @@ export function clearControlEnrollmentCookie(reply: FastifyReply): void {
     secure: true,
     httpOnly: true,
     sameSite: "strict",
+  });
+}
+
+export function setControlOidcFlowCookie(
+  reply: FastifyReply,
+  value: string,
+  maxAgeSeconds: number,
+): void {
+  reply.setCookie(CONTROL_OIDC_FLOW_COOKIE, value, {
+    path: "/api/v2/auth/oidc/",
+    secure: true,
+    httpOnly: true,
+    sameSite: "lax",
+    maxAge: maxAgeSeconds,
+  });
+}
+
+export function clearControlOidcFlowCookie(reply: FastifyReply): void {
+  reply.clearCookie(CONTROL_OIDC_FLOW_COOKIE, {
+    path: "/api/v2/auth/oidc/",
+    secure: true,
+    httpOnly: true,
+    sameSite: "lax",
   });
 }
 

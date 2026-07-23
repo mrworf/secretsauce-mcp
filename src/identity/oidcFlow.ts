@@ -312,6 +312,14 @@ export class OidcFlowService {
     }
   }
 
+  async deny(correlationId: string): Promise<void> {
+    try {
+      await this.repository.recordDenied(correlationId);
+    } catch {
+      // Public authentication failures remain uniform when auditing is unavailable.
+    }
+  }
+
   close(): void {
     this.#stateKey.fill(0);
   }

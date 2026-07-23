@@ -27,6 +27,11 @@ export interface ControlSession {
   expires_at: number;
 }
 
+export interface OidcProviderLabel {
+  id: string;
+  display_name: string;
+}
+
 export interface OneTimeUser {
   user: ControlUser;
   one_time_value_displayed: boolean;
@@ -68,6 +73,11 @@ export interface ControlApi {
   ): Promise<ControlUser | OneTimeUser | { user_id: string; deleted: true }>;
 }
 
+export interface OidcControlApi {
+  oidcProviders(): Promise<{ providers: OidcProviderLabel[] }>;
+  beginOidc(providerId: string): Promise<{ authorization_url: string; expires_at: number }>;
+}
+
 export interface UserProfileInput {
   email: string;
   given_name: string;
@@ -84,8 +94,19 @@ export type UserAction =
   | "role"
   | "delete";
 
-export const browserControlApi: ControlApi = {
+export const browserControlApi: ControlApi & OidcControlApi = {
   session: () => get<ControlSession>("/api/v2/auth/session"),
+  oidcProviders: () => get<{ providers: OidcProviderLabel[] }>("/api/v2/auth/oidc/providers"),
+  beginOidc: (providerId) => {
+    if (!/^[a-z][a-z0-9_.-]{0,63}$/.test(providerId)) {
+      return Promise.reject(new ControlApiError("invalid_request", "The provider is invalid."));
+    }
+    return request(`/api/v2/auth/oidc/${encodeURIComponent(providerId)}/begin`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: "{}",
+    });
+  },
   self: () => get<ControlUser>("/api/v2/auth/self/profile"),
   listUsers: (input = {}) => {
     const query = new URLSearchParams();

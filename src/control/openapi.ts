@@ -80,12 +80,22 @@ function registerRoute(
     : controlDataEnvelopeSchema(route.schemas.response);
   const responses: RouteConfig["responses"] = {};
   for (const status of route.successStatuses ?? [200]) {
-    responses[status] = {
-      description: status === 503 ? "Control plane is not ready." : "Successful response.",
-      content: {
-        "application/json": { schema: responseSchema },
-      },
-    };
+    responses[status] = route.redirectResponse
+      ? {
+          description: "Redirect to the fixed local control application.",
+          headers: {
+            location: {
+              description: "Fixed local control path.",
+              schema: { type: "string", const: "/control/" },
+            },
+          },
+        }
+      : {
+          description: status === 503 ? "Control plane is not ready." : "Successful response.",
+          content: {
+            "application/json": { schema: responseSchema },
+          },
+        };
   }
   for (const [status, description] of commonErrors) {
     responses[status] = {

@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { RouterProvider } from "react-router-dom";
 import { createControlRouter } from "./router";
 import { browserControlApi, type UserRole } from "./controlApi";
+import { OidcSignIn } from "./OidcSignIn";
 import "./styles.css";
 
 const root = document.getElementById("root");
@@ -25,12 +26,7 @@ function AuthenticatedControl() {
   }, []);
 
   if (failed) {
-    return (
-      <main className="startup-message" role="alert">
-        <h1>Sign in required</h1>
-        <p>Your control session is unavailable. Sign in again, then reload this page.</p>
-      </main>
-    );
+    return <OidcSignIn />;
   }
   if (role === undefined) {
     return <main className="startup-message" role="status">Loading your control workspace…</main>;

@@ -319,6 +319,8 @@ export class UserAdministrationRepository {
           const updated = transaction.run(`
             UPDATE users
             SET email = ?, normalized_email = ?, given_name = ?, family_name = ?,
+                email_source = 'local', given_name_source = 'local',
+                family_name_source = 'local',
                 security_epoch = security_epoch + ?, version = version + 1, updated_at = ?
             WHERE id = ? AND version = ?
           `, [

@@ -66,6 +66,7 @@ export interface ControlHandlerResult {
   data: unknown;
   statusCode?: number;
   version?: number;
+  redirectLocation?: string;
 }
 
 export interface ControlRouteDefinition {
@@ -85,6 +86,7 @@ export interface ControlRouteDefinition {
   concurrency: "none" | "if-match";
   idempotency: "none" | "required";
   rawResponse?: boolean;
+  redirectResponse?: boolean;
   successStatuses?: readonly number[];
   handler(context: ControlHandlerContext): Promise<ControlHandlerResult> | ControlHandlerResult;
 }
@@ -241,6 +243,17 @@ export function installControlRoutes(
           }
           const parsedData = definition.schemas.response.safeParse(result.data);
           if (!parsedData.success) throw new Error("Control response contract violation.");
+          if (definition.redirectResponse) {
+            if (
+              statusCode !== 302 ||
+              result.redirectLocation !== "/control/" ||
+              result.version !== undefined
+            ) throw new Error("Invalid control redirect.");
+            return reply.redirect(result.redirectLocation, 302);
+          }
+          if (result.redirectLocation !== undefined) {
+            throw new Error("Unexpected control redirect.");
+          }
           if (result.version !== undefined) {
             reply.header("etag", formatVersionEtag(result.version));
           }
@@ -463,8 +476,21 @@ function validateDefinition(definition: ControlRouteDefinition): void {
   if (definition.rawResponse && (!isPublic || definition.secretFields.length > 0)) {
     throw new Error("Invalid control raw response metadata.");
   }
+  if (
+    definition.redirectResponse &&
+    (
+      !isPublic ||
+      definition.method !== "GET" ||
+      successStatuses.length !== 1 ||
+      successStatuses[0] !== 302 ||
+      definition.rawResponse === true ||
+      definition.secretFields.length > 0
+    )
+  ) {
+    throw new Error("Invalid control redirect metadata.");
+  }
 }
 
 function isSupportedResponseStatus(status: number): boolean {
-  return (status >= 200 && status <= 299) || status === 503;
+  return (status >= 200 && status <= 299) || status === 302 || status === 503;
 }

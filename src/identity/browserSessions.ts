@@ -24,6 +24,7 @@ interface SessionRow {
   status: string;
   password_state: string;
   totp_state: string;
+  has_external_identity: number;
   security_epoch: number;
   global_security_epoch: number;
   issued_security_epoch: number;
@@ -64,6 +65,9 @@ export class BrowserSessionRepository {
           SELECT
             bs.id, bs.user_id, u.role, bs.role_class, u.status,
             a.password_state, a.totp_state,
+            EXISTS (
+              SELECT 1 FROM external_identities e WHERE e.user_id = u.id
+            ) AS has_external_identity,
             u.security_epoch,
             sec.global_security_epoch,
             bs.issued_security_epoch, bs.issued_global_epoch,
@@ -254,8 +258,10 @@ function sessionIsValid(
   if (
     row.revoked_at !== null ||
     row.status !== "active" ||
-    row.password_state !== "configured" ||
-    row.totp_state !== "configured" ||
+    !(
+      (row.password_state === "configured" && row.totp_state === "configured") ||
+      row.has_external_identity === 1
+    ) ||
     row.security_epoch !== row.issued_security_epoch ||
     row.global_security_epoch !== row.issued_global_epoch
     || row.role_class !== (row.role === "user" ? "user" : "admin")

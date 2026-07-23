@@ -6,6 +6,9 @@ import type { BrowserSessionAuthenticator } from "../identity/browserSessions.js
 import type { StepUpService } from "../identity/stepUp.js";
 import type { UserAdministrationService } from "../identity/userAdministration.js";
 import type { UserLifecycleAdministrationService } from "../identity/userLifecycleAdministration.js";
+import type { OidcFlowService } from "../identity/oidcFlow.js";
+import type { OidcLoginService } from "../identity/oidcLogin.js";
+import type { OidcProviderConfig } from "../types.js";
 import {
   EnrollmentError,
   type LocalEnrollmentService,
@@ -21,8 +24,11 @@ import {
 import {
   clearControlSessionCookie,
   clearControlEnrollmentCookie,
+  clearControlOidcFlowCookie,
   setControlEnrollmentCookie,
+  setControlOidcFlowCookie,
   setControlSessionCookie,
+  CONTROL_OIDC_FLOW_COOKIE,
 } from "./security.js";
 import { z } from "./zod.js";
 
@@ -36,6 +42,12 @@ export interface LocalIdentityControl {
   authenticator?: LocalControlAuthenticator;
   users?: UserAdministrationService;
   userLifecycle?: UserLifecycleAdministrationService;
+  oidc?: {
+    flow: OidcFlowService;
+    login: OidcLoginService;
+    providers: Record<string, OidcProviderConfig>;
+    flowTtlMs: number;
+  };
 }
 
 const roleSchema = z.enum(["superadmin", "admin", "user"]);
@@ -59,6 +71,7 @@ export function registerLocalIdentityRoutes(
       identity.restrictedSessions,
     );
   }
+  if (identity.oidc !== undefined) registerOidcLoginRoutes(registry, identity.oidc);
   registry.register(defineControlRoute({
     id: "identity.login",
     method: "POST",
@@ -260,6 +273,150 @@ export function registerLocalIdentityRoutes(
       } catch {
         throw new ControlContractError(503, "maintenance", "Authentication is unavailable.");
       }
+    },
+  }));
+}
+
+function registerOidcLoginRoutes(
+  registry: ControlRouteRegistry,
+  oidc: NonNullable<LocalIdentityControl["oidc"]>,
+): void {
+  registry.register(defineControlRoute({
+    id: "identity.oidc_providers",
+    method: "GET",
+    path: "/api/v2/auth/oidc/providers",
+    summary: "List configured external identity providers",
+    tags: ["Identity"],
+    authentication: "public",
+    permission: null,
+    stepUp: "none",
+    schemas: {
+      response: z.object({
+        providers: z.array(z.object({
+          id: z.string().regex(/^[a-z][a-z0-9_.-]{0,63}$/),
+          display_name: z.string().min(1).max(120),
+        }).strict()).max(8),
+      }).strict(),
+    },
+    rateLimit: "authentication",
+    secretFields: [],
+    cache: "no-store",
+    concurrency: "none",
+    idempotency: "none",
+    handler: async () => ({
+      data: {
+        providers: Object.values(oidc.providers)
+          .map((provider) => ({ id: provider.id, display_name: provider.displayName }))
+          .sort((left, right) => left.id.localeCompare(right.id)),
+      },
+    }),
+  }));
+
+  registry.register(defineControlRoute({
+    id: "identity.oidc_begin",
+    method: "POST",
+    path: "/api/v2/auth/oidc/{provider_id}/begin",
+    summary: "Begin external browser authentication",
+    tags: ["Identity"],
+    authentication: "public",
+    permission: null,
+    stepUp: "none",
+    schemas: {
+      body: z.object({}).strict(),
+      params: z.object({
+        provider_id: z.string().regex(/^[a-z][a-z0-9_.-]{0,63}$/),
+      }).strict(),
+      response: z.object({
+        authorization_url: z.string().url(),
+        expires_at: z.number().int().nonnegative(),
+      }).strict(),
+    },
+    rateLimit: "authentication",
+    secretFields: [],
+    cache: "no-store",
+    concurrency: "none",
+    idempotency: "none",
+    handler: async ({ params, reply }) => {
+      try {
+        const started = await oidc.flow.begin(params.provider_id, { purpose: "login" });
+        const state = new URL(started.authorizationUrl).searchParams.get("state");
+        if (state === null) throw new Error("missing OIDC state");
+        setControlOidcFlowCookie(
+          reply,
+          state,
+          Math.max(1, Math.ceil(oidc.flowTtlMs / 1_000)),
+        );
+        return {
+          data: {
+            authorization_url: started.authorizationUrl,
+            expires_at: started.expiresAt,
+          },
+        };
+      } catch {
+        throw new ControlContractError(401, "unauthenticated", "Authentication failed.");
+      }
+    },
+  }));
+
+  registry.register(defineControlRoute({
+    id: "identity.oidc_callback",
+    method: "GET",
+    path: "/api/v2/auth/oidc/{provider_id}/callback",
+    summary: "Complete external browser authentication",
+    tags: ["Identity"],
+    authentication: "public",
+    permission: null,
+    stepUp: "none",
+    schemas: {
+      query: z.object({}).passthrough(),
+      params: z.object({
+        provider_id: z.string().min(1).max(256),
+      }).strict(),
+      response: z.null(),
+    },
+    rateLimit: "authentication",
+    secretFields: [],
+    cache: "no-store",
+    concurrency: "none",
+    idempotency: "none",
+    redirectResponse: true,
+    successStatuses: [302],
+    handler: async ({ params, query, request, reply }) => {
+      try {
+        const state = query.state;
+        const code = query.code;
+        if (
+          typeof state !== "string" ||
+          !/^[A-Za-z0-9_-]{43}$/.test(state) ||
+          typeof code !== "string" ||
+          code.length < 1 ||
+          Buffer.byteLength(code, "utf8") > 4_096 ||
+          /[\u0000\r\n]/.test(code) ||
+          Object.keys(query).sort().join(",") !== "code,state" ||
+          request.cookies[CONTROL_OIDC_FLOW_COOKIE] !== state
+        ) {
+          await oidc.flow.deny(request.id);
+          throw new Error("OIDC browser binding mismatch");
+        }
+        const completed = await oidc.flow.callback(
+          params.provider_id,
+          state,
+          code,
+          request.id,
+        );
+        if (completed.binding.purpose !== "login") throw new Error("OIDC purpose mismatch");
+        const login = await oidc.login.login(completed.assertion, request.id);
+        setControlSessionCookie(
+          reply,
+          login.sessionToken,
+          Math.max(1, Math.floor((login.absoluteExpiresAt - login.issuedAt) / 1_000)),
+        );
+      } catch {
+        // The browser observes the same fixed redirect for every callback outcome.
+      } finally {
+        clearControlOidcFlowCookie(reply);
+      }
+      return { data: null, statusCode: 302, redirectLocation: "/control/" };
     },
   }));
 }

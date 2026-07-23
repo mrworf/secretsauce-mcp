@@ -328,6 +328,12 @@ h1 {
   border-radius: 1rem;
 }
 
+.signin-actions {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
 .section-toolbar,
 .button-row,
 .label-row {

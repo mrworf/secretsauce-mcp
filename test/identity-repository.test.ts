@@ -48,6 +48,17 @@ describe("transactional identity repository", () => {
       totpState: "not_configured",
       version: 1,
     });
+    await worker.execute({
+      run: (database) => database.withOperationalTransaction((transaction) => {
+        transaction.run(`
+          UPDATE users
+          SET email_source = 'oidc:workforce',
+              given_name_source = 'oidc:workforce',
+              family_name_source = 'oidc:workforce'
+          WHERE id = ?
+        `, [created.id]);
+      }),
+    });
 
     const updated = await identities.updateProfile(created.id, 1, {
       email: "renamed@example.org",
@@ -60,6 +71,20 @@ describe("transactional identity repository", () => {
       securityEpoch: 2,
       version: 2,
       mcpEligible: false,
+    });
+    await expect(worker.execute({
+      run: (database) => database.read((query) => query.get<{
+        email_source: string;
+        given_name_source: string;
+        family_name_source: string;
+      }>(`
+        SELECT email_source, given_name_source, family_name_source
+        FROM users WHERE id = ?
+      `, [created.id])),
+    })).resolves.toEqual({
+      email_source: "local",
+      given_name_source: "local",
+      family_name_source: "local",
     });
 
     await worker.close();

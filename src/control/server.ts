@@ -48,6 +48,15 @@ import {
   UserLifecycleAdministrationService,
 } from "../identity/userLifecycleAdministration.js";
 import {
+  OidcFlowRepository,
+  OidcFlowService,
+} from "../identity/oidcFlow.js";
+import { OidcTrustClient } from "../identity/oidcTrust.js";
+import {
+  OidcLoginRepository,
+  OidcLoginService,
+} from "../identity/oidcLogin.js";
+import {
   denyControlAuthentication,
   controlAuthentication,
   type ControlAuthenticator,
@@ -237,6 +246,8 @@ export async function startControlServer(
   let enrollment: LocalEnrollmentService | undefined;
   let restrictedSessions: RestrictedSessionAuthenticator | undefined;
   let userAdministration: UserAdministrationService | undefined;
+  let oidcFlow: OidcFlowService | undefined;
+  let oidcLogin: OidcLoginService | undefined;
   let identityKeyRing: IdentityKeyRing | undefined;
   try {
     let localIdentity: LocalIdentityControl | undefined;
@@ -295,6 +306,21 @@ export async function startControlServer(
           config.identity,
           denyUserRelationships,
         );
+        if (config.identity.oidc !== undefined) {
+          const oidcTrust = new OidcTrustClient(config.identity.oidc);
+          oidcFlow = new OidcFlowService(
+            new OidcFlowRepository(persistence),
+            oidcTrust,
+            identityKeyRing,
+            config.identity.oidc,
+            sessionKey,
+          );
+          oidcLogin = new OidcLoginService(
+            new OidcLoginRepository(persistence),
+            config.identity,
+            sessionKey,
+          );
+        }
         localIdentity = {
           authentication: localAuthentication,
           browserSessions,
@@ -308,6 +334,16 @@ export async function startControlServer(
           authenticator: new LocalControlAuthenticator(browserSessions, restrictedSessions),
           users: userAdministration,
           userLifecycle,
+          ...(oidcFlow === undefined || oidcLogin === undefined || config.identity.oidc === undefined
+            ? {}
+            : {
+                oidc: {
+                  flow: oidcFlow,
+                  login: oidcLogin,
+                  providers: config.identity.oidc.providers,
+                  flowTtlMs: config.identity.oidc.flowTtlMs,
+                },
+              }),
         };
       } finally {
         sessionKey.fill(0);
@@ -333,6 +369,8 @@ export async function startControlServer(
     restrictedSessions?.close();
     enrollment?.close();
     userAdministration?.close();
+    oidcFlow?.close();
+    oidcLogin?.close();
     localAuthentication?.close();
     identityKeyRing?.destroy();
     await persistence.close();
@@ -353,6 +391,8 @@ export async function startControlServer(
         restrictedSessions?.close();
         enrollment?.close();
         userAdministration?.close();
+        oidcFlow?.close();
+        oidcLogin?.close();
         localAuthentication?.close();
         identityKeyRing?.destroy();
         await persistence.close();

@@ -30,10 +30,10 @@ milestones:
   - id: "04"
     title: "Identity Bootstrap"
     file: "docs/milestones/04-identity-bootstrap.md"
-    status: "pending"
+    status: "in_progress"
     completed_at: null
     commit_hash: null
-    notes: ""
+    notes: "Decision-complete implementation plan: docs/plans/milestone-04-identity-bootstrap.md"
   - id: "05"
     title: "Local Authentication, Sessions, And Step-Up"
     file: "docs/milestones/05-local-auth-sessions-step-up.md"

@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { validateConfig } from "../src/config.js";
 import { GatewayError } from "../src/errors.js";
-import { evaluatePolicy } from "../src/policy.js";
+import {
+  evaluatePolicy,
+  evaluatePolicySnapshot,
+  type PolicyBoundarySnapshot,
+} from "../src/policy.js";
+import {
+  normalizeManagedPolicyMatchers,
+  PolicyMatcherError,
+} from "../src/policyMatchers.js";
 import { getService, resolveDestination } from "../src/registry.js";
 import type { AuthContext, GatewayConfig } from "../src/types.js";
 
@@ -83,7 +91,154 @@ describe("policy engine", () => {
 
     expect(() => validateConfig(raw, policyEnv())).toThrow(GatewayError);
   });
+
+  it("requires the service and every credential boundary to allow", () => {
+    const service = boundary("service", "service", "allow", [
+      rule("service-allow", "allow", 100, { kind: "all" }),
+    ]);
+    const firstCredential = boundary("credential-one", "credential", "deny", [
+      rule("group-allow", "allow", 50, {
+        kind: "groups",
+        groupIds: ["group-one"],
+      }),
+    ]);
+    const secondCredential = boundary("credential-two", "credential", "allow", [
+      rule("direct-deny", "deny", 50, {
+        kind: "users",
+        userIds: ["user-one"],
+      }),
+    ]);
+
+    const explanation = evaluatePolicySnapshot({
+      subjectId: "user-one",
+      groupIds: ["group-two", "group-one", "group-one"],
+      method: "get",
+      host: "API.EXAMPLE.ORG.",
+      pathname: "/v1/items",
+      service,
+      credentials: [firstCredential, secondCredential],
+    });
+
+    expect(explanation).toMatchObject({
+      allowed: false,
+      groupIds: ["group-one", "group-two"],
+      canonicalTarget: {
+        method: "GET",
+        host: "api.example.org",
+        pathname: "/v1/items",
+      },
+      reasonCode: "boundary_denied",
+    });
+    expect(explanation.boundaries.map(({ allowed }) => allowed)).toEqual([
+      true,
+      true,
+      false,
+    ]);
+  });
+
+  it("explains disabled, inapplicable, lower-priority, and deny-tie rules", () => {
+    const policy = boundary("service", "service", "allow", [
+      { ...rule("disabled", "deny", 1000, { kind: "all" }), enabled: false },
+      rule("other-user", "deny", 900, {
+        kind: "users",
+        userIds: ["user-two"],
+      }),
+      rule("lower", "allow", 10, { kind: "all" }),
+      rule("selected-allow", "allow", 20, { kind: "all" }),
+      rule("selected-deny", "deny", 20, { kind: "all" }),
+    ]);
+    const explanation = evaluatePolicySnapshot({
+      subjectId: "user-one",
+      groupIds: [],
+      method: "GET",
+      host: "api.example.org",
+      pathname: "/v1/items",
+      service: policy,
+      credentials: [],
+    }).boundaries[0]!;
+
+    expect(explanation).toMatchObject({
+      allowed: false,
+      selectedPriority: 20,
+      selectedRuleIds: ["selected-allow", "selected-deny"],
+      decisiveRuleId: "selected-deny",
+      reasonCode: "deny_tie",
+    });
+    expect(Object.fromEntries(explanation.rules.map((entry) => [
+      entry.ruleId,
+      entry.reasonCode,
+    ]))).toEqual({
+      disabled: "disabled",
+      "other-user": "principal_not_applicable",
+      lower: "matched_lower_priority",
+      "selected-allow": "selected_allow",
+      "selected-deny": "selected_deny",
+    });
+  });
+
+  it("normalizes managed matchers and rejects routing ambiguity or nonlinear regex", () => {
+    expect(normalizeManagedPolicyMatchers({
+      methods: ["post", "GET"],
+      hosts: [
+        { kind: "suffix", value: ".Example.ORG." },
+        { kind: "regex", value: "^api[0-9]+\\.example\\.org$" },
+      ],
+      paths: [
+        { kind: "prefix", value: "/v1/items" },
+        { kind: "regex", value: "^/v1/items/[A-Za-z0-9-]+$" },
+      ],
+    })).toEqual({
+      methods: ["GET", "POST"],
+      hosts: [
+        { kind: "regex", value: "^api[0-9]+\\.example\\.org$" },
+        { kind: "suffix", value: "example.org" },
+      ],
+      paths: [
+        { kind: "prefix", value: "/v1/items" },
+        { kind: "regex", value: "^/v1/items/[A-Za-z0-9-]+$" },
+      ],
+    });
+
+    for (const paths of [
+      [{ kind: "exact", value: "/v1/%2Fadmin" }],
+      [{ kind: "exact", value: "/v1/%61dmin" }],
+      [{ kind: "regex", value: "^/(a+)+$" }],
+    ]) {
+      expect(() => normalizeManagedPolicyMatchers({
+        methods: [],
+        hosts: [],
+        paths: paths as never,
+      })).toThrow(PolicyMatcherError);
+    }
+  });
 });
+
+function boundary(
+  id: string,
+  kind: "service" | "credential",
+  mode: "allow" | "deny",
+  rules: PolicyBoundarySnapshot["rules"],
+): PolicyBoundarySnapshot {
+  return { id, kind, mode, assignmentAllowed: true, rules };
+}
+
+function rule(
+  id: string,
+  effect: "allow" | "deny",
+  priority: number,
+  selector: PolicyBoundarySnapshot["rules"][number]["selector"],
+): PolicyBoundarySnapshot["rules"][number] {
+  return {
+    id,
+    effect,
+    priority,
+    enabled: true,
+    methods: ["GET"],
+    hosts: [{ kind: "suffix", value: "example.org" }],
+    paths: [{ kind: "prefix", value: "/v1" }],
+    selector,
+  };
+}
 
 function policyContext(config: GatewayConfig) {
   const actor = auth();

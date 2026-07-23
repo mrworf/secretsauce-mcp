@@ -1046,6 +1046,185 @@ CREATE INDEX credential_vault_operations_phase_idx
   ON credential_vault_operations (phase, updated_at, credential_id);
 `;
 
+const migration0011 = `
+CREATE TABLE policies (
+  id TEXT PRIMARY KEY CHECK (
+    length(id) = 36 AND id = lower(id)
+    AND substr(id, 15, 1) = '7'
+    AND substr(id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND id NOT GLOB '*[^0-9a-f-]*'
+  ),
+  service_id TEXT NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+  credential_id TEXT,
+  name TEXT NOT NULL CHECK (length(name) BETWEEN 1 AND 120),
+  normalized_name TEXT NOT NULL CHECK (
+    length(normalized_name) BETWEEN 1 AND 120
+    AND normalized_name = lower(normalized_name)
+  ),
+  description TEXT CHECK (
+    description IS NULL OR length(description) BETWEEN 1 AND 1024
+  ),
+  operating_mode TEXT NOT NULL DEFAULT 'deny'
+    CHECK (operating_mode IN ('allow', 'deny')),
+  lifecycle TEXT NOT NULL DEFAULT 'active'
+    CHECK (lifecycle IN ('active', 'archived')),
+  evaluation_generation INTEGER NOT NULL DEFAULT 0
+    CHECK (evaluation_generation >= 0),
+  version INTEGER NOT NULL DEFAULT 1 CHECK (version > 0),
+  created_at INTEGER NOT NULL CHECK (created_at >= 0),
+  updated_at INTEGER NOT NULL CHECK (updated_at >= created_at),
+  UNIQUE (service_id, id),
+  UNIQUE (service_id, credential_id, normalized_name),
+  FOREIGN KEY (service_id, credential_id)
+    REFERENCES service_credentials(service_id, id) ON DELETE CASCADE
+) STRICT;
+
+CREATE UNIQUE INDEX policies_active_service_boundary_idx
+  ON policies (service_id)
+  WHERE credential_id IS NULL AND lifecycle = 'active';
+CREATE UNIQUE INDEX policies_active_credential_boundary_idx
+  ON policies (credential_id)
+  WHERE credential_id IS NOT NULL AND lifecycle = 'active';
+CREATE INDEX policies_service_idx
+  ON policies (service_id, lifecycle, credential_id, normalized_name, id);
+
+CREATE TABLE policy_rules (
+  id TEXT PRIMARY KEY CHECK (
+    length(id) = 36 AND id = lower(id)
+    AND substr(id, 15, 1) = '7'
+    AND substr(id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND id NOT GLOB '*[^0-9a-f-]*'
+  ),
+  service_id TEXT NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+  policy_id TEXT NOT NULL,
+  name TEXT NOT NULL CHECK (length(name) BETWEEN 1 AND 120),
+  normalized_name TEXT NOT NULL CHECK (
+    length(normalized_name) BETWEEN 1 AND 120
+    AND normalized_name = lower(normalized_name)
+  ),
+  reason TEXT CHECK (reason IS NULL OR length(reason) BETWEEN 1 AND 1024),
+  effect TEXT NOT NULL CHECK (effect IN ('allow', 'deny')),
+  priority INTEGER NOT NULL CHECK (
+    priority BETWEEN -1000000000 AND 1000000000
+  ),
+  enabled INTEGER NOT NULL DEFAULT 1 CHECK (enabled IN (0, 1)),
+  methods_json TEXT NOT NULL CHECK (
+    length(methods_json) BETWEEN 2 AND 4096 AND json_valid(methods_json)
+  ),
+  hosts_json TEXT NOT NULL CHECK (
+    length(hosts_json) BETWEEN 2 AND 32768 AND json_valid(hosts_json)
+  ),
+  paths_json TEXT NOT NULL CHECK (
+    length(paths_json) BETWEEN 2 AND 65536 AND json_valid(paths_json)
+  ),
+  response_safeguards_json TEXT NOT NULL CHECK (
+    length(response_safeguards_json) BETWEEN 2 AND 4096
+    AND json_valid(response_safeguards_json)
+  ),
+  version INTEGER NOT NULL DEFAULT 1 CHECK (version > 0),
+  created_at INTEGER NOT NULL CHECK (created_at >= 0),
+  updated_at INTEGER NOT NULL CHECK (updated_at >= created_at),
+  UNIQUE (service_id, policy_id, normalized_name),
+  UNIQUE (service_id, policy_id, id),
+  FOREIGN KEY (service_id, policy_id)
+    REFERENCES policies(service_id, id) ON DELETE CASCADE
+) STRICT;
+
+CREATE INDEX policy_rules_evaluation_idx
+  ON policy_rules (
+    service_id, policy_id, enabled, priority DESC, effect DESC, id
+  );
+
+CREATE TABLE policy_rule_principal_assignments (
+  id TEXT PRIMARY KEY CHECK (
+    length(id) = 36 AND id = lower(id)
+    AND substr(id, 15, 1) = '7'
+    AND substr(id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND id NOT GLOB '*[^0-9a-f-]*'
+  ),
+  service_id TEXT NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+  policy_id TEXT NOT NULL,
+  rule_id TEXT NOT NULL,
+  selector_kind TEXT NOT NULL CHECK (
+    selector_kind IN ('all', 'group', 'user')
+  ),
+  group_id TEXT,
+  user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
+  assigned_by_user_id TEXT NOT NULL,
+  created_at INTEGER NOT NULL CHECK (created_at >= 0),
+  CHECK (
+    (selector_kind = 'all' AND group_id IS NULL AND user_id IS NULL)
+    OR (selector_kind = 'group' AND group_id IS NOT NULL AND user_id IS NULL)
+    OR (selector_kind = 'user' AND group_id IS NULL AND user_id IS NOT NULL)
+  ),
+  FOREIGN KEY (service_id, policy_id, rule_id)
+    REFERENCES policy_rules(service_id, policy_id, id) ON DELETE CASCADE,
+  FOREIGN KEY (service_id, group_id)
+    REFERENCES service_groups(service_id, id) ON DELETE CASCADE
+) STRICT;
+
+CREATE UNIQUE INDEX policy_rule_assignment_all_idx
+  ON policy_rule_principal_assignments (rule_id)
+  WHERE selector_kind = 'all';
+CREATE UNIQUE INDEX policy_rule_assignment_group_idx
+  ON policy_rule_principal_assignments (rule_id, group_id)
+  WHERE selector_kind = 'group';
+CREATE UNIQUE INDEX policy_rule_assignment_user_idx
+  ON policy_rule_principal_assignments (rule_id, user_id)
+  WHERE selector_kind = 'user';
+CREATE INDEX policy_rule_assignments_service_idx
+  ON policy_rule_principal_assignments (
+    service_id, policy_id, rule_id, selector_kind, id
+  );
+CREATE INDEX policy_rule_assignments_user_idx
+  ON policy_rule_principal_assignments (user_id, service_id, policy_id, rule_id)
+  WHERE user_id IS NOT NULL;
+
+CREATE TABLE policy_invalidation_events (
+  id TEXT PRIMARY KEY CHECK (
+    length(id) = 36 AND id = lower(id)
+    AND substr(id, 15, 1) = '7'
+    AND substr(id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND id NOT GLOB '*[^0-9a-f-]*'
+  ),
+  service_id TEXT NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+  policy_id TEXT NOT NULL,
+  rule_id TEXT,
+  affected_user_id TEXT,
+  evaluation_generation INTEGER NOT NULL
+    CHECK (evaluation_generation > 0),
+  reason TEXT NOT NULL CHECK (
+    reason IN (
+      'policy', 'rule', 'selector', 'archive', 'delete', 'copy'
+    )
+  ),
+  created_at INTEGER NOT NULL CHECK (created_at >= 0),
+  dispatched_at INTEGER CHECK (
+    dispatched_at IS NULL OR dispatched_at >= created_at
+  ),
+  attempts INTEGER NOT NULL DEFAULT 0 CHECK (attempts >= 0),
+  FOREIGN KEY (service_id, policy_id)
+    REFERENCES policies(service_id, id) ON DELETE CASCADE,
+  CHECK (
+    length(rule_id) IS NULL OR (
+      length(rule_id) = 36 AND rule_id = lower(rule_id)
+    )
+  ),
+  CHECK (
+    affected_user_id IS NULL OR (
+      length(affected_user_id) = 36 AND affected_user_id = lower(affected_user_id)
+    )
+  )
+) STRICT;
+
+CREATE INDEX policy_invalidation_events_dispatch_idx
+  ON policy_invalidation_events (dispatched_at, created_at, id);
+CREATE INDEX policy_invalidation_events_service_idx
+  ON policy_invalidation_events (
+    service_id, policy_id, evaluation_generation, affected_user_id, id
+  );
+`;
+
 export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [
   {
     version: 1,
@@ -1096,6 +1275,11 @@ export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [
     version: 10,
     name: "credential_management",
     sql: migration0010,
+  },
+  {
+    version: 11,
+    name: "policy_management_explanation",
+    sql: migration0011,
   },
 ];
 

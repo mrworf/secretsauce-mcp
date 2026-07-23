@@ -9,7 +9,7 @@ milestones:
   - id: "01"
     title: "Persistence And Audit Foundation"
     file: "docs/milestones/01-persistence-audit-foundation.md"
-    status: "pending"
+    status: "in_progress"
     completed_at: null
     commit_hash: null
     notes: ""

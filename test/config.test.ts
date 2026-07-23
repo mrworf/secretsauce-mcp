@@ -86,6 +86,33 @@ describe("config validation", () => {
     expect(config.logging.level).toBe("debug");
   });
 
+  it("accepts an optional durable persistence database path", () => {
+    const omitted = validateConfig(validRaw(), validEnv);
+    expect(omitted.persistence).toBeUndefined();
+
+    const raw = validRaw();
+    raw.persistence = { database_file: "/var/lib/secretsauce/control.sqlite" };
+    expect(validateConfig(raw, validEnv).persistence).toEqual({
+      databaseFile: "/var/lib/secretsauce/control.sqlite",
+    });
+  });
+
+  it("rejects unsafe or malformed persistence configuration", () => {
+    for (const persistence of [
+      { database_file: "" },
+      { database_file: "   " },
+      { database_file: ":memory:" },
+      { database_file: "file:control.sqlite" },
+      { database_file: "control\0.sqlite" },
+      { database_file: "control.sqlite", unexpected: true },
+      { unexpected: "control.sqlite" },
+    ]) {
+      const raw = validRaw();
+      raw.persistence = persistence;
+      expectConfigError(() => validateConfig(raw, validEnv), "Invalid config");
+    }
+  });
+
   it("defaults usage enforcement off and accepts sanitized header reference templates", () => {
     const raw = validRaw();
     raw.services["portainer-prod"].credentials[0].usage = {

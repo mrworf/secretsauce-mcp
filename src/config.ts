@@ -18,6 +18,7 @@ import type {
   LoggingConfig,
   PolicyConfig,
   PolicyRuleConfig,
+  PersistenceConfig,
   ServiceConfig,
   ServerConfig,
   TlsConfig,
@@ -218,6 +219,11 @@ const rawConfigSchema = z.object({
     file: z.string().min(1).optional(),
     memory_events: z.number().int().positive().default(1000),
   }).default({ memory_events: 1000 }),
+  persistence: z.object({
+    database_file: z.string().trim().min(1).max(4096)
+      .refine((value) => !value.includes("\0"), "database_file must not contain NUL")
+      .refine((value) => value !== ":memory:" && !value.startsWith("file:"), "database_file must be a filesystem path"),
+  }).strict().optional(),
   services: z.record(z.string().min(1), serviceSchema)
     .refine((services) => Object.keys(services).length > 0, "at least one service is required"),
 }).strict();
@@ -244,10 +250,24 @@ export function validateConfig(raw: unknown, env: NodeJS.ProcessEnv = process.en
     memoryEvents: parsed.audit.memory_events,
     ...(parsed.audit.file === undefined ? {} : { file: parsed.audit.file }),
   };
+  const persistence: PersistenceConfig | undefined = parsed.persistence === undefined
+    ? undefined
+    : { databaseFile: parsed.persistence.database_file };
   appendPublicOAuthWarnings(server, auth, warnings);
   const services = normalizeServices(parsed.services, env, warnings, debugDiagnostics);
 
-  return { server, auth, tokens, limits, logging, audit, services, warnings, debugDiagnostics };
+  return {
+    server,
+    auth,
+    tokens,
+    limits,
+    logging,
+    audit,
+    ...(persistence === undefined ? {} : { persistence }),
+    services,
+    warnings,
+    debugDiagnostics,
+  };
 }
 
 function parseRawConfig(raw: unknown): RawConfig {

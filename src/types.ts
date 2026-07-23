@@ -5,6 +5,7 @@ export interface GatewayConfig {
   limits: LimitsConfig;
   logging: LoggingConfig;
   audit: AuditConfig;
+  persistence?: PersistenceConfig;
   services: Record<string, ServiceConfig>;
   warnings: string[];
   debugDiagnostics: ConfigDebugDiagnostic[];
@@ -119,6 +120,10 @@ export interface LoggingConfig {
 export interface AuditConfig {
   file?: string;
   memoryEvents: number;
+}
+
+export interface PersistenceConfig {
+  databaseFile: string;
 }
 
 export interface ServiceConfig {

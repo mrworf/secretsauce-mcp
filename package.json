@@ -17,14 +17,19 @@
     "@secretlint/core": "^13.0.2",
     "@secretlint/secretlint-rule-pattern": "^13.0.2",
     "@secretlint/secretlint-rule-preset-recommend": "^13.0.2",
+    "better-sqlite3": "12.10.0",
     "jose": "^6.1.0",
     "jsonc-parser": "^3.3.1",
     "yaml": "^2.8.1",
     "zod": "^4.1.12"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "7.6.13",
     "@types/node": "^22.10.2",
     "typescript": "^5.7.2",
     "vitest": "^3.2.6"
+  },
+  "allowScripts": {
+    "better-sqlite3@12.10.0": true
   }
 }

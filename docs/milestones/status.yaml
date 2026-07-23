@@ -37,10 +37,10 @@ milestones:
   - id: "05"
     title: "Local Authentication, Sessions, And Step-Up"
     file: "docs/milestones/05-local-auth-sessions-step-up.md"
-    status: "pending"
+    status: "in_progress"
     completed_at: null
     commit_hash: null
-    notes: ""
+    notes: "Decision-complete implementation plan: docs/plans/milestone-05-local-auth-sessions-step-up.md"
   - id: "06"
     title: "Enrollment, Recovery, And Self-Service"
     file: "docs/milestones/06-enrollment-recovery-self-service.md"

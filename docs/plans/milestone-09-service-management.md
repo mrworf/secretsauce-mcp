@@ -106,8 +106,10 @@ Destination slugs use the service-slug grammar. Base URLs:
 Schemes are unique and must contain the base scheme. Ports are unique and must
 contain the base port. One to 32 host matchers are required. Exact and suffix
 hosts normalize through IDNA; suffixes cannot be IP literals. Regexes are
-bounded, compile successfully, and reject known match-all/broad forms rather
-than merely warning. The base host must match at least one matcher.
+bounded, fully anchored, and limited to a linear-time host-pattern subset
+without groups, alternation, wildcards, backreferences, or lookarounds. They
+also compile successfully and reject known match-all/broad forms rather than
+merely warning. The base host must match at least one matcher.
 
 `tls.verify: false` remains supported and produces a safe publication warning;
 it is not silently changed. Private and loopback destinations remain valid

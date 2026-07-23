@@ -18,7 +18,7 @@ export interface ServiceProfileInput {
 export interface ServiceDestinationInput {
   slug: string;
   baseUrl: string;
-  schemes: string[];
+  schemes: Array<"http" | "https">;
   hosts: Array<
     | { type: "exact"; value: string }
     | { type: "suffix"; value: string }
@@ -79,7 +79,7 @@ export function normalizeServiceDestination(
   if (!SERVICE_SLUG.test(slug)) invalid();
   const baseUrl = canonicalBaseUrl(input.baseUrl);
   const parsed = new URL(baseUrl);
-  const baseScheme = parsed.protocol.slice(0, -1);
+  const baseScheme = parsed.protocol.slice(0, -1) as "http" | "https";
   const schemes = uniqueSorted(input.schemes, (value) => {
     if (value !== "http" && value !== "https") unsafe();
     return value;
@@ -214,7 +214,7 @@ function normalizeMatcher(
     return { type: "suffix", value: normalized };
   }
   if (matcher.type === "regex") {
-    if ([".*", "^.*$", ".+", "^.+$"].includes(value)) unsafe();
+    assertSafeHostRegex(value);
     try {
       new RegExp(value);
     } catch {
@@ -223,6 +223,48 @@ function normalizeMatcher(
     return { type: "regex", value };
   }
   invalid();
+}
+
+function assertSafeHostRegex(value: string): void {
+  if (!value.startsWith("^") || !value.endsWith("$") || value.length < 3) unsafe();
+  const expression = value.slice(1, -1);
+  let previousWasAtom = false;
+  let previousWasQuantifier = false;
+  for (let index = 0; index < expression.length; index += 1) {
+    const character = expression[index]!;
+    if (character === "\\") {
+      const escaped = expression[index + 1];
+      if (escaped !== "." && escaped !== "-") unsafe();
+      index += 1;
+      previousWasAtom = true;
+      previousWasQuantifier = false;
+      continue;
+    }
+    if (character === "[") {
+      const end = expression.indexOf("]", index + 1);
+      if (end < 0) unsafe();
+      const characterClass = expression.slice(index + 1, end);
+      if (
+        characterClass.length < 1 ||
+        characterClass.length > 64 ||
+        !/^[A-Za-z0-9-]+$/.test(characterClass)
+      ) unsafe();
+      index = end;
+      previousWasAtom = true;
+      previousWasQuantifier = false;
+      continue;
+    }
+    if (character === "+" || character === "*" || character === "?") {
+      if (!previousWasAtom || previousWasQuantifier) unsafe();
+      previousWasAtom = false;
+      previousWasQuantifier = true;
+      continue;
+    }
+    if (!/^[A-Za-z0-9-]$/.test(character)) unsafe();
+    previousWasAtom = true;
+    previousWasQuantifier = false;
+  }
+  if (!previousWasAtom && !previousWasQuantifier) unsafe();
 }
 
 function normalizeDnsOrIp(input: string): string {

@@ -11,6 +11,7 @@ import { ControlIdempotencyHasher } from "../src/control/idempotency.js";
 import { createControlApplication } from "../src/control/server.js";
 import { IdentityRepository, type IdentityAuditContext } from "../src/identity/repository.js";
 import { PersistenceWorker } from "../src/persistence/worker.js";
+import { UuidV7Generator } from "../src/persistence/uuidV7.js";
 import {
   ServiceManagementAuthorization,
   ServiceManagementError,
@@ -72,6 +73,14 @@ describe("durable service ownership", () => {
       { ...inputDestination(), baseUrl: "https://api.example.org/%41dmin/" },
       { ...inputDestination(), schemes: ["http"] },
       { ...inputDestination(), hosts: [{ type: "regex" as const, value: ".*" }] },
+      {
+        ...inputDestination(),
+        hosts: [{ type: "regex" as const, value: "^(a+)+\\.example\\.org$" }],
+      },
+      {
+        ...inputDestination(),
+        hosts: [{ type: "regex" as const, value: "api\\.example\\.org" }],
+      },
       { ...inputDestination(), hosts: [{ type: "suffix" as const, value: "127.0.0.1" }] },
       { ...inputDestination(), ports: [8443] },
     ]) {
@@ -173,6 +182,314 @@ describe("durable service ownership", () => {
       .rejects.toEqual(new ServiceManagementError("not_found"));
     await expect(fixture.service.list(browser(admin.id, "admin"), {}))
       .resolves.toMatchObject({ services: [] });
+    await expect(fixture.service.validate(
+      fixture.superadmin,
+      created.id,
+      CORRELATION,
+    )).resolves.toMatchObject({
+      valid: false,
+      issues: expect.arrayContaining([{ code: "service_admin_required", pointer: "/admins" }]),
+    });
+  });
+
+  it("edits canonical destination drafts and previews closed validation outcomes", async () => {
+    const fixture = await serviceFixture("drafts");
+    const created = await fixture.create("draft-api", "Draft API");
+    const initial = await fixture.service.validate(
+      fixture.superadmin,
+      created.id,
+      CORRELATION,
+    );
+    expect(initial).toMatchObject({
+      valid: false,
+      issues: [
+        { code: "service_admin_required", pointer: "/admins" },
+        { code: "destination_required", pointer: "/destinations" },
+      ],
+    });
+    const admin = await fixture.identity("draft-admin@example.org", "admin", "active");
+    const assigned = await fixture.service.assign(
+      fixture.superadmin,
+      created.id,
+      admin.id,
+      created.version,
+      false,
+      CORRELATION,
+    );
+    const withDestination = await fixture.service.createDestination(
+      browser(admin.id, "admin"),
+      created.id,
+      assigned.version,
+      { ...inputDestination(), tlsVerify: false },
+      CORRELATION,
+    );
+    expect(withDestination).toMatchObject({
+      version: 3,
+      destinationCount: 1,
+      destinations: [{
+        slug: "primary",
+        tlsVerify: false,
+        baseUrl: "https://api.example.org/",
+      }],
+    });
+    await expect(fixture.service.validate(
+      browser(admin.id, "admin"),
+      created.id,
+      CORRELATION,
+    )).resolves.toMatchObject({
+      valid: true,
+      issues: [],
+      warnings: [{
+        code: "tls_verification_disabled",
+        pointer: "/destinations/0/tls_verify",
+      }],
+    });
+
+    const profiled = await fixture.service.updateProfile(
+      browser(admin.id, "admin"),
+      created.id,
+      withDestination.version,
+      {
+        name: "Edited API",
+        description: "Canonical draft",
+        documentationUrl: "https://docs.example.org/",
+      },
+      CORRELATION,
+    );
+    expect(profiled).toMatchObject({
+      name: "Edited API",
+      description: "Canonical draft",
+      documentationUrl: "https://docs.example.org/",
+      version: 4,
+    });
+    const partial = await fixture.service.updateProfile(
+      browser(admin.id, "admin"),
+      created.id,
+      profiled.version,
+      { name: "Edited API v2" },
+      CORRELATION,
+    );
+    expect(partial).toMatchObject({
+      name: "Edited API v2",
+      description: "Canonical draft",
+      documentationUrl: "https://docs.example.org/",
+      version: 5,
+    });
+    const destinationId = profiled.destinations[0]!.id;
+    const updated = await fixture.service.updateDestination(
+      browser(admin.id, "admin"),
+      created.id,
+      destinationId,
+      partial.version,
+      {
+        baseUrl: "https://api.example.org/v2/",
+        schemes: ["https"],
+        hosts: [{ type: "regex", value: "^api\\.example\\.org$" }],
+        ports: [443],
+        tlsVerify: true,
+      },
+      CORRELATION,
+    );
+    expect(updated).toMatchObject({
+      version: 6,
+      destinations: [{
+        id: destinationId,
+        slug: "primary",
+        baseUrl: "https://api.example.org/v2/",
+        tlsVerify: true,
+        version: 2,
+      }],
+    });
+    await expect(fixture.service.updateProfile(
+      browser(admin.id, "admin"),
+      created.id,
+      profiled.version,
+      { name: "Stale" },
+      CORRELATION,
+    )).rejects.toEqual(new ServiceManagementError("stale"));
+    await expect(fixture.service.updateDestination(
+      browser(admin.id, "admin"),
+      created.id,
+      destinationId,
+      updated.version,
+      {
+        ...inputDestination(),
+        baseUrl: "https://api.example.org/%2fescape/",
+      },
+      CORRELATION,
+    )).rejects.toEqual(new ServiceManagementError("invalid_request"));
+
+    const empty = await fixture.service.deleteDestination(
+      browser(admin.id, "admin"),
+      created.id,
+      destinationId,
+      updated.version,
+      CORRELATION,
+    );
+    expect(empty).toMatchObject({ version: 7, destinationCount: 0, destinations: [] });
+    await expect(fixture.service.validate(
+      browser(admin.id, "admin"),
+      created.id,
+      CORRELATION,
+    )).resolves.toMatchObject({
+      valid: false,
+      issues: [{ code: "destination_required" }],
+    });
+  });
+
+  it("publishes immutable snapshots with atomic invalidation and audit rollback", async () => {
+    const fixture = await serviceFixture("publish");
+    const created = await fixture.create("published-api", "Published API");
+    const admin = await fixture.identity("publisher@example.org", "admin", "active");
+    const assigned = await fixture.service.assign(
+      fixture.superadmin,
+      created.id,
+      admin.id,
+      created.version,
+      false,
+      CORRELATION,
+    );
+    const drafted = await fixture.service.createDestination(
+      browser(admin.id, "admin"),
+      created.id,
+      assigned.version,
+      inputDestination(),
+      CORRELATION,
+    );
+    const unassigned = await fixture.identity("unassigned@example.org", "admin", "active");
+    await expect(fixture.service.publish(
+      browser(unassigned.id, "admin"),
+      created.id,
+      drafted.version,
+      CORRELATION,
+    )).rejects.toEqual(new ServiceManagementError("not_found"));
+
+    await expect(fixture.service.publish(
+      browser(admin.id, "admin"),
+      created.id,
+      drafted.version,
+      "invalid-correlation",
+    )).rejects.toBeInstanceOf(ServiceManagementError);
+    expect(await servicePersistenceState(fixture.worker, created.id)).toMatchObject({
+      revisions: [],
+      invalidations: [],
+      lifecycle: "draft",
+      publication_generation: 0,
+    });
+
+    const first = await fixture.service.publish(
+      browser(admin.id, "admin"),
+      created.id,
+      drafted.version,
+      CORRELATION,
+    );
+    expect(first).toMatchObject({
+      lifecycle: "published",
+      publicationGeneration: 1,
+      draftMatchesPublished: true,
+      version: 4,
+      publishedRevision: {
+        sequence: 1,
+        publishedAt: NOW,
+      },
+    });
+    const firstState = await servicePersistenceState(fixture.worker, created.id);
+    expect(firstState.revisions).toHaveLength(1);
+    expect(firstState.invalidations).toEqual([{
+      publication_generation: 1,
+      reason: "publication",
+    }]);
+    expect(firstState.revisions[0]).toMatchObject({
+      sequence: 1,
+      publication_generation: 1,
+      actor_role: "admin",
+    });
+    expect(firstState.revisions[0]!.document_json).not.toMatch(
+      /admin|credential|secret|token|policy|runtime/i,
+    );
+
+    const edited = await fixture.service.updateProfile(
+      browser(admin.id, "admin"),
+      created.id,
+      first.version,
+      { name: "Published API v2" },
+      CORRELATION,
+    );
+    expect(edited.draftMatchesPublished).toBe(false);
+    const second = await fixture.service.publish(
+      browser(admin.id, "admin"),
+      created.id,
+      edited.version,
+      CORRELATION,
+    );
+    expect(second).toMatchObject({
+      publicationGeneration: 2,
+      draftMatchesPublished: true,
+      version: 6,
+    });
+    const secondState = await servicePersistenceState(fixture.worker, created.id);
+    expect(secondState.revisions).toHaveLength(2);
+    expect(secondState.revisions[0]!.document_json)
+      .toBe(firstState.revisions[0]!.document_json);
+    expect(secondState.revisions[1]!.document_json).toContain("Published API v2");
+    await expect(fixture.service.publish(
+      browser(admin.id, "admin"),
+      created.id,
+      second.version,
+      CORRELATION,
+    )).rejects.toEqual(new ServiceManagementError("conflict"));
+  });
+
+  it("enforces revision capacity and prunes only expired non-current history", async () => {
+    const fixture = await serviceFixture("retention");
+    const created = await fixture.create("retention-api", "Retention API");
+    const admin = await fixture.identity("retention-admin@example.org", "admin", "active");
+    const assigned = await fixture.service.assign(
+      fixture.superadmin,
+      created.id,
+      admin.id,
+      created.version,
+      false,
+      CORRELATION,
+    );
+    const drafted = await fixture.service.createDestination(
+      browser(admin.id, "admin"),
+      created.id,
+      assigned.version,
+      inputDestination(),
+      CORRELATION,
+    );
+    await seedRevisionCapacity(fixture.worker, created.id, admin.id, NOW);
+    await expect(fixture.service.publish(
+      browser(admin.id, "admin"),
+      created.id,
+      drafted.version,
+      CORRELATION,
+    )).rejects.toEqual(new ServiceManagementError("conflict"));
+    expect((await servicePersistenceState(fixture.worker, created.id)).revisions)
+      .toHaveLength(100);
+
+    await fixture.worker.execute({
+      run: (database) => database.withOperationalTransaction((transaction) => {
+        transaction.run(
+          "UPDATE service_config_versions SET published_at = 1 WHERE service_id = ?",
+          [created.id],
+        );
+      }),
+    });
+    const published = await fixture.service.publish(
+      browser(admin.id, "admin"),
+      created.id,
+      drafted.version,
+      CORRELATION,
+    );
+    expect(published).toMatchObject({ lifecycle: "published", publicationGeneration: 1 });
+    const revisions = (await servicePersistenceState(fixture.worker, created.id)).revisions;
+    expect(revisions).toHaveLength(100);
+    expect(revisions.at(-1)).toMatchObject({
+      sequence: 101,
+      publication_generation: 1,
+    });
   });
 
   it("scopes lists and binds cursors to actor, scope, and filters", async () => {
@@ -278,6 +595,61 @@ describe("durable service ownership", () => {
     expect(conflict.statusCode).toBe(409);
     expect(conflict.json().error).toMatchObject({ code: "service_conflict" });
 
+    const admin = await fixture.identity("route-admin@example.org", "admin", "active");
+    const assigned = await application.inject({
+      method: "PUT",
+      url: `/api/v2/services/${serviceId}/admins/${admin.id}`,
+      headers: mutationHeaders({ "if-match": '"1"' }),
+      payload: {},
+    });
+    expect(assigned.statusCode).toBe(200);
+    expect(assigned.headers.etag).toBe('"2"');
+
+    const unsafeDestination = await application.inject({
+      method: "POST",
+      url: `/api/v2/services/${serviceId}/destinations`,
+      headers: mutationHeaders({ "if-match": '"2"' }),
+      payload: {
+        ...wireDestinationInput(),
+        base_url: "https://api.example.org/%2fescape/",
+      },
+    });
+    expect(unsafeDestination.statusCode).toBe(400);
+    expect(JSON.stringify(unsafeDestination.json())).not.toContain("%2fescape");
+
+    const destination = await application.inject({
+      method: "POST",
+      url: `/api/v2/services/${serviceId}/destinations`,
+      headers: mutationHeaders({ "if-match": '"2"' }),
+      payload: wireDestinationInput(),
+    });
+    expect(destination.statusCode).toBe(200);
+    expect(destination.headers.etag).toBe('"3"');
+    expect(destination.json().data.destinations).toHaveLength(1);
+
+    const validation = await application.inject({
+      method: "POST",
+      url: `/api/v2/services/${serviceId}/validate`,
+      headers: mutationHeaders(),
+      payload: {},
+    });
+    expect(validation.statusCode).toBe(200);
+    expect(validation.json().data).toMatchObject({ valid: true, issues: [] });
+
+    const published = await application.inject({
+      method: "POST",
+      url: `/api/v2/services/${serviceId}/publish`,
+      headers: mutationHeaders({ "if-match": '"3"' }),
+      payload: {},
+    });
+    expect(published.statusCode).toBe(200);
+    expect(published.headers.etag).toBe('"4"');
+    expect(published.json().data).toMatchObject({
+      lifecycle: "published",
+      publication_generation: 1,
+      draft_matches_published: true,
+    });
+
     const detail = await application.inject({
       method: "GET",
       url: `/api/v2/services/${serviceId}`,
@@ -294,9 +666,76 @@ describe("durable service ownership", () => {
     expect(openapi.statusCode).toBe(200);
     expect(openapi.json().paths["/api/v2/services/{service_id}/admins/{user_id}"])
       .toHaveProperty("put");
+    expect(openapi.json().paths["/api/v2/services/{service_id}/destinations"])
+      .toHaveProperty("post");
+    expect(openapi.json().paths["/api/v2/services/{service_id}/publish"])
+      .toHaveProperty("post");
     await application.close();
   });
 });
+
+async function servicePersistenceState(worker: PersistenceWorker, serviceId: string) {
+  return worker.execute({
+    run: (database) => database.read((query) => ({
+      ...query.get<{
+        lifecycle: string;
+        publication_generation: number;
+      }>(
+        "SELECT lifecycle, publication_generation FROM services WHERE id = ?",
+        [serviceId],
+      ),
+      revisions: query.all<{
+        sequence: number;
+        document_json: string;
+        publication_generation: number;
+        actor_role: string;
+      }>(`
+        SELECT sequence, document_json, publication_generation, actor_role
+        FROM service_config_versions
+        WHERE service_id = ?
+        ORDER BY sequence
+      `, [serviceId]),
+      invalidations: query.all<{
+        publication_generation: number;
+        reason: string;
+      }>(`
+        SELECT publication_generation, reason
+        FROM service_invalidation_events
+        WHERE service_id = ?
+        ORDER BY publication_generation
+      `, [serviceId]),
+    })),
+  });
+}
+
+async function seedRevisionCapacity(
+  worker: PersistenceWorker,
+  serviceId: string,
+  actorUserId: string,
+  publishedAt: number,
+) {
+  const ids = new UuidV7Generator({ now: () => NOW });
+  await worker.execute({
+    run: (database) => database.withOperationalTransaction((transaction) => {
+      for (let sequence = 1; sequence <= 100; sequence += 1) {
+        transaction.run(`
+          INSERT INTO service_config_versions (
+            id, service_id, sequence, document_json, digest, source_revision_id,
+            publication_generation, actor_user_id, actor_role, published_at
+          ) VALUES (?, ?, ?, '{}', ?, NULL, ?, ?, 'admin', ?)
+        `, [
+          ids.next(),
+          serviceId,
+          sequence,
+          "0".repeat(64),
+          sequence,
+          actorUserId,
+          publishedAt,
+        ]);
+      }
+    }),
+  });
+}
 
 async function serviceFixture(label: string) {
   const worker = PersistenceWorker.open({
@@ -357,6 +796,17 @@ function inputDestination() {
     hosts: [{ type: "exact" as const, value: "api.example.org" }],
     ports: [443],
     tlsVerify: true,
+  };
+}
+
+function wireDestinationInput() {
+  return {
+    slug: "primary",
+    base_url: "https://api.example.org/",
+    schemes: ["https"],
+    hosts: [{ type: "exact", value: "api.example.org" }],
+    ports: [443],
+    tls_verify: true,
   };
 }
 

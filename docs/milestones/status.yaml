@@ -65,10 +65,10 @@ milestones:
   - id: "09"
     title: "Service Management"
     file: "docs/milestones/09-service-management.md"
-    status: "pending"
+    status: "in_progress"
     completed_at: null
     commit_hash: null
-    notes: ""
+    notes: "Decision-complete implementation and security plan under docs/plans/milestone-09-service-management.md."
   - id: "10"
     title: "Groups And Assignments"
     file: "docs/milestones/10-groups-and-assignments.md"

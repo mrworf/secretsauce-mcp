@@ -373,6 +373,93 @@ describe("restricted initial local enrollment", () => {
     replacementSeed.fill(0);
   });
 
+  it("changes the current password only after fresh password and TOTP verification", async () => {
+    const fixture = await enrollmentFixture("self-password");
+    const currentPassword = "Current-Self-Password-2026";
+    const active = await activateInitial(fixture, currentPassword);
+    fixture.clock.value += 30_000;
+    const browser = await loginBrowser(fixture, currentPassword, active.seed);
+    fixture.clock.value += 30_000;
+    await expect(fixture.service.selfPasswordChange(browser.session, {
+      currentPassword: "wrong-password",
+      currentTotp: totpCode(active.seed, fixture.clock.value),
+      newPassword: "Replacement-Self-Password-2026",
+      correlationId: CORRELATION,
+      source: "wrong-current",
+    })).rejects.toEqual(new EnrollmentError("authentication_failed"));
+    await fixture.service.selfPasswordChange(browser.session, {
+      currentPassword,
+      currentTotp: totpCode(active.seed, fixture.clock.value),
+      newPassword: "Replacement-Self-Password-2026",
+      correlationId: CORRELATION,
+      source: "correct-current",
+    });
+    expect(await browser.authenticator.authenticate(browser.request)).toBeUndefined();
+
+    fixture.clock.value += 30_000;
+    const authentication = await authenticationService(fixture);
+    await expect(authentication.login({
+      email: fixture.email,
+      password: "Replacement-Self-Password-2026",
+      totp: totpCode(active.seed, fixture.clock.value),
+      source: "replacement-password",
+      correlationId: CORRELATION,
+    })).resolves.toMatchObject({ userId: fixture.userId });
+    const state = await credentialState(fixture);
+    expect(state).toMatchObject({ invalidation_reason: "password_change" });
+    active.seed.fill(0);
+  });
+
+  it("replaces TOTP through an isolated ceremony and invalidates the initiating session", async () => {
+    const fixture = await enrollmentFixture("self-totp");
+    const password = "Current-TOTP-Password-2026";
+    const active = await activateInitial(fixture, password);
+    fixture.clock.value += 30_000;
+    const browser = await loginBrowser(fixture, password, active.seed);
+    fixture.clock.value += 30_000;
+    await expect(fixture.service.beginTotpReplacement(browser.session, {
+      currentPassword: password,
+      currentTotp: "000000",
+      correlationId: CORRELATION,
+      source: "wrong-current-totp",
+    })).rejects.toEqual(new EnrollmentError("authentication_failed"));
+    const begun = await fixture.service.beginTotpReplacement(browser.session, {
+      currentPassword: password,
+      currentTotp: totpCode(active.seed, fixture.clock.value),
+      correlationId: CORRELATION,
+      source: "correct-current-totp",
+    });
+    const replacementSeed = parseTotpEnrollmentUri(begun.uri).seed;
+    const restricted = await bindRestricted(fixture, begun.sessionToken);
+    expect(restricted.purpose).toBe("totp_replacement");
+    fixture.clock.value += 30_000;
+    await fixture.service.confirmTotpReplacement(restricted, {
+      totp: totpCode(replacementSeed, fixture.clock.value),
+      correlationId: CORRELATION,
+      source: "replacement-totp",
+    });
+    expect(await browser.authenticator.authenticate(browser.request)).toBeUndefined();
+
+    fixture.clock.value += 30_000;
+    const authentication = await authenticationService(fixture);
+    await expect(authentication.login({
+      email: fixture.email,
+      password,
+      totp: totpCode(active.seed, fixture.clock.value),
+      source: "old-totp",
+      correlationId: CORRELATION,
+    })).rejects.toEqual(expect.objectContaining({ code: "authentication_failed" }));
+    await expect(authentication.login({
+      email: fixture.email,
+      password,
+      totp: totpCode(replacementSeed, fixture.clock.value),
+      source: "new-totp",
+      correlationId: CORRELATION,
+    })).resolves.toMatchObject({ userId: fixture.userId });
+    active.seed.fill(0);
+    replacementSeed.fill(0);
+  });
+
   it("serves strict no-store restricted-cookie HTTP flow without granting an ordinary session", async () => {
     const fixture = await enrollmentFixture("http");
     const issued = await fixture.service.issueInitialTemporary(fixture.userId, audit());
@@ -623,6 +710,34 @@ async function bindRestricted(
   const session = authenticator.session(request);
   if (session === undefined) throw new Error("missing restricted fixture session");
   return session;
+}
+
+async function loginBrowser(
+  fixture: Awaited<ReturnType<typeof enrollmentFixture>>,
+  password: string,
+  seed: Buffer,
+) {
+  const authentication = await authenticationService(fixture);
+  const login = await authentication.login({
+    email: fixture.email,
+    password,
+    totp: totpCode(seed, fixture.clock.value),
+    source: `browser-${fixture.userId}`,
+    correlationId: CORRELATION,
+  });
+  const authenticator = new BrowserSessionAuthenticator(
+    new BrowserSessionRepository(fixture.worker, () => fixture.clock.value),
+    fixture.config.sessions,
+    fixture.sessionKey,
+  );
+  services.add(authenticator);
+  const request = {
+    cookies: { "__Host-secretsauce_session": login.sessionToken },
+  } as unknown as FastifyRequest;
+  await authenticator.authenticate(request);
+  const session = authenticator.session(request);
+  if (session === undefined) throw new Error("missing browser fixture session");
+  return { authenticator, request, session };
 }
 
 async function authenticationService(

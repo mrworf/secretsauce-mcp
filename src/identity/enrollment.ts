@@ -12,6 +12,7 @@ import type {
   ControlAuthenticator,
 } from "../control/authentication.js";
 import { CONTROL_ENROLLMENT_COOKIE } from "../control/security.js";
+import type { ValidatedBrowserSession } from "./browserSessions.js";
 import {
   generateTemporaryPassword,
 } from "./credentialLifecycle.js";
@@ -788,6 +789,230 @@ export class LocalEnrollmentRepository {
       throw new EnrollmentError("enrollment_unavailable");
     }
   }
+
+  async completeSelfPasswordChange(input: {
+    browserSession: ValidatedBrowserSession;
+    candidate: EnrollmentCandidate;
+    encodedHash: string;
+    acceptedStep: number;
+    eventId: string;
+    correlationId: string;
+  }): Promise<void> {
+    const now = safeNow(this.now);
+    try {
+      await this.owner.execute({
+        run: (database) => database.withGeneratedAdministrativeAudit((transaction) => {
+          requireCurrentBrowserSession(transaction, input.browserSession, now);
+          const current = requiredEnrollmentCandidate(
+            transaction,
+            input.browserSession.userId,
+          );
+          if (!sameConfiguredCandidate(current, input.candidate)) {
+            throw new PersistenceError("authentication_failed");
+          }
+          acceptTotpStep(
+            transaction,
+            input.browserSession.userId,
+            input.acceptedStep,
+            now,
+          );
+          const passwordChanged = transaction.run(`
+            UPDATE local_password_credentials
+            SET encoded_hash = ?, policy_version = ?, version = version + 1, updated_at = ?
+            WHERE user_id = ? AND version = ?
+          `, [
+            input.encodedHash,
+            current.passwordPolicyVersion,
+            now,
+            input.browserSession.userId,
+            current.passwordVersion,
+          ]);
+          if (passwordChanged.changes !== 1) {
+            throw new PersistenceError("authentication_failed");
+          }
+          const counts = finalizeCredentialChange(
+            transaction,
+            input.browserSession.userId,
+            input.eventId,
+            "password_change",
+            now,
+          );
+          return {
+            value: undefined,
+            auditInput: browserCredentialChangeAudit(
+              input.browserSession,
+              input.correlationId,
+              "identity.self_password_change",
+              counts,
+            ),
+          };
+        }),
+      });
+    } catch (error) {
+      if (
+        error instanceof PersistenceError &&
+        ["authentication_failed", "totp_replayed"].includes(error.code)
+      ) throw new EnrollmentError("authentication_failed");
+      throw new EnrollmentError("enrollment_unavailable");
+    }
+  }
+
+  async beginTotpReplacement(input: {
+    browserSession: ValidatedBrowserSession;
+    candidate: EnrollmentCandidate;
+    material: RestrictedSessionMaterial;
+    envelope: TotpEnvelope;
+    acceptedStep: number;
+    correlationId: string;
+  }): Promise<void> {
+    const now = safeNow(this.now);
+    try {
+      await this.owner.execute({
+        run: (database) => database.withGeneratedAdministrativeAudit((transaction) => {
+          requireCurrentBrowserSession(transaction, input.browserSession, now);
+          const current = requiredEnrollmentCandidate(
+            transaction,
+            input.browserSession.userId,
+          );
+          if (
+            input.material.purpose !== "totp_replacement" ||
+            !sameConfiguredCandidate(current, input.candidate)
+          ) throw new PersistenceError("authentication_failed");
+          acceptTotpStep(
+            transaction,
+            input.browserSession.userId,
+            input.acceptedStep,
+            now,
+          );
+          transaction.run(`
+            UPDATE identity_restricted_sessions
+            SET revoked_at = ?, version = version + 1
+            WHERE user_id = ? AND revoked_at IS NULL
+          `, [now, input.browserSession.userId]);
+          transaction.run(`
+            INSERT INTO identity_restricted_sessions (
+              id, user_id, purpose, session_hash, csrf_hash,
+              issued_security_epoch, issued_global_epoch,
+              issued_at, expires_at, revoked_at, version
+            ) VALUES (?, ?, 'totp_replacement', ?, ?, ?, ?, ?, ?, NULL, 1)
+          `, [
+            input.material.id,
+            input.browserSession.userId,
+            input.material.sessionHash,
+            input.material.csrfHash,
+            input.material.securityEpoch,
+            input.material.globalSecurityEpoch,
+            input.material.issuedAt,
+            input.material.expiresAt,
+          ]);
+          transaction.run(`
+            INSERT INTO identity_pending_totp (
+              restricted_session_id, user_id, authenticator_id, envelope_json,
+              root_key_id, generation, password_policy_version, created_at, expires_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `, [
+            input.material.id,
+            input.browserSession.userId,
+            input.envelope.authenticatorId,
+            JSON.stringify(input.envelope),
+            input.envelope.rootKeyId,
+            input.envelope.generation,
+            current.passwordPolicyVersion,
+            now,
+            input.material.expiresAt,
+          ]);
+          return {
+            value: undefined,
+            auditInput: {
+              actor: browserAuditActor(input.browserSession),
+              action: "identity.self_totp_begin",
+              result: "allow",
+              target: {
+                type: "user",
+                id: input.browserSession.userId,
+                label: `user:${input.browserSession.userId}`,
+              },
+              changes: [{ field: "totp_replacement", after: "pending" }],
+              correlationId: input.correlationId,
+              source: { category: "identity" },
+            } satisfies AdministrativeAuditEventInput,
+          };
+        }),
+      });
+    } catch (error) {
+      if (
+        error instanceof PersistenceError &&
+        ["authentication_failed", "totp_replayed"].includes(error.code)
+      ) throw new EnrollmentError("authentication_failed");
+      throw new EnrollmentError("enrollment_unavailable");
+    }
+  }
+
+  async completeTotpReplacement(input: {
+    session: ValidatedRestrictedSession;
+    pending: PendingEnrollment;
+    acceptedStep: number;
+    eventId: string;
+    correlationId: string;
+  }): Promise<void> {
+    const now = safeNow(this.now);
+    try {
+      await this.owner.execute({
+        run: (database) => database.withGeneratedAdministrativeAudit((transaction) => {
+          requireCurrentRestrictedSession(transaction, input.session, now);
+          const pending = requiredPending(transaction, input.pending, now);
+          const current = requiredEnrollmentCandidate(transaction, input.session.userId);
+          if (
+            input.session.purpose !== "totp_replacement" ||
+            pending.status !== "active" ||
+            !eligibleConfiguredCandidate(current)
+          ) throw new PersistenceError("authentication_failed");
+          acceptTotpStep(transaction, input.session.userId, input.acceptedStep, now);
+          const replaced = transaction.run(`
+            UPDATE local_totp_authenticators
+            SET id = ?, envelope_json = ?, root_key_id = ?, generation = ?,
+                confirmed_at = ?, version = version + 1, updated_at = ?
+            WHERE user_id = ?
+          `, [
+            pending.authenticatorId,
+            pending.envelopeJson,
+            pending.rootKeyId,
+            pending.generation,
+            now,
+            now,
+            input.session.userId,
+          ]);
+          if (replaced.changes !== 1) throw new PersistenceError("authentication_failed");
+          const counts = finalizeCredentialChange(
+            transaction,
+            input.session.userId,
+            input.eventId,
+            "totp_change",
+            now,
+          );
+          transaction.run(
+            "DELETE FROM identity_pending_totp WHERE user_id = ?",
+            [input.session.userId],
+          );
+          return {
+            value: undefined,
+            auditInput: credentialChangeAudit(
+              input.session.userId,
+              input.correlationId,
+              "identity.self_totp_change",
+              counts,
+            ),
+          };
+        }),
+      });
+    } catch (error) {
+      if (
+        error instanceof PersistenceError &&
+        ["authentication_failed", "totp_replayed"].includes(error.code)
+      ) throw new EnrollmentError("authentication_failed");
+      throw new EnrollmentError("enrollment_unavailable");
+    }
+  }
 }
 
 export interface LocalEnrollmentServiceOptions {
@@ -1286,6 +1511,181 @@ export class LocalEnrollmentService {
     });
   }
 
+  async selfPasswordChange(
+    browserSession: ValidatedBrowserSession,
+    input: {
+      currentPassword: unknown;
+      currentTotp: unknown;
+      newPassword: unknown;
+      correlationId: string;
+      source?: unknown;
+    },
+  ): Promise<void> {
+    if (!validCorrelationId(input.correlationId)) {
+      throw new EnrollmentError("invalid_request");
+    }
+    const candidate = await this.#repository.candidateByUserId(browserSession.userId);
+    if (!eligibleConfiguredCandidate(candidate)) {
+      throw new EnrollmentError("authentication_failed");
+    }
+    const source = validAttemptSource(input.source) ? input.source : "browser-session";
+    const acceptedStep = await this.#verifyCurrentAuthenticator(
+      candidate,
+      input.currentPassword,
+      input.currentTotp,
+      source,
+    );
+    const password = this.#passwordPolicy.validate(input.newPassword, {
+      email: candidate.email,
+      givenName: candidate.givenName,
+      familyName: candidate.familyName,
+      productName: "SecretSauce",
+    });
+    const release = this.#passwordInflight.acquire(source);
+    if (release === undefined) {
+      password.fill(0);
+      throw new EnrollmentError("rate_limited");
+    }
+    let encodedHash: string;
+    try {
+      encodedHash = await hashPassword(password);
+    } finally {
+      password.fill(0);
+      release();
+    }
+    await this.#repository.completeSelfPasswordChange({
+      browserSession,
+      candidate,
+      encodedHash,
+      acceptedStep,
+      eventId: this.nextUuid(),
+      correlationId: input.correlationId,
+    });
+  }
+
+  async beginTotpReplacement(
+    browserSession: ValidatedBrowserSession,
+    input: {
+      currentPassword: unknown;
+      currentTotp: unknown;
+      correlationId: string;
+      source?: unknown;
+    },
+  ): Promise<{
+    secret: string;
+    uri: string;
+    sessionToken: string;
+    csrfToken: string;
+    expiresAt: number;
+  }> {
+    if (!validCorrelationId(input.correlationId)) {
+      throw new EnrollmentError("invalid_request");
+    }
+    const candidate = await this.#repository.candidateByUserId(browserSession.userId);
+    if (!eligibleConfiguredCandidate(candidate)) {
+      throw new EnrollmentError("authentication_failed");
+    }
+    const source = validAttemptSource(input.source) ? input.source : "browser-session";
+    const acceptedStep = await this.#verifyCurrentAuthenticator(
+      candidate,
+      input.currentPassword,
+      input.currentTotp,
+      source,
+    );
+    const issuedAt = safeNow(this.#now);
+    const sessionToken = opaqueValue(this.#random);
+    const csrfToken = opaqueValue(this.#random);
+    const material: RestrictedSessionMaterial = {
+      id: this.nextUuid(),
+      userId: browserSession.userId,
+      purpose: "totp_replacement",
+      sessionHash: keyedHash(this.#sessionHmacKey, SESSION_DOMAIN, sessionToken),
+      csrfHash: keyedHash(this.#sessionHmacKey, CSRF_DOMAIN, csrfToken),
+      securityEpoch: candidate.securityEpoch,
+      globalSecurityEpoch: candidate.globalSecurityEpoch,
+      issuedAt,
+      expiresAt: issuedAt + this.#config.restrictedSessionTtlMs,
+    };
+    const enrollment = beginTotpEnrollment({
+      authenticatorId: this.nextUuid(),
+      userId: browserSession.userId,
+      issuer: "SecretSauce",
+      label: candidate.email,
+      keyRing: this.#keyRing,
+      random: this.#random,
+    });
+    await this.#repository.beginTotpReplacement({
+      browserSession,
+      candidate,
+      material,
+      envelope: enrollment.envelope,
+      acceptedStep,
+      correlationId: input.correlationId,
+    });
+    return {
+      secret: enrollment.secret,
+      uri: enrollment.uri,
+      sessionToken,
+      csrfToken,
+      expiresAt: material.expiresAt,
+    };
+  }
+
+  async confirmTotpReplacement(
+    session: ValidatedRestrictedSession,
+    input: { totp: unknown; correlationId: string; source?: unknown },
+  ): Promise<void> {
+    if (
+      session.purpose !== "totp_replacement" ||
+      typeof input.totp !== "string" ||
+      !/^\d{6}$/.test(input.totp) ||
+      !validCorrelationId(input.correlationId)
+    ) throw new EnrollmentError("invalid_request");
+    const pending = await this.#repository.pending(session.sessionId, session.userId);
+    if (pending === undefined || safeNow(this.#now) >= pending.expiresAt) {
+      throw new EnrollmentError("authentication_failed");
+    }
+    let seed: Buffer;
+    try {
+      const envelope = parseTotpEnvelope(JSON.parse(pending.envelopeJson));
+      if (
+        envelope.userId !== pending.userId ||
+        envelope.authenticatorId !== pending.authenticatorId ||
+        envelope.rootKeyId !== pending.rootKeyId ||
+        envelope.generation !== pending.generation
+      ) throw new Error("binding mismatch");
+      seed = decryptTotpSeed(envelope, this.#keyRing);
+    } catch {
+      throw new EnrollmentError("enrollment_unavailable");
+    }
+    const source = validAttemptSource(input.source) ? input.source : "restricted-session";
+    const accountKey = keyedHash(this.#sessionHmacKey, ACCOUNT_DOMAIN, session.userId);
+    if (!this.#totpLimiter.take(source, accountKey)) {
+      seed.fill(0);
+      throw new EnrollmentError("rate_limited");
+    }
+    const release = this.#totpInflight.acquire(source);
+    if (release === undefined) {
+      seed.fill(0);
+      throw new EnrollmentError("rate_limited");
+    }
+    let acceptedStep: number | undefined;
+    try {
+      acceptedStep = verifyTotpCode(seed, input.totp, safeNow(this.#now));
+    } finally {
+      seed.fill(0);
+      release();
+    }
+    if (acceptedStep === undefined) throw new EnrollmentError("authentication_failed");
+    await this.#repository.completeTotpReplacement({
+      session,
+      pending,
+      acceptedStep,
+      eventId: this.nextUuid(),
+      correlationId: input.correlationId,
+    });
+  }
+
   async #initialProfile(userId: string): Promise<PendingEnrollment> {
     const candidate = await this.#repository.candidateByUserId(userId);
     if (candidate === undefined) throw new EnrollmentError("enrollment_unavailable");
@@ -1333,6 +1733,58 @@ export class LocalEnrollmentService {
     } catch {
       throw new EnrollmentError("enrollment_unavailable");
     }
+  }
+
+  async #verifyCurrentAuthenticator(
+    candidate: EnrollmentCandidate,
+    passwordInput: unknown,
+    totpInput: unknown,
+    source: string,
+  ): Promise<number> {
+    if (
+      typeof passwordInput !== "string" ||
+      [...passwordInput].length > 1_024 ||
+      Buffer.byteLength(passwordInput, "utf8") > 4_096 ||
+      typeof totpInput !== "string" ||
+      !/^\d{6}$/.test(totpInput) ||
+      candidate.passwordHash === null
+    ) throw new EnrollmentError("authentication_failed");
+    const accountKey = keyedHash(this.#sessionHmacKey, ACCOUNT_DOMAIN, candidate.userId);
+    if (!this.#passwordLimiter.take(source, accountKey)) {
+      throw new EnrollmentError("rate_limited");
+    }
+    const releasePassword = this.#passwordInflight.acquire(source);
+    if (releasePassword === undefined) throw new EnrollmentError("rate_limited");
+    let passwordValid = false;
+    try {
+      passwordValid = await verifyPasswordHash(
+        Buffer.from(passwordInput.normalize("NFKC"), "utf8"),
+        candidate.passwordHash,
+      );
+    } finally {
+      releasePassword();
+    }
+    const seed = this.#candidateTotpSeed(candidate);
+    if (!this.#totpLimiter.take(source, accountKey)) {
+      seed.fill(0);
+      throw new EnrollmentError("rate_limited");
+    }
+    const releaseTotp = this.#totpInflight.acquire(source);
+    if (releaseTotp === undefined) {
+      seed.fill(0);
+      throw new EnrollmentError("rate_limited");
+    }
+    let acceptedStep: number | undefined;
+    try {
+      acceptedStep = verifyTotpCode(seed, totpInput, safeNow(this.#now));
+    } finally {
+      seed.fill(0);
+      releaseTotp();
+    }
+    if (!passwordValid || acceptedStep === undefined) {
+      throw new EnrollmentError("authentication_failed");
+    }
+    return acceptedStep;
   }
 
   async #uniformTemporaryDenial(source: string): Promise<void> {
@@ -1555,6 +2007,11 @@ function validRestrictedState(
       passwordState === "configured" &&
       totpState === "not_configured";
   }
+  if (purpose === "totp_replacement") {
+    return status === "active" &&
+      passwordState === "configured" &&
+      totpState === "configured";
+  }
   return false;
 }
 
@@ -1666,6 +2123,21 @@ function eligiblePasswordChangeCandidate(
     candidate.totpGeneration !== null;
 }
 
+function eligibleConfiguredCandidate(
+  candidate: EnrollmentCandidate | undefined,
+): candidate is EnrollmentCandidate {
+  return candidate !== undefined &&
+    candidate.status === "active" &&
+    candidate.passwordState === "configured" &&
+    candidate.totpState === "configured" &&
+    candidate.passwordHash !== null &&
+    candidate.passwordVersion !== null &&
+    candidate.totpAuthenticatorId !== null &&
+    candidate.totpEnvelopeJson !== null &&
+    candidate.totpRootKeyId !== null &&
+    candidate.totpGeneration !== null;
+}
+
 function requiredEnrollmentCandidate(
   transaction: PersistenceTransaction,
   userId: string,
@@ -1755,6 +2227,22 @@ function samePasswordChangeCandidate(
     current.authenticatorVersion === candidate.authenticatorVersion;
 }
 
+function sameConfiguredCandidate(
+  current: EnrollmentCandidate,
+  candidate: EnrollmentCandidate,
+): boolean {
+  return eligibleConfiguredCandidate(current) &&
+    current.securityEpoch === candidate.securityEpoch &&
+    current.globalSecurityEpoch === candidate.globalSecurityEpoch &&
+    current.passwordPolicyVersion === candidate.passwordPolicyVersion &&
+    current.passwordHash === candidate.passwordHash &&
+    current.passwordVersion === candidate.passwordVersion &&
+    current.totpAuthenticatorId === candidate.totpAuthenticatorId &&
+    current.totpEnvelopeJson === candidate.totpEnvelopeJson &&
+    current.totpGeneration === candidate.totpGeneration &&
+    current.authenticatorVersion === candidate.authenticatorVersion;
+}
+
 function acceptTotpStep(
   transaction: PersistenceTransaction,
   userId: string,
@@ -1832,6 +2320,74 @@ function credentialChangeAudit(
     ],
     correlationId,
     source: { category: "identity" },
+  };
+}
+
+function requireCurrentBrowserSession(
+  transaction: PersistenceTransaction,
+  session: ValidatedBrowserSession,
+  now: number,
+): void {
+  const current = transaction.get<{
+    user_id: string;
+    role: string;
+    status: string;
+    password_state: string;
+    totp_state: string;
+    issued_security_epoch: number;
+    issued_global_epoch: number;
+    security_epoch: number;
+    global_security_epoch: number;
+    absolute_expires_at: number;
+    revoked_at: number | null;
+  }>(`
+    SELECT
+      bs.user_id, u.role, u.status, a.password_state, a.totp_state,
+      bs.issued_security_epoch, bs.issued_global_epoch,
+      u.security_epoch, sec.global_security_epoch,
+      bs.absolute_expires_at, bs.revoked_at
+    FROM browser_sessions bs
+    JOIN users u ON u.id = bs.user_id
+    JOIN local_authenticator_states a ON a.user_id = u.id
+    JOIN identity_security_state sec ON sec.singleton = 1
+    WHERE bs.id = ?
+  `, [session.sessionId]);
+  if (
+    current === undefined ||
+    current.user_id !== session.userId ||
+    current.role !== session.role ||
+    current.status !== "active" ||
+    current.password_state !== "configured" ||
+    current.totp_state !== "configured" ||
+    current.issued_security_epoch !== current.security_epoch ||
+    current.issued_global_epoch !== current.global_security_epoch ||
+    current.absolute_expires_at !== session.absoluteExpiresAt ||
+    current.absolute_expires_at <= now ||
+    current.revoked_at !== null
+  ) throw new PersistenceError("authentication_failed");
+}
+
+function browserAuditActor(
+  session: ValidatedBrowserSession,
+): AdministrativeAuditEventInput["actor"] {
+  return {
+    type: "browser_session",
+    id: session.userId,
+    label: `user:${session.userId}`,
+    role: session.role,
+    authenticationMethod: "browser_session",
+  };
+}
+
+function browserCredentialChangeAudit(
+  session: ValidatedBrowserSession,
+  correlationId: string,
+  action: string,
+  counts: { browserSessionsRevoked: number; restrictedSessionsRevoked: number },
+): AdministrativeAuditEventInput {
+  return {
+    ...credentialChangeAudit(session.userId, correlationId, action, counts),
+    actor: browserAuditActor(session),
   };
 }
 

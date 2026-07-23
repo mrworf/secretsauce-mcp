@@ -415,6 +415,7 @@ function registerLifecycleRoutes(
         credentialId: context.params.credential_id,
         expectedVersion: context.expectedVersion!,
         archive: true,
+        idempotencyKey: context.idempotencyKey!,
         correlationId: context.requestId,
       });
       return { data: wireCredential(credential), version: credential.version };
@@ -586,6 +587,7 @@ function registerValueRoutes(
           ...(context.body.capture_last_four === undefined
             ? {}
             : { captureLastFour: context.body.capture_last_four }),
+          idempotencyKey: context.idempotencyKey!,
           correlationId: context.requestId,
         });
         return { data: wireCredential(credential), version: credential.version };
@@ -618,6 +620,7 @@ function registerValueRoutes(
         credentialId: context.params.credential_id,
         expectedVersion: context.expectedVersion!,
         archive: false,
+        idempotencyKey: context.idempotencyKey!,
         correlationId: context.requestId,
       });
       return { data: wireCredential(credential), version: credential.version };

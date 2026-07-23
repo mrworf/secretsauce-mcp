@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { ControlAuthenticationContext } from "./control/authentication.js";
+import type { ControlIdempotencyHasher } from "./control/idempotency.js";
 import {
   CredentialManagementError,
   type CredentialStatus,
@@ -8,6 +9,7 @@ import {
 } from "./credentialManagement.js";
 import type { AdministrativeAuditEventInput } from "./persistence/administrativeAudit.js";
 import { PersistenceError } from "./persistence/errors.js";
+import type { IdempotencyExecutionInput } from "./persistence/idempotency.js";
 import type {
   PersistenceQuery,
   PersistenceTransaction,
@@ -72,6 +74,12 @@ interface CredentialState {
   version: number;
 }
 
+interface PreparedVaultOperation {
+  intent?: VaultIntent;
+  replayed: boolean;
+  keyHash?: string;
+}
+
 export class CredentialVaultCoordinator {
   readonly #eventUuid: () => string;
 
@@ -81,6 +89,7 @@ export class CredentialVaultCoordinator {
     private readonly vault: CredentialControlVault,
     now: () => number = Date.now,
     private readonly locatorUuid: () => string = randomUUID,
+    private readonly idempotency?: ControlIdempotencyHasher,
   ) {
     const generator = new UuidV7Generator({ now });
     this.#eventUuid = () => generator.next();
@@ -93,6 +102,7 @@ export class CredentialVaultCoordinator {
     expectedVersion: number;
     value: Uint8Array;
     captureLastFour?: boolean;
+    idempotencyKey?: string;
     correlationId: string;
   }): Promise<CredentialView> {
     validateOperationInput(input);
@@ -103,9 +113,18 @@ export class CredentialVaultCoordinator {
         typeof input.captureLastFour !== "boolean"
     ) throw new CredentialManagementError("invalid_request");
     const secret = Buffer.from(input.value);
+    let prepared: PreparedVaultOperation | undefined;
     let intent: VaultIntent;
     try {
-      intent = await this.prepareSet(input);
+      prepared = await this.prepareSet(input);
+      if (prepared.intent === undefined) {
+        return this.credentials.credential(
+          input.actor,
+          input.serviceId,
+          input.credentialId,
+        );
+      }
+      intent = prepared.intent;
       const binding = serviceBinding(intent);
       let metadata: VaultRecordMetadata;
       if (intent.operation === "create") {
@@ -146,6 +165,7 @@ export class CredentialVaultCoordinator {
           if (view.status === "configured" || view.status === "disabled") {
             return view;
           }
+          await this.removeIdempotency(prepared?.keyHash);
         }
         throw mapCoordinatorError(error);
       } else {
@@ -167,13 +187,22 @@ export class CredentialVaultCoordinator {
     credentialId: string;
     expectedVersion: number;
     archive: boolean;
+    idempotencyKey?: string;
     correlationId: string;
   }): Promise<CredentialView> {
     validateOperationInput(input);
     if (typeof input.archive !== "boolean") {
       throw new CredentialManagementError("invalid_request");
     }
-    const intent = await this.prepareDelete(input);
+    const prepared = await this.prepareDelete(input);
+    if (prepared.intent === undefined) {
+      return this.credentials.credential(
+        input.actor,
+        input.serviceId,
+        input.credentialId,
+      );
+    }
+    const intent = prepared.intent;
     try {
       await this.vault.delete(
         intent.locator,
@@ -289,65 +318,59 @@ export class CredentialVaultCoordinator {
     serviceId: string;
     credentialId: string;
     expectedVersion: number;
+    value: Uint8Array;
+    captureLastFour?: boolean;
+    idempotencyKey?: string;
     correlationId: string;
-  }): Promise<VaultIntent> {
+  }): Promise<PreparedVaultOperation> {
+    const idempotency = this.valueIdempotency(
+      input,
+      "credentials.value.replace",
+      {
+        serviceId: input.serviceId,
+        credentialId: input.credentialId,
+        expectedVersion: input.expectedVersion,
+        captureLastFour: input.captureLastFour ?? false,
+        value: Buffer.from(input.value).toString("base64url"),
+      },
+    );
     return this.owner.execute({
       run: (database) => database.withGeneratedAdministrativeAudit((transaction) => {
         requireScopedService(transaction, input.actor, input.serviceId);
-        const current = requiredState(transaction, input.serviceId, input.credentialId);
-        if (current.version !== input.expectedVersion) {
-          throw new PersistenceError("identity_stale");
+        let prepared: PreparedVaultOperation;
+        if (idempotency === undefined) {
+          prepared = {
+            intent: this.prepareSetMutation(transaction, input),
+            replayed: false,
+          };
+        } else {
+          let executedIntent: VaultIntent | undefined;
+          const result = transaction.idempotent(idempotency, () => {
+            executedIntent = this.prepareSetMutation(transaction, input);
+            return {
+              value: executedIntent.credential_id,
+              resultReference: executedIntent.credential_id,
+              responseStatus: 200,
+            };
+          });
+          const credentialId = result.kind === "executed"
+            ? result.value
+            : result.resultReference;
+          const intent = executedIntent ?? optionalIntent(transaction, credentialId);
+          prepared = {
+            ...(intent === undefined ? {} : { intent }),
+            replayed: result.kind === "replayed",
+            keyHash: idempotency.keyHash,
+          };
         }
-        if (
-          current.vault_state !== "idle" ||
-          !["unconfigured", "configured", "disabled"].includes(current.status)
-        ) throw new PersistenceError("identity_conflict");
-        const create = current.status === "unconfigured";
-        if (
-          create && (current.vault_locator !== null || current.vault_generation !== null) ||
-          !create && (current.vault_locator === null || current.vault_generation === null)
-        ) throw new PersistenceError("database_unavailable");
-        const locator = create ? this.locatorUuid() : current.vault_locator!;
-        if (!isUuidV4(locator)) throw new PersistenceError("database_unavailable");
-        const intent: VaultIntent = {
-          credential_id: current.id,
-          service_id: current.service_id,
-          operation: create ? "create" : "replace",
-          locator,
-          expected_generation: create ? null : current.vault_generation,
-          target_generation: create ? 1 : current.vault_generation! + 1,
-          prior_status: current.status as Exclude<CredentialStatus, "archived">,
-          phase: "prepared",
-        };
-        const now = transaction.timestamp();
-        insertIntent(transaction, intent, now);
-        const generation = current.authorization_generation + 1;
-        const changed = transaction.run(`
-          UPDATE service_credentials
-          SET vault_state = ?, authorization_generation = ?,
-            version = version + 1, updated_at = ?
-          WHERE id = ? AND version = ?
-        `, [
-          create ? "pending_create" : "pending_replace",
-          generation,
-          now,
-          current.id,
-          current.version,
-        ]);
-        if (changed.changes !== 1) throw new PersistenceError("identity_stale");
-        insertInvalidation(
-          transaction,
-          this.#eventUuid(),
-          current,
-          generation,
-          "value_replace",
-          now,
-        );
         return {
-          value: intent,
+          value: prepared,
           auditInput: vaultAudit(input, "credential.value.prepare", [
-            { field: "operation", after: intent.operation },
-            { field: "outcome", after: "prepared" },
+            {
+              field: "operation",
+              after: prepared.intent?.operation ?? "completed_replay",
+            },
+            { field: "outcome", after: prepared.replayed ? "replayed" : "prepared" },
           ]),
         };
       }),
@@ -362,63 +385,59 @@ export class CredentialVaultCoordinator {
     credentialId: string;
     expectedVersion: number;
     archive: boolean;
+    idempotencyKey?: string;
     correlationId: string;
-  }): Promise<VaultIntent> {
+  }): Promise<PreparedVaultOperation> {
+    const idempotency = this.valueIdempotency(
+      input,
+      input.archive ? "credentials.archive" : "credentials.value.delete",
+      {
+        serviceId: input.serviceId,
+        credentialId: input.credentialId,
+        expectedVersion: input.expectedVersion,
+        archive: input.archive,
+      },
+    );
     return this.owner.execute({
       run: (database) => database.withGeneratedAdministrativeAudit((transaction) => {
         requireScopedService(transaction, input.actor, input.serviceId);
-        const current = requiredState(transaction, input.serviceId, input.credentialId);
-        if (current.version !== input.expectedVersion) {
-          throw new PersistenceError("identity_stale");
+        let prepared: PreparedVaultOperation;
+        if (idempotency === undefined) {
+          prepared = {
+            intent: this.prepareDeleteMutation(transaction, input),
+            replayed: false,
+          };
+        } else {
+          let executedIntent: VaultIntent | undefined;
+          const result = transaction.idempotent(idempotency, () => {
+            executedIntent = this.prepareDeleteMutation(transaction, input);
+            return {
+              value: executedIntent.credential_id,
+              resultReference: executedIntent.credential_id,
+              responseStatus: 200,
+            };
+          });
+          const credentialId = result.kind === "executed"
+            ? result.value
+            : result.resultReference;
+          const intent = executedIntent ?? optionalIntent(transaction, credentialId);
+          prepared = {
+            ...(intent === undefined ? {} : { intent }),
+            replayed: result.kind === "replayed",
+            keyHash: idempotency.keyHash,
+          };
         }
-        if (
-          current.vault_state !== "idle" ||
-          !["configured", "disabled"].includes(current.status) ||
-          current.vault_locator === null ||
-          current.vault_generation === null
-        ) throw new PersistenceError("identity_conflict");
-        const intent: VaultIntent = {
-          credential_id: current.id,
-          service_id: current.service_id,
-          operation: input.archive ? "archive" : "delete_value",
-          locator: current.vault_locator,
-          expected_generation: current.vault_generation,
-          target_generation: null,
-          prior_status: current.status as "configured" | "disabled",
-          phase: "prepared",
-        };
-        const now = transaction.timestamp();
-        insertIntent(transaction, intent, now);
-        const generation = current.authorization_generation + 1;
-        const changed = transaction.run(`
-          UPDATE service_credentials
-          SET vault_state = ?, authorization_generation = ?,
-            version = version + 1, updated_at = ?
-          WHERE id = ? AND version = ?
-        `, [
-          input.archive ? "pending_archive" : "pending_delete",
-          generation,
-          now,
-          current.id,
-          current.version,
-        ]);
-        if (changed.changes !== 1) throw new PersistenceError("identity_stale");
-        insertInvalidation(
-          transaction,
-          this.#eventUuid(),
-          current,
-          generation,
-          input.archive ? "archive" : "value_delete",
-          now,
-        );
         return {
-          value: intent,
+          value: prepared,
           auditInput: vaultAudit(
             input,
             input.archive ? "credential.archive.prepare" : "credential.value.delete.prepare",
             [
-              { field: "operation", after: intent.operation },
-              { field: "outcome", after: "prepared" },
+              {
+                field: "operation",
+                after: prepared.intent?.operation ?? "completed_replay",
+              },
+              { field: "outcome", after: prepared.replayed ? "replayed" : "prepared" },
             ],
           ),
         };
@@ -426,6 +445,164 @@ export class CredentialVaultCoordinator {
     }).catch((error) => {
       throw mapCoordinatorError(error);
     });
+  }
+
+  private prepareSetMutation(
+    transaction: PersistenceTransaction,
+    input: {
+      serviceId: string;
+      credentialId: string;
+      expectedVersion: number;
+    },
+  ): VaultIntent {
+    const current = requiredState(transaction, input.serviceId, input.credentialId);
+    if (current.version !== input.expectedVersion) {
+      throw new PersistenceError("identity_stale");
+    }
+    if (
+      current.vault_state !== "idle" ||
+      !["unconfigured", "configured", "disabled"].includes(current.status)
+    ) throw new PersistenceError("identity_conflict");
+    const create = current.status === "unconfigured";
+    if (
+      create && (current.vault_locator !== null || current.vault_generation !== null) ||
+      !create && (current.vault_locator === null || current.vault_generation === null)
+    ) throw new PersistenceError("database_unavailable");
+    const locator = create ? this.locatorUuid() : current.vault_locator!;
+    if (!isUuidV4(locator)) throw new PersistenceError("database_unavailable");
+    const target = create ? 1 : current.vault_generation! + 1;
+    if (!Number.isSafeInteger(target)) throw new PersistenceError("identity_conflict");
+    const intent: VaultIntent = {
+      credential_id: current.id,
+      service_id: current.service_id,
+      operation: create ? "create" : "replace",
+      locator,
+      expected_generation: create ? null : current.vault_generation,
+      target_generation: target,
+      prior_status: current.status as Exclude<CredentialStatus, "archived">,
+      phase: "prepared",
+    };
+    const now = transaction.timestamp();
+    insertIntent(transaction, intent, now);
+    const generation = current.authorization_generation + 1;
+    const changed = transaction.run(`
+      UPDATE service_credentials
+      SET vault_state = ?, authorization_generation = ?,
+        version = version + 1, updated_at = ?
+      WHERE id = ? AND version = ?
+    `, [
+      create ? "pending_create" : "pending_replace",
+      generation,
+      now,
+      current.id,
+      current.version,
+    ]);
+    if (changed.changes !== 1) throw new PersistenceError("identity_stale");
+    insertInvalidation(
+      transaction,
+      this.#eventUuid(),
+      current,
+      generation,
+      "value_replace",
+      now,
+    );
+    return intent;
+  }
+
+  private prepareDeleteMutation(
+    transaction: PersistenceTransaction,
+    input: {
+      serviceId: string;
+      credentialId: string;
+      expectedVersion: number;
+      archive: boolean;
+    },
+  ): VaultIntent {
+    const current = requiredState(transaction, input.serviceId, input.credentialId);
+    if (current.version !== input.expectedVersion) {
+      throw new PersistenceError("identity_stale");
+    }
+    if (
+      current.vault_state !== "idle" ||
+      !["configured", "disabled"].includes(current.status) ||
+      current.vault_locator === null ||
+      current.vault_generation === null
+    ) throw new PersistenceError("identity_conflict");
+    const intent: VaultIntent = {
+      credential_id: current.id,
+      service_id: current.service_id,
+      operation: input.archive ? "archive" : "delete_value",
+      locator: current.vault_locator,
+      expected_generation: current.vault_generation,
+      target_generation: null,
+      prior_status: current.status as "configured" | "disabled",
+      phase: "prepared",
+    };
+    const now = transaction.timestamp();
+    insertIntent(transaction, intent, now);
+    const generation = current.authorization_generation + 1;
+    const changed = transaction.run(`
+      UPDATE service_credentials
+      SET vault_state = ?, authorization_generation = ?,
+        version = version + 1, updated_at = ?
+      WHERE id = ? AND version = ?
+    `, [
+      input.archive ? "pending_archive" : "pending_delete",
+      generation,
+      now,
+      current.id,
+      current.version,
+    ]);
+    if (changed.changes !== 1) throw new PersistenceError("identity_stale");
+    insertInvalidation(
+      transaction,
+      this.#eventUuid(),
+      current,
+      generation,
+      input.archive ? "archive" : "value_delete",
+      now,
+    );
+    return intent;
+  }
+
+  private valueIdempotency(
+    input: {
+      actor: ControlAuthenticationContext;
+      idempotencyKey?: string;
+    },
+    routeId: string,
+    body: unknown,
+  ): IdempotencyExecutionInput | undefined {
+    if (input.idempotencyKey === undefined) return undefined;
+    if (this.idempotency === undefined) {
+      throw new CredentialManagementError("unavailable");
+    }
+    try {
+      return {
+        keyHash: this.idempotency.keyHash({
+          key: input.idempotencyKey,
+          principalId: input.actor.principalId,
+          routeId,
+        }),
+        principalId: input.actor.principalId,
+        routeId,
+        requestDigest: this.idempotency.protectedRequestDigest(body),
+      };
+    } catch {
+      throw new CredentialManagementError("invalid_request");
+    }
+  }
+
+  private async removeIdempotency(keyHash: string | undefined): Promise<void> {
+    if (keyHash === undefined) return;
+    await this.owner.execute({
+      run: (database) => database.withOperationalTransaction((transaction) => {
+        transaction.run(
+          "DELETE FROM control_idempotency_records WHERE key_hash = ?",
+          [keyHash],
+        );
+      }),
+    }).catch(() => undefined);
   }
 
   private async finalizeSet(
@@ -657,6 +834,16 @@ function requiredState(
   return state;
 }
 
+function optionalIntent(
+  query: Pick<PersistenceQuery, "get">,
+  credentialId: string,
+): VaultIntent | undefined {
+  return query.get<VaultIntent>(
+    "SELECT * FROM credential_vault_operations WHERE credential_id = ?",
+    [credentialId],
+  );
+}
+
 function insertIntent(
   transaction: PersistenceTransaction,
   intent: VaultIntent,
@@ -756,6 +943,9 @@ function mapCoordinatorError(error: unknown): CredentialManagementError {
     }
     if (error.code === "identity_stale") return new CredentialManagementError("stale");
     if (error.code === "identity_conflict") return new CredentialManagementError("conflict");
+    if (error.code === "idempotency_conflict") {
+      return new CredentialManagementError("idempotency_conflict");
+    }
   }
   return new CredentialManagementError("unavailable");
 }

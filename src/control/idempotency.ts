@@ -45,6 +45,19 @@ export class ControlIdempotencyHasher {
       .update(canonical, "utf8")
       .digest("hex");
   }
+
+  protectedRequestDigest(input: unknown): string {
+    let canonical: string;
+    try {
+      canonical = canonicalControlJson(input);
+    } catch {
+      throw new PersistenceError("invalid_idempotency_record");
+    }
+    return createHmac("sha256", this.#key)
+      .update("secretsauce-control-protected-request-v1\0", "utf8")
+      .update(canonical, "utf8")
+      .digest("hex");
+  }
 }
 
 export function loadControlIdempotencyKey(path: string): Buffer {

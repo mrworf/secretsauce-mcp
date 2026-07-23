@@ -71,6 +71,11 @@ describe("control idempotency hashing", () => {
       .toBe(hasher.requestDigest({ query: {}, body: { a: 1, b: 2 } }));
     expect(hasher.requestDigest({ body: { a: 2 } }))
       .not.toBe(hasher.requestDigest({ body: { a: 1 } }));
+    expect(hasher.protectedRequestDigest({ value: "short-secret" }))
+      .not.toBe(hasher.requestDigest({ value: "short-secret" }));
+    expect(hasher.protectedRequestDigest({ value: "short-secret" }))
+      .not.toBe(new ControlIdempotencyHasher(Buffer.alloc(32, 8))
+        .protectedRequestDigest({ value: "short-secret" }));
   });
 
   it("rejects out-of-bound keys and unsupported digest inputs without reflecting values", () => {

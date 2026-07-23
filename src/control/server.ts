@@ -1,4 +1,5 @@
 import cookie from "@fastify/cookie";
+import { randomUUID } from "node:crypto";
 import Fastify, {
   type FastifyInstance,
   type FastifyRequest,
@@ -364,6 +365,9 @@ export async function startControlServer(
             persistence,
             credentialRepository,
             options.credentialVaultClient,
+            Date.now,
+            randomUUID,
+            idempotencyHasher,
           );
           await credentialVault.reconcilePending();
         }

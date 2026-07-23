@@ -105,6 +105,29 @@ describe("credential HTTP contracts", () => {
     });
     expect(JSON.stringify(configured.json())).not.toContain(raw);
     expect(configured.headers["cache-control"]).toBe("no-store");
+    const replay = await fixture.application.inject({
+      method: "PUT",
+      url: `/api/v2/services/${service.id}/credentials/${credentialId}/value`,
+      headers: mutationHeaders({
+        "if-match": '"1"',
+        "idempotency-key": "set-route-credential",
+      }),
+      payload: { value: raw, capture_last_four: true },
+    });
+    expect(replay.statusCode).toBe(200);
+    expect(fixture.vault.createCalls).toBe(1);
+    const conflictingReplay = await fixture.application.inject({
+      method: "PUT",
+      url: `/api/v2/services/${service.id}/credentials/${credentialId}/value`,
+      headers: mutationHeaders({
+        "if-match": '"1"',
+        "idempotency-key": "set-route-credential",
+      }),
+      payload: { value: "different-value", capture_last_four: true },
+    });
+    expect(conflictingReplay.statusCode).toBe(409);
+    expect(conflictingReplay.json().error.code).toBe("idempotency_conflict");
+    expect(fixture.vault.createCalls).toBe(1);
 
     const stale = await fixture.application.inject({
       method: "PATCH",
@@ -191,6 +214,7 @@ async function routeFixture() {
     vault,
     () => NOW,
     () => "abcdef12-3456-4789-8abc-def012345678",
+    idempotency,
   );
   const actor = { value: superadmin as ControlAuthenticationContext };
   const authenticator: ControlAuthenticator = {
@@ -213,6 +237,7 @@ async function routeFixture() {
     identities,
     services,
     application,
+    vault,
     actor,
     superadmin,
     identity: (
@@ -229,6 +254,7 @@ async function routeFixture() {
 
 class RouteVault implements CredentialControlVault {
   readonly records = new Map<string, VaultRecordMetadata>();
+  createCalls = 0;
 
   async create(input: {
     binding: VaultCredentialBinding;
@@ -236,6 +262,7 @@ class RouteVault implements CredentialControlVault {
     locator: string;
     captureLastFour?: boolean;
   }) {
+    this.createCalls += 1;
     const text = Buffer.from(input.secret).toString("utf8");
     const metadata: VaultRecordMetadata = {
       status: "configured",

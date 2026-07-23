@@ -38,6 +38,14 @@ export class PersistenceTransaction extends PersistenceQuery {
     }
   }
 
+  timestamp(): number {
+    const value = Math.trunc(this.now());
+    if (!Number.isSafeInteger(value) || value < 0) {
+      throw new PersistenceError("database_unavailable");
+    }
+    return value;
+  }
+
   optimisticUpdate(
     table: string,
     id: string,

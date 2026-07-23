@@ -7,6 +7,12 @@ export type PersistenceErrorCode =
   | "audit_persistence_failed"
   | "idempotency_conflict"
   | "invalid_idempotency_record"
+  | "identity_not_found"
+  | "identity_conflict"
+  | "identity_stale"
+  | "invalid_identity_transition"
+  | "last_active_superadmin"
+  | "bootstrap_unavailable"
   | "persistence_closed";
 
 const messages: Record<PersistenceErrorCode, string> = {
@@ -18,6 +24,12 @@ const messages: Record<PersistenceErrorCode, string> = {
   audit_persistence_failed: "Administrative audit persistence failed.",
   idempotency_conflict: "The idempotency key conflicts with an earlier request.",
   invalid_idempotency_record: "The idempotency record is invalid.",
+  identity_not_found: "Identity was not found.",
+  identity_conflict: "Identity conflicts with an existing record.",
+  identity_stale: "Identity version is stale.",
+  invalid_identity_transition: "Identity transition is invalid.",
+  last_active_superadmin: "The last active superadmin must be preserved.",
+  bootstrap_unavailable: "Initial identity bootstrap is unavailable.",
   persistence_closed: "Persistence owner is closed.",
 };
 

@@ -2,8 +2,13 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import type { ControlConfig } from "../types.js";
 import {
   bindControlAuthentication,
+  type ControlAuthenticationMethod,
   type ControlAuthenticator,
 } from "./authentication.js";
+import {
+  ControlRateLimiter,
+  type ControlRateLimitClass,
+} from "./rateLimiter.js";
 
 export const CONTROL_API_PREFIX = "/api/v2";
 export const CONTROL_BROWSER_PREFIX = "/control";
@@ -13,11 +18,14 @@ export const CONTROL_SESSION_COOKIE = "__Host-secretsauce_session";
 export interface ControlRouteSecurity {
   public: boolean;
   cache?: "no-store" | "immutable";
+  authenticationMethods?: readonly ControlAuthenticationMethod[];
+  rateLimit?: ControlRateLimitClass;
 }
 
 export function controlSecurityHooks(
   config: ControlConfig,
   authenticator: ControlAuthenticator,
+  rateLimiter: ControlRateLimiter,
 ): {
   onRequest(request: FastifyRequest, reply: FastifyReply): Promise<void>;
   onSend(request: FastifyRequest, reply: FastifyReply): Promise<void>;
@@ -34,13 +42,31 @@ export function controlSecurityHooks(
         sendControlError(reply, request.id, 403, "forbidden", "Cross-origin request denied.");
         return;
       }
-      if (routeSecurity(request).public) return;
+      const security = routeSecurity(request);
+      if (security.public) {
+        if (!applyRateLimit(request, reply, rateLimiter, security.rateLimit ?? "none")) return;
+        return;
+      }
 
       const authentication = await authenticator.authenticate(request);
       if (authentication === undefined) {
         sendControlError(reply, request.id, 401, "unauthenticated", "Authentication required.");
         return;
       }
+      if (
+        security.authenticationMethods !== undefined &&
+        !security.authenticationMethods.includes(authentication.method)
+      ) {
+        sendControlError(reply, request.id, 403, "forbidden", "Authentication method not permitted.");
+        return;
+      }
+      if (!applyRateLimit(
+        request,
+        reply,
+        rateLimiter,
+        security.rateLimit ?? "management",
+        authentication.principalId,
+      )) return;
       bindControlAuthentication(request, authentication);
       if (authentication.method !== "browser_session" || isSafeMethod(request.method)) return;
       if (origin !== config.publicOrigin) {
@@ -83,7 +109,7 @@ export function controlSecurityHooks(
 export function publicControlRoute(
   cache: ControlRouteSecurity["cache"] = "no-store",
 ): { controlSecurity: ControlRouteSecurity } {
-  return { controlSecurity: { public: true, cache } };
+  return { controlSecurity: { public: true, cache, rateLimit: "none" } };
 }
 
 export function setControlSessionCookie(
@@ -115,14 +141,38 @@ export function sendControlError(
   statusCode: number,
   code: string,
   message: string,
+  details?: Readonly<Record<string, string | number | boolean | null>>,
 ): void {
   void reply.code(statusCode).type("application/json; charset=utf-8").send({
     error: {
       code,
       message,
       request_id: requestId,
+      ...(details === undefined ? {} : { details }),
     },
   });
+}
+
+function applyRateLimit(
+  request: FastifyRequest,
+  reply: FastifyReply,
+  limiter: ControlRateLimiter,
+  rateClass: ControlRateLimitClass,
+  principalId?: string,
+): boolean {
+  const result = limiter.check(rateClass, request.ip, principalId);
+  if (result.allowed) return true;
+  const retryAfter = result.retryAfterSeconds ?? 60;
+  reply.header("retry-after", String(retryAfter));
+  sendControlError(
+    reply,
+    request.id,
+    429,
+    "rate_limited",
+    "Request rate limit exceeded.",
+    { retry_after_seconds: retryAfter },
+  );
+  return false;
 }
 
 function hasExpectedHost(request: FastifyRequest, authority: string): boolean {

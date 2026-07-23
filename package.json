@@ -9,11 +9,14 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "generate:control-openapi": "npm run build && node scripts/generate-control-openapi.mjs",
+    "check:control-openapi": "npm run build && node scripts/generate-control-openapi.mjs --check",
     "start": "node dist/server.js",
     "start:control": "node dist/control/main.js",
     "test": "vitest run"
   },
   "dependencies": {
+    "@asteasolutions/zod-to-openapi": "9.1.0",
     "@fastify/cookie": "11.1.2",
     "@modelcontextprotocol/sdk": "^1.18.1",
     "@secretlint/core": "^13.0.2",

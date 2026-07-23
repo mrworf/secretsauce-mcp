@@ -1,0 +1,349 @@
+import type {
+  FastifyInstance,
+  FastifyRequest,
+} from "fastify";
+import { z } from "zod";
+import {
+  controlAuthentication,
+  type ControlAuthenticationContext,
+  type ControlAuthenticationMethod,
+} from "./authentication.js";
+import {
+  ControlContractError,
+  controlDataEnvelopeSchema,
+  formatVersionEtag,
+  parseExpectedVersion,
+  parseIdempotencyKey,
+} from "./contracts.js";
+import {
+  permissionNeedsHumanStepUp,
+  permissionNeedsScope,
+  permissionOutcome,
+  type ControlCapability,
+  type PermissionOutcome,
+} from "./permissions.js";
+import type { ControlRateLimitClass } from "./rateLimiter.js";
+import { sendControlError } from "./security.js";
+
+export type ControlHttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+export type ControlStepUpRule = "none" | "five_minutes" | "always";
+
+export interface ControlRouteSchemas {
+  body?: z.ZodType;
+  query?: z.ZodObject<z.ZodRawShape>;
+  params?: z.ZodObject<z.ZodRawShape>;
+  response: z.ZodType;
+}
+
+export interface ControlHandlerContext {
+  body: unknown;
+  query: unknown;
+  params: unknown;
+  authentication?: ControlAuthenticationContext;
+  expectedVersion?: number;
+  idempotencyKey?: string;
+  requestId: string;
+}
+
+export interface ControlHandlerResult {
+  data: unknown;
+  statusCode?: number;
+  version?: number;
+}
+
+export interface ControlRouteDefinition {
+  id: string;
+  method: ControlHttpMethod;
+  path: string;
+  summary: string;
+  tags: readonly string[];
+  authentication: "public" | readonly ControlAuthenticationMethod[];
+  permission: ControlCapability | null;
+  stepUp: ControlStepUpRule;
+  schemas: ControlRouteSchemas;
+  rateLimit: ControlRateLimitClass;
+  auditAction?: string;
+  secretFields: readonly string[];
+  cache: "no-store" | "private";
+  concurrency: "none" | "if-match";
+  idempotency: "none" | "required";
+  rawResponse?: boolean;
+  successStatuses?: readonly number[];
+  handler(context: ControlHandlerContext): Promise<ControlHandlerResult> | ControlHandlerResult;
+}
+
+type SchemaOutput<T extends z.ZodType | undefined> =
+  T extends z.ZodType ? z.output<T> : undefined;
+
+export function defineControlRoute<
+  TBody extends z.ZodType | undefined,
+  TQuery extends z.ZodObject<z.ZodRawShape> | undefined,
+  TParams extends z.ZodObject<z.ZodRawShape> | undefined,
+  TResponse extends z.ZodType,
+>(
+  definition: Omit<ControlRouteDefinition, "schemas" | "handler"> & {
+    schemas: {
+      body?: TBody;
+      query?: TQuery;
+      params?: TParams;
+      response: TResponse;
+    };
+    handler(context: Omit<ControlHandlerContext, "body" | "query" | "params"> & {
+      body: SchemaOutput<TBody>;
+      query: SchemaOutput<TQuery>;
+      params: SchemaOutput<TParams>;
+    }): Promise<Omit<ControlHandlerResult, "data"> & { data: z.input<TResponse> }> |
+      (Omit<ControlHandlerResult, "data"> & { data: z.input<TResponse> });
+  },
+): ControlRouteDefinition {
+  return definition as unknown as ControlRouteDefinition;
+}
+
+export interface ControlAuthorizationSeam {
+  authorizeScope(
+    context: ControlAuthenticationContext,
+    capability: ControlCapability,
+    outcome: PermissionOutcome,
+    request: FastifyRequest,
+  ): Promise<boolean>;
+  verifyStepUp(
+    context: ControlAuthenticationContext,
+    rule: Exclude<ControlStepUpRule, "none">,
+    request: FastifyRequest,
+  ): Promise<boolean>;
+}
+
+export const denyControlAuthorization: ControlAuthorizationSeam = {
+  authorizeScope: async () => false,
+  verifyStepUp: async () => false,
+};
+
+export class ControlRouteRegistry {
+  readonly #definitions: ControlRouteDefinition[] = [];
+  readonly #keys = new Set<string>();
+  readonly #ids = new Set<string>();
+
+  register(definition: ControlRouteDefinition): void {
+    validateDefinition(definition);
+    const key = `${definition.method} ${definition.path}`;
+    if (this.#keys.has(key) || this.#ids.has(definition.id)) {
+      throw new Error("Duplicate control route.");
+    }
+    this.#keys.add(key);
+    this.#ids.add(definition.id);
+    this.#definitions.push(definition);
+  }
+
+  definitions(): readonly ControlRouteDefinition[] {
+    return [...this.#definitions];
+  }
+}
+
+export function installControlRoutes(
+  application: FastifyInstance,
+  registry: ControlRouteRegistry,
+  authorization: ControlAuthorizationSeam = denyControlAuthorization,
+): void {
+  for (const definition of registry.definitions()) {
+    application.route({
+      method: definition.method,
+      url: fastifyPath(definition.path),
+      config: {
+        controlSecurity: {
+          public: definition.authentication === "public",
+          cache: definition.cache === "no-store" ? "no-store" : undefined,
+          authenticationMethods: definition.authentication === "public"
+            ? undefined
+            : definition.authentication,
+          rateLimit: definition.rateLimit,
+        },
+      },
+      handler: async (request, reply) => {
+        try {
+          const authentication = controlAuthentication(request);
+          await authorizeRoute(definition, authentication, request, authorization);
+          const body = parsePart(definition.schemas.body, request.body, "body");
+          const query = parsePart(definition.schemas.query, request.query, "query");
+          const params = parsePart(definition.schemas.params, request.params, "params");
+          const expectedVersion = definition.concurrency === "if-match"
+            ? parseExpectedVersion(request.headers["if-match"])
+            : undefined;
+          const idempotencyKey = definition.idempotency === "required"
+            ? parseIdempotencyKey(request.headers["idempotency-key"])
+            : undefined;
+          const result = await definition.handler({
+            body,
+            query,
+            params,
+            ...(authentication === undefined ? {} : { authentication }),
+            ...(expectedVersion === undefined ? {} : { expectedVersion }),
+            ...(idempotencyKey === undefined ? {} : { idempotencyKey }),
+            requestId: request.id,
+          });
+          const statusCode = result.statusCode ?? 200;
+          const successStatuses = definition.successStatuses ?? [200];
+          if (
+            !Number.isInteger(statusCode) ||
+            !successStatuses.includes(statusCode) ||
+            !isSupportedResponseStatus(statusCode) ||
+            statusCode === 204
+          ) {
+            throw new Error("Invalid control response status.");
+          }
+          const parsedData = definition.schemas.response.safeParse(result.data);
+          if (!parsedData.success) throw new Error("Control response contract violation.");
+          if (result.version !== undefined) {
+            reply.header("etag", formatVersionEtag(result.version));
+          }
+          const payload = definition.rawResponse
+            ? parsedData.data
+            : controlDataEnvelopeSchema(definition.schemas.response).parse({
+                data: parsedData.data,
+                meta: { request_id: request.id, api_version: "v2" },
+              });
+          return reply.code(statusCode).type("application/json; charset=utf-8").send(payload);
+        } catch (error) {
+          if (error instanceof ControlContractError) {
+            sendControlError(
+              reply,
+              request.id,
+              error.statusCode,
+              error.code,
+              error.message,
+              error.details,
+            );
+            return;
+          }
+          throw error;
+        }
+      },
+    });
+  }
+}
+
+async function authorizeRoute(
+  route: ControlRouteDefinition,
+  authentication: ControlAuthenticationContext | undefined,
+  request: FastifyRequest,
+  authorization: ControlAuthorizationSeam,
+): Promise<void> {
+  if (route.authentication === "public") return;
+  if (authentication === undefined || route.permission === null) {
+    throw new ControlContractError(401, "unauthenticated", "Authentication required.");
+  }
+  const outcome = permissionOutcome(authentication.role, route.permission);
+  if (outcome === "deny" || outcome === "no_account") {
+    throw new ControlContractError(403, "forbidden", "The operation is not permitted.");
+  }
+  if (
+    permissionNeedsScope(outcome) &&
+    !(await authorization.authorizeScope(authentication, route.permission, outcome, request))
+  ) {
+    throw new ControlContractError(403, "forbidden", "The operation is not permitted.");
+  }
+  const needsStepUp = permissionNeedsHumanStepUp(outcome) ||
+    (authentication.method === "browser_session" && route.stepUp !== "none");
+  if (needsStepUp) {
+    if (authentication.method !== "browser_session") {
+      throw new ControlContractError(403, "forbidden", "The operation is not permitted.");
+    }
+    const rule = route.stepUp === "none" ? "five_minutes" : route.stepUp;
+    if (!(await authorization.verifyStepUp(authentication, rule, request))) {
+      throw new ControlContractError(403, "step_up_required", "Additional authentication is required.");
+    }
+  }
+}
+
+function parsePart(
+  schema: z.ZodType | undefined,
+  value: unknown,
+  part: "body" | "query" | "params",
+): unknown {
+  if (schema === undefined) return undefined;
+  const parsed = schema.safeParse(value);
+  if (parsed.success) return parsed.data;
+  const issue = parsed.error.issues[0];
+  const pointer = issue === undefined || issue.path.length === 0
+    ? `/${part}`
+    : `/${part}/${issue.path.map(escapePointer).join("/")}`;
+  throw new ControlContractError(
+    400,
+    "invalid_request",
+    "The request is invalid.",
+    {
+      field: pointer.slice(0, 256),
+      rule: (issue?.code ?? "invalid").slice(0, 64),
+    },
+  );
+}
+
+function escapePointer(value: PropertyKey): string {
+  return String(value).replaceAll("~", "~0").replaceAll("/", "~1");
+}
+
+function fastifyPath(path: string): string {
+  return path.replaceAll(/\{([a-z][a-z0-9_]*)\}/g, ":$1");
+}
+
+function validateDefinition(definition: ControlRouteDefinition): void {
+  if (
+    !/^[a-z][a-z0-9_.-]{0,127}$/.test(definition.id) ||
+    !definition.path.startsWith("/api/v2/") ||
+    definition.path.includes("?") ||
+    definition.path.includes("#") ||
+    definition.path.includes(":") ||
+    definition.summary.length < 1 ||
+    definition.summary.length > 256 ||
+    definition.tags.length < 1 ||
+    definition.tags.some((tag) => !/^[A-Za-z][A-Za-z0-9 -]{0,63}$/.test(tag))
+  ) {
+    throw new Error("Invalid control route metadata.");
+  }
+  const successStatuses = definition.successStatuses ?? [200];
+  if (
+    successStatuses.length < 1 ||
+    new Set(successStatuses).size !== successStatuses.length ||
+    successStatuses.some((status) =>
+      !Number.isInteger(status) || !isSupportedResponseStatus(status) || status === 204)
+  ) {
+    throw new Error("Invalid control response metadata.");
+  }
+  const isPublic = definition.authentication === "public";
+  if (
+    (isPublic && (definition.permission !== null || definition.stepUp !== "none")) ||
+    (!isPublic && (
+      definition.authentication.length < 1 ||
+      new Set(definition.authentication).size !== definition.authentication.length ||
+      definition.permission === null
+    ))
+  ) {
+    throw new Error("Invalid control route authentication metadata.");
+  }
+  const unsafe = definition.method !== "GET";
+  if (
+    (!unsafe && (definition.concurrency !== "none" || definition.idempotency !== "none")) ||
+    (unsafe && !isPublic && (
+      definition.auditAction === undefined ||
+      !/^[a-z][a-z0-9_.-]{0,127}$/.test(definition.auditAction)
+    ))
+  ) {
+    throw new Error("Invalid control mutation metadata.");
+  }
+  if (
+    definition.secretFields.some((pointer) => !/^\/[a-z][a-z0-9_]*(?:\/[a-z][a-z0-9_]*)*$/.test(pointer)) ||
+    (definition.secretFields.length > 0 && (
+      definition.schemas.body === undefined ||
+      definition.cache !== "no-store"
+    )) ||
+    (!isPublic && definition.cache !== "no-store")
+  ) {
+    throw new Error("Invalid control secret/cache metadata.");
+  }
+  if (definition.rawResponse && (!isPublic || definition.secretFields.length > 0)) {
+    throw new Error("Invalid control raw response metadata.");
+  }
+}
+
+function isSupportedResponseStatus(status: number): boolean {
+  return (status >= 200 && status <= 299) || status === 503;
+}

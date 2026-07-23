@@ -1,0 +1,518 @@
+{
+  "components": {
+    "parameters": {},
+    "schemas": {
+      "ControlError": {
+        "additionalProperties": false,
+        "properties": {
+          "error": {
+            "additionalProperties": false,
+            "properties": {
+              "code": {
+                "enum": [
+                  "invalid_request",
+                  "unauthenticated",
+                  "forbidden",
+                  "step_up_required",
+                  "not_found",
+                  "precondition_required",
+                  "stale_version",
+                  "idempotency_conflict",
+                  "rate_limited",
+                  "vault_unavailable",
+                  "maintenance",
+                  "internal_error"
+                ],
+                "type": "string"
+              },
+              "details": {
+                "additionalProperties": {
+                  "anyOf": [
+                    {
+                      "maxLength": 256,
+                      "type": "string"
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "type": "object"
+              },
+              "message": {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              "request_id": {
+                "pattern": "^req_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "code",
+              "message",
+              "request_id"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "type": "object"
+      },
+      "ControlExpectedVersion": {
+        "description": "Strong resource ETag required in If-Match for mutable resources.",
+        "pattern": "^\"[1-9][0-9]*\"$",
+        "type": "string"
+      },
+      "ControlHealth": {
+        "additionalProperties": false,
+        "description": "Sanitized readiness with stable check names and states.",
+        "properties": {
+          "checks": {
+            "additionalProperties": false,
+            "properties": {
+              "administrative_audit": {
+                "enum": [
+                  "ready",
+                  "unavailable",
+                  "unsupported"
+                ],
+                "type": "string"
+              },
+              "database": {
+                "enum": [
+                  "ready",
+                  "unavailable",
+                  "unsupported"
+                ],
+                "type": "string"
+              },
+              "schema": {
+                "enum": [
+                  "ready",
+                  "unavailable",
+                  "unsupported"
+                ],
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "status": {
+            "enum": [
+              "ready",
+              "not_ready"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "checks"
+        ],
+        "type": "object"
+      },
+      "ControlIdempotencyKey": {
+        "description": "Printable ASCII retry key. The raw value and request body are never persisted.",
+        "maxLength": 128,
+        "minLength": 16,
+        "pattern": "^[\\x20-\\x7e]+$",
+        "type": "string"
+      },
+      "ControlOpenApiDocument": {
+        "additionalProperties": {},
+        "description": "Generated OpenAPI 3.1 document.",
+        "type": "object"
+      },
+      "ControlPageMeta": {
+        "additionalProperties": false,
+        "description": "Keyset pagination metadata. Absence of next_cursor means the page is final.",
+        "properties": {
+          "next_cursor": {
+            "maxLength": 2048,
+            "minLength": 16,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ControlPaginationQuery": {
+        "additionalProperties": false,
+        "properties": {
+          "cursor": {
+            "maxLength": 2048,
+            "minLength": 16,
+            "pattern": "^[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+$",
+            "type": "string"
+          },
+          "limit": {
+            "default": 50,
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "browserSession": {
+        "description": "Opaque Secure HttpOnly browser session cookie. Cookie mutations also require synchronizer CSRF proof.",
+        "in": "cookie",
+        "name": "__Host-secretsauce_session",
+        "type": "apiKey"
+      },
+      "localHostAuthority": {
+        "description": "Local host or Unix-socket authority. Remote bearer credentials are not accepted.",
+        "type": "mutualTLS"
+      },
+      "managementApiKey": {
+        "bearerFormat": "SecretSauce management API key",
+        "description": "System-owned API key with immutable static role and resource scope. It never satisfies human step-up.",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "description": "Versioned management API. Secret inputs are body-only, bounded, write-only, and excluded from logs, errors, audit, and later reads.",
+    "title": "SecretSauce Control API",
+    "version": "v2"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v2/health": {
+      "get": {
+        "operationId": "control.health",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/ControlHealth"
+                    },
+                    "meta": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "api_version": {
+                          "enum": [
+                            "v2"
+                          ],
+                          "type": "string"
+                        },
+                        "request_id": {
+                          "pattern": "^req_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "request_id",
+                        "api_version"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful response."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "Invalid request. Validation details contain only a JSON Pointer and rule."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "Authentication is required."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "The operation is forbidden or requires human step-up."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "The route or an authorized resource was not found."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "The resource version or idempotency digest conflicts."
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "The request body exceeds its bounded limit."
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "A required expected resource version is missing."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "A bounded request rate was exceeded."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "The request failed without exposing internal details."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/ControlHealth"
+                    },
+                    "meta": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "api_version": {
+                          "enum": [
+                            "v2"
+                          ],
+                          "type": "string"
+                        },
+                        "request_id": {
+                          "pattern": "^req_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "request_id",
+                        "api_version"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Control plane is not ready."
+          }
+        },
+        "security": [],
+        "summary": "Read sanitized control-plane readiness",
+        "tags": [
+          "System"
+        ],
+        "x-audit-action": "none",
+        "x-authentication-methods": [
+          "public"
+        ],
+        "x-cache-class": "no-store",
+        "x-permission": "public",
+        "x-rate-limit-class": "none",
+        "x-secret-fields": [],
+        "x-step-up": "none"
+      }
+    },
+    "/api/v2/openapi.json": {
+      "get": {
+        "operationId": "control.openapi",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlOpenApiDocument"
+                }
+              }
+            },
+            "description": "Successful response."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "Invalid request. Validation details contain only a JSON Pointer and rule."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "Authentication is required."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "The operation is forbidden or requires human step-up."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "The route or an authorized resource was not found."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "The resource version or idempotency digest conflicts."
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "The request body exceeds its bounded limit."
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "A required expected resource version is missing."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "A bounded request rate was exceeded."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "The request failed without exposing internal details."
+          }
+        },
+        "security": [],
+        "summary": "Read the generated OpenAPI 3.1 contract",
+        "tags": [
+          "System"
+        ],
+        "x-audit-action": "none",
+        "x-authentication-methods": [
+          "public"
+        ],
+        "x-cache-class": "no-store",
+        "x-permission": "public",
+        "x-rate-limit-class": "none",
+        "x-secret-fields": [],
+        "x-step-up": "none"
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "https://control.example.org"
+    }
+  ],
+  "tags": [
+    {
+      "description": "Sanitized control-plane readiness and contracts.",
+      "name": "System"
+    }
+  ],
+  "webhooks": {}
+}

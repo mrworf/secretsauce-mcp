@@ -18,6 +18,17 @@ import {
   controlAuthentication,
   type ControlAuthenticator,
 } from "./authentication.js";
+import { createDefaultControlRouteRegistry } from "./defaultRoutes.js";
+import { ControlRateLimiter } from "./rateLimiter.js";
+import {
+  ControlContractError,
+} from "./contracts.js";
+import {
+  denyControlAuthorization,
+  installControlRoutes,
+  type ControlAuthorizationSeam,
+  type ControlRouteRegistry,
+} from "./routeRegistry.js";
 import {
   CONTROL_BODY_LIMIT_BYTES,
   controlSecurityHooks,
@@ -30,6 +41,9 @@ export interface ControlApplicationOptions {
   logger?: Logger;
   persistence?: PersistenceOwner;
   registerRoutes?: (application: FastifyInstance) => void | Promise<void>;
+  registerControlRoutes?: (registry: ControlRouteRegistry) => void;
+  authorization?: ControlAuthorizationSeam;
+  rateLimiter?: ControlRateLimiter;
 }
 
 export function createControlApplication(
@@ -40,6 +54,8 @@ export function createControlApplication(
   if (control === undefined) throw new Error("Control configuration is required.");
   const logger = options.logger ?? createLogger(config.logging);
   const authenticator = options.authenticator ?? denyControlAuthentication;
+  const authorization = options.authorization ?? denyControlAuthorization;
+  const rateLimiter = options.rateLimiter ?? new ControlRateLimiter();
   const application = Fastify({
     logger: false,
     trustProxy: false,
@@ -49,7 +65,7 @@ export function createControlApplication(
     logController: new LogController({ disableRequestLogging: true }),
   });
   void application.register(cookie);
-  const security = controlSecurityHooks(control, authenticator);
+  const security = controlSecurityHooks(control, authenticator, rateLimiter);
   application.addHook("onRequest", security.onRequest);
   application.addHook("onSend", security.onSend);
   application.addHook("onResponse", async (request, reply) => {
@@ -67,32 +83,9 @@ export function createControlApplication(
     });
   });
 
-  application.get("/api/v2/health", {
-    config: publicControlRoute(),
-  }, async (_request, reply) => {
-    const readiness = options.persistence?.readiness;
-    const ready = readiness === undefined || (
-      readiness.database === "ready" &&
-      readiness.schema === "ready" &&
-      readiness.administrativeAudit === "ready"
-    );
-    return reply.code(ready ? 200 : 503).send({
-      data: {
-        status: ready ? "ready" : "not_ready",
-        checks: readiness === undefined
-          ? {}
-          : {
-              database: readiness.database,
-              schema: readiness.schema,
-              administrative_audit: readiness.administrativeAudit,
-            },
-      },
-      meta: {
-        request_id: reply.request.id,
-        api_version: "v2",
-      },
-    });
-  });
+  const routeRegistry = createDefaultControlRouteRegistry(options.persistence, control.publicOrigin);
+  options.registerControlRoutes?.(routeRegistry);
+  installControlRoutes(application, routeRegistry, authorization);
 
   application.get("/control", {
     config: publicControlRoute(),
@@ -107,6 +100,17 @@ export function createControlApplication(
     void application.register(async (scope) => options.registerRoutes?.(scope));
   }
   application.setErrorHandler((error, request, reply) => {
+    if (error instanceof ControlContractError) {
+      sendControlError(
+        reply,
+        request.id,
+        error.statusCode,
+        error.code,
+        error.message,
+        error.details,
+      );
+      return;
+    }
     const receivedStatus = errorStatusCode(error);
     const statusCode = receivedStatus === 413 ? 413 : receivedStatus === 400 ? 400 : 500;
     if (statusCode === 500) {
@@ -146,24 +150,26 @@ export async function startControlServer(config: GatewayConfig): Promise<Control
     productVersion: PACKAGE_VERSION,
     sanitizeAuditText: configuredAuditTextSanitizer(config),
   });
-  const server = createControlApplication(config, { persistence });
+  let server: FastifyInstance | undefined;
   try {
+    server = createControlApplication(config, { persistence });
     await server.listen({
       host: config.control.host,
       port: config.control.port,
     });
   } catch (error) {
-    await server.close().catch(() => undefined);
+    await server?.close().catch(() => undefined);
     await persistence.close();
     throw error;
   }
+  const startedServer = server;
   let closePromise: Promise<void> | undefined;
   return {
-    server,
+    server: startedServer,
     persistence,
     close: () => {
       closePromise ??= (async () => {
-        await server.close();
+        await startedServer.close();
         await persistence.close();
       })();
       return closePromise;

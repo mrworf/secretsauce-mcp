@@ -1,11 +1,12 @@
 import type { FastifyRequest } from "fastify";
+import type { ControlRole } from "./permissions.js";
 
 export type ControlAuthenticationMethod = "browser_session" | "api_key" | "local_cli";
 
 export interface ControlAuthenticationContext {
   method: ControlAuthenticationMethod;
   principalId: string;
-  role: "user" | "admin" | "superadmin" | "service" | "all_services" | "system";
+  role: ControlRole;
 }
 
 export interface ControlAuthenticator {

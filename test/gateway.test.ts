@@ -580,6 +580,45 @@ describe("HTTP gateway", () => {
     }
   });
 
+  it("isolates a saturated slow service from another service and releases service capacity", async () => {
+    const downstream = await startDownstream();
+    try {
+      const config = gatewayConfig(downstream.baseUrl, {
+        maxServiceRequestsInflight: 2,
+        maxServiceRequestsInflightPerSubject: 2,
+        maxServiceRequestsInflightPerService: 1,
+      });
+      const original = config.services["demo-service"];
+      if (original === undefined) throw new Error("Expected demo service");
+      config.services["other-service"] = { ...original, id: "other-service", name: "Other Service" };
+      installBroker(config);
+      const first = executeServiceRequest(config, actor(), {
+        service: "demo-service", destination: "primary", method: "GET", path: "/api/slow",
+        reason: "Hold one service's slot.",
+      });
+      await waitForRequestCount(downstream.requests, 1);
+
+      await expectGatewayError(() => executeServiceRequest(config, actor(), {
+        service: "demo-service", destination: "primary", method: "GET", path: "/api/echo",
+        reason: "Exceed one service's capacity.",
+      }), "capacity_exceeded");
+      const other = await executeServiceRequest(config, actor(), {
+        service: "other-service", destination: "primary", method: "GET", path: "/api/echo",
+        reason: "Use another service's capacity.",
+      });
+
+      expect(other.status_code).toBe(200);
+      await first;
+      await executeServiceRequest(config, actor(), {
+        service: "demo-service", destination: "primary", method: "GET", path: "/api/echo",
+        reason: "Reuse released service capacity.",
+      });
+      expect(downstream.requests.map((request) => request.path)).toEqual(["/api/slow", "/api/echo", "/api/echo"]);
+    } finally {
+      await downstream.close();
+    }
+  });
+
   it("rejects unknown and wrong-destination tokens before downstream calls", async () => {
     const downstream = await startDownstream();
     try {
@@ -642,6 +681,7 @@ describe("HTTP gateway", () => {
         timeout: "10ms",
         maxServiceRequestsInflight: 1,
         maxServiceRequestsInflightPerSubject: 1,
+        maxServiceRequestsInflightPerService: 1,
       });
       installBroker(config);
 
@@ -874,6 +914,7 @@ function gatewayConfig(baseUrl: string, options: {
   maxResponseBody?: string;
   maxServiceRequestsInflight?: number;
   maxServiceRequestsInflightPerSubject?: number;
+  maxServiceRequestsInflightPerService?: number;
   tlsVerify?: boolean;
   headerTemplate?: { prefix?: string; suffix?: string; enforce?: boolean };
 } = {}): GatewayConfig {
@@ -892,6 +933,8 @@ function gatewayConfig(baseUrl: string, options: {
       max_response_body: options.maxResponseBody ?? "1mb",
       max_service_requests_inflight: options.maxServiceRequestsInflight ?? 32,
       max_service_requests_inflight_per_subject: options.maxServiceRequestsInflightPerSubject ?? 4,
+      max_service_requests_inflight_per_service: options.maxServiceRequestsInflightPerService
+        ?? Math.min(8, options.maxServiceRequestsInflight ?? 32),
       timeout: options.timeout ?? "1s",
     },
     services: {

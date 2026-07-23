@@ -260,7 +260,7 @@ describe("MCP surface", () => {
   it("returns a structured capacity error for saturated authenticated service work", async () => {
     const config = fixtureConfig({ maxServiceRequestsInflight: 1, maxServiceRequestsInflightPerSubject: 1 });
     const auth = { subject: "bearer-dev", scopes: ["gateway.request"], mode: "bearer" as const };
-    const release = getServiceRequestLimiter(config).acquire(auth.subject);
+    const release = getServiceRequestLimiter(config).acquire(auth.subject, "demo-service");
     if (release === undefined) throw new Error("Expected admission slot");
 
     try {
@@ -556,6 +556,7 @@ function fixtureConfig(options: {
   binaryResponse?: { scan?: boolean; max_size?: string };
   maxServiceRequestsInflight?: number;
   maxServiceRequestsInflightPerSubject?: number;
+  maxServiceRequestsInflightPerService?: number;
 } = {}) {
   return validateConfig({
     server: { listen: "127.0.0.1:8080", mcp_path: "/mcp", ...(options.publicResource === undefined ? {} : { resource: options.publicResource }) },
@@ -564,6 +565,8 @@ function fixtureConfig(options: {
       max_inbound_body: options.maxInboundBody ?? "1mb",
       max_service_requests_inflight: options.maxServiceRequestsInflight ?? 32,
       max_service_requests_inflight_per_subject: options.maxServiceRequestsInflightPerSubject ?? 4,
+      max_service_requests_inflight_per_service: options.maxServiceRequestsInflightPerService
+        ?? Math.min(8, options.maxServiceRequestsInflight ?? 32),
     },
     services: {
       "demo-service": {

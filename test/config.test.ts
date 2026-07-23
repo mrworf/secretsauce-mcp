@@ -505,12 +505,15 @@ describe("config validation", () => {
     const defaults = validateConfig(raw, validEnv).limits;
     expect(defaults.maxServiceRequestsInflight).toBe(32);
     expect(defaults.maxServiceRequestsInflightPerSubject).toBe(4);
+    expect(defaults.maxServiceRequestsInflightPerService).toBe(8);
 
     raw.limits.max_service_requests_inflight = 2;
     raw.limits.max_service_requests_inflight_per_subject = 2;
+    raw.limits.max_service_requests_inflight_per_service = 2;
     expect(validateConfig(raw, validEnv).limits).toMatchObject({
       maxServiceRequestsInflight: 2,
       maxServiceRequestsInflightPerSubject: 2,
+      maxServiceRequestsInflightPerService: 2,
     });
     raw.limits.max_service_requests_inflight_per_subject = 3;
     expectConfigError(() => validateConfig(raw, validEnv), "must not exceed");
@@ -518,6 +521,14 @@ describe("config validation", () => {
     expectConfigError(() => validateConfig(raw, validEnv), "Invalid config");
     raw.limits.max_service_requests_inflight = 0;
     expectConfigError(() => validateConfig(raw, validEnv), "Invalid config");
+
+    const perService = validRaw();
+    perService.limits.max_service_requests_inflight = 2;
+    perService.limits.max_service_requests_inflight_per_subject = 2;
+    perService.limits.max_service_requests_inflight_per_service = 3;
+    expectConfigError(() => validateConfig(perService, validEnv), "must not exceed");
+    perService.limits.max_service_requests_inflight_per_service = 0;
+    expectConfigError(() => validateConfig(perService, validEnv), "Invalid config");
   });
 
   it("defaults and validates password-verification limits", () => {

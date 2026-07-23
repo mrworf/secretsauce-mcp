@@ -120,7 +120,7 @@ export async function executeServiceRequest(
     throw new GatewayError("policy_denied", policy.reason, denial.request_id);
   }
 
-  const releaseCapacity = acquireServiceRequest(config, auth.subject);
+  const releaseCapacity = acquireServiceRequest(config, auth.subject, service.id);
   try {
   const broker = getTokenBroker(config);
   const tokenTarget = { service: service.id, destination: target.destination.id };

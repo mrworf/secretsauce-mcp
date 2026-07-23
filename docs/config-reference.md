@@ -72,6 +72,17 @@ limited to the new UUID and non-sensitive enrollment state. The identity cannot
 authenticate or authorize MCP requests until the later enrollment and
 authentication features activate it.
 
+## Local browser authentication
+
+The optional `identity` block enables password-plus-TOTP authentication on the
+control listener. It requires both `control` and `persistence`. See
+[Local browser authentication](local-authentication.md) for the complete
+configuration, key-mount, session, step-up, and operational security contract.
+
+Until the Milestone 06 enrollment workflows are present, this subsystem can
+authenticate only an already active, fully configured local identity; the
+bootstrap identity remains `enrollment_required` and cannot log in.
+
 ## Startup diagnostics
 
 Invalid gateway, Secretlint, and sensitive-name YAML stops startup with a structured `config_error`. Each actionable diagnostic includes the configuration file, dotted field path when known, 1-based line and column, a detailed reason, a sanitized source excerpt, and a caret. Missing fields point to the nearest existing parent node; unreadable files have no fabricated source position.

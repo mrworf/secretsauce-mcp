@@ -15,6 +15,7 @@ const healthDataSchema = z.object({
     schema: readinessValueSchema.optional(),
     administrative_audit: readinessValueSchema.optional(),
     vault: readinessValueSchema.optional(),
+    identity: readinessValueSchema.optional(),
   }).strict(),
 }).strict().meta({
   id: "ControlHealth",
@@ -30,6 +31,7 @@ export function createDefaultControlRouteRegistry(
   persistence: PersistenceOwner | undefined,
   publicOrigin: string,
   vaultReadiness?: () => Promise<"ready" | "unavailable" | "unsupported">,
+  identityReadiness?: () => Promise<"ready" | "unavailable" | "unsupported">,
 ): ControlRouteRegistry {
   const registry = new ControlRouteRegistry();
   registry.register({
@@ -51,6 +53,7 @@ export function createDefaultControlRouteRegistry(
     handler: async () => {
       const readiness = persistence?.readiness;
       let vault: "ready" | "unavailable" | "unsupported" | undefined;
+      let identity: "ready" | "unavailable" | "unsupported" | undefined;
       if (vaultReadiness !== undefined) {
         try {
           vault = await vaultReadiness();
@@ -58,11 +61,20 @@ export function createDefaultControlRouteRegistry(
           vault = "unavailable";
         }
       }
+      if (identityReadiness !== undefined) {
+        try {
+          identity = await identityReadiness();
+        } catch {
+          identity = "unavailable";
+        }
+      }
       const ready = (readiness === undefined || (
         readiness.database === "ready" &&
         readiness.schema === "ready" &&
         readiness.administrativeAudit === "ready"
-      )) && (vault === undefined || vault === "ready");
+      )) &&
+        (vault === undefined || vault === "ready") &&
+        (identity === undefined || identity === "ready");
       return {
         statusCode: ready ? 200 : 503,
         data: {
@@ -74,6 +86,7 @@ export function createDefaultControlRouteRegistry(
                 administrative_audit: readiness.administrativeAudit,
             }),
             ...(vault === undefined ? {} : { vault }),
+            ...(identity === undefined ? {} : { identity }),
           },
         },
       };

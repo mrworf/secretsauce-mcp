@@ -129,6 +129,20 @@ describe("documentation examples", () => {
     expect(configReference).toContain("`not_configured` password/TOTP state");
     expect(bootstrap).not.toMatch(/identity:bootstrap\s+--(?:email|password|totp)/);
   });
+
+  it("documents local authentication key, session, origin, and step-up boundaries", () => {
+    const docs = readFileSync("docs/local-authentication.md", "utf8");
+
+    expect(docs).toContain("mode `0400`");
+    expect(docs).toContain("writable persistent storage");
+    expect(docs).toContain("TOTP is not phishing-resistant");
+    expect(docs).toContain("never extends an existing session");
+    expect(docs).toContain("accepted only on the control listener");
+    expect(docs).toContain("`x-step-up-proof`");
+    expect(docs).toContain("Milestone 06 enrollment ceremony");
+    expect(docs).toContain("checks.identity");
+    expect(docs).not.toMatch(/https?:\/\/(?!control\.example\.org)[a-z0-9.-]+/i);
+  });
 });
 
 function collectFiles(root: string): string[] {

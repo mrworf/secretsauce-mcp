@@ -96,6 +96,14 @@
                 ],
                 "type": "string"
               },
+              "identity": {
+                "enum": [
+                  "ready",
+                  "unavailable",
+                  "unsupported"
+                ],
+                "type": "string"
+              },
               "schema": {
                 "enum": [
                   "ready",

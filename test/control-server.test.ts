@@ -333,6 +333,40 @@ describe("control listener security boundary", () => {
     });
     expect(unavailableResponse.body).not.toContain("private socket path");
   });
+
+  it("reports configured identity readiness and sanitizes seam failures", async () => {
+    const config = controlConfig();
+    const ready = createControlApplication(config, {
+      identityReadiness: async () => "ready",
+    });
+    const readyResponse = await ready.inject({
+      method: "GET",
+      url: "/api/v2/health",
+      headers: { host: "control.example.org" },
+    });
+    expect(readyResponse.statusCode).toBe(200);
+    expect(readyResponse.json()).toMatchObject({
+      data: { status: "ready", checks: { identity: "ready" } },
+    });
+    await ready.close();
+
+    const unavailable = createControlApplication(config, {
+      identityReadiness: async () => {
+        throw new Error("identity-key-value-and-path");
+      },
+    });
+    const unavailableResponse = await unavailable.inject({
+      method: "GET",
+      url: "/api/v2/health",
+      headers: { host: "control.example.org" },
+    });
+    expect(unavailableResponse.statusCode).toBe(503);
+    expect(unavailableResponse.json()).toMatchObject({
+      data: { status: "not_ready", checks: { identity: "unavailable" } },
+    });
+    expect(unavailableResponse.body).not.toContain("identity-key-value-and-path");
+    await unavailable.close();
+  });
 });
 
 describe("control and data listener integration", () => {

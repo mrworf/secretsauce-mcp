@@ -65,6 +65,16 @@ describe("durable browser sessions", () => {
     expect(documented.statusCode).toBe(200);
     expect(documented.json().paths).toHaveProperty("/api/v2/auth/login");
     expect(documented.json().paths).toHaveProperty("/api/v2/auth/step-up");
+    const health = await first.server.inject({
+      method: "GET",
+      url: "/api/v2/health",
+      headers: { host: "control.example.org" },
+    });
+    expect(health.statusCode).toBe(200);
+    expect(health.json()).toMatchObject({
+      data: { status: "ready", checks: { identity: "ready" } },
+    });
+    await first.close();
     await first.close();
     closeables.delete(first);
 

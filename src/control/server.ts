@@ -73,6 +73,7 @@ export interface ControlApplicationOptions {
   rateLimiter?: ControlRateLimiter;
   webAssets?: ControlWebAssets;
   vaultReadiness?: () => Promise<"ready" | "unavailable" | "unsupported">;
+  identityReadiness?: () => Promise<"ready" | "unavailable" | "unsupported">;
   localIdentity?: LocalIdentityControl;
 }
 
@@ -121,6 +122,7 @@ export function createControlApplication(
     options.persistence,
     control.publicOrigin,
     options.vaultReadiness,
+    options.identityReadiness,
   );
   if (options.localIdentity !== undefined) {
     registerLocalIdentityRoutes(routeRegistry, options.localIdentity);
@@ -245,6 +247,9 @@ export async function startControlServer(
     server = createControlApplication(config, {
       persistence,
       ...options,
+      ...(localIdentity === undefined
+        ? {}
+        : { identityReadiness: async () => "ready" as const }),
       ...(localIdentity === undefined ? {} : { localIdentity }),
     });
     await server.listen({

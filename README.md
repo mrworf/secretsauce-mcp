@@ -53,6 +53,7 @@ For every downstream request, the gateway validates the authenticated client, re
 ## Documentation
 
 - [Configuration reference](docs/config-reference.md)
+- [Local browser authentication](docs/local-authentication.md)
 - [Codex and ChatGPT setup](docs/codex-setup.md), including hosted ChatGPT web configuration
 - [Security notes](docs/security-notes.md)
 - [Branch protection](docs/branch-protection.md)

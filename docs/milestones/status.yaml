@@ -44,10 +44,10 @@ milestones:
   - id: "06"
     title: "Enrollment, Recovery, And Self-Service"
     file: "docs/milestones/06-enrollment-recovery-self-service.md"
-    status: "in_progress"
-    completed_at: null
-    commit_hash: null
-    notes: "Decision-complete implementation planning and review in progress."
+    status: "completed"
+    completed_at: "2026-07-23T19:36:25.367Z"
+    commit_hash: "613de32"
+    notes: "Implemented guarded reset primitives, isolated enrollment/recovery sessions, atomic initial activation, password/TOTP recovery, self-service replacement, terminal-only break glass, and operator guidance; OpenAPI current; 63 files / 545 tests passed."
   - id: "07"
     title: "User Administration And Lifecycle"
     file: "docs/milestones/07-user-administration-lifecycle.md"

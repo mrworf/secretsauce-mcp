@@ -60,7 +60,13 @@ describe("isolated vault broker and typed clients", () => {
     const fixture = await brokerFixture();
     try {
       const firstSecret = Buffer.from("first-control-secret");
-      const created = await fixture.control.create({ binding: fixture.binding, secret: firstSecret });
+      const locator = "12345678-1234-4234-8234-123456789abc";
+      const created = await fixture.control.create({
+        binding: fixture.binding,
+        secret: firstSecret,
+        locator,
+      });
+      expect(created.locator).toBe(locator);
       const secondSecret = Buffer.from("second-control-secret");
       const replaced = await fixture.control.replace({
         locator: created.locator,

@@ -247,7 +247,10 @@ export class VaultBrokerServer {
         const payload = parse(createRequestSchema, request.payload);
         const secret = decodeSecret(payload.secret);
         try {
-        return this.#store.create(payload.binding, secret, { captureLastFour: payload.captureLastFour });
+        return this.#store.create(payload.binding, secret, {
+          captureLastFour: payload.captureLastFour,
+          ...(payload.locator === undefined ? {} : { locator: payload.locator }),
+        });
         } finally {
           secret.fill(0);
         }

@@ -21,6 +21,27 @@ import {
 const timestamp = 1_800_000_000_000;
 
 describe("encrypted vault record store", () => {
+  it("accepts a control-selected locator and rejects invalid or duplicate locators", () => {
+    const fixture = storeFixture("selected-locator");
+    const locator = "12345678-1234-4234-8234-123456789abc";
+    expect(fixture.store.create(
+      fixture.binding,
+      Buffer.from("selected-value"),
+      { locator },
+    ).locator).toBe(locator);
+    expect(() => fixture.store.create(
+      fixture.binding,
+      Buffer.from("duplicate-value"),
+      { locator },
+    )).toThrowError(expect.objectContaining({ code: "vault_record_conflict" }));
+    expect(() => fixture.store.create(
+      fixture.binding,
+      Buffer.from("invalid-value"),
+      { locator: "not-a-locator" },
+    )).toThrowError(expect.objectContaining({ code: "vault_record_invalid" }));
+    fixture.store.close();
+  });
+
   it("creates, masks, resolves, and persists an envelope-encrypted credential", () => {
     const fixture = storeFixture();
     const secret = Buffer.from("credential-private-1234");

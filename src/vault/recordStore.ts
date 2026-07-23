@@ -99,6 +99,7 @@ export interface VaultRecordStoreOptions {
 
 export interface VaultWriteOptions {
   captureLastFour?: boolean;
+  locator?: string;
 }
 
 interface ParsedRecord {
@@ -272,7 +273,7 @@ export class VaultRecordStore {
     this.#assertReady();
     validateBinding(binding);
     const secret = validateSecret(secretValue);
-    const locator = this.#randomUuid();
+    const locator = options.locator ?? this.#randomUuid();
     if (!LOCATOR_PATTERN.test(locator)) throw vaultError("vault_record_invalid");
     const timestamp = this.#timestamp();
     try {

@@ -37,6 +37,7 @@ export interface VaultClientOptions {
 export interface ControlCreateInput {
   binding: VaultCredentialBinding;
   secret: Uint8Array;
+  locator?: string;
   captureLastFour?: boolean;
 }
 
@@ -145,6 +146,7 @@ export class ControlVaultClient extends VaultClient {
     return this.request("create", {
       binding: input.binding,
       secret: asBufferView(input.secret).toString("base64url"),
+      ...(input.locator === undefined ? {} : { locator: input.locator }),
       captureLastFour: input.captureLastFour ?? false,
     }, createResultSchema);
   }

@@ -21,6 +21,7 @@ export const readinessRequestSchema = z.object({}).strict();
 export const createRequestSchema = z.object({
   binding: bindingSchema,
   secret: canonicalSecretSchema,
+  locator: locatorSchema.optional(),
   captureLastFour: z.boolean().default(false),
 }).strict();
 export const replaceRequestSchema = z.object({

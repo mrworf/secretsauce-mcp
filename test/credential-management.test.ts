@@ -1,4 +1,4 @@
-import { mkdtempSync } from "node:fs";
+import { chmodSync, mkdirSync, mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -9,6 +9,10 @@ import {
   CredentialManagementRepository,
   CredentialManagementService,
 } from "../src/credentialManagement.js";
+import {
+  CredentialVaultCoordinator,
+  type CredentialControlVault,
+} from "../src/credentialVaultCoordinator.js";
 import { GroupAssignmentRepository } from "../src/groupAssignments.js";
 import { IdentityRepository, type IdentityAuditContext } from "../src/identity/repository.js";
 import { PersistenceWorker } from "../src/persistence/worker.js";
@@ -18,6 +22,15 @@ import {
   ServiceManagementService,
   ServiceRelationshipRepository,
 } from "../src/serviceManagement.js";
+import { vaultError } from "../src/vault/errors.js";
+import { VaultCapabilityAuthority } from "../src/vault/capabilities.js";
+import { VaultBrokerServer } from "../src/vault/broker.js";
+import { ControlVaultClient } from "../src/vault/client.js";
+import type {
+  VaultCredentialBinding,
+  VaultRecordMetadata,
+} from "../src/vault/recordStore.js";
+import { VaultRecordStore } from "../src/vault/recordStore.js";
 
 const NOW = 1_785_000_000_000;
 const CORRELATION = "req_12345678-1234-4234-8234-123456789abc";
@@ -32,6 +45,256 @@ afterEach(async () => {
 });
 
 describe("service credential metadata and selectors", () => {
+  it("writes through the real broker without giving the control caller a plaintext resolve path", async () => {
+    const fixture = await credentialFixture("real-vault");
+    const service = await fixture.service("real-vault-api");
+    const created = await fixture.credentials.create(
+      fixture.superadmin,
+      service.id,
+      {
+        name: "Broker token",
+        placement: { kind: "body", name: "token" },
+        selector: { kind: "all" },
+      },
+      "create-broker-token",
+      CORRELATION,
+    );
+    const directory = mkdtempSync(join(tmpdir(), "credential-real-vault-"));
+    chmodSync(directory, 0o700);
+    const run = join(directory, "run");
+    const storeDirectory = join(directory, "store");
+    mkdirSync(run, { mode: 0o700 });
+    mkdirSync(storeDirectory, { mode: 0o700 });
+    const socketPath = join(run, "vault.sock");
+    const keys = {
+      data_plane: Buffer.alloc(32, 81),
+      control_plane: Buffer.alloc(32, 82),
+      backup: Buffer.alloc(32, 83),
+    };
+    const server = new VaultBrokerServer({
+      socketPath,
+      socketMode: 0o600,
+      callerKeys: keys,
+      capabilityAuthority: new VaultCapabilityAuthority({
+        resolveKey: Buffer.alloc(32, 84),
+        backupKey: Buffer.alloc(32, 85),
+      }),
+      store: new VaultRecordStore({
+        directory: storeDirectory,
+        activeRootKey: "root-a",
+        rootKeys: new Map([["root-a", Buffer.alloc(32, 86)]]),
+        now: () => NOW,
+      }),
+    });
+    await server.listen();
+    const control = new ControlVaultClient({
+      socketPath,
+      key: keys.control_plane,
+    });
+    try {
+      const coordinator = new CredentialVaultCoordinator(
+        fixture.worker,
+        fixture.repository,
+        control,
+        () => NOW,
+        () => "abcdef12-3456-4789-8abc-def012345678",
+      );
+      const view = await coordinator.setValue({
+        actor: fixture.superadmin,
+        serviceId: service.id,
+        credentialId: created.credential.id,
+        expectedVersion: created.credential.version,
+        value: Buffer.from("broker-only-secret-2468"),
+        captureLastFour: true,
+        correlationId: CORRELATION,
+      });
+      expect(view).toMatchObject({ status: "configured", lastFour: "2468" });
+      expect(JSON.stringify(view)).not.toContain("broker-only-secret");
+      expect((control as unknown as { resolveForRequest?: unknown }).resolveForRequest)
+        .toBeUndefined();
+    } finally {
+      control.close();
+      await server.close();
+    }
+  });
+
+  it("coordinates write-only vault values with service-wide binding and safe metadata", async () => {
+    const fixture = await credentialFixture("vault-values");
+    const service = await fixture.service("vault-api");
+    const created = await fixture.credentials.create(
+      fixture.superadmin,
+      service.id,
+      {
+        name: "Vault token",
+        placement: { kind: "header", name: "Authorization", prefix: "Bearer " },
+        selector: { kind: "all" },
+      },
+      "create-vault-token",
+      CORRELATION,
+    );
+    const vault = new FakeCredentialVault();
+    const locator = "12345678-1234-4234-8234-123456789abc";
+    const coordinator = new CredentialVaultCoordinator(
+      fixture.worker,
+      fixture.repository,
+      vault,
+      () => NOW,
+      () => locator,
+    );
+    const configured = await coordinator.setValue({
+      actor: fixture.superadmin,
+      serviceId: service.id,
+      credentialId: created.credential.id,
+      expectedVersion: created.credential.version,
+      value: Buffer.from("first-secret-1234"),
+      captureLastFour: true,
+      correlationId: CORRELATION,
+    });
+    expect(configured).toMatchObject({
+      status: "configured",
+      lastFour: "1234",
+      valueUpdatedAt: NOW,
+    });
+    expect(configured).not.toHaveProperty("vaultLocator");
+    expect(vault.lastBinding).toEqual({
+      serviceId: service.id,
+      destinationId: service.id,
+      credentialId: created.credential.id,
+    });
+    expect(vault).not.toHaveProperty("resolveForRequest");
+
+    vault.throwAfterApply = true;
+    const replaced = await coordinator.setValue({
+      actor: fixture.superadmin,
+      serviceId: service.id,
+      credentialId: created.credential.id,
+      expectedVersion: configured.version,
+      value: Buffer.from("replacement-5678"),
+      captureLastFour: true,
+      correlationId: CORRELATION,
+    });
+    expect(replaced).toMatchObject({ status: "configured", lastFour: "5678" });
+
+    vault.throwAfterApply = true;
+    const removed = await coordinator.deleteValue({
+      actor: fixture.superadmin,
+      serviceId: service.id,
+      credentialId: created.credential.id,
+      expectedVersion: replaced.version,
+      archive: false,
+      correlationId: CORRELATION,
+    });
+    expect(removed).toMatchObject({ status: "unconfigured" });
+    expect(removed).not.toHaveProperty("lastFour");
+    expect(await coordinator.reconcilePending()).toEqual({
+      reconciled: 0,
+      unresolved: 0,
+    });
+
+    const restored = await coordinator.setValue({
+      actor: fixture.superadmin,
+      serviceId: service.id,
+      credentialId: created.credential.id,
+      expectedVersion: removed.version,
+      value: Buffer.from("restored"),
+      correlationId: CORRELATION,
+    });
+    const disabled = await fixture.credentials.disable(
+      fixture.superadmin,
+      service.id,
+      created.credential.id,
+      restored.version,
+      { justification: "Temporarily pause downstream access." },
+      "disable-vault-token",
+      CORRELATION,
+    );
+    expect(disabled.credential.status).toBe("disabled");
+    const enabled = await coordinator.enable({
+      actor: fixture.superadmin,
+      serviceId: service.id,
+      credentialId: created.credential.id,
+      expectedVersion: disabled.credential.version,
+      correlationId: CORRELATION,
+    });
+    expect(enabled.status).toBe("configured");
+    const archived = await coordinator.deleteValue({
+      actor: fixture.superadmin,
+      serviceId: service.id,
+      credentialId: created.credential.id,
+      expectedVersion: enabled.version,
+      archive: true,
+      correlationId: CORRELATION,
+    });
+    expect(archived).toMatchObject({ status: "archived" });
+    expect(archived.selector).toBeUndefined();
+  });
+
+  it("rolls back definite create failure and leaves ambiguous vault work non-usable", async () => {
+    const fixture = await credentialFixture("vault-failure");
+    const service = await fixture.service("failure-api");
+    const created = await fixture.credentials.create(
+      fixture.superadmin,
+      service.id,
+      {
+        name: "Failing token",
+        placement: { kind: "query", name: "token" },
+        selector: { kind: "all" },
+      },
+      "create-failing-token",
+      CORRELATION,
+    );
+    const vault = new FakeCredentialVault();
+    vault.failBeforeApply = true;
+    const coordinator = new CredentialVaultCoordinator(
+      fixture.worker,
+      fixture.repository,
+      vault,
+      () => NOW,
+      () => "87654321-4321-4321-8321-cba987654321",
+    );
+    await expect(coordinator.setValue({
+      actor: fixture.superadmin,
+      serviceId: service.id,
+      credentialId: created.credential.id,
+      expectedVersion: created.credential.version,
+      value: Buffer.from("never-written"),
+      correlationId: CORRELATION,
+    })).rejects.toEqual(new CredentialManagementError("unavailable"));
+    expect(await fixture.credentials.credential(
+      fixture.superadmin,
+      service.id,
+      created.credential.id,
+    )).toMatchObject({ status: "unconfigured" });
+    expect(await coordinator.reconcilePending()).toEqual({
+      reconciled: 0,
+      unresolved: 0,
+    });
+
+    vault.failBeforeApply = false;
+    vault.metadataUnavailable = true;
+    vault.throwAfterApply = true;
+    await expect(coordinator.setValue({
+      actor: fixture.superadmin,
+      serviceId: service.id,
+      credentialId: created.credential.id,
+      expectedVersion: (await fixture.credentials.credential(
+        fixture.superadmin,
+        service.id,
+        created.credential.id,
+      )).version,
+      value: Buffer.from("ambiguous"),
+      correlationId: CORRELATION,
+    })).rejects.toEqual(new CredentialManagementError("unavailable"));
+    expect(await fixture.repository.privateCredential(
+      fixture.superadmin,
+      service.id,
+      created.credential.id,
+    )).toMatchObject({
+      status: "unconfigured",
+      vaultState: "reconcile",
+    });
+  });
+
   it("creates, reads, and edits only safe credential metadata", async () => {
     const fixture = await credentialFixture("metadata");
     const service = await fixture.service("managed-api");
@@ -520,6 +783,98 @@ async function credentialFixture(label: string) {
       `, [credentialId])!.count),
     }),
   };
+}
+
+class FakeCredentialVault implements CredentialControlVault {
+  readonly records = new Map<string, VaultRecordMetadata>();
+  lastBinding: VaultCredentialBinding | undefined;
+  throwAfterApply = false;
+  failBeforeApply = false;
+  metadataUnavailable = false;
+
+  async create(input: {
+    binding: VaultCredentialBinding;
+    secret: Uint8Array;
+    locator: string;
+    captureLastFour?: boolean;
+  }) {
+    this.lastBinding = input.binding;
+    if (this.failBeforeApply) throw vaultError("vault_record_invalid");
+    const metadata = this.metadataFor(input.secret, 1, input.captureLastFour);
+    this.records.set(input.locator, metadata);
+    if (this.throwAfterApply) {
+      this.throwAfterApply = false;
+      throw vaultError("vault_store_unavailable");
+    }
+    return { locator: input.locator, metadata };
+  }
+
+  async replace(input: {
+    binding: VaultCredentialBinding;
+    secret: Uint8Array;
+    locator: string;
+    generation: number;
+    captureLastFour?: boolean;
+  }) {
+    this.lastBinding = input.binding;
+    if (this.failBeforeApply) throw vaultError("vault_record_invalid");
+    const current = this.records.get(input.locator);
+    if (current?.generation !== input.generation) {
+      throw vaultError("vault_record_conflict");
+    }
+    const metadata = this.metadataFor(
+      input.secret,
+      input.generation + 1,
+      input.captureLastFour,
+    );
+    this.records.set(input.locator, metadata);
+    if (this.throwAfterApply) {
+      this.throwAfterApply = false;
+      throw vaultError("vault_store_unavailable");
+    }
+    return metadata;
+  }
+
+  async delete(
+    locator: string,
+    generation: number,
+    binding: VaultCredentialBinding,
+  ) {
+    this.lastBinding = binding;
+    if (this.failBeforeApply) throw vaultError("vault_record_invalid");
+    const current = this.records.get(locator);
+    if (current?.generation !== generation) throw vaultError("vault_record_conflict");
+    this.records.delete(locator);
+    if (this.throwAfterApply) {
+      this.throwAfterApply = false;
+      throw vaultError("vault_store_unavailable");
+    }
+    return { deleted: true as const };
+  }
+
+  async metadata(locator: string, binding: VaultCredentialBinding) {
+    this.lastBinding = binding;
+    if (this.metadataUnavailable) throw vaultError("vault_store_unavailable");
+    const metadata = this.records.get(locator);
+    if (metadata === undefined) throw vaultError("vault_record_not_found");
+    return metadata;
+  }
+
+  private metadataFor(
+    secret: Uint8Array,
+    generation: number,
+    captureLastFour: boolean | undefined,
+  ): VaultRecordMetadata {
+    const text = Buffer.from(secret).toString("utf8");
+    return {
+      status: "configured",
+      generation,
+      sizeClass: "up_to_32_bytes",
+      ...(captureLastFour === true ? { lastFour: text.slice(-4) } : {}),
+      createdAt: NOW,
+      updatedAt: NOW,
+    };
+  }
 }
 
 function idempotency(

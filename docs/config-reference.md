@@ -10,6 +10,40 @@ Sticky sessions do not provide the missing shared atomic capability store: there
 
 The single instance should mount stable read-only built-in OAuth signing keys plus writable persistent audit storage. If built-in OAuth refresh continuity is enabled, mount its hash-only refresh-state path on writable persistent storage and allow only this one process to write it. Opaque `gref_` and `sec_` state remains intentionally ephemeral and must not be placed on a shared filesystem.
 
+## Vault broker
+
+The vault broker uses its own closed YAML document; see
+[`examples/vault.yaml`](../examples/vault.yaml). It runs as a separate process,
+listens only on a Unix-domain socket, and owns the encrypted record store and
+root keys. Key files contain one canonical 32-byte base64url key, have mode
+`0400`, and are generated with
+`npm run vault:key -- generate --output /absolute/path/to/key`; the command never
+prints key bytes or replaces an existing file.
+
+The broker requires distinct data, control, backup, resolve-capability, and
+backup-capability keys. The broker mounts all of them. A caller mounts only its
+own caller key and the socket directory—never root keys, the encrypted store, or
+another caller's key. Socket mode is `0600` by default or explicitly `0660` for
+a shared deployment group. The store directory is `0700`, records are `0600`,
+and key/socket/store paths reject links, unsafe ownership, or writable modes.
+
+Start the broker with `SECRETSAUCE_VAULT_CONFIG=/config/vault.yaml
+node dist/vault/main.js`. The authenticated health command uses
+`SECRETSAUCE_VAULT_SOCKET` plus `SECRETSAUCE_VAULT_DATA_KEY_FILE` and returns
+only `ready` or `unavailable`. A separately started control process can use
+`SECRETSAUCE_VAULT_SOCKET` plus
+`SECRETSAUCE_VAULT_CONTROL_KEY_FILE`; `/api/v2/health` then includes only
+`checks.vault: ready|unavailable`. Supplying just one variable fails startup
+without echoing either path.
+
+Vault archives use Argon2id with 64 MiB memory, three iterations, and parallelism
+one, then independently authenticated 64 KiB AES-256-GCM chunks and a final
+manifest. Imports reject parameter changes, excess sizes/counts, reordering,
+truncation, and tampering before atomically replacing the active encrypted
+record set. Wrong passphrases and authenticated-content tampering share one
+stable failure. Archive passphrases are never command arguments or persisted
+temporary files.
+
 ## Startup diagnostics
 
 Invalid gateway, Secretlint, and sensitive-name YAML stops startup with a structured `config_error`. Each actionable diagnostic includes the configuration file, dotted field path when known, 1-based line and column, a detailed reason, a sanitized source excerpt, and a caret. Missing fields point to the nearest existing parent node; unreadable files have no fabricated source position.

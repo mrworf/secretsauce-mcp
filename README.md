@@ -133,8 +133,23 @@ SecretSauce rejects non-loopback HTTP resource, issuer, and JWKS URLs by default
 
 ```yaml
 services:
+  secretsauce-vault:
+    image: ghcr.io/example-org/secretsauce-mcp:latest
+    command: ["node", "dist/vault/main.js"]
+    volumes:
+      - ./vault.yaml:/config/vault.yaml:ro
+      - ./vault-keys:/run/vault-keys:ro
+      - ./vault-runtime:/run/secretsauce-vault
+      - ./vault-store:/var/lib/secretsauce/vault
+    environment:
+      SECRETSAUCE_VAULT_CONFIG: /config/vault.yaml
+      SECRETSAUCE_VAULT_SOCKET: /run/secretsauce-vault/vault.sock
+      SECRETSAUCE_VAULT_DATA_KEY_FILE: /run/vault-keys/data-plane.key
+    healthcheck:
+      test: ["CMD", "node", "dist/vault/healthCli.js"]
+
   secretsauce:
-    image: ghcr.io/mrworf/secretsauce-mcp:latest
+    image: ghcr.io/example-org/secretsauce-mcp:latest
     ports:
       - "8080:8080"
     volumes:
@@ -145,12 +160,35 @@ services:
       - ./oauth:/run/oauth:ro
       - ./audit:/var/lib/secretsauce/audit
       - ./oauth-state:/var/lib/secretsauce/oauth
+      - ./vault-keys/data-plane.key:/run/vault-caller/data-plane.key:ro
+      - ./vault-runtime:/run/secretsauce-vault:ro
     environment:
       CONFIG_PATH: /config/config.yaml
       SECRETLINT_CONFIG_PATH: /config/secretlint.yaml
       SENSITIVE_NAMES_CONFIG_PATH: /config/sensitive-names.yaml
+      SECRETSAUCE_VAULT_SOCKET: /run/secretsauce-vault/vault.sock
+      SECRETSAUCE_VAULT_DATA_KEY_FILE: /run/vault-caller/data-plane.key
 ```
 
 Use the writable audit mount for `audit.file`, for example `/var/lib/secretsauce/audit/audit.jsonl`. Monitor `/health` and disk capacity: an audit open or write failure keeps privileged operations fail-open but changes readiness to `503` with a sanitized audit-degraded check until restart. The open descriptor supports `copytruncate`-style rotation; rename-based rotation requires a restart. When using `auth.mode: builtin_oauth`, keep `auth.builtin_oauth.signing_key_file` on stable mounted storage such as `/run/oauth/oauth_signing_key.pem`; changing that key forces clients to reauthenticate. Set `auth.builtin_oauth.refresh_token_store_file` to a stable writable path such as `/var/lib/secretsauce/oauth/refresh-state.json` to preserve hash-only refresh state across restarts. Omitting it keeps refresh grants in memory and requires reauthorization after restart.
+
+The vault broker is a separate process with no TCP listener. Start from
+[`examples/vault.yaml`](examples/vault.yaml), create each listed key with
+`npm run vault:key -- generate --output /absolute/path/to/key`, and set every key
+file to mode `0400`. The socket directory and encrypted store use modes `0750`
+(or stricter) and `0700`; make their container ownership explicit before startup.
+The broker mounts all caller/verifier and root keys, while each caller mounts only
+its own caller key and the socket directory. Root keys and the encrypted store
+must never be mounted into a caller container. Keep the root-key mount stable
+across restart; the passphrase-encrypted backup flow is the recovery path when a
+root key is unavailable.
+
+`node dist/vault/healthCli.js` performs an authenticated, sanitized readiness
+check and prints only `ready` or `unavailable`. The optional control-process
+variables `SECRETSAUCE_VAULT_SOCKET` and
+`SECRETSAUCE_VAULT_CONTROL_KEY_FILE` add the same safe `checks.vault` seam to
+`/api/v2/health`. The current milestone provides the broker and restricted
+clients only: write-only credential management and authorized data-plane
+resolution are connected in milestones 11 and 13, respectively.
 
 Expose the service through an HTTPS endpoint such as `https://gateway.example.org/mcp` when using remote MCP clients.

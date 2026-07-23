@@ -53,6 +53,7 @@ export interface ControlApplicationOptions {
   authorization?: ControlAuthorizationSeam;
   rateLimiter?: ControlRateLimiter;
   webAssets?: ControlWebAssets;
+  vaultReadiness?: () => Promise<"ready" | "unavailable" | "unsupported">;
 }
 
 export function createControlApplication(
@@ -92,7 +93,11 @@ export function createControlApplication(
     });
   });
 
-  const routeRegistry = createDefaultControlRouteRegistry(options.persistence, control.publicOrigin);
+  const routeRegistry = createDefaultControlRouteRegistry(
+    options.persistence,
+    control.publicOrigin,
+    options.vaultReadiness,
+  );
   options.registerControlRoutes?.(routeRegistry);
   installControlRoutes(application, routeRegistry, authorization);
 
@@ -144,7 +149,10 @@ export interface ControlServerApplication {
   close(): Promise<void>;
 }
 
-export async function startControlServer(config: GatewayConfig): Promise<ControlServerApplication> {
+export async function startControlServer(
+  config: GatewayConfig,
+  options: Pick<ControlApplicationOptions, "vaultReadiness"> = {},
+): Promise<ControlServerApplication> {
   if (config.control === undefined || config.persistence === undefined) {
     throw new Error("Control and persistence configuration are required.");
   }
@@ -158,7 +166,7 @@ export async function startControlServer(config: GatewayConfig): Promise<Control
   });
   let server: FastifyInstance | undefined;
   try {
-    server = createControlApplication(config, { persistence });
+    server = createControlApplication(config, { persistence, ...options });
     await server.listen({
       host: config.control.host,
       port: config.control.port,

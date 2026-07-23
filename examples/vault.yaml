@@ -1,0 +1,20 @@
+version: 1
+
+socket:
+  path: /run/secretsauce-vault/vault.sock
+  mode: 432 # 0660
+
+store_directory: /var/lib/secretsauce/vault
+active_root_key: root-primary
+
+root_keys:
+  root-primary: /run/vault-keys/root-primary.key
+
+caller_keys:
+  data_plane: /run/vault-keys/data-plane.key
+  control_plane: /run/vault-keys/control-plane.key
+  backup: /run/vault-keys/backup.key
+
+capability_keys:
+  resolve: /run/vault-keys/resolve-capability.key
+  backup: /run/vault-keys/backup-capability.key

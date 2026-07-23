@@ -14,6 +14,7 @@ const healthDataSchema = z.object({
     database: readinessValueSchema.optional(),
     schema: readinessValueSchema.optional(),
     administrative_audit: readinessValueSchema.optional(),
+    vault: readinessValueSchema.optional(),
   }).strict(),
 }).strict().meta({
   id: "ControlHealth",
@@ -28,6 +29,7 @@ const openApiDocumentSchema = z.record(z.string(), z.unknown()).meta({
 export function createDefaultControlRouteRegistry(
   persistence: PersistenceOwner | undefined,
   publicOrigin: string,
+  vaultReadiness?: () => Promise<"ready" | "unavailable" | "unsupported">,
 ): ControlRouteRegistry {
   const registry = new ControlRouteRegistry();
   registry.register({
@@ -46,24 +48,33 @@ export function createDefaultControlRouteRegistry(
     concurrency: "none",
     idempotency: "none",
     successStatuses: [200, 503],
-    handler: () => {
+    handler: async () => {
       const readiness = persistence?.readiness;
-      const ready = readiness === undefined || (
+      let vault: "ready" | "unavailable" | "unsupported" | undefined;
+      if (vaultReadiness !== undefined) {
+        try {
+          vault = await vaultReadiness();
+        } catch {
+          vault = "unavailable";
+        }
+      }
+      const ready = (readiness === undefined || (
         readiness.database === "ready" &&
         readiness.schema === "ready" &&
         readiness.administrativeAudit === "ready"
-      );
+      )) && (vault === undefined || vault === "ready");
       return {
         statusCode: ready ? 200 : 503,
         data: {
           status: ready ? "ready" : "not_ready",
-          checks: readiness === undefined
-            ? {}
-            : {
+          checks: {
+            ...(readiness === undefined ? {} : {
                 database: readiness.database,
                 schema: readiness.schema,
                 administrative_audit: readiness.administrativeAudit,
-              },
+            }),
+            ...(vault === undefined ? {} : { vault }),
+          },
         },
       };
     },

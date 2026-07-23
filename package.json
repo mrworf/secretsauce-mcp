@@ -17,6 +17,7 @@
     "start:control": "node dist/control/main.js",
     "start:vault": "node dist/vault/main.js",
     "vault:key": "node dist/vault/keyCli.js",
+    "vault:health": "node dist/vault/healthCli.js",
     "dev:control-web": "vite",
     "pretest": "npm run build",
     "test": "vitest run"

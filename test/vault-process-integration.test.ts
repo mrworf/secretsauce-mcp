@@ -14,6 +14,8 @@ import { UuidV7Generator } from "../src/persistence/uuidV7.js";
 import { VaultCapabilityAuthority } from "../src/vault/capabilities.js";
 import { BackupVaultClient, ControlVaultClient, DataVaultClient } from "../src/vault/client.js";
 import { encodeVaultKey } from "../src/vault/keyFile.js";
+import { runVaultHealthCli } from "../src/vault/healthCli.js";
+import { createControlVaultReadiness } from "../src/vault/readiness.js";
 import type { VaultCredentialBinding } from "../src/vault/recordStore.js";
 
 const children = new Set<ChildProcessWithoutNullStreams>();
@@ -28,6 +30,20 @@ describe("standalone vault broker process", () => {
     const secret = Buffer.from("separate-process-private-4321");
     const first = await startChild(fixture.configFile, fixture.socketPath);
     try {
+      const healthOutput: string[] = [];
+      await expect(runVaultHealthCli({
+        SECRETSAUCE_VAULT_SOCKET: fixture.socketPath,
+        SECRETSAUCE_VAULT_DATA_KEY_FILE: fixture.raw.caller_keys.data_plane,
+      }, (value) => healthOutput.push(value))).resolves.toBe(0);
+      expect(healthOutput).toEqual(['{"status":"ready"}\n']);
+      expect(healthOutput.join("")).not.toContain(fixture.socketPath);
+      const controlReadiness = createControlVaultReadiness({
+        SECRETSAUCE_VAULT_SOCKET: fixture.socketPath,
+        SECRETSAUCE_VAULT_CONTROL_KEY_FILE: fixture.raw.caller_keys.control_plane,
+      })!;
+      await expect(controlReadiness.readiness()).resolves.toBe("ready");
+      controlReadiness.close();
+
       const control = new ControlVaultClient({ socketPath: fixture.socketPath, key: fixture.keys.control });
       const data = new DataVaultClient({ socketPath: fixture.socketPath, key: fixture.keys.data });
       const backup = new BackupVaultClient({ socketPath: fixture.socketPath, key: fixture.keys.backup });
@@ -62,6 +78,12 @@ describe("standalone vault broker process", () => {
       const firstOutput = await stopChild(first);
       expect(firstOutput).not.toContain(secret.toString());
       expect(existsSync(fixture.socketPath)).toBe(false);
+      const stoppedOutput: string[] = [];
+      await expect(runVaultHealthCli({
+        SECRETSAUCE_VAULT_SOCKET: fixture.socketPath,
+        SECRETSAUCE_VAULT_DATA_KEY_FILE: fixture.raw.caller_keys.data_plane,
+      }, (value) => stoppedOutput.push(value))).resolves.toBe(1);
+      expect(stoppedOutput).toEqual(['{"status":"unavailable"}\n']);
 
       const second = await startChild(fixture.configFile, fixture.socketPath);
       const restartedControl = new ControlVaultClient({ socketPath: fixture.socketPath, key: fixture.keys.control });
@@ -97,6 +119,29 @@ describe("standalone vault broker process", () => {
     expect(output).toContain("vault_startup_failed");
     expect(output).not.toContain("missing.key");
     expect(output).not.toContain(fixture.configFile);
+  });
+
+  it("rejects partial or relative readiness configuration without echoing inputs", () => {
+    for (const environment of [
+      { SECRETSAUCE_VAULT_SOCKET: "/private/runtime/vault.sock" },
+      { SECRETSAUCE_VAULT_CONTROL_KEY_FILE: "/private/keys/control.key" },
+      {
+        SECRETSAUCE_VAULT_SOCKET: "relative.sock",
+        SECRETSAUCE_VAULT_CONTROL_KEY_FILE: "/private/keys/control.key",
+      },
+    ]) {
+      let serialized = "";
+      try {
+        createControlVaultReadiness(environment);
+      } catch (error) {
+        serialized = JSON.stringify(error, Object.getOwnPropertyNames(error));
+      }
+      expect(serialized).toContain("vault_config_invalid");
+      expect(serialized).not.toContain("private/runtime");
+      expect(serialized).not.toContain("private/keys");
+      expect(serialized).not.toContain("relative.sock");
+    }
+    expect(createControlVaultReadiness({})).toBeUndefined();
   });
 });
 

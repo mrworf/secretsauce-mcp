@@ -2,6 +2,8 @@ import { loadConfig } from "../config.js";
 import { createLogger } from "../logger.js";
 import { startupErrorPayload } from "../server.js";
 import { startControlServer } from "./server.js";
+import { createControlVaultReadiness } from "../vault/readiness.js";
+import type { VaultReadinessHandle } from "../vault/readiness.js";
 
 const configPath = process.env.CONFIG_PATH;
 if (!configPath) {
@@ -15,9 +17,13 @@ if (!configPath) {
   process.exit(1);
 }
 
+let vaultReadiness: VaultReadinessHandle | undefined;
 try {
   const config = loadConfig(configPath);
-  const application = await startControlServer(config);
+  vaultReadiness = createControlVaultReadiness();
+  const application = await startControlServer(config, {
+    ...(vaultReadiness === undefined ? {} : { vaultReadiness: vaultReadiness.readiness }),
+  });
   const logger = createLogger(config.logging);
   logger.info("control.server_started", {
     listen: config.control?.listen,
@@ -32,11 +38,14 @@ try {
     } catch {
       logger.error("control.shutdown_failed", { signal });
       process.exitCode = 1;
+    } finally {
+      vaultReadiness?.close();
     }
   };
   process.once("SIGTERM", () => void close("SIGTERM"));
   process.once("SIGINT", () => void close("SIGINT"));
 } catch (error) {
+  vaultReadiness?.close();
   console.error(JSON.stringify(startupErrorPayload(error)));
   process.exit(1);
 }

@@ -103,6 +103,14 @@
                   "unsupported"
                 ],
                 "type": "string"
+              },
+              "vault": {
+                "enum": [
+                  "ready",
+                  "unavailable",
+                  "unsupported"
+                ],
+                "type": "string"
               }
             },
             "type": "object"

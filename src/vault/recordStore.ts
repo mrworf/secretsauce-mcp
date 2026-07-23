@@ -90,7 +90,11 @@ export interface VaultRecordStoreOptions {
   now?: () => number;
   randomBytes?: (size: number) => Buffer;
   randomUuid?: () => string;
-  failureInjector?: (stage: "after_file_sync_before_commit") => void;
+  failureInjector?: (stage:
+    | "after_file_sync_before_commit"
+    | "before_restore_swap"
+    | "after_restore_old_moved"
+  ) => void;
 }
 
 export interface VaultWriteOptions {
@@ -218,15 +222,16 @@ export class VaultRecordStore {
       commit: () => {
         if (finished) throw vaultError("vault_store_unavailable");
         const previousDirectory = join(parent, `.${basename(this.#directory)}.previous.${randomUUID()}`);
+        let oldMoved = false;
+        let newMoved = false;
         staging.close();
         try {
+          this.#failureInjector?.("before_restore_swap");
           renameSync(this.#directory, previousDirectory);
-          try {
-            renameSync(stagingDirectory, this.#directory);
-          } catch (error) {
-            renameSync(previousDirectory, this.#directory);
-            throw error;
-          }
+          oldMoved = true;
+          this.#failureInjector?.("after_restore_old_moved");
+          renameSync(stagingDirectory, this.#directory);
+          newMoved = true;
           fsyncDirectory(parent);
           this.#recordCount = count;
           this.#status = "ready";
@@ -239,7 +244,10 @@ export class VaultRecordStore {
           }
         } catch {
           try {
+            if (newMoved) rmSync(this.#directory, { recursive: true, force: true });
+            if (oldMoved) renameSync(previousDirectory, this.#directory);
             rmSync(stagingDirectory, { recursive: true, force: true });
+            fsyncDirectory(parent);
           } catch {
             // Best-effort cleanup after a failed swap.
           }

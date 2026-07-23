@@ -298,6 +298,41 @@ describe("control listener security boundary", () => {
     });
     expect(response.body).not.toContain(configDatabaseFile);
   });
+
+  it("reports only the sanitized vault readiness seam and fails closed on seam errors", async () => {
+    const ready = createControlApplication(controlConfig(), {
+      vaultReadiness: async () => "ready",
+    });
+    openApplications.push(ready);
+    const readyResponse = await ready.inject({
+      method: "GET",
+      url: "/api/v2/health",
+      headers: { host: "control.example.org" },
+    });
+    expect(readyResponse.statusCode).toBe(200);
+    expect(readyResponse.json().data).toEqual({
+      status: "ready",
+      checks: { vault: "ready" },
+    });
+
+    const unavailable = createControlApplication(controlConfig(), {
+      vaultReadiness: async () => {
+        throw new Error("private socket path and key details");
+      },
+    });
+    openApplications.push(unavailable);
+    const unavailableResponse = await unavailable.inject({
+      method: "GET",
+      url: "/api/v2/health",
+      headers: { host: "control.example.org" },
+    });
+    expect(unavailableResponse.statusCode).toBe(503);
+    expect(unavailableResponse.json().data).toEqual({
+      status: "not_ready",
+      checks: { vault: "unavailable" },
+    });
+    expect(unavailableResponse.body).not.toContain("private socket path");
+  });
 });
 
 describe("control and data listener integration", () => {

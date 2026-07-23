@@ -117,6 +117,38 @@ describe("passphrase-encrypted vault archives", () => {
     await expect(exportEncryptedVaultArchive(source.store, Buffer.alloc(1_025)))
       .rejects.toMatchObject({ code: "vault_archive_invalid" });
   });
+
+  it("rolls back an interruption after moving the old store but before publishing the staged restore", async () => {
+    const source = storeFixture("archive-interruption-source", 60);
+    source.store.create(source.binding, Buffer.from("incoming-secret"));
+    const passphrase = Buffer.from("interruption passphrase");
+    const archive = await exportEncryptedVaultArchive(source.store, passphrase);
+
+    const directory = mkdtempSync(join(tmpdir(), "archive-interruption-destination-"));
+    chmodSync(directory, 0o700);
+    const generator = new UuidV7Generator();
+    const binding = {
+      serviceId: generator.next(),
+      destinationId: generator.next(),
+      credentialId: generator.next(),
+    };
+    const destination = new VaultRecordStore({
+      directory,
+      activeRootKey: "root-a",
+      rootKeys: new Map([["root-a", Buffer.alloc(32, 61)]]),
+      failureInjector: (stage) => {
+        if (stage === "after_restore_old_moved") throw new Error("injected");
+      },
+    });
+    const active = destination.create(binding, Buffer.from("authoritative-secret"));
+
+    await expect(importEncryptedVaultArchive(destination, passphrase, archive))
+      .rejects.toMatchObject({ code: "vault_archive_authentication_failed" });
+    expect(destination.resolve(active.locator, 1, binding).toString()).toBe("authoritative-secret");
+    expect(destination.readiness()).toEqual({ status: "ready", recordCount: 1 });
+    const previousPrefix = `.${directory.slice(directory.lastIndexOf("/") + 1)}.previous.`;
+    expect(readdirSync(join(directory, "..")).some((name) => name.startsWith(previousPrefix))).toBe(false);
+  });
 });
 
 function storeFixture(name: string, keyByte: number): {

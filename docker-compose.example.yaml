@@ -1,4 +1,27 @@
 services:
+  secretsauce-vault:
+    # The vault has its own process and container mount namespace and no TCP port.
+    build: .
+    image: secretsauce-mcp:latest
+    command: ["node", "dist/vault/main.js"]
+    volumes:
+      - ./examples/vault.yaml:/config/vault.yaml:ro
+      # Provision these files with the local vault:key command and mode 0400.
+      - ./vault-keys:/run/vault-keys:ro
+      # Both directories must be owned by the container's node identity.
+      - ./vault-runtime:/run/secretsauce-vault
+      - ./vault-store:/var/lib/secretsauce/vault
+    environment:
+      SECRETSAUCE_VAULT_CONFIG: /config/vault.yaml
+      SECRETSAUCE_VAULT_SOCKET: /run/secretsauce-vault/vault.sock
+      SECRETSAUCE_VAULT_DATA_KEY_FILE: /run/vault-keys/data-plane.key
+    healthcheck:
+      test: ["CMD", "node", "dist/vault/healthCli.js"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
   secretsauce:
     # Supported topology: exactly one replica. Runtime references are instance-local;
     # sticky sessions do not replace the unimplemented shared atomic capability store.
@@ -6,6 +29,9 @@ services:
       replicas: 1
     build: .
     image: secretsauce-mcp:latest
+    depends_on:
+      secretsauce-vault:
+        condition: service_healthy
     ports:
       - "8080:8080"
     volumes:
@@ -22,11 +48,16 @@ services:
       # This refresh-state mount has a single-process writer contract.
       - ./oauth-state:/var/lib/secretsauce/oauth
       # gref_/sec_ capability state is intentionally ephemeral and is not mounted.
+      # The data-plane caller sees only its caller key and the shared socket.
+      - ./vault-keys/data-plane.key:/run/vault-caller/data-plane.key:ro
+      - ./vault-runtime:/run/secretsauce-vault:ro
     environment:
       CONFIG_PATH: /config/config.yaml
       SECRETLINT_CONFIG_PATH: /config/secretlint.yaml
       SENSITIVE_NAMES_CONFIG_PATH: /config/sensitive-names.yaml
-      SECRETSAUCE_MCP_TOKEN: change-me-dev-token
+      SECRETSAUCE_MCP_TOKEN: ${SECRETSAUCE_MCP_TOKEN:?set an ephemeral gateway token}
+      SECRETSAUCE_VAULT_SOCKET: /run/secretsauce-vault/vault.sock
+      SECRETSAUCE_VAULT_DATA_KEY_FILE: /run/vault-caller/data-plane.key
       PORTAINER_API_KEY_FILE: /run/secrets/portainer_api_key
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/health"]

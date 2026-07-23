@@ -117,8 +117,8 @@ resolution.
 
 ## Authorization and ownership
 
-`ServiceRelationshipRepository` implements both service scope and the existing
-user relationship resolver:
+`ServiceRelationshipRepository` implements service scope and the actor-only
+portion of the existing user relationship resolver:
 
 - superadmins see/configure all services;
 - an admin sees/configures only services with a live `service_admins` row;
@@ -128,6 +128,11 @@ user relationship resolver:
 - users and system principals cannot access service configuration;
 - API-role behavior remains unavailable until Milestone 16 supplies
   authentication, but route contracts preserve the matrix outcomes.
+
+Actor-only relationship queries return the services an admin manages, enabling
+assigned-service invitation entry points. Target-specific related-user queries
+remain empty until Milestone 10 supplies direct/group membership; profile and
+lifecycle access therefore stays fail-closed rather than inventing membership.
 
 The central `UserManagementAuthorization` delegates service outcomes to a new
 `ServiceManagementAuthorization`. It extracts only canonical route parameters,
@@ -248,11 +253,12 @@ repository, superadmin create, scoped list/detail, admin assignment, signed
 pagination, and production service/user relationship authorization.
 
 Positive tests cover normalized safe documents, superadmin create/list/detail,
-active-admin assignment, assigned-admin reads, pagination, and now-enabled
-related-user scope. Negative/boundary tests cover every malformed field and
+active-admin assignment, assigned-admin reads, pagination, and actor-only
+managed-service resolution. Negative/boundary tests cover every malformed field and
 destination boundary, duplicate slug, capacity, non-admin assignment, final
 admin removal, user/admin creation, unassigned/cross-service access,
-malformed/cross-scope/expired cursors, stale versions, and prohibited columns.
+malformed/cross-scope/expired cursors, target-specific relationship denial
+before Milestone 10, stale versions, and prohibited columns.
 
 Commit: `Add durable service ownership`.
 

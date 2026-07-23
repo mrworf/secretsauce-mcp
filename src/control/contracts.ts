@@ -14,6 +14,7 @@ export const CONTROL_ERROR_CODES = [
   "precondition_required",
   "stale_version",
   "identity_conflict",
+  "service_conflict",
   "last_active_superadmin",
   "idempotency_conflict",
   "rate_limited",
@@ -115,11 +116,14 @@ const cursorPayloadSchema = z.object({
 }).strict();
 
 export class ControlCursorCodec {
+  readonly #hmacKey: Buffer;
+
   constructor(
-    private readonly hmacKey: Buffer,
+    hmacKey: Buffer,
     private readonly now: () => number = Date.now,
   ) {
     if (hmacKey.byteLength !== 32) throw new Error("Cursor HMAC key must be 32 bytes.");
+    this.#hmacKey = Buffer.from(hmacKey);
   }
 
   encode(input: ControlCursorInput): string {
@@ -166,13 +170,17 @@ export class ControlCursorCodec {
   }
 
   private sign(payload: string): string {
-    return createHmac("sha256", this.hmacKey).update(payload, "utf8").digest("base64url");
+    return createHmac("sha256", this.#hmacKey).update(payload, "utf8").digest("base64url");
   }
 
   private safeNow(): number {
     const value = Math.trunc(this.now());
     if (!Number.isSafeInteger(value) || value < 0) throw invalidRequest();
     return value;
+  }
+
+  close(): void {
+    this.#hmacKey.fill(0);
   }
 }
 

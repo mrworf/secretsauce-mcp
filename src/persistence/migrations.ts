@@ -564,6 +564,150 @@ CREATE INDEX identity_invalidation_events_user_idx
   ON identity_invalidation_events (user_id, created_at, id);
 `;
 
+const migration0008 = `
+CREATE TABLE services (
+  id TEXT PRIMARY KEY CHECK (
+    length(id) = 36 AND id = lower(id)
+    AND substr(id, 15, 1) = '7'
+    AND substr(id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND id NOT GLOB '*[^0-9a-f-]*'
+  ),
+  slug TEXT NOT NULL UNIQUE CHECK (
+    length(slug) BETWEEN 1 AND 64
+    AND slug = lower(slug)
+    AND substr(slug, 1, 1) GLOB '[a-z]'
+    AND slug NOT GLOB '*[^a-z0-9-]*'
+  ),
+  name TEXT NOT NULL CHECK (length(name) BETWEEN 1 AND 120),
+  description TEXT CHECK (
+    description IS NULL OR length(description) BETWEEN 1 AND 1024
+  ),
+  documentation_url TEXT CHECK (
+    documentation_url IS NULL OR length(documentation_url) BETWEEN 8 AND 2048
+  ),
+  lifecycle TEXT NOT NULL DEFAULT 'draft'
+    CHECK (lifecycle IN ('draft', 'published', 'archived')),
+  draft_digest TEXT NOT NULL CHECK (
+    length(draft_digest) = 64
+    AND draft_digest = lower(draft_digest)
+    AND draft_digest NOT GLOB '*[^0-9a-f]*'
+  ),
+  published_revision_id TEXT,
+  published_digest TEXT CHECK (
+    published_digest IS NULL OR (
+      length(published_digest) = 64
+      AND published_digest = lower(published_digest)
+      AND published_digest NOT GLOB '*[^0-9a-f]*'
+    )
+  ),
+  publication_generation INTEGER NOT NULL DEFAULT 0
+    CHECK (publication_generation >= 0),
+  version INTEGER NOT NULL DEFAULT 1 CHECK (version > 0),
+  created_at INTEGER NOT NULL CHECK (created_at >= 0),
+  updated_at INTEGER NOT NULL CHECK (updated_at >= created_at)
+) STRICT;
+
+CREATE INDEX services_lifecycle_slug_idx ON services (lifecycle, slug, id);
+
+CREATE TABLE service_destinations (
+  id TEXT PRIMARY KEY CHECK (
+    length(id) = 36 AND id = lower(id)
+    AND substr(id, 15, 1) = '7'
+    AND substr(id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND id NOT GLOB '*[^0-9a-f-]*'
+  ),
+  service_id TEXT NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+  slug TEXT NOT NULL CHECK (
+    length(slug) BETWEEN 1 AND 64
+    AND slug = lower(slug)
+    AND substr(slug, 1, 1) GLOB '[a-z]'
+    AND slug NOT GLOB '*[^a-z0-9-]*'
+  ),
+  base_url TEXT NOT NULL CHECK (length(base_url) BETWEEN 8 AND 2048),
+  schemes_json TEXT NOT NULL CHECK (
+    length(schemes_json) BETWEEN 2 AND 128 AND json_valid(schemes_json)
+  ),
+  hosts_json TEXT NOT NULL CHECK (
+    length(hosts_json) BETWEEN 2 AND 16384 AND json_valid(hosts_json)
+  ),
+  ports_json TEXT NOT NULL CHECK (
+    length(ports_json) BETWEEN 2 AND 512 AND json_valid(ports_json)
+  ),
+  tls_verify INTEGER NOT NULL CHECK (tls_verify IN (0, 1)),
+  version INTEGER NOT NULL DEFAULT 1 CHECK (version > 0),
+  created_at INTEGER NOT NULL CHECK (created_at >= 0),
+  updated_at INTEGER NOT NULL CHECK (updated_at >= created_at),
+  UNIQUE (service_id, slug)
+) STRICT;
+
+CREATE INDEX service_destinations_service_idx
+  ON service_destinations (service_id, slug, id);
+
+CREATE TABLE service_admins (
+  service_id TEXT NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  assigned_by_user_id TEXT NOT NULL,
+  created_at INTEGER NOT NULL CHECK (created_at >= 0),
+  PRIMARY KEY (service_id, user_id)
+) STRICT, WITHOUT ROWID;
+
+CREATE INDEX service_admins_service_idx
+  ON service_admins (service_id, user_id);
+CREATE INDEX service_admins_user_idx
+  ON service_admins (user_id, service_id);
+
+CREATE TABLE service_config_versions (
+  id TEXT PRIMARY KEY CHECK (
+    length(id) = 36 AND id = lower(id)
+    AND substr(id, 15, 1) = '7'
+    AND substr(id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND id NOT GLOB '*[^0-9a-f-]*'
+  ),
+  service_id TEXT NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+  sequence INTEGER NOT NULL CHECK (sequence > 0),
+  document_json TEXT NOT NULL CHECK (
+    length(document_json) BETWEEN 2 AND 1048576 AND json_valid(document_json)
+  ),
+  digest TEXT NOT NULL CHECK (
+    length(digest) = 64 AND digest = lower(digest)
+    AND digest NOT GLOB '*[^0-9a-f]*'
+  ),
+  source_revision_id TEXT,
+  publication_generation INTEGER NOT NULL CHECK (publication_generation > 0),
+  actor_user_id TEXT NOT NULL,
+  actor_role TEXT NOT NULL CHECK (actor_role IN ('admin', 'superadmin')),
+  published_at INTEGER NOT NULL CHECK (published_at >= 0),
+  UNIQUE (service_id, sequence)
+) STRICT;
+
+CREATE INDEX service_config_versions_service_idx
+  ON service_config_versions (service_id, sequence DESC, id);
+CREATE INDEX service_config_versions_retention_idx
+  ON service_config_versions (service_id, published_at, id);
+
+CREATE TABLE service_invalidation_events (
+  id TEXT PRIMARY KEY CHECK (
+    length(id) = 36 AND id = lower(id)
+    AND substr(id, 15, 1) = '7'
+    AND substr(id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND id NOT GLOB '*[^0-9a-f-]*'
+  ),
+  service_id TEXT NOT NULL CHECK (length(service_id) = 36),
+  publication_generation INTEGER NOT NULL CHECK (publication_generation > 0),
+  reason TEXT NOT NULL CHECK (
+    reason IN ('publication', 'rollback', 'archive', 'delete')
+  ),
+  created_at INTEGER NOT NULL CHECK (created_at >= 0),
+  dispatched_at INTEGER CHECK (dispatched_at IS NULL OR dispatched_at >= created_at),
+  attempts INTEGER NOT NULL DEFAULT 0 CHECK (attempts >= 0)
+) STRICT;
+
+CREATE INDEX service_invalidation_events_dispatch_idx
+  ON service_invalidation_events (dispatched_at, created_at, id);
+CREATE INDEX service_invalidation_events_service_idx
+  ON service_invalidation_events (service_id, created_at, id);
+`;
+
 export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [
   {
     version: 1,
@@ -599,6 +743,11 @@ export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [
     version: 7,
     name: "generic_oidc_provider",
     sql: migration0007,
+  },
+  {
+    version: 8,
+    name: "service_management",
+    sql: migration0008,
   },
 ];
 

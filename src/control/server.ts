@@ -41,7 +41,6 @@ import {
   UserAdministrationService,
   UserCursorCodec,
   UserManagementAuthorization,
-  denyUserRelationships,
 } from "../identity/userAdministration.js";
 import {
   UserLifecycleAdministrationRepository,
@@ -96,6 +95,13 @@ import {
   registerLocalIdentityRoutes,
   type LocalIdentityControl,
 } from "./identityRoutes.js";
+import {
+  ServiceManagementAuthorization,
+  ServiceManagementRepository,
+  ServiceManagementService,
+  ServiceRelationshipRepository,
+} from "../serviceManagement.js";
+import { registerServiceManagementRoutes } from "./serviceRoutes.js";
 
 export interface ControlApplicationOptions {
   authenticator?: ControlAuthenticator;
@@ -109,6 +115,7 @@ export interface ControlApplicationOptions {
   vaultReadiness?: () => Promise<"ready" | "unavailable" | "unsupported">;
   identityReadiness?: () => Promise<"ready" | "unavailable" | "unsupported">;
   localIdentity?: LocalIdentityControl;
+  serviceManagement?: ServiceManagementService;
 }
 
 export function createControlApplication(
@@ -168,6 +175,9 @@ export function createControlApplication(
         options.localIdentity.userLifecycle,
       );
     }
+  }
+  if (options.serviceManagement !== undefined) {
+    registerServiceManagementRoutes(routeRegistry, options.serviceManagement);
   }
   options.registerControlRoutes?.(routeRegistry);
   installControlRoutes(
@@ -253,6 +263,7 @@ export async function startControlServer(
   let oidcFlow: OidcFlowService | undefined;
   let oidcLogin: OidcLoginService | undefined;
   let oidcLink: OidcLinkService | undefined;
+  let serviceManagement: ServiceManagementService | undefined;
   let identityKeyRing: IdentityKeyRing | undefined;
   try {
     let localIdentity: LocalIdentityControl | undefined;
@@ -300,16 +311,27 @@ export async function startControlServer(
           enrollmentRepository,
           sessionKey,
         );
+        const serviceRelationships = new ServiceRelationshipRepository(persistence);
+        serviceManagement = new ServiceManagementService(
+          new ServiceManagementRepository(persistence),
+          serviceRelationships,
+          idempotencyHasher,
+          sessionKey,
+        );
+        const serviceAuthorization = new ServiceManagementAuthorization(
+          serviceRelationships,
+          stepUpAuthorization,
+        );
         userAdministration = new UserAdministrationService(
           new UserAdministrationRepository(persistence),
           new UserCursorCodec(sessionKey),
-          denyUserRelationships,
+          serviceRelationships,
         );
         const userLifecycle = new UserLifecycleAdministrationService(
           new UserLifecycleAdministrationRepository(persistence, stepUpRepository),
           idempotencyHasher,
           config.identity,
-          denyUserRelationships,
+          serviceRelationships,
         );
         if (config.identity.oidc !== undefined) {
           const oidcTrust = new OidcTrustClient(config.identity.oidc);
@@ -336,8 +358,8 @@ export async function startControlServer(
           browserSessions,
           stepUp,
           authorization: new UserManagementAuthorization(
-            stepUpAuthorization,
-            denyUserRelationships,
+            serviceAuthorization,
+            serviceRelationships,
           ),
           enrollment,
           restrictedSessions,
@@ -370,6 +392,7 @@ export async function startControlServer(
         ? {}
         : { identityReadiness: async () => "ready" as const }),
       ...(localIdentity === undefined ? {} : { localIdentity }),
+      ...(serviceManagement === undefined ? {} : { serviceManagement }),
     });
     await server.listen({
       host: config.control.host,
@@ -386,6 +409,7 @@ export async function startControlServer(
     oidcFlow?.close();
     oidcLogin?.close();
     oidcLink?.close();
+    serviceManagement?.close();
     localAuthentication?.close();
     identityKeyRing?.destroy();
     await persistence.close();
@@ -409,6 +433,7 @@ export async function startControlServer(
         oidcFlow?.close();
         oidcLogin?.close();
         oidcLink?.close();
+        serviceManagement?.close();
         localAuthentication?.close();
         identityKeyRing?.destroy();
         await persistence.close();

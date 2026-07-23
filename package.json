@@ -15,6 +15,7 @@
     "check:control-openapi": "npm run build && node scripts/generate-control-openapi.mjs --check",
     "start": "node dist/server.js",
     "start:control": "node dist/control/main.js",
+    "vault:key": "node dist/vault/keyCli.js",
     "dev:control-web": "vite",
     "pretest": "npm run build:web",
     "test": "vitest run"

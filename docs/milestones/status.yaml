@@ -72,10 +72,10 @@ milestones:
   - id: "10"
     title: "Groups And Assignments"
     file: "docs/milestones/10-groups-and-assignments.md"
-    status: "pending"
+    status: "in_progress"
     completed_at: null
     commit_hash: null
-    notes: ""
+    notes: "Decision-complete implementation and security plan under docs/plans/milestone-10-groups-and-assignments.md."
   - id: "11"
     title: "Credential Management"
     file: "docs/milestones/11-credential-management.md"

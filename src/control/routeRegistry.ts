@@ -25,6 +25,10 @@ import {
 } from "./permissions.js";
 import type { ControlRateLimitClass } from "./rateLimiter.js";
 import { sendControlError } from "./security.js";
+import {
+  AlwaysStepUpHandle,
+  controlStepUpBodyDigest,
+} from "../identity/stepUp.js";
 
 export type ControlHttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 export type ControlStepUpRule = "none" | "five_minutes" | "always";
@@ -46,6 +50,16 @@ export interface ControlHandlerContext {
   requestId: string;
   request: FastifyRequest;
   reply: FastifyReply;
+  stepUpProof?: AlwaysStepUpHandle;
+}
+
+export interface ControlStepUpOperation {
+  method: "POST" | "PUT" | "PATCH" | "DELETE";
+  routeId: string;
+  targets: string[];
+  expectedVersion?: number;
+  idempotencyKey?: string;
+  bodyDigest: string;
 }
 
 export interface ControlHandlerResult {
@@ -113,7 +127,9 @@ export interface ControlAuthorizationSeam {
     context: ControlAuthenticationContext,
     rule: Exclude<ControlStepUpRule, "none">,
     request: FastifyRequest,
+    operation: ControlStepUpOperation,
   ): Promise<boolean>;
+  stepUpProof?(request: FastifyRequest): AlwaysStepUpHandle | undefined;
 }
 
 export const denyControlAuthorization: ControlAuthorizationSeam = {
@@ -164,7 +180,6 @@ export function installControlRoutes(
       handler: async (request, reply) => {
         try {
           const authentication = controlAuthentication(request);
-          await authorizeRoute(definition, authentication, request, authorization);
           const body = parsePart(definition.schemas.body, request.body, "body");
           const query = parsePart(definition.schemas.query, request.query, "query");
           const params = parsePart(definition.schemas.params, request.params, "params");
@@ -174,6 +189,15 @@ export function installControlRoutes(
           const idempotencyKey = definition.idempotency === "required"
             ? parseIdempotencyKey(request.headers["idempotency-key"])
             : undefined;
+          const operation = stepUpOperation(
+            definition,
+            body,
+            params,
+            expectedVersion,
+            idempotencyKey,
+          );
+          await authorizeRoute(definition, authentication, request, authorization, operation);
+          const stepUpProof = authorization.stepUpProof?.(request);
           const result = await definition.handler({
             body,
             query,
@@ -184,7 +208,11 @@ export function installControlRoutes(
             requestId: request.id,
             request,
             reply,
+            ...(stepUpProof === undefined ? {} : { stepUpProof }),
           });
+          if (stepUpProof !== undefined && !stepUpProof.consumed) {
+            throw new Error("Transaction-bound step-up proof was not consumed.");
+          }
           const statusCode = result.statusCode ?? 200;
           const successStatuses = definition.successStatuses ?? [200];
           if (
@@ -231,33 +259,93 @@ async function authorizeRoute(
   authentication: ControlAuthenticationContext | undefined,
   request: FastifyRequest,
   authorization: ControlAuthorizationSeam,
+  operation: ControlStepUpOperation,
 ): Promise<void> {
   if (route.authentication === "public") return;
   if (authentication === undefined || route.permission === null) {
     throw new ControlContractError(401, "unauthenticated", "Authentication required.");
   }
-  if (route.permission === "authenticated") return;
-  const outcome = permissionOutcome(authentication.role, route.permission);
-  if (outcome === "deny" || outcome === "no_account") {
-    throw new ControlContractError(403, "forbidden", "The operation is not permitted.");
+  const capability = route.permission === "authenticated" ? undefined : route.permission;
+  const outcome = capability === undefined
+    ? undefined
+    : permissionOutcome(authentication.role, capability);
+  if (outcome !== undefined) {
+    if (outcome === "deny" || outcome === "no_account") {
+      throw new ControlContractError(403, "forbidden", "The operation is not permitted.");
+    }
+    if (
+      permissionNeedsScope(outcome) &&
+      !(await authorization.authorizeScope(authentication, capability!, outcome, request))
+    ) {
+      throw new ControlContractError(403, "forbidden", "The operation is not permitted.");
+    }
   }
-  if (
-    permissionNeedsScope(outcome) &&
-    !(await authorization.authorizeScope(authentication, route.permission, outcome, request))
-  ) {
-    throw new ControlContractError(403, "forbidden", "The operation is not permitted.");
-  }
-  const needsStepUp = permissionNeedsHumanStepUp(outcome) ||
+  const needsStepUp = (outcome !== undefined && permissionNeedsHumanStepUp(outcome)) ||
     (authentication.method === "browser_session" && route.stepUp !== "none");
   if (needsStepUp) {
     if (authentication.method !== "browser_session") {
       throw new ControlContractError(403, "forbidden", "The operation is not permitted.");
     }
     const rule = route.stepUp === "none" ? "five_minutes" : route.stepUp;
-    if (!(await authorization.verifyStepUp(authentication, rule, request))) {
+    if (!(await authorization.verifyStepUp(authentication, rule, request, operation))) {
       throw new ControlContractError(403, "step_up_required", "Additional authentication is required.");
     }
   }
+}
+
+function stepUpOperation(
+  route: ControlRouteDefinition,
+  body: unknown,
+  params: unknown,
+  expectedVersion: number | undefined,
+  idempotencyKey: string | undefined,
+): ControlStepUpOperation {
+  if (route.method === "GET") {
+    return {
+      method: "POST",
+      routeId: route.id,
+      targets: targetIds(params, body),
+      ...(expectedVersion === undefined ? {} : { expectedVersion }),
+      ...(idempotencyKey === undefined ? {} : { idempotencyKey }),
+      bodyDigest: controlStepUpBodyDigest(body ?? null),
+    };
+  }
+  return {
+    method: route.method,
+    routeId: route.id,
+    targets: targetIds(params, body),
+    ...(expectedVersion === undefined ? {} : { expectedVersion }),
+    ...(idempotencyKey === undefined ? {} : { idempotencyKey }),
+    bodyDigest: controlStepUpBodyDigest(body ?? null),
+  };
+}
+
+function targetIds(...values: unknown[]): string[] {
+  const targets = new Set<string>();
+  const visit = (value: unknown, key?: string): void => {
+    if (typeof value === "string") {
+      if ((key === undefined || key === "id" || key.endsWith("_id")) && isUuidLike(value)) {
+        targets.add(value);
+      }
+      return;
+    }
+    if (Array.isArray(value)) {
+      if (key?.endsWith("_ids")) {
+        for (const entry of value) if (typeof entry === "string" && isUuidLike(entry)) targets.add(entry);
+      }
+      return;
+    }
+    if (value === null || typeof value !== "object") return;
+    for (const [entryKey, entryValue] of Object.entries(value as Record<string, unknown>)) {
+      visit(entryValue, entryKey);
+    }
+  };
+  for (const value of values) visit(value);
+  return [...targets].sort();
+}
+
+function isUuidLike(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(value);
 }
 
 function parsePart(

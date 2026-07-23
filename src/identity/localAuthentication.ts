@@ -198,6 +198,33 @@ export class LocalAuthenticationRepository {
     });
   }
 
+  async candidateByUserId(userId: string): Promise<LoginCandidate | undefined> {
+    if (!isUuidV7(userId)) return undefined;
+    return this.#owner.execute({
+      run: (database) => database.read((query) => query.get<LoginCandidate>(`
+        SELECT
+          u.id AS userId,
+          u.role AS role,
+          u.status AS status,
+          u.security_epoch AS securityEpoch,
+          s.global_security_epoch AS globalSecurityEpoch,
+          a.password_state AS passwordState,
+          a.totp_state AS totpState,
+          p.encoded_hash AS encodedHash,
+          p.version AS passwordVersion,
+          t.id AS totpAuthenticatorId,
+          t.envelope_json AS totpEnvelopeJson,
+          t.generation AS totpGeneration
+        FROM users u
+        JOIN identity_security_state s ON s.singleton = 1
+        JOIN local_authenticator_states a ON a.user_id = u.id
+        LEFT JOIN local_password_credentials p ON p.user_id = u.id
+        LEFT JOIN local_totp_authenticators t ON t.user_id = u.id
+        WHERE u.id = ?
+      `, [userId])),
+    });
+  }
+
   async commitLogin(input: {
     candidate: LoginCandidate;
     encodedHash: string;

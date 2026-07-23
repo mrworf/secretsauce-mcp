@@ -24,6 +24,11 @@ import {
 } from "../identity/localAuthentication.js";
 import { IdentityKeyRing } from "../identity/totp.js";
 import {
+  BrowserStepUpAuthorization,
+  StepUpRepository,
+  StepUpService,
+} from "../identity/stepUp.js";
+import {
   denyControlAuthentication,
   controlAuthentication,
   type ControlAuthenticator,
@@ -81,7 +86,9 @@ export function createControlApplication(
   const authenticator = options.authenticator ??
     options.localIdentity?.browserSessions ??
     denyControlAuthentication;
-  const authorization = options.authorization ?? denyControlAuthorization;
+  const authorization = options.authorization ??
+    options.localIdentity?.authorization ??
+    denyControlAuthorization;
   const rateLimiter = options.rateLimiter ?? new ControlRateLimiter();
   const application = Fastify({
     logger: false,
@@ -187,6 +194,8 @@ export async function startControlServer(
   let server: FastifyInstance | undefined;
   let localAuthentication: LocalAuthenticationService | undefined;
   let browserSessions: BrowserSessionAuthenticator | undefined;
+  let stepUp: StepUpService | undefined;
+  let stepUpAuthorization: BrowserStepUpAuthorization | undefined;
   let identityKeyRing: IdentityKeyRing | undefined;
   try {
     let localIdentity: LocalIdentityControl | undefined;
@@ -209,9 +218,25 @@ export async function startControlServer(
           config.identity.sessions,
           sessionKey,
         );
+        const stepUpRepository = new StepUpRepository(persistence);
+        stepUp = new StepUpService({
+          authenticationRepository,
+          repository: stepUpRepository,
+          config: config.identity,
+          keyRing: identityKeyRing,
+          sessionHmacKey: sessionKey,
+        });
+        stepUpAuthorization = new BrowserStepUpAuthorization(
+          browserSessions,
+          stepUpRepository,
+          config.identity.stepUpMode,
+          sessionKey,
+        );
         localIdentity = {
           authentication: localAuthentication,
           browserSessions,
+          stepUp,
+          authorization: stepUpAuthorization,
         };
       } finally {
         sessionKey.fill(0);
@@ -229,6 +254,8 @@ export async function startControlServer(
   } catch (error) {
     await server?.close().catch(() => undefined);
     browserSessions?.close();
+    stepUpAuthorization?.close();
+    stepUp?.close();
     localAuthentication?.close();
     identityKeyRing?.destroy();
     await persistence.close();
@@ -244,6 +271,8 @@ export async function startControlServer(
       closePromise ??= (async () => {
         await startedServer.close();
         browserSessions?.close();
+        stepUpAuthorization?.close();
+        stepUp?.close();
         localAuthentication?.close();
         identityKeyRing?.destroy();
         await persistence.close();

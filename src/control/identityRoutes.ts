@@ -3,9 +3,11 @@ import {
   type LocalAuthenticationService,
 } from "../identity/localAuthentication.js";
 import type { BrowserSessionAuthenticator } from "../identity/browserSessions.js";
+import type { StepUpService } from "../identity/stepUp.js";
 import { ControlContractError } from "./contracts.js";
 import {
   defineControlRoute,
+  type ControlAuthorizationSeam,
   type ControlRouteRegistry,
 } from "./routeRegistry.js";
 import {
@@ -17,6 +19,8 @@ import { z } from "./zod.js";
 export interface LocalIdentityControl {
   authentication: LocalAuthenticationService;
   browserSessions: BrowserSessionAuthenticator;
+  stepUp?: StepUpService;
+  authorization?: ControlAuthorizationSeam;
 }
 
 const roleSchema = z.enum(["superadmin", "admin", "user"]);
@@ -85,6 +89,91 @@ export function registerLocalIdentityRoutes(
       }
     },
   }));
+
+  if (identity.stepUp !== undefined) {
+    registry.register(defineControlRoute({
+      id: "identity.step_up",
+      method: "POST",
+      path: "/api/v2/auth/step-up",
+      summary: "Perform password and TOTP step-up for the current browser session",
+      tags: ["Identity"],
+      authentication: ["browser_session"],
+      permission: "authenticated",
+      stepUp: "none",
+      schemas: {
+        body: z.object({
+          password: z.string().max(4_096),
+          totp: z.string().regex(/^\d{6}$/),
+          operation: z.object({
+            method: z.enum(["POST", "PUT", "PATCH", "DELETE"]),
+            route_id: z.string().regex(/^[a-z][a-z0-9_.-]{0,127}$/),
+            target_ids: z.array(z.string().uuid()).max(100),
+            expected_version: z.number().int().positive().optional(),
+            idempotency_key: z.string().min(16).max(128).optional(),
+            body: z.unknown(),
+          }).strict().optional(),
+        }).strict(),
+        response: z.object({
+          mode: z.enum(["five_minutes", "always"]),
+          expires_at: z.number().int().nonnegative(),
+          proof: z.string().regex(/^[A-Za-z0-9_-]{43}$/).optional(),
+        }).strict(),
+      },
+      rateLimit: "authentication",
+      auditAction: "identity.step_up",
+      secretFields: ["/password", "/totp"],
+      cache: "no-store",
+      concurrency: "none",
+      idempotency: "none",
+      handler: async ({ body, request }) => {
+        const session = identity.browserSessions.session(request);
+        if (session === undefined) {
+          throw new ControlContractError(401, "unauthenticated", "Authentication required.");
+        }
+        try {
+          const result = await identity.stepUp!.stepUp({
+            userId: session.userId,
+            sessionId: session.sessionId,
+            role: session.role,
+            password: body.password,
+            totp: body.totp,
+            source: request.ip,
+            correlationId: request.id,
+            ...(body.operation === undefined ? {} : {
+              operation: {
+                method: body.operation.method,
+                routeId: body.operation.route_id,
+                targets: body.operation.target_ids,
+                ...(body.operation.expected_version === undefined
+                  ? {}
+                  : { expectedVersion: body.operation.expected_version }),
+                ...(body.operation.idempotency_key === undefined
+                  ? {}
+                  : { idempotencyKey: body.operation.idempotency_key }),
+                body: body.operation.body,
+              },
+            }),
+          });
+          return {
+            data: {
+              mode: result.mode,
+              expires_at: result.expiresAt,
+              ...(result.proof === undefined ? {} : { proof: result.proof }),
+            },
+          };
+        } catch (error) {
+          if (!(error instanceof LocalAuthenticationError)) throw error;
+          if (error.code === "rate_limited") {
+            throw new ControlContractError(429, "rate_limited", "Authentication is temporarily unavailable.");
+          }
+          if (error.code === "authentication_unavailable") {
+            throw new ControlContractError(503, "maintenance", "Authentication is unavailable.");
+          }
+          throw new ControlContractError(401, "unauthenticated", "Authentication failed.");
+        }
+      },
+    }));
+  }
 
   registry.register(defineControlRoute({
     id: "identity.current_session",

@@ -36,7 +36,7 @@ export class ControlIdempotencyHasher {
   requestDigest(input: unknown): string {
     let canonical: string;
     try {
-      canonical = canonicalJson(input);
+      canonical = canonicalControlJson(input);
     } catch {
       throw new PersistenceError("invalid_idempotency_record");
     }
@@ -65,7 +65,7 @@ export function loadControlIdempotencyKey(path: string): Buffer {
   }
 }
 
-function canonicalJson(input: unknown): string {
+export function canonicalControlJson(input: unknown): string {
   if (input === null) return "null";
   if (typeof input === "string") return JSON.stringify(input);
   if (typeof input === "boolean") return input ? "true" : "false";
@@ -74,7 +74,7 @@ function canonicalJson(input: unknown): string {
     return JSON.stringify(input);
   }
   if (Array.isArray(input)) {
-    return `[${input.map((value) => canonicalJson(value)).join(",")}]`;
+    return `[${input.map((value) => canonicalControlJson(value)).join(",")}]`;
   }
   if (typeof input === "object") {
     const prototype = Object.getPrototypeOf(input);
@@ -82,7 +82,7 @@ function canonicalJson(input: unknown): string {
     const record = input as Record<string, unknown>;
     const keys = Object.keys(record).sort();
     if (keys.some((key) => record[key] === undefined)) throw new Error("unsupported");
-    return `{${keys.map((key) => `${JSON.stringify(key)}:${canonicalJson(record[key])}`).join(",")}}`;
+    return `{${keys.map((key) => `${JSON.stringify(key)}:${canonicalControlJson(record[key])}`).join(",")}}`;
   }
   throw new Error("unsupported");
 }

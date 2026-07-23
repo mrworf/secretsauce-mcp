@@ -64,6 +64,7 @@ describe("durable browser sessions", () => {
     });
     expect(documented.statusCode).toBe(200);
     expect(documented.json().paths).toHaveProperty("/api/v2/auth/login");
+    expect(documented.json().paths).toHaveProperty("/api/v2/auth/step-up");
     await first.close();
     closeables.delete(first);
 

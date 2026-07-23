@@ -48,6 +48,36 @@ afterEach(async () => {
 });
 
 describe("restricted initial local enrollment", () => {
+  it("advances an invited identity before issuing its restricted enrollment session", async () => {
+    const fixture = await enrollmentFixture("invited-handoff");
+    const identities = new IdentityRepository(
+      fixture.worker,
+      { now: () => fixture.clock.value },
+    );
+    const invited = await identities.createLocalIdentity({
+      profile: {
+        email: "invited-handoff-user@example.org",
+        givenName: "Invited",
+        familyName: "User",
+      },
+      role: "user",
+      status: "invited",
+    }, audit());
+    const issued = await fixture.service.issueInitialTemporary(invited.id, audit());
+    await expect(fixture.service.temporaryLogin(loginInput(
+      invited.email,
+      issued.temporaryPassword,
+      "invited-handoff",
+    ))).resolves.toMatchObject({
+      userId: invited.id,
+      purpose: "initial_enrollment",
+    });
+    await expect(identities.identity(invited.id)).resolves.toMatchObject({
+      status: "enrollment_required",
+      version: invited.version + 1,
+    });
+  });
+
   it("activates a bootstrapped identity only after permanent password and confirmed TOTP", async () => {
     const fixture = await enrollmentFixture("success");
     const issued = await fixture.service.issueInitialTemporary(fixture.userId, audit());

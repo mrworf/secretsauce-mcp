@@ -94,6 +94,17 @@ export class UserManagementAuthorization implements ControlAuthorizationSeam {
     request: FastifyRequest,
   ): Promise<boolean> {
     if (
+      capability === "invite_ordinary_user" &&
+      outcome === "all_services"
+    ) return context.role === "superadmin";
+    if (
+      capability === "invite_ordinary_user" &&
+      outcome === "assigned_services"
+    ) {
+      const serviceIds = await this.relationships.relatedServiceIds(context.principalId);
+      return serviceIds.length > 0;
+    }
+    if (
       ["all_ordinary_users", "all_ordinary_users_step_up", "last_superadmin_rules"]
         .includes(outcome)
     ) return context.role === "superadmin";

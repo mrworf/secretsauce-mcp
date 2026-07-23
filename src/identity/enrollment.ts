@@ -75,6 +75,7 @@ interface EnrollmentCandidate {
   familyName: string;
   role: "superadmin" | "admin" | "user";
   status: string;
+  userVersion: number;
   securityEpoch: number;
   globalSecurityEpoch: number;
   passwordPolicyVersion: number;
@@ -221,7 +222,7 @@ export class LocalEnrollmentRepository {
       run: (database) => database.read((query) => query.get<EnrollmentCandidate>(`
         SELECT
           u.id AS userId, u.email, u.given_name AS givenName,
-          u.family_name AS familyName, u.role, u.status,
+          u.family_name AS familyName, u.role, u.status, u.version AS userVersion,
           u.security_epoch AS securityEpoch,
           sec.global_security_epoch AS globalSecurityEpoch,
           u.password_policy_version AS passwordPolicyVersion,
@@ -253,7 +254,7 @@ export class LocalEnrollmentRepository {
       run: (database) => database.read((query) => query.get<EnrollmentCandidate>(`
         SELECT
           u.id AS userId, u.email, u.given_name AS givenName,
-          u.family_name AS familyName, u.role, u.status,
+          u.family_name AS familyName, u.role, u.status, u.version AS userVersion,
           u.security_epoch AS securityEpoch,
           sec.global_security_epoch AS globalSecurityEpoch,
           u.password_policy_version AS passwordPolicyVersion,
@@ -303,6 +304,16 @@ export class LocalEnrollmentRepository {
                 AND consumed_at IS NULL AND revoked_at IS NULL AND expires_at > ?
             `, [now, candidate.userId, candidate.temporaryVersion, now]);
             if (consumed.changes !== 1) throw new PersistenceError("authentication_failed");
+            if (current.status === "invited") {
+              const advanced = transaction.run(`
+                UPDATE users
+                SET status = 'enrollment_required',
+                    version = version + 1,
+                    updated_at = ?
+                WHERE id = ? AND status = 'invited' AND version = ?
+              `, [now, candidate.userId, current.userVersion]);
+              if (advanced.changes !== 1) throw new PersistenceError("authentication_failed");
+            }
           }
           transaction.run(`
             UPDATE identity_restricted_sessions
@@ -2145,7 +2156,7 @@ function requiredEnrollmentCandidate(
   const row = transaction.get<EnrollmentCandidate>(`
     SELECT
       u.id AS userId, u.email, u.given_name AS givenName,
-      u.family_name AS familyName, u.role, u.status,
+      u.family_name AS familyName, u.role, u.status, u.version AS userVersion,
       u.security_epoch AS securityEpoch,
       sec.global_security_epoch AS globalSecurityEpoch,
       u.password_policy_version AS passwordPolicyVersion,
@@ -2183,6 +2194,7 @@ function sameTemporaryCandidate(
     : "initial_enrollment";
   const totpState = purpose === "password_change" ? "configured" : "not_configured";
   return current.status === candidate.status &&
+    current.userVersion === candidate.userVersion &&
     current.securityEpoch === candidate.securityEpoch &&
     current.globalSecurityEpoch === candidate.globalSecurityEpoch &&
     current.passwordState === "temporary" &&

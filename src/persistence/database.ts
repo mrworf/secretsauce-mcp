@@ -16,13 +16,9 @@ import { PersistenceQuery, PersistenceTransaction } from "./transaction.js";
 import { UuidV7Generator } from "./uuidV7.js";
 import {
   IDEMPOTENCY_PRUNE_LIMIT,
-  IDEMPOTENCY_RETENTION_MS,
   type IdempotencyExecutionInput,
   type IdempotencyExecutionResult,
   type IdempotencyMutationResult,
-  type StoredIdempotencyRecord,
-  validateIdempotencyExecutionInput,
-  validateIdempotencyMutationResult,
 } from "./idempotency.js";
 
 export interface PersistenceDatabaseOptions {
@@ -206,64 +202,16 @@ export class PersistenceDatabase {
     mutation: (transaction: PersistenceTransaction) => IdempotencyMutationResult<T>,
   ): IdempotencyExecutionResult<T> {
     this.assertOpen();
-    const idempotency = validateIdempotencyExecutionInput(idempotencyInput);
     const event = this.buildAuditEvent(auditInput);
     if (event.result !== "allow") throw new PersistenceError("invalid_audit_event");
-    const now = this.safeNow();
-    const expiresAt = now + IDEMPOTENCY_RETENTION_MS;
-    if (!Number.isSafeInteger(expiresAt)) {
-      throw new PersistenceError("invalid_idempotency_record");
-    }
     const execute = this.#database.transaction((): IdempotencyExecutionResult<T> => {
-      const existing = this.#database.prepare(`
-        SELECT
-          key_hash, principal_id, route_id, request_digest,
-          result_reference, response_status, expires_at
-        FROM control_idempotency_records
-        WHERE key_hash = ?
-      `).get(idempotency.keyHash) as StoredIdempotencyRecord | undefined;
-      if (existing !== undefined && existing.expires_at > now) {
-        if (
-          existing.principal_id !== idempotency.principalId ||
-          existing.route_id !== idempotency.routeId ||
-          existing.request_digest !== idempotency.requestDigest
-        ) {
-          throw new PersistenceError("idempotency_conflict");
-        }
-        return {
-          kind: "replayed",
-          resultReference: existing.result_reference,
-          responseStatus: existing.response_status,
-        };
-      }
-      if (existing !== undefined) {
-        this.#database.prepare(
-          "DELETE FROM control_idempotency_records WHERE key_hash = ?",
-        ).run(idempotency.keyHash);
-      }
-
-      const result = validateIdempotencyMutationResult(
-        mutation(new PersistenceTransaction(this.#database, this.#now)),
+      const transaction = new PersistenceTransaction(this.#database, this.#now);
+      const result = transaction.idempotent(
+        idempotencyInput,
+        () => mutation(transaction),
       );
-      if (isPromiseLike(result.value)) throw new PersistenceError("database_unavailable");
-      this.#database.prepare(`
-        INSERT INTO control_idempotency_records (
-          key_hash, principal_id, route_id, request_digest, result_reference,
-          response_status, created_at, completed_at, expires_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
-        idempotency.keyHash,
-        idempotency.principalId,
-        idempotency.routeId,
-        idempotency.requestDigest,
-        result.resultReference,
-        result.responseStatus,
-        now,
-        now,
-        expiresAt,
-      );
-      this.insertAdministrativeAudit(event);
-      return { kind: "executed", ...result };
+      if (result.kind === "executed") this.insertAdministrativeAudit(event);
+      return result;
     });
     try {
       return execute.immediate();

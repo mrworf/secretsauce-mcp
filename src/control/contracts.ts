@@ -14,6 +14,7 @@ export const CONTROL_ERROR_CODES = [
   "precondition_required",
   "stale_version",
   "identity_conflict",
+  "last_active_superadmin",
   "idempotency_conflict",
   "rate_limited",
   "vault_unavailable",

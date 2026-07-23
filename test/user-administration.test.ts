@@ -1,6 +1,7 @@
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import type { FastifyRequest } from "fastify";
 import { afterEach, describe, expect, it } from "vitest";
 import type { ControlAuthenticationContext } from "../src/control/authentication.js";
 import { IdentityRepository, type IdentityAuditContext } from "../src/identity/repository.js";
@@ -9,6 +10,7 @@ import {
   UserAdministrationRepository,
   UserAdministrationService,
   UserCursorCodec,
+  UserManagementAuthorization,
 } from "../src/identity/userAdministration.js";
 import { PersistenceWorker } from "../src/persistence/worker.js";
 
@@ -25,6 +27,32 @@ afterEach(async () => {
 });
 
 describe("authorized user profiles", () => {
+  it("adapts matrix outcomes with fail-closed user and invitation scopes", async () => {
+    const authorization = new UserManagementAuthorization({
+      authorizeScope: async () => false,
+      verifyStepUp: async () => true,
+    });
+    const request = { params: {} } as FastifyRequest;
+    await expect(authorization.authorizeScope(
+      browser("018f1f2e-7b3c-7a10-8000-000000000001", "superadmin"),
+      "invite_ordinary_user",
+      "all_services",
+      request,
+    )).resolves.toBe(true);
+    await expect(authorization.authorizeScope(
+      browser("018f1f2e-7b3c-7a10-8000-000000000002", "admin"),
+      "invite_ordinary_user",
+      "assigned_services",
+      request,
+    )).resolves.toBe(false);
+    await expect(authorization.authorizeScope(
+      browser("018f1f2e-7b3c-7a10-8000-000000000001", "superadmin"),
+      "view_ordinary_users",
+      "all_ordinary_users",
+      request,
+    )).resolves.toBe(true);
+  });
+
   it("lists and searches bounded superadmin projections with viewer-bound cursors", async () => {
     const fixture = await userFixture("list");
     await fixture.create("charlie@example.org", "user");

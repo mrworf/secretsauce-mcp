@@ -5,6 +5,7 @@ import {
 import type { BrowserSessionAuthenticator } from "../identity/browserSessions.js";
 import type { StepUpService } from "../identity/stepUp.js";
 import type { UserAdministrationService } from "../identity/userAdministration.js";
+import type { UserLifecycleAdministrationService } from "../identity/userLifecycleAdministration.js";
 import {
   EnrollmentError,
   type LocalEnrollmentService,
@@ -34,6 +35,7 @@ export interface LocalIdentityControl {
   restrictedSessions?: RestrictedSessionAuthenticator;
   authenticator?: LocalControlAuthenticator;
   users?: UserAdministrationService;
+  userLifecycle?: UserLifecycleAdministrationService;
 }
 
 const roleSchema = z.enum(["superadmin", "admin", "user"]);

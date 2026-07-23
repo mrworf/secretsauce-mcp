@@ -42,6 +42,10 @@ import {
   denyUserRelationships,
 } from "../identity/userAdministration.js";
 import {
+  UserLifecycleAdministrationRepository,
+  UserLifecycleAdministrationService,
+} from "../identity/userLifecycleAdministration.js";
+import {
   denyControlAuthentication,
   controlAuthentication,
   type ControlAuthenticator,
@@ -142,7 +146,11 @@ export function createControlApplication(
   if (options.localIdentity !== undefined) {
     registerLocalIdentityRoutes(routeRegistry, options.localIdentity);
     if (options.localIdentity.users !== undefined) {
-      registerUserAdministrationRoutes(routeRegistry, options.localIdentity.users);
+      registerUserAdministrationRoutes(
+        routeRegistry,
+        options.localIdentity.users,
+        options.localIdentity.userLifecycle,
+      );
     }
   }
   options.registerControlRoutes?.(routeRegistry);
@@ -271,6 +279,12 @@ export async function startControlServer(
           new UserCursorCodec(sessionKey),
           denyUserRelationships,
         );
+        const userLifecycle = new UserLifecycleAdministrationService(
+          new UserLifecycleAdministrationRepository(persistence, stepUpRepository),
+          idempotencyHasher,
+          config.identity,
+          denyUserRelationships,
+        );
         localIdentity = {
           authentication: localAuthentication,
           browserSessions,
@@ -283,6 +297,7 @@ export async function startControlServer(
           restrictedSessions,
           authenticator: new LocalControlAuthenticator(browserSessions, restrictedSessions),
           users: userAdministration,
+          userLifecycle,
         };
       } finally {
         sessionKey.fill(0);

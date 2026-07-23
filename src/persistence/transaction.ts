@@ -1,5 +1,14 @@
 import type Database from "better-sqlite3";
 import { PersistenceError } from "./errors.js";
+import {
+  IDEMPOTENCY_RETENTION_MS,
+  type IdempotencyExecutionInput,
+  type IdempotencyExecutionResult,
+  type IdempotencyMutationResult,
+  type StoredIdempotencyRecord,
+  validateIdempotencyExecutionInput,
+  validateIdempotencyMutationResult,
+} from "./idempotency.js";
 
 type SqlValue = string | number | bigint | Buffer | null;
 
@@ -52,6 +61,70 @@ export class PersistenceTransaction extends PersistenceQuery {
       throw new PersistenceError("database_unavailable");
     }
     return value;
+  }
+
+  idempotent<T>(
+    input: IdempotencyExecutionInput,
+    mutation: () => IdempotencyMutationResult<T>,
+  ): IdempotencyExecutionResult<T> {
+    const idempotency = validateIdempotencyExecutionInput(input);
+    const now = this.timestamp();
+    const expiresAt = now + IDEMPOTENCY_RETENTION_MS;
+    if (!Number.isSafeInteger(expiresAt)) {
+      throw new PersistenceError("invalid_idempotency_record");
+    }
+    const existing = this.get<StoredIdempotencyRecord>(`
+      SELECT
+        key_hash, principal_id, route_id, request_digest,
+        result_reference, response_status, expires_at
+      FROM control_idempotency_records
+      WHERE key_hash = ?
+    `, [idempotency.keyHash]);
+    if (existing !== undefined && existing.expires_at > now) {
+      if (
+        existing.principal_id !== idempotency.principalId ||
+        existing.route_id !== idempotency.routeId ||
+        existing.request_digest !== idempotency.requestDigest
+      ) {
+        throw new PersistenceError("idempotency_conflict");
+      }
+      return {
+        kind: "replayed",
+        resultReference: existing.result_reference,
+        responseStatus: existing.response_status,
+      };
+    }
+    if (existing !== undefined) {
+      this.run("DELETE FROM control_idempotency_records WHERE key_hash = ?", [
+        idempotency.keyHash,
+      ]);
+    }
+    const result = validateIdempotencyMutationResult(mutation());
+    if (
+      result.value !== null &&
+      (typeof result.value === "object" || typeof result.value === "function") &&
+      "then" in result.value &&
+      typeof result.value.then === "function"
+    ) {
+      throw new PersistenceError("database_unavailable");
+    }
+    this.run(`
+      INSERT INTO control_idempotency_records (
+        key_hash, principal_id, route_id, request_digest, result_reference,
+        response_status, created_at, completed_at, expires_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+      idempotency.keyHash,
+      idempotency.principalId,
+      idempotency.routeId,
+      idempotency.requestDigest,
+      result.resultReference,
+      result.responseStatus,
+      now,
+      now,
+      expiresAt,
+    ]);
+    return { kind: "executed", ...result };
   }
 
   optimisticUpdate(

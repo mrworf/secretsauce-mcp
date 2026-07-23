@@ -1,5 +1,5 @@
 import { createHash, createPublicKey } from "node:crypto";
-import { readFileSync, statSync } from "node:fs";
+import { lstatSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { isIP } from "node:net";
 import { domainToASCII } from "node:url";
 import { z } from "zod";
@@ -15,6 +15,7 @@ import type {
   DestinationConfig,
   GatewayConfig,
   HostMatcherConfig,
+  IdentityConfig,
   LimitsConfig,
   LoggingConfig,
   PolicyConfig,
@@ -230,6 +231,46 @@ const rawConfigSchema = z.object({
       .refine((value) => !value.includes("\0"), "database_file must not contain NUL")
       .refine((value) => value !== ":memory:" && !value.startsWith("file:"), "database_file must be a filesystem path"),
   }).strict().optional(),
+  identity: z.object({
+    active_root_key_id: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/),
+    root_key_files: z.record(
+      z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/),
+      z.string().trim().min(1).max(4096),
+    ).refine((value) => Object.keys(value).length >= 1 && Object.keys(value).length <= 8),
+    session_hmac_key_file: z.string().trim().min(1).max(4096),
+    password: z.object({
+      minimum_length: z.number().int().min(8).max(128).default(12),
+      compromised_blocklist_file: z.string().trim().min(1).max(4096).optional(),
+    }).strict().default({ minimum_length: 12 }),
+    sessions: z.object({
+      admin_absolute: z.string().default("12h"),
+      admin_inactivity: z.string().default("15m"),
+      user_absolute: z.string().default("24h"),
+      user_inactivity: z.string().default("1h"),
+    }).strict().default({
+      admin_absolute: "12h", admin_inactivity: "15m",
+      user_absolute: "24h", user_inactivity: "1h",
+    }),
+    step_up_mode: z.enum(["five_minutes", "always"]).default("five_minutes"),
+    limits: z.object({
+      login_attempts: z.number().int().min(3).max(20).default(10),
+      login_window: z.string().default("15m"),
+      password_attempts: z.number().int().min(3).max(20).default(10),
+      password_window: z.string().default("15m"),
+      totp_attempts: z.number().int().min(3).max(10).default(5),
+      totp_window: z.string().default("5m"),
+      max_password_verifications: z.number().int().min(1).max(16).default(2),
+      max_password_verifications_per_source: z.number().int().min(1).max(8).default(1),
+      max_totp_verifications: z.number().int().min(1).max(64).default(8),
+      max_totp_verifications_per_source: z.number().int().min(1).max(16).default(2),
+    }).strict().default({
+      login_attempts: 10, login_window: "15m",
+      password_attempts: 10, password_window: "15m",
+      totp_attempts: 5, totp_window: "5m",
+      max_password_verifications: 2, max_password_verifications_per_source: 1,
+      max_totp_verifications: 8, max_totp_verifications_per_source: 2,
+    }),
+  }).strict().optional(),
   services: z.record(z.string().min(1), serviceSchema)
     .refine((services) => Object.keys(services).length > 0, "at least one service is required"),
 }).strict();
@@ -260,6 +301,7 @@ export function validateConfig(raw: unknown, env: NodeJS.ProcessEnv = process.en
   const persistence: PersistenceConfig | undefined = parsed.persistence === undefined
     ? undefined
     : { databaseFile: parsed.persistence.database_file };
+  const identity = normalizeIdentity(parsed.identity, parsed.control, parsed.persistence);
   appendPublicOAuthWarnings(server, auth, warnings);
   const services = normalizeServices(parsed.services, env, warnings, debugDiagnostics);
 
@@ -272,10 +314,127 @@ export function validateConfig(raw: unknown, env: NodeJS.ProcessEnv = process.en
     logging,
     audit,
     ...(persistence === undefined ? {} : { persistence }),
+    ...(identity === undefined ? {} : { identity }),
     services,
     warnings,
     debugDiagnostics,
   };
+}
+
+function normalizeIdentity(
+  raw: RawConfig["identity"],
+  control: RawConfig["control"],
+  persistence: RawConfig["persistence"],
+): IdentityConfig | undefined {
+  if (raw === undefined) return undefined;
+  if (control === undefined || persistence === undefined) {
+    throw configValidationError("identity requires control and persistence", ["identity"]);
+  }
+  if (!(raw.active_root_key_id in raw.root_key_files)) {
+    throw configValidationError(
+      "identity.active_root_key_id must name a configured root key",
+      ["identity", "active_root_key_id"],
+    );
+  }
+
+  const rootKeyFiles: Record<string, string> = {};
+  const canonicalPaths = new Set<string>();
+  for (const [keyId, path] of Object.entries(raw.root_key_files)) {
+    validateRestrictedIdentityKeyFile(path, ["identity", "root_key_files", keyId]);
+    const canonical = safeRealpath(path, ["identity", "root_key_files", keyId]);
+    if (canonicalPaths.has(canonical)) {
+      throw configValidationError("identity key files must be distinct", ["identity", "root_key_files", keyId]);
+    }
+    canonicalPaths.add(canonical);
+    rootKeyFiles[keyId] = path;
+  }
+  validateRestrictedIdentityKeyFile(raw.session_hmac_key_file, ["identity", "session_hmac_key_file"]);
+  const sessionCanonical = safeRealpath(raw.session_hmac_key_file, ["identity", "session_hmac_key_file"]);
+  if (canonicalPaths.has(sessionCanonical)) {
+    throw configValidationError("identity session and root key files must be distinct", ["identity", "session_hmac_key_file"]);
+  }
+
+  const adminAbsoluteMs = boundedIdentityDuration(raw.sessions.admin_absolute, "identity.sessions.admin_absolute", 3_600_000, 86_400_000);
+  const adminInactivityMs = boundedIdentityDuration(raw.sessions.admin_inactivity, "identity.sessions.admin_inactivity", 300_000, 7_200_000);
+  const userAbsoluteMs = boundedIdentityDuration(raw.sessions.user_absolute, "identity.sessions.user_absolute", 3_600_000, 259_200_000);
+  const userInactivityMs = boundedIdentityDuration(raw.sessions.user_inactivity, "identity.sessions.user_inactivity", 300_000, 86_400_000);
+  if (adminInactivityMs > adminAbsoluteMs || userInactivityMs > userAbsoluteMs) {
+    throw configValidationError("identity session inactivity must not exceed absolute lifetime", ["identity", "sessions"]);
+  }
+  const loginWindowMs = boundedIdentityDuration(raw.limits.login_window, "identity.limits.login_window", 300_000, 3_600_000);
+  const passwordWindowMs = boundedIdentityDuration(raw.limits.password_window, "identity.limits.password_window", 300_000, 3_600_000);
+  const totpWindowMs = boundedIdentityDuration(raw.limits.totp_window, "identity.limits.totp_window", 60_000, 900_000);
+  if (raw.limits.max_password_verifications_per_source > raw.limits.max_password_verifications) {
+    throw configValidationError(
+      "identity.limits.max_password_verifications_per_source must not exceed max_password_verifications",
+      ["identity", "limits", "max_password_verifications_per_source"],
+    );
+  }
+  if (raw.limits.max_totp_verifications_per_source > raw.limits.max_totp_verifications) {
+    throw configValidationError(
+      "identity.limits.max_totp_verifications_per_source must not exceed max_totp_verifications",
+      ["identity", "limits", "max_totp_verifications_per_source"],
+    );
+  }
+  return {
+    activeRootKeyId: raw.active_root_key_id,
+    rootKeyFiles,
+    sessionHmacKeyFile: raw.session_hmac_key_file,
+    password: {
+      minimumLength: raw.password.minimum_length,
+      ...(raw.password.compromised_blocklist_file === undefined
+        ? {}
+        : { compromisedBlocklistFile: raw.password.compromised_blocklist_file }),
+    },
+    sessions: { adminAbsoluteMs, adminInactivityMs, userAbsoluteMs, userInactivityMs },
+    stepUpMode: raw.step_up_mode,
+    limits: {
+      loginAttempts: raw.limits.login_attempts,
+      loginWindowMs,
+      passwordAttempts: raw.limits.password_attempts,
+      passwordWindowMs,
+      totpAttempts: raw.limits.totp_attempts,
+      totpWindowMs,
+      maxPasswordVerifications: raw.limits.max_password_verifications,
+      maxPasswordVerificationsPerSource: raw.limits.max_password_verifications_per_source,
+      maxTotpVerifications: raw.limits.max_totp_verifications,
+      maxTotpVerificationsPerSource: raw.limits.max_totp_verifications_per_source,
+    },
+  };
+}
+
+function boundedIdentityDuration(value: string, label: string, minimum: number, maximum: number): number {
+  const duration = parseDuration(value, label);
+  if (duration < minimum || duration > maximum) {
+    throw configValidationError(`${label} is outside its supported range`, label.split("."));
+  }
+  return duration;
+}
+
+function validateRestrictedIdentityKeyFile(path: string, configPath: ConfigPath): void {
+  try {
+    const linkStats = lstatSync(path);
+    if (linkStats.isSymbolicLink() || !linkStats.isFile() || (linkStats.mode & 0o777) !== 0o400) {
+      throw new Error("unsafe identity key file");
+    }
+    const encoded = readFileSync(path, "utf8");
+    if (!/^[A-Za-z0-9_-]{43}\n?$/.test(encoded) || Buffer.from(encoded.trim(), "base64url").byteLength !== 32) {
+      throw new Error("invalid identity key");
+    }
+  } catch {
+    throw configValidationError(
+      "identity key files must be readable non-linked mode-0400 files containing one 32-byte base64url key",
+      configPath,
+    );
+  }
+}
+
+function safeRealpath(path: string, configPath: ConfigPath): string {
+  try {
+    return realpathSync(path);
+  } catch {
+    throw configValidationError("identity key file is unavailable", configPath);
+  }
 }
 
 function parseRawConfig(raw: unknown): RawConfig {

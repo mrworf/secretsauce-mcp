@@ -7,6 +7,7 @@ export interface GatewayConfig {
   logging: LoggingConfig;
   audit: AuditConfig;
   persistence?: PersistenceConfig;
+  identity?: IdentityConfig;
   services: Record<string, ServiceConfig>;
   warnings: string[];
   debugDiagnostics: ConfigDebugDiagnostic[];
@@ -134,6 +135,35 @@ export interface AuditConfig {
 
 export interface PersistenceConfig {
   databaseFile: string;
+}
+
+export interface IdentityConfig {
+  activeRootKeyId: string;
+  rootKeyFiles: Record<string, string>;
+  sessionHmacKeyFile: string;
+  password: {
+    minimumLength: number;
+    compromisedBlocklistFile?: string;
+  };
+  sessions: {
+    adminAbsoluteMs: number;
+    adminInactivityMs: number;
+    userAbsoluteMs: number;
+    userInactivityMs: number;
+  };
+  stepUpMode: "five_minutes" | "always";
+  limits: {
+    loginAttempts: number;
+    loginWindowMs: number;
+    passwordAttempts: number;
+    passwordWindowMs: number;
+    totpAttempts: number;
+    totpWindowMs: number;
+    maxPasswordVerifications: number;
+    maxPasswordVerificationsPerSource: number;
+    maxTotpVerifications: number;
+    maxTotpVerificationsPerSource: number;
+  };
 }
 
 export interface ServiceConfig {

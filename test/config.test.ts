@@ -97,6 +97,98 @@ describe("config validation", () => {
     });
   });
 
+  it("accepts closed local identity security configuration with bounded defaults", () => {
+    const rootKey = identityKeyFile("root", 11);
+    const sessionKey = identityKeyFile("session", 12);
+    const raw = validRaw();
+    raw.persistence = { database_file: "/var/lib/secretsauce/control.sqlite" };
+    raw.control = {
+      listen: "127.0.0.1:8081",
+      public_origin: "http://127.0.0.1:8081",
+      idempotency_hmac_key_file: controlKeyFile("identity"),
+    };
+    raw.identity = {
+      active_root_key_id: "identity-2026",
+      root_key_files: { "identity-2026": rootKey },
+      session_hmac_key_file: sessionKey,
+    };
+
+    expect(validateConfig(raw, validEnv).identity).toEqual({
+      activeRootKeyId: "identity-2026",
+      rootKeyFiles: { "identity-2026": rootKey },
+      sessionHmacKeyFile: sessionKey,
+      password: { minimumLength: 12 },
+      sessions: {
+        adminAbsoluteMs: 12 * 3_600_000,
+        adminInactivityMs: 15 * 60_000,
+        userAbsoluteMs: 24 * 3_600_000,
+        userInactivityMs: 60 * 60_000,
+      },
+      stepUpMode: "five_minutes",
+      limits: {
+        loginAttempts: 10,
+        loginWindowMs: 15 * 60_000,
+        passwordAttempts: 10,
+        passwordWindowMs: 15 * 60_000,
+        totpAttempts: 5,
+        totpWindowMs: 5 * 60_000,
+        maxPasswordVerifications: 2,
+        maxPasswordVerificationsPerSource: 1,
+        maxTotpVerifications: 8,
+        maxTotpVerificationsPerSource: 2,
+      },
+    });
+  });
+
+  it("rejects unsafe, colliding, incomplete, and out-of-range identity configuration without key disclosure", () => {
+    const rootKey = identityKeyFile("root-invalid", 21);
+    const sessionKey = identityKeyFile("session-invalid", 22);
+    const configured = (): any => {
+      const raw = validRaw();
+      raw.persistence = { database_file: "/var/lib/secretsauce/control.sqlite" };
+      raw.control = {
+        listen: "127.0.0.1:8081",
+        public_origin: "http://127.0.0.1:8081",
+        idempotency_hmac_key_file: controlKeyFile("identity-invalid"),
+      };
+      raw.identity = {
+        active_root_key_id: "current",
+        root_key_files: { current: rootKey },
+        session_hmac_key_file: sessionKey,
+      };
+      return raw;
+    };
+
+    const noControl = configured();
+    delete noControl.control;
+    expectConfigError(() => validateConfig(noControl, validEnv), "requires control");
+
+    const missingActive = configured();
+    missingActive.identity.active_root_key_id = "absent";
+    expectConfigError(() => validateConfig(missingActive, validEnv), "must name a configured root key");
+
+    const collision = configured();
+    collision.identity.session_hmac_key_file = rootKey;
+    expectConfigError(() => validateConfig(collision, validEnv), "must be distinct");
+
+    const range = configured();
+    range.identity.sessions = {
+      admin_absolute: "12h",
+      admin_inactivity: "15m",
+      user_absolute: "24h",
+      user_inactivity: "1h",
+    };
+    range.identity.sessions.admin_absolute = "25h";
+    expectConfigError(() => validateConfig(range, validEnv), "outside its supported range");
+
+    const unknown = configured();
+    unknown.identity.unexpected = true;
+    expectConfigError(() => validateConfig(unknown, validEnv), "Invalid config");
+
+    chmodSync(sessionKey, 0o600);
+    expectConfigErrorWithoutValue(() => validateConfig(configured(), validEnv), sessionKey);
+  });
+
   it("rejects unsafe or malformed persistence configuration", () => {
     for (const persistence of [
       { database_file: "" },
@@ -928,5 +1020,13 @@ function controlKeyFile(name: string, value = Buffer.alloc(32, 7).toString("base
   const file = join(directory, "idempotency.key");
   writeFileSync(file, `${value}\n`, { mode: 0o600 });
   chmodSync(file, 0o600);
+  return file;
+}
+
+function identityKeyFile(name: string, fill: number): string {
+  const directory = mkdtempSync(join(tmpdir(), `secretsauce-identity-key-${name}-`));
+  const file = join(directory, "identity.key");
+  writeFileSync(file, `${Buffer.alloc(32, fill).toString("base64url")}\n`, { mode: 0o400 });
+  chmodSync(file, 0o400);
   return file;
 }

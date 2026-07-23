@@ -189,6 +189,132 @@ CREATE TABLE identity_bootstrap (
 ) STRICT;
 `;
 
+const migration0004 = `
+ALTER TABLE users ADD COLUMN last_login_at INTEGER
+  CHECK (last_login_at IS NULL OR last_login_at >= 0);
+ALTER TABLE users ADD COLUMN last_authenticated_at INTEGER
+  CHECK (last_authenticated_at IS NULL OR last_authenticated_at >= 0);
+
+CREATE TABLE local_password_credentials (
+  user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  encoded_hash TEXT NOT NULL CHECK (length(encoded_hash) BETWEEN 64 AND 512),
+  policy_version INTEGER NOT NULL CHECK (policy_version > 0),
+  version INTEGER NOT NULL DEFAULT 1 CHECK (version > 0),
+  created_at INTEGER NOT NULL CHECK (created_at >= 0),
+  updated_at INTEGER NOT NULL CHECK (updated_at >= created_at)
+) STRICT;
+
+CREATE TABLE local_totp_authenticators (
+  id TEXT PRIMARY KEY CHECK (
+    length(id) = 36 AND id = lower(id)
+    AND substr(id, 15, 1) = '7'
+    AND substr(id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND id NOT GLOB '*[^0-9a-f-]*'
+  ),
+  user_id TEXT NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+  envelope_json TEXT NOT NULL CHECK (
+    length(envelope_json) BETWEEN 128 AND 4096 AND json_valid(envelope_json)
+  ),
+  root_key_id TEXT NOT NULL CHECK (
+    length(root_key_id) BETWEEN 1 AND 64
+    AND root_key_id NOT GLOB '*[^A-Za-z0-9._-]*'
+  ),
+  generation INTEGER NOT NULL CHECK (generation > 0),
+  confirmed_at INTEGER NOT NULL CHECK (confirmed_at >= 0),
+  version INTEGER NOT NULL DEFAULT 1 CHECK (version > 0),
+  created_at INTEGER NOT NULL CHECK (created_at >= 0),
+  updated_at INTEGER NOT NULL CHECK (updated_at >= created_at)
+) STRICT;
+
+CREATE TABLE accepted_totp_steps (
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  time_step INTEGER NOT NULL CHECK (time_step >= 0),
+  purpose TEXT NOT NULL CHECK (purpose IN ('confirmation', 'login', 'step_up')),
+  accepted_at INTEGER NOT NULL CHECK (accepted_at >= 0),
+  PRIMARY KEY (user_id, time_step)
+) STRICT, WITHOUT ROWID;
+
+CREATE INDEX accepted_totp_steps_time_idx
+  ON accepted_totp_steps (accepted_at, user_id, time_step);
+
+CREATE TABLE browser_sessions (
+  id TEXT PRIMARY KEY CHECK (
+    length(id) = 36 AND id = lower(id)
+    AND substr(id, 15, 1) = '7'
+    AND substr(id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND id NOT GLOB '*[^0-9a-f-]*'
+  ),
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  session_hash TEXT NOT NULL UNIQUE CHECK (
+    length(session_hash) = 64 AND session_hash = lower(session_hash)
+    AND session_hash NOT GLOB '*[^0-9a-f]*'
+  ),
+  csrf_hash TEXT NOT NULL UNIQUE CHECK (
+    length(csrf_hash) = 64 AND csrf_hash = lower(csrf_hash)
+    AND csrf_hash NOT GLOB '*[^0-9a-f]*'
+  ),
+  role_class TEXT NOT NULL CHECK (role_class IN ('admin', 'user')),
+  issued_security_epoch INTEGER NOT NULL CHECK (issued_security_epoch > 0),
+  issued_global_epoch INTEGER NOT NULL CHECK (issued_global_epoch > 0),
+  issued_absolute_ms INTEGER NOT NULL CHECK (issued_absolute_ms > 0),
+  issued_inactivity_ms INTEGER NOT NULL CHECK (issued_inactivity_ms > 0),
+  issued_at INTEGER NOT NULL CHECK (issued_at >= 0),
+  last_activity_at INTEGER NOT NULL CHECK (last_activity_at >= issued_at),
+  absolute_expires_at INTEGER NOT NULL CHECK (absolute_expires_at > issued_at),
+  step_up_at INTEGER CHECK (step_up_at IS NULL OR step_up_at >= issued_at),
+  revoked_at INTEGER CHECK (revoked_at IS NULL OR revoked_at >= issued_at),
+  version INTEGER NOT NULL DEFAULT 1 CHECK (version > 0)
+) STRICT;
+
+CREATE INDEX browser_sessions_user_active_idx
+  ON browser_sessions (user_id, revoked_at, absolute_expires_at, id);
+CREATE INDEX browser_sessions_expiry_idx
+  ON browser_sessions (absolute_expires_at, id);
+
+CREATE TABLE identity_step_up_proofs (
+  id TEXT PRIMARY KEY CHECK (
+    length(id) = 36 AND id = lower(id)
+    AND substr(id, 15, 1) = '7'
+    AND substr(id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND id NOT GLOB '*[^0-9a-f-]*'
+  ),
+  proof_hash TEXT NOT NULL UNIQUE CHECK (
+    length(proof_hash) = 64 AND proof_hash = lower(proof_hash)
+    AND proof_hash NOT GLOB '*[^0-9a-f]*'
+  ),
+  session_id TEXT NOT NULL REFERENCES browser_sessions(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  method TEXT NOT NULL CHECK (length(method) BETWEEN 3 AND 16 AND method = upper(method)),
+  route_id TEXT NOT NULL CHECK (
+    length(route_id) BETWEEN 1 AND 128
+    AND route_id NOT GLOB '*[^a-z0-9_.-]*'
+  ),
+  targets_json TEXT NOT NULL CHECK (length(targets_json) <= 4096 AND json_valid(targets_json)),
+  expected_version INTEGER CHECK (expected_version IS NULL OR expected_version > 0),
+  idempotency_key_hash TEXT CHECK (
+    idempotency_key_hash IS NULL OR (
+      length(idempotency_key_hash) = 64
+      AND idempotency_key_hash = lower(idempotency_key_hash)
+      AND idempotency_key_hash NOT GLOB '*[^0-9a-f]*'
+    )
+  ),
+  body_digest TEXT NOT NULL CHECK (
+    length(body_digest) = 64 AND body_digest = lower(body_digest)
+    AND body_digest NOT GLOB '*[^0-9a-f]*'
+  ),
+  issued_security_epoch INTEGER NOT NULL CHECK (issued_security_epoch > 0),
+  issued_global_epoch INTEGER NOT NULL CHECK (issued_global_epoch > 0),
+  issued_at INTEGER NOT NULL CHECK (issued_at >= 0),
+  expires_at INTEGER NOT NULL CHECK (expires_at > issued_at),
+  consumed_at INTEGER CHECK (consumed_at IS NULL OR consumed_at >= issued_at)
+) STRICT;
+
+CREATE INDEX identity_step_up_proofs_expiry_idx
+  ON identity_step_up_proofs (expires_at, consumed_at, id);
+CREATE INDEX identity_step_up_proofs_session_idx
+  ON identity_step_up_proofs (session_id, consumed_at, expires_at, id);
+`;
+
 export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [
   {
     version: 1,
@@ -204,6 +330,11 @@ export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [
     version: 3,
     name: "identity_bootstrap_foundation",
     sql: migration0003,
+  },
+  {
+    version: 4,
+    name: "local_authentication_foundation",
+    sql: migration0004,
   },
 ];
 

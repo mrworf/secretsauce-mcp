@@ -13,6 +13,8 @@ export type PersistenceErrorCode =
   | "invalid_identity_transition"
   | "last_active_superadmin"
   | "bootstrap_unavailable"
+  | "authentication_failed"
+  | "totp_replayed"
   | "persistence_closed";
 
 const messages: Record<PersistenceErrorCode, string> = {
@@ -30,6 +32,8 @@ const messages: Record<PersistenceErrorCode, string> = {
   invalid_identity_transition: "Identity transition is invalid.",
   last_active_superadmin: "The last active superadmin must be preserved.",
   bootstrap_unavailable: "Initial identity bootstrap is unavailable.",
+  authentication_failed: "Authentication failed.",
+  totp_replayed: "The authenticator code has already been used.",
   persistence_closed: "Persistence owner is closed.",
 };
 

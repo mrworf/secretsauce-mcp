@@ -58,10 +58,10 @@ milestones:
   - id: "08"
     title: "Generic OIDC Provider"
     file: "docs/milestones/08-generic-oidc-provider.md"
-    status: "pending"
+    status: "in_progress"
     completed_at: null
     commit_hash: null
-    notes: ""
+    notes: "Decision-complete implementation planning and security review in progress."
   - id: "09"
     title: "Service Management"
     file: "docs/milestones/09-service-management.md"

@@ -51,10 +51,10 @@ milestones:
   - id: "07"
     title: "User Administration And Lifecycle"
     file: "docs/milestones/07-user-administration-lifecycle.md"
-    status: "in_progress"
-    completed_at: null
-    commit_hash: null
-    notes: "Decision-complete implementation planning and review in progress."
+    status: "completed"
+    completed_at: "2026-07-23T20:21:27.338Z"
+    commit_hash: "98fa7b3"
+    notes: "Implemented scoped profiles and signed directory cursors, guarded invitation/reset/lifecycle/role/deletion transactions, retained deletion audits, centralized sensitive failure audit, and responsive Users/Profile UX; OpenAPI current; 67 files / 565 tests passed."
   - id: "08"
     title: "Generic OIDC Provider"
     file: "docs/milestones/08-generic-oidc-provider.md"

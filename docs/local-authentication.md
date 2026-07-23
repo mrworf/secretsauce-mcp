@@ -6,8 +6,10 @@ accepted only on the control listener and are never credentials for `/mcp`.
 
 An `enrollment_required` identity becomes active only after a restricted
 temporary-password ceremony installs a permanent password and confirmed TOTP in
-one transaction. Administrative reset primitives are authorization-guarded for
-Milestone 07 routes; no public administrative reset endpoint exists.
+one transaction. Administrative reset and lifecycle routes are
+authorization-guarded as described in
+[User Administration](user-administration.md); no public administrative reset
+endpoint exists.
 
 ## Configuration and stable key mounts
 

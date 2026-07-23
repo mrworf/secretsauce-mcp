@@ -414,6 +414,48 @@ CREATE INDEX identity_invalidation_events_user_idx
   ON identity_invalidation_events (user_id, created_at, id);
 `;
 
+const migration0006 = `
+ALTER TABLE identity_invalidation_events RENAME TO identity_invalidation_events_v5;
+
+CREATE TABLE identity_invalidation_events (
+  id TEXT PRIMARY KEY CHECK (
+    length(id) = 36 AND id = lower(id)
+    AND substr(id, 15, 1) = '7'
+    AND substr(id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND id NOT GLOB '*[^0-9a-f-]*'
+  ),
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  reason TEXT NOT NULL CHECK (
+    reason IN (
+      'password_reset', 'totp_reset', 'password_change', 'totp_change',
+      'break_glass', 'enrollment', 'profile_email_change', 'suspension',
+      'reactivation', 'deactivation', 'role_change', 'enrollment_restore'
+    )
+  ),
+  browser_sessions_revoked INTEGER NOT NULL CHECK (browser_sessions_revoked >= 0),
+  restricted_sessions_revoked INTEGER NOT NULL CHECK (restricted_sessions_revoked >= 0),
+  created_at INTEGER NOT NULL CHECK (created_at >= 0),
+  dispatched_at INTEGER CHECK (dispatched_at IS NULL OR dispatched_at >= created_at),
+  attempts INTEGER NOT NULL DEFAULT 0 CHECK (attempts >= 0)
+) STRICT;
+
+INSERT INTO identity_invalidation_events (
+  id, user_id, reason, browser_sessions_revoked, restricted_sessions_revoked,
+  created_at, dispatched_at, attempts
+)
+SELECT
+  id, user_id, reason, browser_sessions_revoked, restricted_sessions_revoked,
+  created_at, dispatched_at, attempts
+FROM identity_invalidation_events_v5;
+
+DROP TABLE identity_invalidation_events_v5;
+
+CREATE INDEX identity_invalidation_events_dispatch_idx
+  ON identity_invalidation_events (dispatched_at, created_at, id);
+CREATE INDEX identity_invalidation_events_user_idx
+  ON identity_invalidation_events (user_id, created_at, id);
+`;
+
 export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [
   {
     version: 1,
@@ -439,6 +481,11 @@ export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [
     version: 5,
     name: "enrollment_recovery_self_service",
     sql: migration0005,
+  },
+  {
+    version: 6,
+    name: "user_administration_lifecycle",
+    sql: migration0006,
   },
 ];
 

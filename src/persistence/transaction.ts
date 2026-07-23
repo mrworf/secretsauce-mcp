@@ -20,6 +20,14 @@ export class PersistenceQuery {
       throw new PersistenceError("database_unavailable");
     }
   }
+
+  all<T>(sql: string, parameters: readonly SqlValue[] = []): T[] {
+    try {
+      return this.database.prepare(sql).all(...parameters) as T[];
+    } catch {
+      throw new PersistenceError("database_unavailable");
+    }
+  }
 }
 
 export class PersistenceTransaction extends PersistenceQuery {

@@ -35,6 +35,13 @@ import {
   RestrictedSessionAuthenticator,
 } from "../identity/enrollment.js";
 import {
+  UserAdministrationRepository,
+  UserAdministrationService,
+  UserCursorCodec,
+  UserManagementAuthorization,
+  denyUserRelationships,
+} from "../identity/userAdministration.js";
+import {
   denyControlAuthentication,
   controlAuthentication,
   type ControlAuthenticator,
@@ -59,6 +66,7 @@ import {
   ControlIdempotencyHasher,
   loadControlIdempotencyKey,
 } from "./idempotency.js";
+import { registerUserAdministrationRoutes } from "./userRoutes.js";
 import {
   installControlWebRoutes,
   loadControlWebAssets,
@@ -133,6 +141,9 @@ export function createControlApplication(
   );
   if (options.localIdentity !== undefined) {
     registerLocalIdentityRoutes(routeRegistry, options.localIdentity);
+    if (options.localIdentity.users !== undefined) {
+      registerUserAdministrationRoutes(routeRegistry, options.localIdentity.users);
+    }
   }
   options.registerControlRoutes?.(routeRegistry);
   installControlRoutes(application, routeRegistry, authorization);
@@ -207,6 +218,7 @@ export async function startControlServer(
   let stepUpAuthorization: BrowserStepUpAuthorization | undefined;
   let enrollment: LocalEnrollmentService | undefined;
   let restrictedSessions: RestrictedSessionAuthenticator | undefined;
+  let userAdministration: UserAdministrationService | undefined;
   let identityKeyRing: IdentityKeyRing | undefined;
   try {
     let localIdentity: LocalIdentityControl | undefined;
@@ -254,14 +266,23 @@ export async function startControlServer(
           enrollmentRepository,
           sessionKey,
         );
+        userAdministration = new UserAdministrationService(
+          new UserAdministrationRepository(persistence),
+          new UserCursorCodec(sessionKey),
+          denyUserRelationships,
+        );
         localIdentity = {
           authentication: localAuthentication,
           browserSessions,
           stepUp,
-          authorization: stepUpAuthorization,
+          authorization: new UserManagementAuthorization(
+            stepUpAuthorization,
+            denyUserRelationships,
+          ),
           enrollment,
           restrictedSessions,
           authenticator: new LocalControlAuthenticator(browserSessions, restrictedSessions),
+          users: userAdministration,
         };
       } finally {
         sessionKey.fill(0);
@@ -286,6 +307,7 @@ export async function startControlServer(
     stepUp?.close();
     restrictedSessions?.close();
     enrollment?.close();
+    userAdministration?.close();
     localAuthentication?.close();
     identityKeyRing?.destroy();
     await persistence.close();
@@ -305,6 +327,7 @@ export async function startControlServer(
         stepUp?.close();
         restrictedSessions?.close();
         enrollment?.close();
+        userAdministration?.close();
         localAuthentication?.close();
         identityKeyRing?.destroy();
         await persistence.close();

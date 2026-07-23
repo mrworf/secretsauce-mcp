@@ -13,6 +13,7 @@ export const CONTROL_ERROR_CODES = [
   "not_found",
   "precondition_required",
   "stale_version",
+  "identity_conflict",
   "idempotency_conflict",
   "rate_limited",
   "vault_unavailable",

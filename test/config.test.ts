@@ -205,6 +205,80 @@ describe("config validation", () => {
     expectConfigErrorWithoutValue(() => validateConfig(configured(), validEnv), sessionKey);
   });
 
+  it("normalizes closed generic OIDC provider trust and assurance configuration", () => {
+    const { raw, clientSecret } = oidcRaw();
+    const oidc = validateConfig(raw, validEnv).identity?.oidc;
+    expect(oidc).toMatchObject({
+      flowTtlMs: 300_000,
+      networkTimeoutMs: 5_000,
+      maxResponseBodyBytes: 262_144,
+      maxInflight: 4,
+      maxInflightPerProvider: 2,
+      maxFlowRecords: 10_000,
+      maxCacheRecords: 64,
+      providers: {
+        workforce: {
+          id: "workforce",
+          displayName: "Workforce identity",
+          issuer: "https://id.example.org/tenant",
+          clientId: "secretsauce-control",
+          clientSecretFile: clientSecret,
+          redirectOrigin: "https://control.example.org",
+          scopes: ["openid", "profile", "email"],
+          allowedSigningAlgorithms: ["RS256", "ES256"],
+          clockSkewSeconds: 60,
+          maxAuthenticationAgeMs: 43_200_000,
+          assuranceAnyOf: [
+            { acr: "urn:example:loa:2" },
+            { amr: ["pwd", "otp"] },
+          ],
+          profileClaims: {
+            email: "email",
+            emailVerified: "email_verified",
+            givenName: "given_name",
+            familyName: "family_name",
+            providerOwnedFields: ["given_name", "family_name"],
+          },
+        },
+      },
+    });
+  });
+
+  it("rejects unsafe OIDC inputs before any provider network use", () => {
+    const invalidCases: Array<[mutate: (raw: any) => void, message: string]> = [
+      [(raw) => { raw.identity.oidc.providers.workforce.issuer = "http://id.example.org"; },
+        "canonical HTTPS"],
+      [(raw) => { raw.identity.oidc.providers.workforce.issuer = "https://id.example.org/%70ath"; },
+        "canonical HTTPS"],
+      [(raw) => { raw.identity.oidc.providers.workforce.redirect_origin = "https://other.example.org"; },
+        "must exactly match"],
+      [(raw) => { raw.identity.oidc.providers.workforce.scopes = ["profile"]; },
+        "include openid"],
+      [(raw) => { raw.identity.oidc.providers.workforce.scopes = ["openid", "openid"]; },
+        "must be unique"],
+      [(raw) => {
+        raw.identity.oidc.providers.workforce.profile_claims.provider_owned_fields = ["email"];
+        delete raw.identity.oidc.providers.workforce.profile_claims.email_verified;
+      }, "requires a verification claim"],
+      [(raw) => {
+        raw.identity.oidc.providers.workforce.assurance.any_of = [{ amr: ["otp", "otp"] }];
+      }, "must be unique"],
+      [(raw) => { raw.identity.oidc.max_inflight_per_provider = 5; },
+        "must not exceed"],
+      [(raw) => { raw.identity.oidc.providers.workforce.unknown = true; },
+        "Invalid config"],
+    ];
+    for (const [mutate, message] of invalidCases) {
+      const { raw } = oidcRaw();
+      mutate(raw);
+      expectConfigError(() => validateConfig(raw, validEnv), message);
+    }
+
+    const { raw, clientSecret } = oidcRaw();
+    chmodSync(clientSecret, 0o644);
+    expectConfigErrorWithoutValue(() => validateConfig(raw, validEnv), "oidc-client-secret");
+  });
+
   it("rejects unsafe or malformed persistence configuration", () => {
     for (const persistence of [
       { database_file: "" },
@@ -1043,6 +1117,57 @@ function identityKeyFile(name: string, fill: number): string {
   const directory = mkdtempSync(join(tmpdir(), `secretsauce-identity-key-${name}-`));
   const file = join(directory, "identity.key");
   writeFileSync(file, `${Buffer.alloc(32, fill).toString("base64url")}\n`, { mode: 0o400 });
+  chmodSync(file, 0o400);
+  return file;
+}
+
+function oidcRaw(): { raw: any; clientSecret: string } {
+  const raw = validRaw();
+  raw.persistence = { database_file: "/var/lib/secretsauce/control.sqlite" };
+  raw.control = {
+    listen: "127.0.0.1:8081",
+    public_origin: "https://control.example.org",
+    idempotency_hmac_key_file: controlKeyFile("oidc"),
+  };
+  raw.identity = {
+    active_root_key_id: "current",
+    root_key_files: { current: identityKeyFile("oidc-root", 31) },
+    session_hmac_key_file: identityKeyFile("oidc-session", 32),
+    oidc: {
+      providers: {
+        workforce: {
+          display_name: "Workforce identity",
+          issuer: "https://id.example.org/tenant",
+          client_id: "secretsauce-control",
+          client_secret_file: oidcClientSecretFile(),
+          redirect_origin: "https://control.example.org",
+          assurance: {
+            any_of: [
+              { acr: "urn:example:loa:2" },
+              { amr: ["pwd", "otp"] },
+            ],
+          },
+          profile_claims: {
+            email: "email",
+            email_verified: "email_verified",
+            given_name: "given_name",
+            family_name: "family_name",
+            provider_owned_fields: ["given_name", "family_name"],
+          },
+        },
+      },
+    },
+  };
+  return {
+    raw,
+    clientSecret: raw.identity.oidc.providers.workforce.client_secret_file,
+  };
+}
+
+function oidcClientSecretFile(): string {
+  const directory = mkdtempSync(join(tmpdir(), "secretsauce-oidc-client-"));
+  const file = join(directory, "client.secret");
+  writeFileSync(file, "oidc-client-secret", { mode: 0o400 });
   chmodSync(file, 0o400);
   return file;
 }

@@ -58,6 +58,14 @@ describe("identity contracts", () => {
       issuer: "https://id.example.org",
       subject: "00u-immutable-subject",
     });
+    expect(parseProviderIdentity({
+      providerId: "workforce-oidc",
+      issuer: "https://id.example.org/tenant",
+      subject: "tenant-subject",
+    })).toMatchObject({
+      issuer: "https://id.example.org/tenant",
+      subject: "tenant-subject",
+    });
     expect(parseProviderAssertion({
       providerId: "workforce-oidc",
       issuer: "https://id.example.org",
@@ -74,7 +82,7 @@ describe("identity contracts", () => {
     for (const identity of [
       { providerId: "OIDC", issuer: "https://id.example.org", subject: "one" },
       { providerId: "oidc", issuer: "http://id.example.org", subject: "one" },
-      { providerId: "oidc", issuer: "https://id.example.org/path", subject: "one" },
+      { providerId: "oidc", issuer: "https://id.example.org/%70ath", subject: "one" },
       { providerId: "oidc", issuer: "https://id.example.org/", subject: "one" },
       { providerId: "oidc", issuer: "https://id.example.org", subject: " one" },
       { providerId: "oidc", issuer: "https://id.example.org", subject: "bad\u0000subject" },

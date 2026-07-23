@@ -28,6 +28,7 @@ import type {
 } from "./types.js";
 import { SECRET_RULE_IDS } from "./secretlintConfig.js";
 import { loadYamlConfig, validationDiagnostics } from "./yamlConfig.js";
+import { normalizeProviderIssuer } from "./identity/validation.js";
 
 const durationPattern = /^(\d+)(ms|s|m|h|d)$/;
 const sizePattern = /^(\d+)(b|kb|mb)$/i;
@@ -119,6 +120,52 @@ const serviceSchema = z.object({
     context.addIssue({ code: "custom", path: ["credentials"], message: "at least one credential is required unless no_auth is true" });
   }
 });
+
+const oidcClaimNameSchema = z.string()
+  .min(1)
+  .max(128)
+  .regex(/^[A-Za-z][A-Za-z0-9_.:-]*$/);
+
+const oidcAssuranceClauseSchema = z.object({
+  acr: z.string().min(1).max(256).optional(),
+  amr: z.array(z.string().min(1).max(64).regex(/^[A-Za-z0-9][A-Za-z0-9_.:-]*$/))
+    .min(1)
+    .max(16)
+    .optional(),
+}).strict().refine(
+  (clause) => clause.acr !== undefined || clause.amr !== undefined,
+  "an OIDC assurance clause requires acr or amr",
+);
+
+const oidcProviderSchema = z.object({
+  display_name: z.string().trim().min(1).max(120),
+  issuer: z.string().min(1).max(2048),
+  client_id: z.string().min(1).max(512),
+  client_secret_file: z.string().trim().min(1).max(4096).optional(),
+  redirect_origin: z.string().url(),
+  scopes: z.array(z.string().min(1).max(128).regex(/^[A-Za-z0-9][A-Za-z0-9._:-]*$/))
+    .min(1)
+    .max(32)
+    .default(["openid", "profile", "email"]),
+  allowed_signing_algorithms: z.array(z.enum(["RS256", "ES256"]))
+    .min(1)
+    .max(2)
+    .default(["RS256", "ES256"]),
+  clock_skew_seconds: z.number().int().min(0).max(120).default(60),
+  max_authentication_age: z.string().default("12h"),
+  assurance: z.object({
+    any_of: z.array(oidcAssuranceClauseSchema).min(1).max(16),
+  }).strict(),
+  profile_claims: z.object({
+    email: oidcClaimNameSchema.optional(),
+    email_verified: oidcClaimNameSchema.optional(),
+    given_name: oidcClaimNameSchema.optional(),
+    family_name: oidcClaimNameSchema.optional(),
+    provider_owned_fields: z.array(z.enum(["email", "given_name", "family_name"]))
+      .max(3)
+      .default([]),
+  }).strict().default({ provider_owned_fields: [] }),
+}).strict();
 
 const rawConfigSchema = z.object({
   server: z.object({
@@ -254,6 +301,22 @@ const rawConfigSchema = z.object({
       user_absolute: "24h", user_inactivity: "1h",
     }),
     step_up_mode: z.enum(["five_minutes", "always"]).default("five_minutes"),
+    oidc: z.object({
+      providers: z.record(
+        z.string().regex(/^[a-z][a-z0-9_.-]{0,63}$/),
+        oidcProviderSchema,
+      ).refine(
+        (providers) => Object.keys(providers).length >= 1 && Object.keys(providers).length <= 8,
+        "identity.oidc.providers must contain between 1 and 8 providers",
+      ),
+      flow_ttl: z.string().default("5m"),
+      network_timeout: z.string().default("5s"),
+      max_response_body: z.string().default("256kb"),
+      max_inflight: z.number().int().min(1).max(32).default(4),
+      max_inflight_per_provider: z.number().int().min(1).max(8).default(2),
+      max_flow_records: z.number().int().min(100).max(100_000).default(10_000),
+      max_cache_records: z.number().int().min(1).max(1_000).default(64),
+    }).strict().optional(),
     limits: z.object({
       login_attempts: z.number().int().min(3).max(20).default(10),
       login_window: z.string().default("15m"),
@@ -355,6 +418,7 @@ function normalizeIdentity(
   if (canonicalPaths.has(sessionCanonical)) {
     throw configValidationError("identity session and root key files must be distinct", ["identity", "session_hmac_key_file"]);
   }
+  canonicalPaths.add(sessionCanonical);
 
   const adminAbsoluteMs = boundedIdentityDuration(raw.sessions.admin_absolute, "identity.sessions.admin_absolute", 3_600_000, 86_400_000);
   const adminInactivityMs = boundedIdentityDuration(raw.sessions.admin_inactivity, "identity.sessions.admin_inactivity", 300_000, 7_200_000);
@@ -378,6 +442,9 @@ function normalizeIdentity(
   const loginWindowMs = boundedIdentityDuration(raw.limits.login_window, "identity.limits.login_window", 300_000, 3_600_000);
   const passwordWindowMs = boundedIdentityDuration(raw.limits.password_window, "identity.limits.password_window", 300_000, 3_600_000);
   const totpWindowMs = boundedIdentityDuration(raw.limits.totp_window, "identity.limits.totp_window", 60_000, 900_000);
+  const oidc = raw.oidc === undefined
+    ? undefined
+    : normalizeIdentityOidc(raw.oidc, control.public_origin, canonicalPaths);
   if (raw.limits.max_password_verifications_per_source > raw.limits.max_password_verifications) {
     throw configValidationError(
       "identity.limits.max_password_verifications_per_source must not exceed max_password_verifications",
@@ -404,6 +471,7 @@ function normalizeIdentity(
     },
     sessions: { adminAbsoluteMs, adminInactivityMs, userAbsoluteMs, userInactivityMs },
     stepUpMode: raw.step_up_mode,
+    ...(oidc === undefined ? {} : { oidc }),
     limits: {
       loginAttempts: raw.limits.login_attempts,
       loginWindowMs,
@@ -416,6 +484,165 @@ function normalizeIdentity(
       maxTotpVerifications: raw.limits.max_totp_verifications,
       maxTotpVerificationsPerSource: raw.limits.max_totp_verifications_per_source,
     },
+  };
+}
+
+function normalizeIdentityOidc(
+  raw: NonNullable<RawConfig["identity"]>["oidc"] & {},
+  controlPublicOrigin: string,
+  canonicalIdentityFiles: Set<string>,
+): NonNullable<IdentityConfig["oidc"]> {
+  if (raw === undefined) throw configValidationError("identity.oidc is invalid", ["identity", "oidc"]);
+  const providers: NonNullable<IdentityConfig["oidc"]>["providers"] = {};
+  for (const [providerId, provider] of Object.entries(raw.providers)) {
+    const path: ConfigPath = ["identity", "oidc", "providers", providerId];
+    let issuer: string;
+    try {
+      issuer = normalizeProviderIssuer(provider.issuer);
+    } catch {
+      throw configValidationError("OIDC issuer must be an exact canonical HTTPS URL", [...path, "issuer"]);
+    }
+    let redirectOrigin: string;
+    try {
+      const parsed = new URL(provider.redirect_origin);
+      redirectOrigin = parsed.origin;
+      if (
+        provider.redirect_origin !== redirectOrigin ||
+        redirectOrigin !== controlPublicOrigin
+      ) throw new Error("redirect mismatch");
+    } catch {
+      throw configValidationError(
+        "OIDC redirect_origin must exactly match control.public_origin",
+        [...path, "redirect_origin"],
+      );
+    }
+    if (!provider.scopes.includes("openid") || new Set(provider.scopes).size !== provider.scopes.length) {
+      throw configValidationError(
+        "OIDC scopes must be unique and include openid",
+        [...path, "scopes"],
+      );
+    }
+    if (new Set(provider.allowed_signing_algorithms).size !== provider.allowed_signing_algorithms.length) {
+      throw configValidationError(
+        "OIDC signing algorithms must be unique",
+        [...path, "allowed_signing_algorithms"],
+      );
+    }
+    const ownedFields = provider.profile_claims.provider_owned_fields;
+    if (new Set(ownedFields).size !== ownedFields.length) {
+      throw configValidationError(
+        "OIDC provider-owned profile fields must be unique",
+        [...path, "profile_claims", "provider_owned_fields"],
+      );
+    }
+    for (const field of ownedFields) {
+      const claim = field === "given_name"
+        ? provider.profile_claims.given_name
+        : field === "family_name"
+          ? provider.profile_claims.family_name
+          : provider.profile_claims.email;
+      if (claim === undefined) {
+        throw configValidationError(
+          "OIDC provider-owned fields require a mapped claim",
+          [...path, "profile_claims", "provider_owned_fields"],
+        );
+      }
+      if (field === "email" && provider.profile_claims.email_verified === undefined) {
+        throw configValidationError(
+          "provider-owned OIDC email requires a verification claim",
+          [...path, "profile_claims", "email_verified"],
+        );
+      }
+    }
+    const assuranceAnyOf = provider.assurance.any_of.map((clause, index) => {
+      if (clause.amr !== undefined && new Set(clause.amr).size !== clause.amr.length) {
+        throw configValidationError(
+          "OIDC assurance amr members must be unique",
+          [...path, "assurance", "any_of", index, "amr"],
+        );
+      }
+      return {
+        ...(clause.acr === undefined ? {} : { acr: clause.acr }),
+        ...(clause.amr === undefined ? {} : { amr: [...clause.amr] }),
+      };
+    });
+    let clientSecretFile: string | undefined;
+    if (provider.client_secret_file !== undefined) {
+      validateRestrictedOidcClientSecretFile(provider.client_secret_file, [
+        ...path,
+        "client_secret_file",
+      ]);
+      clientSecretFile = safeRealpath(provider.client_secret_file, [
+        ...path,
+        "client_secret_file",
+      ]);
+      if (canonicalIdentityFiles.has(clientSecretFile)) {
+        throw configValidationError(
+          "OIDC client secret and identity key files must be distinct",
+          [...path, "client_secret_file"],
+        );
+      }
+      canonicalIdentityFiles.add(clientSecretFile);
+    }
+    providers[providerId] = {
+      id: providerId,
+      displayName: provider.display_name,
+      issuer,
+      clientId: provider.client_id,
+      ...(clientSecretFile === undefined ? {} : { clientSecretFile }),
+      redirectOrigin,
+      scopes: [...provider.scopes],
+      allowedSigningAlgorithms: [...provider.allowed_signing_algorithms],
+      clockSkewSeconds: provider.clock_skew_seconds,
+      maxAuthenticationAgeMs: boundedIdentityDuration(
+        provider.max_authentication_age,
+        `identity.oidc.providers.${providerId}.max_authentication_age`,
+        300_000,
+        86_400_000,
+      ),
+      assuranceAnyOf,
+      profileClaims: {
+        ...(provider.profile_claims.email === undefined
+          ? {}
+          : { email: provider.profile_claims.email }),
+        ...(provider.profile_claims.email_verified === undefined
+          ? {}
+          : { emailVerified: provider.profile_claims.email_verified }),
+        ...(provider.profile_claims.given_name === undefined
+          ? {}
+          : { givenName: provider.profile_claims.given_name }),
+        ...(provider.profile_claims.family_name === undefined
+          ? {}
+          : { familyName: provider.profile_claims.family_name }),
+        providerOwnedFields: [...ownedFields],
+      },
+    };
+  }
+  if (raw.max_inflight_per_provider > raw.max_inflight) {
+    throw configValidationError(
+      "identity.oidc.max_inflight_per_provider must not exceed max_inflight",
+      ["identity", "oidc", "max_inflight_per_provider"],
+    );
+  }
+  return {
+    providers,
+    flowTtlMs: boundedIdentityDuration(raw.flow_ttl, "identity.oidc.flow_ttl", 60_000, 600_000),
+    networkTimeoutMs: boundedIdentityDuration(
+      raw.network_timeout,
+      "identity.oidc.network_timeout",
+      1_000,
+      15_000,
+    ),
+    maxResponseBodyBytes: parseBoundedSize(
+      raw.max_response_body,
+      "identity.oidc.max_response_body",
+      4 * 1024,
+      1024 * 1024,
+    ),
+    maxInflight: raw.max_inflight,
+    maxInflightPerProvider: raw.max_inflight_per_provider,
+    maxFlowRecords: raw.max_flow_records,
+    maxCacheRecords: raw.max_cache_records,
   };
 }
 
@@ -440,6 +667,28 @@ function validateRestrictedIdentityKeyFile(path: string, configPath: ConfigPath)
   } catch {
     throw configValidationError(
       "identity key files must be readable non-linked mode-0400 files containing one 32-byte base64url key",
+      configPath,
+    );
+  }
+}
+
+function validateRestrictedOidcClientSecretFile(path: string, configPath: ConfigPath): void {
+  try {
+    const stats = lstatSync(path);
+    const value = readFileSync(path, "utf8");
+    if (
+      stats.isSymbolicLink() ||
+      !stats.isFile() ||
+      (stats.mode & 0o777) !== 0o400 ||
+      value.length < 1 ||
+      Buffer.byteLength(value, "utf8") > 4096 ||
+      /[\0\r\n]/.test(value)
+    ) {
+      throw new Error("unsafe OIDC client secret file");
+    }
+  } catch {
+    throw configValidationError(
+      "OIDC client secret files must be readable non-linked mode-0400 files with one bounded value",
       configPath,
     );
   }
@@ -1099,4 +1348,17 @@ function parseSize(value: string, label: string, path: ConfigPath = label.split(
   const multiplier = multipliers[unit];
   if (multiplier === undefined) throw configValidationError(`${label} has unsupported size unit`, path);
   return amount * multiplier;
+}
+
+function parseBoundedSize(
+  value: string,
+  label: string,
+  minimum: number,
+  maximum: number,
+): number {
+  const size = parseSize(value, label);
+  if (size < minimum || size > maximum) {
+    throw configValidationError(`${label} is outside its supported range`, label.split("."));
+  }
+  return size;
 }

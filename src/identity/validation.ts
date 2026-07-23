@@ -77,19 +77,7 @@ export function parseProviderIdentity(input: unknown): ProviderIdentity {
   try {
     const providerId = parsed.data.providerId;
     if (!providerIdPattern.test(providerId)) throw new Error("invalid provider");
-    const issuerUrl = new URL(parsed.data.issuer);
-    if (
-      issuerUrl.protocol !== "https:" ||
-      issuerUrl.username !== "" ||
-      issuerUrl.password !== "" ||
-      issuerUrl.pathname !== "/" ||
-      issuerUrl.search !== "" ||
-      issuerUrl.hash !== "" ||
-      parsed.data.issuer !== issuerUrl.origin ||
-      Buffer.byteLength(issuerUrl.origin, "utf8") > 2048
-    ) {
-      throw new Error("invalid issuer");
-    }
+    const issuer = normalizeProviderIssuer(parsed.data.issuer);
     const subject = parsed.data.subject.normalize("NFC");
     if (
       subject !== parsed.data.subject ||
@@ -101,10 +89,31 @@ export function parseProviderIdentity(input: unknown): ProviderIdentity {
     ) {
       throw new Error("invalid subject");
     }
-    return { providerId, issuer: issuerUrl.origin, subject };
+    return { providerId, issuer, subject };
   } catch {
     throw new IdentityError("invalid_provider_identity");
   }
+}
+
+export function normalizeProviderIssuer(input: string): string {
+  const issuerUrl = new URL(input);
+  const canonical = issuerUrl.pathname === "/"
+    ? issuerUrl.origin
+    : `${issuerUrl.origin}${issuerUrl.pathname}`;
+  if (
+    issuerUrl.protocol !== "https:" ||
+    issuerUrl.username !== "" ||
+    issuerUrl.password !== "" ||
+    issuerUrl.search !== "" ||
+    issuerUrl.hash !== "" ||
+    issuerUrl.pathname.includes("\\") ||
+    issuerUrl.pathname.includes("%") ||
+    input !== canonical ||
+    Buffer.byteLength(canonical, "utf8") > 2048
+  ) {
+    throw new Error("invalid issuer");
+  }
+  return canonical;
 }
 
 function normalizeDisplayEmail(input: string): string {

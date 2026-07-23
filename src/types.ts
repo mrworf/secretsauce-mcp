@@ -154,6 +154,16 @@ export interface IdentityConfig {
     userInactivityMs: number;
   };
   stepUpMode: "five_minutes" | "always";
+  oidc?: {
+    providers: Record<string, OidcProviderConfig>;
+    flowTtlMs: number;
+    networkTimeoutMs: number;
+    maxResponseBodyBytes: number;
+    maxInflight: number;
+    maxInflightPerProvider: number;
+    maxFlowRecords: number;
+    maxCacheRecords: number;
+  };
   limits: {
     loginAttempts: number;
     loginWindowMs: number;
@@ -165,6 +175,32 @@ export interface IdentityConfig {
     maxPasswordVerificationsPerSource: number;
     maxTotpVerifications: number;
     maxTotpVerificationsPerSource: number;
+  };
+}
+
+export interface OidcAssuranceClause {
+  acr?: string;
+  amr?: string[];
+}
+
+export interface OidcProviderConfig {
+  id: string;
+  displayName: string;
+  issuer: string;
+  clientId: string;
+  clientSecretFile?: string;
+  redirectOrigin: string;
+  scopes: string[];
+  allowedSigningAlgorithms: Array<"RS256" | "ES256">;
+  clockSkewSeconds: number;
+  maxAuthenticationAgeMs: number;
+  assuranceAnyOf: OidcAssuranceClause[];
+  profileClaims: {
+    email?: string;
+    emailVerified?: string;
+    givenName?: string;
+    familyName?: string;
+    providerOwnedFields: Array<"email" | "given_name" | "family_name">;
   };
 }
 

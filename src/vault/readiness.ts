@@ -5,6 +5,7 @@ import { readVaultKeyFile } from "./keyFile.js";
 
 export interface VaultReadinessHandle {
   readiness(): Promise<"ready" | "unavailable">;
+  controlClient?: ControlVaultClient;
   close(): void;
 }
 
@@ -56,6 +57,9 @@ function createReadiness(
         return "unavailable";
       }
     },
+    ...(caller === "control" && client instanceof ControlVaultClient
+      ? { controlClient: client }
+      : {}),
     close: () => client.close(),
   };
 }

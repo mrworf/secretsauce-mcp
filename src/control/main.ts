@@ -23,6 +23,9 @@ try {
   vaultReadiness = createControlVaultReadiness();
   const application = await startControlServer(config, {
     ...(vaultReadiness === undefined ? {} : { vaultReadiness: vaultReadiness.readiness }),
+    ...(vaultReadiness?.controlClient === undefined
+      ? {}
+      : { credentialVaultClient: vaultReadiness.controlClient }),
   });
   const logger = createLogger(config.logging);
   logger.info("control.server_started", {

@@ -107,6 +107,15 @@ import {
   GroupAssignmentService,
 } from "../groupAssignments.js";
 import { registerGroupAssignmentRoutes } from "./groupRoutes.js";
+import {
+  CredentialManagementRepository,
+  CredentialManagementService,
+} from "../credentialManagement.js";
+import {
+  CredentialVaultCoordinator,
+  type CredentialControlVault,
+} from "../credentialVaultCoordinator.js";
+import { registerCredentialRoutes } from "./credentialRoutes.js";
 
 export interface ControlApplicationOptions {
   authenticator?: ControlAuthenticator;
@@ -122,6 +131,8 @@ export interface ControlApplicationOptions {
   localIdentity?: LocalIdentityControl;
   serviceManagement?: ServiceManagementService;
   groupAssignments?: GroupAssignmentService;
+  credentialManagement?: CredentialManagementService;
+  credentialVault?: CredentialVaultCoordinator;
 }
 
 export function createControlApplication(
@@ -188,6 +199,13 @@ export function createControlApplication(
   if (options.groupAssignments !== undefined) {
     registerGroupAssignmentRoutes(routeRegistry, options.groupAssignments);
   }
+  if (options.credentialManagement !== undefined) {
+    registerCredentialRoutes(
+      routeRegistry,
+      options.credentialManagement,
+      options.credentialVault,
+    );
+  }
   options.registerControlRoutes?.(routeRegistry);
   installControlRoutes(
     application,
@@ -248,7 +266,9 @@ export interface ControlServerApplication {
 
 export async function startControlServer(
   config: GatewayConfig,
-  options: Pick<ControlApplicationOptions, "vaultReadiness"> = {},
+  options: Pick<ControlApplicationOptions, "vaultReadiness"> & {
+    credentialVaultClient?: CredentialControlVault;
+  } = {},
 ): Promise<ControlServerApplication> {
   if (config.control === undefined || config.persistence === undefined) {
     throw new Error("Control and persistence configuration are required.");
@@ -274,6 +294,8 @@ export async function startControlServer(
   let oidcLink: OidcLinkService | undefined;
   let serviceManagement: ServiceManagementService | undefined;
   let groupAssignments: GroupAssignmentService | undefined;
+  let credentialManagement: CredentialManagementService | undefined;
+  let credentialVault: CredentialVaultCoordinator | undefined;
   let identityKeyRing: IdentityKeyRing | undefined;
   try {
     let localIdentity: LocalIdentityControl | undefined;
@@ -332,6 +354,19 @@ export async function startControlServer(
           new GroupAssignmentRepository(persistence),
           idempotencyHasher,
         );
+        const credentialRepository = new CredentialManagementRepository(persistence);
+        credentialManagement = new CredentialManagementService(
+          credentialRepository,
+          idempotencyHasher,
+        );
+        if (options.credentialVaultClient !== undefined) {
+          credentialVault = new CredentialVaultCoordinator(
+            persistence,
+            credentialRepository,
+            options.credentialVaultClient,
+          );
+          await credentialVault.reconcilePending();
+        }
         const serviceAuthorization = new ServiceManagementAuthorization(
           serviceRelationships,
           stepUpAuthorization,
@@ -408,6 +443,8 @@ export async function startControlServer(
       ...(localIdentity === undefined ? {} : { localIdentity }),
       ...(serviceManagement === undefined ? {} : { serviceManagement }),
       ...(groupAssignments === undefined ? {} : { groupAssignments }),
+      ...(credentialManagement === undefined ? {} : { credentialManagement }),
+      ...(credentialVault === undefined ? {} : { credentialVault }),
     });
     await server.listen({
       host: config.control.host,

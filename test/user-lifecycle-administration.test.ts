@@ -240,6 +240,60 @@ describe("guarded user lifecycle administration", () => {
       CORRELATION,
     )).rejects.toEqual(new UserLifecycleAdministrationError("not_found"));
   });
+
+  it("permanently deletes only deactivated ordinary identities and retains audit evidence", async () => {
+    const fixture = await lifecycleFixture("delete");
+    const target = await fixture.create("delete-target@example.org", "user", "active");
+    const identities = new IdentityRepository(fixture.worker, { now: () => NOW });
+    await identities.linkProvider(target.id, {
+      providerId: "fixture",
+      issuer: "https://issuer.example.org",
+      subject: "delete-target",
+    }, audit());
+    await addDeletionRelations(fixture.worker, target.id);
+
+    await expect(fixture.service.deleteUser(
+      fixture.actor,
+      target.id,
+      target.version,
+      { justification: "Still active." },
+      CORRELATION,
+    )).rejects.toEqual(new UserLifecycleAdministrationError("not_found"));
+
+    const deactivated = await fixture.service.transition(
+      "deactivate",
+      fixture.actor,
+      target.id,
+      target.version,
+      { justification: "Prepare approved deletion." },
+      CORRELATION,
+    );
+    await expect(fixture.service.deleteUser(
+      fixture.actor,
+      target.id,
+      deactivated.version,
+      { justification: "Retention period completed." },
+      CORRELATION,
+    )).resolves.toEqual({ userId: target.id, deleted: true });
+
+    const remaining = await deletionSnapshot(fixture.worker, target.id);
+    expect(remaining.relation_count).toBe(0);
+    expect(remaining.delete_audits).toBe(1);
+    expect(remaining.audit_target).toBe(target.id);
+
+    const protectedSuperadmin = await fixture.create(
+      "protected-superadmin@example.org",
+      "superadmin",
+      "deactivated",
+    );
+    await expect(fixture.service.deleteUser(
+      fixture.actor,
+      protectedSuperadmin.id,
+      protectedSuperadmin.version,
+      { justification: "Superadmins are never deleted." },
+      CORRELATION,
+    )).rejects.toEqual(new UserLifecycleAdministrationError("not_found"));
+  });
 });
 
 async function lifecycleFixture(label: string) {
@@ -333,5 +387,99 @@ async function snapshot(worker: PersistenceWorker, userId: string) {
           AS pending_count
       FROM users u WHERE u.id = ?
     `, [userId])),
+  });
+}
+
+async function addDeletionRelations(worker: PersistenceWorker, userId: string): Promise<void> {
+  await worker.execute({
+    run: (database) => database.withOperationalTransaction((transaction) => {
+      const sessionId = "018f1f2e-7b3c-7a10-8000-000000000101";
+      transaction.run(`
+        INSERT INTO accepted_totp_steps (user_id, time_step, purpose, accepted_at)
+        VALUES (?, 1, 'login', ?)
+      `, [userId, NOW]);
+      transaction.run(`
+        INSERT INTO browser_sessions (
+          id, user_id, session_hash, csrf_hash, role_class,
+          issued_security_epoch, issued_global_epoch,
+          issued_absolute_ms, issued_inactivity_ms,
+          issued_at, last_activity_at, absolute_expires_at,
+          step_up_at, revoked_at, version
+        ) VALUES (?, ?, ?, ?, 'user', 1, 1, 60000, 30000, ?, ?, ?, NULL, NULL, 1)
+      `, [
+        sessionId,
+        userId,
+        "1".repeat(64),
+        "2".repeat(64),
+        NOW,
+        NOW,
+        NOW + 60_000,
+      ]);
+      transaction.run(`
+        INSERT INTO identity_step_up_proofs (
+          id, proof_hash, session_id, user_id, method, route_id,
+          targets_json, expected_version, idempotency_key_hash, body_digest,
+          issued_security_epoch, issued_global_epoch, issued_at, expires_at, consumed_at
+        ) VALUES (?, ?, ?, ?, 'DELETE', 'users.delete', '[]', 1, NULL, ?, 1, 1, ?, ?, NULL)
+      `, [
+        "018f1f2e-7b3c-7a10-8000-000000000102",
+        "3".repeat(64),
+        sessionId,
+        userId,
+        "4".repeat(64),
+        NOW,
+        NOW + 60_000,
+      ]);
+      transaction.run(`
+        INSERT INTO identity_restricted_sessions (
+          id, user_id, purpose, session_hash, csrf_hash,
+          issued_security_epoch, issued_global_epoch,
+          issued_at, expires_at, revoked_at, version
+        ) VALUES (?, ?, 'password_change', ?, ?, 1, 1, ?, ?, NULL, 1)
+      `, [
+        "018f1f2e-7b3c-7a10-8000-000000000103",
+        userId,
+        "5".repeat(64),
+        "6".repeat(64),
+        NOW,
+        NOW + 60_000,
+      ]);
+    }),
+  });
+}
+
+async function deletionSnapshot(worker: PersistenceWorker, userId: string) {
+  return worker.execute({
+    run: (database) => database.read((query) => query.get<{
+      relation_count: number;
+      delete_audits: number;
+      audit_target: string | null;
+    }>(`
+      SELECT
+        (
+          (SELECT count(*) FROM users WHERE id = ?) +
+          (SELECT count(*) FROM local_authenticator_states WHERE user_id = ?) +
+          (SELECT count(*) FROM external_identities WHERE user_id = ?) +
+          (SELECT count(*) FROM local_password_credentials WHERE user_id = ?) +
+          (SELECT count(*) FROM local_totp_authenticators WHERE user_id = ?) +
+          (SELECT count(*) FROM accepted_totp_steps WHERE user_id = ?) +
+          (SELECT count(*) FROM browser_sessions WHERE user_id = ?) +
+          (SELECT count(*) FROM identity_step_up_proofs WHERE user_id = ?) +
+          (SELECT count(*) FROM identity_temporary_passwords WHERE user_id = ?) +
+          (SELECT count(*) FROM identity_restricted_sessions WHERE user_id = ?) +
+          (SELECT count(*) FROM identity_pending_totp WHERE user_id = ?) +
+          (SELECT count(*) FROM identity_invalidation_events WHERE user_id = ?) +
+          (SELECT count(*) FROM identity_bootstrap WHERE user_id = ?)
+        ) AS relation_count,
+        (
+          SELECT count(*) FROM administrative_audit_events
+          WHERE action = 'identity.delete' AND target_id_snapshot = ?
+        ) AS delete_audits,
+        (
+          SELECT target_id_snapshot FROM administrative_audit_events
+          WHERE action = 'identity.delete' AND target_id_snapshot = ?
+          LIMIT 1
+        ) AS audit_target
+    `, Array(15).fill(userId))),
   });
 }

@@ -9,6 +9,8 @@ import {
   PersistenceWorker,
   type PersistenceOwner,
 } from "../persistence/worker.js";
+import type { AdministrativeAuditEventInput } from "../persistence/administrativeAudit.js";
+import { isUuidV7 } from "../persistence/uuidV7.js";
 import { createRequestId } from "../requestId.js";
 import { configuredAuditTextSanitizer } from "../runtime.js";
 import type { GatewayConfig } from "../types.js";
@@ -60,6 +62,7 @@ import {
   installControlRoutes,
   type ControlAuthorizationSeam,
   type ControlRouteRegistry,
+  type ControlSensitiveFailureAudit,
 } from "./routeRegistry.js";
 import {
   CONTROL_BODY_LIMIT_BYTES,
@@ -154,7 +157,14 @@ export function createControlApplication(
     }
   }
   options.registerControlRoutes?.(routeRegistry);
-  installControlRoutes(application, routeRegistry, authorization);
+  installControlRoutes(
+    application,
+    routeRegistry,
+    authorization,
+    options.persistence === undefined
+      ? undefined
+      : sensitiveFailureAudit(options.persistence),
+  );
 
   installControlWebRoutes(application, options.webAssets ?? loadControlWebAssets());
 
@@ -365,4 +375,69 @@ function durationClass(elapsedMilliseconds: number): string {
 function errorStatusCode(error: unknown): number | undefined {
   if (error === null || typeof error !== "object" || !("statusCode" in error)) return undefined;
   return typeof error.statusCode === "number" ? error.statusCode : undefined;
+}
+
+function sensitiveFailureAudit(persistence: PersistenceOwner): ControlSensitiveFailureAudit {
+  return {
+    record: async ({ route, authentication, body, params, requestId, error }) => {
+      const targetId = safeAuditTargetId(route.id, authentication?.principalId, params);
+      const justification = safeAuditJustification(body);
+      await persistence.execute({
+        run: (database) => {
+          database.appendAdministrativeAudit({
+            actor: authentication === undefined
+              ? {
+                  type: "system",
+                  label: "unauthenticated request",
+                  authenticationMethod: "none",
+                }
+              : {
+                  type: authentication.method === "restricted_session"
+                    ? "browser_session"
+                    : authentication.method,
+                  ...(isUuidV7(authentication.principalId)
+                    ? { id: authentication.principalId }
+                    : {}),
+                  label: `principal ${authentication.principalId}`,
+                  role: authentication.role,
+                  authenticationMethod: authentication.method,
+                },
+            action: route.auditAction!,
+            result: error.statusCode === 401 || error.statusCode === 403 || error.statusCode === 404
+              ? "deny"
+              : "error",
+            target: {
+              type: route.tags.includes("Users") ? "user" : "control_resource",
+              ...(targetId === undefined ? {} : { id: targetId }),
+              label: targetId === undefined ? route.id : `user ${targetId}`,
+            },
+            ...(justification === undefined ? {} : { justification }),
+            changes: [],
+            correlationId: requestId,
+            source: { category: "control_http" },
+            failureCode: error.code,
+          } satisfies AdministrativeAuditEventInput);
+        },
+      });
+    },
+  };
+}
+
+function safeAuditTargetId(
+  routeId: string,
+  principalId: string | undefined,
+  params: unknown,
+): string | undefined {
+  if (routeId.startsWith("identity.self_") && principalId !== undefined && isUuidV7(principalId)) {
+    return principalId;
+  }
+  if (params === null || typeof params !== "object") return undefined;
+  const candidate = (params as Record<string, unknown>).user_id;
+  return typeof candidate === "string" && isUuidV7(candidate) ? candidate : undefined;
+}
+
+function safeAuditJustification(body: unknown): string | undefined {
+  if (body === null || typeof body !== "object") return undefined;
+  const candidate = (body as Record<string, unknown>).justification;
+  return typeof candidate === "string" ? candidate : undefined;
 }

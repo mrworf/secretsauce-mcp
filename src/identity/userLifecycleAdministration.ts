@@ -50,6 +50,11 @@ export type UserLifecycleTransition =
   | "reactivate"
   | "deactivate";
 
+export interface DeletedUserResult {
+  userId: string;
+  deleted: true;
+}
+
 interface UserLifecycleRow extends UserAdministrationView {
   normalizedEmail: string;
   securityEpoch: number;
@@ -361,6 +366,52 @@ export class UserLifecycleAdministrationRepository {
       },
       [{ field: "role", after: input.role }],
     );
+  }
+
+  async deleteUser(
+    input: MutationContext & { eventId: string },
+  ): Promise<DeletedUserResult> {
+    const audit = lifecycleAudit({
+      actor: input.actor,
+      action: "identity.delete",
+      targetUserId: input.targetUserId,
+      correlationId: input.correlationId,
+      justification: input.justification,
+      affectedServiceIds: input.affectedServiceIds,
+      changes: [
+        { field: "status", before: "deactivated" },
+        { field: "identity", after: "permanently_deleted" },
+      ],
+    });
+    const execute = (transaction: PersistenceTransaction): DeletedUserResult => {
+      const { actor, target } = currentMutationRows(transaction, input);
+      if (
+        actor.role !== "superadmin" ||
+        target.role === "superadmin" ||
+        target.status !== "deactivated"
+      ) throw new PersistenceError("identity_not_found");
+      transaction.run("DELETE FROM identity_bootstrap WHERE user_id = ?", [target.id]);
+      const deleted = transaction.run(
+        "DELETE FROM users WHERE id = ? AND version = ?",
+        [target.id, target.version],
+      );
+      if (deleted.changes !== 1) throw new PersistenceError("identity_stale");
+      return { userId: target.id, deleted: true };
+    };
+    try {
+      if (input.stepUpProof !== undefined) {
+        if (this.stepUps === undefined) throw new PersistenceError("authentication_failed");
+        return await this.stepUps.withConsumedProof(input.stepUpProof, audit, execute);
+      }
+      return await this.owner.execute({
+        run: (database) => database.withGeneratedAdministrativeAudit((transaction) => ({
+          value: execute(transaction),
+          auditInput: audit,
+        })),
+      });
+    } catch (error) {
+      throw mapLifecycleError(error);
+    }
   }
 
   private async idempotentMutation(
@@ -683,6 +734,28 @@ export class UserLifecycleAdministrationService {
     return this.repository.changeRole({
       ...common,
       role,
+      eventId: this.nextUuid(),
+    });
+  }
+
+  async deleteUser(
+    actor: ControlAuthenticationContext,
+    targetUserId: unknown,
+    expectedVersion: unknown,
+    body: unknown,
+    correlationId: string,
+    stepUpProof?: AlwaysStepUpHandle,
+  ): Promise<DeletedUserResult> {
+    const common = await this.commonMutation(
+      actor,
+      targetUserId,
+      expectedVersion,
+      body,
+      correlationId,
+      stepUpProof,
+    );
+    return this.repository.deleteUser({
+      ...common,
       eventId: this.nextUuid(),
     });
   }

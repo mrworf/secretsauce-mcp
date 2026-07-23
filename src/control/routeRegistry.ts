@@ -132,6 +132,17 @@ export interface ControlAuthorizationSeam {
   stepUpProof?(request: FastifyRequest): AlwaysStepUpHandle | undefined;
 }
 
+export interface ControlSensitiveFailureAudit {
+  record(input: {
+    route: ControlRouteDefinition;
+    authentication?: ControlAuthenticationContext;
+    body?: unknown;
+    params?: unknown;
+    requestId: string;
+    error: ControlContractError;
+  }): Promise<void>;
+}
+
 export const denyControlAuthorization: ControlAuthorizationSeam = {
   authorizeScope: async () => false,
   verifyStepUp: async () => false,
@@ -162,6 +173,7 @@ export function installControlRoutes(
   application: FastifyInstance,
   registry: ControlRouteRegistry,
   authorization: ControlAuthorizationSeam = denyControlAuthorization,
+  failureAudit?: ControlSensitiveFailureAudit,
 ): void {
   for (const definition of registry.definitions()) {
     application.route({
@@ -178,11 +190,15 @@ export function installControlRoutes(
         },
       },
       handler: async (request, reply) => {
+        let parsedBody: unknown;
+        let parsedParams: unknown;
         try {
           const authentication = controlAuthentication(request);
           const body = parsePart(definition.schemas.body, request.body, "body");
+          parsedBody = body;
           const query = parsePart(definition.schemas.query, request.query, "query");
           const params = parsePart(definition.schemas.params, request.params, "params");
+          parsedParams = params;
           const expectedVersion = definition.concurrency === "if-match"
             ? parseExpectedVersion(request.headers["if-match"])
             : undefined;
@@ -237,6 +253,17 @@ export function installControlRoutes(
           return reply.code(statusCode).type("application/json; charset=utf-8").send(payload);
         } catch (error) {
           if (error instanceof ControlContractError) {
+            if (definition.auditAction !== undefined && failureAudit !== undefined) {
+              const authentication = controlAuthentication(request);
+              await failureAudit.record({
+                route: definition,
+                ...(authentication === undefined ? {} : { authentication }),
+                ...(parsedBody === undefined ? {} : { body: parsedBody }),
+                ...(parsedParams === undefined ? {} : { params: parsedParams }),
+                requestId: request.id,
+                error,
+              });
+            }
             sendControlError(
               reply,
               request.id,

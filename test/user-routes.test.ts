@@ -113,6 +113,25 @@ describe("user administration HTTP contracts", () => {
       },
     });
     expect(missingVersion.statusCode).toBe(428);
+    expect(await worker.execute({
+      run: (database) => database.read((query) => query.get<{
+        result: string;
+        failure_code: string;
+        actor_id_snapshot: string;
+        target_id_snapshot: string;
+      }>(`
+        SELECT result, failure_code, actor_id_snapshot, target_id_snapshot
+        FROM administrative_audit_events
+        WHERE action = 'identity.profile_update'
+        ORDER BY occurred_at DESC, event_id DESC
+        LIMIT 1
+      `)),
+    })).toMatchObject({
+      result: "error",
+      failure_code: "precondition_required",
+      actor_id_snapshot: superadmin.id,
+      target_id_snapshot: target.id,
+    });
 
     const updated = await application.inject({
       method: "PATCH",
@@ -194,6 +213,15 @@ describe("user administration HTTP contracts", () => {
       role: "superadmin",
       status: "active",
     }, audit());
+    const deletionTarget = await identities.createLocalIdentity({
+      profile: {
+        email: "delete-over-http@example.org",
+        givenName: "Delete",
+        familyName: "Target",
+      },
+      role: "user",
+      status: "active",
+    }, audit());
     const users = new UserAdministrationService(
       new UserAdministrationRepository(worker, () => NOW),
       new UserCursorCodec(Buffer.alloc(32, 103), () => NOW),
@@ -271,6 +299,33 @@ describe("user administration HTTP contracts", () => {
       payload: { justification: "" },
     });
     expect(invalid.statusCode).toBe(400);
+
+    const deactivated = await application.inject({
+      method: "POST",
+      url: `/api/v2/users/${deletionTarget.id}/deactivate`,
+      headers: {
+        ...headers,
+        "if-match": `"${deletionTarget.version}"`,
+      },
+      payload: { justification: "Approved deactivation before deletion." },
+    });
+    expect(deactivated.statusCode).toBe(200);
+    const deactivatedVersion = deactivated.json().data.version as number;
+
+    const deleted = await application.inject({
+      method: "DELETE",
+      url: `/api/v2/users/${deletionTarget.id}`,
+      headers: {
+        ...headers,
+        "if-match": `"${deactivatedVersion}"`,
+      },
+      payload: { justification: "Approved permanent deletion." },
+    });
+    expect(deleted.statusCode).toBe(200);
+    expect(deleted.json().data).toEqual({
+      user_id: deletionTarget.id,
+      deleted: true,
+    });
     await application.close();
   });
 });

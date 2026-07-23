@@ -473,6 +473,58 @@ export function registerUserAdministrationRoutes(
       }
     },
   }));
+
+  registry.register(defineControlRoute({
+    id: "users.delete",
+    method: "DELETE",
+    path: "/api/v2/users/{user_id}",
+    summary: "Permanently delete a deactivated local user",
+    tags: ["Users"],
+    authentication: ["browser_session"],
+    permission: "permanently_delete_user",
+    stepUp: "five_minutes",
+    schemas: {
+      params: userParamsSchema,
+      body: justificationBodySchema,
+      response: z.object({
+        user_id: z.string().uuid(),
+        deleted: z.literal(true),
+      }).strict(),
+    },
+    rateLimit: "management",
+    auditAction: "identity.delete",
+    secretFields: [],
+    cache: "no-store",
+    concurrency: "if-match",
+    idempotency: "none",
+    handler: async ({
+      authentication,
+      params,
+      expectedVersion,
+      body,
+      requestId,
+      stepUpProof,
+    }) => {
+      try {
+        const result = await lifecycle.deleteUser(
+          authentication!,
+          params.user_id,
+          expectedVersion,
+          body,
+          requestId,
+          stepUpProof,
+        );
+        return {
+          data: {
+            user_id: result.userId,
+            deleted: result.deleted,
+          },
+        };
+      } catch (error) {
+        throw lifecycleContractError(error);
+      }
+    },
+  }));
 }
 
 function wireUser(user: UserAdministrationView) {

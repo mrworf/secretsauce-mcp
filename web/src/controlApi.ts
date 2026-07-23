@@ -82,8 +82,12 @@ export interface ServiceValidation {
   valid: boolean;
   draft_digest: string;
   issues: Array<{
-    code: "service_archived" | "service_admin_required" | "destination_required";
-    pointer: "/lifecycle" | "/admins" | "/destinations";
+    code:
+      | "service_archived"
+      | "service_admin_required"
+      | "destination_required"
+      | "credential_reconciliation_required";
+    pointer: "/lifecycle" | "/admins" | "/destinations" | "/credentials";
   }>;
   warnings: Array<{
     code: "tls_verification_disabled";

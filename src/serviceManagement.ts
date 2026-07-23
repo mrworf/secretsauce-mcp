@@ -74,8 +74,12 @@ export interface ServiceDetailView extends ServiceView {
 }
 
 export interface ServiceValidationIssue {
-  code: "service_archived" | "service_admin_required" | "destination_required";
-  pointer: "/lifecycle" | "/admins" | "/destinations";
+  code:
+    | "service_archived"
+    | "service_admin_required"
+    | "destination_required"
+    | "credential_reconciliation_required";
+  pointer: "/lifecycle" | "/admins" | "/destinations" | "/credentials";
 }
 
 export interface ServiceValidationWarning {
@@ -1296,6 +1300,12 @@ export class ServiceManagementRepository {
         if (current.lifecycle !== "archived" || current.admin_count !== 0) {
           throw new PersistenceError("identity_conflict");
         }
+        if (transaction.get(
+          "SELECT 1 FROM service_credentials WHERE service_id = ? LIMIT 1",
+          [current.id],
+        ) !== undefined) {
+          throw new PersistenceError("identity_conflict");
+        }
         const generation = nextGeneration(current.publication_generation);
         const now = transaction.timestamp();
         const deleted = transaction.run(
@@ -2068,6 +2078,16 @@ function validationView(
   }
   if (draft.document.destinations.length < 1) {
     issues.push({ code: "destination_required", pointer: "/destinations" });
+  }
+  if (query.get(`
+    SELECT 1 FROM service_credentials
+    WHERE service_id = ? AND vault_state <> 'idle'
+    LIMIT 1
+  `, [service.id]) !== undefined) {
+    issues.push({
+      code: "credential_reconciliation_required",
+      pointer: "/credentials",
+    });
   }
   const warnings: ServiceValidationWarning[] = [];
   draft.document.destinations.forEach((destination, index) => {

@@ -1096,6 +1096,9 @@ function JustifiedAction({
 function validationIssue(code: ServiceValidation["issues"][number]["code"]): string {
   if (code === "service_admin_required") return "Assign at least one active administrator.";
   if (code === "destination_required") return "Configure at least one complete destination.";
+  if (code === "credential_reconciliation_required") {
+    return "Resolve pending credential vault work before publication.";
+  }
   return "Archived services cannot be published.";
 }
 

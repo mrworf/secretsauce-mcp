@@ -614,7 +614,7 @@ export class CredentialVaultCoordinator {
       throw new CredentialManagementError("unavailable");
     }
     await this.owner.execute({
-      run: (database) => database.withOperationalTransaction((transaction) => {
+      run: (database) => database.withGeneratedAdministrativeAudit((transaction) => {
         const now = transaction.timestamp();
         const status = intent.prior_status === "disabled" ? "disabled" : "configured";
         const changed = transaction.run(`
@@ -637,13 +637,21 @@ export class CredentialVaultCoordinator {
           "DELETE FROM credential_vault_operations WHERE credential_id = ?",
           [intent.credential_id],
         );
+        return {
+          value: undefined,
+          auditInput: vaultSystemAudit(
+            intent,
+            "credential.value.finalize",
+            "applied",
+          ),
+        };
       }),
     });
   }
 
   private async finalizeDelete(intent: VaultIntent): Promise<void> {
     await this.owner.execute({
-      run: (database) => database.withOperationalTransaction((transaction) => {
+      run: (database) => database.withGeneratedAdministrativeAudit((transaction) => {
         const now = transaction.timestamp();
         if (intent.operation === "archive") {
           transaction.run(
@@ -667,13 +675,23 @@ export class CredentialVaultCoordinator {
           "DELETE FROM credential_vault_operations WHERE credential_id = ?",
           [intent.credential_id],
         );
+        return {
+          value: undefined,
+          auditInput: vaultSystemAudit(
+            intent,
+            intent.operation === "archive"
+              ? "credential.archive.finalize"
+              : "credential.value.delete.finalize",
+            "applied",
+          ),
+        };
       }),
     });
   }
 
   private async rollback(intent: VaultIntent, category: string): Promise<void> {
     await this.owner.execute({
-      run: (database) => database.withOperationalTransaction((transaction) => {
+      run: (database) => database.withGeneratedAdministrativeAudit((transaction) => {
         const now = transaction.timestamp();
         const changed = transaction.run(`
           UPDATE service_credentials
@@ -690,13 +708,21 @@ export class CredentialVaultCoordinator {
           "DELETE FROM credential_vault_operations WHERE credential_id = ?",
           [intent.credential_id],
         );
+        return {
+          value: undefined,
+          auditInput: vaultSystemAudit(
+            intent,
+            "credential.value.rollback",
+            category,
+          ),
+        };
       }),
     });
   }
 
   private async markReconcile(intent: VaultIntent, category: string): Promise<void> {
     await this.owner.execute({
-      run: (database) => database.withOperationalTransaction((transaction) => {
+      run: (database) => database.withGeneratedAdministrativeAudit((transaction) => {
         const now = transaction.timestamp();
         transaction.run(`
           UPDATE credential_vault_operations
@@ -708,6 +734,14 @@ export class CredentialVaultCoordinator {
           SET vault_state = 'reconcile', version = version + 1, updated_at = ?
           WHERE id = ? AND vault_state <> 'idle'
         `, [now, intent.credential_id]);
+        return {
+          value: undefined,
+          auditInput: vaultSystemAudit(
+            intent,
+            "credential.value.reconcile",
+            category,
+          ),
+        };
       }),
     }).catch(() => undefined);
   }
@@ -926,6 +960,34 @@ function vaultAudit(
     serviceId: input.serviceId,
     changes,
     correlationId: input.correlationId,
+    source: { category: "credential_management" },
+  };
+}
+
+function vaultSystemAudit(
+  intent: VaultIntent,
+  action: string,
+  outcome: string,
+): AdministrativeAuditEventInput {
+  return {
+    actor: {
+      type: "system",
+      label: "credential vault coordinator",
+      authenticationMethod: "internal_vault_protocol",
+    },
+    action,
+    result: "allow",
+    target: {
+      type: "service_credential",
+      id: intent.credential_id,
+      label: `credential:${intent.credential_id}`,
+    },
+    serviceId: intent.service_id,
+    changes: [
+      { field: "operation", after: intent.operation },
+      { field: "outcome", after: outcome },
+    ],
+    correlationId: `req_${randomUUID()}`,
     source: { category: "credential_management" },
   };
 }

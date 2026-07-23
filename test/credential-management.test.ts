@@ -293,6 +293,14 @@ describe("service credential metadata and selectors", () => {
       status: "unconfigured",
       vaultState: "reconcile",
     });
+    expect((await fixture.services.validate(
+      fixture.superadmin,
+      service.id,
+      CORRELATION,
+    )).issues).toContainEqual({
+      code: "credential_reconciliation_required",
+      pointer: "/credentials",
+    });
   });
 
   it("creates, reads, and edits only safe credential metadata", async () => {

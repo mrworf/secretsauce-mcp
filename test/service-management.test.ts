@@ -736,6 +736,43 @@ describe("durable service ownership", () => {
       CORRELATION,
       "Remove the final administrator from the archived service.",
     );
+    const retainedCredentialId = "018f1f2e-7b3c-7a10-8000-000000000084";
+    await fixture.worker.execute({
+      run: (database) => database.withOperationalTransaction((transaction) => {
+        transaction.run(`
+          INSERT INTO service_credentials (
+            id, service_id, name, normalized_name, description,
+            usage_kind, usage_name, usage_prefix, usage_suffix,
+            enforce_header_ownership, status, vault_state, vault_locator,
+            vault_generation, last_four, value_updated_at,
+            authorization_generation, version, created_at, updated_at
+          ) VALUES (?, ?, 'Retained', 'retained', NULL, 'header',
+            'Authorization', NULL, NULL, 0, 'unconfigured', 'idle',
+            NULL, NULL, NULL, NULL, 0, 1, ?, ?)
+        `, [retainedCredentialId, created.id, NOW, NOW]);
+      }),
+    });
+    await expect(fixture.service.delete(
+      fixture.superadmin,
+      created.id,
+      unowned.version,
+      "Credential cleanup is still required.",
+      "delete-lifecycle-credential-block",
+      CORRELATION,
+      new AlwaysStepUpHandle(
+        "018f1f2e-7b3c-7a10-8000-000000000085",
+        "018f1f2e-7b3c-7a10-8000-000000000086",
+        fixture.superadmin.principalId,
+      ),
+    )).rejects.toEqual(new ServiceManagementError("conflict"));
+    await fixture.worker.execute({
+      run: (database) => database.withOperationalTransaction((transaction) => {
+        transaction.run(
+          "DELETE FROM service_credentials WHERE id = ?",
+          [retainedCredentialId],
+        );
+      }),
+    });
     const deletion = await fixture.service.delete(
       fixture.superadmin,
       created.id,

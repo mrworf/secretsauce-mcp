@@ -98,9 +98,14 @@ const validationSchema = z.object({
   valid: z.boolean(),
   draft_digest: z.string().regex(/^[a-f0-9]{64}$/),
   issues: z.array(z.object({
-    code: z.enum(["service_archived", "service_admin_required", "destination_required"]),
-    pointer: z.enum(["/lifecycle", "/admins", "/destinations"]),
-  }).strict()).max(3),
+    code: z.enum([
+      "service_archived",
+      "service_admin_required",
+      "destination_required",
+      "credential_reconciliation_required",
+    ]),
+    pointer: z.enum(["/lifecycle", "/admins", "/destinations", "/credentials"]),
+  }).strict()).max(4),
   warnings: z.array(z.object({
     code: z.literal("tls_verification_disabled"),
     pointer: z.string().regex(/^\/destinations\/(?:0|[1-5]?\d|6[0-3])\/tls_verify$/),

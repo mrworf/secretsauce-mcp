@@ -40,7 +40,7 @@ function sanitizeValue(value: unknown, key: string, configuredSecrets: string[])
   return value;
 }
 
-function sanitizeAuditText(value: string, configuredSecrets: string[]): string {
+export function sanitizeAuditText(value: string, configuredSecrets: readonly string[] = []): string {
   let sanitized = value;
   for (const secret of configuredSecrets) sanitized = sanitized.split(secret).join(REDACTED);
   sanitized = replaceRanges(sanitized, findHttpBasicCredentialRanges(sanitized));

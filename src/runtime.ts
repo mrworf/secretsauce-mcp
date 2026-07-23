@@ -6,6 +6,7 @@ import { createCapabilityDependencies, type CapabilityDependencies } from "./cap
 import { BuiltinOAuthRuntime } from "./builtinOAuth.js";
 import { PersistenceWorker, type PersistenceOwner } from "./persistence/worker.js";
 import { PACKAGE_VERSION } from "./version.js";
+import { sanitizeAuditText } from "./auditSanitizer.js";
 
 export interface GatewayRuntimeOptions {
   auditSink?: AuditSink;
@@ -38,6 +39,7 @@ export class GatewayRuntime {
           : PersistenceWorker.open({
             databaseFile: config.persistence.databaseFile,
             productVersion: PACKAGE_VERSION,
+            sanitizeAuditText: configuredAuditTextSanitizer(config),
           })
       );
       const capabilities = options.capabilities ?? createCapabilityDependencies(config, auditSink);
@@ -78,4 +80,11 @@ export class GatewayRuntime {
     try { await this.secretRuntime.pool.close(); } catch (error) { errors.push(error); }
     if (errors.length > 0) throw new AggregateError(errors, "Gateway runtime close failed.");
   }
+}
+
+function configuredAuditTextSanitizer(config: GatewayConfig): (value: string) => string {
+  const secrets = [...new Set(Object.values(config.services).flatMap(
+    (service) => service.credentials.map((credential) => credential.secret),
+  ))].filter((secret) => secret.length > 0).sort((left, right) => right.length - left.length);
+  return (value) => sanitizeAuditText(value, secrets);
 }

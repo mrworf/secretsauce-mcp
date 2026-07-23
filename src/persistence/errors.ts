@@ -2,12 +2,18 @@ export type PersistenceErrorCode =
   | "database_unavailable"
   | "schema_unsupported"
   | "migration_failed"
+  | "administrative_audit_required"
+  | "invalid_audit_event"
+  | "audit_persistence_failed"
   | "persistence_closed";
 
 const messages: Record<PersistenceErrorCode, string> = {
   database_unavailable: "Persistence database is unavailable.",
   schema_unsupported: "Persistence schema is unsupported.",
   migration_failed: "Persistence migration failed.",
+  administrative_audit_required: "Administrative audit event is required.",
+  invalid_audit_event: "Administrative audit event is invalid.",
+  audit_persistence_failed: "Administrative audit persistence failed.",
   persistence_closed: "Persistence owner is closed.",
 };
 

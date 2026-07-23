@@ -3,17 +3,25 @@ import { dirname } from "node:path";
 import Database from "better-sqlite3";
 import { PersistenceError, mapPersistenceError } from "./errors.js";
 import {
+  buildAdministrativeAuditEvent,
+  type AdministrativeAuditEvent,
+} from "./administrativeAudit.js";
+import {
   migrationChecksum,
   PERSISTENCE_MIGRATIONS,
   type PersistenceMigration,
   validateMigrationRegistry,
 } from "./migrations.js";
+import { PersistenceQuery, PersistenceTransaction } from "./transaction.js";
+import { UuidV7Generator } from "./uuidV7.js";
 
 export interface PersistenceDatabaseOptions {
   databaseFile: string;
   productVersion: string;
   migrations?: readonly PersistenceMigration[];
   now?: () => number;
+  uuid?: () => string;
+  sanitizeAuditText?: (value: string) => string;
 }
 
 interface MigrationRow {
@@ -30,10 +38,25 @@ export interface PersistenceReadiness {
 
 export class PersistenceDatabase {
   readonly #database: Database.Database;
+  readonly #now: () => number;
+  readonly #uuid: () => string;
+  readonly #sanitizeAuditText: (value: string) => string;
+  readonly #expectedSchemaVersion: number;
+  #administrativeAuditDegraded = false;
   #closed = false;
 
-  private constructor(database: Database.Database) {
+  private constructor(
+    database: Database.Database,
+    now: () => number,
+    uuid: () => string,
+    sanitizeAuditText: (value: string) => string,
+    expectedSchemaVersion: number,
+  ) {
     this.#database = database;
+    this.#now = now;
+    this.#uuid = uuid;
+    this.#sanitizeAuditText = sanitizeAuditText;
+    this.#expectedSchemaVersion = expectedSchemaVersion;
   }
 
   static open(options: PersistenceDatabaseOptions): PersistenceDatabase {
@@ -50,9 +73,17 @@ export class PersistenceDatabase {
       database = new Database(options.databaseFile);
       chmodSync(options.databaseFile, 0o600);
       configureDatabase(database);
-      applyMigrations(database, migrations, options.productVersion, options.now ?? Date.now);
+      const now = options.now ?? Date.now;
+      const uuidGenerator = new UuidV7Generator({ now });
+      applyMigrations(database, migrations, options.productVersion, now);
       validateCurrentSchema(database, migrations);
-      return new PersistenceDatabase(database);
+      return new PersistenceDatabase(
+        database,
+        now,
+        options.uuid ?? (() => uuidGenerator.next()),
+        options.sanitizeAuditText ?? ((value) => value),
+        migrations.length,
+      );
     } catch (error) {
       try {
         database?.close();
@@ -79,12 +110,12 @@ export class PersistenceDatabase {
     ).all() as MigrationRow[];
   }
 
-  readiness(expectedSchemaVersion = PERSISTENCE_MIGRATIONS.length): PersistenceReadiness {
+  readiness(): PersistenceReadiness {
     if (this.#closed) return unavailableReadiness();
     try {
       const databaseReady = this.#database.prepare("SELECT 1 AS ready").get() !== undefined;
       const schemaReady =
-        this.schemaVersion === expectedSchemaVersion &&
+        this.schemaVersion === this.#expectedSchemaVersion &&
         this.#database.pragma("quick_check", { simple: true }) === "ok";
       const auditReady = this.#database.prepare(`
         SELECT 1 AS present
@@ -94,10 +125,82 @@ export class PersistenceDatabase {
       return {
         database: databaseReady ? "ready" : "unavailable",
         schema: schemaReady ? "ready" : "unsupported",
-        administrativeAudit: auditReady ? "ready" : "unavailable",
+        administrativeAudit: auditReady && !this.#administrativeAuditDegraded ? "ready" : "unavailable",
       };
     } catch {
       return unavailableReadiness();
+    }
+  }
+
+  withAdministrativeAudit<T>(
+    input: unknown,
+    mutation: (transaction: PersistenceTransaction) => T,
+  ): T {
+    this.assertOpen();
+    const event = this.buildAuditEvent(input);
+    if (event.result !== "allow") throw new PersistenceError("invalid_audit_event");
+    const execute = this.#database.transaction(() => {
+      const result = mutation(new PersistenceTransaction(this.#database, this.#now));
+      if (isPromiseLike(result)) throw new PersistenceError("database_unavailable");
+      this.insertAdministrativeAudit(event);
+      return result;
+    });
+    try {
+      return execute.immediate();
+    } catch (error) {
+      throw mapPersistenceError(error, "database_unavailable");
+    }
+  }
+
+  read<T>(query: (context: PersistenceQuery) => T): T {
+    this.assertOpen();
+    try {
+      const result = query(new PersistenceQuery(this.#database));
+      if (isPromiseLike(result)) throw new PersistenceError("database_unavailable");
+      return result;
+    } catch (error) {
+      throw mapPersistenceError(error, "database_unavailable");
+    }
+  }
+
+  appendAdministrativeAudit(input: unknown): AdministrativeAuditEvent {
+    this.assertOpen();
+    const event = this.buildAuditEvent(input);
+    const append = this.#database.transaction(() => this.insertAdministrativeAudit(event));
+    try {
+      append.immediate();
+      return event;
+    } catch (error) {
+      throw mapPersistenceError(error, "audit_persistence_failed");
+    }
+  }
+
+  administrativeAuditEvent(eventId: string): Record<string, unknown> | undefined {
+    this.assertOpen();
+    try {
+      return this.#database.prepare(`
+        SELECT
+          event_id, occurred_at, actor_type, actor_id_snapshot, actor_label_snapshot,
+          actor_role_snapshot, authentication_method, action, result, target_type,
+          target_id_snapshot, target_label_snapshot, service_id_snapshot,
+          justification, changes_json, correlation_id, source_json, failure_code
+        FROM administrative_audit_events
+        WHERE event_id = ?
+      `).get(eventId) as Record<string, unknown> | undefined;
+    } catch {
+      throw new PersistenceError("database_unavailable");
+    }
+  }
+
+  administrativeAuditCount(): number {
+    this.assertOpen();
+    try {
+      const row = this.#database.prepare(
+        "SELECT count(*) AS count FROM administrative_audit_events",
+      ).get() as { count: number };
+      return row.count;
+    } catch {
+      throw new PersistenceError("database_unavailable");
     }
   }
 
@@ -114,6 +217,55 @@ export class PersistenceDatabase {
   private assertOpen(): void {
     if (this.#closed) throw new PersistenceError("persistence_closed");
   }
+
+  private buildAuditEvent(input: unknown): AdministrativeAuditEvent {
+    return buildAdministrativeAuditEvent(input, {
+      now: this.#now,
+      uuid: this.#uuid,
+      sanitizeText: this.#sanitizeAuditText,
+    });
+  }
+
+  private insertAdministrativeAudit(event: AdministrativeAuditEvent): void {
+    try {
+      this.#database.prepare(`
+        INSERT INTO administrative_audit_events (
+          event_id, occurred_at, actor_type, actor_id_snapshot, actor_label_snapshot,
+          actor_role_snapshot, authentication_method, action, result, target_type,
+          target_id_snapshot, target_label_snapshot, service_id_snapshot,
+          justification, changes_json, correlation_id, source_json, failure_code
+        ) VALUES (
+          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+        )
+      `).run(
+        event.eventId,
+        event.occurredAt,
+        event.actor.type,
+        event.actor.id ?? null,
+        event.actor.label,
+        event.actor.role ?? null,
+        event.actor.authenticationMethod,
+        event.action,
+        event.result,
+        event.target.type,
+        event.target.id ?? null,
+        event.target.label,
+        event.serviceId ?? null,
+        event.justification ?? null,
+        JSON.stringify(event.changes),
+        event.correlationId,
+        JSON.stringify(event.source),
+        event.failureCode ?? null,
+      );
+    } catch {
+      this.#administrativeAuditDegraded = true;
+      throw new PersistenceError("audit_persistence_failed");
+    }
+  }
+}
+
+function isPromiseLike(value: unknown): value is PromiseLike<unknown> {
+  return value !== null && typeof value === "object" && "then" in value;
 }
 
 function unavailableReadiness(): PersistenceReadiness {

@@ -378,14 +378,14 @@ describe("control and data listener integration", () => {
     const first = await startControlServer(config);
     expect(await first.persistence.execute({
       run: (database) => database.schemaVersion,
-    })).toBe(2);
+    })).toBe(3);
     await first.close();
 
     const restarted = await startControlServer(config);
     openApplications.push(restarted);
     expect(await restarted.persistence.execute({
       run: (database) => database.schemaVersion,
-    })).toBe(2);
+    })).toBe(3);
     const health = await request(port, "/api/v2/health", "control.example.org");
     expect(health.statusCode).toBe(200);
     const shell = await request(port, "/control/services", "control.example.org");

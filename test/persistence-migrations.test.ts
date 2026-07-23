@@ -15,7 +15,7 @@ describe("persistence migrations", () => {
     const file = databasePath("fresh");
     const persistence = open(file);
     try {
-      expect(persistence.schemaVersion).toBe(2);
+      expect(persistence.schemaVersion).toBe(3);
       expect(persistence.migrationHistory()).toEqual([
         {
           version: 1,
@@ -25,6 +25,11 @@ describe("persistence migrations", () => {
         {
           version: 2,
           name: "control_idempotency_foundation",
+          checksum: expect.stringMatching(/^[a-f0-9]{64}$/),
+        },
+        {
+          version: 3,
+          name: "identity_bootstrap_foundation",
           checksum: expect.stringMatching(/^[a-f0-9]{64}$/),
         },
       ]);
@@ -39,7 +44,22 @@ describe("persistence migrations", () => {
         `).pluck().all()).toEqual([
           "administrative_audit_events",
           "control_idempotency_records",
+          "external_identities",
+          "identity_bootstrap",
+          "identity_security_state",
+          "local_authenticator_states",
           "schema_migrations",
+          "users",
+        ]);
+        expect(inspection.prepare(
+          "PRAGMA table_info(local_authenticator_states)",
+        ).all().map((row) => (row as { name: string }).name)).toEqual([
+          "user_id",
+          "password_state",
+          "totp_state",
+          "version",
+          "created_at",
+          "updated_at",
         ]);
       } finally {
         inspection.close();
@@ -53,22 +73,23 @@ describe("persistence migrations", () => {
     const file = databasePath("ordered");
     const migrations = [
       ...PERSISTENCE_MIGRATIONS,
-      testMigration(3, "third", "CREATE TABLE third_fixture (id INTEGER PRIMARY KEY) STRICT;"),
       testMigration(4, "fourth", "CREATE TABLE fourth_fixture (id INTEGER PRIMARY KEY) STRICT;"),
+      testMigration(5, "fifth", "CREATE TABLE fifth_fixture (id INTEGER PRIMARY KEY) STRICT;"),
     ];
     const first = open(file, migrations);
-    expect(first.schemaVersion).toBe(4);
-    expect(first.migrationHistory().map(({ version }) => version)).toEqual([1, 2, 3, 4]);
+    expect(first.schemaVersion).toBe(5);
+    expect(first.migrationHistory().map(({ version }) => version)).toEqual([1, 2, 3, 4, 5]);
     first.close();
 
     const restarted = open(file, migrations);
     try {
-      expect(restarted.schemaVersion).toBe(4);
+      expect(restarted.schemaVersion).toBe(5);
       expect(restarted.migrationHistory().map(({ name }) => name)).toEqual([
         "persistence_and_administrative_audit_foundation",
         "control_idempotency_foundation",
-        "third",
+        "identity_bootstrap_foundation",
         "fourth",
+        "fifth",
       ]);
     } finally {
       restarted.close();
@@ -77,7 +98,7 @@ describe("persistence migrations", () => {
 
   it("rejects unknown future, partial, and checksum-drifted schemas safely", () => {
     const futureFile = initializedPath("future");
-    edit(futureFile, (database) => database.pragma("user_version = 3"));
+    edit(futureFile, (database) => database.pragma("user_version = 4"));
     expectPersistenceError(() => open(futureFile), "schema_unsupported", futureFile);
 
     const partialFile = databasePath("partial");
@@ -102,7 +123,7 @@ describe("persistence migrations", () => {
     const file = initializedPath("rollback");
     const migrations = [
       ...PERSISTENCE_MIGRATIONS,
-      testMigration(3, "broken", `
+      testMigration(4, "broken", `
         CREATE TABLE should_rollback (id INTEGER PRIMARY KEY) STRICT;
         INSERT INTO table_that_does_not_exist (id) VALUES (1);
       `),
@@ -112,12 +133,12 @@ describe("persistence migrations", () => {
 
     const inspection = new Database(file);
     try {
-      expect(inspection.pragma("user_version", { simple: true })).toBe(2);
+      expect(inspection.pragma("user_version", { simple: true })).toBe(3);
       expect(inspection.prepare(
         "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'should_rollback'",
       ).get()).toBeUndefined();
       expect(inspection.prepare("SELECT count(*) AS count FROM schema_migrations").get())
-        .toEqual({ count: 2 });
+        .toEqual({ count: 3 });
     } finally {
       inspection.close();
     }

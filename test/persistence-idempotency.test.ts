@@ -23,7 +23,7 @@ const RAW_KEY = "do-not-store-key-1234";
 const RAW_BODY_MARKER = "body-marker-must-not-persist";
 
 const fixtureMigration: PersistenceMigration = {
-  version: 3,
+  version: 4,
   name: "test_idempotency_fixture",
   sql: `
     CREATE TABLE test_idempotent_mutations (
@@ -272,7 +272,7 @@ describe("transaction-bound idempotency", () => {
     }
 
     const failureMigration: PersistenceMigration = {
-      version: 4,
+      version: 5,
       name: "test_idempotent_audit_failure",
       sql: `
         CREATE TRIGGER reject_idempotent_audit
@@ -309,7 +309,7 @@ describe("transaction-bound idempotency", () => {
 
   it("rolls back the mutation when durable idempotency storage fails", () => {
     const failureMigration: PersistenceMigration = {
-      version: 4,
+      version: 5,
       name: "test_idempotency_storage_failure",
       sql: `
         CREATE TRIGGER reject_idempotency_storage

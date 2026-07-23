@@ -95,6 +95,100 @@ CREATE INDEX control_idempotency_principal_route_idx
   ON control_idempotency_records (principal_id, route_id, expires_at);
 `;
 
+const migration0003 = `
+CREATE TABLE users (
+  id TEXT PRIMARY KEY CHECK (
+    length(id) = 36
+    AND id = lower(id)
+    AND substr(id, 9, 1) = '-'
+    AND substr(id, 14, 1) = '-'
+    AND substr(id, 19, 1) = '-'
+    AND substr(id, 24, 1) = '-'
+    AND substr(id, 15, 1) = '7'
+    AND substr(id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND id NOT GLOB '*[^0-9a-f-]*'
+  ),
+  email TEXT NOT NULL CHECK (length(email) BETWEEN 3 AND 254),
+  normalized_email TEXT NOT NULL UNIQUE CHECK (
+    length(normalized_email) BETWEEN 3 AND 254
+    AND normalized_email = lower(normalized_email)
+  ),
+  given_name TEXT NOT NULL CHECK (length(given_name) <= 128),
+  family_name TEXT NOT NULL CHECK (length(family_name) <= 128),
+  role TEXT NOT NULL CHECK (role IN ('superadmin', 'admin', 'user')),
+  status TEXT NOT NULL CHECK (
+    status IN ('invited', 'enrollment_required', 'active', 'suspended', 'deactivated')
+  ),
+  security_epoch INTEGER NOT NULL DEFAULT 1 CHECK (security_epoch > 0),
+  password_policy_version INTEGER NOT NULL DEFAULT 1 CHECK (password_policy_version > 0),
+  version INTEGER NOT NULL DEFAULT 1 CHECK (version > 0),
+  created_at INTEGER NOT NULL CHECK (created_at >= 0),
+  updated_at INTEGER NOT NULL CHECK (updated_at >= created_at)
+) STRICT;
+
+CREATE INDEX users_status_role_idx ON users (status, role, id);
+
+CREATE TABLE local_authenticator_states (
+  user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  password_state TEXT NOT NULL CHECK (
+    password_state IN ('not_configured', 'temporary', 'configured', 'disabled')
+  ),
+  totp_state TEXT NOT NULL CHECK (
+    totp_state IN ('not_configured', 'configured', 'disabled')
+  ),
+  version INTEGER NOT NULL DEFAULT 1 CHECK (version > 0),
+  created_at INTEGER NOT NULL CHECK (created_at >= 0),
+  updated_at INTEGER NOT NULL CHECK (updated_at >= created_at)
+) STRICT;
+
+CREATE TABLE external_identities (
+  id TEXT PRIMARY KEY CHECK (
+    length(id) = 36
+    AND id = lower(id)
+    AND substr(id, 9, 1) = '-'
+    AND substr(id, 14, 1) = '-'
+    AND substr(id, 19, 1) = '-'
+    AND substr(id, 24, 1) = '-'
+    AND substr(id, 15, 1) = '7'
+    AND substr(id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND id NOT GLOB '*[^0-9a-f-]*'
+  ),
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  provider_id TEXT NOT NULL CHECK (
+    length(provider_id) BETWEEN 1 AND 64
+    AND provider_id = lower(provider_id)
+    AND provider_id NOT GLOB '*[^a-z0-9_.-]*'
+  ),
+  issuer TEXT NOT NULL CHECK (length(issuer) BETWEEN 8 AND 2048),
+  subject TEXT NOT NULL CHECK (length(subject) BETWEEN 1 AND 255),
+  version INTEGER NOT NULL DEFAULT 1 CHECK (version > 0),
+  created_at INTEGER NOT NULL CHECK (created_at >= 0),
+  updated_at INTEGER NOT NULL CHECK (updated_at >= created_at),
+  UNIQUE (provider_id, issuer, subject)
+) STRICT;
+
+CREATE INDEX external_identities_user_idx
+  ON external_identities (user_id, provider_id, id);
+
+CREATE TABLE identity_security_state (
+  singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
+  global_security_epoch INTEGER NOT NULL CHECK (global_security_epoch > 0),
+  version INTEGER NOT NULL CHECK (version > 0),
+  created_at INTEGER NOT NULL CHECK (created_at >= 0),
+  updated_at INTEGER NOT NULL CHECK (updated_at >= created_at)
+) STRICT;
+
+INSERT INTO identity_security_state (
+  singleton, global_security_epoch, version, created_at, updated_at
+) VALUES (1, 1, 1, 0, 0);
+
+CREATE TABLE identity_bootstrap (
+  singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
+  user_id TEXT NOT NULL UNIQUE REFERENCES users(id) ON DELETE RESTRICT,
+  created_at INTEGER NOT NULL CHECK (created_at >= 0)
+) STRICT;
+`;
+
 export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [
   {
     version: 1,
@@ -105,6 +199,11 @@ export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [
     version: 2,
     name: "control_idempotency_foundation",
     sql: migration0002,
+  },
+  {
+    version: 3,
+    name: "identity_bootstrap_foundation",
+    sql: migration0003,
   },
 ];
 

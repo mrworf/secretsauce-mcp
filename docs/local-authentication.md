@@ -4,10 +4,10 @@ SecretSauce can authenticate local control-plane users with a password and
 mandatory TOTP. This is separate from MCP authentication: browser cookies are
 accepted only on the control listener and are never credentials for `/mcp`.
 
-Milestone 05 supplies authentication for an already active, fully configured
-identity. It intentionally does not expose enrollment, reset, recovery, or
-replacement routes. The initial `enrollment_required` superadmin becomes usable
-only through the restricted Milestone 06 enrollment ceremony.
+An `enrollment_required` identity becomes active only after a restricted
+temporary-password ceremony installs a permanent password and confirmed TOTP in
+one transaction. Administrative reset primitives are authorization-guarded for
+Milestone 07 routes; no public administrative reset endpoint exists.
 
 ## Configuration and stable key mounts
 
@@ -28,6 +28,8 @@ identity:
   root_key_files:
     identity-2026-01: /run/secretsauce-keys/identity-2026-01.key
   session_hmac_key_file: /run/secretsauce-keys/session-hmac.key
+  temporary_password_ttl: 72h
+  restricted_session_ttl: 15m
   password:
     minimum_length: 12
     # Optional file containing one lowercase SHA-256 password digest per line.
@@ -119,6 +121,46 @@ Rate limits use the direct socket source and a keyed account identity. Proxy
 forwarding headers are not trusted. Login, password work, and TOTP work have
 separate windows and concurrency budgets, and public failures do not reveal
 whether an account exists.
+
+## Enrollment, recovery, and self-service
+
+Bootstrap and future invitation/reset operations generate random temporary
+passwords, store only Argon2id encodings, and display plaintext exactly once.
+`POST /api/v2/auth/enrollment/login` accepts a temporary value only for a
+restricted `__Host-secretsauce_enrollment` cookie. That cookie has the same
+Secure, HTTP-only, strict-same-site, host-only properties as the ordinary cookie
+but is rejected by ordinary control routes and MCP.
+
+Initial enrollment accepts the permanent password twice—once to begin and again
+to confirm—so no unconfirmed password is stored. The begin response returns one
+base32 TOTP seed and `otpauth` URI. QR rendering is client-side; there is no seed
+retrieval endpoint. Confirmation rechecks the current password policy and commits
+password, encrypted TOTP, activation, epoch increment, session revocation,
+temporary-credential invalidation, and audit atomically.
+
+A password reset preserves TOTP. The temporary password enters only the
+restricted password-change flow, whose completion requires the existing TOTP.
+A TOTP reset returns no seed; the active user authenticates with the retained
+permanent password and enrolls TOTP through a restricted recovery session.
+
+Authenticated users can change their own password or replace TOTP only after
+fresh current-password and current-TOTP verification. Successful changes
+increment the user security epoch, revoke all browser and restricted sessions,
+clear the initiating cookies in the response, and leave a durable invalidation
+event for future grant/reference consumers.
+
+For host-local recovery, run:
+
+```bash
+CONFIG_PATH=/absolute/path/to/config.yaml npm run identity:break-glass
+```
+
+The command requires input and output terminals, accepts no arguments, prompts
+for an existing UUID or email and exact confirmation, and emits a generated
+temporary password once. It preserves UUID/role, moves the account to
+`enrollment_required`, erases password/TOTP material, revokes sessions, increments
+the epoch, and audits bounded OS-actor metadata. Do not place the target or any
+credential in command arguments, shell history, logs, tickets, or chat.
 
 ## Step-up modes
 

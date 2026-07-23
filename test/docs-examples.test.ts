@@ -126,7 +126,8 @@ describe("documentation examples", () => {
     expect(bootstrap).toContain("Do not append an email, password, TOTP value");
     expect(configReference).toContain("persistence.database_file");
     expect(configReference).toContain("accepts no arguments");
-    expect(configReference).toContain("`not_configured` password/TOTP state");
+    expect(configReference).toContain("hash-only temporary password");
+    expect(bootstrap).toContain("displays a new temporary password once");
     expect(bootstrap).not.toMatch(/identity:bootstrap\s+--(?:email|password|totp)/);
   });
 
@@ -139,7 +140,8 @@ describe("documentation examples", () => {
     expect(docs).toContain("never extends an existing session");
     expect(docs).toContain("accepted only on the control listener");
     expect(docs).toContain("`x-step-up-proof`");
-    expect(docs).toContain("Milestone 06 enrollment ceremony");
+    expect(docs).toContain("temporary-password ceremony");
+    expect(docs).toContain("npm run identity:break-glass");
     expect(docs).toContain("checks.identity");
     expect(docs).not.toMatch(/https?:\/\/(?!control\.example\.org)[a-z0-9.-]+/i);
   });

@@ -62,15 +62,15 @@ On a fresh database, run `CONFIG_PATH=/absolute/path/to/config.yaml npm run
 identity:bootstrap` from an interactive terminal on the gateway host. In Docker,
 use an interactive exec such as `docker compose exec secretsauce npm run
 identity:bootstrap`. The command accepts no arguments: email and optional names
-are terminal prompts, and password/TOTP material is neither requested nor
-created by this stage.
+are terminal prompts, and password/TOTP material is never accepted from the
+operator.
 
 The one-time transaction creates a UUIDv7 `superadmin` with status
-`enrollment_required`, `not_configured` password/TOTP state, a singleton
-bootstrap marker, and a sanitized `identity.bootstrap` audit event. Output is
-limited to the new UUID and non-sensitive enrollment state. The identity cannot
-authenticate or authorize MCP requests until the later enrollment and
-authentication features activate it.
+`enrollment_required`, a hash-only temporary password, `not_configured` TOTP
+state, a singleton bootstrap marker, and a sanitized `identity.bootstrap` audit
+event. Output displays the generated temporary password exactly once. It can
+enter only the restricted enrollment flow and cannot authenticate an ordinary
+control or MCP request.
 
 ## Local browser authentication
 
@@ -79,9 +79,16 @@ control listener. It requires both `control` and `persistence`. See
 [Local browser authentication](local-authentication.md) for the complete
 configuration, key-mount, session, step-up, and operational security contract.
 
-Until the Milestone 06 enrollment workflows are present, this subsystem can
-authenticate only an already active, fully configured local identity; the
-bootstrap identity remains `enrollment_required` and cannot log in.
+`identity.temporary_password_ttl` defaults to `72h` and is bounded from `1h`
+through `7d`. `identity.restricted_session_ttl` defaults to `15m` and is bounded
+from `5m` through `30m`. Restricted enrollment cookies never authorize ordinary
+control or MCP routes.
+
+If an existing account cannot authenticate, run the terminal-only
+`identity:break-glass` command on the gateway host. It accepts no arguments,
+preserves the selected UUID and role, invalidates active state, erases existing
+authenticators, and displays one new expiring temporary password. Target-not-found
+and reset failures use the same output and never echo the submitted identifier.
 
 ## Startup diagnostics
 

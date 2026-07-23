@@ -19,6 +19,7 @@
     "vault:key": "node dist/vault/keyCli.js",
     "vault:health": "node dist/vault/healthCli.js",
     "identity:bootstrap": "node dist/identity/bootstrapCli.js",
+    "identity:break-glass": "node dist/identity/breakGlassCli.js",
     "dev:control-web": "vite",
     "pretest": "npm run build",
     "test": "vitest run"

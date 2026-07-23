@@ -7,8 +7,9 @@ import type { PersistenceOwner } from "../persistence/worker.js";
 import type { IdentityConfig } from "../types.js";
 import { hashPassword } from "./password.js";
 import type { IdentityAuditContext } from "./repository.js";
+import { normalizeEmail } from "./validation.js";
 
-export type CredentialResetReason = "password_reset" | "totp_reset";
+export type CredentialResetReason = "password_reset" | "totp_reset" | "break_glass";
 
 export class CredentialLifecycleError extends Error {
   constructor(
@@ -96,6 +97,26 @@ export class LocalCredentialLifecycleRepository {
         FROM users
         WHERE id = ?
       `, [userId])),
+    });
+  }
+
+  async targetByIdentifier(identifier: string): Promise<CredentialTarget | undefined> {
+    let normalizedEmail: string | undefined;
+    if (!isUuidV7(identifier)) {
+      try {
+        normalizedEmail = normalizeEmail(identifier);
+      } catch {
+        return undefined;
+      }
+    }
+    return this.owner.execute({
+      run: (database) => database.read((query) => query.get<CredentialTarget>(`
+        SELECT
+          id, email, given_name AS givenName, family_name AS familyName,
+          role, status
+        FROM users
+        WHERE ${normalizedEmail === undefined ? "id" : "normalized_email"} = ?
+      `, [normalizedEmail ?? identifier])),
     });
   }
 
@@ -199,6 +220,92 @@ export class LocalCredentialLifecycleRepository {
               { field: "totp_state", before: "configured", after: "not_configured" },
               { field: "security_epoch", after: "incremented" },
             ]),
+          };
+        }),
+      });
+    } catch (error) {
+      if (error instanceof PersistenceError && error.code === "identity_not_found") {
+        throw new CredentialLifecycleError("identity_not_found");
+      }
+      throw new CredentialLifecycleError("credential_lifecycle_unavailable");
+    }
+  }
+
+  async breakGlassReset(input: {
+    target: CredentialTarget;
+    encodedHash: string;
+    expiresAt: number;
+    eventId: string;
+    audit: IdentityAuditContext;
+  }): Promise<ResetMutationResult> {
+    const now = safeNow(this.now);
+    try {
+      return await this.owner.execute({
+        run: (database) => database.withGeneratedAdministrativeAudit((transaction) => {
+          requireCurrentTarget(transaction, input.target);
+          const counts = revokeUserSessions(transaction, input.target.id, now);
+          transaction.run(
+            "DELETE FROM local_password_credentials WHERE user_id = ?",
+            [input.target.id],
+          );
+          transaction.run(
+            "DELETE FROM local_totp_authenticators WHERE user_id = ?",
+            [input.target.id],
+          );
+          transaction.run(`
+            INSERT INTO identity_temporary_passwords (
+              user_id, encoded_hash, purpose, issued_at, expires_at,
+              consumed_at, revoked_at, version
+            ) VALUES (?, ?, 'initial_enrollment', ?, ?, NULL, NULL, 1)
+            ON CONFLICT(user_id) DO UPDATE SET
+              encoded_hash = excluded.encoded_hash,
+              purpose = excluded.purpose,
+              issued_at = excluded.issued_at,
+              expires_at = excluded.expires_at,
+              consumed_at = NULL,
+              revoked_at = NULL,
+              version = identity_temporary_passwords.version + 1
+          `, [input.target.id, input.encodedHash, now, input.expiresAt]);
+          transaction.run(`
+            UPDATE local_authenticator_states
+            SET password_state = 'temporary', totp_state = 'not_configured',
+                version = version + 1, updated_at = ?
+            WHERE user_id = ?
+          `, [now, input.target.id]);
+          const user = transaction.run(`
+            UPDATE users
+            SET status = 'enrollment_required',
+                security_epoch = security_epoch + 1,
+                version = version + 1,
+                updated_at = ?
+            WHERE id = ?
+          `, [now, input.target.id]);
+          if (user.changes !== 1) throw new PersistenceError("identity_not_found");
+          insertInvalidation(transaction, {
+            eventId: input.eventId,
+            userId: input.target.id,
+            reason: "break_glass",
+            ...counts,
+          }, now);
+          return {
+            value: {
+              eventId: input.eventId,
+              userId: input.target.id,
+              reason: "break_glass" as const,
+              expiresAt: input.expiresAt,
+              ...counts,
+            },
+            auditInput: resetAudit(
+              input.audit,
+              input.target,
+              "identity.break_glass_reset",
+              counts,
+              [
+                { field: "status", before: input.target.status, after: "enrollment_required" },
+                { field: "authentication_state", after: "initial_enrollment_required" },
+                { field: "security_epoch", after: "incremented" },
+              ],
+            ),
           };
         }),
       });
@@ -318,6 +425,68 @@ export class LocalCredentialLifecycleService {
     });
     const invalidationPending = !(await this.dispatch(mutation));
     return {
+      invalidationPending,
+      browserSessionsRevoked: mutation.browserSessionsRevoked,
+      restrictedSessionsRevoked: mutation.restrictedSessionsRevoked,
+    };
+  }
+
+  async breakGlassReset(input: {
+    identifier: unknown;
+    authorization: CredentialResetAuthorization;
+  }): Promise<PasswordResetResult & {
+    userId: string;
+    role: "superadmin" | "admin" | "user";
+  }> {
+    if (
+      typeof input.identifier !== "string" ||
+      input.identifier.length < 1 ||
+      input.identifier.length > 254 ||
+      input.authorization.allowed !== true ||
+      input.authorization.actor.type !== "local_cli" ||
+      input.authorization.actor.authenticationMethod !== "host_terminal" ||
+      input.authorization.source?.category !== "break_glass" ||
+      !validCorrelationId(input.authorization.correlationId)
+    ) throw new CredentialLifecycleError("forbidden");
+    const target = await this.#repository.targetByIdentifier(input.identifier);
+    if (target === undefined) throw new CredentialLifecycleError("identity_not_found");
+    const temporaryPassword = generateTemporaryPassword(
+      this.#config.password.minimumLength,
+      this.#random,
+    );
+    let encodedHash: string;
+    try {
+      const bytes = Buffer.from(temporaryPassword, "utf8");
+      try {
+        encodedHash = await hashPassword(bytes);
+      } finally {
+        bytes.fill(0);
+      }
+    } catch {
+      throw new CredentialLifecycleError("credential_lifecycle_unavailable");
+    }
+    const expiresAt = safeNow(this.#now) + this.#config.temporaryPasswordTtlMs;
+    if (!Number.isSafeInteger(expiresAt)) {
+      throw new CredentialLifecycleError("credential_lifecycle_unavailable");
+    }
+    const mutation = await this.#repository.breakGlassReset({
+      target,
+      encodedHash,
+      expiresAt,
+      eventId: this.nextUuid(),
+      audit: {
+        actor: input.authorization.actor,
+        correlationId: input.authorization.correlationId,
+        source: input.authorization.source,
+        justification: "Host-local break-glass credential recovery.",
+      },
+    });
+    const invalidationPending = !(await this.dispatch(mutation));
+    return {
+      userId: target.id,
+      role: target.role,
+      temporaryPassword,
+      expiresAt,
       invalidationPending,
       browserSessionsRevoked: mutation.browserSessionsRevoked,
       restrictedSessionsRevoked: mutation.restrictedSessionsRevoked,

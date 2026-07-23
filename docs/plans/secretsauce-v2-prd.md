@@ -27,7 +27,7 @@ Version 2 adds:
 - Platform roles and service-scoped groups.
 - Subject- and group-aware service, credential, and policy authorization.
 - A responsive web control plane on a separate listener.
-- A management API with system-owned, immutable-scope API keys.
+- A management API with system-owned API keys that have immutable static API roles/resource scopes.
 - An operation-restricted credential vault.
 - Searchable control-plane and MCP audits.
 - Status, security, grant, reference, and activity views.
@@ -197,7 +197,7 @@ Platform roles are mutually exclusive.
 
 A superadmin can:
 
-- Manage all non-deleted users, including admins and other superadmins.
+- Manage all existing users, including admins and other superadmins.
 - Manage their own profile and authenticators.
 - Create, archive, and delete services.
 - Assign administrators to services.
@@ -216,7 +216,7 @@ An admin can:
 - Remove ordinary users from assigned services.
 - Manage first name, last name, and email for ordinary users assigned to at least one service the admin manages.
 - View service-scoped status, activity, effective access, references, and audits.
-- Create and revoke service-scoped API keys for assigned services.
+- Create and revoke `service` API-role keys for assigned services.
 
 An admin cannot:
 
@@ -256,7 +256,6 @@ Supported states are:
 - `active`
 - `suspended`
 - `deactivated`
-- `deleted`
 
 Transitions:
 
@@ -269,25 +268,34 @@ suspended -> deactivated
 deactivated -> enrollment_required
 ```
 
+In the diagram, `deleted` is a permanent removal event rather than a persisted account state.
+
 Rules:
 
 - `invited` and `enrollment_required` users cannot use MCP.
 - `suspended` users retain password and TOTP material but cannot authenticate normally.
-- `deactivated` users lose password hashes, TOTP seeds, sessions, OAuth grants, API keys associated with their prior access, and gateway references.
+- `deactivated` users lose password hashes, TOTP seeds, sessions, OAuth grants, and gateway references. System-owned API keys are unaffected by account lifecycle.
 - Reactivating a deactivated local user creates a new temporary password and requires new TOTP enrollment.
-- `deleted` is a terminal tombstone retained only as needed for referential audit integrity.
-- Only a superadmin can permanently delete a deactivated user.
+- Permanently deleting a deactivated user removes the user record, profile, provider links, authenticators, sessions, grants, assignments, memberships, and other user-specific operational records.
+- Permanent deletion retains no user tombstone. Self-contained, immutable audit events remain as historical proof and must not depend on a live user-table foreign key.
+- Only an interactively authenticated superadmin or a valid `system` API-role key can permanently delete a deactivated ordinary user or admin. No API key can delete a superadmin.
 - The last active superadmin cannot be suspended, deactivated, deleted, demoted, or automatically expired.
 
-### 7.4 Automatic deactivation after loss of service access
+### 7.4 Users without service access
 
-An ordinary user is automatically deactivated when they have no remaining direct or group-derived service assignment.
+Removing a user's final direct or group-derived service assignment does not deactivate the account.
 
-The calculation uses assignments, not temporary service health or enabled state. Disabling a service does not by itself deactivate its users.
+An active ordinary user with no service assignment:
 
-Removal of the last effective assignment and user deactivation occur in one transaction. The event revokes all sessions, grants, and references.
+- Remains active.
+- Retains web self-service access.
+- Cannot begin MCP OAuth authorization because MCP eligibility requires an effective service assignment.
+- Cannot discover or invoke a service through an existing OAuth grant because service authorization is evaluated dynamically.
+- Appears in the status/security dashboard as an active user without service access.
 
-Admins and superadmins are not subject to this rule because administrator-service assignment is management authority, not MCP service access.
+Removing an assignment invalidates capabilities for that service but does not revoke unrelated web sessions, OAuth grants, or capabilities.
+
+Deactivation is always an explicit authorized action or the result of configured suspension/inactivity automation.
 
 ## 8. Authentication providers
 
@@ -405,14 +413,14 @@ No failure response may disclose which eligibility condition failed.
 
 ### 10.2 Administrative password reset
 
-An authorized admin may reset an ordinary user assigned to an administered service. A superadmin may reset any non-deleted account, including their own.
+An authorized admin may reset an ordinary user assigned to an administered service. A superadmin may reset any existing account, including their own.
 
 Reset:
 
 - Requires justification.
 - Generates a temporary password shown once.
 - Forces password change at next login.
-- Invalidates web sessions, OAuth grants, API access attributable to that identity, and gateway references.
+- Invalidates web sessions, OAuth grants, and gateway references. System-owned API keys are unaffected.
 - Does not erase TOTP unless TOTP reset is also selected.
 
 ### 10.3 Administrative TOTP reset
@@ -441,7 +449,7 @@ The action:
 
 - Requires explicit confirmation, justification, and step-up.
 - Increments the global password-policy/security epoch.
-- Invalidates all web sessions, OAuth grants, API-authenticated identity sessions where applicable, and gateway references.
+- Invalidates all web sessions, OAuth grants, and gateway references. System-owned API keys are unaffected.
 - Preserves existing password hashes only for entry into the restricted password-change flow.
 
 ### 10.6 System-wide TOTP reset
@@ -457,7 +465,7 @@ The action:
 
 ### 10.7 Break-glass CLI
 
-A local CLI command can reset any non-deleted account, including a superadmin.
+A local CLI command can reset any existing account, including a superadmin.
 
 It must:
 
@@ -516,6 +524,8 @@ Sensitive transactions include:
 - Approval of a SecretSauce API key as a downstream credential.
 - Permanent deletion.
 - System-wide password or TOTP event.
+
+Step-up applies to human browser sessions. API keys cannot perform step-up; an API-key request is allowed or denied solely by key validity, its immutable API role/resource scope, the static API-role permission matrix, target eligibility, and applicable rate limits. An operation explicitly allowed to an API role does not acquire a human step-up requirement merely because the corresponding browser operation is sensitive.
 
 ## 12. Suspension and inactivity controls
 
@@ -864,6 +874,16 @@ Management API keys are system principals, not owned by a user account.
 
 Creation records the human creator for audit only. Disabling or deleting the creator does not revoke the key.
 
+API roles are statically defined product roles. They are not aliases for `user`, `admin`, or `superadmin`, and they are not linked to an account role. Changing a human account role has no effect on any API key.
+
+The API roles are:
+
+- `service`
+- `all_services`
+- `system`
+
+An API-role contract can change only through an explicit management-API product/schema change with release notes, migration consideration, and security regression coverage.
+
 ### 19.2 Key fields
 
 An API key contains:
@@ -874,7 +894,8 @@ An API key contains:
 - Random secret shown once.
 - Slow verification hash.
 - Last four characters.
-- Immutable scope.
+- Immutable API role.
+- Immutable service UUID resource scope when the API role is `service`.
 - Immutable expiration, except it may be shortened.
 - Status: active, expired, or revoked.
 - Creation, last-use, expiration, and revocation timestamps.
@@ -882,13 +903,9 @@ An API key contains:
 
 The raw key is never stored after creation and cannot be recovered.
 
-### 19.3 Scopes
+### 19.3 API roles and resource scopes
 
-Scopes are mutually exclusive:
-
-- `service:<uuid>`
-- `all_services`
-- `system`
+API roles are mutually exclusive. The `service` role requires exactly one immutable service UUID; the other roles have no service target.
 
 `all_services` applies to current and future services and requires a prominent creation warning.
 
@@ -896,21 +913,27 @@ Scopes are mutually exclusive:
 
 ### 19.4 Creation and visibility
 
-An admin can create only `service:<uuid>` keys for assigned services.
+An admin can create only `service` keys scoped to assigned services.
 
 All admins assigned to that service can see key metadata and revoke the key.
 
 Only a superadmin can create or see `all_services` or `system` key metadata.
 
-“See” means nickname, UUID, last four, scope, status, expiry, last use, and audited activity. It never means the raw key or verifier hash.
+“See” means nickname, UUID, last four, API role/resource scope, status, expiry, last use, and audited activity. It never means the raw key or verifier hash.
 
 ### 19.5 Authority
 
-A service key may use management endpoints equivalent to an admin for its one service, excluding operations requiring human step-up.
+A `service` key may manage its one service, destinations, credentials, policies, service groups, and service membership. It can invite an ordinary user directly into the scoped service, view ordinary users related to that service, and reset passwords or TOTP for those related ordinary users. It cannot edit a user's profile or change account status.
 
-An all-services key may manage service configuration across current and future services, including service creation/archive, excluding operations requiring human step-up.
+An `all_services` key has the same service-management authority across current and future services and may create or archive services. It can invite and view ordinary users and reset their passwords or TOTP. It cannot edit a user's profile or change account status.
 
-A system key may manage permitted global settings and ordinary/admin lifecycle operations, excluding hard-denied operations.
+A `system` key may manage permitted global settings and completely manage ordinary-user and admin accounts without step-up, including profile edits, password/TOTP reset, suspension, reactivation, deactivation, permanent deletion of a deactivated account, and `user`/`admin` role changes. It cannot view or affect a superadmin.
+
+Removing a user's final service membership never deactivates the account. Account-status changes require the `system` API role.
+
+An API-authorized password reset returns the new temporary password exactly once in a non-cacheable response and never logs or audits it. A TOTP reset returns no TOTP seed; the user completes enrollment interactively.
+
+The static endpoint permission matrix in Section 30 is authoritative.
 
 ### 19.6 Hard-denied API-key operations
 
@@ -927,11 +950,13 @@ No API key can:
 - Satisfy password+TOTP step-up.
 - Perform a vault-key operation.
 
+The `service` and `all_services` API roles additionally cannot edit user profiles, suspend, reactivate, deactivate, permanently delete, or change the platform role of a user.
+
 ### 19.7 Expiration and rotation
 
 Expiration supports integer-day lifetimes or explicit non-expiring status.
 
-Scope and expiration are immutable. Expiration may be shortened, but never extended. A non-expiring key cannot be converted into an expiring key as a substitute for rotation; it can only be revoked.
+API role, service resource scope, and expiration are immutable. Expiration may be shortened, but never extended. A non-expiring key cannot be converted into an expiring key as a substitute for rotation; it can only be revoked.
 
 Rotation creates a replacement key and revokes the old key.
 
@@ -943,7 +968,7 @@ Every use records:
 - Immutable key UUID.
 - Nickname snapshot at event time.
 - Last four.
-- Scope.
+- API role and resource scope.
 - Authentication and authorization outcome.
 - Target and action.
 - Safe request metadata.
@@ -1098,6 +1123,8 @@ Successful mutations and their audit events commit in one transaction. If the co
 
 Denied and failed sensitive actions are also audited.
 
+Audit actor and target identity fields are denormalized event-time snapshots. They must remain intelligible after permanent user deletion and must not require a live foreign key to the user table. Permanent deletion does not rewrite or remove immutable audit events.
+
 ### 23.3 Prohibited audit content
 
 Neither audit contains:
@@ -1180,7 +1207,7 @@ The status page includes:
 - Configured/unconfigured/disabled credential counts.
 - Active `gref` and `sec` counts per service.
 - Active OAuth grant counts.
-- Active API-key counts by permitted scope.
+- Active API-key counts by permitted API role/resource scope.
 - Database health.
 - Vault health/lock state.
 - Audit persistence health.
@@ -1208,6 +1235,7 @@ The security dashboard highlights:
 - Missing credentials.
 - Vault/audit degradation.
 - Pending enrollment.
+- Active ordinary users without service access.
 - Last-superadmin protection events.
 
 ## 25. Rate limits and abuse controls
@@ -1238,10 +1266,18 @@ Expected contents:
 
 ```text
 manifest.yaml
-configuration.yaml
-groups.yaml
+services.yaml
+credentials.yaml
+policies.yaml
 secrets.enc          # optional
 ```
+
+The portable configuration domain contains only:
+
+- Services, including destinations and TLS behavior.
+- Credential definitions and placement metadata.
+- Policies and request-matching/response-protection behavior.
+- Optional passphrase-encrypted downstream credential values.
 
 The manifest contains:
 
@@ -1260,9 +1296,11 @@ Every backup excludes:
 
 - Users and profiles.
 - Roles.
+- Service groups.
 - Admin-service assignments.
 - User-service assignments.
 - Group memberships.
+- Every service, credential, and policy principal binding, including `all`.
 - Password hashes and temporary passwords.
 - TOTP seeds.
 - External identity links.
@@ -1272,10 +1310,19 @@ Every backup excludes:
 - Active `gref` and `sec` references.
 - Audit history.
 - Activity aggregates.
+- System, password, TOTP, session, rate-limit, inactivity, retention, and security settings.
+- Listener addresses and ports.
+- Public origins and reverse-proxy configuration.
+- Filesystem paths.
+- OIDC configuration and client secrets.
+- Vault configuration, key locations, and encryption-key material.
+- Branding and other instance-specific settings.
 
 The UX/API must warn about these exclusions before backup and in the manifest.
 
 Audit history and activity are available through separate, permission-checked exports. They are not part of a restorable configuration archive.
+
+The archive captures portable configuration for interacting with downstream services; it is not an installation clone.
 
 ### 26.3 Interactive backup
 
@@ -1293,7 +1340,7 @@ Secret-bearing backup:
 
 ### 26.4 API-key backup
 
-Only a `system`-scoped API key can create a complete programmatic backup.
+Only a `system` API-role key can create a complete programmatic backup.
 
 Programmatic backup:
 
@@ -1305,7 +1352,7 @@ Programmatic backup:
 - Records archive ID, key identity metadata, object counts, and archive checksum.
 - Streams directly or uses a short-lived, single-use download authorization.
 
-Service and all-services API keys cannot create a complete backup. Service-scoped export is outside initial v2 scope.
+`service` and `all_services` API-role keys cannot create a complete backup. Service-scoped export is outside initial v2 scope.
 
 ## 27. Restore
 
@@ -1337,15 +1384,16 @@ Before commit, SecretSauce must:
 Restore:
 
 1. Preserves the target installation's users, roles, superadmins, and local authenticators.
-2. Replaces services, destinations, policies, credential metadata, group definitions, and included settings.
-3. Clears every service-user, service-admin, and group-membership assignment.
-4. Restores groups with no members.
-5. Revokes all target API keys.
-6. Revokes all web sessions and OAuth grants.
-7. Invalidates all active gateway references.
-8. Marks credentials `unconfigured` when values are absent or unavailable.
-9. Requires deliberate reassignment of admins, groups, and users.
-10. Produces a persistent remediation checklist.
+2. Preserves all target instance and deployment settings.
+3. Replaces only services/destinations, credential definitions, and policy definitions.
+4. Removes service groups and every service-user, service-admin, group-membership, credential-principal, and policy-principal binding associated with the replaced configuration.
+5. Restores policy matching/effect/priority/response behavior as disabled and unassigned, even when the source binding was `all`.
+6. Revokes all target API keys.
+7. Revokes all web sessions and OAuth grants.
+8. Invalidates all active gateway references.
+9. Marks credentials `unconfigured` when values are absent or unavailable.
+10. Keeps restored services unavailable through MCP until administrators recreate groups/bindings, assign service administrators/users, bind and enable policies, and supply required credentials.
+11. Produces a persistent remediation checklist.
 
 The initiating superadmin is logged out after successful restore.
 
@@ -1453,23 +1501,41 @@ Credential, password, TOTP, temporary-password, passphrase, and API-key inputs:
 
 ## 30. Administrative permissions matrix
 
-| Capability | User | Admin | Superadmin | Service API key | All-services API key | System API key |
+API roles in this matrix are static product contracts and are independent of account roles.
+
+| Capability | User | Admin | Superadmin | `service` API role | `all_services` API role | `system` API role |
 | --- | --- | --- | --- | --- | --- | --- |
 | Use MCP | Yes, if eligible | No | No | No | No | No |
-| Manage own password/TOTP | Yes | Yes | Yes | No | No | No |
-| View own grants | Yes | Yes | Yes | No | No | No |
-| Manage assigned service | No | Yes | Yes | Yes | Yes | No |
-| Create/archive service | No | No | Yes | No | Yes | No |
+| Manage own password/TOTP | Yes | Yes | Yes | No account | No account | No account |
+| View own grants | Yes | Yes | Yes | No account | No account | No account |
+| View service configuration | No; service names only in own access view | Assigned services | All services | Scoped service | All services | No |
+| Configure service/destinations | No | Assigned services | All services | Scoped service | All services | No |
+| Manage credentials/policies | No | Assigned services | All services | Scoped service | All services | No |
+| Create service | No | No | Yes | No | Yes | No |
+| Archive service | No | No | Yes | No | Yes | No |
+| Permanently delete service | No | No | Yes with step-up | No | No | No |
 | Assign service admin | No | No | Yes | No | No | No |
-| Invite/manage ordinary service users | No | Yes | Yes | Yes | Yes | System lifecycle only |
-| Manage admin accounts | No | No | Yes | No | No | Yes, except step-up actions |
-| Manage superadmins | No | No | Yes | No | No | No |
-| Manage global settings | No | No | Yes | No | No | Permitted subset |
-| Create/revoke API keys | No | Assigned-service keys | All keys | No | No | No |
+| Manage service groups | No | Assigned services | All services | Scoped service | All services | No |
+| Add/remove service membership | No | Assigned services | All services | Scoped service | All services | No |
+| Invite ordinary user | No | Into assigned service | Into any service | Into scoped service | Yes | Yes, without service assignment |
+| View ordinary users | Self | Users related to assigned services | All | Users related to scoped service | All ordinary users | All ordinary users |
+| Edit ordinary-user profile | Self where permitted | Related users, not self | All | No | No | Yes |
+| Reset ordinary-user password | No | Related users with step-up | All with step-up | Related users | All ordinary users | All ordinary users |
+| Reset ordinary-user TOTP | No | Related users with step-up | All with step-up | Related users | All ordinary users | All ordinary users |
+| Suspend/reactivate ordinary user | No | Related users with step-up | All with step-up | No | No | Yes |
+| Deactivate ordinary user | No | Related users with step-up | All with step-up | No | No | Yes |
+| Permanently delete deactivated ordinary user | No | No | Yes with step-up | No | No | Yes |
+| Create/manage admin accounts | No | No | Yes | No | No | Yes |
+| Change `user`/`admin` account role | No | No | Yes with step-up | No | No | Yes |
+| View or affect a superadmin | No | No | Yes, subject to last-superadmin protections | Never | Never | Never |
+| Manage global settings | No | No | Yes | No | No | Permitted settings |
+| Trigger system-wide password/TOTP event | No | No | Yes with step-up | No | No | No |
+| Create/revoke API keys | No | Assigned-service keys with step-up | All keys with step-up | No | No | No |
 | Credential-bearing backup | No | No | Yes with step-up | No | No | No |
 | Credential-less complete backup | No | No | Yes | No | No | Yes |
 | Restore | No | No | Yes with step-up | No | No | No |
 | Self-API-key credential approval | No | No | Yes with step-up | No | No | No |
+| Vault-key operation | No | No | Yes with step-up | No | No | No |
 
 Endpoint-level authorization is authoritative if a summary-cell description could be read broadly.
 
@@ -1547,6 +1613,8 @@ Health output is sanitized and never reveals paths, credentials, keys, tokens, i
 - Temporary-password and missing-TOTP users cannot obtain MCP grants.
 - TOTP replay and rate-limit negative cases are tested.
 - The last active superadmin cannot be lost through manual, automatic, API, migration, or restore paths.
+- Removing a user's final service assignment leaves the account active but makes MCP ineligible.
+- Permanent deletion removes the user record and related operational state without a tombstone while immutable, self-contained audit events remain readable.
 
 ### 34.2 Authorization
 
@@ -1576,9 +1644,12 @@ Health output is sanitized and never reveals paths, credentials, keys, tokens, i
 ### 34.5 API keys
 
 - Raw keys are shown once and stored only as verifiers.
-- Scope and expiry cannot be expanded.
+- API role/resource scope and expiry cannot be expanded.
 - Service admins cannot see keys outside assigned services.
 - No key can affect a superadmin or call an interactive-only endpoint.
+- `service` and `all_services` keys cannot edit profiles or change account status.
+- `system` keys can completely manage ordinary-user and admin accounts without step-up.
+- Account-role changes do not alter any API role.
 - Only system keys can create credential-less complete backups.
 - API-key audit records contain nickname/suffix but no raw value.
 
@@ -1587,7 +1658,8 @@ Health output is sanitized and never reveals paths, credentials, keys, tokens, i
 - Archives reject traversal, excessive size/count, unsupported schemas, malformed YAML, and bad checksums.
 - Secret-bearing archives cannot be decrypted with a wrong/missing passphrase.
 - Missing passphrase still permits non-secret restore with `unconfigured` credentials.
-- Restore preserves target identities, clears assignments, and revokes keys/sessions/grants.
+- Archives contain only portable service, credential, and policy configuration plus optional encrypted credential values.
+- Restore preserves target identities and instance settings, removes groups/bindings, imports policies disabled/unassigned, and revokes keys/sessions/grants.
 - Migration imports no users or v1 ACL values.
 - Failed validation/restore/migration leaves active state unchanged.
 
@@ -1615,6 +1687,7 @@ Every new external input and state transition requires positive and negative tes
 Required layers:
 
 - Pure unit tests for policy, role, lifecycle, time-range, and scope algorithms.
+- Table-driven contract tests for every account-role and static API-role matrix cell, including cross-service and superadmin denials.
 - Repository/integration tests for transactions, optimistic concurrency, audit coupling, and retention.
 - Vault permission and cryptographic-envelope integration tests.
 - OAuth/browser-session/API-key authentication tests.
@@ -1623,6 +1696,8 @@ Required layers:
 - Browser end-to-end tests for enrollment, TOTP, admin restrictions, credential write-only behavior, policy explanation, backup warning, and restore confirmation.
 - Migration fixtures representing valid, partial, malformed, and secret-source configurations.
 - Backup compatibility fixtures per supported archive schema version.
+- Restore tests proving all principal bindings are excluded, policies return disabled/unassigned, and target instance settings remain unchanged.
+- Permanent-deletion tests proving operational identity rows are removed while denormalized audit evidence remains readable.
 - Security regression tests asserting prohibited values do not appear in logs, audits, API output, backups, or rendered pages.
 
 The canonical full suite and build must pass for every implementation slice.
@@ -1639,7 +1714,7 @@ Version 2 documentation must include:
 - Session and step-up behavior.
 - Group and direct-assignment guidance.
 - Exact policy algorithm with examples.
-- API-key scope and hard-denial model.
+- Static API-role/resource-scope matrix and hard-denial model.
 - Vault threat model and control-plane write-only limitation.
 - Backup contents/exclusions and restore consequences.
 - Migration dry run and discarded v1 identity behavior.
@@ -1690,12 +1765,15 @@ The following are not open questions for the architecture review:
 - Web/control plane uses a separate listener.
 - Stored credential values are write-only to the control plane.
 - Credential clones exclude secret values.
-- API keys are system-owned and immutable-scope.
+- API keys are system-owned and have immutable static API roles/resource scopes independent of account roles.
 - API keys cannot manage other API keys or superadmins.
+- Only the `system` API role can edit profiles or suspend, reactivate, deactivate, or permanently delete users/admins; it does so without step-up.
+- Removing a user's final service assignment never deactivates the account.
 - Only system API keys can produce a complete programmatic backup, and it is credential-less.
 - API keys cannot restore.
-- Backups exclude all users, authenticators, OAuth state, API keys, sessions, and references.
-- Restore preserves target identities but clears authorization assignments.
+- Backups contain only portable service, credential, and policy configuration plus optional encrypted credential values; all identity, authorization bindings, instance settings, audit, and runtime state are excluded.
+- Restore preserves target identities and instance settings but removes groups/authorization bindings and restores policy logic disabled/unassigned.
+- Permanent user deletion retains no user tombstone; immutable denormalized audit events remain.
 - Migration imports no v1 users or ACL identities.
 - Missing restored/migrated credentials are `unconfigured`, never dummy values.
 - Endpoint activity is based on policy-defined categories rather than raw paths.
@@ -1720,7 +1798,7 @@ The following are not open questions for the architecture review:
 | Password/TOTP reset, deletion, break glass | Sections 7, 10 |
 | Policy priority, group behavior, simulator/editor | Sections 16, 22 |
 | Service/credential/policy assignment and clone/copy | Sections 13–16, 22 |
-| System-owned scoped API keys | Sections 19–20 |
+| System-owned static-role API keys | Sections 19–20, 30 |
 | API-key self-use protection | Section 20 |
 | Backup/restore and credential-less API backup | Sections 26–27 |
 | OAuth grant visibility and invalidation | Section 17 |

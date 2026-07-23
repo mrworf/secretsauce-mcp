@@ -1,3 +1,6 @@
+import { chmodSync, mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { exportJWK, generateKeyPair, SignJWT } from "jose";
 import {
@@ -79,6 +82,8 @@ describe("pinned generic OIDC discovery and JWKS trust", () => {
       .toHaveLength(2);
     await expect(client.verifyIdToken(provider(), token, "wrong".repeat(9)))
       .rejects.toEqual(new OidcTrustError());
+    expect(fixture.requests.filter((url) => url === "https://keys.example.org/jwks"))
+      .toHaveLength(2);
 
     const elliptic = await generateKeyPair("ES256");
     const ellipticJwk = {
@@ -189,6 +194,39 @@ describe("pinned generic OIDC discovery and JWKS trust", () => {
       await expect(client.jwks(provider())).rejects.toEqual(new OidcTrustError());
     }
   });
+
+  it("exchanges a confidential code with form-encoded Basic credentials", async () => {
+    const fixture = network();
+    fixture.responses.set("https://id.example.org/token", response({
+      id_token: "signed-token",
+    }));
+    const directory = mkdtempSync(join(tmpdir(), "secretsauce-oidc-secret-"));
+    const secretFile = join(directory, "client.secret");
+    writeFileSync(secretFile, "s e:cr%t", { mode: 0o400 });
+    chmodSync(secretFile, 0o400);
+    const configured = {
+      ...provider(),
+      clientId: "client id:one",
+      clientSecretFile: secretFile,
+    };
+    const client = new OidcTrustClient(limits(), fixture.value, fixture.now);
+
+    await expect(client.exchangeCode(
+      configured,
+      "authorization-code",
+      "v".repeat(43),
+      "https://control.example.org/api/v2/auth/oidc/workforce/callback",
+    )).resolves.toBe("signed-token");
+
+    const tokenRequest = fixture.requestInputs.at(-1)!;
+    expect(tokenRequest.url.toString()).toBe("https://id.example.org/token");
+    expect(tokenRequest.method).toBe("POST");
+    expect(Buffer.from(tokenRequest.body!).toString("utf8"))
+      .not.toContain("s e:cr%t");
+    expect(Buffer.from(tokenRequest.headers.authorization!.slice("Basic ".length), "base64")
+      .toString("utf8"))
+      .toBe("client+id%3Aone:s+e%3Acr%25t");
+  });
 });
 
 function provider(): OidcProviderConfig {
@@ -276,6 +314,7 @@ function network() {
     ["keys.example.org", "93.184.216.35"],
   ]);
   const requests: string[] = [];
+  const requestInputs: Parameters<OidcNetwork["request"]>[0][] = [];
   const resolutions: string[] = [];
   const value: OidcNetwork = {
     resolve: async (hostname) => {
@@ -284,6 +323,7 @@ function network() {
     },
     request: async (input) => {
       requests.push(input.url.toString());
+      requestInputs.push(input);
       const selected = responses.get(input.url.toString());
       if (selected === undefined) throw new Error("missing fixture");
       return {
@@ -297,6 +337,7 @@ function network() {
     responses,
     addresses,
     requests,
+    requestInputs,
     resolutions,
     now: () => now.value,
   };

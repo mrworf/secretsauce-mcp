@@ -1,4 +1,5 @@
 import { lookup as dnsLookup } from "node:dns/promises";
+import { readFileSync } from "node:fs";
 import { request as httpsRequest } from "node:https";
 import { isIP, type LookupFunction } from "node:net";
 import {
@@ -127,7 +128,8 @@ export class OidcTrustClient {
     const discovery = await this.discover(provider);
     try {
       return await this.verifyWithKeys(provider, discovery, token, nonce, false);
-    } catch {
+    } catch (error) {
+      if (!isRefreshableJwksFailure(error)) throw new OidcTrustError();
       try {
         return await this.verifyWithKeys(provider, discovery, token, nonce, true);
       } catch {
@@ -136,9 +138,69 @@ export class OidcTrustClient {
     }
   }
 
+  async exchangeCode(
+    provider: OidcProviderConfig,
+    code: string,
+    verifier: string,
+    redirectUri: string,
+  ): Promise<string> {
+    if (
+      code.length < 1 ||
+      Buffer.byteLength(code, "utf8") > 4_096 ||
+      /[\0\r\n]/.test(code) ||
+      !/^[A-Za-z0-9_-]{43}$/.test(verifier) ||
+      redirectUri !== `${provider.redirectOrigin}/api/v2/auth/oidc/${provider.id}/callback`
+    ) throw new OidcTrustError();
+    try {
+      const discovery = await this.discover(provider);
+      const form = new URLSearchParams({
+        grant_type: "authorization_code",
+        code,
+        redirect_uri: redirectUri,
+        code_verifier: verifier,
+      });
+      const headers: Record<string, string> = {
+        accept: "application/json",
+        "content-type": "application/x-www-form-urlencoded",
+      };
+      if (provider.clientSecretFile === undefined) {
+        form.set("client_id", provider.clientId);
+      } else {
+        const secret = readClientSecret(provider.clientSecretFile);
+        headers.authorization = `Basic ${Buffer.from(
+          `${formComponent(provider.clientId)}:${formComponent(secret)}`,
+          "utf8",
+        ).toString("base64")}`;
+      }
+      const result = await this.jsonRequest(
+        provider.id,
+        new URL(discovery.tokenEndpoint),
+        {
+          method: "POST",
+          headers,
+          body: Buffer.from(form.toString(), "utf8"),
+        },
+      );
+      const response = result.value as Record<string, unknown>;
+      if (
+        typeof response.id_token !== "string" ||
+        response.id_token.length < 1 ||
+        Buffer.byteLength(response.id_token, "utf8") > 65_536
+      ) throw new Error("missing ID token");
+      return response.id_token;
+    } catch {
+      throw new OidcTrustError();
+    }
+  }
+
   private async jsonRequest(
     providerId: string,
     url: URL,
+    request: {
+      method: "POST";
+      headers: Record<string, string>;
+      body: Uint8Array;
+    } | undefined = undefined,
   ): Promise<{ value: unknown; ttlMs: number }> {
     const release = this.#limiter.acquire(providerId);
     if (release === undefined) throw new OidcTrustError();
@@ -147,8 +209,9 @@ export class OidcTrustClient {
       const response = await this.network.request({
         url,
         address,
-        method: "GET",
-        headers: { accept: "application/json" },
+        method: request?.method ?? "GET",
+        headers: request?.headers ?? { accept: "application/json" },
+        ...(request === undefined ? {} : { body: request.body }),
         timeoutMs: this.limits.networkTimeoutMs,
         maxBodyBytes: this.limits.maxResponseBodyBytes,
       });
@@ -231,6 +294,27 @@ export class OidcTrustClient {
     }
     cache.set(key, { value, expiresAt: this.now() + ttlMs });
   }
+}
+
+function readClientSecret(path: string): string {
+  const value = readFileSync(path, "utf8");
+  if (
+    value.length < 1 ||
+    Buffer.byteLength(value, "utf8") > 4_096 ||
+    /[\0\r\n]/.test(value)
+  ) throw new Error("invalid client secret");
+  return value;
+}
+
+function formComponent(value: string): string {
+  return new URLSearchParams({ value }).toString().slice("value=".length);
+}
+
+function isRefreshableJwksFailure(error: unknown): boolean {
+  if (error === null || typeof error !== "object" || !("code" in error)) return false;
+  const code = (error as { code?: unknown }).code;
+  return code === "ERR_JWKS_NO_MATCHING_KEY" ||
+    code === "ERR_JWS_SIGNATURE_VERIFICATION_FAILED";
 }
 
 function validAuthorizedParty(payload: JWTPayload, clientId: string): boolean {

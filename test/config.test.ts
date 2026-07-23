@@ -252,6 +252,8 @@ describe("config validation", () => {
         "canonical HTTPS"],
       [(raw) => { raw.identity.oidc.providers.workforce.redirect_origin = "https://other.example.org"; },
         "must exactly match"],
+      [(raw) => { raw.identity.oidc.providers.workforce.client_id = "client\r\ninjected"; },
+        "Invalid config"],
       [(raw) => { raw.identity.oidc.providers.workforce.scopes = ["profile"]; },
         "include openid"],
       [(raw) => { raw.identity.oidc.providers.workforce.scopes = ["openid", "openid"]; },

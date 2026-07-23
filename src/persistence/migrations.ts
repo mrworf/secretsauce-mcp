@@ -456,6 +456,114 @@ CREATE INDEX identity_invalidation_events_user_idx
   ON identity_invalidation_events (user_id, created_at, id);
 `;
 
+const migration0007 = `
+ALTER TABLE users ADD COLUMN email_source TEXT NOT NULL DEFAULT 'local'
+  CHECK (length(email_source) BETWEEN 1 AND 69);
+ALTER TABLE users ADD COLUMN given_name_source TEXT NOT NULL DEFAULT 'local'
+  CHECK (length(given_name_source) BETWEEN 1 AND 69);
+ALTER TABLE users ADD COLUMN family_name_source TEXT NOT NULL DEFAULT 'local'
+  CHECK (length(family_name_source) BETWEEN 1 AND 69);
+
+ALTER TABLE external_identities ADD COLUMN last_authenticated_at INTEGER
+  CHECK (last_authenticated_at IS NULL OR last_authenticated_at >= 0);
+ALTER TABLE external_identities ADD COLUMN last_claim_update_at INTEGER
+  CHECK (last_claim_update_at IS NULL OR last_claim_update_at >= 0);
+
+CREATE TABLE identity_oidc_flows (
+  id TEXT PRIMARY KEY CHECK (
+    length(id) = 36 AND id = lower(id)
+    AND substr(id, 15, 1) = '7'
+    AND substr(id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND id NOT GLOB '*[^0-9a-f-]*'
+  ),
+  provider_id TEXT NOT NULL CHECK (
+    length(provider_id) BETWEEN 1 AND 64
+    AND provider_id = lower(provider_id)
+    AND provider_id NOT GLOB '*[^a-z0-9_.-]*'
+  ),
+  purpose TEXT NOT NULL CHECK (
+    purpose IN ('login', 'restricted_link', 'superadmin_link')
+  ),
+  state_hash TEXT NOT NULL UNIQUE CHECK (
+    length(state_hash) = 64
+    AND state_hash = lower(state_hash)
+    AND state_hash NOT GLOB '*[^0-9a-f]*'
+  ),
+  envelope_json TEXT NOT NULL CHECK (
+    length(envelope_json) BETWEEN 1 AND 8192
+    AND json_valid(envelope_json)
+  ),
+  target_user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
+  actor_user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
+  actor_session_id TEXT CHECK (
+    actor_session_id IS NULL OR length(actor_session_id) = 36
+  ),
+  target_version INTEGER CHECK (
+    target_version IS NULL OR target_version > 0
+  ),
+  redirect_uri TEXT NOT NULL CHECK (
+    length(redirect_uri) BETWEEN 8 AND 2048
+  ),
+  created_at INTEGER NOT NULL CHECK (created_at >= 0),
+  expires_at INTEGER NOT NULL CHECK (expires_at > created_at),
+  claimed_at INTEGER CHECK (
+    claimed_at IS NULL OR claimed_at >= created_at
+  ),
+  consumed_at INTEGER CHECK (
+    consumed_at IS NULL OR (
+      claimed_at IS NOT NULL AND consumed_at >= claimed_at
+    )
+  ),
+  version INTEGER NOT NULL DEFAULT 1 CHECK (version > 0)
+) STRICT;
+
+CREATE INDEX identity_oidc_flows_expiry_idx
+  ON identity_oidc_flows (expires_at, state_hash);
+CREATE INDEX identity_oidc_flows_target_idx
+  ON identity_oidc_flows (target_user_id, provider_id, created_at);
+
+ALTER TABLE identity_invalidation_events RENAME TO identity_invalidation_events_v6;
+
+CREATE TABLE identity_invalidation_events (
+  id TEXT PRIMARY KEY CHECK (
+    length(id) = 36 AND id = lower(id)
+    AND substr(id, 15, 1) = '7'
+    AND substr(id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND id NOT GLOB '*[^0-9a-f-]*'
+  ),
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  reason TEXT NOT NULL CHECK (
+    reason IN (
+      'password_reset', 'totp_reset', 'password_change', 'totp_change',
+      'break_glass', 'enrollment', 'profile_email_change', 'suspension',
+      'reactivation', 'deactivation', 'role_change', 'enrollment_restore',
+      'provider_link_change'
+    )
+  ),
+  browser_sessions_revoked INTEGER NOT NULL CHECK (browser_sessions_revoked >= 0),
+  restricted_sessions_revoked INTEGER NOT NULL CHECK (restricted_sessions_revoked >= 0),
+  created_at INTEGER NOT NULL CHECK (created_at >= 0),
+  dispatched_at INTEGER CHECK (dispatched_at IS NULL OR dispatched_at >= created_at),
+  attempts INTEGER NOT NULL DEFAULT 0 CHECK (attempts >= 0)
+) STRICT;
+
+INSERT INTO identity_invalidation_events (
+  id, user_id, reason, browser_sessions_revoked, restricted_sessions_revoked,
+  created_at, dispatched_at, attempts
+)
+SELECT
+  id, user_id, reason, browser_sessions_revoked, restricted_sessions_revoked,
+  created_at, dispatched_at, attempts
+FROM identity_invalidation_events_v6;
+
+DROP TABLE identity_invalidation_events_v6;
+
+CREATE INDEX identity_invalidation_events_dispatch_idx
+  ON identity_invalidation_events (dispatched_at, created_at, id);
+CREATE INDEX identity_invalidation_events_user_idx
+  ON identity_invalidation_events (user_id, created_at, id);
+`;
+
 export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [
   {
     version: 1,
@@ -486,6 +594,11 @@ export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [
     version: 6,
     name: "user_administration_lifecycle",
     sql: migration0006,
+  },
+  {
+    version: 7,
+    name: "generic_oidc_provider",
+    sql: migration0007,
   },
 ];
 

@@ -140,7 +140,7 @@ const oidcAssuranceClauseSchema = z.object({
 const oidcProviderSchema = z.object({
   display_name: z.string().trim().min(1).max(120),
   issuer: z.string().min(1).max(2048),
-  client_id: z.string().min(1).max(512),
+  client_id: z.string().min(1).max(512).regex(/^[^\u0000-\u001f\u007f]+$/),
   client_secret_file: z.string().trim().min(1).max(4096).optional(),
   redirect_origin: z.string().url(),
   scopes: z.array(z.string().min(1).max(128).regex(/^[A-Za-z0-9][A-Za-z0-9._:-]*$/))

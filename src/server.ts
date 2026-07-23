@@ -36,10 +36,25 @@ export function createGatewayServer(
   const server = createServer(async (request, response) => {
     if (request.method === "GET" && request.url === "/health") {
       logger.debug("http.health", { method: request.method, path: "/health", service_count: Object.keys(config.services).length });
-      writeJson(response, auditSink.degraded ? 503 : 200, {
-        status: auditSink.degraded ? "not_ready" : "ready",
+      const persistenceReadiness = runtime.persistence?.readiness;
+      const persistenceDegraded = persistenceReadiness !== undefined && (
+        persistenceReadiness.database !== "ready" ||
+        persistenceReadiness.schema !== "ready" ||
+        persistenceReadiness.administrativeAudit !== "ready"
+      );
+      const degraded = auditSink.degraded || persistenceDegraded;
+      const checks = {
+        ...(auditSink.degraded ? { audit: "degraded" as const } : {}),
+        ...(persistenceReadiness === undefined ? {} : {
+          database: persistenceReadiness.database,
+          schema: persistenceReadiness.schema,
+          administrative_audit: persistenceReadiness.administrativeAudit,
+        }),
+      };
+      writeJson(response, degraded ? 503 : 200, {
+        status: degraded ? "not_ready" : "ready",
         service_count: Object.keys(config.services).length,
-        ...(auditSink.degraded ? { checks: { audit: "degraded" } } : {}),
+        ...(Object.keys(checks).length === 0 ? {} : { checks }),
       });
       return;
     }

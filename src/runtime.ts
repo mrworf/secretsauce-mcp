@@ -4,6 +4,8 @@ import { createSecretRuntime, type SecretRuntime } from "./secretRuntime.js";
 import type { GatewayConfig } from "./types.js";
 import { createCapabilityDependencies, type CapabilityDependencies } from "./capabilities.js";
 import { BuiltinOAuthRuntime } from "./builtinOAuth.js";
+import { PersistenceWorker, type PersistenceOwner } from "./persistence/worker.js";
+import { PACKAGE_VERSION } from "./version.js";
 
 export interface GatewayRuntimeOptions {
   auditSink?: AuditSink;
@@ -12,6 +14,7 @@ export interface GatewayRuntimeOptions {
   startMaintenance?: (config: GatewayConfig) => () => void;
   builtinOAuth?: BuiltinOAuthRuntime;
   maintenance?: MaintenanceRegistry;
+  persistence?: PersistenceOwner;
 }
 
 export class GatewayRuntime {
@@ -20,13 +23,23 @@ export class GatewayRuntime {
   readonly capabilities: CapabilityDependencies;
   readonly builtinOAuth: BuiltinOAuthRuntime;
   readonly maintenance: MaintenanceRegistry;
+  readonly persistence: PersistenceOwner | undefined;
   readonly #stopMaintenance: () => void;
   #closePromise: Promise<void> | undefined;
 
   constructor(readonly config: GatewayConfig, options: GatewayRuntimeOptions = {}) {
     const auditSink = options.auditSink ?? new AuditSink(config);
+    let persistence: PersistenceOwner | undefined;
     let secretRuntime: SecretRuntime | undefined;
     try {
+      persistence = options.persistence ?? (
+        config.persistence === undefined
+          ? undefined
+          : PersistenceWorker.open({
+            databaseFile: config.persistence.databaseFile,
+            productVersion: PACKAGE_VERSION,
+          })
+      );
       const capabilities = options.capabilities ?? createCapabilityDependencies(config, auditSink);
       secretRuntime = options.secretRuntime ?? createSecretRuntime(config, capabilities.tokenBroker);
       const builtinOAuth = options.builtinOAuth ?? new BuiltinOAuthRuntime(config);
@@ -40,9 +53,11 @@ export class GatewayRuntime {
       this.capabilities = capabilities;
       this.builtinOAuth = builtinOAuth;
       this.maintenance = maintenance;
+      this.persistence = persistence;
       this.#stopMaintenance = stopMaintenance;
     } catch (error) {
       auditSink.close();
+      if (persistence !== undefined) void persistence.close();
       if (secretRuntime !== undefined) void secretRuntime.pool.close();
       throw error;
     }
@@ -56,6 +71,9 @@ export class GatewayRuntime {
   private async closeOwnedResources(): Promise<void> {
     const errors: unknown[] = [];
     try { this.#stopMaintenance(); } catch (error) { errors.push(error); }
+    if (this.persistence !== undefined) {
+      try { await this.persistence.close(); } catch (error) { errors.push(error); }
+    }
     this.auditSink.close();
     try { await this.secretRuntime.pool.close(); } catch (error) { errors.push(error); }
     if (errors.length > 0) throw new AggregateError(errors, "Gateway runtime close failed.");

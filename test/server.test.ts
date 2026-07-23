@@ -35,6 +35,47 @@ describe("health server", () => {
     }
   });
 
+  it("reports configured persistence readiness without exposing its path", async () => {
+    const config = serverConfig();
+    const databaseFile = join(mkdtempSync(join(tmpdir(), "gateway-server-db-")), "private-control.sqlite");
+    config.persistence = { databaseFile };
+    const runtime = new GatewayRuntime(config);
+    const server = createGatewayServer(config, { runtime });
+    server.listen(0, "127.0.0.1");
+    await once(server, "listening");
+
+    try {
+      const ready = await fetchHealth(server);
+      expect(ready.response.status).toBe(200);
+      expect(ready.body).toEqual({
+        status: "ready",
+        service_count: 1,
+        checks: {
+          database: "ready",
+          schema: "ready",
+          administrative_audit: "ready",
+        },
+      });
+      expect(JSON.stringify(ready.body)).not.toContain(databaseFile);
+
+      await runtime.persistence?.close();
+      const unavailable = await fetchHealth(server);
+      expect(unavailable.response.status).toBe(503);
+      expect(unavailable.body).toEqual({
+        status: "not_ready",
+        service_count: 1,
+        checks: {
+          database: "unavailable",
+          schema: "unsupported",
+          administrative_audit: "unavailable",
+        },
+      });
+      expect(JSON.stringify(unavailable.body)).not.toContain(databaseFile);
+    } finally {
+      server.close();
+    }
+  });
+
   it("serves only allowlisted public brand assets", async () => {
     const server = createGatewayServer(serverConfig());
     server.listen(0, "127.0.0.1");
@@ -235,6 +276,22 @@ describe("health server", () => {
     expect(auditSink.closed).toBe(true);
     await expect(secretRuntime.pool.scan("actor", "benign", [], 100))
       .rejects.toBeInstanceOf(SecretScanBusyError);
+  });
+
+  it("releases configured persistence after partial runtime initialization failure", async () => {
+    const config = serverConfig();
+    const databaseFile = join(mkdtempSync(join(tmpdir(), "gateway-runtime-db-failure-")), "control.sqlite");
+    config.persistence = { databaseFile };
+
+    expect(() => new GatewayRuntime(config, {
+      startMaintenance: () => {
+        throw new Error("maintenance startup failed");
+      },
+    })).toThrow("maintenance startup failed");
+    await new Promise((resolve) => setImmediate(resolve));
+
+    const replacement = new GatewayRuntime(config);
+    await replacement.close();
   });
 
   it("keeps separately configured runtime scanner lifecycles independent", async () => {

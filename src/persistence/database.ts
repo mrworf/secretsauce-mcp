@@ -22,6 +22,12 @@ interface MigrationRow {
   checksum: string;
 }
 
+export interface PersistenceReadiness {
+  database: "ready" | "unavailable";
+  schema: "ready" | "unsupported";
+  administrativeAudit: "ready" | "unavailable";
+}
+
 export class PersistenceDatabase {
   readonly #database: Database.Database;
   #closed = false;
@@ -73,6 +79,28 @@ export class PersistenceDatabase {
     ).all() as MigrationRow[];
   }
 
+  readiness(expectedSchemaVersion = PERSISTENCE_MIGRATIONS.length): PersistenceReadiness {
+    if (this.#closed) return unavailableReadiness();
+    try {
+      const databaseReady = this.#database.prepare("SELECT 1 AS ready").get() !== undefined;
+      const schemaReady =
+        this.schemaVersion === expectedSchemaVersion &&
+        this.#database.pragma("quick_check", { simple: true }) === "ok";
+      const auditReady = this.#database.prepare(`
+        SELECT 1 AS present
+        FROM sqlite_master
+        WHERE type = 'table' AND name = 'administrative_audit_events'
+      `).get() !== undefined;
+      return {
+        database: databaseReady ? "ready" : "unavailable",
+        schema: schemaReady ? "ready" : "unsupported",
+        administrativeAudit: auditReady ? "ready" : "unavailable",
+      };
+    } catch {
+      return unavailableReadiness();
+    }
+  }
+
   close(): void {
     if (this.#closed) return;
     this.#closed = true;
@@ -86,6 +114,14 @@ export class PersistenceDatabase {
   private assertOpen(): void {
     if (this.#closed) throw new PersistenceError("persistence_closed");
   }
+}
+
+function unavailableReadiness(): PersistenceReadiness {
+  return {
+    database: "unavailable",
+    schema: "unsupported",
+    administrativeAudit: "unavailable",
+  };
 }
 
 function configureDatabase(database: Database.Database): void {

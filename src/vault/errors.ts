@@ -6,7 +6,11 @@ export type VaultErrorCode =
   | "vault_request_stale"
   | "vault_replay_detected"
   | "vault_capacity_exceeded"
-  | "vault_capability_invalid";
+  | "vault_capability_invalid"
+  | "vault_store_unavailable"
+  | "vault_record_invalid"
+  | "vault_record_conflict"
+  | "vault_record_not_found";
 
 export class VaultError extends Error {
   readonly code: VaultErrorCode;
@@ -28,6 +32,10 @@ export function vaultError(code: VaultErrorCode): VaultError {
     vault_replay_detected: "Vault request was already consumed.",
     vault_capacity_exceeded: "Vault request capacity is exhausted.",
     vault_capability_invalid: "Vault capability is invalid.",
+    vault_store_unavailable: "Vault store is unavailable.",
+    vault_record_invalid: "Vault record is invalid.",
+    vault_record_conflict: "Vault record state conflicts with the request.",
+    vault_record_not_found: "Vault record was not found.",
   };
   return new VaultError(code, messages[code]);
 }

@@ -39,7 +39,13 @@ export function readVaultKeyFile(file: string): Buffer {
     if (!isAbsolute(file)) throw vaultError("vault_key_invalid");
     descriptor = openSync(file, constants.O_RDONLY | constants.O_NOFOLLOW);
     const metadata = fstatSync(descriptor);
-    if (!metadata.isFile() || metadata.isSymbolicLink() || metadata.nlink !== 1 || (metadata.mode & 0o777) !== 0o400) {
+    if (
+      !metadata.isFile()
+      || metadata.isSymbolicLink()
+      || metadata.nlink !== 1
+      || (metadata.mode & 0o777) !== 0o400
+      || !isAllowedOwner(metadata.uid)
+    ) {
       throw vaultError("vault_key_invalid");
     }
     const source = readFileSync(descriptor, "utf8");
@@ -60,7 +66,12 @@ export function createVaultKeyFile(file: string, random: (size: number) => Buffe
   if (!isAbsolute(file)) throw vaultError("vault_key_invalid");
   const parent = dirname(file);
   const parentMetadata = safeLstat(parent);
-  if (!parentMetadata.isDirectory() || parentMetadata.isSymbolicLink() || (parentMetadata.mode & 0o022) !== 0) {
+  if (
+    !parentMetadata.isDirectory()
+    || parentMetadata.isSymbolicLink()
+    || (parentMetadata.mode & 0o022) !== 0
+    || !isAllowedOwner(parentMetadata.uid)
+  ) {
     throw vaultError("vault_key_invalid");
   }
   const key = random(KEY_BYTES);
@@ -99,4 +110,9 @@ function safeLstat(path: string): Stats {
   } catch {
     throw vaultError("vault_key_invalid");
   }
+}
+
+function isAllowedOwner(uid: number): boolean {
+  const current = process.getuid?.();
+  return current === undefined || uid === current || uid === 0;
 }

@@ -2,10 +2,10 @@ milestones:
   - id: "00"
     title: "Architecture Baseline"
     file: "docs/milestones/00-architecture.md"
-    status: "in_progress"
-    completed_at: null
-    commit_hash: null
-    notes: ""
+    status: "completed"
+    completed_at: "2026-07-23T15:26:59.212Z"
+    commit_hash: "dc13398"
+    notes: "Approved v2 architecture packet; focused 7/7, build, and full 379/379 tests pass."
   - id: "01"
     title: "Persistence And Audit Foundation"
     file: "docs/milestones/01-persistence-audit-foundation.md"

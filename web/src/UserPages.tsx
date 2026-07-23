@@ -5,10 +5,12 @@ import {
   ControlApiError,
   type ControlApi,
   type ControlUser,
+  type GroupControlApi,
   type OneTimeUser,
   type OidcControlApi,
   type OidcManagementApi,
   type OidcManagementLink,
+  type OwnService,
   type UserAction,
   type UserProfileInput,
   type UserRole,
@@ -177,13 +179,23 @@ export function UsersPage({
   );
 }
 
-export function ProfilePage({ api = browserControlApi }: { api?: ControlApi }) {
+export function ProfilePage({
+  api = browserControlApi,
+}: {
+  api?: ControlApi & Pick<GroupControlApi, "ownServices">;
+}) {
   const [user, setUser] = useState<ControlUser>();
+  const [services, setServices] = useState<OwnService[]>([]);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    api.self().then(setUser).catch((caught) => setError(messageFor(caught)));
+    Promise.all([api.self(), api.ownServices()])
+      .then(([profile, result]) => {
+        setUser(profile);
+        setServices(result.services);
+      })
+      .catch((caught) => setError(messageFor(caught)));
   }, [api]);
 
   return (
@@ -207,6 +219,22 @@ export function ProfilePage({ api = browserControlApi }: { api?: ControlApi }) {
             />
           )}
         {saved && <p className="success-copy" role="status">Profile saved.</p>}
+      </section>
+      <section className="content-panel">
+        <p className="card-kicker">Current authorization</p>
+        <h2>My services</h2>
+        {services.length === 0 ? (
+          <p className="muted-copy">No services are currently assigned to your account.</p>
+        ) : (
+          <ul className="own-service-list">
+            {services.map((service) => (
+              <li key={service.id}>
+                <strong>{service.name}</strong>
+                <span>{service.slug}</span>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
       <section className="content-panel">
         <h2>Security</h2>

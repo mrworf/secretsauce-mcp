@@ -117,6 +117,56 @@ export interface ServiceProfileInput {
   documentation_url?: string;
 }
 
+export interface ServiceGroup {
+  id: string;
+  service_id: string;
+  name: string;
+  description?: string;
+  lifecycle: "active" | "archived";
+  member_count: number;
+  version: number;
+  created_at: number;
+  updated_at: number;
+}
+
+export interface ServiceGroupMember {
+  id: string;
+  email: string;
+  given_name: string;
+  family_name: string;
+  status: UserStatus;
+}
+
+export interface ServiceAssignments {
+  service_id: string;
+  selector?: {
+    kind: "all" | "explicit";
+    group_ids: string[];
+    user_ids: string[];
+  };
+  version: number;
+  authorization_generation: number;
+}
+
+export interface EffectiveServiceAccess {
+  service_id: string;
+  user_id: string;
+  email: string;
+  given_name: string;
+  family_name: string;
+  contributions: Array<
+    | { kind: "all" }
+    | { kind: "direct" }
+    | { kind: "group"; group_id: string; group_name: string }
+  >;
+}
+
+export interface OwnService {
+  id: string;
+  slug: string;
+  name: string;
+}
+
 export interface ServiceDestinationInput {
   slug: string;
   base_url: string;
@@ -240,6 +290,40 @@ export interface ServiceControlApi {
   ): Promise<{ service_id: string; deleted: true }>;
 }
 
+export interface GroupControlApi
+  extends Pick<ServiceControlApi, "listServices">,
+    Pick<ControlApi, "listUsers"> {
+  listGroups(serviceId: string): Promise<{ groups: ServiceGroup[] }>;
+  createGroup(
+    serviceId: string,
+    input: { name: string; description?: string },
+  ): Promise<ServiceGroup>;
+  updateGroup(
+    group: ServiceGroup,
+    input: { name: string; description?: string },
+  ): Promise<ServiceGroup>;
+  groupMembers(
+    serviceId: string,
+    groupId: string,
+  ): Promise<{ members: ServiceGroupMember[] }>;
+  replaceGroupMembers(group: ServiceGroup, userIds: string[]): Promise<ServiceGroup>;
+  archiveGroup(group: ServiceGroup, justification: string): Promise<ServiceGroup>;
+  deleteGroup(
+    group: ServiceGroup,
+    justification: string,
+  ): Promise<{ group_id: string; deleted: true; replayed: boolean }>;
+  serviceAssignments(serviceId: string): Promise<ServiceAssignments>;
+  replaceServiceAssignments(
+    assignments: ServiceAssignments,
+    input:
+      | { kind: "all" }
+      | { kind: "principals"; group_ids: string[]; user_ids: string[];
+        direct_assignment_confirmed: boolean },
+  ): Promise<ServiceAssignments>;
+  serviceAccess(serviceId: string): Promise<{ access: EffectiveServiceAccess[] }>;
+  ownServices(): Promise<{ services: OwnService[] }>;
+}
+
 export interface OidcControlApi {
   oidcProviders(): Promise<{ providers: OidcProviderLabel[] }>;
   beginOidc(providerId: string): Promise<{ authorization_url: string; expires_at: number }>;
@@ -294,7 +378,7 @@ export type UserAction =
   | "delete";
 
 export const browserControlApi:
-  ControlApi & OidcControlApi & OidcManagementApi & ServiceControlApi = {
+  ControlApi & OidcControlApi & OidcManagementApi & ServiceControlApi & GroupControlApi = {
   session: () => get<ControlSession>("/api/v2/auth/session"),
   oidcProviders: () => get<{ providers: OidcProviderLabel[] }>("/api/v2/auth/oidc/providers"),
   beginOidc: (providerId) => {
@@ -455,6 +539,62 @@ export const browserControlApi:
     ),
   deleteService: (service, justification, password, totp) =>
     deleteServiceWithStepUp(service, justification, password, totp),
+  listGroups: (serviceId) =>
+    get(`/api/v2/services/${encodeURIComponent(serviceId)}/groups`),
+  createGroup: (serviceId, input) =>
+    mutation(
+      `/api/v2/services/${encodeURIComponent(serviceId)}/groups`,
+      "POST",
+      input,
+      undefined,
+      true,
+    ),
+  updateGroup: (group, input) =>
+    mutation(
+      `/api/v2/services/${group.service_id}/groups/${group.id}`,
+      "PATCH",
+      input,
+      group.version,
+    ),
+  groupMembers: (serviceId, groupId) =>
+    get(`/api/v2/services/${encodeURIComponent(serviceId)}/groups/${encodeURIComponent(groupId)}/members`),
+  replaceGroupMembers: (group, userIds) =>
+    mutation(
+      `/api/v2/services/${group.service_id}/groups/${group.id}/members`,
+      "PUT",
+      { user_ids: userIds },
+      group.version,
+      true,
+    ),
+  archiveGroup: (group, justification) =>
+    mutation(
+      `/api/v2/services/${group.service_id}/groups/${group.id}/archive`,
+      "POST",
+      { justification },
+      group.version,
+      true,
+    ),
+  deleteGroup: (group, justification) =>
+    mutation(
+      `/api/v2/services/${group.service_id}/groups/${group.id}`,
+      "DELETE",
+      { justification },
+      group.version,
+      true,
+    ),
+  serviceAssignments: (serviceId) =>
+    get(`/api/v2/services/${encodeURIComponent(serviceId)}/assignments`),
+  replaceServiceAssignments: (assignments, input) =>
+    mutation(
+      `/api/v2/services/${assignments.service_id}/assignments`,
+      "PUT",
+      input,
+      assignments.version,
+      true,
+    ),
+  serviceAccess: (serviceId) =>
+    get(`/api/v2/services/${encodeURIComponent(serviceId)}/access`),
+  ownServices: () => get("/api/v2/users/me/services"),
 };
 
 function safeProviderId(providerId: string): string {

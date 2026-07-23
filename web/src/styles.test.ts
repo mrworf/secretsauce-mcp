@@ -29,4 +29,12 @@ describe("responsive control shell styles", () => {
     );
     expect(styles).toMatch(/\.code-input \{[\s\S]*max-width: 100%/);
   });
+
+  it("keeps group cards stacked on narrow screens and separates exceptional assignments", () => {
+    expect(styles).toMatch(/\.group-layout,[\s\S]*display: grid/);
+    expect(styles).toMatch(
+      /@media \(min-width: 1200px\)[\s\S]*\.group-layout \{[\s\S]*grid-template-columns:/,
+    );
+    expect(styles).toMatch(/\.direct-assignment \{[\s\S]*border-width: 2px/);
+  });
 });

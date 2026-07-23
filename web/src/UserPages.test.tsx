@@ -8,6 +8,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type {
   ControlApi,
   ControlUser,
+  GroupControlApi,
   UserAction,
   UserProfileInput,
   UserRole,
@@ -96,6 +97,8 @@ describe("user and profile views", () => {
       expect.objectContaining({ given_name: "Updated" }),
     ));
     expect(await screen.findByRole("status")).toHaveTextContent("Profile saved");
+    expect(screen.getByRole("heading", { name: "My services" })).toBeInTheDocument();
+    expect(screen.getByText("Assigned API")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Open security actions" }))
       .toHaveAttribute("href", "/security");
   });
@@ -115,7 +118,7 @@ const TARGET: ControlUser = {
   updated_at: 1,
 };
 
-function fakeApi(): ControlApi & {
+function fakeApi(): ControlApi & Pick<GroupControlApi, "ownServices"> & {
   listUsers: ReturnType<typeof vi.fn<ControlApi["listUsers"]>>;
   updateSelf: ReturnType<typeof vi.fn<ControlApi["updateSelf"]>>;
   userAction: ReturnType<typeof vi.fn<ControlApi["userAction"]>>;
@@ -150,6 +153,13 @@ function fakeApi(): ControlApi & {
       expires_at: 10,
     }),
     self: async () => TARGET,
+    ownServices: async () => ({
+      services: [{
+        id: "018f1f2e-7b3c-7a10-8000-000000000099",
+        slug: "assigned-api",
+        name: "Assigned API",
+      }],
+    }),
     listUsers,
     updateSelf,
     updateUser: async (target, profile) => ({

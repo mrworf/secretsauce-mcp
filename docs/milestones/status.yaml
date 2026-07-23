@@ -58,10 +58,10 @@ milestones:
   - id: "08"
     title: "Generic OIDC Provider"
     file: "docs/milestones/08-generic-oidc-provider.md"
-    status: "in_progress"
-    completed_at: null
-    commit_hash: null
-    notes: "Decision-complete implementation planning and security review in progress."
+    status: "completed"
+    completed_at: "2026-07-23T21:17:07.006Z"
+    commit_hash: "8b4225c"
+    notes: "Implemented bounded pinned OIDC trust, verified single-use flows, exact immutable provider linking, provider-independent sessions, guarded link lifecycle, responsive UX, and operator guidance; OpenAPI current; 74 files / 591 tests passed."
   - id: "09"
     title: "Service Management"
     file: "docs/milestones/09-service-management.md"

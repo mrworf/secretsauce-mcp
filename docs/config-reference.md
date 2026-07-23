@@ -79,6 +79,13 @@ control listener. It requires both `control` and `persistence`. See
 [Local browser authentication](local-authentication.md) for the complete
 configuration, key-mount, session, step-up, and operational security contract.
 
+The optional `identity.oidc` block adds standards-compliant external browser
+authentication without changing MCP authentication. Provider issuer, client,
+callback, assurance, claim-ownership, network, cache, and flow settings are
+documented in [Generic OIDC identity provider](oidc-identity-provider.md).
+`redirect_origin` must exactly equal `control.public_origin`; provider subjects
+are linked explicitly and matching email never authenticates or links a user.
+
 `identity.temporary_password_ttl` defaults to `72h` and is bounded from `1h`
 through `7d`. `identity.restricted_session_ttl` defaults to `15m` and is bounded
 from `5m` through `30m`. Restricted enrollment cookies never authorize ordinary

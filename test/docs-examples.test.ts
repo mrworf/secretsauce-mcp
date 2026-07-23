@@ -145,6 +145,21 @@ describe("documentation examples", () => {
     expect(docs).toContain("checks.identity");
     expect(docs).not.toMatch(/https?:\/\/(?!control\.example\.org)[a-z0-9.-]+/i);
   });
+
+  it("documents generic OIDC setup without unsafe identity shortcuts or real hosts", () => {
+    const docs = readFileSync("docs/oidc-identity-provider.md", "utf8");
+
+    expect(docs).toContain("/api/v2/auth/oidc/workforce/callback");
+    expect(docs).toContain("Matching email addresses never authenticate or link users");
+    expect(docs).toContain("`redirect_origin` must exactly equal `control.public_origin`");
+    expect(docs).toContain("Alternatives are ORed");
+    expect(docs).toContain("`acr` and `amr` are ANDed");
+    expect(docs).toContain("mode `0400`");
+    expect(docs).toContain("An active user must retain another eligible authentication method");
+    expect(docs).toMatch(/does not make an external identity MCP-eligible by\s+itself/);
+    expect(docs).not.toMatch(/https?:\/\/(?![a-z0-9.-]*example\.org)[a-z0-9.-]+/i);
+    expect(docs).not.toMatch(/client_secret:\s+\S+/);
+  });
 });
 
 function collectFiles(root: string): string[] {

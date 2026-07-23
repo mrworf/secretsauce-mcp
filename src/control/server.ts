@@ -1,0 +1,187 @@
+import cookie from "@fastify/cookie";
+import Fastify, {
+  type FastifyInstance,
+  type FastifyRequest,
+  LogController,
+} from "fastify";
+import { createLogger, type Logger } from "../logger.js";
+import {
+  PersistenceWorker,
+  type PersistenceOwner,
+} from "../persistence/worker.js";
+import { createRequestId } from "../requestId.js";
+import { configuredAuditTextSanitizer } from "../runtime.js";
+import type { GatewayConfig } from "../types.js";
+import { PACKAGE_VERSION } from "../version.js";
+import {
+  denyControlAuthentication,
+  controlAuthentication,
+  type ControlAuthenticator,
+} from "./authentication.js";
+import {
+  CONTROL_BODY_LIMIT_BYTES,
+  controlSecurityHooks,
+  publicControlRoute,
+  sendControlError,
+} from "./security.js";
+
+export interface ControlApplicationOptions {
+  authenticator?: ControlAuthenticator;
+  logger?: Logger;
+  persistence?: PersistenceOwner;
+  registerRoutes?: (application: FastifyInstance) => void | Promise<void>;
+}
+
+export function createControlApplication(
+  config: GatewayConfig,
+  options: ControlApplicationOptions = {},
+): FastifyInstance {
+  const control = config.control;
+  if (control === undefined) throw new Error("Control configuration is required.");
+  const logger = options.logger ?? createLogger(config.logging);
+  const authenticator = options.authenticator ?? denyControlAuthentication;
+  const application = Fastify({
+    logger: false,
+    trustProxy: false,
+    bodyLimit: CONTROL_BODY_LIMIT_BYTES,
+    requestIdHeader: false,
+    genReqId: createRequestId,
+    logController: new LogController({ disableRequestLogging: true }),
+  });
+  void application.register(cookie);
+  const security = controlSecurityHooks(control, authenticator);
+  application.addHook("onRequest", security.onRequest);
+  application.addHook("onSend", security.onSend);
+  application.addHook("onResponse", async (request, reply) => {
+    const authentication = controlAuthentication(request);
+    logger.info("control.request_completed", {
+      request_id: request.id,
+      method: request.method,
+      route: registeredRoute(request),
+      status_code: reply.statusCode,
+      duration_class: durationClass(reply.elapsedTime),
+      ...(authentication === undefined ? {} : {
+        principal_id: authentication.principalId,
+        authentication_method: authentication.method,
+      }),
+    });
+  });
+
+  application.get("/api/v2/health", {
+    config: publicControlRoute(),
+  }, async (_request, reply) => {
+    const readiness = options.persistence?.readiness;
+    const ready = readiness === undefined || (
+      readiness.database === "ready" &&
+      readiness.schema === "ready" &&
+      readiness.administrativeAudit === "ready"
+    );
+    return reply.code(ready ? 200 : 503).send({
+      data: {
+        status: ready ? "ready" : "not_ready",
+        checks: readiness === undefined
+          ? {}
+          : {
+              database: readiness.database,
+              schema: readiness.schema,
+              administrative_audit: readiness.administrativeAudit,
+            },
+      },
+      meta: {
+        request_id: reply.request.id,
+        api_version: "v2",
+      },
+    });
+  });
+
+  application.get("/control", {
+    config: publicControlRoute(),
+  }, async (_request, reply) => reply.redirect("/control/"));
+  application.get("/control/", {
+    config: publicControlRoute(),
+  }, async (_request, reply) => reply
+    .type("text/html; charset=utf-8")
+    .send("<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>SecretSauce Control</title></head><body><main><h1>SecretSauce</h1><p>Control plane foundation is ready.</p></main></body></html>"));
+
+  if (options.registerRoutes !== undefined) {
+    void application.register(async (scope) => options.registerRoutes?.(scope));
+  }
+  application.setErrorHandler((error, request, reply) => {
+    const receivedStatus = errorStatusCode(error);
+    const statusCode = receivedStatus === 413 ? 413 : receivedStatus === 400 ? 400 : 500;
+    if (statusCode === 500) {
+      logger.error("control.request_failed", {
+        request_id: request.id,
+        method: request.method,
+        route: registeredRoute(request),
+        error_type: error instanceof Error ? error.name : "UnknownError",
+      });
+    }
+    sendControlError(
+      reply,
+      request.id,
+      statusCode,
+      statusCode === 500 ? "internal_error" : "invalid_request",
+      statusCode === 500 ? "The request could not be completed." : "The request is invalid.",
+    );
+  });
+  application.setNotFoundHandler((request, reply) => {
+    sendControlError(reply, request.id, 404, "not_found", "Not found.");
+  });
+  return application;
+}
+
+export interface ControlServerApplication {
+  server: FastifyInstance;
+  persistence: PersistenceOwner;
+  close(): Promise<void>;
+}
+
+export async function startControlServer(config: GatewayConfig): Promise<ControlServerApplication> {
+  if (config.control === undefined || config.persistence === undefined) {
+    throw new Error("Control and persistence configuration are required.");
+  }
+  const persistence = PersistenceWorker.open({
+    databaseFile: config.persistence.databaseFile,
+    productVersion: PACKAGE_VERSION,
+    sanitizeAuditText: configuredAuditTextSanitizer(config),
+  });
+  const server = createControlApplication(config, { persistence });
+  try {
+    await server.listen({
+      host: config.control.host,
+      port: config.control.port,
+    });
+  } catch (error) {
+    await server.close().catch(() => undefined);
+    await persistence.close();
+    throw error;
+  }
+  let closePromise: Promise<void> | undefined;
+  return {
+    server,
+    persistence,
+    close: () => {
+      closePromise ??= (async () => {
+        await server.close();
+        await persistence.close();
+      })();
+      return closePromise;
+    },
+  };
+}
+
+function registeredRoute(request: FastifyRequest): string {
+  return request.routeOptions.url ?? "unmatched";
+}
+
+function durationClass(elapsedMilliseconds: number): string {
+  if (elapsedMilliseconds < 100) return "under_100ms";
+  if (elapsedMilliseconds < 1_000) return "under_1s";
+  return "one_second_or_more";
+}
+
+function errorStatusCode(error: unknown): number | undefined {
+  if (error === null || typeof error !== "object" || !("statusCode" in error)) return undefined;
+  return typeof error.statusCode === "number" ? error.statusCode : undefined;
+}

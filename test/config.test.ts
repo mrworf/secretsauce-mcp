@@ -1,4 +1,4 @@
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { generateKeyPairSync } from "node:crypto";
@@ -111,6 +111,78 @@ describe("config validation", () => {
       raw.persistence = persistence;
       expectConfigError(() => validateConfig(raw, validEnv), "Invalid config");
     }
+  });
+
+  it("accepts a separate HTTPS control listener and loopback development origin", () => {
+    const keyFile = controlKeyFile("valid");
+    const raw = validRaw();
+    raw.persistence = { database_file: "/var/lib/secretsauce/control.sqlite" };
+    raw.server.resource = "https://mcp.example.org";
+    raw.control = {
+      listen: "127.0.0.1:8081",
+      public_origin: "https://control.example.org",
+      idempotency_hmac_key_file: keyFile,
+    };
+
+    expect(validateConfig(raw, validEnv).control).toEqual({
+      listen: "127.0.0.1:8081",
+      host: "127.0.0.1",
+      port: 8081,
+      publicOrigin: "https://control.example.org",
+      publicAuthority: "control.example.org",
+      idempotencyHmacKeyFile: keyFile,
+    });
+
+    raw.control.public_origin = "http://127.0.0.1:8081";
+    expect(validateConfig(raw, validEnv).control?.publicOrigin).toBe("http://127.0.0.1:8081");
+  });
+
+  it("rejects malformed, colliding, or unsafe control configuration without exposing key contents", () => {
+    const keyFile = controlKeyFile("negative");
+    const base = () => {
+      const raw = validRaw();
+      raw.persistence = { database_file: "/var/lib/secretsauce/control.sqlite" };
+      raw.server.resource = "https://mcp.example.org";
+      raw.control = {
+        listen: "127.0.0.1:8081",
+        public_origin: "https://control.example.org",
+        idempotency_hmac_key_file: keyFile,
+      };
+      return raw;
+    };
+    const invalid: Array<(raw: any) => void> = [
+      (raw) => { delete raw.persistence; },
+      (raw) => { raw.control.listen = "127.0.0.1:8080"; },
+      (raw) => { raw.control.listen = "missing-port"; },
+      (raw) => { raw.control.listen = "127.0.0.1:0"; },
+      (raw) => { raw.control.listen = "127.0.0.1:65536"; },
+      (raw) => { raw.control.public_origin = "https://mcp.example.org"; },
+      (raw) => { raw.control.public_origin = "http://control.example.org"; },
+      (raw) => { raw.control.public_origin = "https://user:private@control.example.org"; },
+      (raw) => { raw.control.public_origin = "https://control.example.org/path"; },
+      (raw) => { raw.control.public_origin = "https://control.example.org?private=query"; },
+      (raw) => { raw.control.public_origin = "https://control.example.org#private-fragment"; },
+      (raw) => { raw.control.unexpected = true; },
+    ];
+    for (const change of invalid) {
+      const raw = base();
+      change(raw);
+      expectGatewayConfigError(() => validateConfig(raw, validEnv));
+    }
+
+    const malformedFile = controlKeyFile("malformed", "private-key-value");
+    const malformed = base();
+    malformed.control.idempotency_hmac_key_file = malformedFile;
+    expectConfigErrorWithoutValue(
+      () => validateConfig(malformed, validEnv),
+      "private-key-value",
+    );
+
+    const permissiveFile = controlKeyFile("permissive");
+    chmodSync(permissiveFile, 0o644);
+    const permissive = base();
+    permissive.control.idempotency_hmac_key_file = permissiveFile;
+    expectConfigError(() => validateConfig(permissive, validEnv), "mode-restricted");
   });
 
   it("defaults usage enforcement off and accepts sanitized header reference templates", () => {
@@ -830,4 +902,31 @@ function expectConfigError(fn: () => unknown, message: string) {
     expect(error).toBeInstanceOf(GatewayError);
     expect((error as GatewayError).message).toContain(message);
   }
+}
+
+function expectConfigErrorWithoutValue(fn: () => unknown, prohibitedValue: string): void {
+  try {
+    fn();
+    throw new Error("Expected config error");
+  } catch (error) {
+    expect(error).toBeInstanceOf(GatewayError);
+    expect(JSON.stringify(error)).not.toContain(prohibitedValue);
+  }
+}
+
+function expectGatewayConfigError(fn: () => unknown): void {
+  try {
+    fn();
+    throw new Error("Expected config error");
+  } catch (error) {
+    expect(error).toBeInstanceOf(GatewayError);
+  }
+}
+
+function controlKeyFile(name: string, value = Buffer.alloc(32, 7).toString("base64url")): string {
+  const directory = mkdtempSync(join(tmpdir(), `secretsauce-control-key-${name}-`));
+  const file = join(directory, "idempotency.key");
+  writeFileSync(file, `${value}\n`, { mode: 0o600 });
+  chmodSync(file, 0o600);
+  return file;
 }

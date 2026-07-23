@@ -1,5 +1,5 @@
 import { createHash, createPublicKey } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { readFileSync, statSync } from "node:fs";
 import { isIP } from "node:net";
 import { domainToASCII } from "node:url";
 import { z } from "zod";
@@ -11,6 +11,7 @@ import type {
   CredentialConfig,
   CredentialSourceConfig,
   ConfigDebugDiagnostic,
+  ControlConfig,
   DestinationConfig,
   GatewayConfig,
   HostMatcherConfig,
@@ -125,6 +126,11 @@ const rawConfigSchema = z.object({
     resource: z.string().url().optional(),
     allow_insecure_oauth_http: z.boolean().default(false),
   }).default({ listen: "0.0.0.0:8080", mcp_path: "/mcp", allow_insecure_oauth_http: false }),
+  control: z.object({
+    listen: z.string().min(1),
+    public_origin: z.string().url(),
+    idempotency_hmac_key_file: z.string().trim().min(1).max(4096),
+  }).strict().optional(),
   auth: z.discriminatedUnion("mode", [
     z.object({
       mode: z.literal("oauth").default("oauth"),
@@ -243,6 +249,7 @@ export function validateConfig(raw: unknown, env: NodeJS.ProcessEnv = process.en
   validateOAuthTrustUrls(parsed, warnings);
   const server = normalizeServer(parsed.server);
   const auth = normalizeAuth(parsed.auth, env);
+  const control = normalizeControl(parsed.control, server, auth, parsed.persistence);
   const tokens = normalizeTokens(parsed.tokens);
   const limits = normalizeLimits(parsed.limits);
   const logging: LoggingConfig = { level: parsed.logging.level };
@@ -258,6 +265,7 @@ export function validateConfig(raw: unknown, env: NodeJS.ProcessEnv = process.en
 
   return {
     server,
+    ...(control === undefined ? {} : { control }),
     auth,
     tokens,
     limits,
@@ -365,6 +373,123 @@ function normalizeServer(raw: RawConfig["server"]): ServerConfig {
     allowInsecureOAuthHttp: raw.allow_insecure_oauth_http,
   };
   return raw.resource === undefined ? base : { ...base, resource: raw.resource };
+}
+
+function normalizeControl(
+  raw: RawConfig["control"],
+  server: ServerConfig,
+  auth: AuthConfig,
+  persistence: RawConfig["persistence"],
+): ControlConfig | undefined {
+  if (raw === undefined) return undefined;
+  if (persistence === undefined) {
+    throw configValidationError(
+      "control requires persistence.database_file",
+      ["control"],
+    );
+  }
+  const listener = parseListen(raw.listen, ["control", "listen"]);
+  if (listener.host.toLowerCase() === server.host.toLowerCase() && listener.port === server.port) {
+    throw configValidationError(
+      "control.listen must be distinct from server.listen",
+      ["control", "listen"],
+    );
+  }
+
+  const origin = new URL(raw.public_origin);
+  const originPath: ConfigPath = ["control", "public_origin"];
+  if (
+    origin.username.length > 0 ||
+    origin.password.length > 0 ||
+    origin.pathname !== "/" ||
+    origin.search.length > 0 ||
+    origin.hash.length > 0
+  ) {
+    throw configValidationError(
+      "control.public_origin must be an origin without userinfo, path, query, or fragment",
+      originPath,
+    );
+  }
+  if (origin.protocol !== "https:" && !(origin.protocol === "http:" && isLoopbackHost(origin.hostname))) {
+    throw configValidationError(
+      "control.public_origin must use HTTPS except for loopback development",
+      originPath,
+    );
+  }
+  const publicOrigin = origin.origin;
+  const prohibitedOrigins = configuredDataPlaneOrigins(server, auth);
+  if (prohibitedOrigins.has(publicOrigin)) {
+    throw configValidationError(
+      "control.public_origin must be distinct from MCP and OAuth public origins",
+      originPath,
+    );
+  }
+  validateRestrictedControlKeyFile(raw.idempotency_hmac_key_file);
+  return {
+    listen: raw.listen,
+    host: listener.host,
+    port: listener.port,
+    publicOrigin,
+    publicAuthority: origin.host.toLowerCase(),
+    idempotencyHmacKeyFile: raw.idempotency_hmac_key_file,
+  };
+}
+
+function parseListen(value: string, path: ConfigPath): { host: string; port: number } {
+  const match = value.match(/^(?:\[([^\]]+)\]|([^:]+)):(\d+)$/);
+  const host = match?.[1] ?? match?.[2];
+  const port = Number(match?.[3]);
+  if (
+    host === undefined ||
+    host.trim() !== host ||
+    host.length === 0 ||
+    !Number.isInteger(port) ||
+    port < 1 ||
+    port > 65535
+  ) {
+    throw configValidationError(
+      `${path.join(".")} must use host:port format with a port between 1 and 65535`,
+      path,
+    );
+  }
+  return { host, port };
+}
+
+function configuredDataPlaneOrigins(server: ServerConfig, auth: AuthConfig): Set<string> {
+  const values = [
+    server.resource,
+    ...(auth.mode === "oauth"
+      ? [auth.oauth.issuer, auth.oauth.resource]
+      : auth.mode === "builtin_oauth"
+        ? [auth.builtinOAuth.issuer]
+        : []),
+  ];
+  return new Set(values.flatMap((value) => {
+    if (value === undefined) return [];
+    try {
+      return [new URL(value).origin];
+    } catch {
+      return [];
+    }
+  }));
+}
+
+function validateRestrictedControlKeyFile(path: string): void {
+  try {
+    const stats = statSync(path);
+    if (!stats.isFile() || (stats.mode & 0o077) !== 0) {
+      throw new Error("unsafe control key file");
+    }
+    const encoded = readFileSync(path, "utf8").trim();
+    if (!/^[A-Za-z0-9_-]{43}$/.test(encoded) || Buffer.from(encoded, "base64url").byteLength !== 32) {
+      throw new Error("invalid control key");
+    }
+  } catch {
+    throw configValidationError(
+      "control.idempotency_hmac_key_file must be a readable mode-restricted file containing one 32-byte base64url key",
+      ["control", "idempotency_hmac_key_file"],
+    );
+  }
 }
 
 function normalizeAuth(raw: RawConfig["auth"], env: NodeJS.ProcessEnv): AuthConfig {

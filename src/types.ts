@@ -1,5 +1,6 @@
 export interface GatewayConfig {
   server: ServerConfig;
+  control?: ControlConfig;
   auth: AuthConfig;
   tokens: TokenConfig;
   limits: LimitsConfig;
@@ -9,6 +10,15 @@ export interface GatewayConfig {
   services: Record<string, ServiceConfig>;
   warnings: string[];
   debugDiagnostics: ConfigDebugDiagnostic[];
+}
+
+export interface ControlConfig {
+  listen: string;
+  host: string;
+  port: number;
+  publicOrigin: string;
+  publicAuthority: string;
+  idempotencyHmacKeyFile: string;
 }
 
 export interface ConfigDebugDiagnostic {

@@ -16,7 +16,7 @@ milestones:
   - id: "02"
     title: "Control Plane Foundation"
     file: "docs/milestones/02-control-plane-foundation.md"
-    status: "pending"
+    status: "in_progress"
     completed_at: null
     commit_hash: null
     notes: ""

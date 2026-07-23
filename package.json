@@ -10,14 +10,17 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
+    "start:control": "node dist/control/main.js",
     "test": "vitest run"
   },
   "dependencies": {
+    "@fastify/cookie": "11.1.2",
     "@modelcontextprotocol/sdk": "^1.18.1",
     "@secretlint/core": "^13.0.2",
     "@secretlint/secretlint-rule-pattern": "^13.0.2",
     "@secretlint/secretlint-rule-preset-recommend": "^13.0.2",
     "better-sqlite3": "12.10.0",
+    "fastify": "5.10.0",
     "jose": "^6.1.0",
     "jsonc-parser": "^3.3.1",
     "yaml": "^2.8.1",

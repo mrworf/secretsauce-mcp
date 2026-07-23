@@ -82,7 +82,7 @@ export class GatewayRuntime {
   }
 }
 
-function configuredAuditTextSanitizer(config: GatewayConfig): (value: string) => string {
+export function configuredAuditTextSanitizer(config: GatewayConfig): (value: string) => string {
   const secrets = [...new Set(Object.values(config.services).flatMap(
     (service) => service.credentials.map((credential) => credential.secret),
   ))].filter((secret) => secret.length > 0).sort((left, right) => right.length - left.length);

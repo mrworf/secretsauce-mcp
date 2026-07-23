@@ -37,10 +37,10 @@ milestones:
   - id: "05"
     title: "Local Authentication, Sessions, And Step-Up"
     file: "docs/milestones/05-local-auth-sessions-step-up.md"
-    status: "in_progress"
-    completed_at: null
-    commit_hash: null
-    notes: "Decision-complete implementation plan: docs/plans/milestone-05-local-auth-sessions-step-up.md"
+    status: "completed"
+    completed_at: "2026-07-23T18:47:09.897Z"
+    commit_hash: "637b7f5"
+    notes: "Implemented local password+TOTP authentication, encrypted replay-safe TOTP, revocable browser sessions, both transaction-bound step-up modes, sanitized readiness, and operator guidance; OpenAPI current; 60 files / 527 tests passed."
   - id: "06"
     title: "Enrollment, Recovery, And Self-Service"
     file: "docs/milestones/06-enrollment-recovery-self-service.md"

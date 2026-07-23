@@ -65,10 +65,10 @@ milestones:
   - id: "09"
     title: "Service Management"
     file: "docs/milestones/09-service-management.md"
-    status: "in_progress"
-    completed_at: null
-    commit_hash: null
-    notes: "Decision-complete implementation and security plan under docs/plans/milestone-09-service-management.md."
+    status: "completed"
+    completed_at: "2026-07-23T22:22:15.300Z"
+    commit_hash: "618f6e6"
+    notes: "Implemented durable scoped service ownership, canonical draft validation, immutable publication and rollback, safe transfer/clone, guarded archive/deletion, responsive Services workspace, and operator guidance; OpenAPI current; 77 files / 609 tests passed."
   - id: "10"
     title: "Groups And Assignments"
     file: "docs/milestones/10-groups-and-assignments.md"

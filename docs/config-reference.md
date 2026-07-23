@@ -86,6 +86,13 @@ documented in [Generic OIDC identity provider](oidc-identity-provider.md).
 `redirect_origin` must exactly equal `control.public_origin`; provider subjects
 are linked explicitly and matching email never authenticates or links a user.
 
+When persistence, control, and identity are enabled, durable service
+administration is available at `/control/services`. See
+[Service management](service-management.md) for ownership, destination,
+publication, transfer, archive, deletion, and runtime-isolation semantics.
+Database-managed service records do not affect MCP routing before the persisted
+runtime authorization milestone.
+
 `identity.temporary_password_ttl` defaults to `72h` and is bounded from `1h`
 through `7d`. `identity.restricted_session_ttl` defaults to `15m` and is bounded
 from `5m` through `30m`. Restricted enrollment cookies never authorize ordinary

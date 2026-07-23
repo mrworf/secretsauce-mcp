@@ -14,7 +14,12 @@ import { getAuditEvents as getAuditEventsFromSink } from "../src/audit.js";
 import { publicRequestIdPattern } from "../src/requestId.js";
 import type { AuthContext, GatewayConfig } from "../src/types.js";
 import { capabilitiesFor, requestDependenciesFor } from "./capabilityHelpers.js";
-import { serviceRequestInputValidator } from "../src/mcp/schemas.js";
+import {
+  describeServicePolicyOutputValidator,
+  errorOutputValidator,
+  advertisedSchema,
+  serviceRequestInputValidator,
+} from "../src/mcp/schemas.js";
 
 function callTool(name: string, args: Record<string, unknown> | undefined, config: GatewayConfig, auth: AuthContext) {
   return callToolWithDependencies(name, args, config, auth, requestDependenciesFor(config));
@@ -105,6 +110,8 @@ describe("MCP surface", () => {
     for (const contract of toolContracts) {
       expect(contract.handler).toBeTypeOf("function");
       expect(requiredScopeForTool(contract.name)).toBe(contract.requiredScope);
+      expect(contract.outputSchema).toEqual(advertisedSchema(contract.outputValidator));
+      expect(contract.outputSchema.additionalProperties).toBe(false);
       expect(contract.securitySchemes).toEqual([{ type: "oauth2", scopes: [contract.requiredScope] }]);
       expect(contract._meta.securitySchemes).toEqual(contract.securitySchemes);
     }
@@ -115,6 +122,72 @@ describe("MCP surface", () => {
     const unknown = await callTool("unknown_tool", {}, config, auth);
     expect(unknown).toMatchObject({ isError: true, structuredContent: { error: { code: "not_implemented" } } });
     expect(getAuditEvents(config)).toEqual([]);
+  });
+
+  it("validates representative tool results with the advertised output contracts", async () => {
+    const downstream = await startDownstream();
+    try {
+      const config = fixtureConfig({ noAuth: true, destinationBaseUrl: downstream.baseUrl });
+      const auth = {
+        subject: "bearer-dev",
+        scopes: ["gateway.read", "gateway.references", "gateway.request"],
+        mode: "bearer" as const,
+      };
+      capabilitiesFor(config).denialStore.record({
+        subject: auth.subject,
+        reason: "Method denied by policy.",
+        matched_rule: "deny-delete",
+        policy_mode: "deny",
+        suggestion: "Use GET instead.",
+      }, "req_output_contract");
+
+      const referenceResult = await callTool("get_gateway_service_references", {
+        service: "demo-service", access_ids: ["gateway_access"], reason: "Verify output contract.",
+      }, config, auth);
+      const serviceReference = (referenceResult.structuredContent.references as Array<{ reference: string }>)[0]!.reference;
+      const results = new Map([
+        ["list_services", await callTool("list_services", {}, config, auth)],
+        ["get_gateway_service_references", referenceResult],
+        ["describe_service_policy", await callTool("describe_service_policy", {
+          service: "demo-service",
+        }, config, auth)],
+        ["service_request", await callTool("service_request", {
+          service: "demo-service", method: "GET", path: "/api/echo", service_reference: serviceReference,
+          reason: "Verify output contract.",
+        }, config, auth)],
+        ["explain_denial", await callTool("explain_denial", {
+          request_id: "req_output_contract",
+        }, config, auth)],
+      ]);
+
+      for (const contract of toolContracts) {
+        const result = results.get(contract.name);
+        expect(result?.isError, contract.name).not.toBe(true);
+        expect(contract.outputValidator.safeParse(result?.structuredContent).success, contract.name).toBe(true);
+      }
+
+      const error = await callTool("describe_service_policy", { service: "missing" }, config, auth);
+      expect(error.isError).toBe(true);
+      expect(errorOutputValidator.safeParse(error.structuredContent).success).toBe(true);
+
+      const described = results.get("describe_service_policy")!.structuredContent;
+      const missingNested = structuredClone(described);
+      delete (missingNested.destinations as Array<Record<string, unknown>>)[0]!.tls_verify;
+      const extraNested = structuredClone(described);
+      (extraNested.access_methods as Array<Record<string, unknown>>)[0]!.credential = "unadvertised";
+      const wrongNestedType = structuredClone(described);
+      ((wrongNestedType.policy as { rules: Array<{ binary_response: { scan: unknown } }> }).rules[0]!.binary_response).scan = "yes";
+
+      expect(describeServicePolicyOutputValidator.safeParse(missingNested).success).toBe(false);
+      expect(describeServicePolicyOutputValidator.safeParse(extraNested).success).toBe(false);
+      expect(describeServicePolicyOutputValidator.safeParse(wrongNestedType).success).toBe(false);
+
+      const arbitraryBody = structuredClone(results.get("service_request")!.structuredContent);
+      arbitraryBody.body = { downstream: [null, 7, true, { nested: "value" }] };
+      expect(toolContracts.find(({ name }) => name === "service_request")!.outputValidator.safeParse(arbitraryBody).success).toBe(true);
+    } finally {
+      await downstream.close();
+    }
   });
 
   it("rejects unknown top-level arguments for every tool before handler side effects", async () => {

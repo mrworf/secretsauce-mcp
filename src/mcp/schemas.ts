@@ -22,152 +22,112 @@ export const serviceRequestInputValidator = z.strictObject({
 });
 export const explainDenialInputValidator = z.strictObject({ request_id: z.string() });
 
-function advertisedInputSchema(schema: z.ZodType): Record<string, unknown> {
+const destinationOutputValidator = z.strictObject({
+  id: z.string(),
+  base_url_hint: z.string(),
+  tls_verify: z.boolean(),
+});
+const accessMethodOutputValidator = z.strictObject({
+  id: z.string(),
+  usage_hint: z.string(),
+});
+
+export const errorOutputValidator = z.strictObject({
+  error: z.strictObject({
+    code: z.string(),
+    message: z.string(),
+    request_id: z.string().optional(),
+  }),
+});
+
+export const listServicesOutputValidator = z.strictObject({
+  services: z.array(z.strictObject({
+    id: z.string(),
+    name: z.string(),
+    description: z.string().optional(),
+    api_docs_url: z.string().optional(),
+    destinations: z.array(destinationOutputValidator),
+    access_methods: z.array(accessMethodOutputValidator),
+    policy_summary: z.string(),
+  })),
+});
+
+export const gatewayServiceReferencesOutputValidator = z.strictObject({
+  references: z.array(z.strictObject({
+    access_id: z.string(),
+    reference: z.string(),
+    usage_hint: z.string(),
+    expires_at: z.string(),
+    exportable: z.literal(false),
+    usable_outside_gateway: z.literal(false),
+    reveals_protected_value: z.literal(false),
+  })),
+});
+
+const binaryResponsePolicyOutputValidator = z.strictObject({
+  scan: z.boolean(),
+  max_size_bytes: z.number().int().nonnegative().nullable(),
+});
+const policyRuleOutputValidator = z.strictObject({
+  id: z.string(),
+  effect: z.enum(["allow", "deny"]),
+  priority: z.number(),
+  methods: z.array(z.string()),
+  hosts: z.array(z.string()),
+  paths: z.array(z.string()),
+  reason: z.string().optional(),
+  binary_response: binaryResponsePolicyOutputValidator,
+});
+
+export const describeServicePolicyOutputValidator = z.strictObject({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().optional(),
+  api_docs_url: z.string().optional(),
+  destinations: z.array(destinationOutputValidator),
+  access_methods: z.array(accessMethodOutputValidator),
+  policy: z.strictObject({
+    mode: z.enum(["allow", "deny"]),
+    rules: z.array(policyRuleOutputValidator),
+  }),
+});
+
+export const serviceRequestOutputValidator = z.strictObject({
+  request_id: z.string(),
+  status_code: z.number().int(),
+  headers: z.record(z.string(), z.string()),
+  // Downstream response bodies are intentionally opaque to the MCP contract.
+  body: z.unknown(),
+  body_encoding: z.enum(["utf8", "mcp_blob"]),
+  body_size_bytes: z.number().int().nonnegative(),
+  body_sha256: z.string(),
+  secret_tokenized: z.boolean(),
+  secret_tokenization_count: z.number().int().nonnegative(),
+  tls: z.strictObject({ verify: z.boolean() }),
+  truncated: z.boolean(),
+});
+
+export const explainDenialOutputValidator = z.strictObject({
+  request_id: z.string(),
+  reason: z.string(),
+  matched_rule: z.string().optional(),
+  policy_mode: z.enum(["allow", "deny"]),
+  suggestion: z.string().optional(),
+});
+
+export function advertisedSchema(schema: z.ZodType): Record<string, unknown> {
   return z.toJSONSchema(schema, { target: "draft-7", unrepresentable: "any" }) as Record<string, unknown>;
 }
 
-export const emptyInputSchema = advertisedInputSchema(emptyInputValidator);
+export const emptyInputSchema = advertisedSchema(emptyInputValidator);
+export const gatewayServiceReferencesInputSchema = advertisedSchema(gatewayServiceReferencesInputValidator);
+export const describeServicePolicyInputSchema = advertisedSchema(describeServicePolicyInputValidator);
+export const serviceRequestInputSchema = advertisedSchema(serviceRequestInputValidator);
+export const explainDenialInputSchema = advertisedSchema(explainDenialInputValidator);
 
-export const errorOutputSchema = {
-  type: "object",
-  properties: {
-    error: {
-      type: "object",
-      properties: {
-        code: { type: "string" },
-        message: { type: "string" },
-        request_id: { type: "string" },
-      },
-      required: ["code", "message"],
-      additionalProperties: false,
-    },
-  },
-  required: ["error"],
-  additionalProperties: false,
-} as const;
-
-export const listServicesOutputSchema = {
-  type: "object",
-  properties: {
-    services: {
-      type: "array",
-      items: {
-        type: "object",
-        properties: {
-          access_methods: {
-            type: "array",
-            items: {
-              type: "object",
-              properties: {
-                id: { type: "string" },
-                usage_hint: { type: "string" },
-              },
-              required: ["id", "usage_hint"],
-              additionalProperties: false,
-            },
-          },
-        },
-        required: ["access_methods"],
-      },
-    },
-  },
-  required: ["services"],
-  additionalProperties: false,
-} as const;
-
-export const gatewayServiceReferencesInputSchema = advertisedInputSchema(gatewayServiceReferencesInputValidator);
-
-export const describeServicePolicyInputSchema = advertisedInputSchema(describeServicePolicyInputValidator);
-
-export const describeServicePolicyOutputSchema = {
-  type: "object",
-  properties: {
-    id: { type: "string" },
-    name: { type: "string" },
-    description: { type: "string" },
-    api_docs_url: { type: "string" },
-    destinations: {
-      type: "array",
-      items: { type: "object" },
-    },
-    access_methods: {
-      type: "array",
-      items: { type: "object" },
-    },
-    policy: { type: "object" },
-  },
-  required: ["id", "name", "destinations", "access_methods", "policy"],
-  additionalProperties: false,
-} as const;
-
-export const gatewayServiceReferencesOutputSchema = {
-  type: "object",
-  properties: {
-    references: {
-      type: "array",
-      items: {
-        type: "object",
-        properties: {
-          access_id: { type: "string" },
-          reference: { type: "string" },
-          usage_hint: { type: "string" },
-          expires_at: { type: "string" },
-          exportable: { type: "boolean", const: false },
-          usable_outside_gateway: { type: "boolean", const: false },
-          reveals_protected_value: { type: "boolean", const: false },
-        },
-        required: [
-          "access_id",
-          "reference",
-          "usage_hint",
-          "expires_at",
-          "exportable",
-          "usable_outside_gateway",
-          "reveals_protected_value",
-        ],
-        additionalProperties: false,
-      },
-    },
-  },
-  required: ["references"],
-  additionalProperties: false,
-} as const;
-
-export const serviceRequestInputSchema = advertisedInputSchema(serviceRequestInputValidator);
-
-export const serviceRequestOutputSchema = {
-  type: "object",
-  properties: {
-    request_id: { type: "string" },
-    status_code: { type: "number" },
-    headers: { type: "object" },
-    body: {},
-    body_encoding: { type: "string", enum: ["utf8", "mcp_blob"] },
-    body_size_bytes: { type: "number" },
-    body_sha256: { type: "string" },
-    secret_tokenized: { type: "boolean" },
-    secret_tokenization_count: { type: "number" },
-    tls: { type: "object" },
-    truncated: { type: "boolean" },
-  },
-  required: [
-    "request_id", "status_code", "headers", "body", "body_encoding", "body_size_bytes", "body_sha256",
-    "secret_tokenized", "secret_tokenization_count", "tls", "truncated",
-  ],
-  additionalProperties: false,
-} as const;
-
-export const explainDenialInputSchema = advertisedInputSchema(explainDenialInputValidator);
-
-export const explainDenialOutputSchema = {
-  type: "object",
-  properties: {
-    request_id: { type: "string" },
-    reason: { type: "string" },
-    matched_rule: { type: "string" },
-    policy_mode: { type: "string" },
-    suggestion: { type: "string" },
-  },
-  required: ["request_id", "reason", "policy_mode"],
-  additionalProperties: false,
-} as const;
+export const errorOutputSchema = advertisedSchema(errorOutputValidator);
+export const listServicesOutputSchema = advertisedSchema(listServicesOutputValidator);
+export const gatewayServiceReferencesOutputSchema = advertisedSchema(gatewayServiceReferencesOutputValidator);
+export const describeServicePolicyOutputSchema = advertisedSchema(describeServicePolicyOutputValidator);
+export const serviceRequestOutputSchema = advertisedSchema(serviceRequestOutputValidator);
+export const explainDenialOutputSchema = advertisedSchema(explainDenialOutputValidator);

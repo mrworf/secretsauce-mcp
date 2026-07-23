@@ -1,4 +1,5 @@
 import type { ToolResult } from "./results.js";
+import type { ZodType } from "zod";
 import { toolError, toolSuccess } from "./results.js";
 import { audit } from "../audit.js";
 import { describeServicePolicy, listVisibleServices } from "../registry.js";
@@ -12,7 +13,6 @@ import {
   emptyInputSchema,
   describeServicePolicyInputSchema,
   describeServicePolicyOutputSchema,
-  errorOutputSchema,
   explainDenialInputSchema,
   explainDenialOutputSchema,
   listServicesOutputSchema,
@@ -25,6 +25,11 @@ import {
   describeServicePolicyInputValidator,
   serviceRequestInputValidator,
   explainDenialInputValidator,
+  listServicesOutputValidator,
+  gatewayServiceReferencesOutputValidator,
+  describeServicePolicyOutputValidator,
+  serviceRequestOutputValidator,
+  explainDenialOutputValidator,
 } from "./schemas.js";
 
 export interface SecurityScheme {
@@ -61,6 +66,7 @@ type ToolHandler = (
 
 export interface ToolContract extends ToolDescriptor {
   requiredScope: "gateway.read" | "gateway.references" | "gateway.request";
+  outputValidator: ZodType;
   handler: ToolHandler;
 }
 
@@ -75,6 +81,7 @@ export const toolContracts: ToolContract[] = [
   {
     name: "list_services",
     requiredScope: READ_SCOPE,
+    outputValidator: listServicesOutputValidator,
     handler: handleListServices,
     title: "List configured services",
     description: "List the HTTP services and access methods available to this authenticated user through the gateway. Never returns protected backend values.",
@@ -96,6 +103,7 @@ export const toolContracts: ToolContract[] = [
   {
     name: "get_gateway_service_references",
     requiredScope: REFERENCE_SCOPE,
+    outputValidator: gatewayServiceReferencesOutputValidator,
     handler: handleGatewayServiceReferences,
     title: "Get gateway service references",
     description: "Get short-lived gref_ references for configured service access. Protected values remain on the gateway: references cannot reveal or export them, have no meaning outside this gateway, and creating a reference does not contact or modify the downstream service.",
@@ -117,6 +125,7 @@ export const toolContracts: ToolContract[] = [
   {
     name: "describe_service_policy",
     requiredScope: READ_SCOPE,
+    outputValidator: describeServicePolicyOutputValidator,
     handler: handleDescribeServicePolicy,
     title: "Describe service policy",
     description: "Describe configured destinations, service access methods, and ordered allow/deny policy rules for a service this authenticated user can access. Never returns protected backend values.",
@@ -138,6 +147,7 @@ export const toolContracts: ToolContract[] = [
   {
     name: "service_request",
     requiredScope: REQUEST_SCOPE,
+    outputValidator: serviceRequestOutputValidator,
     handler: handleServiceRequest,
     title: "Send service HTTP request",
     description: "Send an HTTP request through the gateway. The backend resolves gateway references only after authorization, destination, reference-binding, and policy checks. Pass a gateway_access reference in service_reference; that gateway-only field is never forwarded downstream. Before the response reaches the agent, the backend scans it and replaces detected secrets with subject- and service-bound sec_ references. Cookie headers are not supported.",
@@ -159,6 +169,7 @@ export const toolContracts: ToolContract[] = [
   {
     name: "explain_denial",
     requiredScope: READ_SCOPE,
+    outputValidator: explainDenialOutputValidator,
     handler: handleExplainDenial,
     title: "Explain denied request",
     description: "Explain why a gateway request was denied, including matched policy rule and suggested next step if available.",
@@ -179,7 +190,12 @@ export const toolContracts: ToolContract[] = [
   },
 ];
 
-export const toolDescriptors: ToolDescriptor[] = toolContracts.map(({ requiredScope: _requiredScope, handler: _handler, ...descriptor }) => descriptor);
+export const toolDescriptors: ToolDescriptor[] = toolContracts.map(({
+  requiredScope: _requiredScope,
+  outputValidator: _outputValidator,
+  handler: _handler,
+  ...descriptor
+}) => descriptor);
 
 export function requiredScopeForTool(name: unknown): ToolContract["requiredScope"] | undefined {
   return typeof name === "string" ? toolContracts.find((tool) => tool.name === name)?.requiredScope : undefined;

@@ -836,6 +836,216 @@ CREATE INDEX assignment_invalidation_events_service_idx
   );
 `;
 
+const migration0010 = `
+CREATE TABLE service_credentials (
+  id TEXT PRIMARY KEY CHECK (
+    length(id) = 36 AND id = lower(id)
+    AND substr(id, 15, 1) = '7'
+    AND substr(id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND id NOT GLOB '*[^0-9a-f-]*'
+  ),
+  service_id TEXT NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+  name TEXT NOT NULL CHECK (length(name) BETWEEN 1 AND 120),
+  normalized_name TEXT NOT NULL CHECK (
+    length(normalized_name) BETWEEN 1 AND 120
+    AND normalized_name = lower(normalized_name)
+  ),
+  description TEXT CHECK (
+    description IS NULL OR length(description) BETWEEN 1 AND 1024
+  ),
+  usage_kind TEXT NOT NULL CHECK (usage_kind IN ('header', 'query', 'body')),
+  usage_name TEXT NOT NULL CHECK (length(usage_name) BETWEEN 1 AND 256),
+  usage_prefix TEXT CHECK (
+    usage_prefix IS NULL OR length(usage_prefix) BETWEEN 1 AND 512
+  ),
+  usage_suffix TEXT CHECK (
+    usage_suffix IS NULL OR length(usage_suffix) BETWEEN 1 AND 512
+  ),
+  enforce_header_ownership INTEGER NOT NULL DEFAULT 0
+    CHECK (enforce_header_ownership IN (0, 1)),
+  status TEXT NOT NULL DEFAULT 'unconfigured'
+    CHECK (status IN ('configured', 'unconfigured', 'disabled', 'archived')),
+  vault_state TEXT NOT NULL DEFAULT 'idle'
+    CHECK (
+      vault_state IN (
+        'idle', 'pending_create', 'pending_replace', 'pending_delete',
+        'pending_archive', 'reconcile'
+      )
+    ),
+  vault_locator TEXT CHECK (
+    vault_locator IS NULL OR (
+      length(vault_locator) = 36
+      AND vault_locator = lower(vault_locator)
+      AND substr(vault_locator, 15, 1) = '4'
+      AND substr(vault_locator, 20, 1) IN ('8', '9', 'a', 'b')
+      AND vault_locator NOT GLOB '*[^0-9a-f-]*'
+    )
+  ),
+  vault_generation INTEGER CHECK (
+    vault_generation IS NULL OR vault_generation > 0
+  ),
+  last_four TEXT CHECK (
+    last_four IS NULL OR (
+      length(last_four) BETWEEN 1 AND 4
+      AND last_four NOT GLOB '*[^ -~]*'
+    )
+  ),
+  value_updated_at INTEGER CHECK (
+    value_updated_at IS NULL OR value_updated_at >= 0
+  ),
+  authorization_generation INTEGER NOT NULL DEFAULT 0
+    CHECK (authorization_generation >= 0),
+  version INTEGER NOT NULL DEFAULT 1 CHECK (version > 0),
+  created_at INTEGER NOT NULL CHECK (created_at >= 0),
+  updated_at INTEGER NOT NULL CHECK (updated_at >= created_at),
+  UNIQUE (service_id, normalized_name),
+  UNIQUE (service_id, id),
+  CHECK (
+    (vault_locator IS NULL AND vault_generation IS NULL)
+    OR (vault_locator IS NOT NULL AND vault_generation IS NOT NULL)
+  ),
+  CHECK (
+    vault_state <> 'idle'
+    OR (
+      status IN ('unconfigured', 'archived')
+      AND vault_locator IS NULL
+      AND vault_generation IS NULL
+      AND last_four IS NULL
+      AND value_updated_at IS NULL
+    )
+    OR (
+      status IN ('configured', 'disabled')
+      AND vault_locator IS NOT NULL
+      AND vault_generation IS NOT NULL
+      AND value_updated_at IS NOT NULL
+    )
+  )
+) STRICT;
+
+CREATE INDEX service_credentials_service_idx
+  ON service_credentials (service_id, status, normalized_name, id);
+CREATE INDEX service_credentials_vault_state_idx
+  ON service_credentials (vault_state, updated_at, id)
+  WHERE vault_state <> 'idle';
+
+CREATE TABLE credential_principal_assignments (
+  id TEXT PRIMARY KEY CHECK (
+    length(id) = 36 AND id = lower(id)
+    AND substr(id, 15, 1) = '7'
+    AND substr(id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND id NOT GLOB '*[^0-9a-f-]*'
+  ),
+  service_id TEXT NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+  credential_id TEXT NOT NULL,
+  selector_kind TEXT NOT NULL CHECK (selector_kind IN ('all', 'group', 'user')),
+  group_id TEXT,
+  user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
+  assigned_by_user_id TEXT NOT NULL,
+  created_at INTEGER NOT NULL CHECK (created_at >= 0),
+  CHECK (
+    (selector_kind = 'all' AND group_id IS NULL AND user_id IS NULL)
+    OR (selector_kind = 'group' AND group_id IS NOT NULL AND user_id IS NULL)
+    OR (selector_kind = 'user' AND group_id IS NULL AND user_id IS NOT NULL)
+  ),
+  FOREIGN KEY (service_id, credential_id)
+    REFERENCES service_credentials(service_id, id) ON DELETE CASCADE,
+  FOREIGN KEY (service_id, group_id)
+    REFERENCES service_groups(service_id, id) ON DELETE CASCADE
+) STRICT;
+
+CREATE UNIQUE INDEX credential_principal_assignment_all_idx
+  ON credential_principal_assignments (credential_id)
+  WHERE selector_kind = 'all';
+CREATE UNIQUE INDEX credential_principal_assignment_group_idx
+  ON credential_principal_assignments (credential_id, group_id)
+  WHERE selector_kind = 'group';
+CREATE UNIQUE INDEX credential_principal_assignment_user_idx
+  ON credential_principal_assignments (credential_id, user_id)
+  WHERE selector_kind = 'user';
+CREATE INDEX credential_principal_assignments_service_idx
+  ON credential_principal_assignments (
+    service_id, credential_id, selector_kind, id
+  );
+CREATE INDEX credential_principal_assignments_user_idx
+  ON credential_principal_assignments (user_id, service_id, credential_id)
+  WHERE user_id IS NOT NULL;
+
+CREATE TABLE credential_invalidation_events (
+  id TEXT PRIMARY KEY CHECK (
+    length(id) = 36 AND id = lower(id)
+    AND substr(id, 15, 1) = '7'
+    AND substr(id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND id NOT GLOB '*[^0-9a-f-]*'
+  ),
+  service_id TEXT NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+  credential_id TEXT NOT NULL,
+  affected_user_id TEXT CHECK (
+    affected_user_id IS NULL OR (
+      length(affected_user_id) = 36
+      AND affected_user_id = lower(affected_user_id)
+    )
+  ),
+  authorization_generation INTEGER NOT NULL
+    CHECK (authorization_generation > 0),
+  reason TEXT NOT NULL CHECK (
+    reason IN (
+      'selector', 'disable', 'enable', 'value_replace', 'value_delete',
+      'archive', 'delete'
+    )
+  ),
+  created_at INTEGER NOT NULL CHECK (created_at >= 0),
+  dispatched_at INTEGER CHECK (dispatched_at IS NULL OR dispatched_at >= created_at),
+  attempts INTEGER NOT NULL DEFAULT 0 CHECK (attempts >= 0),
+  CHECK (
+    length(credential_id) = 36
+    AND credential_id = lower(credential_id)
+  )
+) STRICT;
+
+CREATE INDEX credential_invalidation_events_dispatch_idx
+  ON credential_invalidation_events (dispatched_at, created_at, id);
+CREATE INDEX credential_invalidation_events_service_idx
+  ON credential_invalidation_events (
+    service_id, credential_id, authorization_generation, affected_user_id, id
+  );
+
+CREATE TABLE credential_vault_operations (
+  credential_id TEXT PRIMARY KEY REFERENCES service_credentials(id) ON DELETE CASCADE,
+  service_id TEXT NOT NULL,
+  operation TEXT NOT NULL CHECK (
+    operation IN ('create', 'replace', 'delete_value', 'archive')
+  ),
+  locator TEXT NOT NULL CHECK (
+    length(locator) = 36 AND locator = lower(locator)
+    AND substr(locator, 15, 1) = '4'
+    AND substr(locator, 20, 1) IN ('8', '9', 'a', 'b')
+    AND locator NOT GLOB '*[^0-9a-f-]*'
+  ),
+  expected_generation INTEGER CHECK (
+    expected_generation IS NULL OR expected_generation > 0
+  ),
+  target_generation INTEGER CHECK (
+    target_generation IS NULL OR target_generation > 0
+  ),
+  prior_status TEXT NOT NULL CHECK (
+    prior_status IN ('configured', 'unconfigured', 'disabled')
+  ),
+  phase TEXT NOT NULL CHECK (
+    phase IN ('prepared', 'vault_applied', 'reconcile')
+  ),
+  result_category TEXT CHECK (
+    result_category IS NULL OR length(result_category) BETWEEN 1 AND 64
+  ),
+  started_at INTEGER NOT NULL CHECK (started_at >= 0),
+  updated_at INTEGER NOT NULL CHECK (updated_at >= started_at),
+  FOREIGN KEY (service_id, credential_id)
+    REFERENCES service_credentials(service_id, id) ON DELETE CASCADE
+) STRICT, WITHOUT ROWID;
+
+CREATE INDEX credential_vault_operations_phase_idx
+  ON credential_vault_operations (phase, updated_at, credential_id);
+`;
+
 export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [
   {
     version: 1,
@@ -881,6 +1091,11 @@ export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [
     version: 9,
     name: "groups_and_assignments",
     sql: migration0009,
+  },
+  {
+    version: 10,
+    name: "credential_management",
+    sql: migration0010,
   },
 ];
 

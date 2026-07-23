@@ -35,6 +35,10 @@ import {
   publicControlRoute,
   sendControlError,
 } from "./security.js";
+import {
+  ControlIdempotencyHasher,
+  loadControlIdempotencyKey,
+} from "./idempotency.js";
 
 export interface ControlApplicationOptions {
   authenticator?: ControlAuthenticator;
@@ -138,6 +142,7 @@ export function createControlApplication(
 export interface ControlServerApplication {
   server: FastifyInstance;
   persistence: PersistenceOwner;
+  idempotencyHasher: ControlIdempotencyHasher;
   close(): Promise<void>;
 }
 
@@ -145,6 +150,9 @@ export async function startControlServer(config: GatewayConfig): Promise<Control
   if (config.control === undefined || config.persistence === undefined) {
     throw new Error("Control and persistence configuration are required.");
   }
+  const idempotencyHasher = new ControlIdempotencyHasher(
+    loadControlIdempotencyKey(config.control.idempotencyHmacKeyFile),
+  );
   const persistence = PersistenceWorker.open({
     databaseFile: config.persistence.databaseFile,
     productVersion: PACKAGE_VERSION,
@@ -167,6 +175,7 @@ export async function startControlServer(config: GatewayConfig): Promise<Control
   return {
     server: startedServer,
     persistence,
+    idempotencyHasher,
     close: () => {
       closePromise ??= (async () => {
         await startedServer.close();

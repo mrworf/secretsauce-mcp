@@ -5,6 +5,8 @@ export type PersistenceErrorCode =
   | "administrative_audit_required"
   | "invalid_audit_event"
   | "audit_persistence_failed"
+  | "idempotency_conflict"
+  | "invalid_idempotency_record"
   | "persistence_closed";
 
 const messages: Record<PersistenceErrorCode, string> = {
@@ -14,6 +16,8 @@ const messages: Record<PersistenceErrorCode, string> = {
   administrative_audit_required: "Administrative audit event is required.",
   invalid_audit_event: "Administrative audit event is invalid.",
   audit_persistence_failed: "Administrative audit persistence failed.",
+  idempotency_conflict: "The idempotency key conflicts with an earlier request.",
+  invalid_idempotency_record: "The idempotency record is invalid.",
   persistence_closed: "Persistence owner is closed.",
 };
 

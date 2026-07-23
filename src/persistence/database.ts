@@ -14,6 +14,16 @@ import {
 } from "./migrations.js";
 import { PersistenceQuery, PersistenceTransaction } from "./transaction.js";
 import { UuidV7Generator } from "./uuidV7.js";
+import {
+  IDEMPOTENCY_PRUNE_LIMIT,
+  IDEMPOTENCY_RETENTION_MS,
+  type IdempotencyExecutionInput,
+  type IdempotencyExecutionResult,
+  type IdempotencyMutationResult,
+  type StoredIdempotencyRecord,
+  validateIdempotencyExecutionInput,
+  validateIdempotencyMutationResult,
+} from "./idempotency.js";
 
 export interface PersistenceDatabaseOptions {
   databaseFile: string;
@@ -116,12 +126,10 @@ export class PersistenceDatabase {
       const databaseReady = this.#database.prepare("SELECT 1 AS ready").get() !== undefined;
       const schemaReady =
         this.schemaVersion === this.#expectedSchemaVersion &&
-        this.#database.pragma("quick_check", { simple: true }) === "ok";
-      const auditReady = this.#database.prepare(`
-        SELECT 1 AS present
-        FROM sqlite_master
-        WHERE type = 'table' AND name = 'administrative_audit_events'
-      `).get() !== undefined;
+        this.#database.pragma("quick_check", { simple: true }) === "ok" &&
+        tableExists(this.#database, "administrative_audit_events") &&
+        tableExists(this.#database, "control_idempotency_records");
+      const auditReady = tableExists(this.#database, "administrative_audit_events");
       return {
         database: databaseReady ? "ready" : "unavailable",
         schema: schemaReady ? "ready" : "unsupported",
@@ -147,6 +155,98 @@ export class PersistenceDatabase {
     });
     try {
       return execute.immediate();
+    } catch (error) {
+      throw mapPersistenceError(error, "database_unavailable");
+    }
+  }
+
+  withIdempotentAdministrativeAudit<T>(
+    idempotencyInput: IdempotencyExecutionInput,
+    auditInput: unknown,
+    mutation: (transaction: PersistenceTransaction) => IdempotencyMutationResult<T>,
+  ): IdempotencyExecutionResult<T> {
+    this.assertOpen();
+    const idempotency = validateIdempotencyExecutionInput(idempotencyInput);
+    const event = this.buildAuditEvent(auditInput);
+    if (event.result !== "allow") throw new PersistenceError("invalid_audit_event");
+    const now = this.safeNow();
+    const expiresAt = now + IDEMPOTENCY_RETENTION_MS;
+    if (!Number.isSafeInteger(expiresAt)) {
+      throw new PersistenceError("invalid_idempotency_record");
+    }
+    const execute = this.#database.transaction((): IdempotencyExecutionResult<T> => {
+      const existing = this.#database.prepare(`
+        SELECT
+          key_hash, principal_id, route_id, request_digest,
+          result_reference, response_status, expires_at
+        FROM control_idempotency_records
+        WHERE key_hash = ?
+      `).get(idempotency.keyHash) as StoredIdempotencyRecord | undefined;
+      if (existing !== undefined && existing.expires_at > now) {
+        if (
+          existing.principal_id !== idempotency.principalId ||
+          existing.route_id !== idempotency.routeId ||
+          existing.request_digest !== idempotency.requestDigest
+        ) {
+          throw new PersistenceError("idempotency_conflict");
+        }
+        return {
+          kind: "replayed",
+          resultReference: existing.result_reference,
+          responseStatus: existing.response_status,
+        };
+      }
+      if (existing !== undefined) {
+        this.#database.prepare(
+          "DELETE FROM control_idempotency_records WHERE key_hash = ?",
+        ).run(idempotency.keyHash);
+      }
+
+      const result = validateIdempotencyMutationResult(
+        mutation(new PersistenceTransaction(this.#database, this.#now)),
+      );
+      if (isPromiseLike(result.value)) throw new PersistenceError("database_unavailable");
+      this.#database.prepare(`
+        INSERT INTO control_idempotency_records (
+          key_hash, principal_id, route_id, request_digest, result_reference,
+          response_status, created_at, completed_at, expires_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        idempotency.keyHash,
+        idempotency.principalId,
+        idempotency.routeId,
+        idempotency.requestDigest,
+        result.resultReference,
+        result.responseStatus,
+        now,
+        now,
+        expiresAt,
+      );
+      this.insertAdministrativeAudit(event);
+      return { kind: "executed", ...result };
+    });
+    try {
+      return execute.immediate();
+    } catch (error) {
+      throw mapPersistenceError(error, "database_unavailable");
+    }
+  }
+
+  pruneExpiredIdempotency(): number {
+    this.assertOpen();
+    const now = this.safeNow();
+    const prune = this.#database.transaction(() => this.#database.prepare(`
+      DELETE FROM control_idempotency_records
+      WHERE key_hash IN (
+        SELECT key_hash
+        FROM control_idempotency_records
+        WHERE expires_at <= ?
+        ORDER BY expires_at, key_hash
+        LIMIT ?
+      )
+    `).run(now, IDEMPOTENCY_PRUNE_LIMIT).changes);
+    try {
+      return prune.immediate();
     } catch (error) {
       throw mapPersistenceError(error, "database_unavailable");
     }
@@ -224,6 +324,14 @@ export class PersistenceDatabase {
       uuid: this.#uuid,
       sanitizeText: this.#sanitizeAuditText,
     });
+  }
+
+  private safeNow(): number {
+    const now = Math.trunc(this.#now());
+    if (!Number.isSafeInteger(now) || now < 0) {
+      throw new PersistenceError("invalid_idempotency_record");
+    }
+    return now;
   }
 
   private insertAdministrativeAudit(event: AdministrativeAuditEvent): void {
@@ -371,14 +479,21 @@ function validateCurrentSchema(
 ): void {
   validateHistory(database, migrations, readHistory(database));
   const integrity = database.pragma("quick_check", { simple: true });
-  const auditTable = database.prepare(`
-    SELECT 1 AS present
-    FROM sqlite_master
-    WHERE type = 'table' AND name = 'administrative_audit_events'
-  `).get();
-  if (integrity !== "ok" || auditTable === undefined) {
+  if (
+    integrity !== "ok" ||
+    !tableExists(database, "administrative_audit_events") ||
+    !tableExists(database, "control_idempotency_records")
+  ) {
     throw new PersistenceError("schema_unsupported");
   }
+}
+
+function tableExists(database: Database.Database, name: string): boolean {
+  return database.prepare(`
+    SELECT 1 AS present
+    FROM sqlite_master
+    WHERE type = 'table' AND name = ?
+  `).get(name) !== undefined;
 }
 
 function mapOpenError(error: unknown): PersistenceError {

@@ -53,11 +53,60 @@ CREATE INDEX administrative_audit_events_result_time_idx
   ON administrative_audit_events (result, occurred_at, event_id);
 `;
 
-export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [{
-  version: 1,
-  name: "persistence_and_administrative_audit_foundation",
-  sql: migration0001,
-}];
+const migration0002 = `
+CREATE TABLE control_idempotency_records (
+  key_hash TEXT PRIMARY KEY CHECK (
+    length(key_hash) = 64
+    AND key_hash = lower(key_hash)
+    AND key_hash NOT GLOB '*[^0-9a-f]*'
+  ),
+  principal_id TEXT NOT NULL CHECK (
+    length(principal_id) = 36
+    AND principal_id = lower(principal_id)
+  ),
+  route_id TEXT NOT NULL CHECK (
+    length(route_id) BETWEEN 1 AND 128
+    AND route_id NOT GLOB '*[^a-z0-9_.-]*'
+  ),
+  request_digest TEXT NOT NULL CHECK (
+    length(request_digest) = 64
+    AND request_digest = lower(request_digest)
+    AND request_digest NOT GLOB '*[^0-9a-f]*'
+  ),
+  result_reference TEXT NOT NULL CHECK (
+    length(result_reference) = 36
+    AND result_reference = lower(result_reference)
+  ),
+  response_status INTEGER NOT NULL CHECK (
+    response_status BETWEEN 200 AND 299
+  ),
+  created_at INTEGER NOT NULL CHECK (created_at >= 0),
+  completed_at INTEGER NOT NULL CHECK (
+    completed_at >= created_at
+  ),
+  expires_at INTEGER NOT NULL CHECK (
+    expires_at > completed_at
+  )
+) STRICT;
+
+CREATE INDEX control_idempotency_expiry_idx
+  ON control_idempotency_records (expires_at, key_hash);
+CREATE INDEX control_idempotency_principal_route_idx
+  ON control_idempotency_records (principal_id, route_id, expires_at);
+`;
+
+export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [
+  {
+    version: 1,
+    name: "persistence_and_administrative_audit_foundation",
+    sql: migration0001,
+  },
+  {
+    version: 2,
+    name: "control_idempotency_foundation",
+    sql: migration0002,
+  },
+];
 
 export function migrationChecksum(migration: PersistenceMigration): string {
   return createHash("sha256")

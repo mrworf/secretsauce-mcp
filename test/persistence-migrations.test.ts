@@ -11,16 +11,23 @@ import {
 } from "../src/persistence/migrations.js";
 
 describe("persistence migrations", () => {
-  it("initializes an empty database with schema 0001 and restrictive permissions", () => {
+  it("initializes an empty database with the production schema and restrictive permissions", () => {
     const file = databasePath("fresh");
     const persistence = open(file);
     try {
-      expect(persistence.schemaVersion).toBe(1);
-      expect(persistence.migrationHistory()).toEqual([{
-        version: 1,
-        name: "persistence_and_administrative_audit_foundation",
-        checksum: expect.stringMatching(/^[a-f0-9]{64}$/),
-      }]);
+      expect(persistence.schemaVersion).toBe(2);
+      expect(persistence.migrationHistory()).toEqual([
+        {
+          version: 1,
+          name: "persistence_and_administrative_audit_foundation",
+          checksum: expect.stringMatching(/^[a-f0-9]{64}$/),
+        },
+        {
+          version: 2,
+          name: "control_idempotency_foundation",
+          checksum: expect.stringMatching(/^[a-f0-9]{64}$/),
+        },
+      ]);
       expect(statSync(file).mode & 0o777).toBe(0o600);
 
       const inspection = new Database(file, { readonly: true });
@@ -31,6 +38,7 @@ describe("persistence migrations", () => {
           WHERE type = 'table' ORDER BY name
         `).pluck().all()).toEqual([
           "administrative_audit_events",
+          "control_idempotency_records",
           "schema_migrations",
         ]);
       } finally {
@@ -45,21 +53,22 @@ describe("persistence migrations", () => {
     const file = databasePath("ordered");
     const migrations = [
       ...PERSISTENCE_MIGRATIONS,
-      testMigration(2, "second", "CREATE TABLE second_fixture (id INTEGER PRIMARY KEY) STRICT;"),
       testMigration(3, "third", "CREATE TABLE third_fixture (id INTEGER PRIMARY KEY) STRICT;"),
+      testMigration(4, "fourth", "CREATE TABLE fourth_fixture (id INTEGER PRIMARY KEY) STRICT;"),
     ];
     const first = open(file, migrations);
-    expect(first.schemaVersion).toBe(3);
-    expect(first.migrationHistory().map(({ version }) => version)).toEqual([1, 2, 3]);
+    expect(first.schemaVersion).toBe(4);
+    expect(first.migrationHistory().map(({ version }) => version)).toEqual([1, 2, 3, 4]);
     first.close();
 
     const restarted = open(file, migrations);
     try {
-      expect(restarted.schemaVersion).toBe(3);
+      expect(restarted.schemaVersion).toBe(4);
       expect(restarted.migrationHistory().map(({ name }) => name)).toEqual([
         "persistence_and_administrative_audit_foundation",
-        "second",
+        "control_idempotency_foundation",
         "third",
+        "fourth",
       ]);
     } finally {
       restarted.close();
@@ -68,7 +77,7 @@ describe("persistence migrations", () => {
 
   it("rejects unknown future, partial, and checksum-drifted schemas safely", () => {
     const futureFile = initializedPath("future");
-    edit(futureFile, (database) => database.pragma("user_version = 2"));
+    edit(futureFile, (database) => database.pragma("user_version = 3"));
     expectPersistenceError(() => open(futureFile), "schema_unsupported", futureFile);
 
     const partialFile = databasePath("partial");
@@ -81,13 +90,19 @@ describe("persistence migrations", () => {
         .run("0".repeat(64));
     });
     expectPersistenceError(() => open(driftFile), "schema_unsupported", driftFile);
+
+    const missingTableFile = initializedPath("missing-table");
+    edit(missingTableFile, (database) => {
+      database.exec("DROP TABLE control_idempotency_records");
+    });
+    expectPersistenceError(() => open(missingTableFile), "schema_unsupported", missingTableFile);
   });
 
   it("rolls a failed migration back without leaving its schema or history", () => {
     const file = initializedPath("rollback");
     const migrations = [
       ...PERSISTENCE_MIGRATIONS,
-      testMigration(2, "broken", `
+      testMigration(3, "broken", `
         CREATE TABLE should_rollback (id INTEGER PRIMARY KEY) STRICT;
         INSERT INTO table_that_does_not_exist (id) VALUES (1);
       `),
@@ -97,12 +112,12 @@ describe("persistence migrations", () => {
 
     const inspection = new Database(file);
     try {
-      expect(inspection.pragma("user_version", { simple: true })).toBe(1);
+      expect(inspection.pragma("user_version", { simple: true })).toBe(2);
       expect(inspection.prepare(
         "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'should_rollback'",
       ).get()).toBeUndefined();
       expect(inspection.prepare("SELECT count(*) AS count FROM schema_migrations").get())
-        .toEqual({ count: 1 });
+        .toEqual({ count: 2 });
     } finally {
       inspection.close();
     }

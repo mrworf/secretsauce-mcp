@@ -43,7 +43,9 @@ describe("host-local identity bootstrap", () => {
       status: "enrollment_required",
       role: "superadmin",
       enrollment: "pending",
+      expires_at: NOW + 72 * 3_600_000,
     });
+    expect(output.temporary_password).toMatch(/^[A-Za-z0-9_-]{24,}$/);
     expect(output.user_id).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
     );
@@ -62,6 +64,10 @@ describe("host-local identity bootstrap", () => {
           "SELECT * FROM local_authenticator_states WHERE user_id = ?",
           [String(output.user_id)],
         ),
+        temporary: query.get<Record<string, unknown>>(
+          "SELECT * FROM identity_temporary_passwords WHERE user_id = ?",
+          [String(output.user_id)],
+        ),
         marker: query.get<Record<string, unknown>>(
           "SELECT * FROM identity_bootstrap WHERE singleton = 1",
         ),
@@ -77,9 +83,16 @@ describe("host-local identity bootstrap", () => {
       version: 1,
     });
     expect(state.authenticator).toMatchObject({
-      password_state: "not_configured",
+      password_state: "temporary",
       totp_state: "not_configured",
     });
+    expect(state.temporary).toMatchObject({
+      purpose: "initial_enrollment",
+      expires_at: NOW + 72 * 3_600_000,
+      consumed_at: null,
+      revoked_at: null,
+    });
+    expect(JSON.stringify(state.temporary)).not.toContain(String(output.temporary_password));
     expect(state.marker).toMatchObject({ singleton: 1, user_id: output.user_id });
     expect(state.audit).toMatchObject({
       actor_type: "local_cli",
@@ -262,6 +275,33 @@ function fakeIo(answers: string[], terminal = true): FakeIo {
 function fakeConfig(databaseFile: string, secret = ""): GatewayConfig {
   return {
     persistence: { databaseFile },
+    identity: {
+      activeRootKeyId: "root",
+      rootKeyFiles: { root: "/unused" },
+      sessionHmacKeyFile: "/unused",
+      temporaryPasswordTtlMs: 72 * 3_600_000,
+      restrictedSessionTtlMs: 15 * 60_000,
+      password: { minimumLength: 12 },
+      sessions: {
+        adminAbsoluteMs: 12 * 3_600_000,
+        adminInactivityMs: 15 * 60_000,
+        userAbsoluteMs: 24 * 3_600_000,
+        userInactivityMs: 60 * 60_000,
+      },
+      stepUpMode: "five_minutes",
+      limits: {
+        loginAttempts: 10,
+        loginWindowMs: 15 * 60_000,
+        passwordAttempts: 10,
+        passwordWindowMs: 15 * 60_000,
+        totpAttempts: 5,
+        totpWindowMs: 5 * 60_000,
+        maxPasswordVerifications: 2,
+        maxPasswordVerificationsPerSource: 1,
+        maxTotpVerifications: 8,
+        maxTotpVerificationsPerSource: 2,
+      },
+    },
     services: {
       fixture: {
         credentials: secret === "" ? [] : [{ secret }],

@@ -382,6 +382,7 @@ CREATE TABLE identity_pending_totp (
     AND root_key_id NOT GLOB '*[^A-Za-z0-9._-]*'
   ),
   generation INTEGER NOT NULL CHECK (generation > 0),
+  password_policy_version INTEGER NOT NULL CHECK (password_policy_version > 0),
   created_at INTEGER NOT NULL CHECK (created_at >= 0),
   expires_at INTEGER NOT NULL CHECK (expires_at > created_at)
 ) STRICT;

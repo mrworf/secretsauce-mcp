@@ -1,7 +1,11 @@
 import type { FastifyRequest } from "fastify";
 import type { ControlRole } from "./permissions.js";
 
-export type ControlAuthenticationMethod = "browser_session" | "api_key" | "local_cli";
+export type ControlAuthenticationMethod =
+  | "browser_session"
+  | "restricted_session"
+  | "api_key"
+  | "local_cli";
 
 export interface ControlAuthenticationContext {
   method: ControlAuthenticationMethod;

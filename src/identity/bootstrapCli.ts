@@ -7,6 +7,8 @@ import type { GatewayConfig } from "../types.js";
 import { PACKAGE_VERSION } from "../version.js";
 import { IdentityError } from "./errors.js";
 import { IdentityRepository } from "./repository.js";
+import { generateTemporaryPassword } from "./credentialLifecycle.js";
+import { hashPassword } from "./password.js";
 import { PersistenceWorker, type PersistenceOwner } from "../persistence/worker.js";
 
 export interface IdentityBootstrapIo {
@@ -49,6 +51,9 @@ export async function runIdentityBootstrapCli(
     if (config.persistence === undefined) {
       return fail(io, "persistence_required", 1);
     }
+    if (config.identity === undefined) {
+      return fail(io, "identity_required", 1);
+    }
 
     const email = await io.question("Email: ");
     const givenName = await io.question("Given name (optional): ");
@@ -66,6 +71,18 @@ export async function runIdentityBootstrapCli(
       ...(dependencies.now === undefined ? {} : { now: dependencies.now }),
       ...(dependencies.identityUuid === undefined ? {} : { uuid: dependencies.identityUuid }),
     });
+    const temporaryPassword = generateTemporaryPassword(
+      config.identity.password.minimumLength,
+    );
+    const temporaryBytes = Buffer.from(temporaryPassword, "utf8");
+    let encodedHash: string;
+    try {
+      encodedHash = await hashPassword(temporaryBytes);
+    } finally {
+      temporaryBytes.fill(0);
+    }
+    const expiresAt = Math.trunc((dependencies.now ?? Date.now)()) +
+      config.identity.temporaryPasswordTtlMs;
     const identity = await identities.bootstrapInitialSuperadmin({
       email,
       givenName,
@@ -83,12 +100,17 @@ export async function runIdentityBootstrapCli(
         osActor: (dependencies.osActor ?? safeOsActor)(),
       },
       justification: "Initialize the first enrollment-pending superadmin identity.",
+    }, {
+      encodedHash,
+      expiresAt,
     });
     io.stdout(`${JSON.stringify({
       status: "enrollment_required",
       user_id: identity.id,
       role: identity.role,
       enrollment: "pending",
+      temporary_password: temporaryPassword,
+      expires_at: expiresAt,
     })}\n`);
     return 0;
   } catch (error) {

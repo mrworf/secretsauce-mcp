@@ -14,6 +14,7 @@ export const CONTROL_API_PREFIX = "/api/v2";
 export const CONTROL_BROWSER_PREFIX = "/control";
 export const CONTROL_BODY_LIMIT_BYTES = 1_048_576;
 export const CONTROL_SESSION_COOKIE = "__Host-secretsauce_session";
+export const CONTROL_ENROLLMENT_COOKIE = "__Host-secretsauce_enrollment";
 
 export interface ControlRouteSecurity {
   public: boolean;
@@ -68,7 +69,10 @@ export function controlSecurityHooks(
         authentication.principalId,
       )) return;
       bindControlAuthentication(request, authentication);
-      if (authentication.method !== "browser_session" || isSafeMethod(request.method)) return;
+      if (
+        !["browser_session", "restricted_session"].includes(authentication.method) ||
+        isSafeMethod(request.method)
+      ) return;
       if (origin !== config.publicOrigin) {
         sendControlError(reply, request.id, 403, "forbidden", "CSRF validation failed.");
         return;
@@ -128,6 +132,29 @@ export function setControlSessionCookie(
 
 export function clearControlSessionCookie(reply: FastifyReply): void {
   reply.clearCookie(CONTROL_SESSION_COOKIE, {
+    path: "/",
+    secure: true,
+    httpOnly: true,
+    sameSite: "strict",
+  });
+}
+
+export function setControlEnrollmentCookie(
+  reply: FastifyReply,
+  value: string,
+  maxAgeSeconds: number,
+): void {
+  reply.setCookie(CONTROL_ENROLLMENT_COOKIE, value, {
+    path: "/",
+    secure: true,
+    httpOnly: true,
+    sameSite: "strict",
+    maxAge: maxAgeSeconds,
+  });
+}
+
+export function clearControlEnrollmentCookie(reply: FastifyReply): void {
+  reply.clearCookie(CONTROL_ENROLLMENT_COOKIE, {
     path: "/",
     secure: true,
     httpOnly: true,

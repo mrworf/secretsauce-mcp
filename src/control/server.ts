@@ -29,6 +29,12 @@ import {
   StepUpService,
 } from "../identity/stepUp.js";
 import {
+  LocalControlAuthenticator,
+  LocalEnrollmentRepository,
+  LocalEnrollmentService,
+  RestrictedSessionAuthenticator,
+} from "../identity/enrollment.js";
+import {
   denyControlAuthentication,
   controlAuthentication,
   type ControlAuthenticator,
@@ -85,6 +91,7 @@ export function createControlApplication(
   if (control === undefined) throw new Error("Control configuration is required.");
   const logger = options.logger ?? createLogger(config.logging);
   const authenticator = options.authenticator ??
+    options.localIdentity?.authenticator ??
     options.localIdentity?.browserSessions ??
     denyControlAuthentication;
   const authorization = options.authorization ??
@@ -198,6 +205,8 @@ export async function startControlServer(
   let browserSessions: BrowserSessionAuthenticator | undefined;
   let stepUp: StepUpService | undefined;
   let stepUpAuthorization: BrowserStepUpAuthorization | undefined;
+  let enrollment: LocalEnrollmentService | undefined;
+  let restrictedSessions: RestrictedSessionAuthenticator | undefined;
   let identityKeyRing: IdentityKeyRing | undefined;
   try {
     let localIdentity: LocalIdentityControl | undefined;
@@ -234,11 +243,25 @@ export async function startControlServer(
           config.identity.stepUpMode,
           sessionKey,
         );
+        const enrollmentRepository = new LocalEnrollmentRepository(persistence);
+        enrollment = await LocalEnrollmentService.create({
+          repository: enrollmentRepository,
+          config: config.identity,
+          keyRing: identityKeyRing,
+          sessionHmacKey: sessionKey,
+        });
+        restrictedSessions = new RestrictedSessionAuthenticator(
+          enrollmentRepository,
+          sessionKey,
+        );
         localIdentity = {
           authentication: localAuthentication,
           browserSessions,
           stepUp,
           authorization: stepUpAuthorization,
+          enrollment,
+          restrictedSessions,
+          authenticator: new LocalControlAuthenticator(browserSessions, restrictedSessions),
         };
       } finally {
         sessionKey.fill(0);
@@ -261,6 +284,8 @@ export async function startControlServer(
     browserSessions?.close();
     stepUpAuthorization?.close();
     stepUp?.close();
+    restrictedSessions?.close();
+    enrollment?.close();
     localAuthentication?.close();
     identityKeyRing?.destroy();
     await persistence.close();
@@ -278,6 +303,8 @@ export async function startControlServer(
         browserSessions?.close();
         stepUpAuthorization?.close();
         stepUp?.close();
+        restrictedSessions?.close();
+        enrollment?.close();
         localAuthentication?.close();
         identityKeyRing?.destroy();
         await persistence.close();

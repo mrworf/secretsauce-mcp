@@ -4,6 +4,12 @@ import {
 } from "../identity/localAuthentication.js";
 import type { BrowserSessionAuthenticator } from "../identity/browserSessions.js";
 import type { StepUpService } from "../identity/stepUp.js";
+import {
+  EnrollmentError,
+  type LocalEnrollmentService,
+  type RestrictedSessionAuthenticator,
+  type LocalControlAuthenticator,
+} from "../identity/enrollment.js";
 import { ControlContractError } from "./contracts.js";
 import {
   defineControlRoute,
@@ -12,6 +18,8 @@ import {
 } from "./routeRegistry.js";
 import {
   clearControlSessionCookie,
+  clearControlEnrollmentCookie,
+  setControlEnrollmentCookie,
   setControlSessionCookie,
 } from "./security.js";
 import { z } from "./zod.js";
@@ -21,6 +29,9 @@ export interface LocalIdentityControl {
   browserSessions: BrowserSessionAuthenticator;
   stepUp?: StepUpService;
   authorization?: ControlAuthorizationSeam;
+  enrollment?: LocalEnrollmentService;
+  restrictedSessions?: RestrictedSessionAuthenticator;
+  authenticator?: LocalControlAuthenticator;
 }
 
 const roleSchema = z.enum(["superadmin", "admin", "user"]);
@@ -35,6 +46,9 @@ export function registerLocalIdentityRoutes(
   registry: ControlRouteRegistry,
   identity: LocalIdentityControl,
 ): void {
+  if (identity.enrollment !== undefined && identity.restrictedSessions !== undefined) {
+    registerEnrollmentRoutes(registry, identity.enrollment, identity.restrictedSessions);
+  }
   registry.register(defineControlRoute({
     id: "identity.login",
     method: "POST",
@@ -238,4 +252,347 @@ export function registerLocalIdentityRoutes(
       }
     },
   }));
+}
+
+function registerEnrollmentRoutes(
+  registry: ControlRouteRegistry,
+  enrollment: LocalEnrollmentService,
+  restrictedSessions: RestrictedSessionAuthenticator,
+): void {
+  const restrictedData = z.object({
+    user_id: z.string().uuid(),
+    role: roleSchema,
+    purpose: z.enum(["initial_enrollment", "password_change", "totp_enrollment"]),
+    csrf_token: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
+    expires_at: z.number().int().nonnegative(),
+  }).strict();
+  registry.register(defineControlRoute({
+    id: "identity.enrollment_login",
+    method: "POST",
+    path: "/api/v2/auth/enrollment/login",
+    summary: "Enter the restricted local enrollment flow",
+    tags: ["Identity"],
+    authentication: "public",
+    permission: null,
+    stepUp: "none",
+    schemas: {
+      body: z.object({
+        email: z.string().min(3).max(254),
+        temporary_password: z.string().max(4_096),
+      }).strict(),
+      response: restrictedData,
+    },
+    rateLimit: "authentication",
+    secretFields: ["/temporary_password"],
+    cache: "no-store",
+    concurrency: "none",
+    idempotency: "none",
+    handler: async ({ body, request, reply }) => {
+      try {
+        const result = await enrollment.temporaryLogin({
+          email: body.email,
+          temporaryPassword: body.temporary_password,
+          source: request.ip,
+          correlationId: request.id,
+        });
+        setControlEnrollmentCookie(
+          reply,
+          result.sessionToken,
+          Math.max(1, Math.floor((result.expiresAt - Date.now()) / 1_000)),
+        );
+        return {
+          data: {
+            user_id: result.userId,
+            role: result.role,
+            purpose: result.purpose,
+            csrf_token: result.csrfToken,
+            expires_at: result.expiresAt,
+          },
+        };
+      } catch (error) {
+        throw enrollmentContractError(error);
+      }
+    },
+  }));
+
+  registry.register(defineControlRoute({
+    id: "identity.totp_recovery_login",
+    method: "POST",
+    path: "/api/v2/auth/totp-recovery/login",
+    summary: "Enter the restricted TOTP recovery flow",
+    tags: ["Identity"],
+    authentication: "public",
+    permission: null,
+    stepUp: "none",
+    schemas: {
+      body: z.object({
+        email: z.string().min(3).max(254),
+        password: z.string().max(4_096),
+      }).strict(),
+      response: restrictedData,
+    },
+    rateLimit: "authentication",
+    secretFields: ["/password"],
+    cache: "no-store",
+    concurrency: "none",
+    idempotency: "none",
+    handler: async ({ body, request, reply }) => {
+      try {
+        const result = await enrollment.totpRecoveryLogin({
+          email: body.email,
+          password: body.password,
+          source: request.ip,
+          correlationId: request.id,
+        });
+        setControlEnrollmentCookie(
+          reply,
+          result.sessionToken,
+          Math.max(1, Math.floor((result.expiresAt - Date.now()) / 1_000)),
+        );
+        return {
+          data: {
+            user_id: result.userId,
+            role: result.role,
+            purpose: result.purpose,
+            csrf_token: result.csrfToken,
+            expires_at: result.expiresAt,
+          },
+        };
+      } catch (error) {
+        throw enrollmentContractError(error);
+      }
+    },
+  }));
+
+  registry.register(defineControlRoute({
+    id: "identity.enrollment_begin",
+    method: "POST",
+    path: "/api/v2/auth/enrollment/begin",
+    summary: "Begin restricted permanent-password and TOTP enrollment",
+    tags: ["Identity"],
+    authentication: ["restricted_session"],
+    permission: "authenticated",
+    stepUp: "none",
+    schemas: {
+      body: z.object({
+        new_password: z.string().max(4_096),
+      }).strict(),
+      response: z.object({
+        secret: z.string().regex(/^[A-Z2-7]{32}$/),
+        otpauth_uri: z.string().startsWith("otpauth://totp/").max(2_048),
+        csrf_token: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
+        expires_at: z.number().int().nonnegative(),
+      }).strict(),
+    },
+    rateLimit: "authentication",
+    auditAction: "identity.enrollment_begin",
+    secretFields: ["/new_password"],
+    cache: "no-store",
+    concurrency: "none",
+    idempotency: "none",
+    handler: async ({ body, request }) => {
+      const session = restrictedSessions.session(request);
+      if (session === undefined) {
+        throw new ControlContractError(401, "unauthenticated", "Authentication required.");
+      }
+      try {
+        const result = await enrollment.beginInitial(session, body.new_password);
+        return {
+          data: {
+            secret: result.secret,
+            otpauth_uri: result.uri,
+            csrf_token: await restrictedSessions.rotateCsrf(request),
+            expires_at: result.expiresAt,
+          },
+        };
+      } catch (error) {
+        throw enrollmentContractError(error);
+      }
+    },
+  }));
+
+  registry.register(defineControlRoute({
+    id: "identity.enrollment_confirm",
+    method: "POST",
+    path: "/api/v2/auth/enrollment/confirm",
+    summary: "Confirm restricted local enrollment",
+    tags: ["Identity"],
+    authentication: ["restricted_session"],
+    permission: "authenticated",
+    stepUp: "none",
+    schemas: {
+      body: z.object({
+        new_password: z.string().max(4_096),
+        totp: z.string().regex(/^\d{6}$/),
+      }).strict(),
+      response: z.object({ enrolled: z.literal(true) }).strict(),
+    },
+    rateLimit: "authentication",
+    auditAction: "identity.enrollment_complete",
+    secretFields: ["/new_password", "/totp"],
+    cache: "no-store",
+    concurrency: "none",
+    idempotency: "none",
+    handler: async ({ body, request, reply }) => {
+      const session = restrictedSessions.session(request);
+      if (session === undefined) {
+        throw new ControlContractError(401, "unauthenticated", "Authentication required.");
+      }
+      try {
+        await enrollment.confirmInitial(session, {
+          newPassword: body.new_password,
+          totp: body.totp,
+          correlationId: request.id,
+          source: request.ip,
+        });
+        clearControlEnrollmentCookie(reply);
+        return { data: { enrolled: true as const } };
+      } catch (error) {
+        throw enrollmentContractError(error);
+      }
+    },
+  }));
+
+  registry.register(defineControlRoute({
+    id: "identity.password_change",
+    method: "POST",
+    path: "/api/v2/auth/password-change",
+    summary: "Complete a reset-required password change",
+    tags: ["Identity"],
+    authentication: ["restricted_session"],
+    permission: "authenticated",
+    stepUp: "none",
+    schemas: {
+      body: z.object({
+        new_password: z.string().max(4_096),
+        totp: z.string().regex(/^\d{6}$/),
+      }).strict(),
+      response: z.object({ changed: z.literal(true) }).strict(),
+    },
+    rateLimit: "authentication",
+    auditAction: "identity.password_change",
+    secretFields: ["/new_password", "/totp"],
+    cache: "no-store",
+    concurrency: "none",
+    idempotency: "none",
+    handler: async ({ body, request, reply }) => {
+      const session = restrictedSessions.session(request);
+      if (session === undefined) {
+        throw new ControlContractError(401, "unauthenticated", "Authentication required.");
+      }
+      try {
+        await enrollment.confirmPasswordChange(session, {
+          newPassword: body.new_password,
+          totp: body.totp,
+          correlationId: request.id,
+          source: request.ip,
+        });
+        clearControlEnrollmentCookie(reply);
+        return { data: { changed: true as const } };
+      } catch (error) {
+        throw enrollmentContractError(error);
+      }
+    },
+  }));
+
+  registry.register(defineControlRoute({
+    id: "identity.totp_enrollment_begin",
+    method: "POST",
+    path: "/api/v2/auth/totp-enrollment/begin",
+    summary: "Begin restricted TOTP re-enrollment",
+    tags: ["Identity"],
+    authentication: ["restricted_session"],
+    permission: "authenticated",
+    stepUp: "none",
+    schemas: {
+      response: z.object({
+        secret: z.string().regex(/^[A-Z2-7]{32}$/),
+        otpauth_uri: z.string().startsWith("otpauth://totp/").max(2_048),
+        csrf_token: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
+        expires_at: z.number().int().nonnegative(),
+      }).strict(),
+    },
+    rateLimit: "authentication",
+    auditAction: "identity.totp_enrollment_begin",
+    secretFields: [],
+    cache: "no-store",
+    concurrency: "none",
+    idempotency: "none",
+    handler: async ({ request }) => {
+      const session = restrictedSessions.session(request);
+      if (session === undefined) {
+        throw new ControlContractError(401, "unauthenticated", "Authentication required.");
+      }
+      try {
+        const result = await enrollment.beginTotpEnrollment(session);
+        return {
+          data: {
+            secret: result.secret,
+            otpauth_uri: result.uri,
+            csrf_token: await restrictedSessions.rotateCsrf(request),
+            expires_at: result.expiresAt,
+          },
+        };
+      } catch (error) {
+        throw enrollmentContractError(error);
+      }
+    },
+  }));
+
+  registry.register(defineControlRoute({
+    id: "identity.totp_enrollment_confirm",
+    method: "POST",
+    path: "/api/v2/auth/totp-enrollment/confirm",
+    summary: "Confirm restricted TOTP re-enrollment",
+    tags: ["Identity"],
+    authentication: ["restricted_session"],
+    permission: "authenticated",
+    stepUp: "none",
+    schemas: {
+      body: z.object({ totp: z.string().regex(/^\d{6}$/) }).strict(),
+      response: z.object({ enrolled: z.literal(true) }).strict(),
+    },
+    rateLimit: "authentication",
+    auditAction: "identity.totp_enrollment_complete",
+    secretFields: ["/totp"],
+    cache: "no-store",
+    concurrency: "none",
+    idempotency: "none",
+    handler: async ({ body, request, reply }) => {
+      const session = restrictedSessions.session(request);
+      if (session === undefined) {
+        throw new ControlContractError(401, "unauthenticated", "Authentication required.");
+      }
+      try {
+        await enrollment.confirmTotpEnrollment(session, {
+          totp: body.totp,
+          correlationId: request.id,
+          source: request.ip,
+        });
+        clearControlEnrollmentCookie(reply);
+        return { data: { enrolled: true as const } };
+      } catch (error) {
+        throw enrollmentContractError(error);
+      }
+    },
+  }));
+}
+
+function enrollmentContractError(error: unknown): ControlContractError {
+  if (error instanceof EnrollmentError) {
+    if (error.code === "rate_limited") {
+      return new ControlContractError(429, "rate_limited", "Authentication is temporarily unavailable.");
+    }
+    if (error.code === "enrollment_unavailable") {
+      return new ControlContractError(503, "maintenance", "Enrollment is unavailable.");
+    }
+    if (error.code === "invalid_request") {
+      return new ControlContractError(400, "validation_failed", "Enrollment input is invalid.");
+    }
+    return new ControlContractError(401, "unauthenticated", "Authentication failed.");
+  }
+  if (error instanceof Error && error.name === "PasswordPolicyError") {
+    return new ControlContractError(400, "validation_failed", "Password policy was not satisfied.");
+  }
+  return new ControlContractError(503, "maintenance", "Enrollment is unavailable.");
 }

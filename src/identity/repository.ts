@@ -18,6 +18,7 @@ import {
 import { IdentityError } from "./errors.js";
 import { requireIdentityStatusTransition } from "./lifecycle.js";
 import { removeActiveSuperadminError } from "./repositoryLifecycle.js";
+import { isSupportedPasswordHash } from "./password.js";
 import { parseIdentityProfile, parseProviderIdentity } from "./validation.js";
 
 const uuidSchema = z.string().refine(isUuidV7);
@@ -35,6 +36,11 @@ export interface IdentityAuditContext {
 export interface IdentityRepositoryOptions {
   now?: () => number;
   uuid?: () => string;
+}
+
+export interface BootstrapTemporaryCredential {
+  encodedHash: string;
+  expiresAt: number;
 }
 
 interface UserRow {
@@ -143,6 +149,7 @@ export class IdentityRepository {
   async bootstrapInitialSuperadmin(
     profileInput: unknown,
     audit: IdentityAuditContext,
+    temporaryCredential?: BootstrapTemporaryCredential,
   ): Promise<IdentityReadModel> {
     const profile = parseIdentityProfile(profileInput);
     if (
@@ -154,6 +161,14 @@ export class IdentityRepository {
     }
     const id = this.nextUuid();
     const now = this.safeNow();
+    if (
+      temporaryCredential !== undefined &&
+      (
+        !isSupportedPasswordHash(temporaryCredential.encodedHash) ||
+        !Number.isSafeInteger(temporaryCredential.expiresAt) ||
+        temporaryCredential.expiresAt <= now
+      )
+    ) throw new IdentityError("bootstrap_unavailable");
     try {
       return await this.#owner.execute({
         run: (database) => database.withGeneratedAdministrativeAudit((transaction) => {
@@ -185,8 +200,16 @@ export class IdentityRepository {
           transaction.run(`
             INSERT INTO local_authenticator_states (
               user_id, password_state, totp_state, version, created_at, updated_at
-            ) VALUES (?, 'not_configured', 'not_configured', 1, ?, ?)
-          `, [id, now, now]);
+            ) VALUES (?, ?, 'not_configured', 1, ?, ?)
+          `, [id, temporaryCredential === undefined ? "not_configured" : "temporary", now, now]);
+          if (temporaryCredential !== undefined) {
+            transaction.run(`
+              INSERT INTO identity_temporary_passwords (
+                user_id, encoded_hash, purpose, issued_at, expires_at,
+                consumed_at, revoked_at, version
+              ) VALUES (?, ?, 'initial_enrollment', ?, ?, NULL, NULL, 1)
+            `, [id, temporaryCredential.encodedHash, now, temporaryCredential.expiresAt]);
+          }
           transaction.run(`
             INSERT INTO identity_bootstrap (singleton, user_id, created_at)
             VALUES (1, ?, ?)
@@ -199,7 +222,12 @@ export class IdentityRepository {
               changes: [
                 { field: "role", after: "superadmin" },
                 { field: "status", after: "enrollment_required" },
-                { field: "enrollment", after: "pending" },
+                {
+                  field: "enrollment",
+                  after: temporaryCredential === undefined
+                    ? "pending"
+                    : "temporary_access_issued",
+                },
               ],
             }),
           };

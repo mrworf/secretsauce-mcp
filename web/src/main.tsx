@@ -2,7 +2,11 @@ import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { RouterProvider } from "react-router-dom";
 import { createControlRouter } from "./router";
-import { browserControlApi, type UserRole } from "./controlApi";
+import {
+  browserControlApi,
+  type RestrictedOidcOptions,
+  type UserRole,
+} from "./controlApi";
 import { OidcSignIn } from "./OidcSignIn";
 import "./styles.css";
 
@@ -18,13 +22,21 @@ createRoot(root).render(
 function AuthenticatedControl() {
   const [role, setRole] = useState<UserRole>();
   const [failed, setFailed] = useState(false);
+  const [restricted, setRestricted] = useState<RestrictedOidcOptions>();
 
   useEffect(() => {
     browserControlApi.session()
       .then((session) => setRole(session.role))
-      .catch(() => setFailed(true));
+      .catch(() => {
+        browserControlApi.oidcEnrollmentOptions()
+          .then(setRestricted)
+          .catch(() => setFailed(true));
+      });
   }, []);
 
+  if (restricted !== undefined) {
+    return <OidcSignIn restricted={restricted} />;
+  }
   if (failed) {
     return <OidcSignIn />;
   }

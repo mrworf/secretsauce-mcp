@@ -14,6 +14,7 @@ export type PersistenceErrorCode =
   | "last_active_superadmin"
   | "bootstrap_unavailable"
   | "authentication_failed"
+  | "authentication_method_required"
   | "totp_replayed"
   | "persistence_closed";
 
@@ -33,6 +34,7 @@ const messages: Record<PersistenceErrorCode, string> = {
   last_active_superadmin: "The last active superadmin must be preserved.",
   bootstrap_unavailable: "Initial identity bootstrap is unavailable.",
   authentication_failed: "Authentication failed.",
+  authentication_method_required: "An eligible authentication method is required.",
   totp_replayed: "The authenticator code has already been used.",
   persistence_closed: "Persistence owner is closed.",
 };

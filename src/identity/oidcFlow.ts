@@ -2,6 +2,7 @@ import { createHash, createHmac, randomBytes } from "node:crypto";
 import type { AdministrativeAuditEventInput } from "../persistence/administrativeAudit.js";
 import { PersistenceError } from "../persistence/errors.js";
 import type { PersistenceOwner } from "../persistence/worker.js";
+import type { PersistenceTransaction } from "../persistence/transaction.js";
 import { UuidV7Generator, isUuidV7 } from "../persistence/uuidV7.js";
 import type { IdentityConfig, OidcProviderConfig } from "../types.js";
 import {
@@ -12,6 +13,7 @@ import {
 import { OidcTrustClient } from "./oidcTrust.js";
 import type { ProviderAssertion } from "./provider.js";
 import type { IdentityKeyRing } from "./totp.js";
+import type { AlwaysStepUpHandle, StepUpRepository } from "./stepUp.js";
 
 const STATE_DOMAIN = "secretsauce.identity.oidc-state.v1";
 const OPAQUE = /^[A-Za-z0-9_-]{43}$/;
@@ -53,6 +55,7 @@ export class OidcFlowRepository {
   constructor(
     private readonly owner: PersistenceOwner,
     private readonly now: () => number = Date.now,
+    private readonly stepUps?: StepUpRepository,
   ) {}
 
   async create(input: {
@@ -65,44 +68,61 @@ export class OidcFlowRepository {
     expiresAt: number;
     maxRecords: number;
     binding: OidcFlowBinding;
+    stepUp?: {
+      proof: AlwaysStepUpHandle;
+      audit: AdministrativeAuditEventInput;
+    };
   }): Promise<void> {
     try {
-      await this.owner.execute({
-        run: (database) => database.withOperationalTransaction((transaction) => {
-          const now = safeNow(this.now);
-          transaction.run(
-            "DELETE FROM identity_oidc_flows WHERE expires_at <= ?",
-            [now],
-          );
-          const count = transaction.get<{ count: number }>(
-            "SELECT count(*) AS count FROM identity_oidc_flows",
-          )?.count ?? input.maxRecords;
-          if (count >= input.maxRecords) throw new PersistenceError("database_unavailable");
-          transaction.run(`
-            INSERT INTO identity_oidc_flows (
-              id, provider_id, purpose, state_hash, envelope_json,
-              target_user_id, actor_user_id, actor_session_id, target_version,
-              redirect_uri, created_at, expires_at, claimed_at, consumed_at, version
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, 1)
-          `, [
-            input.id,
-            input.providerId,
-            input.purpose,
-            input.stateHash,
-            input.envelopeJson,
-            input.binding.targetUserId ?? null,
-            input.binding.actorUserId ?? null,
-            input.binding.actorSessionId ?? null,
-            input.binding.targetVersion ?? null,
-            input.redirectUri,
-            now,
-            input.expiresAt,
-          ]);
-        }),
-      });
+      if (input.stepUp !== undefined) {
+        if (this.stepUps === undefined) throw new PersistenceError("authentication_failed");
+        await this.stepUps.withConsumedProof(
+          input.stepUp.proof,
+          input.stepUp.audit,
+          (transaction) => this.insert(transaction, input),
+        );
+      } else {
+        await this.owner.execute({
+          run: (database) => database.withOperationalTransaction((transaction) => {
+            this.insert(transaction, input);
+          }),
+        });
+      }
     } catch {
       throw new OidcFlowError();
     }
+  }
+
+  private insert(
+    transaction: PersistenceTransaction,
+    input: Parameters<OidcFlowRepository["create"]>[0],
+  ): void {
+    const now = safeNow(this.now);
+    transaction.run("DELETE FROM identity_oidc_flows WHERE expires_at <= ?", [now]);
+    const count = transaction.get<{ count: number }>(
+      "SELECT count(*) AS count FROM identity_oidc_flows",
+    )?.count ?? input.maxRecords;
+    if (count >= input.maxRecords) throw new PersistenceError("database_unavailable");
+    transaction.run(`
+      INSERT INTO identity_oidc_flows (
+        id, provider_id, purpose, state_hash, envelope_json,
+        target_user_id, actor_user_id, actor_session_id, target_version,
+        redirect_uri, created_at, expires_at, claimed_at, consumed_at, version
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, 1)
+    `, [
+      input.id,
+      input.providerId,
+      input.purpose,
+      input.stateHash,
+      input.envelopeJson,
+      input.binding.targetUserId ?? null,
+      input.binding.actorUserId ?? null,
+      input.binding.actorSessionId ?? null,
+      input.binding.targetVersion ?? null,
+      input.redirectUri,
+      now,
+      input.expiresAt,
+    ]);
   }
 
   async claim(providerId: string, stateHash: string): Promise<OidcFlowRow> {
@@ -223,7 +243,14 @@ export class OidcFlowService {
 
   private readonly config: NonNullable<IdentityConfig["oidc"]>;
 
-  async begin(providerId: string, binding: OidcFlowBinding): Promise<OidcAuthorizationStart> {
+  async begin(
+    providerId: string,
+    binding: OidcFlowBinding,
+    stepUp?: {
+      proof: AlwaysStepUpHandle;
+      audit: AdministrativeAuditEventInput;
+    },
+  ): Promise<OidcAuthorizationStart> {
     const provider = this.provider(providerId);
     validateBinding(binding);
     const discovery = await this.trust.discover(provider);
@@ -251,6 +278,7 @@ export class OidcFlowService {
       expiresAt,
       maxRecords: this.config.maxFlowRecords,
       binding,
+      ...(stepUp === undefined ? {} : { stepUp }),
     });
     const authorization = new URL(discovery.authorizationEndpoint);
     authorization.searchParams.set("response_type", "code");

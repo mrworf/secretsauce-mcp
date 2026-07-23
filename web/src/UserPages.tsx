@@ -6,6 +6,9 @@ import {
   type ControlApi,
   type ControlUser,
   type OneTimeUser,
+  type OidcControlApi,
+  type OidcManagementApi,
+  type OidcManagementLink,
   type UserAction,
   type UserProfileInput,
   type UserRole,
@@ -270,6 +273,13 @@ function UserDetail({
           </div>
         </>
       )}
+      {actorRole === "superadmin" && isOidcManagementApi(api) && (
+        <OidcLinksPanel
+          user={user}
+          api={api}
+          onVersion={(version) => onChange({ ...user, version })}
+        />
+      )}
       {error !== "" && <p className="form-error" role="alert">{error}</p>}
       {action !== undefined && (
         <ConfirmationPanel
@@ -294,6 +304,133 @@ function UserDetail({
       )}
     </article>
   );
+}
+
+export function OidcLinksPanel({
+  user,
+  api,
+  onVersion,
+}: {
+  user: ControlUser;
+  api: ControlApi & OidcControlApi & OidcManagementApi;
+  onVersion(version: number): void;
+}) {
+  const [links, setLinks] = useState<OidcManagementLink[]>([]);
+  const [providers, setProviders] = useState<Array<{ id: string; display_name: string }>>([]);
+  const [providerId, setProviderId] = useState("");
+  const [justification, setJustification] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    Promise.all([api.listOidcLinks(user.id), api.oidcProviders()])
+      .then(([linked, configured]) => {
+        setLinks(linked.links);
+        setProviders(configured.providers);
+        setProviderId((current) => current || configured.providers[0]?.id || "");
+      })
+      .catch((caught) => setError(messageFor(caught)));
+  }, [api, user.id, user.version]);
+
+  async function begin() {
+    if (providerId === "" || justification.trim() === "") return;
+    setBusy(true);
+    setError("");
+    try {
+      const result = await api.beginOidcLink(
+        user,
+        providerId,
+        justification.trim(),
+      );
+      window.location.assign(result.authorization_url);
+    } catch (caught) {
+      setError(messageFor(caught));
+      setBusy(false);
+    }
+  }
+
+  async function unlink(link: OidcManagementLink) {
+    if (justification.trim() === "") {
+      setError("A justification is required.");
+      return;
+    }
+    if (!window.confirm(`Remove ${link.provider_display_name} from ${user.email}?`)) return;
+    setBusy(true);
+    setError("");
+    try {
+      const result = await api.unlinkOidc(user, link.id, justification.trim());
+      setLinks((current) => current.filter(({ id }) => id !== link.id));
+      onVersion(result.version);
+    } catch (caught) {
+      setError(messageFor(caught));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="oidc-links" aria-labelledby={`oidc-links-${user.id}`}>
+      <h4 id={`oidc-links-${user.id}`}>External identities</h4>
+      {links.length === 0
+        ? <p className="muted-copy">No external identity is linked.</p>
+        : (
+            <ul className="compact-list">
+              {links.map((link) => (
+                <li key={link.id}>
+                  <span>{link.provider_display_name}</span>
+                  <button
+                    type="button"
+                    className="danger-button"
+                    disabled={busy}
+                    onClick={() => void unlink(link)}
+                  >
+                    Unlink
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+      <label>
+        Provider
+        <select
+          value={providerId}
+          onChange={(event) => setProviderId(event.target.value)}
+          disabled={busy}
+        >
+          {providers.map((provider) => (
+            <option key={provider.id} value={provider.id}>{provider.display_name}</option>
+          ))}
+        </select>
+      </label>
+      <label>
+        Justification
+        <textarea
+          maxLength={1_024}
+          required
+          value={justification}
+          onChange={(event) => setJustification(event.target.value)}
+        />
+      </label>
+      <button
+        type="button"
+        disabled={busy || providerId === "" || justification.trim() === ""}
+        onClick={() => void begin()}
+      >
+        {busy ? "Working…" : "Link external identity"}
+      </button>
+      {error !== "" && <p className="form-error" role="alert">{error}</p>}
+    </section>
+  );
+}
+
+function isOidcManagementApi(
+  api: ControlApi,
+): api is ControlApi & OidcControlApi & OidcManagementApi {
+  const candidate = api as Partial<OidcControlApi & OidcManagementApi>;
+  return typeof candidate.oidcProviders === "function" &&
+    typeof candidate.listOidcLinks === "function" &&
+    typeof candidate.beginOidcLink === "function" &&
+    typeof candidate.unlinkOidc === "function";
 }
 
 function ProfileForm({

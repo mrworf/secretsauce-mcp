@@ -3,32 +3,38 @@ import {
   browserControlApi,
   type OidcControlApi,
   type OidcProviderLabel,
+  type RestrictedOidcOptions,
 } from "./controlApi";
 
 export function OidcSignIn({
   api = browserControlApi,
   navigate = (url) => window.location.assign(url),
+  restricted,
 }: {
   api?: OidcControlApi;
   navigate?: (url: string) => void;
+  restricted?: RestrictedOidcOptions;
 }) {
-  const [providers, setProviders] = useState<OidcProviderLabel[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [providers, setProviders] = useState<OidcProviderLabel[]>(restricted?.providers ?? []);
+  const [loading, setLoading] = useState(restricted === undefined);
   const [starting, setStarting] = useState<string>();
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
+    if (restricted !== undefined) return;
     api.oidcProviders()
       .then(({ providers: configured }) => setProviders(configured))
       .catch(() => setFailed(true))
       .finally(() => setLoading(false));
-  }, [api]);
+  }, [api, restricted]);
 
   async function begin(providerId: string) {
     setStarting(providerId);
     setFailed(false);
     try {
-      const result = await api.beginOidc(providerId);
+      const result = restricted === undefined
+        ? await api.beginOidc(providerId)
+        : await browserControlApi.beginRestrictedOidc(providerId, restricted.csrf_token);
       navigate(result.authorization_url);
     } catch {
       setStarting(undefined);
@@ -39,7 +45,11 @@ export function OidcSignIn({
   return (
     <main className="startup-message">
       <h1>Sign in required</h1>
-      <p>Choose your configured identity provider to open the control workspace.</p>
+      <p>
+        {restricted === undefined
+          ? "Choose your configured identity provider to open the control workspace."
+          : "Finish enrollment with an approved external identity provider."}
+      </p>
       {loading && <p role="status">Loading sign-in options…</p>}
       {!loading && providers.length === 0 && (
         <p role={failed ? "alert" : "status"}>

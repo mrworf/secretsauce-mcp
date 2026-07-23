@@ -16,6 +16,7 @@ import {
   type OidcNetworkResponse,
 } from "../src/identity/oidcTrust.js";
 import { IdentityKeyRing } from "../src/identity/totp.js";
+import { AlwaysStepUpHandle, StepUpRepository } from "../src/identity/stepUp.js";
 import { PersistenceWorker } from "../src/persistence/worker.js";
 import type { IdentityConfig, OidcProviderConfig } from "../src/types.js";
 
@@ -162,6 +163,130 @@ describe("durable verified OIDC flow", () => {
     expect(tokenCalls).toBe(1);
     fixture.close();
     expired.close();
+  });
+
+  it("consumes always-step-up proof atomically with guarded flow creation", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "secretsauce-oidc-proof-"));
+    const worker = PersistenceWorker.open({
+      databaseFile: join(directory, "control.sqlite"),
+      productVersion: "test",
+      now: () => NOW,
+    });
+    workers.add(worker);
+    const userId = "019f9a4a-7a00-7000-8000-000000000061";
+    const sessionId = "019f9a4a-7a00-7000-8000-000000000062";
+    const firstProof = "019f9a4a-7a00-7000-8000-000000000063";
+    const secondProof = "019f9a4a-7a00-7000-8000-000000000064";
+    await worker.execute({
+      run: (database) => database.withOperationalTransaction((transaction) => {
+        transaction.run(`
+          INSERT INTO users (
+            id, email, normalized_email, given_name, family_name, role, status,
+            security_epoch, password_policy_version, version, created_at, updated_at
+          ) VALUES (?, 'admin@example.org', 'admin@example.org', 'Admin', 'User',
+            'superadmin', 'active', 1, 1, 1, ?, ?)
+        `, [userId, NOW, NOW]);
+        transaction.run(`
+          INSERT INTO local_authenticator_states (
+            user_id, password_state, totp_state, version, created_at, updated_at
+          ) VALUES (?, 'configured', 'configured', 1, ?, ?)
+        `, [userId, NOW, NOW]);
+        transaction.run(`
+          INSERT INTO users (
+            id, email, normalized_email, given_name, family_name, role, status,
+            security_epoch, password_policy_version, version, created_at, updated_at
+          ) VALUES (
+            '019f9a4a-7a00-7000-8000-000000000065',
+            'target@example.org', 'target@example.org', 'Target', 'User',
+            'user', 'active', 1, 1, 1, ?, ?
+          )
+        `, [NOW, NOW]);
+        transaction.run(`
+          INSERT INTO local_authenticator_states (
+            user_id, password_state, totp_state, version, created_at, updated_at
+          ) VALUES (
+            '019f9a4a-7a00-7000-8000-000000000065',
+            'disabled', 'disabled', 1, ?, ?
+          )
+        `, [NOW, NOW]);
+        transaction.run(`
+          INSERT INTO browser_sessions (
+            id, user_id, session_hash, csrf_hash, role_class,
+            issued_security_epoch, issued_global_epoch,
+            issued_absolute_ms, issued_inactivity_ms,
+            issued_at, last_activity_at, absolute_expires_at,
+            step_up_at, revoked_at, version
+          ) VALUES (?, ?, ?, ?, 'admin', 1, 1, 43200000, 900000,
+            ?, ?, ?, ?, NULL, 1)
+        `, [sessionId, userId, "a".repeat(64), "b".repeat(64), NOW, NOW, NOW + 300_000, NOW]);
+        for (const [id, hash] of [[firstProof, "c".repeat(64)], [secondProof, "d".repeat(64)]]) {
+          transaction.run(`
+            INSERT INTO identity_step_up_proofs (
+              id, proof_hash, session_id, user_id, method, route_id,
+              targets_json, expected_version, idempotency_key_hash, body_digest,
+              issued_security_epoch, issued_global_epoch,
+              issued_at, expires_at, consumed_at
+            ) VALUES (?, ?, ?, ?, 'POST', 'users.oidc_link_begin',
+              '[]', 1, NULL, ?, 1, 1, ?, ?, NULL)
+          `, [id, hash, sessionId, userId, "e".repeat(64), NOW, NOW + 300_000]);
+        }
+      }),
+    });
+    const stepUps = new StepUpRepository(worker, () => NOW);
+    const repository = new OidcFlowRepository(worker, () => NOW, stepUps);
+    const create = (id: string, proofId: string) => repository.create({
+      id,
+      providerId: "workforce",
+      purpose: "superadmin_link",
+      stateHash: "f".repeat(64),
+      envelopeJson: "{}",
+      redirectUri: "https://control.example.org/api/v2/auth/oidc/workforce/callback",
+      expiresAt: NOW + 300_000,
+      maxRecords: 10,
+      binding: {
+        purpose: "superadmin_link",
+        targetUserId: "019f9a4a-7a00-7000-8000-000000000065",
+        actorUserId: userId,
+        actorSessionId: sessionId,
+        targetVersion: 1,
+      },
+      stepUp: {
+        proof: new AlwaysStepUpHandle(proofId, sessionId, userId),
+        audit: {
+          actor: {
+            type: "browser_session",
+            id: userId,
+            label: `user:${userId}`,
+            role: "superadmin",
+            authenticationMethod: "browser_session",
+          },
+          action: "identity.oidc_link_begin",
+          result: "allow",
+          target: {
+            type: "user",
+            id: "019f9a4a-7a00-7000-8000-000000000065",
+            label: "guarded target",
+          },
+          changes: [{ field: "provider", after: "workforce" }],
+          correlationId: CORRELATION,
+          source: { category: "identity" },
+        },
+      },
+    });
+    await create("019f9a4a-7a00-7000-8000-000000000066", firstProof);
+    await expect(create("019f9a4a-7a00-7000-8000-000000000067", secondProof))
+      .rejects.toEqual(new OidcFlowError());
+    await expect(worker.execute({
+      run: (database) => database.read((query) => query.all<{
+        id: string;
+        consumed_at: number | null;
+      }>(`
+        SELECT id, consumed_at FROM identity_step_up_proofs ORDER BY id
+      `)),
+    })).resolves.toEqual([
+      { id: firstProof, consumed_at: NOW },
+      { id: secondProof, consumed_at: null },
+    ]);
   });
 });
 

@@ -8,6 +8,10 @@ import type { UserAdministrationService } from "../identity/userAdministration.j
 import type { UserLifecycleAdministrationService } from "../identity/userLifecycleAdministration.js";
 import type { OidcFlowService } from "../identity/oidcFlow.js";
 import type { OidcLoginService } from "../identity/oidcLogin.js";
+import {
+  OidcLinkError,
+  type OidcLinkService,
+} from "../identity/oidcLink.js";
 import type { OidcProviderConfig } from "../types.js";
 import {
   EnrollmentError,
@@ -47,6 +51,7 @@ export interface LocalIdentityControl {
     login: OidcLoginService;
     providers: Record<string, OidcProviderConfig>;
     flowTtlMs: number;
+    link?: OidcLinkService;
   };
 }
 
@@ -72,6 +77,17 @@ export function registerLocalIdentityRoutes(
     );
   }
   if (identity.oidc !== undefined) registerOidcLoginRoutes(registry, identity.oidc);
+  if (
+    identity.oidc?.link !== undefined &&
+    identity.restrictedSessions !== undefined
+  ) {
+    registerOidcLinkRoutes(
+      registry,
+      identity.oidc,
+      identity.restrictedSessions,
+      identity.browserSessions,
+    );
+  }
   registry.register(defineControlRoute({
     id: "identity.login",
     method: "POST",
@@ -404,13 +420,25 @@ function registerOidcLoginRoutes(
           code,
           request.id,
         );
-        if (completed.binding.purpose !== "login") throw new Error("OIDC purpose mismatch");
-        const login = await oidc.login.login(completed.assertion, request.id);
-        setControlSessionCookie(
-          reply,
-          login.sessionToken,
-          Math.max(1, Math.floor((login.absoluteExpiresAt - login.issuedAt) / 1_000)),
-        );
+        if (completed.binding.purpose === "login") {
+          const login = await oidc.login.login(completed.assertion, request.id);
+          setBrowserSession(reply, login);
+        } else if (completed.binding.purpose === "restricted_link" && oidc.link !== undefined) {
+          const login = await oidc.link.completeRestricted(
+            completed.assertion,
+            completed.binding,
+            request.id,
+          );
+          setBrowserSession(reply, login);
+          clearControlEnrollmentCookie(reply);
+        } else if (
+          completed.binding.purpose === "superadmin_link" &&
+          oidc.link !== undefined
+        ) {
+          await oidc.link.completeAdmin(completed.assertion, completed.binding, request.id);
+        } else {
+          throw new Error("OIDC purpose mismatch");
+        }
       } catch {
         // The browser observes the same fixed redirect for every callback outcome.
       } finally {
@@ -419,6 +447,319 @@ function registerOidcLoginRoutes(
       return { data: null, statusCode: 302, redirectLocation: "/control/" };
     },
   }));
+}
+
+function registerOidcLinkRoutes(
+  registry: ControlRouteRegistry,
+  oidc: NonNullable<LocalIdentityControl["oidc"]>,
+  restrictedSessions: RestrictedSessionAuthenticator,
+  browserSessions: BrowserSessionAuthenticator,
+): void {
+  const beginResponse = z.object({
+    authorization_url: z.string().url(),
+    expires_at: z.number().int().nonnegative(),
+  }).strict();
+  const providerParams = z.object({
+    provider_id: z.string().regex(/^[a-z][a-z0-9_.-]{0,63}$/),
+  }).strict();
+  registry.register(defineControlRoute({
+    id: "identity.oidc_restricted_options",
+    method: "GET",
+    path: "/api/v2/auth/enrollment/oidc/providers",
+    summary: "Read external identity options for restricted enrollment",
+    tags: ["Identity"],
+    authentication: ["restricted_session"],
+    permission: "authenticated",
+    stepUp: "none",
+    schemas: {
+      response: z.object({
+        csrf_token: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
+        providers: z.array(z.object({
+          id: z.string().regex(/^[a-z][a-z0-9_.-]{0,63}$/),
+          display_name: z.string().min(1).max(120),
+        }).strict()).max(8),
+      }).strict(),
+    },
+    rateLimit: "authentication",
+    secretFields: [],
+    cache: "no-store",
+    concurrency: "none",
+    idempotency: "none",
+    handler: async ({ request }) => {
+      try {
+        return {
+          data: {
+            csrf_token: await restrictedSessions.rotateCsrf(request),
+            providers: Object.values(oidc.providers)
+              .map((provider) => ({ id: provider.id, display_name: provider.displayName }))
+              .sort((left, right) => left.id.localeCompare(right.id)),
+          },
+        };
+      } catch {
+        throw new ControlContractError(401, "unauthenticated", "Authentication failed.");
+      }
+    },
+  }));
+
+  registry.register(defineControlRoute({
+    id: "identity.oidc_restricted_link_begin",
+    method: "POST",
+    path: "/api/v2/auth/enrollment/oidc/{provider_id}/begin",
+    summary: "Link an external identity during restricted enrollment",
+    tags: ["Identity"],
+    authentication: ["restricted_session"],
+    permission: "authenticated",
+    stepUp: "none",
+    schemas: {
+      body: z.object({}).strict(),
+      params: providerParams,
+      response: beginResponse,
+    },
+    rateLimit: "authentication",
+    auditAction: "identity.oidc_link_begin",
+    secretFields: [],
+    cache: "no-store",
+    concurrency: "none",
+    idempotency: "none",
+    handler: async ({ params, request, reply }) => {
+      const session = restrictedSessions.session(request);
+      if (session === undefined) throw new ControlContractError(401, "unauthenticated", "Authentication failed.");
+      try {
+        const binding = await oidc.link!.restrictedBinding(session);
+        const started = await oidc.flow.begin(params.provider_id, binding);
+        setOidcFlowCookie(reply, started.authorizationUrl, oidc.flowTtlMs);
+        return {
+          data: {
+            authorization_url: started.authorizationUrl,
+            expires_at: started.expiresAt,
+          },
+        };
+      } catch {
+        throw new ControlContractError(401, "unauthenticated", "Authentication failed.");
+      }
+    },
+  }));
+
+  registry.register(defineControlRoute({
+    id: "users.oidc_links",
+    method: "GET",
+    path: "/api/v2/users/{user_id}/oidc-links",
+    summary: "List safe external identity links for a user",
+    tags: ["Users"],
+    authentication: ["browser_session"],
+    permission: "manage_admin_accounts",
+    stepUp: "none",
+    schemas: {
+      params: z.object({ user_id: z.string().uuid() }).strict(),
+      response: z.object({
+        links: z.array(z.object({
+          id: z.string().uuid(),
+          provider_id: z.string().regex(/^[a-z][a-z0-9_.-]{0,63}$/),
+          provider_display_name: z.string().min(1).max(120),
+          created_at: z.number().int().nonnegative(),
+          last_authenticated_at: z.number().int().nonnegative().optional(),
+        }).strict()).max(64),
+      }).strict(),
+    },
+    rateLimit: "management",
+    secretFields: [],
+    cache: "no-store",
+    concurrency: "none",
+    idempotency: "none",
+    handler: async ({ params }) => {
+      try {
+        const links = await oidc.link!.links(params.user_id);
+        return {
+          data: {
+            links: links.map((link) => ({
+              id: link.id,
+              provider_id: link.providerId,
+              provider_display_name: link.providerDisplayName,
+              created_at: link.createdAt,
+              ...(link.lastAuthenticatedAt === undefined
+                ? {}
+                : { last_authenticated_at: link.lastAuthenticatedAt }),
+            })),
+          },
+        };
+      } catch {
+        throw new ControlContractError(404, "not_found", "The resource was not found.");
+      }
+    },
+  }));
+
+  registry.register(defineControlRoute({
+    id: "users.oidc_link_begin",
+    method: "POST",
+    path: "/api/v2/users/{user_id}/oidc-links/{provider_id}/begin",
+    summary: "Begin a guarded external identity link",
+    tags: ["Users"],
+    authentication: ["browser_session"],
+    permission: "manage_admin_accounts",
+    stepUp: "five_minutes",
+    schemas: {
+      params: z.object({
+        user_id: z.string().uuid(),
+        provider_id: z.string().regex(/^[a-z][a-z0-9_.-]{0,63}$/),
+      }).strict(),
+      body: z.object({
+        justification: z.string().min(1).max(1_024),
+      }).strict(),
+      response: beginResponse,
+    },
+    rateLimit: "management",
+    auditAction: "identity.oidc_link_begin",
+    secretFields: [],
+    cache: "no-store",
+    concurrency: "if-match",
+    idempotency: "none",
+    handler: async ({
+      authentication,
+      params,
+      body,
+      expectedVersion,
+      request,
+      requestId,
+      reply,
+      stepUpProof,
+    }) => {
+      const session = oidcBrowserSession(request, browserSessions);
+      try {
+        const binding = await oidc.link!.adminBinding(
+          authentication!,
+          session,
+          params.user_id,
+          expectedVersion!,
+        );
+        const authorization = oidc.link!.beginStepUp(
+          authentication!,
+          params.user_id,
+          params.provider_id,
+          body.justification,
+          requestId,
+          stepUpProof,
+        );
+        const started = await oidc.flow.begin(params.provider_id, binding, authorization);
+        setOidcFlowCookie(reply, started.authorizationUrl, oidc.flowTtlMs);
+        return {
+          data: {
+            authorization_url: started.authorizationUrl,
+            expires_at: started.expiresAt,
+          },
+        };
+      } catch (error) {
+        throw oidcLinkContractError(error);
+      }
+    },
+  }));
+
+  registry.register(defineControlRoute({
+    id: "users.oidc_unlink",
+    method: "DELETE",
+    path: "/api/v2/users/{user_id}/oidc-links/{link_id}",
+    summary: "Remove a guarded external identity link",
+    tags: ["Users"],
+    authentication: ["browser_session"],
+    permission: "manage_admin_accounts",
+    stepUp: "five_minutes",
+    schemas: {
+      params: z.object({
+        user_id: z.string().uuid(),
+        link_id: z.string().uuid(),
+      }).strict(),
+      body: z.object({
+        justification: z.string().min(1).max(1_024),
+      }).strict(),
+      response: z.object({
+        user_id: z.string().uuid(),
+        deleted: z.literal(true),
+        version: z.number().int().positive(),
+      }).strict(),
+    },
+    rateLimit: "management",
+    auditAction: "identity.oidc_unlink",
+    secretFields: [],
+    cache: "no-store",
+    concurrency: "if-match",
+    idempotency: "none",
+    handler: async ({
+      authentication,
+      params,
+      body,
+      expectedVersion,
+      request,
+      requestId,
+      stepUpProof,
+    }) => {
+      try {
+        const version = await oidc.link!.unlink({
+          actor: authentication!,
+          session: oidcBrowserSession(request, browserSessions),
+          targetUserId: params.user_id,
+          linkId: params.link_id,
+          expectedVersion: expectedVersion!,
+          justification: body.justification,
+          correlationId: requestId,
+          ...(stepUpProof === undefined ? {} : { proof: stepUpProof }),
+        });
+        return {
+          data: { user_id: params.user_id, deleted: true as const, version },
+          version,
+        };
+      } catch (error) {
+        throw oidcLinkContractError(error);
+      }
+    },
+  }));
+}
+
+function oidcBrowserSession(
+  request: Parameters<BrowserSessionAuthenticator["session"]>[0],
+  browserSessions: BrowserSessionAuthenticator,
+) {
+  const session = browserSessions.session(request);
+  if (session === undefined) throw new OidcLinkError("invalid");
+  return session;
+}
+
+function setOidcFlowCookie(
+  reply: Parameters<typeof setControlOidcFlowCookie>[0],
+  authorizationUrl: string,
+  flowTtlMs: number,
+): void {
+  const state = new URL(authorizationUrl).searchParams.get("state");
+  if (state === null) throw new Error("missing OIDC state");
+  setControlOidcFlowCookie(reply, state, Math.max(1, Math.ceil(flowTtlMs / 1_000)));
+}
+
+function setBrowserSession(
+  reply: Parameters<typeof setControlSessionCookie>[0],
+  login: {
+    sessionToken: string;
+    absoluteExpiresAt: number;
+    issuedAt: number;
+  },
+): void {
+  setControlSessionCookie(
+    reply,
+    login.sessionToken,
+    Math.max(1, Math.floor((login.absoluteExpiresAt - login.issuedAt) / 1_000)),
+  );
+}
+
+function oidcLinkContractError(error: unknown): ControlContractError {
+  if (error instanceof OidcLinkError) {
+    if (error.code === "stale") {
+      return new ControlContractError(409, "stale_version", "The resource changed. Refresh and retry.");
+    }
+    if (error.code === "conflict" || error.code === "last_method") {
+      return new ControlContractError(409, "identity_conflict", "The identity change conflicts with current state.");
+    }
+    if (error.code === "unavailable") {
+      return new ControlContractError(503, "maintenance", "Identity linking is unavailable.");
+    }
+  }
+  return new ControlContractError(404, "not_found", "The resource was not found.");
 }
 
 function registerEnrollmentRoutes(

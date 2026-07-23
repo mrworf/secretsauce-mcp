@@ -78,6 +78,38 @@ export interface OidcControlApi {
   beginOidc(providerId: string): Promise<{ authorization_url: string; expires_at: number }>;
 }
 
+export interface RestrictedOidcOptions {
+  csrf_token: string;
+  providers: OidcProviderLabel[];
+}
+
+export interface OidcManagementLink {
+  id: string;
+  provider_id: string;
+  provider_display_name: string;
+  created_at: number;
+  last_authenticated_at?: number;
+}
+
+export interface OidcManagementApi {
+  oidcEnrollmentOptions(): Promise<RestrictedOidcOptions>;
+  beginRestrictedOidc(
+    providerId: string,
+    csrfToken: string,
+  ): Promise<{ authorization_url: string; expires_at: number }>;
+  listOidcLinks(userId: string): Promise<{ links: OidcManagementLink[] }>;
+  beginOidcLink(
+    user: ControlUser,
+    providerId: string,
+    justification: string,
+  ): Promise<{ authorization_url: string; expires_at: number }>;
+  unlinkOidc(
+    user: ControlUser,
+    linkId: string,
+    justification: string,
+  ): Promise<{ user_id: string; deleted: true; version: number }>;
+}
+
 export interface UserProfileInput {
   email: string;
   given_name: string;
@@ -94,7 +126,7 @@ export type UserAction =
   | "role"
   | "delete";
 
-export const browserControlApi: ControlApi & OidcControlApi = {
+export const browserControlApi: ControlApi & OidcControlApi & OidcManagementApi = {
   session: () => get<ControlSession>("/api/v2/auth/session"),
   oidcProviders: () => get<{ providers: OidcProviderLabel[] }>("/api/v2/auth/oidc/providers"),
   beginOidc: (providerId) => {
@@ -107,6 +139,33 @@ export const browserControlApi: ControlApi & OidcControlApi = {
       body: "{}",
     });
   },
+  oidcEnrollmentOptions: () =>
+    get<RestrictedOidcOptions>("/api/v2/auth/enrollment/oidc/providers"),
+  beginRestrictedOidc: (providerId, csrfToken) =>
+    request(`/api/v2/auth/enrollment/oidc/${safeProviderId(providerId)}/begin`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-csrf-token": csrfToken,
+      },
+      body: "{}",
+    }),
+  listOidcLinks: (userId) =>
+    get(`/api/v2/users/${encodeURIComponent(userId)}/oidc-links`),
+  beginOidcLink: (user, providerId, justification) =>
+    mutation(
+      `/api/v2/users/${user.id}/oidc-links/${safeProviderId(providerId)}/begin`,
+      "POST",
+      { justification },
+      user.version,
+    ),
+  unlinkOidc: (user, linkId, justification) =>
+    mutation(
+      `/api/v2/users/${user.id}/oidc-links/${encodeURIComponent(linkId)}`,
+      "DELETE",
+      { justification },
+      user.version,
+    ),
   self: () => get<ControlUser>("/api/v2/auth/self/profile"),
   listUsers: (input = {}) => {
     const query = new URLSearchParams();
@@ -149,6 +208,13 @@ export const browserControlApi: ControlApi & OidcControlApi = {
     );
   },
 };
+
+function safeProviderId(providerId: string): string {
+  if (!/^[a-z][a-z0-9_.-]{0,63}$/.test(providerId)) {
+    throw new ControlApiError("invalid_request", "The provider is invalid.");
+  }
+  return encodeURIComponent(providerId);
+}
 
 async function get<T>(path: string): Promise<T> {
   return request<T>(path, { method: "GET" });

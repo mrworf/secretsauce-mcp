@@ -169,7 +169,7 @@ export function setControlOidcFlowCookie(
   maxAgeSeconds: number,
 ): void {
   reply.setCookie(CONTROL_OIDC_FLOW_COOKIE, value, {
-    path: "/api/v2/auth/oidc/",
+    path: "/api/v2/",
     secure: true,
     httpOnly: true,
     sameSite: "lax",
@@ -179,7 +179,7 @@ export function setControlOidcFlowCookie(
 
 export function clearControlOidcFlowCookie(reply: FastifyReply): void {
   reply.clearCookie(CONTROL_OIDC_FLOW_COOKIE, {
-    path: "/api/v2/auth/oidc/",
+    path: "/api/v2/",
     secure: true,
     httpOnly: true,
     sameSite: "lax",

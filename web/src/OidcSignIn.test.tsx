@@ -36,4 +36,23 @@ describe("external sign-in view", () => {
       .toHaveTextContent("Sign-in options are temporarily unavailable.");
     expect(screen.queryByText(/token and endpoint detail/)).not.toBeInTheDocument();
   });
+
+  it("offers configured external linking inside a restricted enrollment state", async () => {
+    const api: OidcControlApi = {
+      oidcProviders: vi.fn(),
+      beginOidc: vi.fn(),
+    };
+    render(<OidcSignIn
+      api={api}
+      navigate={vi.fn()}
+      restricted={{
+        csrf_token: "c".repeat(43),
+        providers: [{ id: "workforce", display_name: "Workforce identity" }],
+      }}
+    />);
+    expect(screen.getByText(/Finish enrollment/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Continue with Workforce identity" }))
+      .toBeInTheDocument();
+    expect(api.oidcProviders).not.toHaveBeenCalled();
+  });
 });

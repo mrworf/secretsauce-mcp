@@ -9,10 +9,10 @@ milestones:
   - id: "01"
     title: "Persistence And Audit Foundation"
     file: "docs/milestones/01-persistence-audit-foundation.md"
-    status: "in_progress"
-    completed_at: null
-    commit_hash: null
-    notes: ""
+    status: "completed"
+    completed_at: "2026-07-23T15:47:17.714Z"
+    commit_hash: "55f5b42"
+    notes: "Implemented SQLite migration and ownership foundations, sanitized readiness/lifecycle integration, and atomic administrative audit units of work; focused tests, build, and full suite pass (406/406)."
   - id: "02"
     title: "Control Plane Foundation"
     file: "docs/milestones/02-control-plane-foundation.md"

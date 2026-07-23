@@ -79,10 +79,10 @@ milestones:
   - id: "11"
     title: "Credential Management"
     file: "docs/milestones/11-credential-management.md"
-    status: "pending"
+    status: "in_progress"
     completed_at: null
     commit_hash: null
-    notes: ""
+    notes: "Decision-complete implementation and security plan under docs/plans/milestone-11-credential-management.md."
   - id: "12"
     title: "Policy Management And Explanation"
     file: "docs/milestones/12-policy-management-explanation.md"

@@ -72,10 +72,10 @@ milestones:
   - id: "10"
     title: "Groups And Assignments"
     file: "docs/milestones/10-groups-and-assignments.md"
-    status: "in_progress"
-    completed_at: null
-    commit_hash: null
-    notes: "Decision-complete implementation and security plan under docs/plans/milestone-10-groups-and-assignments.md."
+    status: "completed"
+    completed_at: "2026-07-23T22:53:43.452Z"
+    commit_hash: "17307c9"
+    notes: "Implemented durable service-scoped groups, normalized selectors, effective-access explanations, scoped related-user authorization, targeted invalidation, strict APIs, responsive workspace, and operator guidance; OpenAPI current; 81 files / 620 tests passed."
   - id: "11"
     title: "Credential Management"
     file: "docs/milestones/11-credential-management.md"

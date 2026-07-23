@@ -56,6 +56,7 @@ For every downstream request, the gateway validates the authenticated client, re
 - [Local browser authentication](docs/local-authentication.md)
 - [Generic OIDC identity provider](docs/oidc-identity-provider.md)
 - [Service management](docs/service-management.md)
+- [Groups and service assignments](docs/group-assignments.md)
 - [Codex and ChatGPT setup](docs/codex-setup.md), including hosted ChatGPT web configuration
 - [Security notes](docs/security-notes.md)
 - [Branch protection](docs/branch-protection.md)

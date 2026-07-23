@@ -93,6 +93,12 @@ publication, transfer, archive, deletion, and runtime-isolation semantics.
 Database-managed service records do not affect MCP routing before the persisted
 runtime authorization milestone.
 
+Service-scoped group and assignment management is available at
+`/control/groups`. See [Groups and service assignments](group-assignments.md)
+for selector, membership, effective-access, invalidation, and account-continuity
+semantics. These assignments remain control-plane state until persisted runtime
+authorization becomes authoritative.
+
 `identity.temporary_password_ttl` defaults to `72h` and is bounded from `1h`
 through `7d`. `identity.restricted_session_ttl` defaults to `15m` and is bounded
 from `5m` through `30m`. Restricted enrollment cookies never authorize ordinary

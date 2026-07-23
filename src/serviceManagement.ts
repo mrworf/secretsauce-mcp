@@ -275,6 +275,11 @@ export class ServiceManagementRepository {
               now,
               now,
             ]);
+            transaction.run(`
+              INSERT INTO service_assignment_states (
+                service_id, version, authorization_generation, created_at, updated_at
+              ) VALUES (?, 1, 0, ?, ?)
+            `, [input.id, now, now]);
             return { value: input.id, resultReference: input.id, responseStatus: 201 };
           });
           const serviceId = result.kind === "executed" ? result.value : result.resultReference;
@@ -971,6 +976,11 @@ export class ServiceManagementRepository {
               now,
               now,
             ]);
+            transaction.run(`
+              INSERT INTO service_assignment_states (
+                service_id, version, authorization_generation, created_at, updated_at
+              ) VALUES (?, 1, 0, ?, ?)
+            `, [input.serviceId, now, now]);
             for (const destination of destinations) {
               insertDestination(transaction, input.serviceId, destination, now);
             }

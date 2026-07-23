@@ -708,6 +708,134 @@ CREATE INDEX service_invalidation_events_service_idx
   ON service_invalidation_events (service_id, created_at, id);
 `;
 
+const migration0009 = `
+CREATE TABLE service_groups (
+  id TEXT PRIMARY KEY CHECK (
+    length(id) = 36 AND id = lower(id)
+    AND substr(id, 15, 1) = '7'
+    AND substr(id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND id NOT GLOB '*[^0-9a-f-]*'
+  ),
+  service_id TEXT NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+  name TEXT NOT NULL CHECK (length(name) BETWEEN 1 AND 120),
+  normalized_name TEXT NOT NULL CHECK (
+    length(normalized_name) BETWEEN 1 AND 120
+    AND normalized_name = lower(normalized_name)
+  ),
+  description TEXT CHECK (
+    description IS NULL OR length(description) BETWEEN 1 AND 1024
+  ),
+  lifecycle TEXT NOT NULL DEFAULT 'active'
+    CHECK (lifecycle IN ('active', 'archived')),
+  version INTEGER NOT NULL DEFAULT 1 CHECK (version > 0),
+  created_at INTEGER NOT NULL CHECK (created_at >= 0),
+  updated_at INTEGER NOT NULL CHECK (updated_at >= created_at),
+  UNIQUE (service_id, normalized_name),
+  UNIQUE (service_id, id)
+) STRICT;
+
+CREATE INDEX service_groups_service_idx
+  ON service_groups (service_id, lifecycle, normalized_name, id);
+
+CREATE TABLE service_group_members (
+  service_id TEXT NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+  group_id TEXT NOT NULL,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  assigned_by_user_id TEXT NOT NULL,
+  created_at INTEGER NOT NULL CHECK (created_at >= 0),
+  PRIMARY KEY (group_id, user_id),
+  FOREIGN KEY (service_id, group_id)
+    REFERENCES service_groups(service_id, id) ON DELETE CASCADE
+) STRICT, WITHOUT ROWID;
+
+CREATE INDEX service_group_members_service_idx
+  ON service_group_members (service_id, group_id, user_id);
+CREATE INDEX service_group_members_user_idx
+  ON service_group_members (user_id, service_id, group_id);
+
+CREATE TABLE service_principal_assignments (
+  id TEXT PRIMARY KEY CHECK (
+    length(id) = 36 AND id = lower(id)
+    AND substr(id, 15, 1) = '7'
+    AND substr(id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND id NOT GLOB '*[^0-9a-f-]*'
+  ),
+  service_id TEXT NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+  selector_kind TEXT NOT NULL CHECK (selector_kind IN ('all', 'group', 'user')),
+  group_id TEXT,
+  user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
+  assigned_by_user_id TEXT NOT NULL,
+  created_at INTEGER NOT NULL CHECK (created_at >= 0),
+  CHECK (
+    (selector_kind = 'all' AND group_id IS NULL AND user_id IS NULL)
+    OR (selector_kind = 'group' AND group_id IS NOT NULL AND user_id IS NULL)
+    OR (selector_kind = 'user' AND group_id IS NULL AND user_id IS NOT NULL)
+  ),
+  FOREIGN KEY (service_id, group_id)
+    REFERENCES service_groups(service_id, id) ON DELETE CASCADE
+) STRICT;
+
+CREATE UNIQUE INDEX service_principal_assignment_all_idx
+  ON service_principal_assignments (service_id)
+  WHERE selector_kind = 'all';
+CREATE UNIQUE INDEX service_principal_assignment_group_idx
+  ON service_principal_assignments (service_id, group_id)
+  WHERE selector_kind = 'group';
+CREATE UNIQUE INDEX service_principal_assignment_user_idx
+  ON service_principal_assignments (service_id, user_id)
+  WHERE selector_kind = 'user';
+CREATE INDEX service_principal_assignments_service_idx
+  ON service_principal_assignments (service_id, selector_kind, id);
+CREATE INDEX service_principal_assignments_user_idx
+  ON service_principal_assignments (user_id, service_id)
+  WHERE user_id IS NOT NULL;
+
+CREATE TABLE service_assignment_states (
+  service_id TEXT PRIMARY KEY REFERENCES services(id) ON DELETE CASCADE,
+  version INTEGER NOT NULL DEFAULT 1 CHECK (version > 0),
+  authorization_generation INTEGER NOT NULL DEFAULT 0
+    CHECK (authorization_generation >= 0),
+  created_at INTEGER NOT NULL CHECK (created_at >= 0),
+  updated_at INTEGER NOT NULL CHECK (updated_at >= created_at)
+) STRICT;
+
+INSERT INTO service_assignment_states (
+  service_id, version, authorization_generation, created_at, updated_at
+)
+SELECT id, 1, 0, created_at, updated_at FROM services;
+
+CREATE TABLE assignment_invalidation_events (
+  id TEXT PRIMARY KEY CHECK (
+    length(id) = 36 AND id = lower(id)
+    AND substr(id, 15, 1) = '7'
+    AND substr(id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND id NOT GLOB '*[^0-9a-f-]*'
+  ),
+  service_id TEXT NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+  affected_user_id TEXT CHECK (
+    affected_user_id IS NULL OR (
+      length(affected_user_id) = 36
+      AND affected_user_id = lower(affected_user_id)
+    )
+  ),
+  authorization_generation INTEGER NOT NULL
+    CHECK (authorization_generation > 0),
+  reason TEXT NOT NULL CHECK (
+    reason IN ('service_selector', 'group_membership', 'group_archive', 'group_delete')
+  ),
+  created_at INTEGER NOT NULL CHECK (created_at >= 0),
+  dispatched_at INTEGER CHECK (dispatched_at IS NULL OR dispatched_at >= created_at),
+  attempts INTEGER NOT NULL DEFAULT 0 CHECK (attempts >= 0)
+) STRICT;
+
+CREATE INDEX assignment_invalidation_events_dispatch_idx
+  ON assignment_invalidation_events (dispatched_at, created_at, id);
+CREATE INDEX assignment_invalidation_events_service_idx
+  ON assignment_invalidation_events (
+    service_id, authorization_generation, affected_user_id, id
+  );
+`;
+
 export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [
   {
     version: 1,
@@ -748,6 +876,11 @@ export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [
     version: 8,
     name: "service_management",
     sql: migration0008,
+  },
+  {
+    version: 9,
+    name: "groups_and_assignments",
+    sql: migration0009,
   },
 ];
 

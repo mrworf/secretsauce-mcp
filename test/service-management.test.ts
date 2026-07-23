@@ -757,6 +757,11 @@ describe("durable service ownership", () => {
       service: undefined,
       destinations: 0,
       revisions: 0,
+      assignmentStates: 0,
+      groups: 0,
+      groupMembers: 0,
+      principalAssignments: 0,
+      assignmentInvalidations: 0,
       deleteInvalidations: 1,
       deleteAudits: 1,
     });
@@ -1159,6 +1164,26 @@ async function deletedServiceEvidence(worker: PersistenceWorker, serviceId: stri
       )!.count,
       revisions: query.get<{ count: number }>(
         "SELECT count(*) AS count FROM service_config_versions WHERE service_id = ?",
+        [serviceId],
+      )!.count,
+      assignmentStates: query.get<{ count: number }>(
+        "SELECT count(*) AS count FROM service_assignment_states WHERE service_id = ?",
+        [serviceId],
+      )!.count,
+      groups: query.get<{ count: number }>(
+        "SELECT count(*) AS count FROM service_groups WHERE service_id = ?",
+        [serviceId],
+      )!.count,
+      groupMembers: query.get<{ count: number }>(
+        "SELECT count(*) AS count FROM service_group_members WHERE service_id = ?",
+        [serviceId],
+      )!.count,
+      principalAssignments: query.get<{ count: number }>(
+        "SELECT count(*) AS count FROM service_principal_assignments WHERE service_id = ?",
+        [serviceId],
+      )!.count,
+      assignmentInvalidations: query.get<{ count: number }>(
+        "SELECT count(*) AS count FROM assignment_invalidation_events WHERE service_id = ?",
         [serviceId],
       )!.count,
       deleteInvalidations: query.get<{ count: number }>(`

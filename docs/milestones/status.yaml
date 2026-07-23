@@ -30,10 +30,10 @@ milestones:
   - id: "04"
     title: "Identity Bootstrap"
     file: "docs/milestones/04-identity-bootstrap.md"
-    status: "in_progress"
-    completed_at: null
-    commit_hash: null
-    notes: "Decision-complete implementation plan: docs/plans/milestone-04-identity-bootstrap.md"
+    status: "completed"
+    completed_at: "2026-07-23T17:49:05.322Z"
+    commit_hash: "990c0f5"
+    notes: "Durable UUIDv7 identities, normalized profiles, exact provider links, transactional lifecycle and last-superadmin invariants, and terminal-only audited initial bootstrap pass production build, current OpenAPI, focused acceptance, restart/race checks, and full 502/502 tests."
   - id: "05"
     title: "Local Authentication, Sessions, And Step-Up"
     file: "docs/milestones/05-local-auth-sessions-step-up.md"

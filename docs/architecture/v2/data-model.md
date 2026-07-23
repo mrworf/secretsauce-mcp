@@ -105,6 +105,14 @@ one top-level transaction and returns after commit. Mutations, invalidation
 generations, job enqueue, activity update when applicable, audit event, and audit
 FTS insert share that transaction.
 
+Milestone 11 realizes credential storage through `service_credentials`,
+`credential_principal_assignments`, `credential_invalidation_events`, and
+`credential_vault_operations`. Browser projections omit the private locator and
+vault generation. A durable vault-operation intent is committed before external
+vault I/O and remains non-usable until a safe final state is known. Permanent
+service deletion is blocked until every credential row has been explicitly
+archived and removed.
+
 ## Required lifecycle walkthroughs
 
 - **User deletion:** verify deactivated and not protected superadmin; delete

@@ -79,10 +79,10 @@ milestones:
   - id: "11"
     title: "Credential Management"
     file: "docs/milestones/11-credential-management.md"
-    status: "in_progress"
-    completed_at: null
-    commit_hash: null
-    notes: "Decision-complete implementation and security plan under docs/plans/milestone-11-credential-management.md."
+    status: "completed"
+    completed_at: "2026-07-23T23:43:39.027Z"
+    commit_hash: "f753526"
+    notes: "Implemented safe service-owned credential metadata, selector intersection, validated placement, isolated write-only vault coordination and reconciliation, protected idempotency, lifecycle/invalidation, strict APIs, and responsive workspace; production build and full 85-file/644-test suite pass."
   - id: "12"
     title: "Policy Management And Explanation"
     file: "docs/milestones/12-policy-management-explanation.md"

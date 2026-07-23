@@ -47,6 +47,14 @@ directory fsync. Locators are random UUIDs and reveal no value. Metadata returns
 status, generation, byte-size class, last-four captured before encryption, and
 timestamps—never ciphertext or key material.
 
+For credential management, the control plane allocates the random locator before
+`create` and binds the record to `(service UUID, service UUID, credential UUID)`.
+That service-wide destination slot is only a compatibility binding for control
+operations; Milestone 13 still binds the actual destination and request when it
+mints a data-plane resolve capability. Create/replace/delete use a durable
+database intent and reconcile reply loss through metadata. Unknown outcomes stay
+visibly unavailable and are retried during startup reconciliation.
+
 ## Provisioning, rotation, and recovery
 
 Initial bootstrap refuses to start until the broker root key and caller keys exist

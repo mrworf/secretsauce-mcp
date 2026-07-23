@@ -110,3 +110,10 @@ contract declares them and never repeat them on later GET.
 | Same idempotency key with different digest | `409 idempotency_conflict` |
 | Credential write succeeds | Returns metadata/status only; later reads never return value |
 | Secret fails validation | Error identifies field/rule, never echoes value |
+
+Credential value routes strengthen the normal idempotency record with a keyed
+digest of the protected request. This permits exact safe-result replay without
+storing a raw value or a brute-forceable unkeyed value digest. Credential
+create/edit/assignment/lifecycle routes are browser-only and service-scoped;
+value bodies are explicitly secret-bearing and all reads/value responses are
+`no-store`.

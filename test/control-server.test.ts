@@ -336,6 +336,27 @@ describe("control and data listener integration", () => {
     });
     await replacement.close();
   });
+
+  it("restarts cleanly with the persisted production schema and built shell", async () => {
+    const port = await unusedPort();
+    const config = controlConfig(port);
+    const first = await startControlServer(config);
+    expect(await first.persistence.execute({
+      run: (database) => database.schemaVersion,
+    })).toBe(2);
+    await first.close();
+
+    const restarted = await startControlServer(config);
+    openApplications.push(restarted);
+    expect(await restarted.persistence.execute({
+      run: (database) => database.schemaVersion,
+    })).toBe(2);
+    const health = await request(port, "/api/v2/health", "control.example.org");
+    expect(health.statusCode).toBe(200);
+    const shell = await request(port, "/control/services", "control.example.org");
+    expect(shell.statusCode).toBe(200);
+    expect(shell.body).toContain('<div id="root"></div>');
+  });
 });
 
 const configDatabaseFile = "/not/a/real/control.sqlite";

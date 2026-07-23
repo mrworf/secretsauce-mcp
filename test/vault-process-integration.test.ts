@@ -12,7 +12,7 @@ import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { afterEach, describe, expect, it } from "vitest";
 import { UuidV7Generator } from "../src/persistence/uuidV7.js";
 import { VaultCapabilityAuthority } from "../src/vault/capabilities.js";
-import { ControlVaultClient, DataVaultClient } from "../src/vault/client.js";
+import { BackupVaultClient, ControlVaultClient, DataVaultClient } from "../src/vault/client.js";
 import { encodeVaultKey } from "../src/vault/keyFile.js";
 import type { VaultCredentialBinding } from "../src/vault/recordStore.js";
 
@@ -30,6 +30,7 @@ describe("standalone vault broker process", () => {
     try {
       const control = new ControlVaultClient({ socketPath: fixture.socketPath, key: fixture.keys.control });
       const data = new DataVaultClient({ socketPath: fixture.socketPath, key: fixture.keys.data });
+      const backup = new BackupVaultClient({ socketPath: fixture.socketPath, key: fixture.keys.backup });
       const created = await control.create({
         binding: fixture.binding,
         secret,
@@ -43,8 +44,20 @@ describe("standalone vault broker process", () => {
         generation: 1,
         binding: fixture.binding,
       }, (value) => value.toString())).resolves.toBe(secret.toString());
+      const passphrase = Buffer.from("process backup passphrase");
+      const archive = await backup.exportEncrypted(issueBackup(fixture, "export_encrypted"), passphrase);
+      await control.replace({
+        locator: created.locator,
+        generation: 1,
+        binding: fixture.binding,
+        secret: Buffer.from("temporary-replacement"),
+      });
+      await backup.importEncrypted(issueBackup(fixture, "import_encrypted"), passphrase, archive);
+      archive.fill(0);
+      passphrase.fill(0);
       control.close();
       data.close();
+      backup.close();
 
       const firstOutput = await stopChild(first);
       expect(firstOutput).not.toContain(secret.toString());
@@ -173,6 +186,18 @@ function issueResolve(fixture: ProcessFixture, locator: string, generation: numb
     pathDigest: "c".repeat(64),
     requestId: `req_${randomUUID()}`,
     operationDigest: "d".repeat(64),
+  });
+}
+
+function issueBackup(
+  fixture: ProcessFixture,
+  operation: "export_encrypted" | "import_encrypted",
+): string {
+  return fixture.authority.issueBackup({
+    operation,
+    authorizationId: new UuidV7Generator().next(),
+    subjectId: new UuidV7Generator().next(),
+    operationDigest: operation === "export_encrypted" ? "e".repeat(64) : "f".repeat(64),
   });
 }
 

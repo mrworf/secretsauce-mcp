@@ -12,7 +12,9 @@ export type VaultErrorCode =
   | "vault_record_conflict"
   | "vault_record_not_found"
   | "vault_protocol_error"
-  | "vault_operation_denied";
+  | "vault_operation_denied"
+  | "vault_archive_invalid"
+  | "vault_archive_authentication_failed";
 
 export class VaultError extends Error {
   readonly code: VaultErrorCode;
@@ -40,6 +42,8 @@ export function vaultError(code: VaultErrorCode): VaultError {
     vault_record_not_found: "Vault record was not found.",
     vault_protocol_error: "Vault protocol operation failed.",
     vault_operation_denied: "Vault operation is not allowed.",
+    vault_archive_invalid: "Vault archive is invalid.",
+    vault_archive_authentication_failed: "Vault archive authentication failed.",
   };
   return new VaultError(code, messages[code]);
 }

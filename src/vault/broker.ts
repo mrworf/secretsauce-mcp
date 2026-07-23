@@ -1,4 +1,9 @@
 import {
+  createHash,
+  randomUUID,
+  timingSafeEqual,
+} from "node:crypto";
+import {
   chmodSync,
   existsSync,
   lstatSync,
@@ -8,9 +13,12 @@ import { createServer, type Server, type Socket } from "node:net";
 import { dirname } from "node:path";
 import type { z } from "zod";
 import { VaultCapabilityAuthority } from "./capabilities.js";
+import { exportEncryptedVaultArchive, importEncryptedVaultArchive } from "./archive.js";
 import {
   createRequestSchema,
   deleteRequestSchema,
+  exportRequestSchema,
+  importRequestSchema,
   metadataRequestSchema,
   readinessRequestSchema,
   replaceRequestSchema,
@@ -31,6 +39,30 @@ const REQUEST_DEADLINE_MS = 5_000;
 const MAX_CONNECTIONS = 32;
 const MAX_ACTIVE_WORK = 8;
 const MIN_FRAME_BYTES = 88;
+const TRANSFER_CHUNK_BYTES = 65_536;
+const MAX_TRANSFER_BYTES = 1024 * 1024 * 1024;
+const MAX_TRANSFERS = 4;
+const TRANSFER_TTL_MS = 5 * 60_000;
+
+interface ExportTransfer {
+  kind: "export";
+  tokenDigest: Buffer;
+  archive: Buffer;
+  offset: number;
+  sequence: number;
+  expiresAt: number;
+}
+
+interface ImportTransfer {
+  kind: "import";
+  tokenDigest: Buffer;
+  chunks: Buffer[];
+  totalBytes: number;
+  sequence: number;
+  expiresAt: number;
+}
+
+type ArchiveTransfer = ExportTransfer | ImportTransfer;
 
 export interface VaultBrokerOptions {
   socketPath: string;
@@ -51,6 +83,7 @@ export class VaultBrokerServer {
   readonly #operationGate?: () => Promise<void>;
   readonly #replayCache = new BoundedReplayCache();
   readonly #sockets = new Set<Socket>();
+  readonly #transfers = new Map<string, ArchiveTransfer>();
   #server: Server | undefined;
   #activeWork = 0;
   #closed = false;
@@ -115,6 +148,8 @@ export class VaultBrokerServer {
       // The runtime removes Unix sockets on normal close on supported platforms.
     }
     for (const key of Object.values(this.#callerKeys)) key.fill(0);
+    for (const transfer of this.#transfers.values()) clearTransfer(transfer);
+    this.#transfers.clear();
     this.#store.close();
   }
 
@@ -192,7 +227,7 @@ export class VaultBrokerServer {
   async #runOperation(socket: Socket, request: VaultFrame): Promise<void> {
     try {
       await this.#operationGate?.();
-      const result = this.#dispatch(request);
+      const result = await this.#dispatch(request);
       this.#respondSuccess(socket, request, result);
     } catch (error) {
       const code = error instanceof VaultError ? error.code : "vault_protocol_error";
@@ -202,7 +237,7 @@ export class VaultBrokerServer {
     }
   }
 
-  #dispatch(request: VaultFrame): unknown {
+  async #dispatch(request: VaultFrame): Promise<unknown> {
     if (request.operation === "readiness") {
       parse(readinessRequestSchema, request.payload);
       return this.#store.readiness();
@@ -212,7 +247,7 @@ export class VaultBrokerServer {
         const payload = parse(createRequestSchema, request.payload);
         const secret = decodeSecret(payload.secret);
         try {
-          return this.#store.create(payload.binding, secret, { captureLastFour: payload.captureLastFour });
+        return this.#store.create(payload.binding, secret, { captureLastFour: payload.captureLastFour });
         } finally {
           secret.fill(0);
         }
@@ -261,7 +296,124 @@ export class VaultBrokerServer {
         secret.fill(0);
       }
     }
+    if (request.caller === "backup" && request.operation === "export_encrypted") {
+      const payload = parse(exportRequestSchema, request.payload);
+      this.#pruneTransfers();
+      if (payload.action === "start") {
+        if (this.#transfers.size >= MAX_TRANSFERS) throw vaultError("vault_capacity_exceeded");
+        const capability = this.#capabilities.consumeBackup(payload.capability);
+        if (capability.operation !== "export_encrypted") throw vaultError("vault_capability_invalid");
+        const passphrase = decodePassphrase(payload.passphrase);
+        let archive: Buffer | undefined;
+        try {
+          archive = await exportEncryptedVaultArchive(this.#store, passphrase);
+          const transferId = randomUUID();
+          this.#transfers.set(transferId, {
+            kind: "export",
+            tokenDigest: transferTokenDigest(payload.capability),
+            archive,
+            offset: 0,
+            sequence: 0,
+            expiresAt: Date.now() + TRANSFER_TTL_MS,
+          });
+          return { transferId, chunkBytes: TRANSFER_CHUNK_BYTES, totalBytes: archive.byteLength };
+        } catch (error) {
+          archive?.fill(0);
+          throw error;
+        } finally {
+          passphrase.fill(0);
+        }
+      }
+      const transfer = this.#requireTransfer(payload.transferId, payload.transferToken, "export");
+      if (payload.sequence !== transfer.sequence) throw vaultError("vault_protocol_error");
+      const end = Math.min(transfer.archive.byteLength, transfer.offset + TRANSFER_CHUNK_BYTES);
+      const chunk = transfer.archive.subarray(transfer.offset, end).toString("base64url");
+      const sequence = transfer.sequence;
+      transfer.offset = end;
+      transfer.sequence += 1;
+      transfer.expiresAt = Date.now() + TRANSFER_TTL_MS;
+      const done = end === transfer.archive.byteLength;
+      if (done) {
+        this.#transfers.delete(payload.transferId);
+        clearTransfer(transfer);
+      }
+      return { sequence, chunk, done };
+    }
+    if (request.caller === "backup" && request.operation === "import_encrypted") {
+      const payload = parse(importRequestSchema, request.payload);
+      this.#pruneTransfers();
+      if (payload.action === "start") {
+        if (this.#transfers.size >= MAX_TRANSFERS) throw vaultError("vault_capacity_exceeded");
+        const capability = this.#capabilities.consumeBackup(payload.capability);
+        if (capability.operation !== "import_encrypted") throw vaultError("vault_capability_invalid");
+        const transferId = randomUUID();
+        this.#transfers.set(transferId, {
+          kind: "import",
+          tokenDigest: transferTokenDigest(payload.capability),
+          chunks: [],
+          totalBytes: 0,
+          sequence: 0,
+          expiresAt: Date.now() + TRANSFER_TTL_MS,
+        });
+        return { transferId, chunkBytes: TRANSFER_CHUNK_BYTES };
+      }
+      const transfer = this.#requireTransfer(payload.transferId, payload.transferToken, "import");
+      if (payload.sequence !== transfer.sequence) throw vaultError("vault_protocol_error");
+      if (payload.action === "write") {
+        const chunk = decodeTransferChunk(payload.chunk);
+        if (transfer.totalBytes + chunk.byteLength > MAX_TRANSFER_BYTES) {
+          chunk.fill(0);
+          throw vaultError("vault_archive_invalid");
+        }
+        transfer.chunks.push(chunk);
+        transfer.totalBytes += chunk.byteLength;
+        transfer.sequence += 1;
+        transfer.expiresAt = Date.now() + TRANSFER_TTL_MS;
+        return { accepted: true, nextSequence: transfer.sequence };
+      }
+      const passphrase = decodePassphrase(payload.passphrase);
+      const archive = Buffer.concat(transfer.chunks, transfer.totalBytes);
+      this.#transfers.delete(payload.transferId);
+      clearTransfer(transfer);
+      try {
+        await importEncryptedVaultArchive(this.#store, passphrase, archive);
+        return { imported: true };
+      } finally {
+        passphrase.fill(0);
+        archive.fill(0);
+      }
+    }
     throw vaultError("vault_operation_denied");
+  }
+
+  #requireTransfer<T extends ArchiveTransfer["kind"]>(
+    transferId: string,
+    token: string,
+    kind: T,
+  ): Extract<ArchiveTransfer, { kind: T }> {
+    const transfer = this.#transfers.get(transferId);
+    const providedDigest = transferTokenDigest(token);
+    if (
+      transfer === undefined
+      || transfer.kind !== kind
+      || transfer.expiresAt <= Date.now()
+      || !timingSafeEqual(transfer.tokenDigest, providedDigest)
+    ) {
+      providedDigest.fill(0);
+      throw vaultError("vault_capability_invalid");
+    }
+    providedDigest.fill(0);
+    return transfer as Extract<ArchiveTransfer, { kind: T }>;
+  }
+
+  #pruneTransfers(): void {
+    const now = Date.now();
+    for (const [id, transfer] of this.#transfers) {
+      if (transfer.expiresAt <= now) {
+        this.#transfers.delete(id);
+        clearTransfer(transfer);
+      }
+    }
   }
 
   #respondSuccess(socket: Socket, request: VaultFrame, result: unknown): void {
@@ -308,6 +460,38 @@ function decodeSecret(value: string): Buffer {
     throw vaultError("vault_frame_invalid");
   }
   return secret;
+}
+
+function decodePassphrase(value: string): Buffer {
+  const passphrase = Buffer.from(value, "base64url");
+  if (
+    passphrase.byteLength < 12
+    || passphrase.byteLength > 1_024
+    || passphrase.toString("base64url") !== value
+  ) {
+    passphrase.fill(0);
+    throw vaultError("vault_frame_invalid");
+  }
+  return passphrase;
+}
+
+function decodeTransferChunk(value: string): Buffer {
+  const chunk = Buffer.from(value, "base64url");
+  if (chunk.byteLength < 1 || chunk.byteLength > TRANSFER_CHUNK_BYTES || chunk.toString("base64url") !== value) {
+    chunk.fill(0);
+    throw vaultError("vault_frame_invalid");
+  }
+  return chunk;
+}
+
+function transferTokenDigest(value: string): Buffer {
+  return createHash("sha256").update("secretsauce:vault-transfer:v1:").update(value).digest();
+}
+
+function clearTransfer(transfer: ArchiveTransfer): void {
+  transfer.tokenDigest.fill(0);
+  if (transfer.kind === "export") transfer.archive.fill(0);
+  else for (const chunk of transfer.chunks) chunk.fill(0);
 }
 
 function copyKey(value: Uint8Array): Buffer {

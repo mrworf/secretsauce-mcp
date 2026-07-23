@@ -4,6 +4,10 @@ import type { z } from "zod";
 import {
   createResultSchema,
   deleteResultSchema,
+  transferFinishResultSchema,
+  transferReadResultSchema,
+  transferStartResultSchema,
+  transferWriteResultSchema,
   failureResponseSchema,
   metadataResultSchema,
   readinessResultSchema,
@@ -192,6 +196,69 @@ export class BackupVaultClient extends VaultClient {
   readiness(): Promise<z.infer<typeof readinessResultSchema>> {
     return this.readinessRequest();
   }
+
+  async exportEncrypted(capability: string, passphraseValue: Uint8Array): Promise<Buffer> {
+    const passphrase = asBufferView(passphraseValue).toString("base64url");
+    const start = await this.request("export_encrypted", {
+      action: "start",
+      capability,
+      passphrase,
+    }, transferStartResultSchema);
+    const chunks: Buffer[] = [];
+    let total = 0;
+    let sequence = 0;
+    try {
+      while (true) {
+        const result = await this.request("export_encrypted", {
+          action: "read",
+          transferId: start.transferId,
+          transferToken: capability,
+          sequence,
+        }, transferReadResultSchema);
+        const chunk = Buffer.from(result.chunk, "base64url");
+        chunks.push(chunk);
+        total += chunk.byteLength;
+        if (total > 1024 * 1024 * 1024) throw vaultError("vault_archive_invalid");
+        sequence += 1;
+        if (result.done) break;
+      }
+      if (start.totalBytes !== undefined && start.totalBytes !== total) throw vaultError("vault_protocol_error");
+      return Buffer.concat(chunks, total);
+    } finally {
+      for (const chunk of chunks) chunk.fill(0);
+    }
+  }
+
+  async importEncrypted(capability: string, passphraseValue: Uint8Array, archiveValue: Uint8Array): Promise<void> {
+    if (archiveValue.byteLength < 1 || archiveValue.byteLength > 1024 * 1024 * 1024) {
+      throw vaultError("vault_archive_invalid");
+    }
+    const start = await this.request("import_encrypted", {
+      action: "start",
+      capability,
+    }, transferStartResultSchema);
+    let sequence = 0;
+    for (let offset = 0; offset < archiveValue.byteLength; offset += start.chunkBytes) {
+      const end = Math.min(archiveValue.byteLength, offset + start.chunkBytes);
+      const chunk = asBufferView(archiveValue.subarray(offset, end)).toString("base64url");
+      const result = await this.request("import_encrypted", {
+        action: "write",
+        transferId: start.transferId,
+        transferToken: capability,
+        sequence,
+        chunk,
+      }, transferWriteResultSchema);
+      if (result.nextSequence !== sequence + 1) throw vaultError("vault_protocol_error");
+      sequence += 1;
+    }
+    await this.request("import_encrypted", {
+      action: "finish",
+      transferId: start.transferId,
+      transferToken: capability,
+      sequence,
+      passphrase: asBufferView(passphraseValue).toString("base64url"),
+    }, transferFinishResultSchema);
+  }
 }
 
 async function exchange(socketPath: string, request: Buffer): Promise<Buffer> {
@@ -253,6 +320,8 @@ function remoteError(code: string): VaultRemoteError {
     "vault_record_not_found",
     "vault_protocol_error",
     "vault_operation_denied",
+    "vault_archive_invalid",
+    "vault_archive_authentication_failed",
   ];
   return new VaultRemoteError(known.includes(code as VaultErrorCode) ? code as VaultErrorCode : "vault_protocol_error");
 }

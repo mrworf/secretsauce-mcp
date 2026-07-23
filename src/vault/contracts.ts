@@ -45,6 +45,54 @@ export const resolveRequestSchema = z.object({
   generation: generationSchema,
   binding: bindingSchema,
 }).strict();
+export const passphraseSchema = z.string().min(16).max(1_366).refine((value) => {
+  if (!/^[A-Za-z0-9_-]+$/.test(value)) return false;
+  const decoded = Buffer.from(value, "base64url");
+  return decoded.byteLength >= 12
+    && decoded.byteLength <= 1_024
+    && decoded.toString("base64url") === value;
+});
+export const transferChunkSchema = z.string().max(87_382).refine((value) => {
+  if (value.length === 0) return false;
+  if (!/^[A-Za-z0-9_-]+$/.test(value)) return false;
+  const decoded = Buffer.from(value, "base64url");
+  return decoded.byteLength >= 1
+    && decoded.byteLength <= 65_536
+    && decoded.toString("base64url") === value;
+});
+export const exportRequestSchema = z.discriminatedUnion("action", [
+  z.object({
+    action: z.literal("start"),
+    capability: z.string().min(1).max(8192),
+    passphrase: passphraseSchema,
+  }).strict(),
+  z.object({
+    action: z.literal("read"),
+    transferId: locatorSchema,
+    transferToken: z.string().min(1).max(8192),
+    sequence: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
+  }).strict(),
+]);
+export const importRequestSchema = z.discriminatedUnion("action", [
+  z.object({
+    action: z.literal("start"),
+    capability: z.string().min(1).max(8192),
+  }).strict(),
+  z.object({
+    action: z.literal("write"),
+    transferId: locatorSchema,
+    transferToken: z.string().min(1).max(8192),
+    sequence: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
+    chunk: transferChunkSchema,
+  }).strict(),
+  z.object({
+    action: z.literal("finish"),
+    transferId: locatorSchema,
+    transferToken: z.string().min(1).max(8192),
+    sequence: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
+    passphrase: passphraseSchema,
+  }).strict(),
+]);
 
 export const metadataSchema = z.object({
   status: z.literal("configured"),
@@ -72,6 +120,23 @@ export const replaceResultSchema = metadataSchema;
 export const deleteResultSchema = z.object({ deleted: z.literal(true) }).strict();
 export const metadataResultSchema = metadataSchema;
 export const resolveResultSchema = z.object({ secret: canonicalSecretSchema }).strict();
+export const transferStartResultSchema = z.object({
+  transferId: locatorSchema,
+  chunkBytes: z.literal(65_536),
+  totalBytes: z.number().int().nonnegative().max(1024 * 1024 * 1024).optional(),
+}).strict();
+export const transferReadResultSchema = z.object({
+  sequence: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
+  chunk: transferChunkSchema,
+  done: z.boolean(),
+}).strict();
+export const transferWriteResultSchema = z.object({
+  accepted: z.literal(true),
+  nextSequence: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
+}).strict();
+export const transferFinishResultSchema = z.object({
+  imported: z.literal(true),
+}).strict();
 
 export const successResponseSchema = z.object({
   ok: z.literal(true),

@@ -28,6 +28,7 @@
     "@secretlint/core": "^13.0.2",
     "@secretlint/secretlint-rule-pattern": "^13.0.2",
     "@secretlint/secretlint-rule-preset-recommend": "^13.0.2",
+    "argon2": "0.45.0",
     "better-sqlite3": "12.10.0",
     "fastify": "5.10.0",
     "jose": "^6.1.0",
@@ -53,6 +54,7 @@
     "vitest": "^3.2.6"
   },
   "allowScripts": {
+    "argon2@0.45.0": true,
     "better-sqlite3@12.10.0": true,
     "esbuild@0.25.12": true
   }

@@ -13,8 +13,9 @@ import { describe, expect, it } from "vitest";
 import { UuidV7Generator } from "../src/persistence/uuidV7.js";
 import { VaultCapabilityAuthority } from "../src/vault/capabilities.js";
 import { VaultBrokerServer } from "../src/vault/broker.js";
-import { ControlVaultClient, DataVaultClient } from "../src/vault/client.js";
-import { encodeVaultFrame } from "../src/vault/protocol.js";
+import { BackupVaultClient, ControlVaultClient, DataVaultClient } from "../src/vault/client.js";
+import { decodeVaultFrame, encodeVaultFrame } from "../src/vault/protocol.js";
+import { BoundedReplayCache } from "../src/vault/replayCache.js";
 import { VaultRecordStore, type VaultCredentialBinding } from "../src/vault/recordStore.js";
 
 describe("isolated vault broker and typed clients", () => {
@@ -187,6 +188,83 @@ describe("isolated vault broker and typed clients", () => {
     fixture.control.close();
     fixture.control.close();
     fixture.data.close();
+    fixture.backup.close();
+  });
+
+  it("streams passphrase-encrypted backup transfers only through backup capabilities", async () => {
+    const fixture = await brokerFixture();
+    const passphrase = Buffer.from("broker backup passphrase");
+    const original = Buffer.from("backup-only-private-value");
+    try {
+      const created = await fixture.control.create({ binding: fixture.binding, secret: original });
+      const exportCapability = issueBackup(fixture, "export_encrypted");
+      const archive = await fixture.backup.exportEncrypted(exportCapability, passphrase);
+      expect(archive.includes(original)).toBe(false);
+      expect(archive.includes(passphrase)).toBe(false);
+
+      await fixture.control.replace({
+        locator: created.locator,
+        generation: 1,
+        binding: fixture.binding,
+        secret: Buffer.from("post-export-value"),
+      });
+      const importCapability = issueBackup(fixture, "import_encrypted");
+      await fixture.backup.importEncrypted(importCapability, passphrase, archive);
+      await expect(fixture.data.resolveForRequest({
+        capability: issueResolve(fixture, created.locator, 1),
+        locator: created.locator,
+        generation: 1,
+        binding: fixture.binding,
+      }, (value) => value.toString())).resolves.toBe(original.toString());
+
+      await expect(fixture.backup.exportEncrypted(exportCapability, passphrase))
+        .rejects.toMatchObject({ code: "vault_replay_detected" });
+      const wrongOperation = issueBackup(fixture, "import_encrypted");
+      await expect(fixture.backup.exportEncrypted(wrongOperation, passphrase))
+        .rejects.toMatchObject({ code: "vault_capability_invalid" });
+
+      const manualCapability = issueBackup(fixture, "export_encrypted");
+      const startPayload = await rawBackupPayload(fixture, "export_encrypted", {
+        action: "start",
+        capability: manualCapability,
+        passphrase: passphrase.toString("base64url"),
+      });
+      const transferId = (startPayload as any).result.transferId as string;
+      const wrongTransfer = await rawBackupPayload(fixture, "export_encrypted", {
+        action: "read",
+        transferId,
+        transferToken: nonCanonicalSignature(manualCapability),
+        sequence: 0,
+      });
+      expect(wrongTransfer).toMatchObject({ ok: false, error: { code: "vault_capability_invalid" } });
+      const wrongSequence = await rawBackupPayload(fixture, "export_encrypted", {
+        action: "read",
+        transferId,
+        transferToken: manualCapability,
+        sequence: 1,
+      });
+      expect(wrongSequence).toMatchObject({ ok: false, error: { code: "vault_protocol_error" } });
+
+      const tampered = Buffer.from(archive);
+      tampered[tampered.length - 1] ^= 1;
+      await expect(fixture.backup.importEncrypted(
+        issueBackup(fixture, "import_encrypted"),
+        passphrase,
+        tampered,
+      )).rejects.toMatchObject({ code: "vault_archive_authentication_failed" });
+      await expect(fixture.data.resolveForRequest({
+        capability: issueResolve(fixture, created.locator, 1),
+        locator: created.locator,
+        generation: 1,
+        binding: fixture.binding,
+      }, (value) => value.toString())).resolves.toBe(original.toString());
+      archive.fill(0);
+      tampered.fill(0);
+    } finally {
+      passphrase.fill(0);
+      original.fill(0);
+      await fixture.close();
+    }
   });
 
   it("enforces connection, active-work, and five-second incomplete-frame limits", async () => {
@@ -232,6 +310,7 @@ interface BrokerFixture {
   server: VaultBrokerServer;
   control: ControlVaultClient;
   data: DataVaultClient;
+  backup: BackupVaultClient;
   close: () => Promise<void>;
 }
 
@@ -267,6 +346,7 @@ async function brokerFixture(overrides: { operationGate?: () => Promise<void> } 
   await server.listen();
   const control = new ControlVaultClient({ socketPath, key: keys.control_plane });
   const data = new DataVaultClient({ socketPath, key: keys.data_plane });
+  const backup = new BackupVaultClient({ socketPath, key: keys.backup });
   const generator = new UuidV7Generator();
   const binding = {
     serviceId: generator.next(),
@@ -281,12 +361,46 @@ async function brokerFixture(overrides: { operationGate?: () => Promise<void> } 
     server,
     control,
     data,
+    backup,
     close: async () => {
       control.close();
       data.close();
+      backup.close();
       await server.close();
     },
   };
+}
+
+function issueBackup(
+  fixture: BrokerFixture,
+  operation: "export_encrypted" | "import_encrypted",
+): string {
+  return fixture.authority.issueBackup({
+    operation,
+    authorizationId: new UuidV7Generator().next(),
+    subjectId: new UuidV7Generator().next(),
+    operationDigest: operation === "export_encrypted" ? "e".repeat(64) : "f".repeat(64),
+  });
+}
+
+async function rawBackupPayload(
+  fixture: BrokerFixture,
+  operation: "export_encrypted" | "import_encrypted",
+  payload: unknown,
+): Promise<unknown> {
+  const frame = encodeVaultFrame({
+    kind: "request",
+    caller: "backup",
+    operation,
+    requestId: randomUUID(),
+    payload,
+    key: fixture.keys.backup,
+  });
+  const response = await rawExchange(fixture.socketPath, frame);
+  return decodeVaultFrame(response, {
+    keys: fixture.keys,
+    replayCache: new BoundedReplayCache(),
+  }).payload;
 }
 
 function issueResolve(fixture: BrokerFixture, locator: string, generation: number): string {

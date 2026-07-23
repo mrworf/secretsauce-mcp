@@ -12,6 +12,7 @@ import {
   readdirSync,
   readFileSync,
   renameSync,
+  rmSync,
   unlinkSync,
   writeFileSync,
 } from "node:fs";
@@ -67,6 +68,21 @@ export interface VaultRecordCreateResult {
   metadata: VaultRecordMetadata;
 }
 
+export interface VaultBackupRecord extends VaultCredentialBinding {
+  locator: string;
+  generation: number;
+  createdAt: number;
+  updatedAt: number;
+  captureLastFour: boolean;
+  secret: Buffer;
+}
+
+export interface VaultRestoreTransaction {
+  append(record: VaultBackupRecord): void;
+  commit(): void;
+  abort(): void;
+}
+
 export interface VaultRecordStoreOptions {
   directory: string;
   activeRootKey: string;
@@ -104,6 +120,7 @@ export class VaultRecordStore {
   #status: VaultReadinessStatus = "ready";
   #recordCount = 0;
   #closed = false;
+  #restoreInProgress = false;
 
   constructor(options: VaultRecordStoreOptions) {
     if (!ROOT_KEY_ID_PATTERN.test(options.activeRootKey) || !options.rootKeys.has(options.activeRootKey)) {
@@ -133,6 +150,114 @@ export class VaultRecordStore {
     for (const key of this.#rootKeys.values()) key.fill(0);
     this.#recordCount = 0;
     this.#status = "degraded";
+  }
+
+  forEachBackupRecord(visitor: (record: VaultBackupRecord) => void): number {
+    this.#assertReady();
+    const locators = readdirSync(this.#directory)
+      .map((name) => RECORD_NAME_PATTERN.exec(name)?.[1])
+      .filter((value): value is string => value !== undefined)
+      .sort();
+    if (locators.length !== this.#recordCount) throw vaultError("vault_store_unavailable");
+    for (const locator of locators) {
+      const parsed = this.#readAndDecrypt(locator);
+      try {
+        visitor({
+          locator: parsed.locator,
+          generation: parsed.generation,
+          createdAt: parsed.createdAt,
+          updatedAt: parsed.updatedAt,
+          captureLastFour: parsed.lastFour !== undefined,
+          ...parsed.binding,
+          secret: parsed.secret,
+        });
+      } finally {
+        parsed.secret.fill(0);
+      }
+    }
+    return locators.length;
+  }
+
+  beginRestore(): VaultRestoreTransaction {
+    this.#assertReady();
+    this.#restoreInProgress = true;
+    const parent = dirname(this.#directory);
+    const stagingDirectory = join(parent, `.${basename(this.#directory)}.restore.${randomUUID()}`);
+    let staging: VaultRecordStore;
+    try {
+      mkdirSync(stagingDirectory, { mode: 0o700 });
+      staging = new VaultRecordStore({
+        directory: stagingDirectory,
+        activeRootKey: this.#activeRootKey,
+        rootKeys: this.#rootKeys,
+        now: this.#now,
+        randomBytes: this.#randomBytes,
+        randomUuid: this.#randomUuid,
+      });
+    } catch {
+      this.#restoreInProgress = false;
+      try {
+        rmSync(stagingDirectory, { recursive: true, force: true });
+      } catch {
+        // Best-effort cleanup of a failed staging initialization.
+      }
+      throw vaultError("vault_store_unavailable");
+    }
+    let count = 0;
+    let finished = false;
+    const finish = (): void => {
+      this.#restoreInProgress = false;
+      finished = true;
+    };
+    return {
+      append: (record) => {
+        if (finished) throw vaultError("vault_store_unavailable");
+        staging.#importBackupRecord(record);
+        count += 1;
+      },
+      commit: () => {
+        if (finished) throw vaultError("vault_store_unavailable");
+        const previousDirectory = join(parent, `.${basename(this.#directory)}.previous.${randomUUID()}`);
+        staging.close();
+        try {
+          renameSync(this.#directory, previousDirectory);
+          try {
+            renameSync(stagingDirectory, this.#directory);
+          } catch (error) {
+            renameSync(previousDirectory, this.#directory);
+            throw error;
+          }
+          fsyncDirectory(parent);
+          this.#recordCount = count;
+          this.#status = "ready";
+          finish();
+          try {
+            rmSync(previousDirectory, { recursive: true, force: true });
+            fsyncDirectory(parent);
+          } catch {
+            // A stale, root-encrypted previous directory is recoverable operator cleanup.
+          }
+        } catch {
+          try {
+            rmSync(stagingDirectory, { recursive: true, force: true });
+          } catch {
+            // Best-effort cleanup after a failed swap.
+          }
+          finish();
+          throw vaultError("vault_store_unavailable");
+        }
+      },
+      abort: () => {
+        if (finished) return;
+        staging.close();
+        try {
+          rmSync(stagingDirectory, { recursive: true, force: true });
+          fsyncDirectory(parent);
+        } finally {
+          finish();
+        }
+      },
+    };
   }
 
   create(binding: VaultCredentialBinding, secretValue: Uint8Array, options: VaultWriteOptions = {}): VaultRecordCreateResult {
@@ -322,6 +447,39 @@ export class VaultRecordStore {
     }
   }
 
+  #importBackupRecord(record: VaultBackupRecord): void {
+    this.#assertReady();
+    validateLocator(record.locator);
+    validateBinding(record);
+    if (
+      !Number.isSafeInteger(record.generation)
+      || record.generation < 1
+      || !Number.isSafeInteger(record.createdAt)
+      || !Number.isSafeInteger(record.updatedAt)
+      || record.createdAt < 0
+      || record.updatedAt < record.createdAt
+    ) {
+      throw vaultError("vault_record_invalid");
+    }
+    const secret = validateSecret(record.secret);
+    try {
+      const encoded = this.#encodeRecord({
+        locator: record.locator,
+        generation: record.generation,
+        rootKeyId: this.#activeRootKey,
+        createdAt: record.createdAt,
+        updatedAt: record.updatedAt,
+        binding: record,
+        secret,
+        captureLastFour: record.captureLastFour,
+      });
+      this.#commit(record.locator, encoded, false);
+      this.#recordCount += 1;
+    } finally {
+      secret.fill(0);
+    }
+  }
+
   #readAndDecrypt(locator: string, expectedBinding?: VaultCredentialBinding, expectedGeneration?: number): ParsedRecord {
     validateLocator(locator);
     let bytes: Buffer;
@@ -487,7 +645,7 @@ export class VaultRecordStore {
   }
 
   #assertReady(): void {
-    if (this.#closed || this.#status !== "ready") throw vaultError("vault_store_unavailable");
+    if (this.#closed || this.#restoreInProgress || this.#status !== "ready") throw vaultError("vault_store_unavailable");
   }
 }
 

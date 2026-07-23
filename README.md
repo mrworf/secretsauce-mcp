@@ -191,4 +191,31 @@ variables `SECRETSAUCE_VAULT_SOCKET` and
 clients only: write-only credential management and authorized data-plane
 resolution are connected in milestones 11 and 13, respectively.
 
+### Initial v2 identity bootstrap
+
+When `persistence.database_file` is configured, build the application and run the
+bootstrap command directly on the gateway host:
+
+```bash
+CONFIG_PATH=/absolute/path/to/config.yaml npm run identity:bootstrap
+```
+
+For a container deployment, run the same command with an interactive terminal in
+the gateway container, for example `docker compose exec secretsauce npm run
+identity:bootstrap`. Do not append an email, password, TOTP value, or other
+profile field as a command argument. The command refuses non-terminal execution
+and prompts for the email and optional names.
+
+Bootstrap succeeds only when the database contains no users and has no prior
+bootstrap marker. It atomically creates one UUID-backed local `superadmin` in
+`enrollment_required` state, empty password/TOTP state, and a sanitized
+break-glass audit event. Its output contains only the UUID, role, status, and
+pending-enrollment marker. A second or racing attempt cannot create another
+initial superadmin.
+
+The pending identity is not a login credential and is not MCP-eligible at this
+foundation stage. Password/TOTP enrollment and activation are separate identity
+ceremonies; until those are configured by the corresponding v2 identity
+features, the existing configured authentication mode remains independent.
+
 Expose the service through an HTTPS endpoint such as `https://gateway.example.org/mcp` when using remote MCP clients.

@@ -113,6 +113,22 @@ describe("documentation examples", () => {
     expect(setup).toContain('alt="SecretSauce MCP"');
     expect(setup).toContain('media="(prefers-color-scheme: dark)"');
   });
+
+  it("documents terminal-only pending identity bootstrap without argument secrets", () => {
+    const readme = readFileSync("README.md", "utf8");
+    const configReference = readFileSync("docs/config-reference.md", "utf8");
+    const bootstrap = readme.slice(readme.indexOf("### Initial v2 identity bootstrap"));
+
+    expect(bootstrap).toContain("npm run identity:bootstrap");
+    expect(bootstrap).toContain("refuses non-terminal execution");
+    expect(bootstrap).toContain("`enrollment_required`");
+    expect(bootstrap).toContain("not MCP-eligible");
+    expect(bootstrap).toContain("Do not append an email, password, TOTP value");
+    expect(configReference).toContain("persistence.database_file");
+    expect(configReference).toContain("accepts no arguments");
+    expect(configReference).toContain("`not_configured` password/TOTP state");
+    expect(bootstrap).not.toMatch(/identity:bootstrap\s+--(?:email|password|totp)/);
+  });
 });
 
 function collectFiles(root: string): string[] {

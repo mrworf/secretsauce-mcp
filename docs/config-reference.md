@@ -44,6 +44,34 @@ record set. Wrong passphrases and authenticated-content tampering share one
 stable failure. Archive passphrases are never command arguments or persisted
 temporary files.
 
+## Persistence and initial identity bootstrap
+
+Set `persistence.database_file` to the durable SQLite path owned by the single
+gateway instance:
+
+```yaml
+persistence:
+  database_file: /var/lib/secretsauce/control.sqlite
+```
+
+The parent directory must be writable by the gateway process. The database file
+is created with mode `0600`, migrations complete before listeners start, and a
+second application writer is rejected.
+
+On a fresh database, run `CONFIG_PATH=/absolute/path/to/config.yaml npm run
+identity:bootstrap` from an interactive terminal on the gateway host. In Docker,
+use an interactive exec such as `docker compose exec secretsauce npm run
+identity:bootstrap`. The command accepts no arguments: email and optional names
+are terminal prompts, and password/TOTP material is neither requested nor
+created by this stage.
+
+The one-time transaction creates a UUIDv7 `superadmin` with status
+`enrollment_required`, `not_configured` password/TOTP state, a singleton
+bootstrap marker, and a sanitized `identity.bootstrap` audit event. Output is
+limited to the new UUID and non-sensitive enrollment state. The identity cannot
+authenticate or authorize MCP requests until the later enrollment and
+authentication features activate it.
+
 ## Startup diagnostics
 
 Invalid gateway, Secretlint, and sensitive-name YAML stops startup with a structured `config_error`. Each actionable diagnostic includes the configuration file, dotted field path when known, 1-based line and column, a detailed reason, a sanitized source excerpt, and a caret. Missing fields point to the nearest existing parent node; unreadable files have no fabricated source position.

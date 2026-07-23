@@ -1,0 +1,176 @@
+milestones:
+  - id: "00"
+    title: "Architecture Baseline"
+    file: "docs/milestones/00-architecture.md"
+    status: "pending"
+    completed_at: null
+    commit_hash: null
+    notes: ""
+  - id: "01"
+    title: "Persistence And Audit Foundation"
+    file: "docs/milestones/01-persistence-audit-foundation.md"
+    status: "pending"
+    completed_at: null
+    commit_hash: null
+    notes: ""
+  - id: "02"
+    title: "Control Plane Foundation"
+    file: "docs/milestones/02-control-plane-foundation.md"
+    status: "pending"
+    completed_at: null
+    commit_hash: null
+    notes: ""
+  - id: "03"
+    title: "Vault Broker"
+    file: "docs/milestones/03-vault-broker.md"
+    status: "pending"
+    completed_at: null
+    commit_hash: null
+    notes: ""
+  - id: "04"
+    title: "Identity Bootstrap"
+    file: "docs/milestones/04-identity-bootstrap.md"
+    status: "pending"
+    completed_at: null
+    commit_hash: null
+    notes: ""
+  - id: "05"
+    title: "Local Authentication, Sessions, And Step-Up"
+    file: "docs/milestones/05-local-auth-sessions-step-up.md"
+    status: "pending"
+    completed_at: null
+    commit_hash: null
+    notes: ""
+  - id: "06"
+    title: "Enrollment, Recovery, And Self-Service"
+    file: "docs/milestones/06-enrollment-recovery-self-service.md"
+    status: "pending"
+    completed_at: null
+    commit_hash: null
+    notes: ""
+  - id: "07"
+    title: "User Administration And Lifecycle"
+    file: "docs/milestones/07-user-administration-lifecycle.md"
+    status: "pending"
+    completed_at: null
+    commit_hash: null
+    notes: ""
+  - id: "08"
+    title: "Generic OIDC Provider"
+    file: "docs/milestones/08-generic-oidc-provider.md"
+    status: "pending"
+    completed_at: null
+    commit_hash: null
+    notes: ""
+  - id: "09"
+    title: "Service Management"
+    file: "docs/milestones/09-service-management.md"
+    status: "pending"
+    completed_at: null
+    commit_hash: null
+    notes: ""
+  - id: "10"
+    title: "Groups And Assignments"
+    file: "docs/milestones/10-groups-and-assignments.md"
+    status: "pending"
+    completed_at: null
+    commit_hash: null
+    notes: ""
+  - id: "11"
+    title: "Credential Management"
+    file: "docs/milestones/11-credential-management.md"
+    status: "pending"
+    completed_at: null
+    commit_hash: null
+    notes: ""
+  - id: "12"
+    title: "Policy Management And Explanation"
+    file: "docs/milestones/12-policy-management-explanation.md"
+    status: "pending"
+    completed_at: null
+    commit_hash: null
+    notes: ""
+  - id: "13"
+    title: "Persisted Runtime Authorization"
+    file: "docs/milestones/13-persisted-runtime-authorization.md"
+    status: "pending"
+    completed_at: null
+    commit_hash: null
+    notes: ""
+  - id: "14"
+    title: "Multi-User MCP OAuth"
+    file: "docs/milestones/14-multiuser-mcp-oauth.md"
+    status: "pending"
+    completed_at: null
+    commit_hash: null
+    notes: ""
+  - id: "15"
+    title: "Access, Session, And Grant Management"
+    file: "docs/milestones/15-access-session-grant-management.md"
+    status: "pending"
+    completed_at: null
+    commit_hash: null
+    notes: ""
+  - id: "16"
+    title: "System-Owned API Keys"
+    file: "docs/milestones/16-system-api-keys.md"
+    status: "pending"
+    completed_at: null
+    commit_hash: null
+    notes: ""
+  - id: "17"
+    title: "Self-API-Key Protection"
+    file: "docs/milestones/17-self-api-key-protection.md"
+    status: "pending"
+    completed_at: null
+    commit_hash: null
+    notes: ""
+  - id: "18"
+    title: "Security Settings And Automation"
+    file: "docs/milestones/18-security-settings-automation.md"
+    status: "pending"
+    completed_at: null
+    commit_hash: null
+    notes: ""
+  - id: "19"
+    title: "Audit Search And Retention"
+    file: "docs/milestones/19-audit-search-retention.md"
+    status: "pending"
+    completed_at: null
+    commit_hash: null
+    notes: ""
+  - id: "20"
+    title: "Activity, Status, And Security Dashboards"
+    file: "docs/milestones/20-activity-status-security-dashboards.md"
+    status: "pending"
+    completed_at: null
+    commit_hash: null
+    notes: ""
+  - id: "21"
+    title: "Backup Export"
+    file: "docs/milestones/21-backup-export.md"
+    status: "pending"
+    completed_at: null
+    commit_hash: null
+    notes: ""
+  - id: "22"
+    title: "Restore"
+    file: "docs/milestones/22-restore.md"
+    status: "pending"
+    completed_at: null
+    commit_hash: null
+    notes: ""
+  - id: "23"
+    title: "V1 Migration"
+    file: "docs/milestones/23-v1-migration.md"
+    status: "pending"
+    completed_at: null
+    commit_hash: null
+    notes: ""
+  - id: "24"
+    title: "Release Hardening And Documentation"
+    file: "docs/milestones/24-release-hardening-documentation.md"
+    status: "pending"
+    completed_at: null
+    commit_hash: null
+    notes: ""

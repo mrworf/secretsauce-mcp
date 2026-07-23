@@ -150,7 +150,9 @@ function verify(token: string, key: Buffer): unknown {
   }
   const separator = token.indexOf(".");
   const encoded = token.slice(0, separator);
-  const provided = Buffer.from(token.slice(separator + 1), "base64url");
+  const encodedSignature = token.slice(separator + 1);
+  const provided = Buffer.from(encodedSignature, "base64url");
+  if (provided.toString("base64url") !== encodedSignature) throw vaultError("vault_capability_invalid");
   let payload: unknown;
   try {
     const source = Buffer.from(encoded, "base64url").toString("utf8");

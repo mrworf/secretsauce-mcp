@@ -15,9 +15,10 @@
     "check:control-openapi": "npm run build && node scripts/generate-control-openapi.mjs --check",
     "start": "node dist/server.js",
     "start:control": "node dist/control/main.js",
+    "start:vault": "node dist/vault/main.js",
     "vault:key": "node dist/vault/keyCli.js",
     "dev:control-web": "vite",
-    "pretest": "npm run build:web",
+    "pretest": "npm run build",
     "test": "vitest run"
   },
   "dependencies": {

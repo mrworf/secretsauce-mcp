@@ -64,6 +64,8 @@ describe("vault single-use capabilities", () => {
     const wrongSignature = `${token.slice(0, -1)}${token.endsWith("A") ? "B" : "A"}`;
     expect(() => authority.consumeResolve(wrongSignature))
       .toThrowError(expect.objectContaining({ code: "vault_capability_invalid" }));
+    expect(() => authority.consumeResolve(nonCanonicalSignature(token)))
+      .toThrowError(expect.objectContaining({ code: "vault_capability_invalid" }));
 
     const [encoded] = token.split(".");
     const payload = JSON.parse(Buffer.from(encoded!, "base64url").toString("utf8"));
@@ -115,4 +117,11 @@ function signRaw(payload: unknown, key: Buffer): string {
   const source = JSON.stringify(payload);
   const encoded = Buffer.from(source).toString("base64url");
   return `${encoded}.${createHmac("sha256", key).update("secretsauce:vault:backup:v1:").update(encoded).digest("base64url")}`;
+}
+
+function nonCanonicalSignature(token: string): string {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+  const last = token.at(-1)!;
+  const index = alphabet.indexOf(last);
+  return `${token.slice(0, -1)}${alphabet[(index & ~3) | ((index + 1) & 3)]}`;
 }

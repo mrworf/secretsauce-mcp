@@ -57,7 +57,7 @@ export interface VaultRecordMetadata {
   status: "configured";
   generation: number;
   sizeClass: VaultSizeClass;
-  lastFour?: string;
+  lastFour?: string | undefined;
   createdAt: number;
   updatedAt: number;
 }
@@ -103,6 +103,7 @@ export class VaultRecordStore {
   readonly #failureInjector?: VaultRecordStoreOptions["failureInjector"];
   #status: VaultReadinessStatus = "ready";
   #recordCount = 0;
+  #closed = false;
 
   constructor(options: VaultRecordStoreOptions) {
     if (!ROOT_KEY_ID_PATTERN.test(options.activeRootKey) || !options.rootKeys.has(options.activeRootKey)) {
@@ -122,7 +123,16 @@ export class VaultRecordStore {
   }
 
   readiness(): { status: VaultReadinessStatus; recordCount: number } {
+    if (this.#closed) return { status: "degraded", recordCount: 0 };
     return { status: this.#status, recordCount: this.#recordCount };
+  }
+
+  close(): void {
+    if (this.#closed) return;
+    this.#closed = true;
+    for (const key of this.#rootKeys.values()) key.fill(0);
+    this.#recordCount = 0;
+    this.#status = "degraded";
   }
 
   create(binding: VaultCredentialBinding, secretValue: Uint8Array, options: VaultWriteOptions = {}): VaultRecordCreateResult {
@@ -477,7 +487,7 @@ export class VaultRecordStore {
   }
 
   #assertReady(): void {
-    if (this.#status !== "ready") throw vaultError("vault_store_unavailable");
+    if (this.#closed || this.#status !== "ready") throw vaultError("vault_store_unavailable");
   }
 }
 

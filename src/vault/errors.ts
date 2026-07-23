@@ -10,7 +10,9 @@ export type VaultErrorCode =
   | "vault_store_unavailable"
   | "vault_record_invalid"
   | "vault_record_conflict"
-  | "vault_record_not_found";
+  | "vault_record_not_found"
+  | "vault_protocol_error"
+  | "vault_operation_denied";
 
 export class VaultError extends Error {
   readonly code: VaultErrorCode;
@@ -36,6 +38,8 @@ export function vaultError(code: VaultErrorCode): VaultError {
     vault_record_invalid: "Vault record is invalid.",
     vault_record_conflict: "Vault record state conflicts with the request.",
     vault_record_not_found: "Vault record was not found.",
+    vault_protocol_error: "Vault protocol operation failed.",
+    vault_operation_denied: "Vault operation is not allowed.",
   };
   return new VaultError(code, messages[code]);
 }

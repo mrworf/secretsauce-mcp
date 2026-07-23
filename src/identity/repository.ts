@@ -140,6 +140,76 @@ export class IdentityRepository {
     }
   }
 
+  async bootstrapInitialSuperadmin(
+    profileInput: unknown,
+    audit: IdentityAuditContext,
+  ): Promise<IdentityReadModel> {
+    const profile = parseIdentityProfile(profileInput);
+    if (
+      audit.actor.type !== "local_cli" ||
+      audit.actor.authenticationMethod !== "host_terminal" ||
+      audit.source?.category !== "break_glass"
+    ) {
+      throw new IdentityError("bootstrap_unavailable");
+    }
+    const id = this.nextUuid();
+    const now = this.safeNow();
+    try {
+      return await this.#owner.execute({
+        run: (database) => database.withGeneratedAdministrativeAudit((transaction) => {
+          const users = transaction.get<{ count: number }>(
+            "SELECT count(*) AS count FROM users",
+          )?.count;
+          const marker = transaction.get<{ present: number }>(
+            "SELECT 1 AS present FROM identity_bootstrap WHERE singleton = 1",
+          );
+          if (users !== 0 || marker !== undefined) {
+            throw new PersistenceError("bootstrap_unavailable");
+          }
+          transaction.run(`
+            INSERT INTO users (
+              id, email, normalized_email, given_name, family_name, role, status,
+              security_epoch, password_policy_version, version, created_at, updated_at
+            ) VALUES (
+              ?, ?, ?, ?, ?, 'superadmin', 'enrollment_required', 1, 1, 1, ?, ?
+            )
+          `, [
+            id,
+            profile.email,
+            profile.normalizedEmail,
+            profile.givenName,
+            profile.familyName,
+            now,
+            now,
+          ]);
+          transaction.run(`
+            INSERT INTO local_authenticator_states (
+              user_id, password_state, totp_state, version, created_at, updated_at
+            ) VALUES (?, 'not_configured', 'not_configured', 1, ?, ?)
+          `, [id, now, now]);
+          transaction.run(`
+            INSERT INTO identity_bootstrap (singleton, user_id, created_at)
+            VALUES (1, ?, ?)
+          `, [id, now]);
+          return {
+            value: requiredUser(transaction, id),
+            auditInput: identityAudit(audit, {
+              action: "identity.bootstrap",
+              targetId: id,
+              changes: [
+                { field: "role", after: "superadmin" },
+                { field: "status", after: "enrollment_required" },
+                { field: "enrollment", after: "pending" },
+              ],
+            }),
+          };
+        }),
+      });
+    } catch (error) {
+      throw mapIdentityPersistenceError(error);
+    }
+  }
+
   async identity(userId: string): Promise<IdentityReadModel | undefined> {
     const id = parseUuid(userId);
     return this.#owner.execute({

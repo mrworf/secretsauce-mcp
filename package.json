@@ -18,6 +18,7 @@
     "start:vault": "node dist/vault/main.js",
     "vault:key": "node dist/vault/keyCli.js",
     "vault:health": "node dist/vault/healthCli.js",
+    "identity:bootstrap": "node dist/identity/bootstrapCli.js",
     "dev:control-web": "vite",
     "pretest": "npm run build",
     "test": "vitest run"

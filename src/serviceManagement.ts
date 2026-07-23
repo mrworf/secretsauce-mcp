@@ -1311,6 +1311,7 @@ export class ServiceManagementRepository {
     expectedVersion: number;
     remove: boolean;
     correlationId: string;
+    justification?: string;
   }): Promise<ServiceView> {
     try {
       return await this.owner.execute({
@@ -1352,16 +1353,19 @@ export class ServiceManagementRepository {
           if (update.status !== "updated") throw new PersistenceError("identity_stale");
           const row = transaction.get<ServiceRow>(serviceSelect("WHERE s.id = ?"), [input.serviceId]);
           if (row === undefined) throw new PersistenceError("database_unavailable");
+          const auditInput = serviceAudit(
+            input.actor,
+            input.remove ? "service.admin_remove" : "service.admin_assign",
+            input.serviceId,
+            current.slug,
+            input.correlationId,
+            [{ field: "service_admin", [input.remove ? "before" : "after"]: input.userId }],
+          );
           return {
             value: project(row),
-            auditInput: serviceAudit(
-              input.actor,
-              input.remove ? "service.admin_remove" : "service.admin_assign",
-              input.serviceId,
-              current.slug,
-              input.correlationId,
-              [{ field: "service_admin", [input.remove ? "before" : "after"]: input.userId }],
-            ),
+            auditInput: input.justification === undefined
+              ? auditInput
+              : { ...auditInput, justification: input.justification },
           };
         }),
       });
@@ -1809,10 +1813,12 @@ export class ServiceManagementService {
     expectedVersion: number,
     remove: boolean,
     correlationId: string,
+    justification?: string,
   ): Promise<ServiceView> {
     if (!isUuidV7(serviceId) || !isUuidV7(userId) || !Number.isSafeInteger(expectedVersion)) {
       throw new ServiceManagementError("invalid_request");
     }
+    const reason = remove ? boundedJustification(justification) : undefined;
     return this.repository.assign({
       actor,
       serviceId,
@@ -1820,6 +1826,7 @@ export class ServiceManagementService {
       expectedVersion,
       remove,
       correlationId,
+      ...(reason === undefined ? {} : { justification: reason }),
     });
   }
 

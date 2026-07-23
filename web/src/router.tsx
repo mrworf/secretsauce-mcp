@@ -6,6 +6,7 @@ import {
 import { AppShell, PlaceholderPage, RouteErrorPage } from "./App";
 import { navigationForRole, type HumanControlRole } from "./navigation";
 import { ProfilePage, UsersPage } from "./UserPages";
+import { ServicesPage } from "./ServicePages";
 
 function routes(role: HumanControlRole): RouteObject[] {
   return [{
@@ -18,6 +19,8 @@ function routes(role: HumanControlRole): RouteObject[] {
         path: item.path === "/" ? undefined : item.path.slice(1),
         element: item.path === "/users"
           ? <UsersPage role={role} />
+          : item.path === "/services"
+            ? <ServicesPage role={role} />
           : item.path === "/profile"
             ? <ProfilePage />
             : <PlaceholderPage />,

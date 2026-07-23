@@ -783,7 +783,7 @@ export function registerServiceManagementRoutes(
       stepUp: "none",
       schemas: {
         params: adminParams,
-        body: z.object({}).strict(),
+        body: remove ? justificationBody : z.object({}).strict(),
         response: serviceSchema,
       },
       rateLimit: "management",
@@ -792,7 +792,7 @@ export function registerServiceManagementRoutes(
       cache: "no-store",
       concurrency: "if-match",
       idempotency: "none",
-      handler: async ({ authentication, params, expectedVersion, requestId }) => {
+      handler: async ({ authentication, params, body, expectedVersion, requestId }) => {
         try {
           const service = await services.assign(
             authentication!,
@@ -801,6 +801,9 @@ export function registerServiceManagementRoutes(
             expectedVersion!,
             remove,
             requestId,
+            remove
+              ? (body as unknown as z.infer<typeof justificationBody>).justification
+              : undefined,
           );
           return { data: wireService(service), version: service.version };
         } catch (error) {

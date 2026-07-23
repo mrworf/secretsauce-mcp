@@ -41,12 +41,12 @@ describe("control application shell", () => {
     expect(screen.getAllByRole("link", { name: "Migration status" })).toHaveLength(2);
   });
 
-  it("renders a deep route semantically without credentials, references, or diagnostics", () => {
+  it("renders a deep route semantically without credentials, references, or diagnostics", async () => {
     const view = render(
       <RouterProvider router={createTestControlRouter("admin", "/services")} />,
     );
     expect(screen.getByRole("heading", { level: 1, name: "Services" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { level: 2, name: "Available service configuration" }))
+    expect(await screen.findByRole("heading", { level: 2, name: "Service drafts" }))
       .toBeInTheDocument();
     expect(view.container.innerHTML).not.toMatch(
       /(?:gref_|authorization\s*:|bearer\s+|cookie\s*:|request body)/i,

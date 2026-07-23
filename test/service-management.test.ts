@@ -180,6 +180,7 @@ describe("durable service ownership", () => {
       assigned.version,
       true,
       CORRELATION,
+      "Do not remove the only active administrator.",
     )).rejects.toEqual(new ServiceManagementError("conflict"));
     await fixture.identities.changeStatus(admin.id, admin.version, "suspended", audit());
     await expect(fixture.service.detail(browser(admin.id, "admin"), created.id))
@@ -733,6 +734,7 @@ describe("durable service ownership", () => {
       archived.service.version,
       true,
       CORRELATION,
+      "Remove the final administrator from the archived service.",
     );
     const deletion = await fixture.service.delete(
       fixture.superadmin,
@@ -905,6 +907,14 @@ describe("durable service ownership", () => {
     });
     expect(assigned.statusCode).toBe(200);
     expect(assigned.headers.etag).toBe('"2"');
+
+    const unjustifiedRemoval = await application.inject({
+      method: "DELETE",
+      url: `/api/v2/services/${serviceId}/admins/${admin.id}`,
+      headers: mutationHeaders({ "if-match": '"2"' }),
+      payload: {},
+    });
+    expect(unjustifiedRemoval.statusCode).toBe(400);
 
     const unsafeDestination = await application.inject({
       method: "POST",

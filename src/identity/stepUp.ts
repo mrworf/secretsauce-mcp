@@ -454,11 +454,7 @@ export class StepUpService {
     }
 
     const issuedAt = safeNow(this.#now);
-    if (this.#config.stepUpMode === "five_minutes") {
-      if (input.operation !== undefined) {
-        await this.deny(input, "invalid");
-        throw new LocalAuthenticationError("authentication_failed");
-      }
+    if (this.#config.stepUpMode === "five_minutes" && input.operation === undefined) {
       try {
         await this.#repository.elevateFiveMinutes({
           candidate: eligible,

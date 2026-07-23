@@ -20,4 +20,13 @@ describe("responsive control shell styles", () => {
     expect(styles).toMatch(/max-width: 1680px/);
     expect(styles).toMatch(/272px minmax\(0, 1fr\)/);
   });
+
+  it("keeps the service workspace ordered on narrow screens and split only when wide", () => {
+    expect(styles).toMatch(/\.service-layout \{[\s\S]*display: grid/);
+    expect(styles).toMatch(/\.service-layout \{[\s\S]*min-width: 0/);
+    expect(styles).toMatch(
+      /@media \(min-width: 1200px\)[\s\S]*\.service-layout \{[\s\S]*grid-template-columns:/,
+    );
+    expect(styles).toMatch(/\.code-input \{[\s\S]*max-width: 100%/);
+  });
 });

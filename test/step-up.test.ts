@@ -79,6 +79,17 @@ describe("transaction-bound browser step-up", () => {
     expect(await protectedRequest(fixture, login, {})).toMatchObject({ statusCode: 200 });
     fixture.now.value += 5 * 60_000;
     expect((await protectedRequest(fixture, login, {})).statusCode).toBe(403);
+
+    fixture.now.value += 30_000;
+    const exactOperation = await stepUpRequest(
+      fixture,
+      login,
+      totpCode(fixture.seed, fixture.now.value),
+      operationInput({ value: "route-forced-always" }),
+    );
+    expect(exactOperation.statusCode).toBe(200);
+    expect(exactOperation.json().data).toMatchObject({ mode: "always" });
+    expect(exactOperation.json().data.proof).toMatch(/^[A-Za-z0-9_-]{43}$/);
     fixture.seed.fill(0);
   });
 

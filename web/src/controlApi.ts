@@ -27,6 +27,105 @@ export interface ControlSession {
   expires_at: number;
 }
 
+export type ServiceLifecycle = "draft" | "published" | "archived";
+
+export interface ControlService {
+  id: string;
+  slug: string;
+  name: string;
+  description?: string;
+  documentation_url?: string;
+  lifecycle: ServiceLifecycle;
+  draft_matches_published: boolean;
+  publication_generation: number;
+  published_revision?: {
+    id: string;
+    sequence: number;
+    published_at: number;
+  };
+  destination_count: number;
+  admin_count: number;
+  version: number;
+  created_at: number;
+  updated_at: number;
+}
+
+export interface ServiceDestination {
+  id: string;
+  slug: string;
+  base_url: string;
+  schemes: Array<"http" | "https">;
+  hosts: Array<{ type: "exact" | "suffix" | "regex"; value: string }>;
+  ports: number[];
+  tls_verify: boolean;
+  version: number;
+  created_at: number;
+  updated_at: number;
+}
+
+export interface ControlServiceDetail extends ControlService {
+  destinations: ServiceDestination[];
+}
+
+export interface ServiceDraftDocument {
+  format_version: 1;
+  service: {
+    slug: string;
+    name: string;
+    description?: string;
+    documentation_url?: string;
+  };
+  destinations: Array<Omit<ServiceDestination, "version" | "created_at" | "updated_at">>;
+}
+
+export interface ServiceValidation {
+  valid: boolean;
+  draft_digest: string;
+  issues: Array<{
+    code: "service_archived" | "service_admin_required" | "destination_required";
+    pointer: "/lifecycle" | "/admins" | "/destinations";
+  }>;
+  warnings: Array<{
+    code: "tls_verification_disabled";
+    pointer: string;
+  }>;
+}
+
+export interface ServiceRevision {
+  id: string;
+  sequence: number;
+  digest: string;
+  publication_generation: number;
+  source_revision_id?: string;
+  actor_role: "admin" | "superadmin";
+  published_at: number;
+}
+
+export interface ServiceAdmin {
+  id: string;
+  email: string;
+  given_name: string;
+  family_name: string;
+  status: string;
+  assigned_at: number;
+}
+
+export interface ServiceProfileInput {
+  slug: string;
+  name: string;
+  description?: string;
+  documentation_url?: string;
+}
+
+export interface ServiceDestinationInput {
+  slug: string;
+  base_url: string;
+  schemes: Array<"http" | "https">;
+  hosts: Array<{ type: "exact" | "suffix" | "regex"; value: string }>;
+  ports: number[];
+  tls_verify: boolean;
+}
+
 export interface OidcProviderLabel {
   id: string;
   display_name: string;
@@ -71,6 +170,74 @@ export interface ControlApi {
     justification: string,
     role?: UserRole,
   ): Promise<ControlUser | OneTimeUser | { user_id: string; deleted: true }>;
+}
+
+export interface ServiceControlApi {
+  listServices(input?: {
+    q?: string;
+    lifecycle?: ServiceLifecycle;
+    cursor?: string;
+  }): Promise<{ services: ControlService[]; next_cursor?: string }>;
+  service(serviceId: string): Promise<ControlServiceDetail>;
+  createService(input: ServiceProfileInput): Promise<ControlService>;
+  updateService(
+    service: ControlServiceDetail,
+    input: {
+      name: string;
+      description?: string | null;
+      documentation_url?: string | null;
+    },
+  ): Promise<ControlServiceDetail>;
+  createDestination(
+    service: ControlServiceDetail,
+    input: ServiceDestinationInput,
+  ): Promise<ControlServiceDetail>;
+  updateDestination(
+    service: ControlServiceDetail,
+    destinationId: string,
+    input: Omit<ServiceDestinationInput, "slug">,
+  ): Promise<ControlServiceDetail>;
+  deleteDestination(
+    service: ControlServiceDetail,
+    destinationId: string,
+  ): Promise<ControlServiceDetail>;
+  validateService(serviceId: string): Promise<ServiceValidation>;
+  publishService(service: ControlServiceDetail): Promise<ControlServiceDetail>;
+  serviceRevisions(serviceId: string): Promise<{ revisions: ServiceRevision[] }>;
+  copyService(serviceId: string): Promise<ServiceDraftDocument>;
+  importService(
+    service: ControlServiceDetail,
+    document: ServiceDraftDocument,
+  ): Promise<ControlServiceDetail>;
+  cloneService(
+    sourceServiceId: string,
+    input: Pick<ServiceProfileInput, "slug" | "name">,
+  ): Promise<ControlServiceDetail>;
+  serviceAdmins(serviceId: string): Promise<{ admins: ServiceAdmin[] }>;
+  assignServiceAdmin(
+    service: ControlServiceDetail,
+    userId: string,
+  ): Promise<ControlServiceDetail>;
+  removeServiceAdmin(
+    service: ControlServiceDetail,
+    userId: string,
+    justification: string,
+  ): Promise<ControlServiceDetail>;
+  rollbackService(
+    service: ControlServiceDetail,
+    revisionId: string,
+    justification: string,
+  ): Promise<ControlServiceDetail>;
+  archiveService(
+    service: ControlServiceDetail,
+    justification: string,
+  ): Promise<ControlServiceDetail>;
+  deleteService(
+    service: ControlServiceDetail,
+    justification: string,
+    password: string,
+    totp: string,
+  ): Promise<{ service_id: string; deleted: true }>;
 }
 
 export interface OidcControlApi {
@@ -126,7 +293,8 @@ export type UserAction =
   | "role"
   | "delete";
 
-export const browserControlApi: ControlApi & OidcControlApi & OidcManagementApi = {
+export const browserControlApi:
+  ControlApi & OidcControlApi & OidcManagementApi & ServiceControlApi = {
   session: () => get<ControlSession>("/api/v2/auth/session"),
   oidcProviders: () => get<{ providers: OidcProviderLabel[] }>("/api/v2/auth/oidc/providers"),
   beginOidc: (providerId) => {
@@ -207,6 +375,86 @@ export const browserControlApi: ControlApi & OidcControlApi & OidcManagementApi 
       ["password-reset", "totp-reset", "restore-enrollment"].includes(action),
     );
   },
+  listServices: (input = {}) => {
+    const query = new URLSearchParams({ limit: "50" });
+    if (input.q !== undefined && input.q.trim() !== "") query.set("q", input.q.trim());
+    if (input.lifecycle !== undefined) query.set("lifecycle", input.lifecycle);
+    if (input.cursor !== undefined) query.set("cursor", input.cursor);
+    return get(`/api/v2/services?${query.toString()}`);
+  },
+  service: (serviceId) => get(`/api/v2/services/${encodeURIComponent(serviceId)}`),
+  createService: (input) => mutation("/api/v2/services", "POST", input, undefined, true),
+  updateService: (service, input) =>
+    mutation(`/api/v2/services/${service.id}`, "PATCH", input, service.version),
+  createDestination: (service, input) =>
+    mutation(
+      `/api/v2/services/${service.id}/destinations`,
+      "POST",
+      input,
+      service.version,
+    ),
+  updateDestination: (service, destinationId, input) =>
+    mutation(
+      `/api/v2/services/${service.id}/destinations/${encodeURIComponent(destinationId)}`,
+      "PATCH",
+      input,
+      service.version,
+    ),
+  deleteDestination: (service, destinationId) =>
+    mutation(
+      `/api/v2/services/${service.id}/destinations/${encodeURIComponent(destinationId)}`,
+      "DELETE",
+      undefined,
+      service.version,
+    ),
+  validateService: (serviceId) =>
+    mutation(`/api/v2/services/${serviceId}/validate`, "POST", {}),
+  publishService: (service) =>
+    mutation(`/api/v2/services/${service.id}/publish`, "POST", {}, service.version),
+  serviceRevisions: (serviceId) =>
+    get(`/api/v2/services/${serviceId}/revisions`),
+  copyService: (serviceId) => get(`/api/v2/services/${serviceId}/copy`),
+  importService: (service, document) =>
+    mutation(`/api/v2/services/${service.id}/import`, "POST", document, service.version),
+  cloneService: (serviceId, input) =>
+    mutation(`/api/v2/services/${serviceId}/clone`, "POST", input, undefined, true),
+  serviceAdmins: (serviceId) => get(`/api/v2/services/${serviceId}/admins`),
+  assignServiceAdmin: async (service, userId) => {
+    await mutation<ControlService>(
+      `/api/v2/services/${service.id}/admins/${encodeURIComponent(userId)}`,
+      "PUT",
+      {},
+      service.version,
+    );
+    return get(`/api/v2/services/${service.id}`);
+  },
+  removeServiceAdmin: async (service, userId, justification) => {
+    await mutation<ControlService>(
+      `/api/v2/services/${service.id}/admins/${encodeURIComponent(userId)}`,
+      "DELETE",
+      { justification },
+      service.version,
+    );
+    return get(`/api/v2/services/${service.id}`);
+  },
+  rollbackService: (service, revisionId, justification) =>
+    mutation(
+      `/api/v2/services/${service.id}/revisions/${encodeURIComponent(revisionId)}/rollback`,
+      "POST",
+      { justification },
+      service.version,
+      true,
+    ),
+  archiveService: (service, justification) =>
+    mutation(
+      `/api/v2/services/${service.id}/archive`,
+      "POST",
+      { justification },
+      service.version,
+      true,
+    ),
+  deleteService: (service, justification, password, totp) =>
+    deleteServiceWithStepUp(service, justification, password, totp),
 };
 
 function safeProviderId(providerId: string): string {
@@ -222,7 +470,7 @@ async function get<T>(path: string): Promise<T> {
 
 async function mutation<T>(
   path: string,
-  method: "POST" | "PATCH" | "DELETE",
+  method: "POST" | "PUT" | "PATCH" | "DELETE",
   body: unknown,
   expectedVersion?: number,
   idempotent = false,
@@ -237,6 +485,53 @@ async function mutation<T>(
         ? {}
         : { "if-match": `"${expectedVersion}"` }),
       ...(idempotent ? { "idempotency-key": crypto.randomUUID() } : {}),
+    },
+    body: JSON.stringify(body),
+  });
+}
+
+async function deleteServiceWithStepUp(
+  service: ControlServiceDetail,
+  justification: string,
+  password: string,
+  totp: string,
+): Promise<{ service_id: string; deleted: true }> {
+  const session = await browserControlApi.session();
+  const idempotencyKey = crypto.randomUUID();
+  const body = { justification };
+  const operation = {
+    method: "DELETE" as const,
+    route_id: "services.delete",
+    target_ids: [service.id],
+    expected_version: service.version,
+    idempotency_key: idempotencyKey,
+    body,
+  };
+  const stepUp = await request<{ mode: "five_minutes" | "always"; proof?: string }>(
+    "/api/v2/auth/step-up",
+    {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-csrf-token": session.csrf_token,
+      },
+      body: JSON.stringify({ password, totp, operation }),
+    },
+  );
+  if (stepUp.mode !== "always" || stepUp.proof === undefined) {
+    throw new ControlApiError(
+      "step_up_required",
+      "A proof for this exact deletion is required.",
+    );
+  }
+  return request(`/api/v2/services/${service.id}`, {
+    method: "DELETE",
+    headers: {
+      "content-type": "application/json",
+      "x-csrf-token": session.csrf_token,
+      "x-step-up-proof": stepUp.proof,
+      "if-match": `"${service.version}"`,
+      "idempotency-key": idempotencyKey,
     },
     body: JSON.stringify(body),
   });

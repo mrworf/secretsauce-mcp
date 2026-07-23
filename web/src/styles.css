@@ -436,6 +436,212 @@ button:disabled {
   margin-top: 1.25rem;
 }
 
+.service-layout {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+  margin-top: 1.25rem;
+}
+
+.service-list,
+.destination-stack,
+.service-workspace,
+.editor-card,
+.revision-list {
+  display: grid;
+  min-width: 0;
+  gap: 0.75rem;
+}
+
+.service-list {
+  align-content: start;
+}
+
+.service-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  min-width: 0;
+  text-align: left;
+}
+
+.service-card > span:first-child {
+  display: grid;
+  min-width: 0;
+}
+
+.service-card small {
+  overflow: hidden;
+  color: var(--muted);
+  text-overflow: ellipsis;
+}
+
+.service-card.selected {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.service-workspace {
+  align-content: start;
+}
+
+.service-workspace-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.service-workspace-header h3,
+.editor-card h4,
+.destination-card h5,
+.confirmation-panel h5,
+.inset-form h3 {
+  margin: 0;
+}
+
+.service-statuses,
+.service-section-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.service-section-nav {
+  position: sticky;
+  z-index: 2;
+  top: 0;
+  padding: 0.45rem;
+  background: color-mix(in srgb, var(--surface) 96%, transparent);
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+}
+
+.service-section-nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0.25rem 0.55rem;
+  color: var(--muted);
+  border-radius: 0.4rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.service-section-nav a:hover {
+  color: var(--text);
+  background: var(--surface-subtle);
+}
+
+.editor-card {
+  scroll-margin-top: 4rem;
+  padding: 1rem;
+  background: var(--surface-subtle);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+}
+
+.destination-card,
+.inset-form,
+.validation-summary {
+  min-width: 0;
+  padding: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+}
+
+.destination-fields {
+  display: grid;
+  min-width: 0;
+  gap: 0.75rem;
+}
+
+.destination-fields label,
+.editor-card > label,
+.checkbox-label {
+  display: grid;
+  min-width: 0;
+  gap: 0.35rem;
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+}
+
+.checkbox-label input {
+  min-width: 44px;
+}
+
+.warning-label {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.75rem;
+  padding: 0.15rem 0.45rem;
+  color: #8a3b12;
+  background: #fff3cd;
+  border: 1px solid #e7b75d;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.warning-copy {
+  color: #8a3b12;
+  font-weight: 700;
+}
+
+.revision-list {
+  margin: 0;
+  padding-left: 1.35rem;
+}
+
+.revision-list li {
+  min-width: 0;
+  padding: 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+}
+
+.revision-list li > span {
+  display: grid;
+  margin-bottom: 0.5rem;
+}
+
+.revision-list small {
+  color: var(--muted);
+}
+
+.code-input {
+  width: 100%;
+  max-width: 100%;
+  min-height: 12rem;
+  overflow: auto;
+  white-space: pre;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.danger-zone {
+  border-color: var(--accent);
+}
+
+.state-published {
+  color: var(--success);
+}
+
+.state-archived {
+  color: var(--accent);
+}
+
 .user-list {
   display: grid;
   align-content: start;
@@ -637,6 +843,10 @@ button:disabled {
   .field-pair {
     grid-template-columns: 1fr 1fr;
   }
+
+  .destination-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (min-width: 1200px) {
@@ -681,6 +891,18 @@ button:disabled {
     grid-template-columns: minmax(18rem, 0.8fr) minmax(24rem, 1.2fr);
   }
 
+  .service-layout {
+    grid-template-columns: minmax(15rem, 0.55fr) minmax(34rem, 1.45fr);
+  }
+
+  .service-filters {
+    grid-template-columns: minmax(16rem, 2fr) minmax(10rem, 1fr) auto;
+  }
+
+  .destination-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .field-pair {
     grid-template-columns: 1fr 1fr;
   }
@@ -705,6 +927,16 @@ button:disabled {
     --focus: #77b8ff;
     --success: #69d3a1;
     --shadow: 0 12px 35px rgb(0 0 0 / 24%);
+  }
+
+  .warning-label {
+    color: #ffd9a0;
+    background: #4a2f12;
+    border-color: #855a20;
+  }
+
+  .warning-copy {
+    color: #ffd9a0;
   }
 }
 

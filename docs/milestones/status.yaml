@@ -23,10 +23,10 @@ milestones:
   - id: "03"
     title: "Vault Broker"
     file: "docs/milestones/03-vault-broker.md"
-    status: "in_progress"
-    completed_at: null
-    commit_hash: null
-    notes: "Decision-complete implementation plan: docs/plans/milestone-03-vault-broker.md"
+    status: "completed"
+    completed_at: "2026-07-23T17:26:33.364Z"
+    commit_hash: "728b946"
+    notes: "Isolated Unix-socket broker, envelope-encrypted atomic store, role/capability separation, Argon2id chunked backup restore, sanitized readiness, and deployment boundaries pass production build, OpenAPI check, real-process restart, focused acceptance, and full 486/486 tests."
   - id: "04"
     title: "Identity Bootstrap"
     file: "docs/milestones/04-identity-bootstrap.md"

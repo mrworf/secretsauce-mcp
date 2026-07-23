@@ -238,6 +238,8 @@ const rawConfigSchema = z.object({
       z.string().trim().min(1).max(4096),
     ).refine((value) => Object.keys(value).length >= 1 && Object.keys(value).length <= 8),
     session_hmac_key_file: z.string().trim().min(1).max(4096),
+    temporary_password_ttl: z.string().default("72h"),
+    restricted_session_ttl: z.string().default("15m"),
     password: z.object({
       minimum_length: z.number().int().min(8).max(128).default(12),
       compromised_blocklist_file: z.string().trim().min(1).max(4096).optional(),
@@ -358,6 +360,18 @@ function normalizeIdentity(
   const adminInactivityMs = boundedIdentityDuration(raw.sessions.admin_inactivity, "identity.sessions.admin_inactivity", 300_000, 7_200_000);
   const userAbsoluteMs = boundedIdentityDuration(raw.sessions.user_absolute, "identity.sessions.user_absolute", 3_600_000, 259_200_000);
   const userInactivityMs = boundedIdentityDuration(raw.sessions.user_inactivity, "identity.sessions.user_inactivity", 300_000, 86_400_000);
+  const temporaryPasswordTtlMs = boundedIdentityDuration(
+    raw.temporary_password_ttl,
+    "identity.temporary_password_ttl",
+    3_600_000,
+    7 * 86_400_000,
+  );
+  const restrictedSessionTtlMs = boundedIdentityDuration(
+    raw.restricted_session_ttl,
+    "identity.restricted_session_ttl",
+    300_000,
+    1_800_000,
+  );
   if (adminInactivityMs > adminAbsoluteMs || userInactivityMs > userAbsoluteMs) {
     throw configValidationError("identity session inactivity must not exceed absolute lifetime", ["identity", "sessions"]);
   }
@@ -380,6 +394,8 @@ function normalizeIdentity(
     activeRootKeyId: raw.active_root_key_id,
     rootKeyFiles,
     sessionHmacKeyFile: raw.session_hmac_key_file,
+    temporaryPasswordTtlMs,
+    restrictedSessionTtlMs,
     password: {
       minimumLength: raw.password.minimum_length,
       ...(raw.password.compromised_blocklist_file === undefined

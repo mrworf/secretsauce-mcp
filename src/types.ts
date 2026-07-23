@@ -141,6 +141,8 @@ export interface IdentityConfig {
   activeRootKeyId: string;
   rootKeyFiles: Record<string, string>;
   sessionHmacKeyFile: string;
+  temporaryPasswordTtlMs: number;
+  restrictedSessionTtlMs: number;
   password: {
     minimumLength: number;
     compromisedBlocklistFile?: string;

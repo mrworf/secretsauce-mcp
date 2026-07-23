@@ -117,6 +117,8 @@ describe("config validation", () => {
       activeRootKeyId: "identity-2026",
       rootKeyFiles: { "identity-2026": rootKey },
       sessionHmacKeyFile: sessionKey,
+      temporaryPasswordTtlMs: 72 * 3_600_000,
+      restrictedSessionTtlMs: 15 * 60_000,
       password: { minimumLength: 12 },
       sessions: {
         adminAbsoluteMs: 12 * 3_600_000,
@@ -180,6 +182,20 @@ describe("config validation", () => {
     };
     range.identity.sessions.admin_absolute = "25h";
     expectConfigError(() => validateConfig(range, validEnv), "outside its supported range");
+
+    const temporaryLifetime = configured();
+    temporaryLifetime.identity.temporary_password_ttl = "59m";
+    expectConfigError(
+      () => validateConfig(temporaryLifetime, validEnv),
+      "outside its supported range",
+    );
+
+    const restrictedLifetime = configured();
+    restrictedLifetime.identity.restricted_session_ttl = "31m";
+    expectConfigError(
+      () => validateConfig(restrictedLifetime, validEnv),
+      "outside its supported range",
+    );
 
     const unknown = configured();
     unknown.identity.unexpected = true;

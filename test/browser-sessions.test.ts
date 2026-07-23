@@ -82,7 +82,7 @@ describe("durable browser sessions", () => {
     closeables.add(restarted);
     expect(await restarted.persistence.execute({
       run: (database) => database.schemaVersion,
-    })).toBe(4);
+    })).toBe(5);
   });
 
   it("serves no-store login/session/logout with strict cookies and CSRF rotation", async () => {
@@ -401,6 +401,8 @@ function identityConfig(): IdentityConfig {
     activeRootKeyId: "root",
     rootKeyFiles: { root: "/unused" },
     sessionHmacKeyFile: "/unused",
+    temporaryPasswordTtlMs: 72 * 3_600_000,
+    restrictedSessionTtlMs: 15 * 60_000,
     password: { minimumLength: 12 },
     sessions: {
       adminAbsoluteMs: 12 * 3_600_000,

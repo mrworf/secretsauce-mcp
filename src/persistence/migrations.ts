@@ -315,6 +315,104 @@ CREATE INDEX identity_step_up_proofs_session_idx
   ON identity_step_up_proofs (session_id, consumed_at, expires_at, id);
 `;
 
+const migration0005 = `
+CREATE TABLE identity_temporary_passwords (
+  user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  encoded_hash TEXT NOT NULL CHECK (length(encoded_hash) BETWEEN 64 AND 512),
+  purpose TEXT NOT NULL CHECK (
+    purpose IN ('initial_enrollment', 'password_reset', 'break_glass')
+  ),
+  issued_at INTEGER NOT NULL CHECK (issued_at >= 0),
+  expires_at INTEGER NOT NULL CHECK (expires_at > issued_at),
+  consumed_at INTEGER CHECK (consumed_at IS NULL OR consumed_at >= issued_at),
+  revoked_at INTEGER CHECK (revoked_at IS NULL OR revoked_at >= issued_at),
+  version INTEGER NOT NULL DEFAULT 1 CHECK (version > 0)
+) STRICT;
+
+CREATE INDEX identity_temporary_passwords_expiry_idx
+  ON identity_temporary_passwords (expires_at, consumed_at, revoked_at, user_id);
+
+CREATE TABLE identity_restricted_sessions (
+  id TEXT PRIMARY KEY CHECK (
+    length(id) = 36 AND id = lower(id)
+    AND substr(id, 15, 1) = '7'
+    AND substr(id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND id NOT GLOB '*[^0-9a-f-]*'
+  ),
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  purpose TEXT NOT NULL CHECK (
+    purpose IN ('initial_enrollment', 'password_change', 'totp_enrollment', 'totp_replacement')
+  ),
+  session_hash TEXT NOT NULL UNIQUE CHECK (
+    length(session_hash) = 64 AND session_hash = lower(session_hash)
+    AND session_hash NOT GLOB '*[^0-9a-f]*'
+  ),
+  csrf_hash TEXT NOT NULL UNIQUE CHECK (
+    length(csrf_hash) = 64 AND csrf_hash = lower(csrf_hash)
+    AND csrf_hash NOT GLOB '*[^0-9a-f]*'
+  ),
+  issued_security_epoch INTEGER NOT NULL CHECK (issued_security_epoch > 0),
+  issued_global_epoch INTEGER NOT NULL CHECK (issued_global_epoch > 0),
+  issued_at INTEGER NOT NULL CHECK (issued_at >= 0),
+  expires_at INTEGER NOT NULL CHECK (expires_at > issued_at),
+  revoked_at INTEGER CHECK (revoked_at IS NULL OR revoked_at >= issued_at),
+  version INTEGER NOT NULL DEFAULT 1 CHECK (version > 0)
+) STRICT;
+
+CREATE INDEX identity_restricted_sessions_user_active_idx
+  ON identity_restricted_sessions (user_id, revoked_at, expires_at, id);
+CREATE INDEX identity_restricted_sessions_expiry_idx
+  ON identity_restricted_sessions (expires_at, revoked_at, id);
+
+CREATE TABLE identity_pending_totp (
+  restricted_session_id TEXT PRIMARY KEY
+    REFERENCES identity_restricted_sessions(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  authenticator_id TEXT NOT NULL UNIQUE CHECK (
+    length(authenticator_id) = 36 AND authenticator_id = lower(authenticator_id)
+    AND substr(authenticator_id, 15, 1) = '7'
+    AND substr(authenticator_id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND authenticator_id NOT GLOB '*[^0-9a-f-]*'
+  ),
+  envelope_json TEXT NOT NULL CHECK (
+    length(envelope_json) BETWEEN 128 AND 4096 AND json_valid(envelope_json)
+  ),
+  root_key_id TEXT NOT NULL CHECK (
+    length(root_key_id) BETWEEN 1 AND 64
+    AND root_key_id NOT GLOB '*[^A-Za-z0-9._-]*'
+  ),
+  generation INTEGER NOT NULL CHECK (generation > 0),
+  created_at INTEGER NOT NULL CHECK (created_at >= 0),
+  expires_at INTEGER NOT NULL CHECK (expires_at > created_at)
+) STRICT;
+
+CREATE INDEX identity_pending_totp_user_idx
+  ON identity_pending_totp (user_id, expires_at, restricted_session_id);
+
+CREATE TABLE identity_invalidation_events (
+  id TEXT PRIMARY KEY CHECK (
+    length(id) = 36 AND id = lower(id)
+    AND substr(id, 15, 1) = '7'
+    AND substr(id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND id NOT GLOB '*[^0-9a-f-]*'
+  ),
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  reason TEXT NOT NULL CHECK (
+    reason IN ('password_reset', 'totp_reset', 'password_change', 'totp_change', 'break_glass', 'enrollment')
+  ),
+  browser_sessions_revoked INTEGER NOT NULL CHECK (browser_sessions_revoked >= 0),
+  restricted_sessions_revoked INTEGER NOT NULL CHECK (restricted_sessions_revoked >= 0),
+  created_at INTEGER NOT NULL CHECK (created_at >= 0),
+  dispatched_at INTEGER CHECK (dispatched_at IS NULL OR dispatched_at >= created_at),
+  attempts INTEGER NOT NULL DEFAULT 0 CHECK (attempts >= 0)
+) STRICT;
+
+CREATE INDEX identity_invalidation_events_dispatch_idx
+  ON identity_invalidation_events (dispatched_at, created_at, id);
+CREATE INDEX identity_invalidation_events_user_idx
+  ON identity_invalidation_events (user_id, created_at, id);
+`;
+
 export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [
   {
     version: 1,
@@ -335,6 +433,11 @@ export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [
     version: 4,
     name: "local_authentication_foundation",
     sql: migration0004,
+  },
+  {
+    version: 5,
+    name: "enrollment_recovery_self_service",
+    sql: migration0005,
   },
 ];
 

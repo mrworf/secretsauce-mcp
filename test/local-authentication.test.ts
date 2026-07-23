@@ -372,6 +372,8 @@ function identityConfig(): IdentityConfig {
     activeRootKeyId: "root",
     rootKeyFiles: { root: "/not-read-by-this-test" },
     sessionHmacKeyFile: "/not-read-by-this-test",
+    temporaryPasswordTtlMs: 72 * 3_600_000,
+    restrictedSessionTtlMs: 15 * 60_000,
     password: { minimumLength: 12 },
     sessions: {
       adminAbsoluteMs: 12 * 3_600_000,

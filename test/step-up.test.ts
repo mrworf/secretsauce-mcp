@@ -544,6 +544,8 @@ function identityConfig(mode: IdentityConfig["stepUpMode"]): IdentityConfig {
     activeRootKeyId: "root",
     rootKeyFiles: { root: "/unused" },
     sessionHmacKeyFile: "/unused",
+    temporaryPasswordTtlMs: 72 * 3_600_000,
+    restrictedSessionTtlMs: 15 * 60_000,
     password: { minimumLength: 12 },
     sessions: {
       adminAbsoluteMs: 12 * 3_600_000,

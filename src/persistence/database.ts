@@ -184,6 +184,22 @@ export class PersistenceDatabase {
     }
   }
 
+  withOperationalTransaction<T>(
+    mutation: (transaction: PersistenceTransaction) => T,
+  ): T {
+    this.assertOpen();
+    const execute = this.#database.transaction(() => {
+      const result = mutation(new PersistenceTransaction(this.#database, this.#now));
+      if (isPromiseLike(result)) throw new PersistenceError("database_unavailable");
+      return result;
+    });
+    try {
+      return execute.immediate();
+    } catch (error) {
+      throw mapPersistenceError(error, "database_unavailable");
+    }
+  }
+
   withIdempotentAdministrativeAudit<T>(
     idempotencyInput: IdempotencyExecutionInput,
     auditInput: unknown,

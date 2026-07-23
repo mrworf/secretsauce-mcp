@@ -1,4 +1,5 @@
 import type {
+  FastifyReply,
   FastifyInstance,
   FastifyRequest,
 } from "fastify";
@@ -43,6 +44,8 @@ export interface ControlHandlerContext {
   expectedVersion?: number;
   idempotencyKey?: string;
   requestId: string;
+  request: FastifyRequest;
+  reply: FastifyReply;
 }
 
 export interface ControlHandlerResult {
@@ -58,7 +61,7 @@ export interface ControlRouteDefinition {
   summary: string;
   tags: readonly string[];
   authentication: "public" | readonly ControlAuthenticationMethod[];
-  permission: ControlCapability | null;
+  permission: ControlCapability | "authenticated" | null;
   stepUp: ControlStepUpRule;
   schemas: ControlRouteSchemas;
   rateLimit: ControlRateLimitClass;
@@ -179,6 +182,8 @@ export function installControlRoutes(
             ...(expectedVersion === undefined ? {} : { expectedVersion }),
             ...(idempotencyKey === undefined ? {} : { idempotencyKey }),
             requestId: request.id,
+            request,
+            reply,
           });
           const statusCode = result.statusCode ?? 200;
           const successStatuses = definition.successStatuses ?? [200];
@@ -231,6 +236,7 @@ async function authorizeRoute(
   if (authentication === undefined || route.permission === null) {
     throw new ControlContractError(401, "unauthenticated", "Authentication required.");
   }
+  if (route.permission === "authenticated") return;
   const outcome = permissionOutcome(authentication.role, route.permission);
   if (outcome === "deny" || outcome === "no_account") {
     throw new ControlContractError(403, "forbidden", "The operation is not permitted.");

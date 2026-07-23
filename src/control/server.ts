@@ -14,6 +14,16 @@ import { configuredAuditTextSanitizer } from "../runtime.js";
 import type { GatewayConfig } from "../types.js";
 import { PACKAGE_VERSION } from "../version.js";
 import {
+  BrowserSessionAuthenticator,
+  BrowserSessionRepository,
+  loadIdentitySessionHmacKey,
+} from "../identity/browserSessions.js";
+import {
+  LocalAuthenticationRepository,
+  LocalAuthenticationService,
+} from "../identity/localAuthentication.js";
+import { IdentityKeyRing } from "../identity/totp.js";
+import {
   denyControlAuthentication,
   controlAuthentication,
   type ControlAuthenticator,
@@ -43,6 +53,10 @@ import {
   loadControlWebAssets,
   type ControlWebAssets,
 } from "./webAssets.js";
+import {
+  registerLocalIdentityRoutes,
+  type LocalIdentityControl,
+} from "./identityRoutes.js";
 
 export interface ControlApplicationOptions {
   authenticator?: ControlAuthenticator;
@@ -54,6 +68,7 @@ export interface ControlApplicationOptions {
   rateLimiter?: ControlRateLimiter;
   webAssets?: ControlWebAssets;
   vaultReadiness?: () => Promise<"ready" | "unavailable" | "unsupported">;
+  localIdentity?: LocalIdentityControl;
 }
 
 export function createControlApplication(
@@ -63,7 +78,9 @@ export function createControlApplication(
   const control = config.control;
   if (control === undefined) throw new Error("Control configuration is required.");
   const logger = options.logger ?? createLogger(config.logging);
-  const authenticator = options.authenticator ?? denyControlAuthentication;
+  const authenticator = options.authenticator ??
+    options.localIdentity?.browserSessions ??
+    denyControlAuthentication;
   const authorization = options.authorization ?? denyControlAuthorization;
   const rateLimiter = options.rateLimiter ?? new ControlRateLimiter();
   const application = Fastify({
@@ -98,6 +115,9 @@ export function createControlApplication(
     control.publicOrigin,
     options.vaultReadiness,
   );
+  if (options.localIdentity !== undefined) {
+    registerLocalIdentityRoutes(routeRegistry, options.localIdentity);
+  }
   options.registerControlRoutes?.(routeRegistry);
   installControlRoutes(application, routeRegistry, authorization);
 
@@ -165,14 +185,52 @@ export async function startControlServer(
     sanitizeAuditText: configuredAuditTextSanitizer(config),
   });
   let server: FastifyInstance | undefined;
+  let localAuthentication: LocalAuthenticationService | undefined;
+  let browserSessions: BrowserSessionAuthenticator | undefined;
+  let identityKeyRing: IdentityKeyRing | undefined;
   try {
-    server = createControlApplication(config, { persistence, ...options });
+    let localIdentity: LocalIdentityControl | undefined;
+    if (config.identity !== undefined) {
+      identityKeyRing = IdentityKeyRing.fromFiles(
+        config.identity.activeRootKeyId,
+        config.identity.rootKeyFiles,
+      );
+      const sessionKey = loadIdentitySessionHmacKey(config.identity.sessionHmacKeyFile);
+      try {
+        const authenticationRepository = new LocalAuthenticationRepository(persistence);
+        localAuthentication = await LocalAuthenticationService.create({
+          repository: authenticationRepository,
+          config: config.identity,
+          keyRing: identityKeyRing,
+          sessionHmacKey: sessionKey,
+        });
+        browserSessions = new BrowserSessionAuthenticator(
+          new BrowserSessionRepository(persistence),
+          config.identity.sessions,
+          sessionKey,
+        );
+        localIdentity = {
+          authentication: localAuthentication,
+          browserSessions,
+        };
+      } finally {
+        sessionKey.fill(0);
+      }
+    }
+    server = createControlApplication(config, {
+      persistence,
+      ...options,
+      ...(localIdentity === undefined ? {} : { localIdentity }),
+    });
     await server.listen({
       host: config.control.host,
       port: config.control.port,
     });
   } catch (error) {
     await server?.close().catch(() => undefined);
+    browserSessions?.close();
+    localAuthentication?.close();
+    identityKeyRing?.destroy();
     await persistence.close();
     throw error;
   }
@@ -185,6 +243,9 @@ export async function startControlServer(
     close: () => {
       closePromise ??= (async () => {
         await startedServer.close();
+        browserSessions?.close();
+        localAuthentication?.close();
+        identityKeyRing?.destroy();
         await persistence.close();
       })();
       return closePromise;

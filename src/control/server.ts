@@ -313,7 +313,7 @@ export async function startControlServer(
         );
         const serviceRelationships = new ServiceRelationshipRepository(persistence);
         serviceManagement = new ServiceManagementService(
-          new ServiceManagementRepository(persistence),
+          new ServiceManagementRepository(persistence, stepUpRepository),
           serviceRelationships,
           idempotencyHasher,
           sessionKey,

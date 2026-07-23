@@ -13,6 +13,10 @@ import { IdentityRepository, type IdentityAuditContext } from "../src/identity/r
 import { PersistenceWorker } from "../src/persistence/worker.js";
 import { UuidV7Generator } from "../src/persistence/uuidV7.js";
 import {
+  AlwaysStepUpHandle,
+  type StepUpRepository,
+} from "../src/identity/stepUp.js";
+import {
   ServiceManagementAuthorization,
   ServiceManagementError,
   ServiceManagementRepository,
@@ -492,6 +496,303 @@ describe("durable service ownership", () => {
     });
   });
 
+  it("round trips safe drafts and completes rollback, clone, archive, and deletion", async () => {
+    const fixture = await serviceFixture("lifecycle");
+    const created = await fixture.create("lifecycle-api", "Lifecycle API");
+    const admin = await fixture.identity("lifecycle-admin@example.org", "admin", "active");
+    const assigned = await fixture.service.assign(
+      fixture.superadmin,
+      created.id,
+      admin.id,
+      created.version,
+      false,
+      CORRELATION,
+    );
+    const drafted = await fixture.service.createDestination(
+      browser(admin.id, "admin"),
+      created.id,
+      assigned.version,
+      inputDestination(),
+      CORRELATION,
+    );
+    const first = await fixture.service.publish(
+      browser(admin.id, "admin"),
+      created.id,
+      drafted.version,
+      CORRELATION,
+    );
+    const copied = await fixture.service.copy(browser(admin.id, "admin"), created.id);
+    expect(copied).toMatchObject({
+      formatVersion: 1,
+      service: { slug: "lifecycle-api", name: "Lifecycle API" },
+      destinations: [{ slug: "primary" }],
+    });
+    expect(JSON.stringify(copied)).not.toMatch(
+      /credential|secret|token|policy|admin|runtime|publication/i,
+    );
+
+    const edited = await fixture.service.updateProfile(
+      browser(admin.id, "admin"),
+      created.id,
+      first.version,
+      { name: "Temporary Edit" },
+      CORRELATION,
+    );
+    const imported = await fixture.service.import(
+      browser(admin.id, "admin"),
+      created.id,
+      edited.version,
+      copied,
+      CORRELATION,
+    );
+    expect(imported).toMatchObject({
+      name: "Lifecycle API",
+      version: 6,
+      draftMatchesPublished: true,
+      destinations: [{ id: copied.destinations[0]!.id }],
+    });
+
+    const other = await fixture.create("other-api", "Other API");
+    const otherDestination = await fixture.service.createDestination(
+      fixture.superadmin,
+      other.id,
+      other.version,
+      { ...inputDestination(), slug: "other" },
+      CORRELATION,
+    );
+    await expect(fixture.service.import(
+      browser(admin.id, "admin"),
+      created.id,
+      imported.version,
+      {
+        ...copied,
+        destinations: [{
+          ...copied.destinations[0]!,
+          id: otherDestination.destinations[0]!.id,
+        }],
+      },
+      CORRELATION,
+    )).rejects.toEqual(new ServiceManagementError("conflict"));
+
+    const cloned = await fixture.service.clone(
+      fixture.superadmin,
+      created.id,
+      { slug: "cloned-api", name: "Cloned API" },
+      "clone-lifecycle-0001",
+      CORRELATION,
+    );
+    expect(cloned).toMatchObject({
+      replayed: false,
+      service: {
+        slug: "cloned-api",
+        lifecycle: "draft",
+        adminCount: 0,
+        publicationGeneration: 0,
+        version: 1,
+      },
+    });
+    expect(cloned.service.destinations).toHaveLength(1);
+    expect(cloned.service.destinations[0]!.id).not.toBe(copied.destinations[0]!.id);
+    await expect(fixture.service.revisions(fixture.superadmin, cloned.service.id))
+      .resolves.toEqual([]);
+    await expect(fixture.service.clone(
+      fixture.superadmin,
+      created.id,
+      { slug: "cloned-api", name: "Cloned API" },
+      "clone-lifecycle-0001",
+      CORRELATION,
+    )).resolves.toMatchObject({
+      replayed: true,
+      service: { id: cloned.service.id },
+    });
+
+    const changed = await fixture.service.updateProfile(
+      browser(admin.id, "admin"),
+      created.id,
+      imported.version,
+      { name: "Lifecycle API v2" },
+      CORRELATION,
+    );
+    const second = await fixture.service.publish(
+      browser(admin.id, "admin"),
+      created.id,
+      changed.version,
+      CORRELATION,
+    );
+    const historyBefore = await fixture.service.revisions(
+      browser(admin.id, "admin"),
+      created.id,
+    );
+    expect(historyBefore.map(({ sequence }) => sequence)).toEqual([2, 1]);
+    const rolledBack = await fixture.service.rollback(
+      browser(admin.id, "admin"),
+      created.id,
+      historyBefore[1]!.id,
+      second.version,
+      "Restore the first known-good revision.",
+      "rollback-lifecycle-0001",
+      CORRELATION,
+    );
+    expect(rolledBack).toMatchObject({
+      replayed: false,
+      service: {
+        name: "Lifecycle API",
+        publicationGeneration: 3,
+        version: 9,
+        publishedRevision: { sequence: 3 },
+      },
+    });
+    await expect(fixture.service.rollback(
+      browser(admin.id, "admin"),
+      created.id,
+      historyBefore[1]!.id,
+      second.version,
+      "Restore the first known-good revision.",
+      "rollback-lifecycle-0001",
+      CORRELATION,
+    )).resolves.toMatchObject({
+      replayed: true,
+      service: {
+        id: created.id,
+        version: rolledBack.service.version,
+      },
+    });
+    const historyAfter = await fixture.service.revisions(
+      browser(admin.id, "admin"),
+      created.id,
+    );
+    expect(historyAfter[0]).toMatchObject({
+      sequence: 3,
+      sourceRevisionId: historyBefore[1]!.id,
+    });
+
+    await expect(fixture.service.archive(
+      browser(admin.id, "admin"),
+      created.id,
+      rolledBack.service.version,
+      "Admins cannot archive services.",
+      "archive-admin-0001",
+      CORRELATION,
+    )).rejects.toEqual(new ServiceManagementError("not_found"));
+    const archived = await fixture.service.archive(
+      fixture.superadmin,
+      created.id,
+      rolledBack.service.version,
+      "Retire this service before permanent deletion.",
+      "archive-lifecycle-0001",
+      CORRELATION,
+    );
+    expect(archived).toMatchObject({
+      replayed: false,
+      service: {
+        lifecycle: "archived",
+        publicationGeneration: 4,
+        version: 10,
+      },
+    });
+    expect(archived.service.publishedRevision).toBeUndefined();
+    await expect(fixture.service.archive(
+      fixture.superadmin,
+      created.id,
+      rolledBack.service.version,
+      "Retire this service before permanent deletion.",
+      "archive-lifecycle-0001",
+      CORRELATION,
+    )).resolves.toMatchObject({
+      replayed: true,
+      service: {
+        id: created.id,
+        version: archived.service.version,
+      },
+    });
+    await expect(fixture.service.updateProfile(
+      fixture.superadmin,
+      created.id,
+      archived.service.version,
+      { name: "Forbidden Edit" },
+      CORRELATION,
+    )).rejects.toEqual(new ServiceManagementError("conflict"));
+    await expect(fixture.service.delete(
+      fixture.superadmin,
+      created.id,
+      archived.service.version,
+      "Delete archived service.",
+      "delete-lifecycle-0001",
+      CORRELATION,
+      new AlwaysStepUpHandle(
+        "018f1f2e-7b3c-7a10-8000-000000000080",
+        "018f1f2e-7b3c-7a10-8000-000000000081",
+        fixture.superadmin.principalId,
+      ),
+    )).rejects.toEqual(new ServiceManagementError("conflict"));
+
+    const unowned = await fixture.service.assign(
+      fixture.superadmin,
+      created.id,
+      admin.id,
+      archived.service.version,
+      true,
+      CORRELATION,
+    );
+    const deletion = await fixture.service.delete(
+      fixture.superadmin,
+      created.id,
+      unowned.version,
+      "Delete the retired service and owned configuration.",
+      "delete-lifecycle-0002",
+      CORRELATION,
+      new AlwaysStepUpHandle(
+        "018f1f2e-7b3c-7a10-8000-000000000082",
+        "018f1f2e-7b3c-7a10-8000-000000000083",
+        fixture.superadmin.principalId,
+      ),
+    );
+    expect(deletion).toEqual({ serviceId: created.id, deleted: true, replayed: false });
+    await expect(fixture.service.detail(fixture.superadmin, created.id))
+      .rejects.toEqual(new ServiceManagementError("not_found"));
+    const evidence = await deletedServiceEvidence(fixture.worker, created.id);
+    expect(evidence).toMatchObject({
+      service: undefined,
+      destinations: 0,
+      revisions: 0,
+      deleteInvalidations: 1,
+      deleteAudits: 1,
+    });
+  });
+
+  it("allocates gateway-owned destination ids for new imported entries", async () => {
+    const fixture = await serviceFixture("import-ids");
+    const created = await fixture.create("import-ids-api", "Import IDs API");
+    const drafted = await fixture.service.createDestination(
+      fixture.superadmin,
+      created.id,
+      created.version,
+      inputDestination(),
+      CORRELATION,
+    );
+    const copied = await fixture.service.copy(fixture.superadmin, created.id);
+    const suppliedId = "018f1f2e-7b3c-7a10-8000-00000000ff01";
+    const imported = await fixture.service.import(
+      fixture.superadmin,
+      created.id,
+      drafted.version,
+      {
+        ...copied,
+        destinations: [{
+          ...copied.destinations[0]!,
+          id: suppliedId,
+          slug: "replacement",
+        }],
+      },
+      CORRELATION,
+    );
+
+    expect(imported.destinations).toHaveLength(1);
+    expect(imported.destinations[0]).toMatchObject({ slug: "replacement" });
+    expect(imported.destinations[0]!.id).not.toBe(suppliedId);
+    expect(imported.destinations[0]!.id).not.toBe(copied.destinations[0]!.id);
+  });
+
   it("scopes lists and binds cursors to actor, scope, and filters", async () => {
     const fixture = await serviceFixture("list");
     const alpha = await fixture.create("alpha", "Alpha");
@@ -650,6 +951,75 @@ describe("durable service ownership", () => {
       draft_matches_published: true,
     });
 
+    const copied = await application.inject({
+      method: "GET",
+      url: `/api/v2/services/${serviceId}/copy`,
+      headers: { host: "control.example.org" },
+    });
+    expect(copied.statusCode).toBe(200);
+    expect(copied.json().data).toMatchObject({
+      format_version: 1,
+      service: { slug: "route-api" },
+      destinations: [{ slug: "primary" }],
+    });
+    expect(JSON.stringify(copied.json())).not.toMatch(
+      /credential|secret|token|policy|admin|runtime/i,
+    );
+
+    const unsafeImport = await application.inject({
+      method: "POST",
+      url: `/api/v2/services/${serviceId}/import`,
+      headers: mutationHeaders({ "if-match": '"4"' }),
+      payload: { ...copied.json().data, credential_value: "must-not-echo" },
+    });
+    expect(unsafeImport.statusCode).toBe(400);
+    expect(JSON.stringify(unsafeImport.json())).not.toContain("must-not-echo");
+
+    const imported = await application.inject({
+      method: "POST",
+      url: `/api/v2/services/${serviceId}/import`,
+      headers: mutationHeaders({ "if-match": '"4"' }),
+      payload: copied.json().data,
+    });
+    expect(imported.statusCode).toBe(200);
+    expect(imported.headers.etag).toBe('"5"');
+
+    const revisions = await application.inject({
+      method: "GET",
+      url: `/api/v2/services/${serviceId}/revisions`,
+      headers: { host: "control.example.org" },
+    });
+    expect(revisions.statusCode).toBe(200);
+    expect(revisions.json().data.revisions).toHaveLength(1);
+    const revisionId = revisions.json().data.revisions[0].id as string;
+
+    const rollback = await application.inject({
+      method: "POST",
+      url: `/api/v2/services/${serviceId}/revisions/${revisionId}/rollback`,
+      headers: mutationHeaders({
+        "if-match": '"5"',
+        "idempotency-key": "route-rollback-0001",
+      }),
+      payload: { justification: "Restore the checked revision." },
+    });
+    expect(rollback.statusCode).toBe(200);
+    expect(rollback.headers.etag).toBe('"6"');
+    expect(rollback.json().data.published_revision).toMatchObject({ sequence: 2 });
+
+    const cloned = await application.inject({
+      method: "POST",
+      url: `/api/v2/services/${serviceId}/clone`,
+      headers: mutationHeaders({ "idempotency-key": "route-clone-0001" }),
+      payload: { slug: "route-clone", name: "Route Clone" },
+    });
+    expect(cloned.statusCode).toBe(201);
+    expect(cloned.json().data).toMatchObject({
+      slug: "route-clone",
+      lifecycle: "draft",
+      admin_count: 0,
+      publication_generation: 0,
+    });
+
     const detail = await application.inject({
       method: "GET",
       url: `/api/v2/services/${serviceId}`,
@@ -657,6 +1027,31 @@ describe("durable service ownership", () => {
     });
     expect(detail.statusCode).toBe(200);
     expect(JSON.stringify(detail.json())).not.toMatch(/document_json|assigned_by|subject|secret/i);
+
+    const archived = await application.inject({
+      method: "POST",
+      url: `/api/v2/services/${serviceId}/archive`,
+      headers: mutationHeaders({
+        "if-match": '"6"',
+        "idempotency-key": "route-archive-0001",
+      }),
+      payload: { justification: "Retire the route test service." },
+    });
+    expect(archived.statusCode).toBe(200);
+    expect(archived.headers.etag).toBe('"7"');
+    expect(archived.json().data).toMatchObject({ lifecycle: "archived" });
+
+    const deleteWithoutStepUp = await application.inject({
+      method: "DELETE",
+      url: `/api/v2/services/${serviceId}`,
+      headers: mutationHeaders({
+        "if-match": '"7"',
+        "idempotency-key": "route-delete-0001",
+      }),
+      payload: { justification: "Attempt deletion without step-up." },
+    });
+    expect(deleteWithoutStepUp.statusCode).toBe(403);
+    expect(deleteWithoutStepUp.json().error).toMatchObject({ code: "step_up_required" });
 
     const openapi = await application.inject({
       method: "GET",
@@ -670,6 +1065,13 @@ describe("durable service ownership", () => {
       .toHaveProperty("post");
     expect(openapi.json().paths["/api/v2/services/{service_id}/publish"])
       .toHaveProperty("post");
+    expect(openapi.json().paths["/api/v2/services/{service_id}/copy"])
+      .toHaveProperty("get");
+    expect(openapi.json().paths[
+      "/api/v2/services/{service_id}/revisions/{revision_id}/rollback"
+    ]).toHaveProperty("post");
+    expect(openapi.json().paths["/api/v2/services/{service_id}"])
+      .toHaveProperty("delete");
     await application.close();
   });
 });
@@ -737,6 +1139,32 @@ async function seedRevisionCapacity(
   });
 }
 
+async function deletedServiceEvidence(worker: PersistenceWorker, serviceId: string) {
+  return worker.execute({
+    run: (database) => database.read((query) => ({
+      service: query.get("SELECT 1 FROM services WHERE id = ?", [serviceId]),
+      destinations: query.get<{ count: number }>(
+        "SELECT count(*) AS count FROM service_destinations WHERE service_id = ?",
+        [serviceId],
+      )!.count,
+      revisions: query.get<{ count: number }>(
+        "SELECT count(*) AS count FROM service_config_versions WHERE service_id = ?",
+        [serviceId],
+      )!.count,
+      deleteInvalidations: query.get<{ count: number }>(`
+        SELECT count(*) AS count
+        FROM service_invalidation_events
+        WHERE service_id = ? AND reason = 'delete'
+      `, [serviceId])!.count,
+      deleteAudits: query.get<{ count: number }>(`
+        SELECT count(*) AS count
+        FROM administrative_audit_events
+        WHERE service_id_snapshot = ? AND action = 'service.delete' AND result = 'allow'
+      `, [serviceId])!.count,
+    })),
+  });
+}
+
 async function serviceFixture(label: string) {
   const worker = PersistenceWorker.open({
     databaseFile: join(mkdtempSync(join(tmpdir(), `secretsauce-services-${label}-`)), "control.sqlite"),
@@ -755,8 +1183,21 @@ async function serviceFixture(label: string) {
     status: "active",
   }, audit());
   const relationships = new ServiceRelationshipRepository(worker);
+  const stepUps = {
+    withConsumedProof: async (
+      _handle: AlwaysStepUpHandle,
+      auditInput: unknown,
+      mutation: (transaction: import("../src/persistence/transaction.js").PersistenceTransaction) =>
+        unknown,
+    ) => worker.execute({
+      run: (database) => database.withGeneratedAdministrativeAudit((transaction) => ({
+        value: mutation(transaction),
+        auditInput,
+      })),
+    }),
+  } as unknown as StepUpRepository;
   const service = new ServiceManagementService(
-    new ServiceManagementRepository(worker),
+    new ServiceManagementRepository(worker, stepUps),
     relationships,
     new ControlIdempotencyHasher(Buffer.alloc(32, 41)),
     Buffer.alloc(32, 42),

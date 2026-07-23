@@ -25,7 +25,7 @@ import {
   type ServiceProfileInput,
 } from "./serviceConfiguration.js";
 import type { UserRelationshipResolver } from "./identity/userAdministration.js";
-import type { AlwaysStepUpHandle } from "./identity/stepUp.js";
+import type { AlwaysStepUpHandle, StepUpRepository } from "./identity/stepUp.js";
 
 const MAX_SERVICE_ADMINS = 200;
 const MAX_SERVICE_DESTINATIONS = 64;
@@ -94,6 +94,16 @@ export interface ServiceProfilePatch {
   name?: string;
   description?: string | null;
   documentationUrl?: string | null;
+}
+
+export interface ServiceRevisionView {
+  id: string;
+  sequence: number;
+  digest: string;
+  publicationGeneration: number;
+  sourceRevisionId?: string;
+  actorRole: "admin" | "superadmin";
+  publishedAt: number;
 }
 
 interface ServiceRow {
@@ -222,7 +232,10 @@ export class ServiceManagementAuthorization implements ControlAuthorizationSeam 
 }
 
 export class ServiceManagementRepository {
-  constructor(private readonly owner: PersistenceOwner) {}
+  constructor(
+    private readonly owner: PersistenceOwner,
+    private readonly stepUps?: StepUpRepository,
+  ) {}
 
   async create(input: {
     actor: ControlAuthenticationContext;
@@ -741,6 +754,532 @@ export class ServiceManagementRepository {
     }
   }
 
+  async revisions(
+    serviceId: string,
+    actor: ControlAuthenticationContext,
+  ): Promise<ServiceRevisionView[]> {
+    try {
+      return await this.owner.execute({
+        run: (database) => database.read((query) => {
+          requiredScopedService(query, actor, serviceId);
+          return query.all<{
+            id: string;
+            sequence: number;
+            digest: string;
+            publication_generation: number;
+            source_revision_id: string | null;
+            actor_role: "admin" | "superadmin";
+            published_at: number;
+          }>(`
+            SELECT id, sequence, digest, publication_generation,
+              source_revision_id, actor_role, published_at
+            FROM service_config_versions
+            WHERE service_id = ?
+            ORDER BY sequence DESC, id DESC
+            LIMIT ?
+          `, [serviceId, MAX_SERVICE_REVISIONS]).map((row) => ({
+            id: row.id,
+            sequence: row.sequence,
+            digest: row.digest,
+            publicationGeneration: row.publication_generation,
+            ...(row.source_revision_id === null
+              ? {}
+              : { sourceRevisionId: row.source_revision_id }),
+            actorRole: row.actor_role,
+            publishedAt: row.published_at,
+          }));
+        }),
+      });
+    } catch (error) {
+      throw mapError(error);
+    }
+  }
+
+  async copy(
+    serviceId: string,
+    actor: ControlAuthenticationContext,
+  ): Promise<ServiceDraftDocument> {
+    try {
+      return await this.owner.execute({
+        run: (database) => database.read((query) => {
+          const current = requiredScopedService(query, actor, serviceId);
+          return canonicalDraft(query, current).document;
+        }),
+      });
+    } catch (error) {
+      throw mapError(error);
+    }
+  }
+
+  async import(input: {
+    actor: ControlAuthenticationContext;
+    serviceId: string;
+    expectedVersion: number;
+    document: ServiceDraftDocument;
+    destinationIds: string[];
+    correlationId: string;
+  }): Promise<ServiceView> {
+    try {
+      return await this.owner.execute({
+        run: (database) => database.withGeneratedAdministrativeAudit((transaction) => {
+          const current = requiredMutableService(
+            transaction,
+            input.actor,
+            input.serviceId,
+            input.expectedVersion,
+          );
+          if (input.document.service.slug !== current.slug) {
+            throw new PersistenceError("identity_conflict");
+          }
+          const existingRows = destinationRows(transaction, current.id);
+          const existing = new Map(existingRows.map((row) => [row.id, row]));
+          const replacement = input.document.destinations.map((destination) => {
+            const owned = existing.get(destination.id);
+            if (owned !== undefined) return { destination, id: destination.id, owned };
+            const collision = transaction.get<{ service_id: string }>(
+              "SELECT service_id FROM service_destinations WHERE id = ?",
+              [destination.id],
+            );
+            if (collision !== undefined) throw new PersistenceError("identity_conflict");
+            const id = input.destinationIds.shift();
+            if (id === undefined || !isUuidV7(id)) {
+              throw new PersistenceError("database_unavailable");
+            }
+            return { destination, id, owned: undefined };
+          });
+          const now = transaction.timestamp();
+          transaction.run("DELETE FROM service_destinations WHERE service_id = ?", [current.id]);
+          for (const entry of replacement) {
+            const destination = normalizeServiceDestination(entry.destination);
+            transaction.run(`
+              INSERT INTO service_destinations (
+                id, service_id, slug, base_url, schemes_json, hosts_json,
+                ports_json, tls_verify, version, created_at, updated_at
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `, [
+              entry.id,
+              current.id,
+              destination.slug,
+              destination.baseUrl,
+              JSON.stringify(destination.schemes),
+              JSON.stringify(destination.hosts),
+              JSON.stringify(destination.ports),
+              destination.tlsVerify ? 1 : 0,
+              entry.owned === undefined ? 1 : entry.owned.version + 1,
+              entry.owned?.created_at ?? now,
+              now,
+            ]);
+          }
+          const normalized = canonicalServiceDraft({
+            formatVersion: 1,
+            service: input.document.service,
+            destinations: replacement.map(({ destination, id }) => ({
+              ...destination,
+              id,
+            })),
+          });
+          const update = transaction.optimisticUpdate(
+            "services",
+            current.id,
+            current.version,
+            {
+              name: normalized.document.service.name,
+              description: normalized.document.service.description ?? null,
+              documentation_url:
+                normalized.document.service.documentationUrl ?? null,
+              draft_digest: normalized.digest,
+            },
+          );
+          if (update.status !== "updated") throw new PersistenceError("identity_stale");
+          return {
+            value: project(requiredService(transaction, current.id)),
+            auditInput: serviceAudit(
+              input.actor,
+              "service.import",
+              current.id,
+              current.slug,
+              input.correlationId,
+              [
+                { field: "profile", before: "previous", after: "imported" },
+                { field: "destination_count", after: replacement.length },
+              ],
+            ),
+          };
+        }),
+      });
+    } catch (error) {
+      throw mapError(error);
+    }
+  }
+
+  async clone(input: {
+    actor: ControlAuthenticationContext;
+    sourceServiceId: string;
+    serviceId: string;
+    destinationIds: string[];
+    profile: Pick<ServiceProfileInput, "slug" | "name">;
+    correlationId: string;
+    idempotency: IdempotencyExecutionInput;
+  }): Promise<{ kind: "executed" | "replayed"; serviceId: string }> {
+    try {
+      return await this.owner.execute({
+        run: (database) => database.withGeneratedAdministrativeAudit((transaction) => {
+          requireSuperadmin(transaction, input.actor);
+          const result = transaction.idempotent(input.idempotency, () => {
+            const source = requiredService(transaction, input.sourceServiceId);
+            const count = transaction.get<{ count: number }>(
+              "SELECT count(*) AS count FROM services",
+            )?.count ?? 1_000;
+            if (count >= 1_000) throw new PersistenceError("identity_conflict");
+            const sourceDraft = canonicalDraft(transaction, source).document;
+            if (sourceDraft.destinations.length > input.destinationIds.length) {
+              throw new PersistenceError("database_unavailable");
+            }
+            const serviceProfile = normalizeServiceProfile({
+              slug: input.profile.slug,
+              name: input.profile.name,
+              ...(sourceDraft.service.description === undefined
+                ? {}
+                : { description: sourceDraft.service.description }),
+              ...(sourceDraft.service.documentationUrl === undefined
+                ? {}
+                : { documentationUrl: sourceDraft.service.documentationUrl }),
+            });
+            const destinations = sourceDraft.destinations.map((destination, index) => ({
+              ...destination,
+              id: input.destinationIds[index]!,
+            }));
+            const draft = canonicalServiceDraft({
+              formatVersion: 1,
+              service: serviceProfile,
+              destinations,
+            });
+            const now = transaction.timestamp();
+            transaction.run(`
+              INSERT INTO services (
+                id, slug, name, description, documentation_url, lifecycle,
+                draft_digest, published_revision_id, published_digest,
+                publication_generation, version, created_at, updated_at
+              ) VALUES (?, ?, ?, ?, ?, 'draft', ?, NULL, NULL, 0, 1, ?, ?)
+            `, [
+              input.serviceId,
+              serviceProfile.slug,
+              serviceProfile.name,
+              serviceProfile.description ?? null,
+              serviceProfile.documentationUrl ?? null,
+              draft.digest,
+              now,
+              now,
+            ]);
+            for (const destination of destinations) {
+              insertDestination(transaction, input.serviceId, destination, now);
+            }
+            return {
+              value: input.serviceId,
+              resultReference: input.serviceId,
+              responseStatus: 201,
+            };
+          });
+          const serviceId = result.kind === "executed"
+            ? result.value
+            : result.resultReference;
+          return {
+            value: { kind: result.kind, serviceId },
+            auditInput: serviceAudit(
+              input.actor,
+              "service.clone",
+              serviceId,
+              input.profile.slug,
+              input.correlationId,
+              [
+                { field: "source_service", after: input.sourceServiceId },
+                { field: "lifecycle", after: "draft" },
+              ],
+            ),
+          };
+        }),
+      });
+    } catch (error) {
+      throw mapError(error);
+    }
+  }
+
+  async rollback(input: {
+    actor: ControlAuthenticationContext;
+    serviceId: string;
+    revisionId: string;
+    expectedVersion: number;
+    newRevisionId: string;
+    invalidationId: string;
+    correlationId: string;
+    justification: string;
+    idempotency: IdempotencyExecutionInput;
+  }): Promise<{ kind: "executed" | "replayed"; serviceId: string }> {
+    try {
+      return await this.owner.execute({
+        run: (database) => database.withGeneratedAdministrativeAudit((transaction) => {
+          requiredScopedService(transaction, input.actor, input.serviceId);
+          const result = transaction.idempotent(input.idempotency, () => {
+            const current = requiredMutableService(
+              transaction,
+              input.actor,
+              input.serviceId,
+              input.expectedVersion,
+            );
+            const retained = transaction.get<{
+              document_json: string;
+              digest: string;
+            }>(`
+              SELECT document_json, digest
+              FROM service_config_versions
+              WHERE id = ? AND service_id = ?
+            `, [input.revisionId, current.id]);
+            if (retained === undefined) throw new PersistenceError("identity_not_found");
+            const document = parseStoredDraft(retained.document_json, retained.digest);
+            if (document.document.service.slug !== current.slug) {
+              throw new PersistenceError("database_unavailable");
+            }
+            assertDestinationIdsAvailable(transaction, current.id, document.document);
+            const now = transaction.timestamp();
+            replaceDestinations(transaction, current.id, document.document.destinations, now);
+            const preview = validationView(transaction, {
+              ...current,
+              name: document.document.service.name,
+              description: document.document.service.description ?? null,
+              documentation_url: document.document.service.documentationUrl ?? null,
+            });
+            if (!preview.valid) throw new PersistenceError("identity_conflict");
+            pruneRevisions(transaction, current, now);
+            const revisionCount = transaction.get<{ count: number }>(
+              "SELECT count(*) AS count FROM service_config_versions WHERE service_id = ?",
+              [current.id],
+            )?.count ?? MAX_SERVICE_REVISIONS;
+            if (revisionCount >= MAX_SERVICE_REVISIONS) {
+              throw new PersistenceError("identity_conflict");
+            }
+            const sequence = nextRevisionSequence(transaction, current.id);
+            const generation = nextGeneration(current.publication_generation);
+            transaction.run(`
+              INSERT INTO service_config_versions (
+                id, service_id, sequence, document_json, digest, source_revision_id,
+                publication_generation, actor_user_id, actor_role, published_at
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `, [
+              input.newRevisionId,
+              current.id,
+              sequence,
+              document.json,
+              document.digest,
+              input.revisionId,
+              generation,
+              input.actor.principalId,
+              input.actor.role,
+              now,
+            ]);
+            const update = transaction.optimisticUpdate(
+              "services",
+              current.id,
+              current.version,
+              {
+                name: document.document.service.name,
+                description: document.document.service.description ?? null,
+                documentation_url:
+                  document.document.service.documentationUrl ?? null,
+                lifecycle: "published",
+                draft_digest: document.digest,
+                published_revision_id: input.newRevisionId,
+                published_digest: document.digest,
+                publication_generation: generation,
+              },
+            );
+            if (update.status !== "updated") throw new PersistenceError("identity_stale");
+            insertServiceInvalidation(
+              transaction,
+              input.invalidationId,
+              current.id,
+              generation,
+              "rollback",
+              now,
+            );
+            return {
+              value: current.id,
+              resultReference: current.id,
+              responseStatus: 200,
+            };
+          });
+          return {
+            value: {
+              kind: result.kind,
+              serviceId: result.kind === "executed"
+                ? result.value
+                : result.resultReference,
+            },
+            auditInput: {
+              ...serviceAudit(
+                input.actor,
+                "service.rollback",
+                input.serviceId,
+                input.serviceId,
+                input.correlationId,
+                [{ field: "source_revision", after: input.revisionId }],
+              ),
+              justification: input.justification,
+            },
+          };
+        }),
+      });
+    } catch (error) {
+      throw mapError(error);
+    }
+  }
+
+  async archive(input: {
+    actor: ControlAuthenticationContext;
+    serviceId: string;
+    expectedVersion: number;
+    invalidationId: string;
+    correlationId: string;
+    justification: string;
+    idempotency: IdempotencyExecutionInput;
+  }): Promise<{ kind: "executed" | "replayed"; serviceId: string }> {
+    try {
+      return await this.owner.execute({
+        run: (database) => database.withGeneratedAdministrativeAudit((transaction) => {
+          requireSuperadmin(transaction, input.actor);
+          const result = transaction.idempotent(input.idempotency, () => {
+            const current = requiredService(transaction, input.serviceId);
+            if (current.version !== input.expectedVersion) {
+              throw new PersistenceError("identity_stale");
+            }
+            if (current.lifecycle === "archived") {
+              throw new PersistenceError("identity_conflict");
+            }
+            const generation = nextGeneration(current.publication_generation);
+            const now = transaction.timestamp();
+            const update = transaction.optimisticUpdate(
+              "services",
+              current.id,
+              current.version,
+              {
+                lifecycle: "archived",
+                published_revision_id: null,
+                published_digest: null,
+                publication_generation: generation,
+              },
+            );
+            if (update.status !== "updated") throw new PersistenceError("identity_stale");
+            insertServiceInvalidation(
+              transaction,
+              input.invalidationId,
+              current.id,
+              generation,
+              "archive",
+              now,
+            );
+            return {
+              value: current.id,
+              resultReference: current.id,
+              responseStatus: 200,
+            };
+          });
+          return {
+            value: {
+              kind: result.kind,
+              serviceId: result.kind === "executed"
+                ? result.value
+                : result.resultReference,
+            },
+            auditInput: {
+              ...serviceAudit(
+                input.actor,
+                "service.archive",
+                input.serviceId,
+                input.serviceId,
+                input.correlationId,
+                [{ field: "lifecycle", after: "archived" }],
+              ),
+              justification: input.justification,
+            },
+          };
+        }),
+      });
+    } catch (error) {
+      throw mapError(error);
+    }
+  }
+
+  async delete(input: {
+    actor: ControlAuthenticationContext;
+    serviceId: string;
+    expectedVersion: number;
+    invalidationId: string;
+    correlationId: string;
+    justification: string;
+    idempotency: IdempotencyExecutionInput;
+    stepUpProof: AlwaysStepUpHandle;
+  }): Promise<{ kind: "executed" | "replayed"; serviceId: string }> {
+    const audit: AdministrativeAuditEventInput = {
+      ...serviceAudit(
+        input.actor,
+        "service.delete",
+        input.serviceId,
+        input.serviceId,
+        input.correlationId,
+        [
+          { field: "lifecycle", before: "archived" },
+          { field: "service", after: "permanently_deleted" },
+        ],
+      ),
+      justification: input.justification,
+    };
+    const mutation = (transaction: PersistenceTransaction) => {
+      requireSuperadmin(transaction, input.actor);
+      return transaction.idempotent(input.idempotency, () => {
+        const current = requiredService(transaction, input.serviceId);
+        if (current.version !== input.expectedVersion) {
+          throw new PersistenceError("identity_stale");
+        }
+        if (current.lifecycle !== "archived" || current.admin_count !== 0) {
+          throw new PersistenceError("identity_conflict");
+        }
+        const generation = nextGeneration(current.publication_generation);
+        const now = transaction.timestamp();
+        const deleted = transaction.run(
+          "DELETE FROM services WHERE id = ? AND version = ?",
+          [current.id, current.version],
+        );
+        if (deleted.changes !== 1) throw new PersistenceError("identity_stale");
+        insertServiceInvalidation(
+          transaction,
+          input.invalidationId,
+          current.id,
+          generation,
+          "delete",
+          now,
+        );
+        return {
+          value: current.id,
+          resultReference: current.id,
+          responseStatus: 200,
+        };
+      });
+    };
+    try {
+      if (this.stepUps === undefined) throw new PersistenceError("authentication_failed");
+      const result = await this.stepUps.withConsumedProof(
+        input.stepUpProof,
+        audit,
+        mutation,
+      );
+      return {
+        kind: result.kind,
+        serviceId: result.kind === "executed" ? result.value : result.resultReference,
+      };
+    } catch (error) {
+      throw mapError(error);
+    }
+  }
+
   async admins(serviceId: string): Promise<ServiceAdminView[]> {
     try {
       return await this.owner.execute({
@@ -1029,6 +1568,190 @@ export class ServiceManagementService {
     return this.detail(actor, serviceId);
   }
 
+  revisions(
+    actor: ControlAuthenticationContext,
+    serviceId: string,
+  ): Promise<ServiceRevisionView[]> {
+    if (!isUuidV7(serviceId)) throw new ServiceManagementError("invalid_request");
+    return this.repository.revisions(serviceId, actor);
+  }
+
+  copy(
+    actor: ControlAuthenticationContext,
+    serviceId: string,
+  ): Promise<ServiceDraftDocument> {
+    if (!isUuidV7(serviceId)) throw new ServiceManagementError("invalid_request");
+    return this.repository.copy(serviceId, actor);
+  }
+
+  async import(
+    actor: ControlAuthenticationContext,
+    serviceId: string,
+    expectedVersion: number,
+    document: ServiceDraftDocument,
+    correlationId: string,
+  ): Promise<ServiceDetailView> {
+    if (!isUuidV7(serviceId) || !Number.isSafeInteger(expectedVersion)) {
+      throw new ServiceManagementError("invalid_request");
+    }
+    let normalized: ServiceDraftDocument;
+    try {
+      normalized = canonicalServiceDraft(document).document;
+    } catch {
+      throw new ServiceManagementError("invalid_request");
+    }
+    await this.repository.import({
+      actor,
+      serviceId,
+      expectedVersion,
+      document: normalized,
+      destinationIds: Array.from(
+        { length: MAX_SERVICE_DESTINATIONS },
+        () => this.nextUuid(),
+      ),
+      correlationId,
+    });
+    return this.detail(actor, serviceId);
+  }
+
+  async clone(
+    actor: ControlAuthenticationContext,
+    sourceServiceId: string,
+    profileInput: Pick<ServiceProfileInput, "slug" | "name">,
+    idempotencyKey: string,
+    correlationId: string,
+  ): Promise<{ service: ServiceDetailView; replayed: boolean }> {
+    if (!isUuidV7(sourceServiceId)) throw new ServiceManagementError("invalid_request");
+    const profile = safeProfile(profileInput);
+    const result = await this.repository.clone({
+      actor,
+      sourceServiceId,
+      serviceId: this.nextUuid(),
+      destinationIds: Array.from(
+        { length: MAX_SERVICE_DESTINATIONS },
+        () => this.nextUuid(),
+      ),
+      profile: { slug: profile.slug, name: profile.name },
+      correlationId,
+      idempotency: this.idempotencyInput(
+        actor,
+        "services.clone",
+        idempotencyKey,
+        { sourceServiceId, profile },
+      ),
+    });
+    return {
+      service: await this.detail(actor, result.serviceId),
+      replayed: result.kind === "replayed",
+    };
+  }
+
+  async rollback(
+    actor: ControlAuthenticationContext,
+    serviceId: string,
+    revisionId: string,
+    expectedVersion: number,
+    justification: string,
+    idempotencyKey: string,
+    correlationId: string,
+  ): Promise<{ service: ServiceDetailView; replayed: boolean }> {
+    if (
+      !isUuidV7(serviceId) ||
+      !isUuidV7(revisionId) ||
+      !Number.isSafeInteger(expectedVersion)
+    ) throw new ServiceManagementError("invalid_request");
+    const reason = boundedJustification(justification);
+    const result = await this.repository.rollback({
+      actor,
+      serviceId,
+      revisionId,
+      expectedVersion,
+      newRevisionId: this.nextUuid(),
+      invalidationId: this.nextUuid(),
+      correlationId,
+      justification: reason,
+      idempotency: this.idempotencyInput(
+        actor,
+        "services.rollback",
+        idempotencyKey,
+        { serviceId, revisionId, expectedVersion, justification: reason },
+      ),
+    });
+    return {
+      service: await this.detail(actor, result.serviceId),
+      replayed: result.kind === "replayed",
+    };
+  }
+
+  async archive(
+    actor: ControlAuthenticationContext,
+    serviceId: string,
+    expectedVersion: number,
+    justification: string,
+    idempotencyKey: string,
+    correlationId: string,
+  ): Promise<{ service: ServiceDetailView; replayed: boolean }> {
+    if (!isUuidV7(serviceId) || !Number.isSafeInteger(expectedVersion)) {
+      throw new ServiceManagementError("invalid_request");
+    }
+    const reason = boundedJustification(justification);
+    const result = await this.repository.archive({
+      actor,
+      serviceId,
+      expectedVersion,
+      invalidationId: this.nextUuid(),
+      correlationId,
+      justification: reason,
+      idempotency: this.idempotencyInput(
+        actor,
+        "services.archive",
+        idempotencyKey,
+        { serviceId, expectedVersion, justification: reason },
+      ),
+    });
+    return {
+      service: await this.detail(actor, result.serviceId),
+      replayed: result.kind === "replayed",
+    };
+  }
+
+  async delete(
+    actor: ControlAuthenticationContext,
+    serviceId: string,
+    expectedVersion: number,
+    justification: string,
+    idempotencyKey: string,
+    correlationId: string,
+    stepUpProof: AlwaysStepUpHandle | undefined,
+  ): Promise<{ serviceId: string; deleted: true; replayed: boolean }> {
+    if (
+      !isUuidV7(serviceId) ||
+      !Number.isSafeInteger(expectedVersion) ||
+      stepUpProof === undefined
+    ) throw new ServiceManagementError("invalid_request");
+    const reason = boundedJustification(justification);
+    const result = await this.repository.delete({
+      actor,
+      serviceId,
+      expectedVersion,
+      invalidationId: this.nextUuid(),
+      correlationId,
+      justification: reason,
+      idempotency: this.idempotencyInput(
+        actor,
+        "services.delete",
+        idempotencyKey,
+        { serviceId, expectedVersion, justification: reason },
+      ),
+      stepUpProof,
+    });
+    return {
+      serviceId: result.serviceId,
+      deleted: true,
+      replayed: result.kind === "replayed",
+    };
+  }
+
   async list(actor: ControlAuthenticationContext, input: {
     limit?: number; cursor?: string; q?: string; lifecycle?: ServiceView["lifecycle"];
   }): Promise<{ services: ServiceView[]; nextCursor?: string }> {
@@ -1302,6 +2025,113 @@ function validationView(
   };
 }
 
+function insertDestination(
+  transaction: PersistenceTransaction,
+  serviceId: string,
+  destinationInput: ServiceDraftDocument["destinations"][number],
+  now: number,
+): void {
+  const destination = normalizeServiceDestination(destinationInput);
+  if (!isUuidV7(destinationInput.id)) throw new PersistenceError("database_unavailable");
+  transaction.run(`
+    INSERT INTO service_destinations (
+      id, service_id, slug, base_url, schemes_json, hosts_json,
+      ports_json, tls_verify, version, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+  `, [
+    destinationInput.id,
+    serviceId,
+    destination.slug,
+    destination.baseUrl,
+    JSON.stringify(destination.schemes),
+    JSON.stringify(destination.hosts),
+    JSON.stringify(destination.ports),
+    destination.tlsVerify ? 1 : 0,
+    now,
+    now,
+  ]);
+}
+
+function replaceDestinations(
+  transaction: PersistenceTransaction,
+  serviceId: string,
+  destinations: ServiceDraftDocument["destinations"],
+  now: number,
+): void {
+  transaction.run("DELETE FROM service_destinations WHERE service_id = ?", [serviceId]);
+  for (const destination of destinations) {
+    insertDestination(transaction, serviceId, destination, now);
+  }
+}
+
+function assertDestinationIdsAvailable(
+  query: Pick<PersistenceQuery, "get">,
+  serviceId: string,
+  document: ServiceDraftDocument,
+): void {
+  for (const destination of document.destinations) {
+    const collision = query.get<{ service_id: string }>(
+      "SELECT service_id FROM service_destinations WHERE id = ? AND service_id <> ?",
+      [destination.id, serviceId],
+    );
+    if (collision !== undefined) throw new PersistenceError("identity_conflict");
+  }
+}
+
+function parseStoredDraft(
+  json: string,
+  expectedDigest: string,
+): ReturnType<typeof canonicalServiceDraft> {
+  try {
+    const parsed = JSON.parse(json) as ServiceDraftDocument;
+    const document = canonicalServiceDraft(parsed);
+    if (document.json !== json || document.digest !== expectedDigest) {
+      throw new Error("Stored service revision is not canonical.");
+    }
+    return document;
+  } catch {
+    throw new PersistenceError("database_unavailable");
+  }
+}
+
+function nextRevisionSequence(
+  query: Pick<PersistenceQuery, "get">,
+  serviceId: string,
+): number {
+  const sequence = (query.get<{ sequence: number | null }>(
+    "SELECT max(sequence) AS sequence FROM service_config_versions WHERE service_id = ?",
+    [serviceId],
+  )?.sequence ?? 0) + 1;
+  if (!Number.isSafeInteger(sequence) || sequence < 1) {
+    throw new PersistenceError("database_unavailable");
+  }
+  return sequence;
+}
+
+function nextGeneration(current: number): number {
+  const generation = current + 1;
+  if (!Number.isSafeInteger(generation) || generation < 1) {
+    throw new PersistenceError("database_unavailable");
+  }
+  return generation;
+}
+
+function insertServiceInvalidation(
+  transaction: PersistenceTransaction,
+  eventId: string,
+  serviceId: string,
+  generation: number,
+  reason: "publication" | "rollback" | "archive" | "delete",
+  now: number,
+): void {
+  transaction.run(`
+    INSERT INTO service_invalidation_events (
+      id, service_id, publication_generation, reason, created_at,
+      dispatched_at, attempts
+    ) VALUES (?, ?, ?, ?, ?, NULL, 0)
+  `, [eventId, serviceId, generation, reason, now]);
+}
+
 function pruneRevisions(
   transaction: PersistenceTransaction,
   service: ServiceRow,
@@ -1504,6 +2334,17 @@ function safeDestination(
   } catch {
     throw new ServiceManagementError("invalid_request");
   }
+}
+
+function boundedJustification(value: unknown): string {
+  if (
+    typeof value !== "string" ||
+    value !== value.trim() ||
+    value.length < 1 ||
+    value.length > 1_024 ||
+    value.includes("\0")
+  ) throw new ServiceManagementError("invalid_request");
+  return value;
 }
 
 function digest(values: readonly string[]): string {

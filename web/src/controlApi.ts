@@ -167,6 +167,78 @@ export interface OwnService {
   name: string;
 }
 
+export interface ControlCredential {
+  id: string;
+  service_id: string;
+  name: string;
+  description?: string;
+  placement: {
+    kind: "header" | "query" | "body";
+    name: string;
+    prefix?: string;
+    suffix?: string;
+    enforce_header_ownership: boolean;
+  };
+  selector?: {
+    kind: "all" | "explicit";
+    group_ids: string[];
+    user_ids: string[];
+  };
+  status: "configured" | "unconfigured" | "disabled" | "archived";
+  last_four?: string;
+  value_updated_at?: number;
+  authorization_generation: number;
+  version: number;
+  created_at: number;
+  updated_at: number;
+}
+
+export type CredentialSelectorInput =
+  | { kind: "all" }
+  | {
+      kind: "principals";
+      group_ids: string[];
+      user_ids: string[];
+      direct_assignment_confirmed: boolean;
+    };
+
+export interface CredentialControlApi
+  extends Pick<ServiceControlApi, "listServices">,
+    Pick<ControlApi, "listUsers">,
+    Pick<GroupControlApi, "listGroups"> {
+  listCredentials(serviceId: string): Promise<{ credentials: ControlCredential[] }>;
+  createCredential(serviceId: string, input: {
+    name: string;
+    description?: string;
+    placement: {
+      kind: "header" | "query" | "body";
+      name: string;
+      prefix?: string;
+      suffix?: string;
+      enforce_header_ownership?: boolean;
+    };
+    selector: CredentialSelectorInput;
+  }): Promise<ControlCredential>;
+  replaceCredentialValue(
+    credential: ControlCredential,
+    value: string,
+    captureLastFour: boolean,
+  ): Promise<ControlCredential>;
+  deleteCredentialValue(
+    credential: ControlCredential,
+    justification: string,
+  ): Promise<ControlCredential>;
+  replaceCredentialAssignments(
+    credential: ControlCredential,
+    selector: CredentialSelectorInput,
+  ): Promise<ControlCredential>;
+  credentialAction(
+    credential: ControlCredential,
+    action: "disable" | "enable" | "archive",
+    justification?: string,
+  ): Promise<ControlCredential>;
+}
+
 export interface ServiceDestinationInput {
   slug: string;
   base_url: string;
@@ -378,7 +450,8 @@ export type UserAction =
   | "delete";
 
 export const browserControlApi:
-  ControlApi & OidcControlApi & OidcManagementApi & ServiceControlApi & GroupControlApi = {
+  ControlApi & OidcControlApi & OidcManagementApi & ServiceControlApi &
+    GroupControlApi & CredentialControlApi = {
   session: () => get<ControlSession>("/api/v2/auth/session"),
   oidcProviders: () => get<{ providers: OidcProviderLabel[] }>("/api/v2/auth/oidc/providers"),
   beginOidc: (providerId) => {
@@ -595,6 +668,48 @@ export const browserControlApi:
   serviceAccess: (serviceId) =>
     get(`/api/v2/services/${encodeURIComponent(serviceId)}/access`),
   ownServices: () => get("/api/v2/users/me/services"),
+  listCredentials: (serviceId) =>
+    get(`/api/v2/services/${encodeURIComponent(serviceId)}/credentials`),
+  createCredential: (serviceId, input) =>
+    mutation(
+      `/api/v2/services/${encodeURIComponent(serviceId)}/credentials`,
+      "POST",
+      input,
+      undefined,
+      true,
+    ),
+  replaceCredentialValue: (credential, value, captureLastFour) =>
+    mutation(
+      `/api/v2/services/${credential.service_id}/credentials/${credential.id}/value`,
+      "PUT",
+      { value, capture_last_four: captureLastFour },
+      credential.version,
+      true,
+    ),
+  deleteCredentialValue: (credential, justification) =>
+    mutation(
+      `/api/v2/services/${credential.service_id}/credentials/${credential.id}/value`,
+      "DELETE",
+      { justification },
+      credential.version,
+      true,
+    ),
+  replaceCredentialAssignments: (credential, selector) =>
+    mutation(
+      `/api/v2/services/${credential.service_id}/credentials/${credential.id}/assignments`,
+      "PUT",
+      selector,
+      credential.version,
+      true,
+    ),
+  credentialAction: (credential, action, justification) =>
+    mutation(
+      `/api/v2/services/${credential.service_id}/credentials/${credential.id}/${action}`,
+      "POST",
+      action === "enable" ? {} : { justification },
+      credential.version,
+      action !== "enable",
+    ),
 };
 
 function safeProviderId(providerId: string): string {

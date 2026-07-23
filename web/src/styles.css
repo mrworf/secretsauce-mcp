@@ -848,6 +848,85 @@ button:disabled {
   margin: 0;
 }
 
+.credential-layout,
+.credential-list,
+.credential-editor {
+  display: grid;
+  min-width: 0;
+  gap: 0.75rem;
+}
+
+.credential-layout {
+  margin-top: 1.25rem;
+}
+
+.credential-list {
+  align-content: start;
+}
+
+.credential-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 0.75rem;
+  text-align: left;
+}
+
+.credential-card > span:first-child {
+  display: grid;
+  min-width: 0;
+}
+
+.credential-card small,
+.credential-facts dt {
+  color: var(--muted);
+}
+
+.credential-card.selected {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.credential-editor {
+  padding: 1rem;
+  background: var(--surface-subtle);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+}
+
+.credential-editor h3 {
+  margin: 0;
+}
+
+.credential-facts {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.credential-facts div {
+  min-width: 0;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+}
+
+.credential-facts dt {
+  font-size: 0.82rem;
+}
+
+.credential-facts dd {
+  margin: 0.25rem 0 0;
+  overflow-wrap: anywhere;
+}
+
+.write-only-form,
+.credential-assignment {
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
 .principal-fieldset {
   display: grid;
   min-width: 0;
@@ -1051,6 +1130,14 @@ button:disabled {
 
   .group-layout {
     grid-template-columns: minmax(15rem, 0.55fr) minmax(28rem, 1.45fr);
+  }
+
+  .credential-layout {
+    grid-template-columns: minmax(15rem, 0.55fr) minmax(28rem, 1.45fr);
+  }
+
+  .credential-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .assignment-grid {

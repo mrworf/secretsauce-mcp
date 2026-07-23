@@ -8,6 +8,7 @@ import { navigationForRole, type HumanControlRole } from "./navigation";
 import { ProfilePage, UsersPage } from "./UserPages";
 import { ServicesPage } from "./ServicePages";
 import { GroupsPage } from "./GroupPages";
+import { CredentialsPage } from "./CredentialPages";
 
 function routes(role: HumanControlRole): RouteObject[] {
   return [{
@@ -24,6 +25,8 @@ function routes(role: HumanControlRole): RouteObject[] {
             ? <ServicesPage role={role} />
           : item.path === "/groups"
             ? <GroupsPage />
+          : item.path === "/credentials"
+            ? <CredentialsPage />
           : item.path === "/profile"
             ? <ProfilePage />
             : <PlaceholderPage />,

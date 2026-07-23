@@ -86,10 +86,10 @@ milestones:
   - id: "12"
     title: "Policy Management And Explanation"
     file: "docs/milestones/12-policy-management-explanation.md"
-    status: "pending"
+    status: "in_progress"
     completed_at: null
     commit_hash: null
-    notes: ""
+    notes: "Decision-complete implementation and security plan under docs/plans/milestone-12-policy-management-explanation.md."
   - id: "13"
     title: "Persisted Runtime Authorization"
     file: "docs/milestones/13-persisted-runtime-authorization.md"

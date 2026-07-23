@@ -8,11 +8,15 @@
     "node": ">=22"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "npm run build:server && npm run build:web",
+    "build:server": "tsc -p tsconfig.json",
+    "build:web": "tsc -p web/tsconfig.json && vite build",
     "generate:control-openapi": "npm run build && node scripts/generate-control-openapi.mjs",
     "check:control-openapi": "npm run build && node scripts/generate-control-openapi.mjs --check",
     "start": "node dist/server.js",
     "start:control": "node dist/control/main.js",
+    "dev:control-web": "vite",
+    "pretest": "npm run build:web",
     "test": "vitest run"
   },
   "dependencies": {
@@ -26,16 +30,28 @@
     "fastify": "5.10.0",
     "jose": "^6.1.0",
     "jsonc-parser": "^3.3.1",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "react-router-dom": "7.18.1",
     "yaml": "^2.8.1",
     "zod": "^4.1.12"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "6.9.1",
+    "@testing-library/react": "16.3.2",
+    "@testing-library/user-event": "14.6.1",
     "@types/better-sqlite3": "7.6.13",
     "@types/node": "^22.10.2",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "4.7.0",
+    "jsdom": "26.1.0",
     "typescript": "^5.7.2",
+    "vite": "6.4.3",
     "vitest": "^3.2.6"
   },
   "allowScripts": {
-    "better-sqlite3@12.10.0": true
+    "better-sqlite3@12.10.0": true,
+    "esbuild@0.25.12": true
   }
 }

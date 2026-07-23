@@ -8,7 +8,10 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm ci
 COPY tsconfig.json ./
+COPY vite.config.ts ./
 COPY src ./src
+COPY web ./web
+COPY assets/brand ./assets/brand
 RUN npm run build
 
 FROM node:22-alpine

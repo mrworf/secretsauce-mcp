@@ -65,7 +65,8 @@ describe("control listener security boundary", () => {
     });
     expect(browser.statusCode).toBe(200);
     expect(browser.headers["content-type"]).toContain("text/html");
-    expect(browser.body).toContain("<h1>SecretSauce</h1>");
+    expect(browser.body).toContain('<div id="root"></div>');
+    expect(browser.body).toContain("/control/assets/");
   });
 
   it("rejects untrusted Host and Origin before invoking protected handlers", async () => {

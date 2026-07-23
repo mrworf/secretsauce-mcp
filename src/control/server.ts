@@ -32,13 +32,17 @@ import {
 import {
   CONTROL_BODY_LIMIT_BYTES,
   controlSecurityHooks,
-  publicControlRoute,
   sendControlError,
 } from "./security.js";
 import {
   ControlIdempotencyHasher,
   loadControlIdempotencyKey,
 } from "./idempotency.js";
+import {
+  installControlWebRoutes,
+  loadControlWebAssets,
+  type ControlWebAssets,
+} from "./webAssets.js";
 
 export interface ControlApplicationOptions {
   authenticator?: ControlAuthenticator;
@@ -48,6 +52,7 @@ export interface ControlApplicationOptions {
   registerControlRoutes?: (registry: ControlRouteRegistry) => void;
   authorization?: ControlAuthorizationSeam;
   rateLimiter?: ControlRateLimiter;
+  webAssets?: ControlWebAssets;
 }
 
 export function createControlApplication(
@@ -91,14 +96,7 @@ export function createControlApplication(
   options.registerControlRoutes?.(routeRegistry);
   installControlRoutes(application, routeRegistry, authorization);
 
-  application.get("/control", {
-    config: publicControlRoute(),
-  }, async (_request, reply) => reply.redirect("/control/"));
-  application.get("/control/", {
-    config: publicControlRoute(),
-  }, async (_request, reply) => reply
-    .type("text/html; charset=utf-8")
-    .send("<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>SecretSauce Control</title></head><body><main><h1>SecretSauce</h1><p>Control plane foundation is ready.</p></main></body></html>"));
+  installControlWebRoutes(application, options.webAssets ?? loadControlWebAssets());
 
   if (options.registerRoutes !== undefined) {
     void application.register(async (scope) => options.registerRoutes?.(scope));

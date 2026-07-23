@@ -99,3 +99,24 @@ Every later milestone must:
 ## Planning handoff
 
 The implementation plan must use the approved artifacts rather than choosing substitutes. It must identify the first schema version, migration tooling, composition roots, process boundaries, test harnesses, and dependency additions. Any later need to change an approved architecture decision requires an explicit ADR update and security/compatibility review.
+
+## Approved architecture packet
+
+The completed, cross-reviewed baseline is indexed at
+[`docs/architecture/v2/README.md`](../architecture/v2/README.md). It includes:
+
+- Ten accepted ADRs answering every PRD Section 39 question.
+- Component, deployment, trust-boundary, key/data-flow, identity, session, OAuth,
+  and invalidation diagrams.
+- The normalized entity/deletion/retention model and schema/transaction contract.
+- The versioned management API, authorization middleware, wire/error, pagination,
+  ETag, idempotency, and secret-input contracts.
+- The operation-restricted vault capability, envelope, key rotation, backup, and
+  recovery specifications.
+- The threat model and positive/negative cross-boundary scenario mapping.
+- Responsive UX workflows/wireframes and WCAG 2.2 AA approach.
+- Approved dependencies, composition roots, test harnesses, and dependency-ordered
+  constraints for Milestones 01–24.
+
+Mandatory decisions may be changed only by amending the relevant ADR and repeating
+security and compatibility review.

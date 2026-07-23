@@ -2,7 +2,7 @@ milestones:
   - id: "00"
     title: "Architecture Baseline"
     file: "docs/milestones/00-architecture.md"
-    status: "pending"
+    status: "in_progress"
     completed_at: null
     commit_hash: null
     notes: ""

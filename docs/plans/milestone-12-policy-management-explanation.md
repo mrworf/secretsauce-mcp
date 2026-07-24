@@ -33,6 +33,10 @@ Migration `0011` adds service-first tables:
   affected ordinary-user UUID, generation, safe reason, dispatch state, and
   timestamps.
 
+Migration `0012` adds scoped policy-copy batch membership so an atomic
+multi-policy operation can retain one UUID result reference in durable
+idempotency storage and resolve the original ordered results on replay.
+
 There is at most one active policy per boundary. Initial limits are 20,000
 rules installation-wide, 2,000 per policy, 64 methods, 64 host selectors, 128
 path selectors, and 1,000 explicit principals per rule. Lists are service-first

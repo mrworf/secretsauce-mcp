@@ -86,10 +86,10 @@ milestones:
   - id: "12"
     title: "Policy Management And Explanation"
     file: "docs/milestones/12-policy-management-explanation.md"
-    status: "in_progress"
-    completed_at: null
-    commit_hash: null
-    notes: "Decision-complete implementation and security plan under docs/plans/milestone-12-policy-management-explanation.md."
+    status: "completed"
+    completed_at: "2026-07-24T00:31:16.000Z"
+    commit_hash: "c5d4e4a"
+    notes: "Implemented durable principal-aware policy boundaries, one deterministic evaluator and simulator, scoped lifecycle, safe clone/import and atomic bulk copy, publication validation, strict APIs, and responsive workspace; production build and full 88-file/655-test suite pass."
   - id: "13"
     title: "Persisted Runtime Authorization"
     file: "docs/milestones/13-persisted-runtime-authorization.md"

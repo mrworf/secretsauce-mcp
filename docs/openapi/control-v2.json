@@ -183,6 +183,153 @@
         },
         "type": "object"
       },
+      "RestorePreview": {
+        "additionalProperties": false,
+        "description": "Server-derived, actor-bound restore replacement preview.",
+        "properties": {
+          "archive_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "confirmation_phrase": {
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          },
+          "counts": {
+            "additionalProperties": false,
+            "properties": {
+              "available_secrets": {
+                "maximum": 100000,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "credentials": {
+                "maximum": 100000,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "destinations": {
+                "maximum": 100000,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "policies": {
+                "maximum": 100000,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "remediations": {
+                "maximum": 100000,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "removals": {
+                "maximum": 100000,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "replacements": {
+                "maximum": 100000,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "revoked_api_keys": {
+                "maximum": 100000,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "revoked_oauth_grants": {
+                "maximum": 100000,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "revoked_sessions": {
+                "maximum": 100000,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "rules": {
+                "maximum": 100000,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "services": {
+                "maximum": 100000,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "unavailable_secrets": {
+                "maximum": 100000,
+                "minimum": 0,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "services",
+              "destinations",
+              "credentials",
+              "policies",
+              "rules",
+              "available_secrets",
+              "unavailable_secrets",
+              "replacements",
+              "removals",
+              "revoked_api_keys",
+              "revoked_sessions",
+              "revoked_oauth_grants",
+              "remediations"
+            ],
+            "type": "object"
+          },
+          "expires_at": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "plan_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "secret_disposition": {
+            "enum": [
+              "configuration_only",
+              "encrypted_secrets"
+            ],
+            "type": "string"
+          },
+          "stage_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "ready"
+            ],
+            "type": "string"
+          },
+          "version": {
+            "exclusiveMinimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "stage_id",
+          "archive_sha256",
+          "plan_digest",
+          "secret_disposition",
+          "counts",
+          "confirmation_phrase",
+          "state",
+          "expires_at",
+          "version"
+        ],
+        "type": "object"
+      },
       "RestoreStage": {
         "additionalProperties": false,
         "description": "Actor-bound restore upload state without a local path or secret material.",
@@ -1086,6 +1233,200 @@
         "x-permission": "restore",
         "x-rate-limit-class": "management",
         "x-secret-fields": [],
+        "x-step-up": "five_minutes"
+      }
+    },
+    "/api/v2/restores/{stage_id}/preview": {
+      "post": {
+        "operationId": "restores.preview",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "stage_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "passphrase": {
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/RestorePreview"
+                    },
+                    "meta": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "api_version": {
+                          "enum": [
+                            "v2"
+                          ],
+                          "type": "string"
+                        },
+                        "request_id": {
+                          "pattern": "^req_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "request_id",
+                        "api_version"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful response."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "Invalid request. Validation details contain only a JSON Pointer and rule."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "Authentication is required."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "The operation is forbidden or requires human step-up."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "The route or an authorized resource was not found."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "The resource version or idempotency digest conflicts."
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "The request body exceeds its bounded limit."
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "A required expected resource version is missing."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "A bounded request rate was exceeded."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "The request failed without exposing internal details."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "A required local subsystem is unavailable."
+          }
+        },
+        "security": [
+          {
+            "browserSession": []
+          }
+        ],
+        "summary": "Validate and preview an actor-bound restore",
+        "tags": [
+          "Restores"
+        ],
+        "x-audit-action": "restore.preview",
+        "x-authentication-methods": [
+          "browser_session"
+        ],
+        "x-cache-class": "no-store",
+        "x-permission": "restore",
+        "x-rate-limit-class": "management",
+        "x-secret-fields": [
+          "/passphrase"
+        ],
         "x-step-up": "five_minutes"
       }
     },

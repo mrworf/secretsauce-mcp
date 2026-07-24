@@ -177,6 +177,7 @@ import {
   RestoreStageCoordinator,
 } from "../restoreStaging.js";
 import { RestoreStateRepository } from "../restoreState.js";
+import { RestorePreviewCoordinator } from "../restorePreview.js";
 
 export interface ControlApplicationOptions {
   authenticator?: ControlAuthenticator;
@@ -215,6 +216,7 @@ export interface ControlApplicationOptions {
   securityDashboard?: SecurityDashboardService;
   backupCoordinator?: PortableBackupCoordinator;
   restoreStages?: RestoreStageCoordinator;
+  restorePreviews?: RestorePreviewCoordinator;
 }
 
 export function createControlApplication(
@@ -300,6 +302,7 @@ export function createControlApplication(
     options.identityReadiness,
     options.backupCoordinator,
     options.restoreStages,
+    options.restorePreviews,
   );
   if (options.localIdentity !== undefined) {
     registerLocalIdentityRoutes(routeRegistry, options.localIdentity);
@@ -429,6 +432,7 @@ export async function startControlServer(
     backupCapabilityIssuer?: VaultBackupCapabilityIssuer;
     referenceAggregates?: ReferenceAggregateSource;
     restoreStages?: RestoreStageCoordinator;
+    restorePreviews?: RestorePreviewCoordinator;
   } = {},
 ): Promise<ControlServerApplication> {
   if (config.control === undefined || config.persistence === undefined) {
@@ -479,6 +483,7 @@ export async function startControlServer(
   let securityDashboard: SecurityDashboardService | undefined;
   let backupCoordinator: PortableBackupCoordinator | undefined;
   let restoreStages = options.restoreStages;
+  let restorePreviews = options.restorePreviews;
   let activityAggregationTimer: NodeJS.Timeout | undefined;
   const apiKeyVerifier = new ApiKeyVerifierPool();
   let selfApiKeyDetector: ActiveSelfApiKeyDetector | undefined;
@@ -816,6 +821,18 @@ export async function startControlServer(
       stepUpRepository,
     );
     restoreStages ??= restoreStageCoordinatorFromEnvironment(persistence);
+    if (
+      restorePreviews === undefined
+      && restoreStages !== undefined
+    ) {
+      restorePreviews = new RestorePreviewCoordinator(
+        persistence,
+        restoreStages,
+        new RestoreStateRepository(persistence),
+        options.backupVaultClient,
+        options.backupCapabilityIssuer,
+      );
+    }
     server = createControlApplication(config, {
       persistence,
       ...options,
@@ -841,6 +858,7 @@ export async function startControlServer(
       ...(securityDashboard === undefined ? {} : { securityDashboard }),
       backupCoordinator,
       ...(restoreStages === undefined ? {} : { restoreStages }),
+      ...(restorePreviews === undefined ? {} : { restorePreviews }),
     });
     await server.listen({
       host: config.control.host,

@@ -7,6 +7,7 @@ import type {
 import type { ControlAuthorizationSeam } from "../src/control/routeRegistry.js";
 import { createControlApplication } from "../src/control/server.js";
 import type { RestoreStageCoordinator } from "../src/restoreStaging.js";
+import type { RestorePreviewCoordinator } from "../src/restorePreview.js";
 import type { GatewayConfig } from "../src/types.js";
 
 const USER_ID = "018f1f2e-7b3c-7a10-8000-000000000001";
@@ -128,6 +129,46 @@ describe("restore staging HTTP contracts", () => {
     await wrongType.close();
   });
 
+  it("accepts an optional bounded passphrase and returns only server-derived preview state", async () => {
+    const preview = vi.fn(async () => previewResult());
+    const application = app(browserActor(), {}, true, { preview });
+    const response = await application.inject({
+      method: "POST",
+      url: `/api/v2/restores/${STAGE_ID}/preview`,
+      headers: {
+        ...browserHeaders(),
+        "content-type": "application/json",
+      },
+      payload: { passphrase: "correct passphrase" },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json().data).toMatchObject({
+      stage_id: STAGE_ID,
+      secret_disposition: "encrypted_secrets",
+      confirmation_phrase: `RESTORE ${ARCHIVE_ID}`,
+      counts: { available_secrets: 1, unavailable_secrets: 0 },
+    });
+    expect(response.body).not.toContain("correct passphrase");
+    expect(preview).toHaveBeenCalledWith({
+      actor: browserActor(),
+      stageId: STAGE_ID,
+      passphrase: expect.any(Buffer),
+    });
+
+    const invalid = await application.inject({
+      method: "POST",
+      url: `/api/v2/restores/${STAGE_ID}/preview`,
+      headers: {
+        ...browserHeaders(),
+        "content-type": "application/json",
+      },
+      payload: { passphrase: "too-short" },
+    });
+    expect(invalid.statusCode).toBe(400);
+    expect(preview).toHaveBeenCalledTimes(1);
+    await application.close();
+  });
+
   it("publishes the binary request bound and browser-only security contract", async () => {
     const application = app(browserActor(), {});
     const response = await application.inject({
@@ -149,6 +190,13 @@ describe("restore staging HTTP contracts", () => {
         },
       },
     });
+    expect(response.json().paths[
+      "/api/v2/restores/{stage_id}/preview"
+    ].post).toMatchObject({
+      security: [{ browserSession: [] }],
+      "x-permission": "restore",
+      "x-step-up": "five_minutes",
+    });
     await application.close();
   });
 });
@@ -160,6 +208,9 @@ function app(
     status?: ReturnType<typeof vi.fn>;
   },
   allowStepUp = true,
+  previews?: {
+    preview?: ReturnType<typeof vi.fn>;
+  },
 ) {
   const authenticator: ControlAuthenticator = {
     authenticate: async () => actor,
@@ -180,6 +231,12 @@ function app(
     authenticator,
     authorization,
     restoreStages: coordinator as unknown as RestoreStageCoordinator,
+    ...(previews === undefined
+      ? {}
+      : {
+          restorePreviews:
+            previews as unknown as RestorePreviewCoordinator,
+        }),
   });
 }
 
@@ -192,6 +249,38 @@ function stageResult() {
     archiveSha256: "a".repeat(64),
     archiveBytes: ARCHIVE.byteLength,
     state: "validated" as const,
+    expiresAt: 1_800_003_600_000,
+    version: 1,
+    createdAt: 1_800_000_000_000,
+    updatedAt: 1_800_000_000_000,
+  };
+}
+
+function previewResult() {
+  return {
+    id: "018f1f2e-7b3c-7a10-8000-000000000012",
+    stageId: STAGE_ID,
+    subjectUserId: USER_ID,
+    archiveSha256: "a".repeat(64),
+    planDigest: "b".repeat(64),
+    secretDisposition: "encrypted_secrets" as const,
+    counts: {
+      services: 1,
+      destinations: 1,
+      credentials: 1,
+      policies: 1,
+      rules: 1,
+      availableSecrets: 1,
+      unavailableSecrets: 0,
+      replacements: 0,
+      removals: 0,
+      revokedApiKeys: 0,
+      revokedSessions: 0,
+      revokedOauthGrants: 0,
+      remediations: 3,
+    },
+    confirmationPhrase: `RESTORE ${ARCHIVE_ID}`,
+    state: "ready" as const,
     expiresAt: 1_800_003_600_000,
     version: 1,
     createdAt: 1_800_000_000_000,

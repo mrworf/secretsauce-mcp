@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
 import { readFileSync, readdirSync } from "node:fs";
+import { join, resolve } from "node:path";
 import { cleanup, render, screen } from "@testing-library/react";
 import { RouterProvider } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -69,14 +70,14 @@ describe("release accessibility and route completeness", () => {
   });
 
   it("ships the product name and branded image in the production bundle", () => {
-    const root = new URL("../../dist/control-web/", import.meta.url);
-    const html = readFileSync(new URL("index.html", root), "utf8");
-    const assets = readdirSync(new URL("assets/", root));
+    const root = resolve("dist/control-web");
+    const html = readFileSync(join(root, "index.html"), "utf8");
+    const assets = readdirSync(join(root, "assets"));
     const scriptName = assets.find((name) => /^index-.*\.js$/.test(name));
     expect(html).toContain("<title>SecretSauce Control</title>");
     expect(assets.some((name) => /^secretsauce-lockup-.*\.png$/.test(name))).toBe(true);
     expect(scriptName).toBeDefined();
-    expect(readFileSync(new URL(`assets/${scriptName}`, root), "utf8"))
+    expect(readFileSync(join(root, "assets", scriptName!), "utf8"))
       .toContain("SecretSauce");
   });
 });

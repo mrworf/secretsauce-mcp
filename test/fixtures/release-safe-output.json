@@ -1,0 +1,18 @@
+{
+  "log": {
+    "event": "service_request.completed",
+    "service": "example-service",
+    "outcome": "allow"
+  },
+  "audit": {
+    "action": "service.publish",
+    "target": "018f1f2e-7b3c-7a10-8000-000000000001"
+  },
+  "api": {
+    "status": "ready"
+  },
+  "backup_report": {
+    "credentials": "excluded",
+    "host": "api.example.org"
+  }
+}

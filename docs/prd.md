@@ -168,7 +168,7 @@ A temporary placeholder returned to the agent instead of a real credential.
 Example:
 
 ```text
-gref_portainer_api_key_abc123
+gref_<opaque-reference>
 ```
 
 The reference is not valid outside the MCP server.
@@ -543,7 +543,7 @@ Required fields:
   "references": [
     {
       "access_id": "api_key",
-      "reference": "gref_portainer_api_key_abc123",
+      "reference": "gref_<opaque-reference>",
       "usage_hint": "Use as X-API-Key header",
       "expires_at": "2026-07-09T18:30:00Z",
       "exportable": false,
@@ -607,7 +607,7 @@ Send an HTTP request to a configured service destination after validating authen
   "method": "GET",
   "path": "/api/stacks",
   "headers": {
-    "X-API-Key": "gref_portainer_api_key_abc123"
+    "X-API-Key": "gref_<opaque-reference>"
   },
   "reason": "List stacks so I can identify the Jellyfin stack."
 }
@@ -803,13 +803,13 @@ Readable service hints are allowed only if they do not leak sensitive informatio
 Acceptable:
 
 ```text
-gref_portainer_api_key_abcd1234
+gref_<opaque-reference>
 ```
 
 Also acceptable:
 
 ```text
-gref_7t93KQeJ2jTqSg9c
+gref_<opaque-reference>
 ```
 
 The reference value itself must not be logged in audit logs. Audit logs should contain only internal reference IDs.

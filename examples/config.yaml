@@ -35,10 +35,10 @@ services:
 
     destinations:
       - name: primary
-        base_url: https://portainer.internal:9443
+        base_url: https://portainer.example.org:9443
         schemes: [https]
         hosts:
-          - exact: portainer.internal
+          - exact: portainer.example.org
         ports: [9443]
 
     tls:

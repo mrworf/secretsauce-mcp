@@ -13,6 +13,7 @@
     "build:web": "tsc -p web/tsconfig.json && vite build",
     "generate:control-openapi": "npm run build && node scripts/generate-control-openapi.mjs",
     "check:control-openapi": "npm run build && node scripts/generate-control-openapi.mjs --check",
+    "scan:release-artifacts": "npm run build && node scripts/scan-release-artifacts.mjs",
     "start": "node dist/server.js",
     "start:control": "node dist/control/main.js",
     "start:vault": "node dist/vault/main.js",

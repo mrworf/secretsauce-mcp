@@ -200,15 +200,23 @@ function withStaticApiKeyAuthentication(
     definition.permission === null ||
     definition.permission === "authenticated"
   ) return definition;
-  const apiRoles = CONTROL_ROLES.filter((role) =>
-    ["service", "all_services", "system"].includes(role));
-  const permitted = apiRoles.some((role) => {
-    const outcome = permissionOutcome(role, definition.permission as ControlCapability);
-    return outcome !== "deny" && outcome !== "no_account";
-  });
+  const permitted = controlCapabilityAllowsApiKey(
+    definition.permission as ControlCapability,
+  );
   return permitted
     ? { ...definition, authentication: [...definition.authentication, "api_key"] }
     : definition;
+}
+
+export function controlCapabilityAllowsApiKey(
+  capability: ControlCapability,
+): boolean {
+  return CONTROL_ROLES
+    .filter((role) => role === "service" || role === "all_services" || role === "system")
+    .some((role) => {
+      const outcome = permissionOutcome(role, capability);
+      return outcome !== "deny" && outcome !== "no_account";
+    });
 }
 
 export function installControlRoutes(

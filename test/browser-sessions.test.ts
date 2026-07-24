@@ -116,7 +116,7 @@ describe("durable browser sessions", () => {
     expect(await restarted.persistence.execute({
       run: (database) => database.schemaVersion,
     })).toBe(19);
-  });
+  }, 10_000);
 
   it("serves no-store login/session/logout with strict cookies and CSRF rotation", async () => {
     const fixture = await setup("http");

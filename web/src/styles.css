@@ -1265,6 +1265,76 @@ button:disabled {
   border: 0;
 }
 
+.audit-filter-grid,
+.capacity-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+}
+
+.audit-filter-grid label,
+.audit-workspace > .content-panel > label {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.scope-banner {
+  border-left: 0.3rem solid var(--accent);
+  background: var(--surface);
+  padding: 0.85rem 1rem;
+  margin: 0;
+}
+
+.audit-event-list {
+  display: grid;
+  gap: 0.75rem;
+  list-style: none;
+  margin: 1rem 0;
+  padding: 0;
+}
+
+.audit-event-list li,
+.capacity-grid article {
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  overflow-wrap: anywhere;
+}
+
+.audit-event-list p,
+.capacity-grid p {
+  margin-bottom: 0;
+}
+
+.audit-event-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.outcome-badge {
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  text-transform: uppercase;
+}
+
+.outcome-allow {
+  background: color-mix(in srgb, var(--success) 18%, transparent);
+}
+
+.outcome-deny,
+.outcome-error {
+  background: color-mix(in srgb, #b42318 18%, transparent);
+}
+
+.outcome-warning,
+.warning-copy {
+  color: #855a20;
+}
+
 @media (min-width: 768px) and (max-width: 1199px) {
   .topbar,
   .footer {

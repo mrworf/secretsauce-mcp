@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import {
   browserControlApi,
   ControlApiError,
+  type AuditControlApi,
+  type AuditEvent,
   type GlobalSecurityEvent,
   type SecurityControlApi,
   type SecurityJobState,
@@ -81,7 +83,7 @@ export function SecurityPage({
   api = browserControlApi,
 }: {
   role: UserRole;
-  api?: SecurityControlApi;
+  api?: SecurityControlApi & Partial<Pick<AuditControlApi, "selfSecurity">>;
 }) {
   if (role !== "superadmin") {
     return (
@@ -93,10 +95,44 @@ export function SecurityPage({
           from your profile. System policy is visible only to superadmins.
         </p>
         <Link className="button-link" to="/profile">Open personal security</Link>
+        {api.selfSecurity !== undefined && <PersonalSecurityHistory load={api.selfSecurity} />}
       </section>
     );
   }
   return <SuperadminSecurity api={api} />;
+}
+
+function PersonalSecurityHistory({
+  load,
+}: {
+  load: NonNullable<AuditControlApi["selfSecurity"]>;
+}) {
+  const [events, setEvents] = useState<AuditEvent[]>([]);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    void load({ preset: "30d" })
+      .then((page) => setEvents(page.events))
+      .catch((caught) => setError(messageFor(caught)));
+  }, [load]);
+  return (
+    <div className="personal-security-history">
+      <h3>Recent account security history</h3>
+      {error !== ""
+        ? <p className="form-error" role="alert">{error}</p>
+        : events.length === 0
+          ? <p className="muted-copy">No security events in the last 30 days.</p>
+          : (
+            <ul className="security-event-list">
+              {events.map((event) => (
+                <li key={event.event_id}>
+                  <strong>{event.action}</strong>
+                  <span>{formatTime(event.occurred_at)} · {event.outcome}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+    </div>
+  );
 }
 
 function SuperadminSecurity({ api }: { api: SecurityControlApi }) {

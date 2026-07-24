@@ -689,6 +689,110 @@ export interface SecurityControlApi {
   ): Promise<GlobalSecurityEvent>;
 }
 
+export type AuditDomain = "administrative" | "runtime";
+
+export interface AuditEvent {
+  domain: AuditDomain;
+  event_id: string;
+  occurred_at: number;
+  category: string;
+  outcome: "allow" | "deny" | "error" | "warning";
+  action: string;
+  actor_id?: string;
+  actor_label: string;
+  target_id?: string;
+  target_label?: string;
+  service_id?: string;
+  service_label?: string;
+  correlation_id?: string;
+  justification?: string;
+  failure_code?: string;
+  changes: unknown[];
+  source: Record<string, unknown>;
+  details: Record<string, unknown>;
+}
+
+export interface AuditFilter {
+  q?: string;
+  category?: string;
+  outcome?: AuditEvent["outcome"];
+  preset?: "24h" | "7d" | "30d" | "90d" | "year";
+  start_utc?: string;
+  end_utc?: string;
+  cursor?: string;
+}
+
+export interface AuditRetentionOverview {
+  settings: {
+    administrative_days: number | null;
+    runtime_days: number | null;
+    version: number;
+    created_at: number;
+    updated_at: number;
+  };
+  administrative: AuditCapacity;
+  runtime: AuditCapacity;
+  maintenance: AuditMaintenance;
+}
+
+export interface AuditCapacity {
+  row_count: number;
+  oldest_occurred_at: number | null;
+  newest_occurred_at: number | null;
+  estimated_bytes: number;
+  warnings: string[];
+}
+
+export interface AuditMaintenance {
+  next_run_at: number;
+  lease_expires_at: number | null;
+  last_started_at: number | null;
+  last_completed_at: number | null;
+  last_outcome: "completed" | "partial" | "skipped" | "error" | null;
+  last_code: string | null;
+  retained_administrative_count: number;
+  retained_runtime_count: number;
+  repaired_index_count: number;
+  version: number;
+}
+
+export interface AuditControlApi {
+  auditEvents(
+    domain: AuditDomain,
+    filter?: AuditFilter,
+  ): Promise<{ events: AuditEvent[]; next_cursor?: string }>;
+  selfSecurity(
+    filter?: Pick<AuditFilter, "preset" | "start_utc" | "end_utc" | "cursor">,
+  ): Promise<{ events: AuditEvent[]; next_cursor?: string }>;
+  exportAudit(
+    domain: AuditDomain,
+    filter: Omit<AuditFilter, "cursor">,
+    justification: string,
+  ): Promise<{
+    filename: string;
+    media_type: "application/x-ndjson";
+    content: string;
+    row_count: number;
+    byte_count: number;
+  }>;
+  auditRetention(): Promise<AuditRetentionOverview>;
+  updateAuditRetention(input: {
+    current: AuditRetentionOverview;
+    administrative_days: number | null;
+    runtime_days: number | null;
+    justification: string;
+    acknowledgement: string;
+    password: string;
+    totp: string;
+  }): Promise<AuditRetentionOverview>;
+  runAuditMaintenance(input: {
+    justification: string;
+    acknowledgement: string;
+    password: string;
+    totp: string;
+  }): Promise<AuditRetentionOverview>;
+}
+
 interface Envelope<T> {
   data: T;
 }
@@ -916,8 +1020,26 @@ export type UserAction =
 export const browserControlApi:
   ControlApi & OidcControlApi & OidcManagementApi & ServiceControlApi &
     GroupControlApi & CredentialControlApi & PolicyControlApi & AccessControlApi &
-    ApiKeyControlApi & SecurityControlApi = {
+    ApiKeyControlApi & SecurityControlApi & AuditControlApi = {
   session: () => get<ControlSession>("/api/v2/auth/session"),
+  auditEvents: (domain, filter = {}) => {
+    const query = auditQuery(filter);
+    query.set("limit", "50");
+    return interactiveGet(`/api/v2/audits/${domain}?${query.toString()}`);
+  },
+  selfSecurity: (filter = {}) => {
+    const query = auditQuery(filter);
+    query.set("limit", "50");
+    return interactiveGet(`/api/v2/audits/self-security?${query.toString()}`);
+  },
+  exportAudit: (domain, filter, justification) =>
+    mutation(`/api/v2/audits/${domain}/export`, "POST", {
+      ...filter,
+      justification,
+    }),
+  auditRetention: () => interactiveGet("/api/v2/audits/retention"),
+  updateAuditRetention: (input) => updateAuditRetentionWithStepUp(input),
+  runAuditMaintenance: (input) => runAuditMaintenanceWithStepUp(input),
   securitySettings: () =>
     interactiveGet<SecuritySettings>("/api/v2/security/settings"),
   updateSecuritySettings: (current, patch, input) =>
@@ -1353,6 +1475,89 @@ export const browserControlApi:
       input,
     ),
 };
+
+function auditQuery(filter: AuditFilter): URLSearchParams {
+  const query = new URLSearchParams();
+  if (filter.q !== undefined && filter.q.trim() !== "") query.set("q", filter.q.trim());
+  if (filter.category !== undefined && filter.category !== "") {
+    query.set("category", filter.category);
+  }
+  if (filter.outcome !== undefined) query.set("outcome", filter.outcome);
+  if (filter.preset !== undefined) query.set("preset", filter.preset);
+  if (filter.start_utc !== undefined) query.set("start_utc", filter.start_utc);
+  if (filter.end_utc !== undefined) query.set("end_utc", filter.end_utc);
+  if (filter.cursor !== undefined) query.set("cursor", filter.cursor);
+  return query;
+}
+
+async function updateAuditRetentionWithStepUp(input: {
+  current: AuditRetentionOverview;
+  administrative_days: number | null;
+  runtime_days: number | null;
+  justification: string;
+  acknowledgement: string;
+  password: string;
+  totp: string;
+}): Promise<AuditRetentionOverview> {
+  const body = {
+    administrative_days: input.administrative_days,
+    runtime_days: input.runtime_days,
+    justification: input.justification,
+    acknowledgement: input.acknowledgement,
+  };
+  const session = await browserControlApi.session();
+  const proof = await performStepUp(session, input.password, input.totp, {
+    method: "PATCH",
+    route_id: "audits.retention.update",
+    target_ids: [],
+    expected_version: input.current.settings.version,
+    body,
+  });
+  if (proof.proof === undefined) {
+    throw new ControlApiError("step_up_required", "Exact audit retention proof is required.");
+  }
+  return request("/api/v2/audits/retention", {
+    method: "PATCH",
+    headers: {
+      "content-type": "application/json",
+      "x-csrf-token": session.csrf_token,
+      "x-step-up-proof": proof.proof,
+      "if-match": `"${input.current.settings.version}"`,
+    },
+    body: JSON.stringify(body),
+  });
+}
+
+async function runAuditMaintenanceWithStepUp(input: {
+  justification: string;
+  acknowledgement: string;
+  password: string;
+  totp: string;
+}): Promise<AuditRetentionOverview> {
+  const body = {
+    justification: input.justification,
+    acknowledgement: input.acknowledgement,
+  };
+  const session = await browserControlApi.session();
+  const proof = await performStepUp(session, input.password, input.totp, {
+    method: "POST",
+    route_id: "audits.retention.run",
+    target_ids: [],
+    body,
+  });
+  if (proof.proof === undefined) {
+    throw new ControlApiError("step_up_required", "Exact audit maintenance proof is required.");
+  }
+  return request("/api/v2/audits/retention/run", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-csrf-token": session.csrf_token,
+      "x-step-up-proof": proof.proof,
+    },
+    body: JSON.stringify(body),
+  });
+}
 
 function safeProviderId(providerId: string): string {
   if (!/^[a-z][a-z0-9_.-]{0,63}$/.test(providerId)) {

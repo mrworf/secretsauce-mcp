@@ -13,6 +13,7 @@ import { PoliciesPage } from "./PolicyPages";
 import { AccessPage } from "./AccessPages";
 import { ApiKeysPage } from "./ApiKeyPages";
 import { SecurityPage } from "./SecurityPage";
+import { AuditPage } from "./AuditPages";
 
 function routes(role: HumanControlRole): RouteObject[] {
   return [{
@@ -39,6 +40,10 @@ function routes(role: HumanControlRole): RouteObject[] {
             ? <ApiKeysPage role={role} />
           : item.path === "/security"
             ? <SecurityPage role={role} />
+          : item.path === "/mcp-audit"
+            ? <AuditPage domain="runtime" role={role} />
+          : item.path === "/administrative-audit"
+            ? <AuditPage domain="administrative" role={role} />
           : item.path === "/profile"
             ? <ProfilePage />
             : <PlaceholderPage />,

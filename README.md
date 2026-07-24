@@ -63,6 +63,8 @@ For every downstream request, the gateway validates the authenticated client, re
 - [Security settings and automation](docs/security-settings-automation.md)
 - [Operator dashboards](docs/operator-dashboards.md)
 - [Audit search and retention](docs/audit-search-retention.md)
+- [Portable backup export](docs/backup-export.md)
+- [Portable restore](docs/restore.md)
 - [Codex and ChatGPT setup](docs/codex-setup.md), including hosted ChatGPT web configuration
 - [Security notes](docs/security-notes.md)
 - [Branch protection](docs/branch-protection.md)
@@ -182,7 +184,9 @@ services:
       - ./vault-keys/resolve-capability.key:/run/vault-caller/resolve-capability.key:ro
       - ./vault-keys/backup.key:/run/vault-caller/backup.key:ro
       - ./vault-keys/backup-capability.key:/run/vault-caller/backup-capability.key:ro
+      - ./restore-keys/recovery.key:/run/restore-keys/recovery.key:ro
       - ./vault-runtime:/run/secretsauce-vault:ro
+      - ./restore:/var/lib/secretsauce/restore
     environment:
       CONFIG_PATH: /config/config.yaml
       SECRETLINT_CONFIG_PATH: /config/secretlint.yaml
@@ -192,6 +196,8 @@ services:
       SECRETSAUCE_VAULT_RESOLVE_KEY_FILE: /run/vault-caller/resolve-capability.key
       SECRETSAUCE_VAULT_BACKUP_KEY_FILE: /run/vault-caller/backup.key
       SECRETSAUCE_VAULT_BACKUP_CAPABILITY_KEY_FILE: /run/vault-caller/backup-capability.key
+      SECRETSAUCE_RESTORE_DIRECTORY: /var/lib/secretsauce/restore
+      SECRETSAUCE_RESTORE_RECOVERY_KEY_FILE: /run/restore-keys/recovery.key
 ```
 
 Use the writable audit mount for `audit.file`, for example `/var/lib/secretsauce/audit/audit.jsonl`. Monitor `/health` and disk capacity: an audit open or write failure keeps privileged operations fail-open but changes readiness to `503` with a sanitized audit-degraded check until restart. The open descriptor supports `copytruncate`-style rotation; rename-based rotation requires a restart. Static built-in OAuth keeps `signing_key_file` on stable read-only storage and can use a writable `refresh_token_store_file` for hash-only refresh continuity. Database built-in OAuth instead keeps `token_hmac_key_file` on stable mode-`0400` storage; its hash-only token and grant state is already in the durable SQLite database.
@@ -222,6 +228,15 @@ continues to work when that pair is absent. The gateway never mounts the
 control-plane caller key, root keys, or encrypted vault store. See
 [Portable Backup Export](docs/backup-export.md) for archive contents,
 permanent exclusions, system-key automation, and operator custody.
+
+Portable restore additionally requires the complete restore directory/recovery
+key pair shown above, a durable SQLite database, and the complete backup-only
+vault pair. The restore directory must be a private mode-`0700` directory owned
+by the gateway process; the recovery key is a stable canonical 32-byte
+base64url file with mode `0400`. Keep both mounts stable across restart. A
+successful restore signs out every browser session, revokes all API and OAuth
+access, and leaves restored services in draft with explicit remediation work.
+See [Portable Restore](docs/restore.md) before enabling or operating it.
 
 ### Initial v2 identity bootstrap
 

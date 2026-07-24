@@ -160,6 +160,24 @@ describe("documentation examples", () => {
     expect(docs).not.toMatch(/https?:\/\/(?![a-z0-9.-]*example\.org)[a-z0-9.-]+/i);
     expect(docs).not.toMatch(/client_secret:\s+\S+/);
   });
+
+  it("documents fail-closed portable restore deployment and recovery", () => {
+    const readme = readFileSync("README.md", "utf8");
+    const compose = readFileSync("docker-compose.example.yaml", "utf8");
+    const reference = readFileSync("docs/config-reference.md", "utf8");
+    const restore = readFileSync("docs/restore.md", "utf8");
+    expect(readme).toContain("[Portable Restore](docs/restore.md)");
+    expect(compose).toContain("SECRETSAUCE_RESTORE_DIRECTORY: /var/lib/secretsauce/restore");
+    expect(compose).toContain("SECRETSAUCE_RESTORE_RECOVERY_KEY_FILE: /run/restore-keys/recovery.key");
+    expect(reference).toContain("both deployment variables");
+    expect(reference).toContain("stops startup instead of guessing");
+    expect(restore).toMatch(/API keys cannot upload, inspect,\s+preview, or commit/);
+    expect(restore).toContain("RESTORE <archive UUID>");
+    expect(restore).toMatch(/do not delete or edit files in the restore\s+directory/);
+    expect(restore).toMatch(/every restored\s+service in draft/);
+    expect(restore).not.toMatch(/https?:\/\/(?![a-z0-9.-]*example\.org)[a-z0-9.-]+/i);
+    expect(restore).not.toMatch(/(?:passphrase|Authorization|cookie):\s+\S+/i);
+  });
 });
 
 function collectFiles(root: string): string[] {

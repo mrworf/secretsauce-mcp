@@ -53,6 +53,38 @@ record set. Wrong passphrases and authenticated-content tampering share one
 stable failure. Archive passphrases are never command arguments or persisted
 temporary files.
 
+## Portable restore
+
+Restore is disabled unless both deployment variables below are set:
+
+- `SECRETSAUCE_RESTORE_DIRECTORY`: absolute, canonical, mode-`0700` directory
+  owned by the gateway process. It is the single-process writable store for
+  staged archives and encrypted recovery artifacts.
+- `SECRETSAUCE_RESTORE_RECOVERY_KEY_FILE`: stable canonical 32-byte base64url
+  key in a regular mode-`0400` file with safe ownership.
+
+Supplying only one variable stops startup with a sanitized configuration error.
+Enabling restore also requires `persistence.database_file` and the complete
+backup-only vault set (`SECRETSAUCE_VAULT_SOCKET`,
+`SECRETSAUCE_VAULT_BACKUP_KEY_FILE`, and
+`SECRETSAUCE_VAULT_BACKUP_CAPABILITY_KEY_FILE`). The recovery key is separate
+from every vault caller, capability, data, and root key.
+
+Mount the directory and recovery key at stable paths across restarts. Do not
+place either in ephemeral container storage, share the directory between
+processes, or manually remove recovery files after an interrupted commit. Before
+the control listener starts, SecretSauce authenticates an existing journal and
+either discards a pre-mutation snapshot or restores both SQLite and vault state
+after a post-mutation interruption. An unknown, malformed, expired, oversized,
+or unauthenticated recovery set stops startup instead of guessing.
+
+The directory needs space for the staged archive plus encrypted database and
+vault recovery material. Restore rejects archives over 256 MiB, database
+recovery input over 2 GiB, and insufficient free space. Recovery artifacts
+expire after 24 hours and are deleted only after rollback/discard or a successful
+post-commit health gate. See [Portable Restore](restore.md) for the destructive
+workflow, archive custody, remediation, and recovery response.
+
 ## Persistence and initial identity bootstrap
 
 Set `persistence.database_file` to the durable SQLite path owned by the single

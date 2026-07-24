@@ -53,7 +53,11 @@ services:
       - ./vault-keys/resolve-capability.key:/run/vault-caller/resolve-capability.key:ro
       - ./vault-keys/backup.key:/run/vault-caller/backup.key:ro
       - ./vault-keys/backup-capability.key:/run/vault-caller/backup-capability.key:ro
+      # Restore recovery uses a distinct stable wrapping key.
+      - ./restore-keys/recovery.key:/run/restore-keys/recovery.key:ro
       - ./vault-runtime:/run/secretsauce-vault:ro
+      # Staged archives and encrypted recovery artifacts require private durable storage.
+      - ./restore:/var/lib/secretsauce/restore
     environment:
       CONFIG_PATH: /config/config.yaml
       SECRETLINT_CONFIG_PATH: /config/secretlint.yaml
@@ -64,6 +68,8 @@ services:
       SECRETSAUCE_VAULT_RESOLVE_KEY_FILE: /run/vault-caller/resolve-capability.key
       SECRETSAUCE_VAULT_BACKUP_KEY_FILE: /run/vault-caller/backup.key
       SECRETSAUCE_VAULT_BACKUP_CAPABILITY_KEY_FILE: /run/vault-caller/backup-capability.key
+      SECRETSAUCE_RESTORE_DIRECTORY: /var/lib/secretsauce/restore
+      SECRETSAUCE_RESTORE_RECOVERY_KEY_FILE: /run/restore-keys/recovery.key
       PORTAINER_API_KEY_FILE: /run/secrets/portainer_api_key
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/health"]

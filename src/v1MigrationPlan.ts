@@ -98,14 +98,14 @@ export interface V1MigrationReport {
   sourceSchemaVersion: 1;
   sourceSha256: string;
   planDigest: string;
-  resolutionMode: "metadata_only";
+  resolutionMode: "metadata_only" | "allowlisted";
   counts: {
     services: number;
     destinations: number;
     credentials: number;
     policies: number;
     rules: number;
-    configuredCredentials: 0;
+    configuredCredentials: number;
     unconfiguredCredentials: number;
     discardedAclEntries: number;
     retainedServiceSlugs: number;

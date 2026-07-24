@@ -2510,6 +2510,79 @@ CREATE INDEX dashboard_remediations_state_scope_idx
   ON dashboard_remediations (state, service_id, severity, last_seen_at DESC);
 `;
 
+const migration0021 = `
+CREATE TABLE backup_export_authorizations (
+  id TEXT PRIMARY KEY CHECK (
+    length(id) = 36 AND id = lower(id)
+    AND substr(id, 15, 1) = '7'
+    AND substr(id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND id NOT GLOB '*[^0-9a-f-]*'
+  ),
+  subject_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  operation_digest TEXT NOT NULL CHECK (
+    length(operation_digest) = 64
+    AND operation_digest = lower(operation_digest)
+    AND operation_digest NOT GLOB '*[^0-9a-f]*'
+  ),
+  state TEXT NOT NULL CHECK (
+    state IN ('issued', 'claimed', 'completed', 'failed', 'expired')
+  ),
+  credential_count INTEGER NOT NULL CHECK (
+    credential_count BETWEEN 0 AND 10000
+  ),
+  expires_at INTEGER NOT NULL CHECK (expires_at > created_at),
+  claimed_at INTEGER CHECK (
+    claimed_at IS NULL OR claimed_at BETWEEN created_at AND expires_at
+  ),
+  completed_at INTEGER CHECK (
+    completed_at IS NULL OR (
+      claimed_at IS NOT NULL AND completed_at >= claimed_at
+    )
+  ),
+  outcome_code TEXT CHECK (
+    outcome_code IS NULL OR (
+      length(outcome_code) BETWEEN 1 AND 64
+      AND outcome_code NOT GLOB '*[^a-z0-9_.-]*'
+    )
+  ),
+  archive_sha256 TEXT CHECK (
+    archive_sha256 IS NULL OR (
+      length(archive_sha256) = 64
+      AND archive_sha256 = lower(archive_sha256)
+      AND archive_sha256 NOT GLOB '*[^0-9a-f]*'
+    )
+  ),
+  archive_bytes INTEGER CHECK (
+    archive_bytes IS NULL OR archive_bytes BETWEEN 1 AND 268435456
+  ),
+  version INTEGER NOT NULL DEFAULT 1 CHECK (version > 0),
+  created_at INTEGER NOT NULL CHECK (created_at >= 0),
+  updated_at INTEGER NOT NULL CHECK (updated_at >= created_at),
+  CHECK (
+    (state = 'issued' AND claimed_at IS NULL AND completed_at IS NULL)
+    OR (state = 'claimed' AND claimed_at IS NOT NULL AND completed_at IS NULL)
+    OR (
+      state IN ('completed', 'failed')
+      AND claimed_at IS NOT NULL AND completed_at IS NOT NULL
+    )
+    OR (state = 'expired' AND completed_at IS NULL)
+  ),
+  CHECK (
+    state <> 'completed'
+    OR (
+      outcome_code = 'completed'
+      AND archive_sha256 IS NOT NULL
+      AND archive_bytes IS NOT NULL
+    )
+  )
+) STRICT;
+
+CREATE INDEX backup_export_authorizations_expiry_idx
+  ON backup_export_authorizations (state, expires_at, id);
+CREATE INDEX backup_export_authorizations_subject_idx
+  ON backup_export_authorizations (subject_user_id, created_at DESC, id);
+`;
+
 export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [
   {
     version: 1,
@@ -2610,6 +2683,11 @@ export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [
     version: 20,
     name: "activity_status_security_dashboards",
     sql: migration0020,
+  },
+  {
+    version: 21,
+    name: "portable_backup_export",
+    sql: migration0021,
   },
 ];
 

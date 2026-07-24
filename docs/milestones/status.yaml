@@ -156,10 +156,10 @@ milestones:
   - id: "22"
     title: "Restore"
     file: "docs/milestones/22-restore.md"
-    status: "in_progress"
-    completed_at: null
-    commit_hash: null
-    notes: "Decision-complete implementation plan written before code changes."
+    status: "completed"
+    completed_at: "2026-07-24T10:37:18.000Z"
+    commit_hash: "59d0594"
+    notes: "Implemented bounded private archive staging, strict portable validation, exact server-derived preview and plan binding, validation/replacement/recovery vault operations, exclusive maintenance, encrypted crash recovery, atomic portable-domain replacement with complete revocation/remediation, exact stepped-up commit coordination, resumable high-friction UX, and operator guidance; production builds and OpenAPI are current, and the full 127-file/890-test regression passes."
   - id: "23"
     title: "V1 Migration"
     file: "docs/milestones/23-v1-migration.md"

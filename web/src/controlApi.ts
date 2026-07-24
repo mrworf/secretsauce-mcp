@@ -27,6 +27,151 @@ export interface ControlSession {
   expires_at: number;
 }
 
+export type DashboardWindow = "24h" | "7d" | "30d" | "90d";
+export interface DashboardCount {
+  value: number | null;
+  suppressed: boolean;
+  threshold: 3;
+}
+export interface ActivityDashboard {
+  generated_at: number;
+  window: DashboardWindow;
+  start_at: number;
+  end_at: number;
+  totals: {
+    requests: number;
+    allow: number;
+    deny: number;
+    error: number;
+    credential_uses: number;
+    tokenizations: number;
+    api_key_activity: number;
+    active_users: DashboardCount;
+  };
+  trend: Array<{
+    bucket_start: number;
+    requests: number;
+    allow: number;
+    deny: number;
+    error: number;
+    status_1xx: number;
+    status_2xx: number;
+    status_3xx: number;
+    status_4xx: number;
+    status_5xx: number;
+  }>;
+  services: Array<{
+    service_id: string;
+    service_name: string;
+    requests: number;
+    credential_uses: number;
+    active_users: DashboardCount;
+  }>;
+  endpoints: Array<{
+    service_id: string;
+    service_name: string;
+    category: string;
+    requests: number;
+  }>;
+  freshness: {
+    cursor_sequence: number;
+    source_sequence: number;
+    last_completed_at: number | null;
+    partial: boolean;
+  };
+}
+export interface StatusDashboard {
+  generated_at: number;
+  services: Array<{
+    service_id: string;
+    name: string;
+    lifecycle: ServiceLifecycle;
+    publication_generation: number;
+    credentials: Record<"configured" | "unconfigured" | "disabled" | "archived", number>;
+    references: {
+      state: "available" | "unavailable";
+      gref: { active: number; expiring: number; expired: number };
+      sec: { active: number; expiring: number; expired: number };
+    };
+    active_grant_count: number;
+    api_keys: { active: number; expiring: number; expired: number };
+    pending_remediation_count: number;
+  }>;
+  service_count: number;
+  services_truncated: boolean;
+  system?: {
+    components: Record<"database" | "schema" | "vault" | "audit" | "identity", string>;
+    jobs: Record<"audit" | "activity" | "inactivity", {
+      state: "ready" | "degraded" | "unavailable";
+      next_run_at: number | null;
+      last_completed_at: number | null;
+      last_outcome: string | null;
+      last_code: string | null;
+    }>;
+    audit_capacity: {
+      administrative_rows: number;
+      runtime_rows: number;
+      estimated_bytes: number;
+      warnings: string[];
+    };
+    api_keys: { active: number; expiring: number; expired: number; non_expiring: number };
+    users: {
+      suspended: number;
+      deactivated: number;
+      pending_enrollment: number;
+      active_without_services: number;
+    };
+  };
+}
+export interface DashboardRemediation {
+  id: string;
+  code: string;
+  severity: "info" | "warning" | "critical";
+  service_id?: string;
+  generation: number;
+  state: "open" | "acknowledged" | "dismissed" | "resolved";
+  first_seen_at: number;
+  last_seen_at: number;
+  version: number;
+}
+export interface SecurityDashboard {
+  generated_at: number;
+  signals: Array<{
+    code: string;
+    severity: "info" | "warning" | "critical";
+    count: number;
+    first_seen_at: number;
+    last_seen_at: number;
+    service_id?: string;
+    remediation_id?: string;
+    remediation_state?: DashboardRemediation["state"];
+    remediation_version?: number;
+  }>;
+  remediations: DashboardRemediation[];
+}
+export interface DashboardControlApi {
+  activityDashboard(input?: {
+    window?: DashboardWindow;
+    service_id?: string;
+  }): Promise<ActivityDashboard>;
+  statusDashboard(): Promise<StatusDashboard>;
+  securityDashboard(): Promise<SecurityDashboard>;
+  updateDashboardRemediation(
+    remediation: DashboardRemediation,
+    input: {
+      state: "acknowledged" | "dismissed";
+      justification: string;
+      password: string;
+      totp: string;
+    },
+  ): Promise<DashboardRemediation>;
+  rebuildActivity(input: {
+    justification: string;
+    password: string;
+    totp: string;
+  }): Promise<unknown>;
+}
+
 export type ApiKeyRole = "service" | "all_services" | "system";
 export type ApiKeyStatus = "active" | "expired" | "revoked";
 
@@ -1020,8 +1165,20 @@ export type UserAction =
 export const browserControlApi:
   ControlApi & OidcControlApi & OidcManagementApi & ServiceControlApi &
     GroupControlApi & CredentialControlApi & PolicyControlApi & AccessControlApi &
-    ApiKeyControlApi & SecurityControlApi & AuditControlApi = {
+    ApiKeyControlApi & SecurityControlApi & AuditControlApi & DashboardControlApi = {
   session: () => get<ControlSession>("/api/v2/auth/session"),
+  activityDashboard: (input = {}) => {
+    const query = new URLSearchParams();
+    if (input.window !== undefined) query.set("window", input.window);
+    if (input.service_id !== undefined) query.set("service_id", input.service_id);
+    const suffix = query.size === 0 ? "" : `?${query.toString()}`;
+    return interactiveGet(`/api/v2/dashboard/activity${suffix}`);
+  },
+  statusDashboard: () => interactiveGet("/api/v2/dashboard/status"),
+  securityDashboard: () => interactiveGet("/api/v2/dashboard/security"),
+  updateDashboardRemediation: (remediation, input) =>
+    updateDashboardRemediationWithStepUp(remediation, input),
+  rebuildActivity: (input) => rebuildActivityWithStepUp(input),
   auditEvents: (domain, filter = {}) => {
     const query = auditQuery(filter);
     query.set("limit", "50");
@@ -1549,6 +1706,81 @@ async function runAuditMaintenanceWithStepUp(input: {
     throw new ControlApiError("step_up_required", "Exact audit maintenance proof is required.");
   }
   return request("/api/v2/audits/retention/run", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-csrf-token": session.csrf_token,
+      "x-step-up-proof": proof.proof,
+    },
+    body: JSON.stringify(body),
+  });
+}
+
+async function updateDashboardRemediationWithStepUp(
+  remediation: DashboardRemediation,
+  input: {
+    state: "acknowledged" | "dismissed";
+    justification: string;
+    password: string;
+    totp: string;
+  },
+): Promise<DashboardRemediation> {
+  const body = {
+    state: input.state,
+    justification: input.justification,
+  };
+  const session = await browserControlApi.session();
+  const proof = await performStepUp(session, input.password, input.totp, {
+    method: "PATCH",
+    route_id: "dashboard.remediations.update",
+    target_ids: [remediation.id],
+    expected_version: remediation.version,
+    body,
+  });
+  if (proof.proof === undefined) {
+    throw new ControlApiError(
+      "step_up_required",
+      "An exact remediation proof is required.",
+    );
+  }
+  return request(
+    `/api/v2/dashboard/remediations/${encodeURIComponent(remediation.id)}`,
+    {
+      method: "PATCH",
+      headers: {
+        "content-type": "application/json",
+        "x-csrf-token": session.csrf_token,
+        "x-step-up-proof": proof.proof,
+        "if-match": `"${remediation.version}"`,
+      },
+      body: JSON.stringify(body),
+    },
+  );
+}
+
+async function rebuildActivityWithStepUp(input: {
+  justification: string;
+  password: string;
+  totp: string;
+}): Promise<unknown> {
+  const body = {
+    acknowledgement: "REBUILD ACTIVITY AGGREGATES",
+    justification: input.justification,
+  };
+  const session = await browserControlApi.session();
+  const proof = await performStepUp(session, input.password, input.totp, {
+    method: "POST",
+    route_id: "dashboard.activity.rebuild",
+    target_ids: [],
+    body,
+  });
+  if (proof.proof === undefined) {
+    throw new ControlApiError(
+      "step_up_required",
+      "An exact activity rebuild proof is required.",
+    );
+  }
+  return request("/api/v2/dashboard/activity/rebuild", {
     method: "POST",
     headers: {
       "content-type": "application/json",

@@ -14,6 +14,12 @@ import { AccessPage } from "./AccessPages";
 import { ApiKeysPage } from "./ApiKeyPages";
 import { SecurityPage } from "./SecurityPage";
 import { AuditPage } from "./AuditPages";
+import {
+  ActivityPage,
+  OverviewPage,
+  SecurityDashboardPanel,
+  StatusPage,
+} from "./DashboardPages";
 
 function routes(role: HumanControlRole): RouteObject[] {
   return [{
@@ -39,7 +45,16 @@ function routes(role: HumanControlRole): RouteObject[] {
           : item.path === "/api-keys"
             ? <ApiKeysPage role={role} />
           : item.path === "/security"
-            ? <SecurityPage role={role} />
+            ? <div className="dashboard-stack">
+                <SecurityDashboardPanel role={role} />
+                <SecurityPage role={role} />
+              </div>
+          : item.path === "/activity"
+            ? <ActivityPage />
+          : item.path === "/status"
+            ? <StatusPage />
+          : item.path === "/"
+            ? <OverviewPage role={role} />
           : item.path === "/mcp-audit"
             ? <AuditPage domain="runtime" role={role} />
           : item.path === "/administrative-audit"

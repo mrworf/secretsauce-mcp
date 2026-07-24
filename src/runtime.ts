@@ -166,12 +166,12 @@ export class GatewayRuntime {
   private async closeOwnedResources(): Promise<void> {
     const errors: unknown[] = [];
     try { this.#stopMaintenance(); } catch (error) { errors.push(error); }
+    this.auditSink.close();
     try { await this.builtinOAuth.close(); } catch (error) { errors.push(error); }
     try { await this.auditSink.flush(); } catch (error) { errors.push(error); }
     if (this.persistence !== undefined) {
       try { await this.persistence.close(); } catch (error) { errors.push(error); }
     }
-    this.auditSink.close();
     try { this.runtimeVault?.close(); } catch (error) { errors.push(error); }
     try { await this.secretRuntime.pool.close(); } catch (error) { errors.push(error); }
     if (errors.length > 0) throw new AggregateError(errors, "Gateway runtime close failed.");

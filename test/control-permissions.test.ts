@@ -42,6 +42,10 @@ const expected: Record<string, readonly PermissionOutcome[]> = {
   restore: ["deny", "deny", "step_up", "deny", "deny", "deny"],
   self_api_key_approval: ["deny", "deny", "step_up", "deny", "deny", "deny"],
   vault_key_operation: ["deny", "deny", "step_up", "deny", "deny", "deny"],
+  view_administrative_audit: ["deny", "allow", "allow", "deny", "deny", "deny"],
+  view_runtime_audit: ["deny", "allow", "allow", "deny", "deny", "deny"],
+  export_audit: ["deny", "allow", "allow", "deny", "deny", "deny"],
+  manage_audit_retention: ["deny", "deny", "step_up", "deny", "deny", "deny"],
 };
 
 describe("control permission matrix", () => {

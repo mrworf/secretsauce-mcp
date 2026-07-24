@@ -41,6 +41,10 @@ export const CONTROL_CAPABILITIES = [
   "restore",
   "self_api_key_approval",
   "vault_key_operation",
+  "view_administrative_audit",
+  "view_runtime_audit",
+  "export_audit",
+  "manage_audit_retention",
 ] as const;
 
 export type ControlCapability = (typeof CONTROL_CAPABILITIES)[number];
@@ -105,6 +109,10 @@ export const CONTROL_PERMISSION_MATRIX: Readonly<Record<ControlCapability, Permi
   restore: row(D, D, "step_up", D, D, D),
   self_api_key_approval: row(D, D, "step_up", D, D, D),
   vault_key_operation: row(D, D, "step_up", D, D, D),
+  view_administrative_audit: row(D, A, A, D, D, D),
+  view_runtime_audit: row(D, A, A, D, D, D),
+  export_audit: row(D, A, A, D, D, D),
+  manage_audit_retention: row(D, D, "step_up", D, D, D),
 };
 
 export function permissionOutcome(

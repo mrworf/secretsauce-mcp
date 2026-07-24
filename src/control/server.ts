@@ -161,6 +161,8 @@ import { HumanActivityRepository } from "../humanActivity.js";
 import { InactivityJob } from "../inactivityJob.js";
 import { registerSecurityRoutes } from "./securityRoutes.js";
 import { GlobalSecurityEvents } from "../globalSecurityEvents.js";
+import { AuditSearchService } from "../auditSearch.js";
+import { registerAuditRoutes } from "./auditRoutes.js";
 
 export interface ControlApplicationOptions {
   authenticator?: ControlAuthenticator;
@@ -191,6 +193,7 @@ export interface ControlApplicationOptions {
   };
   humanActivity?: Pick<HumanActivityRepository, "record">;
   inactivityJob?: InactivityJob;
+  auditSearch?: AuditSearchService;
 }
 
 export function createControlApplication(
@@ -311,6 +314,9 @@ export function createControlApplication(
       inactivityJob: options.inactivityJob,
     });
   }
+  if (options.auditSearch !== undefined) {
+    registerAuditRoutes(routeRegistry, options.auditSearch);
+  }
   options.registerControlRoutes?.(routeRegistry);
   installControlRoutes(
     application,
@@ -416,6 +422,7 @@ export async function startControlServer(
   let securitySettings: ControlApplicationOptions["securitySettings"];
   let inactivityJob: InactivityJob | undefined;
   let inactivityTimer: NodeJS.Timeout | undefined;
+  let auditSearch: AuditSearchService | undefined;
   const apiKeyVerifier = new ApiKeyVerifierPool();
   let selfApiKeyDetector: ActiveSelfApiKeyDetector | undefined;
   try {
@@ -449,6 +456,7 @@ export async function startControlServer(
         ? config.auth.builtinOAuth
         : undefined;
       try {
+        auditSearch = new AuditSearchService(persistence, sessionKey);
         apiKeyManagement = {
           repository: apiKeyRepository,
           service: new ApiKeyService(apiKeyRepository),
@@ -730,6 +738,7 @@ export async function startControlServer(
       ...(apiKeyManagement === undefined ? {} : { apiKeys: apiKeyManagement }),
       ...(securitySettings === undefined ? {} : { securitySettings }),
       ...(inactivityJob === undefined ? {} : { inactivityJob }),
+      ...(auditSearch === undefined ? {} : { auditSearch }),
     });
     await server.listen({
       host: config.control.host,
@@ -757,6 +766,7 @@ export async function startControlServer(
     oauthIntentState?.close();
     accessCursor?.close();
     apiKeyManagement?.cursors.close();
+    auditSearch?.close();
     serviceManagement?.close();
     localAuthentication?.close();
     identityKeyRing?.destroy();
@@ -785,7 +795,8 @@ export async function startControlServer(
         databaseOAuthHasher?.close();
         oauthIntentState?.close();
         accessCursor?.close();
-        apiKeyManagement?.cursors.close();
+      apiKeyManagement?.cursors.close();
+      auditSearch?.close();
         serviceManagement?.close();
         localAuthentication?.close();
         identityKeyRing?.destroy();

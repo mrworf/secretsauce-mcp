@@ -749,6 +749,7 @@ describe("HTTP gateway", () => {
         path: "/api/slow",
         reason: "Check timeout.",
       }), "downstream_timeout");
+      config.limits.timeoutMs = 1_000;
       const response = await executeServiceRequest(config, actor(), {
         service: "demo-service", destination: "primary", method: "GET", path: "/api/echo",
         reason: "Reuse capacity after timeout.",

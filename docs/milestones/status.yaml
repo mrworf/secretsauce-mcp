@@ -173,4 +173,4 @@ milestones:
     status: "in_progress"
     completed_at: null
     commit_hash: null
-    notes: "Decision-complete release plan and blocking release-matrix skeleton written before implementation."
+    notes: "Implementation, final reviews, production build, OpenAPI, advisory threshold, 146-file/972-test regression, and 562-file artifact scan pass at baseline 8a2b06d. Required amd64 container smoke remains unwaived and cannot run because this environment has no Docker-compatible engine."

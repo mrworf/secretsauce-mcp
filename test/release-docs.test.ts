@@ -7,6 +7,7 @@ const RELEASE_DOCS = [
   "docs/operator-guide.md",
   "docs/management-api.md",
   "docs/client-compatibility.md",
+  "docs/release-matrix.md",
   "docs/audits/milestone-24-acceptance.md",
   "docs/audits/milestone-24-architecture-operations.md",
   "docs/audits/milestone-24-security-invariant.md",
@@ -137,5 +138,27 @@ describe("release operations documentation", () => {
     expect(acceptance).toContain("Production container execution | **pending**");
     expect(acceptance).toContain("No pending gate is waived");
     expect(acceptance).not.toContain("Release approved");
+  });
+
+  it("records every verified gate while leaving unavailable container execution pending", () => {
+    const matrix = readFileSync("docs/release-matrix.md", "utf8");
+    const pendingRows = matrix
+      .split("\n")
+      .filter((line) => line.startsWith("|") && line.includes("pending"));
+    expect(pendingRows).toEqual([
+      expect.stringContaining(
+        "Image build, unprivileged start, health, MCP, restart",
+      ),
+    ]);
+    expect(matrix).toContain("146 files / 972 tests passed");
+    expect(matrix).toContain("562 tracked, staged, built, generated");
+
+    const status = readFileSync("docs/milestones/status.yaml", "utf8");
+    expect(status).toMatch(
+      /id: "24"[\s\S]*status: "in_progress"[\s\S]*container smoke remains unwaived/,
+    );
+    expect(status).not.toMatch(
+      /id: "24"[\s\S]*status: "completed"/,
+    );
   });
 });

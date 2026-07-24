@@ -125,7 +125,8 @@ use the same stable private mounts documented in [Portable restore](restore.md).
 Use the same control caller key mounted by the combined application, but keep
 the application stopped while the migration command owns the database. The
 control key cannot resolve or export credentials. Never mount vault root keys
-or its encrypted store into the migration caller.
+or its encrypted store into the migration caller. Credential resolution is
+terminal-only; do not add it to the ordinary gateway runtime.
 
 After confirmation, the command re-reads the V1 YAML, allowlist, environment
 values, and selected files. A change to any of them fails with

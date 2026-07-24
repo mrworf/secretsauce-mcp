@@ -7,6 +7,10 @@ const RELEASE_DOCS = [
   "docs/operator-guide.md",
   "docs/management-api.md",
   "docs/client-compatibility.md",
+  "docs/audits/milestone-24-acceptance.md",
+  "docs/audits/milestone-24-architecture-operations.md",
+  "docs/audits/milestone-24-security-invariant.md",
+  "docs/audits/milestone-24-ux-accessibility.md",
 ];
 
 describe("release operations documentation", () => {
@@ -86,5 +90,52 @@ describe("release operations documentation", () => {
     ]) expect(api).toContain(expected);
     expect(api).not.toMatch(/Authorization:\s+(?!Bearer <)/);
     expect(api).not.toMatch(/Cookie:\s+\S+/);
+  });
+
+  it("keeps the final release reviews decision-complete without waiving pending gates", () => {
+    const ux = readFileSync(
+      "docs/audits/milestone-24-ux-accessibility.md",
+      "utf8",
+    );
+    for (const heading of [
+      "## Scope",
+      "## Commands And Evidence",
+      "## Limitations And Residual Risk",
+      "## Verdict",
+    ]) expect(ux).toContain(heading);
+
+    const security = readFileSync(
+      "docs/audits/milestone-24-security-invariant.md",
+      "utf8",
+    );
+    for (const expected of [
+      "## Threat Model",
+      "## Findings Summary",
+      "CVSS v3.1",
+      "Accepted risk",
+      "No open Critical or High",
+    ]) expect(security).toContain(expected);
+
+    const architecture = readFileSync(
+      "docs/audits/milestone-24-architecture-operations.md",
+      "utf8",
+    );
+    for (const heading of [
+      "## Scope",
+      "## Executive Summary",
+      "## What Is Good",
+      "## What Is Bad Or Risky",
+      "## What Should Change",
+      "## What I Would Not Change Yet",
+      "## Overall Opinion",
+    ]) expect(architecture).toContain(heading);
+
+    const acceptance = readFileSync(
+      "docs/audits/milestone-24-acceptance.md",
+      "utf8",
+    );
+    expect(acceptance).toContain("Production container execution | **pending**");
+    expect(acceptance).toContain("No pending gate is waived");
+    expect(acceptance).not.toContain("Release approved");
   });
 });

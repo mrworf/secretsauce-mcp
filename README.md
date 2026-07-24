@@ -52,6 +52,9 @@ For every downstream request, the gateway validates the authenticated client, re
 
 ## Documentation
 
+- [V2 operator guide and release operations index](docs/operator-guide.md)
+- [Management API usage](docs/management-api.md)
+- [Codex and ChatGPT compatibility verification](docs/client-compatibility.md)
 - [Configuration reference](docs/config-reference.md)
 - [Local browser authentication](docs/local-authentication.md)
 - [Generic OIDC identity provider](docs/oidc-identity-provider.md)
@@ -70,6 +73,8 @@ For every downstream request, the gateway validates the authenticated client, re
 - [Security notes](docs/security-notes.md)
 - [Branch protection](docs/branch-protection.md)
 - [Docker Compose example](docker-compose.example.yaml)
+- [MCP/OAuth HAProxy example](examples/proxy-mcp-oauth.haproxy.cfg)
+- [Control HAProxy example](examples/proxy-control.haproxy.cfg)
 - [Example config](examples/config.yaml)
 
 Codex CLI, the Codex IDE extension, and ChatGPT desktop can use shared Codex MCP configuration. ChatGPT web does not read local Codex MCP configuration; web usage requires a hosted or plugin integration path.

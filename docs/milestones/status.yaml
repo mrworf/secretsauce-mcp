@@ -142,10 +142,10 @@ milestones:
   - id: "20"
     title: "Activity, Status, And Security Dashboards"
     file: "docs/milestones/20-activity-status-security-dashboards.md"
-    status: "pending"
+    status: "in_progress"
     completed_at: null
     commit_hash: null
-    notes: ""
+    notes: "Decision-complete implementation plan written before code changes."
   - id: "21"
     title: "Backup Export"
     file: "docs/milestones/21-backup-export.md"

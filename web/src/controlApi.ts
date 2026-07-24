@@ -172,6 +172,16 @@ export interface DashboardControlApi {
   }): Promise<unknown>;
 }
 
+export interface BackupControlApi {
+  createPortableBackup(input: {
+    include_secrets: boolean;
+    acknowledgement: string;
+    passphrase?: string;
+    password: string;
+    totp: string;
+  }): Promise<Blob>;
+}
+
 export type ApiKeyRole = "service" | "all_services" | "system";
 export type ApiKeyStatus = "active" | "expired" | "revoked";
 
@@ -1165,7 +1175,8 @@ export type UserAction =
 export const browserControlApi:
   ControlApi & OidcControlApi & OidcManagementApi & ServiceControlApi &
     GroupControlApi & CredentialControlApi & PolicyControlApi & AccessControlApi &
-    ApiKeyControlApi & SecurityControlApi & AuditControlApi & DashboardControlApi = {
+    ApiKeyControlApi & SecurityControlApi & AuditControlApi & DashboardControlApi &
+    BackupControlApi = {
   session: () => get<ControlSession>("/api/v2/auth/session"),
   activityDashboard: (input = {}) => {
     const query = new URLSearchParams();
@@ -1179,6 +1190,7 @@ export const browserControlApi:
   updateDashboardRemediation: (remediation, input) =>
     updateDashboardRemediationWithStepUp(remediation, input),
   rebuildActivity: (input) => rebuildActivityWithStepUp(input),
+  createPortableBackup: (input) => createPortableBackupWithStepUp(input),
   auditEvents: (domain, filter = {}) => {
     const query = auditQuery(filter);
     query.set("limit", "50");
@@ -1935,6 +1947,42 @@ async function executeGlobalSecurityEventWithStepUp(
   });
 }
 
+async function createPortableBackupWithStepUp(input: {
+  include_secrets: boolean;
+  acknowledgement: string;
+  passphrase?: string;
+  password: string;
+  totp: string;
+}): Promise<Blob> {
+  const body = {
+    include_secrets: input.include_secrets,
+    acknowledgement: input.acknowledgement,
+    ...(input.passphrase === undefined ? {} : { passphrase: input.passphrase }),
+  };
+  const session = await browserControlApi.session();
+  const stepUp = await performStepUp(session, input.password, input.totp, {
+    method: "POST",
+    route_id: "backups.create_interactive",
+    target_ids: [],
+    body,
+  });
+  if (stepUp.mode !== "always" || stepUp.proof === undefined) {
+    throw new ControlApiError(
+      "step_up_required",
+      "A proof for this exact backup is required.",
+    );
+  }
+  return binaryRequest("/api/v2/backups/interactive", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-csrf-token": session.csrf_token,
+      "x-step-up-proof": stepUp.proof,
+    },
+    body: JSON.stringify(body),
+  });
+}
+
 async function performStepUp(
   session: ControlSession,
   password: string,
@@ -2096,6 +2144,52 @@ async function approveSelfApiKeyWithStepUp(
       body: JSON.stringify(body),
     },
   );
+}
+
+async function binaryRequest(path: string, init: RequestInit): Promise<Blob> {
+  const response = await fetch(path, {
+    ...init,
+    credentials: "same-origin",
+    cache: "no-store",
+  });
+  if (!response.ok) {
+    let payload: unknown;
+    try {
+      payload = await response.json();
+    } catch {
+      throw new ControlApiError(
+        "request_failed",
+        "The request could not be completed.",
+      );
+    }
+    const error = payload as { error?: { code?: unknown; message?: unknown } };
+    throw new ControlApiError(
+      typeof error.error?.code === "string"
+        ? error.error.code
+        : "request_failed",
+      typeof error.error?.message === "string"
+        ? error.error.message
+        : "The request could not be completed.",
+    );
+  }
+  if (
+    response.headers.get("content-type")?.split(";", 1)[0] !== "application/gzip"
+    || response.headers.get("content-disposition")
+      !== 'attachment; filename="secretsauce-portable-backup.tar.gz"'
+  ) {
+    throw new ControlApiError(
+      "invalid_response",
+      "The control service returned an invalid backup response.",
+    );
+  }
+  const archive = await response.blob();
+  if (archive.size < 1) {
+    throw new ControlApiError(
+      "invalid_response",
+      "The control service returned an empty backup.",
+    );
+  }
+  return archive;
 }
 
 async function request<T>(path: string, init: RequestInit): Promise<T> {

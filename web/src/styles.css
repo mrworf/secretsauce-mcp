@@ -915,6 +915,139 @@ button:disabled {
   border-color: #9b2c20;
 }
 
+.backup-workspace,
+.backup-form,
+.backup-secret-fields,
+.backup-step-up {
+  display: grid;
+  gap: 1rem;
+}
+
+.backup-exclusions {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: color-mix(in srgb, #e7b75d 14%, var(--surface));
+  border: 2px solid #b7791f;
+  border-radius: 0.75rem;
+}
+
+.backup-exclusions h3 {
+  margin: 0.65rem 0 0;
+}
+
+.backup-exclusions p {
+  max-width: 82ch;
+  margin-bottom: 0;
+  line-height: 1.6;
+}
+
+.backup-form {
+  margin-top: 1.5rem;
+}
+
+.backup-mode-grid {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0;
+  border: 0;
+}
+
+.backup-mode-grid legend {
+  margin-bottom: 0.75rem;
+  font-weight: 800;
+}
+
+.backup-mode {
+  display: flex;
+  gap: 0.8rem;
+  padding: 1rem;
+  cursor: pointer;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 0.75rem;
+}
+
+.backup-mode-selected {
+  border-color: var(--success);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--success) 20%, transparent);
+}
+
+.backup-mode-sensitive {
+  background: color-mix(in srgb, var(--accent-soft) 55%, var(--surface));
+}
+
+.backup-mode-sensitive.backup-mode-selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
+.backup-mode input,
+.backup-acknowledgement input {
+  min-width: 24px;
+  min-height: 24px;
+  margin: 0.1rem 0 0;
+}
+
+.backup-mode span,
+.backup-mode small {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.backup-mode small,
+.field-help {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.backup-secret-fields,
+.backup-step-up {
+  padding: 1rem;
+  background: var(--surface-subtle);
+  border-radius: 0.75rem;
+}
+
+.backup-secret-fields label,
+.backup-step-up label {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.backup-secret-fields input,
+.backup-step-up input {
+  width: 100%;
+}
+
+.backup-secret-fields .field-help,
+.backup-step-up h3,
+.backup-step-up p {
+  margin: 0;
+}
+
+.backup-acknowledgement {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  font-weight: 700;
+  line-height: 1.5;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+}
+
+@media (min-width: 760px) {
+  .backup-mode-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .backup-mode-grid legend {
+    grid-column: 1 / -1;
+  }
+}
+
 .one-time-panel {
   display: grid;
   gap: 1rem;

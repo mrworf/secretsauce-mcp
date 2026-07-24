@@ -52,4 +52,13 @@ describe("control application shell", () => {
       /(?:gref_|authorization\s*:|bearer\s+|cookie\s*:|request body)/i,
     );
   });
+
+  it("renders the backup workspace only for a superadmin route", () => {
+    render(
+      <RouterProvider router={createTestControlRouter("superadmin", "/backup")} />,
+    );
+    expect(screen.getByRole("heading", { level: 2, name: "Create portable backup" }))
+      .toBeInTheDocument();
+    expect(screen.getByText("Permanent exclusions")).toBeInTheDocument();
+  });
 });

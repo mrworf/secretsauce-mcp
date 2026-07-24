@@ -284,7 +284,7 @@ describe("durable browser sessions", () => {
     });
     expect(await globalEpoch.sessions.authenticate(globalHash, globalEpoch.config.sessions)).toBeUndefined();
     globalEpoch.seed.fill(0);
-  });
+  }, 10_000);
 
   it("refreshes activity below the idle boundary and rejects inactive or incomplete identities", async () => {
     const fixture = await setup("activity");

@@ -29,7 +29,7 @@ export const CONTROL_NAVIGATION: readonly NavigationItem[] = [
   { label: "MCP audit", path: "/mcp-audit", description: "Runtime audit events", capability: "view_runtime_audit", group: "Operations" },
   { label: "Administrative audit", path: "/administrative-audit", description: "Control-plane audit events", capability: "view_administrative_audit", group: "Operations" },
   { label: "Security", path: "/security", description: "Personal and system security", capability: "manage_own_security", group: "Operations" },
-  { label: "Backup and restore", path: "/backup", description: "Protected configuration lifecycle", capability: "backup_without_credentials", group: "Operations" },
+  { label: "Backup and restore", path: "/backup", description: "Protected configuration lifecycle", capability: "create_portable_backup", group: "Operations" },
   { label: "Migration status", path: "/migration", description: "Configuration migration state", capability: "manage_global_settings", group: "Operations" },
   { label: "Profile", path: "/profile", description: "Personal profile and security", capability: "manage_own_security", group: "Account" },
   { label: "OpenAPI", path: "/openapi", description: "Authenticated API documentation", capability: "manage_own_security", group: "Account" },

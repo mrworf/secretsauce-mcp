@@ -14,6 +14,89 @@ afterEach(() => {
 });
 
 describe("service browser API", () => {
+  it("binds a binary backup to the exact stepped-up body and validates delivery headers", async () => {
+    const requests: Array<{ url: string; init: RequestInit }> = [];
+    const responses = [
+      envelope({
+        user_id: SERVICE.id,
+        role: "superadmin",
+        csrf_token: "x".repeat(43),
+        expires_at: 10,
+      }),
+      envelope({ mode: "always", expires_at: 10, proof: "p".repeat(43) }),
+      new Response("archive", {
+        status: 200,
+        headers: {
+          "content-type": "application/gzip",
+          "content-disposition":
+            'attachment; filename="secretsauce-portable-backup.tar.gz"',
+        },
+      }),
+    ];
+    vi.stubGlobal("fetch", vi.fn(async (url: string, init: RequestInit) => {
+      requests.push({ url, init });
+      return responses.shift()!;
+    }));
+    const body = {
+      include_secrets: true,
+      acknowledgement: "exact exclusion acknowledgement",
+      passphrase: "separate-passphrase",
+    };
+
+    await expect(browserControlApi.createPortableBackup({
+      ...body,
+      password: "current-password",
+      totp: "123456",
+    })).resolves.toEqual(expect.any(Blob));
+
+    expect(JSON.parse(String(requests[1]!.init.body))).toEqual({
+      password: "current-password",
+      totp: "123456",
+      operation: {
+        method: "POST",
+        route_id: "backups.create_interactive",
+        target_ids: [],
+        body,
+      },
+    });
+    expect(requests[2]).toMatchObject({
+      url: "/api/v2/backups/interactive",
+      init: { method: "POST" },
+    });
+    expect(requests[2]!.init.headers).toMatchObject({
+      "x-step-up-proof": "p".repeat(43),
+    });
+    expect(JSON.parse(String(requests[2]!.init.body))).toEqual(body);
+    expect(String(requests[2]!.init.body)).not.toContain("current-password");
+    expect(String(requests[2]!.init.body)).not.toContain("123456");
+  });
+
+  it("rejects an invalid binary backup response without returning its body", async () => {
+    const responses = [
+      envelope({
+        user_id: SERVICE.id,
+        role: "superadmin",
+        csrf_token: "x".repeat(43),
+        expires_at: 10,
+      }),
+      envelope({ mode: "always", expires_at: 10, proof: "p".repeat(43) }),
+      new Response("not-an-archive", {
+        status: 200,
+        headers: { "content-type": "text/plain" },
+      }),
+    ];
+    vi.stubGlobal("fetch", vi.fn(async () => responses.shift()!));
+
+    await expect(browserControlApi.createPortableBackup({
+      include_secrets: false,
+      acknowledgement: "exact exclusion acknowledgement",
+      password: "current-password",
+      totp: "123456",
+    })).rejects.toEqual(expect.objectContaining<Partial<ControlApiError>>({
+      code: "invalid_response",
+    }));
+  });
+
   it("binds permanent deletion proof to the exact request and consumes it once", async () => {
     const requests: Array<{ url: string; init: RequestInit }> = [];
     const responses = [

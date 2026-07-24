@@ -20,6 +20,7 @@ import {
   SecurityDashboardPanel,
   StatusPage,
 } from "./DashboardPages";
+import { BackupPage } from "./BackupPage";
 
 function routes(role: HumanControlRole): RouteObject[] {
   return [{
@@ -59,6 +60,8 @@ function routes(role: HumanControlRole): RouteObject[] {
             ? <AuditPage domain="runtime" role={role} />
           : item.path === "/administrative-audit"
             ? <AuditPage domain="administrative" role={role} />
+          : item.path === "/backup"
+            ? <BackupPage role={role} />
           : item.path === "/profile"
             ? <ProfilePage />
             : <PlaceholderPage />,

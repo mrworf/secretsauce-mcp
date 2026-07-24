@@ -1246,6 +1246,83 @@ CREATE INDEX policy_copy_batch_members_policy_idx
   ON policy_copy_batch_members (service_id, policy_id, batch_id);
 `;
 
+const migration0013 = `
+CREATE TABLE runtime_activation (
+  singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
+  state TEXT NOT NULL CHECK (state IN ('inactive', 'active')),
+  activation_generation INTEGER NOT NULL CHECK (activation_generation >= 0),
+  global_reference_epoch INTEGER NOT NULL CHECK (global_reference_epoch >= 0),
+  version INTEGER NOT NULL CHECK (version > 0),
+  activated_at INTEGER CHECK (activated_at IS NULL OR activated_at >= 0),
+  updated_at INTEGER NOT NULL CHECK (updated_at >= 0),
+  CHECK (
+    (state = 'inactive' AND activated_at IS NULL)
+    OR (state = 'active' AND activated_at IS NOT NULL)
+  )
+) STRICT;
+
+INSERT INTO runtime_activation (
+  singleton, state, activation_generation, global_reference_epoch,
+  version, activated_at, updated_at
+) VALUES (1, 'inactive', 0, 0, 1, NULL, 0);
+
+CREATE TABLE runtime_service_snapshots (
+  id TEXT PRIMARY KEY CHECK (
+    length(id) = 36 AND id = lower(id)
+    AND substr(id, 15, 1) = '7'
+    AND substr(id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND id NOT GLOB '*[^0-9a-f-]*'
+  ),
+  service_id TEXT NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+  publication_generation INTEGER NOT NULL CHECK (publication_generation > 0),
+  document_json TEXT NOT NULL CHECK (
+    length(document_json) BETWEEN 2 AND 4194304
+  ),
+  digest TEXT NOT NULL CHECK (
+    length(digest) = 64
+    AND digest = lower(digest)
+    AND digest NOT GLOB '*[^0-9a-f]*'
+  ),
+  created_at INTEGER NOT NULL CHECK (created_at >= 0),
+  UNIQUE (service_id, id)
+) STRICT;
+
+CREATE INDEX runtime_service_snapshots_history_idx
+  ON runtime_service_snapshots (
+    service_id, publication_generation DESC, created_at DESC, id
+  );
+
+CREATE TABLE runtime_active_services (
+  service_id TEXT PRIMARY KEY REFERENCES services(id) ON DELETE CASCADE,
+  snapshot_id TEXT NOT NULL UNIQUE,
+  publication_generation INTEGER NOT NULL CHECK (publication_generation > 0),
+  activated_at INTEGER NOT NULL CHECK (activated_at >= 0),
+  FOREIGN KEY (service_id, snapshot_id)
+    REFERENCES runtime_service_snapshots(service_id, id) ON DELETE CASCADE
+) STRICT;
+
+CREATE TABLE runtime_invalidation_checkpoints (
+  stream_name TEXT PRIMARY KEY CHECK (
+    stream_name IN ('identity', 'service', 'credential', 'policy')
+  ),
+  last_created_at INTEGER NOT NULL CHECK (last_created_at >= 0),
+  last_event_id TEXT CHECK (
+    last_event_id IS NULL OR (
+      length(last_event_id) = 36 AND last_event_id = lower(last_event_id)
+    )
+  ),
+  updated_at INTEGER NOT NULL CHECK (updated_at >= 0)
+) STRICT;
+
+INSERT INTO runtime_invalidation_checkpoints (
+  stream_name, last_created_at, last_event_id, updated_at
+) VALUES
+  ('identity', 0, NULL, 0),
+  ('service', 0, NULL, 0),
+  ('credential', 0, NULL, 0),
+  ('policy', 0, NULL, 0);
+`;
+
 export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [
   {
     version: 1,
@@ -1306,6 +1383,11 @@ export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [
     version: 12,
     name: "policy_bulk_copy_idempotency",
     sql: migration0012,
+  },
+  {
+    version: 13,
+    name: "persisted_runtime_authorization",
+    sql: migration0013,
   },
 ];
 

@@ -8,9 +8,14 @@ export interface GatewayConfig {
   audit: AuditConfig;
   persistence?: PersistenceConfig;
   identity?: IdentityConfig;
+  runtime?: RuntimeAuthorityConfig;
   services: Record<string, ServiceConfig>;
   warnings: string[];
   debugDiagnostics: ConfigDebugDiagnostic[];
+}
+
+export interface RuntimeAuthorityConfig {
+  authority: "yaml" | "database";
 }
 
 export interface ControlConfig {

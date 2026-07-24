@@ -26,6 +26,7 @@ import {
 } from "./serviceConfiguration.js";
 import type { UserRelationshipResolver } from "./identity/userAdministration.js";
 import type { AlwaysStepUpHandle, StepUpRepository } from "./identity/stepUp.js";
+import { persistRuntimeSnapshot } from "./runtimeSnapshots.js";
 
 const MAX_SERVICE_ADMINS = 200;
 const MAX_SERVICE_DESTINATIONS = 64;
@@ -711,6 +712,7 @@ export class ServiceManagementRepository {
     expectedVersion: number;
     revisionId: string;
     invalidationId: string;
+    runtimeSnapshotId: string;
     correlationId: string;
   }): Promise<ServiceView> {
     try {
@@ -775,6 +777,11 @@ export class ServiceManagementRepository {
             },
           );
           if (update.status !== "updated") throw new PersistenceError("identity_stale");
+          persistRuntimeSnapshot(
+            transaction,
+            current.id,
+            input.runtimeSnapshotId,
+          );
           transaction.run(`
             INSERT INTO service_invalidation_events (
               id, service_id, publication_generation, reason, created_at,
@@ -1632,6 +1639,7 @@ export class ServiceManagementService {
       expectedVersion,
       revisionId: this.nextUuid(),
       invalidationId: this.nextUuid(),
+      runtimeSnapshotId: this.nextUuid(),
       correlationId,
     });
     return this.detail(actor, serviceId);

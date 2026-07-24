@@ -278,6 +278,9 @@ const rawConfigSchema = z.object({
       .refine((value) => !value.includes("\0"), "database_file must not contain NUL")
       .refine((value) => value !== ":memory:" && !value.startsWith("file:"), "database_file must be a filesystem path"),
   }).strict().optional(),
+  runtime: z.object({
+    authority: z.enum(["yaml", "database"]).default("yaml"),
+  }).strict().default({ authority: "yaml" }),
   identity: z.object({
     active_root_key_id: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/),
     root_key_files: z.record(
@@ -336,8 +339,7 @@ const rawConfigSchema = z.object({
       max_totp_verifications: 8, max_totp_verifications_per_source: 2,
     }),
   }).strict().optional(),
-  services: z.record(z.string().min(1), serviceSchema)
-    .refine((services) => Object.keys(services).length > 0, "at least one service is required"),
+  services: z.record(z.string().min(1), serviceSchema).default({}),
 }).strict();
 
 type RawConfig = z.infer<typeof rawConfigSchema>;
@@ -352,6 +354,27 @@ export function validateConfig(raw: unknown, env: NodeJS.ProcessEnv = process.en
   const warnings: string[] = [];
   const debugDiagnostics: ConfigDebugDiagnostic[] = [];
   const parsed = parseRawConfig(raw);
+  const configuredServiceCount = Object.keys(parsed.services).length;
+  if (parsed.runtime.authority === "yaml" && configuredServiceCount < 1) {
+    throw configValidationError(
+      "runtime.authority yaml requires at least one YAML service",
+      ["services"],
+    );
+  }
+  if (parsed.runtime.authority === "database") {
+    if (parsed.persistence === undefined) {
+      throw configValidationError(
+        "runtime.authority database requires persistence",
+        ["runtime", "authority"],
+      );
+    }
+    if (configuredServiceCount > 0) {
+      throw configValidationError(
+        "runtime.authority database prohibits YAML services",
+        ["services"],
+      );
+    }
+  }
   validateOAuthTrustUrls(parsed, warnings);
   const server = normalizeServer(parsed.server);
   const auth = normalizeAuth(parsed.auth, env);
@@ -380,6 +403,7 @@ export function validateConfig(raw: unknown, env: NodeJS.ProcessEnv = process.en
     audit,
     ...(persistence === undefined ? {} : { persistence }),
     ...(identity === undefined ? {} : { identity }),
+    runtime: { authority: parsed.runtime.authority },
     services,
     warnings,
     debugDiagnostics,

@@ -97,6 +97,44 @@ describe("config validation", () => {
     });
   });
 
+  it("accepts database runtime authority only with persistence and no YAML services", () => {
+    const raw = validRaw();
+    raw.runtime = { authority: "database" };
+    raw.persistence = { database_file: "/var/lib/secretsauce/control.sqlite" };
+    raw.services = {};
+
+    expect(validateConfig(raw, validEnv).runtime).toEqual({
+      authority: "database",
+    });
+  });
+
+  it("rejects incomplete or mixed runtime authority configuration", () => {
+    const missingPersistence = validRaw();
+    missingPersistence.runtime = { authority: "database" };
+    missingPersistence.services = {};
+    expectConfigError(
+      () => validateConfig(missingPersistence, validEnv),
+      "requires persistence",
+    );
+
+    const mixedAuthority = validRaw();
+    mixedAuthority.runtime = { authority: "database" };
+    mixedAuthority.persistence = {
+      database_file: "/var/lib/secretsauce/control.sqlite",
+    };
+    expectConfigError(
+      () => validateConfig(mixedAuthority, validEnv),
+      "prohibits YAML services",
+    );
+
+    const emptyYaml = validRaw();
+    emptyYaml.services = {};
+    expectConfigError(
+      () => validateConfig(emptyYaml, validEnv),
+      "requires at least one YAML service",
+    );
+  });
+
   it("accepts closed local identity security configuration with bounded defaults", () => {
     const rootKey = identityKeyFile("root", 11);
     const sessionKey = identityKeyFile("session", 12);

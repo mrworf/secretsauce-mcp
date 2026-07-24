@@ -133,6 +133,33 @@ describe("control wire primitives", () => {
       PRINCIPAL_ID,
     )).toEqual({ allowed: false, retryAfterSeconds: 60 });
   });
+
+  it("uses live rate limits without rewriting an existing window deadline", () => {
+    let now = 1_000;
+    const settings = {
+      management: { attempts: 3, windowMs: 60_000 },
+      search: { attempts: 2, windowMs: 30_000 },
+    };
+    const limiter = new ControlRateLimiter(
+      () => now,
+      100,
+      () => settings,
+    );
+    expect(limiter.check("management", "127.0.0.1")).toEqual({ allowed: true });
+    expect(limiter.check("management", "127.0.0.1")).toEqual({ allowed: true });
+    settings.management = { attempts: 2, windowMs: 5 * 60_000 };
+    expect(limiter.check("management", "127.0.0.1")).toEqual({
+      allowed: false,
+      retryAfterSeconds: 60,
+    });
+    now += 60_000;
+    expect(limiter.check("management", "127.0.0.1")).toEqual({ allowed: true });
+    expect(limiter.check("management", "127.0.0.1")).toEqual({ allowed: true });
+    expect(limiter.check("management", "127.0.0.1")).toEqual({
+      allowed: false,
+      retryAfterSeconds: 300,
+    });
+  });
 });
 
 describe("control route registry", () => {

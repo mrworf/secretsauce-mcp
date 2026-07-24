@@ -161,7 +161,9 @@ export class BrowserSessionAuthenticator implements ControlAuthenticator {
 
   constructor(
     private readonly repository: BrowserSessionRepository,
-    private readonly sessionSettings: IdentityConfig["sessions"],
+    private readonly sessionSettings:
+      | IdentityConfig["sessions"]
+      | (() => IdentityConfig["sessions"]),
     hmacKey: Buffer,
     private readonly random: (size: number) => Buffer = randomBytes,
   ) {
@@ -176,7 +178,9 @@ export class BrowserSessionAuthenticator implements ControlAuthenticator {
     try {
       session = await this.repository.authenticate(
         keyedHash(this.#hmacKey, SESSION_DOMAIN, token),
-        this.sessionSettings,
+        typeof this.sessionSettings === "function"
+          ? this.sessionSettings()
+          : this.sessionSettings,
       );
     } catch {
       return undefined;

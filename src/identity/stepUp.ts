@@ -6,6 +6,7 @@ import type { PersistenceTransaction } from "../persistence/transaction.js";
 import { UuidV7Generator, isUuidV7 } from "../persistence/uuidV7.js";
 import type { PersistenceOwner } from "../persistence/worker.js";
 import type { IdentityConfig } from "../types.js";
+import type { SecuritySettings } from "../securitySettings.js";
 import { InflightLimiter } from "../inflightLimiter.js";
 import { canonicalControlJson } from "../control/idempotency.js";
 import type {
@@ -342,6 +343,7 @@ export interface StepUpServiceOptions {
   now?: () => number;
   random?: (size: number) => Buffer;
   uuid?: () => string;
+  securitySettings?: () => SecuritySettings;
 }
 
 export class StepUpService {
@@ -357,6 +359,7 @@ export class StepUpService {
   readonly #totpLimiter: AttemptLimiter;
   readonly #passwordInflight: InflightLimiter;
   readonly #totpInflight: InflightLimiter;
+  readonly #securitySettings: (() => SecuritySettings) | undefined;
 
   constructor(options: StepUpServiceOptions) {
     this.#authenticationRepository = options.authenticationRepository;
@@ -369,14 +372,23 @@ export class StepUpService {
     this.#random = options.random ?? randomBytes;
     const generator = new UuidV7Generator({ now: this.#now });
     this.#uuid = options.uuid ?? (() => generator.next());
+    this.#securitySettings = options.securitySettings;
     this.#passwordLimiter = new AttemptLimiter(
-      options.config.limits.passwordAttempts,
-      options.config.limits.passwordWindowMs,
+      () => ({
+        limit: this.#securitySettings?.().passwordAttempts
+          ?? options.config.limits.passwordAttempts,
+        windowMs: this.#securitySettings?.().passwordWindowMs
+          ?? options.config.limits.passwordWindowMs,
+      }),
       this.#now,
     );
     this.#totpLimiter = new AttemptLimiter(
-      options.config.limits.totpAttempts,
-      options.config.limits.totpWindowMs,
+      () => ({
+        limit: this.#securitySettings?.().totpAttempts
+          ?? options.config.limits.totpAttempts,
+        windowMs: this.#securitySettings?.().totpWindowMs
+          ?? options.config.limits.totpWindowMs,
+      }),
       this.#now,
     );
     this.#passwordInflight = new InflightLimiter(
@@ -454,7 +466,9 @@ export class StepUpService {
     }
 
     const issuedAt = safeNow(this.#now);
-    if (this.#config.stepUpMode === "five_minutes" && input.operation === undefined) {
+    const configuredMode = this.#securitySettings?.().stepUpMode
+      ?? this.#config.stepUpMode;
+    if (configuredMode === "five_minutes" && input.operation === undefined) {
       try {
         await this.#repository.elevateFiveMinutes({
           candidate: eligible,
@@ -540,7 +554,9 @@ export class BrowserStepUpAuthorization implements ControlAuthorizationSeam {
   constructor(
     private readonly sessions: BrowserSessionAuthenticator,
     private readonly repository: StepUpRepository,
-    private readonly configuredMode: IdentityConfig["stepUpMode"],
+    private readonly configuredMode:
+      | IdentityConfig["stepUpMode"]
+      | (() => IdentityConfig["stepUpMode"]),
     hmacKey: Buffer,
   ) {
     if (hmacKey.byteLength !== 32) throw new Error("Invalid step-up authorization key.");
@@ -568,7 +584,10 @@ export class BrowserStepUpAuthorization implements ControlAuthorizationSeam {
       session.userId !== context.principalId ||
       session.context !== context
     ) return false;
-    const mode = rule === "always" || this.configuredMode === "always"
+    const configuredMode = typeof this.configuredMode === "function"
+      ? this.configuredMode()
+      : this.configuredMode;
+    const mode = rule === "always" || configuredMode === "always"
       ? "always"
       : "five_minutes";
     if (mode === "five_minutes") {
@@ -807,29 +826,29 @@ function parseCredentials(password: unknown, totp: unknown): { password: string;
 }
 
 class AttemptLimiter {
-  readonly #entries = new Map<string, { count: number; startedAt: number }>();
+  readonly #entries = new Map<string, { count: number; resetAt: number }>();
 
   constructor(
-    private readonly limit: number,
-    private readonly windowMs: number,
+    private readonly settings: () => { limit: number; windowMs: number },
     private readonly now: () => number,
   ) {}
 
   take(source: string, account: string): boolean {
     const now = safeNow(this.now);
+    const { limit, windowMs } = this.settings();
     const keys = [`s:${source}`, `a:${account}`];
     const entries = keys.map((key) => {
       const current = this.#entries.get(key);
-      if (current !== undefined && now - current.startedAt < this.windowMs) return current;
-      const created = { count: 0, startedAt: now };
+      if (current !== undefined && now < current.resetAt) return current;
+      const created = { count: 0, resetAt: now + windowMs };
       this.#entries.set(key, created);
       return created;
     });
-    if (entries.some((entry) => entry.count >= this.limit)) return false;
+    if (entries.some((entry) => entry.count >= limit)) return false;
     for (const entry of entries) entry.count += 1;
     if (this.#entries.size > 20_000) {
       for (const [key, entry] of this.#entries) {
-        if (now - entry.startedAt >= this.windowMs) this.#entries.delete(key);
+        if (now >= entry.resetAt) this.#entries.delete(key);
       }
     }
     return true;

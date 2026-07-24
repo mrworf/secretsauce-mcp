@@ -241,7 +241,9 @@ export class DatabaseOAuthRepository {
   constructor(
     private readonly owner: PersistenceOwner,
     private readonly hasher: DatabaseOAuthTokenHasher,
-    private readonly settings: DatabaseOAuthSettings,
+    private readonly settings:
+      | DatabaseOAuthSettings
+      | (() => DatabaseOAuthSettings),
     options: {
       uuid?: () => string;
       random?: (size: number) => Buffer;
@@ -254,6 +256,10 @@ export class DatabaseOAuthRepository {
     this.#uuid = options.uuid ?? (() => generator.next());
   }
 
+  private currentSettings(): DatabaseOAuthSettings {
+    return typeof this.settings === "function" ? this.settings() : this.settings;
+  }
+
   async createExternalIntent(
     input: DatabaseOAuthIntentInput,
   ): Promise<DatabaseOAuthIntent> {
@@ -263,7 +269,7 @@ export class DatabaseOAuthRepository {
     const handleHash = this.hasher.hash("intent", handle);
     const id = this.nextUuid();
     const clientId = this.nextUuid();
-    const expiresAt = now + this.settings.authorizationCodeTtlMs;
+    const expiresAt = now + this.currentSettings().authorizationCodeTtlMs;
     try {
       await this.owner.execute({
         run: (database) => database.withOperationalTransaction((transaction) => {
@@ -273,8 +279,8 @@ export class DatabaseOAuthRepository {
           );
           const count = transaction.get<{ count: number }>(
             "SELECT count(*) AS count FROM oauth_authorization_intents",
-          )?.count ?? this.settings.maxAuthorizationCodes;
-          if (count >= this.settings.maxAuthorizationCodes) {
+          )?.count ?? this.currentSettings().maxAuthorizationCodes;
+          if (count >= this.currentSettings().maxAuthorizationCodes) {
             throw new PersistenceError("oauth_capacity_exceeded");
           }
           const client = upsertClient(
@@ -403,8 +409,8 @@ export class DatabaseOAuthRepository {
                 AND absolute_expires_at > ? AND idle_expires_at > ?
             `, [now, now])?.count ?? 0;
             if (
-              liveCodes >= this.settings.maxAuthorizationCodes
-              || liveGrants >= this.settings.maxTokenRecords
+              liveCodes >= this.currentSettings().maxAuthorizationCodes
+              || liveGrants >= this.currentSettings().maxTokenRecords
             ) throw new PersistenceError("oauth_capacity_exceeded");
             const consumed = transaction.run(`
               UPDATE oauth_authorization_intents SET consumed_at = ?
@@ -415,10 +421,10 @@ export class DatabaseOAuthRepository {
             }
             const scopes = parseStoredScopes(record.scopes_json);
             const absoluteExpiresAt =
-              now + this.settings.refreshTokenMaxTtlMs;
+              now + this.currentSettings().refreshTokenMaxTtlMs;
             const idleExpiresAt = Math.min(
               absoluteExpiresAt,
-              now + this.settings.refreshTokenIdleTtlMs,
+              now + this.currentSettings().refreshTokenIdleTtlMs,
             );
             transaction.run(`
               INSERT INTO oauth_grants (
@@ -438,9 +444,9 @@ export class DatabaseOAuthRepository {
               JSON.stringify(scopes),
               current.security_epoch,
               current.global_security_epoch,
-              this.settings.accessTokenTtlMs,
-              this.settings.refreshTokenIdleTtlMs,
-              this.settings.refreshTokenMaxTtlMs,
+              this.currentSettings().accessTokenTtlMs,
+              this.currentSettings().refreshTokenIdleTtlMs,
+              this.currentSettings().refreshTokenMaxTtlMs,
               now,
               now,
               absoluteExpiresAt,
@@ -466,7 +472,7 @@ export class DatabaseOAuthRepository {
               current.security_epoch,
               current.global_security_epoch,
               now,
-              now + this.settings.authorizationCodeTtlMs,
+              now + this.currentSettings().authorizationCodeTtlMs,
             ]);
             return {
               value: {
@@ -518,7 +524,7 @@ export class DatabaseOAuthRepository {
     const clientId = this.nextUuid();
     const grantId = this.nextUuid();
     const codeId = this.nextUuid();
-    const expiresAt = now + this.settings.authorizationCodeTtlMs;
+    const expiresAt = now + this.currentSettings().authorizationCodeTtlMs;
     try {
       await this.owner.execute({
         run: (database) => database.withGeneratedAdministrativeAudit(
@@ -548,8 +554,8 @@ export class DatabaseOAuthRepository {
                 AND absolute_expires_at > ? AND idle_expires_at > ?
             `, [now, now])?.count ?? 0;
             if (
-              liveCodes >= this.settings.maxAuthorizationCodes
-              || liveGrants >= this.settings.maxTokenRecords
+              liveCodes >= this.currentSettings().maxAuthorizationCodes
+              || liveGrants >= this.currentSettings().maxTokenRecords
             ) throw new PersistenceError("oauth_capacity_exceeded");
             const client = upsertClient(
               transaction,
@@ -580,15 +586,15 @@ export class DatabaseOAuthRepository {
               JSON.stringify(normalized.scopes),
               input.proof.securityEpoch,
               input.proof.globalSecurityEpoch,
-              this.settings.accessTokenTtlMs,
-              this.settings.refreshTokenIdleTtlMs,
-              this.settings.refreshTokenMaxTtlMs,
+              this.currentSettings().accessTokenTtlMs,
+              this.currentSettings().refreshTokenIdleTtlMs,
+              this.currentSettings().refreshTokenMaxTtlMs,
               now,
               now,
-              now + this.settings.refreshTokenMaxTtlMs,
+              now + this.currentSettings().refreshTokenMaxTtlMs,
               Math.min(
-                now + this.settings.refreshTokenIdleTtlMs,
-                now + this.settings.refreshTokenMaxTtlMs,
+                now + this.currentSettings().refreshTokenIdleTtlMs,
+                now + this.currentSettings().refreshTokenMaxTtlMs,
               ),
             ]);
             transaction.run(`
@@ -727,21 +733,21 @@ export class DatabaseOAuthRepository {
                 (SELECT count(*) FROM oauth_refresh_tokens)
                 + (SELECT count(*) FROM oauth_access_tokens) AS count
             `)?.count ?? 0;
-            if (tokenCount + 2 > this.settings.maxTokenRecords) {
+            if (tokenCount + 2 > this.currentSettings().maxTokenRecords) {
               throw new PersistenceError("oauth_capacity_exceeded");
             }
             const scopes = parseStoredScopes(record.scopes_json);
             const absoluteExpiresAt = Math.min(
               record.absolute_expires_at,
-              now + this.settings.refreshTokenMaxTtlMs,
+              now + this.currentSettings().refreshTokenMaxTtlMs,
             );
             const idleExpiresAt = Math.min(
               absoluteExpiresAt,
-              now + this.settings.refreshTokenIdleTtlMs,
+              now + this.currentSettings().refreshTokenIdleTtlMs,
             );
             const accessExpiresAt = now + Math.min(
               record.issued_access_ttl_ms,
-              this.settings.accessTokenTtlMs,
+              this.currentSettings().accessTokenTtlMs,
             );
             if (idleExpiresAt <= now || accessExpiresAt <= now) {
               throw new PersistenceError("oauth_invalid_grant");
@@ -936,8 +942,8 @@ export class DatabaseOAuthRepository {
               : Math.min(
                 record.family_absolute_expires_at,
                 record.grant_absolute_expires_at,
-                record.family_issued_at + this.settings.refreshTokenMaxTtlMs,
-                record.grant_issued_at + this.settings.refreshTokenMaxTtlMs,
+                record.family_issued_at + this.currentSettings().refreshTokenMaxTtlMs,
+                record.grant_issued_at + this.currentSettings().refreshTokenMaxTtlMs,
               );
             const currentIdle = record === undefined
               ? 0
@@ -945,7 +951,7 @@ export class DatabaseOAuthRepository {
                 currentAbsolute,
                 record.family_idle_expires_at,
                 record.grant_idle_expires_at,
-                record.family_last_used_at + this.settings.refreshTokenIdleTtlMs,
+                record.family_last_used_at + this.currentSettings().refreshTokenIdleTtlMs,
               );
             if (
               record === undefined
@@ -970,7 +976,7 @@ export class DatabaseOAuthRepository {
                 (SELECT count(*) FROM oauth_refresh_tokens)
                 + (SELECT count(*) FROM oauth_access_tokens) AS count
             `)?.count ?? 0;
-            if (tokenCount + 2 > this.settings.maxTokenRecords) {
+            if (tokenCount + 2 > this.currentSettings().maxTokenRecords) {
               throw new PersistenceError("oauth_capacity_exceeded");
             }
             const nextSequence = record.sequence + 1;
@@ -978,12 +984,12 @@ export class DatabaseOAuthRepository {
               currentAbsolute,
               now + Math.min(
                 record.issued_refresh_idle_ms,
-                this.settings.refreshTokenIdleTtlMs,
+                this.currentSettings().refreshTokenIdleTtlMs,
               ),
             );
             const accessExpiresAt = now + Math.min(
               record.issued_access_ttl_ms,
-              this.settings.accessTokenTtlMs,
+              this.currentSettings().accessTokenTtlMs,
             );
             const used = transaction.run(`
               UPDATE oauth_refresh_tokens
@@ -1130,8 +1136,8 @@ export class DatabaseOAuthRepository {
             : Math.min(
               record.grant_absolute_expires_at,
               record.family_absolute_expires_at,
-              record.grant_issued_at + this.settings.refreshTokenMaxTtlMs,
-              record.family_issued_at + this.settings.refreshTokenMaxTtlMs,
+              record.grant_issued_at + this.currentSettings().refreshTokenMaxTtlMs,
+              record.family_issued_at + this.currentSettings().refreshTokenMaxTtlMs,
             );
           const idleExpiresAt = record === undefined
             ? 0
@@ -1139,14 +1145,14 @@ export class DatabaseOAuthRepository {
               absoluteExpiresAt,
               record.grant_idle_expires_at,
               record.family_idle_expires_at,
-              record.grant_last_used_at + this.settings.refreshTokenIdleTtlMs,
-              record.family_last_used_at + this.settings.refreshTokenIdleTtlMs,
+              record.grant_last_used_at + this.currentSettings().refreshTokenIdleTtlMs,
+              record.family_last_used_at + this.currentSettings().refreshTokenIdleTtlMs,
             );
           const accessExpiresAt = record === undefined
             ? 0
             : Math.min(
               record.token_expires_at,
-              record.token_issued_at + this.settings.accessTokenTtlMs,
+              record.token_issued_at + this.currentSettings().accessTokenTtlMs,
             );
           if (
             record === undefined
@@ -1169,7 +1175,7 @@ export class DatabaseOAuthRepository {
             absoluteExpiresAt,
             now + Math.min(
               record.issued_refresh_idle_ms,
-              this.settings.refreshTokenIdleTtlMs,
+              this.currentSettings().refreshTokenIdleTtlMs,
             ),
           );
           transaction.run(`

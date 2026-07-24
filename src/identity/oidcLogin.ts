@@ -170,6 +170,7 @@ export class OidcLoginService {
   readonly #now: () => number;
   readonly #random: (size: number) => Buffer;
   readonly #uuid: () => string;
+  readonly #sessionSettings: () => IdentityConfig["sessions"];
 
   constructor(
     private readonly repository: OidcLoginRepository,
@@ -179,12 +180,14 @@ export class OidcLoginService {
       now?: () => number;
       random?: (size: number) => Buffer;
       uuid?: () => string;
+      sessionSettings?: () => IdentityConfig["sessions"];
     } = {},
   ) {
     if (sessionKey.byteLength !== 32) throw new Error("Invalid browser session key.");
     this.#sessionKey = Buffer.from(sessionKey);
     this.#now = options.now ?? Date.now;
     this.#random = options.random ?? randomBytes;
+    this.#sessionSettings = options.sessionSettings ?? (() => this.config.sessions);
     const generator = new UuidV7Generator({ now: this.#now });
     this.#uuid = options.uuid ?? (() => generator.next());
   }
@@ -206,12 +209,13 @@ export class OidcLoginService {
       const sessionToken = opaque(this.#random);
       const csrfToken = opaque(this.#random);
       const roleClass = candidate.role === "user" ? "user" : "admin";
+      const sessions = this.#sessionSettings();
       const absoluteMs = roleClass === "admin"
-        ? this.config.sessions.adminAbsoluteMs
-        : this.config.sessions.userAbsoluteMs;
+        ? sessions.adminAbsoluteMs
+        : sessions.userAbsoluteMs;
       const inactivityMs = roleClass === "admin"
-        ? this.config.sessions.adminInactivityMs
-        : this.config.sessions.userInactivityMs;
+        ? sessions.adminInactivityMs
+        : sessions.userInactivityMs;
       const id = this.#uuid();
       if (!isUuidV7(id)) throw new OidcLoginError();
       const session: BrowserSessionMaterial = {

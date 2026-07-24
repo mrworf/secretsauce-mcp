@@ -5,6 +5,7 @@ import type { PersistenceTransaction } from "../persistence/transaction.js";
 import { UuidV7Generator, isUuidV7 } from "../persistence/uuidV7.js";
 import type { PersistenceOwner } from "../persistence/worker.js";
 import type { IdentityConfig } from "../types.js";
+import type { SecuritySettings } from "../securitySettings.js";
 import { InflightLimiter } from "../inflightLimiter.js";
 import type { IdentityAuditContext } from "./repository.js";
 import {
@@ -352,6 +353,7 @@ export interface LocalAuthenticationServiceOptions {
   uuid?: () => string;
   dummyPasswordHash?: string;
   dummyTotpSeed?: Buffer;
+  securitySettings?: () => SecuritySettings;
 }
 
 export class LocalAuthenticationService {
@@ -369,6 +371,7 @@ export class LocalAuthenticationService {
   readonly #totpLimiter: DualWindowLimiter;
   readonly #passwordInflight: InflightLimiter;
   readonly #totpInflight: InflightLimiter;
+  readonly #securitySettings: (() => SecuritySettings) | undefined;
 
   private constructor(options: LocalAuthenticationServiceOptions & {
     dummyPasswordHash: string;
@@ -388,19 +391,32 @@ export class LocalAuthenticationService {
     this.#uuid = options.uuid ?? (() => generator.next());
     this.#dummyPasswordHash = options.dummyPasswordHash;
     this.#dummyTotpSeed = Buffer.from(options.dummyTotpSeed);
+    this.#securitySettings = options.securitySettings;
     this.#loginLimiter = new DualWindowLimiter(
-      options.config.limits.loginAttempts,
-      options.config.limits.loginWindowMs,
+      () => ({
+        limit: this.#securitySettings?.().loginAttempts
+          ?? options.config.limits.loginAttempts,
+        windowMs: this.#securitySettings?.().loginWindowMs
+          ?? options.config.limits.loginWindowMs,
+      }),
       this.#now,
     );
     this.#passwordLimiter = new DualWindowLimiter(
-      options.config.limits.passwordAttempts,
-      options.config.limits.passwordWindowMs,
+      () => ({
+        limit: this.#securitySettings?.().passwordAttempts
+          ?? options.config.limits.passwordAttempts,
+        windowMs: this.#securitySettings?.().passwordWindowMs
+          ?? options.config.limits.passwordWindowMs,
+      }),
       this.#now,
     );
     this.#totpLimiter = new DualWindowLimiter(
-      options.config.limits.totpAttempts,
-      options.config.limits.totpWindowMs,
+      () => ({
+        limit: this.#securitySettings?.().totpAttempts
+          ?? options.config.limits.totpAttempts,
+        windowMs: this.#securitySettings?.().totpWindowMs
+          ?? options.config.limits.totpWindowMs,
+      }),
       this.#now,
     );
     this.#passwordInflight = new InflightLimiter(
@@ -440,12 +456,17 @@ export class LocalAuthenticationService {
     const sessionToken = opaqueValue(this.#random);
     const csrfToken = opaqueValue(this.#random);
     const roleClass = candidate.role === "user" ? "user" : "admin";
+    const securitySettings = this.#securitySettings?.();
     const absoluteMs = roleClass === "admin"
-      ? this.#config.sessions.adminAbsoluteMs
-      : this.#config.sessions.userAbsoluteMs;
+      ? securitySettings?.adminSessionAbsoluteMs
+        ?? this.#config.sessions.adminAbsoluteMs
+      : securitySettings?.userSessionAbsoluteMs
+        ?? this.#config.sessions.userAbsoluteMs;
     const inactivityMs = roleClass === "admin"
-      ? this.#config.sessions.adminInactivityMs
-      : this.#config.sessions.userInactivityMs;
+      ? securitySettings?.adminSessionInactivityMs
+        ?? this.#config.sessions.adminInactivityMs
+      : securitySettings?.userSessionInactivityMs
+        ?? this.#config.sessions.userInactivityMs;
     const session: BrowserSessionMaterial = {
       id: this.nextUuid(),
       sessionHash: keyedHash(this.#sessionHmacKey, SESSION_DOMAIN, sessionToken),
@@ -722,22 +743,22 @@ function successfulAudit(
 }
 
 class DualWindowLimiter {
-  readonly #entries = new Map<string, { count: number; startedAt: number; seenAt: number }>();
+  readonly #entries = new Map<string, { count: number; resetAt: number; seenAt: number }>();
 
   constructor(
-    readonly limit: number,
-    readonly windowMs: number,
+    readonly settings: () => { limit: number; windowMs: number },
     readonly now: () => number,
   ) {}
 
   take(source: string, account: string): boolean {
     const now = safeTimestamp(this.now);
+    const { limit, windowMs } = this.settings();
     this.sweep(now);
     const sourceKey = `s:${source}`;
     const accountKey = `a:${account}`;
     const sourceEntry = this.current(sourceKey, now);
     const accountEntry = this.current(accountKey, now);
-    if (sourceEntry.count >= this.limit || accountEntry.count >= this.limit) return false;
+    if (sourceEntry.count >= limit || accountEntry.count >= limit) return false;
     sourceEntry.count += 1;
     sourceEntry.seenAt = now;
     accountEntry.count += 1;
@@ -745,17 +766,18 @@ class DualWindowLimiter {
     return true;
   }
 
-  private current(key: string, now: number): { count: number; startedAt: number; seenAt: number } {
+  private current(key: string, now: number): { count: number; resetAt: number; seenAt: number } {
     const existing = this.#entries.get(key);
-    if (existing !== undefined && now - existing.startedAt < this.windowMs) return existing;
-    const created = { count: 0, startedAt: now, seenAt: now };
+    if (existing !== undefined && now < existing.resetAt) return existing;
+    const created = { count: 0, resetAt: now + this.settings().windowMs, seenAt: now };
     this.#entries.set(key, created);
     return created;
   }
 
   private sweep(now: number): void {
+    const { windowMs } = this.settings();
     for (const [key, entry] of this.#entries) {
-      if (now - entry.seenAt >= this.windowMs) this.#entries.delete(key);
+      if (now - entry.seenAt >= windowMs) this.#entries.delete(key);
     }
     while (this.#entries.size > 20_000) {
       const oldest = this.#entries.keys().next().value as string | undefined;

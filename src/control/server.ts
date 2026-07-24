@@ -198,7 +198,25 @@ export function createControlApplication(
   const authorization = options.authorization ??
     options.localIdentity?.authorization ??
     denyControlAuthorization;
-  const rateLimiter = options.rateLimiter ?? new ControlRateLimiter();
+  const rateLimiter = options.rateLimiter ?? new ControlRateLimiter(
+    Date.now,
+    10_000,
+    options.securitySettings === undefined
+      ? undefined
+      : () => {
+          const current = options.securitySettings!.store.current();
+          return {
+            management: {
+              attempts: current.managementApiAttempts,
+              windowMs: current.managementApiWindowMs,
+            },
+            search: {
+              attempts: current.searchAttempts,
+              windowMs: current.searchWindowMs,
+            },
+          };
+        },
+  );
   const application = Fastify({
     logger: false,
     trustProxy: false,
@@ -396,6 +414,10 @@ export async function startControlServer(
         config.identity.rootKeyFiles,
       );
       const sessionKey = loadIdentitySessionHmacKey(config.identity.sessionHmacKeyFile);
+      const databaseOAuthConfig = config.auth.mode === "builtin_oauth"
+        && config.auth.builtinOAuth.identitySource === "database"
+        ? config.auth.builtinOAuth
+        : undefined;
       try {
         apiKeyManagement = {
           repository: apiKeyRepository,
@@ -408,10 +430,19 @@ export async function startControlServer(
           config: config.identity,
           keyRing: identityKeyRing,
           sessionHmacKey: sessionKey,
+          securitySettings: () => securitySettings!.store.current(),
         });
         browserSessions = new BrowserSessionAuthenticator(
           new BrowserSessionRepository(persistence),
-          config.identity.sessions,
+          () => {
+            const current = securitySettings!.store.current();
+            return {
+              adminAbsoluteMs: current.adminSessionAbsoluteMs,
+              adminInactivityMs: current.adminSessionInactivityMs,
+              userAbsoluteMs: current.userSessionAbsoluteMs,
+              userInactivityMs: current.userSessionInactivityMs,
+            };
+          },
           sessionKey,
         );
         stepUpRepository = new StepUpRepository(persistence);
@@ -421,11 +452,12 @@ export async function startControlServer(
           config: config.identity,
           keyRing: identityKeyRing,
           sessionHmacKey: sessionKey,
+          securitySettings: () => securitySettings!.store.current(),
         });
         stepUpAuthorization = new BrowserStepUpAuthorization(
           browserSessions,
           stepUpRepository,
-          config.identity.stepUpMode,
+          () => securitySettings!.store.current().stepUpMode,
           sessionKey,
         );
         if (
@@ -436,14 +468,22 @@ export async function startControlServer(
           accessManagement = {
             repository: new AccessManagementRepository(
               persistence,
-              config.identity.sessions,
-              {
-                accessTokenTtlMs:
-                  config.auth.builtinOAuth.accessTokenTtlMs,
-                refreshTokenIdleTtlMs:
-                  config.auth.builtinOAuth.refreshTokenIdleTtlMs,
-                refreshTokenMaxTtlMs:
-                  config.auth.builtinOAuth.refreshTokenMaxTtlMs,
+              () => {
+                const current = securitySettings!.store.current();
+                return {
+                  adminAbsoluteMs: current.adminSessionAbsoluteMs,
+                  adminInactivityMs: current.adminSessionInactivityMs,
+                  userAbsoluteMs: current.userSessionAbsoluteMs,
+                  userInactivityMs: current.userSessionInactivityMs,
+                };
+              },
+              () => {
+                const current = securitySettings!.store.current();
+                return {
+                  accessTokenTtlMs: current.oauthAccessTokenMs,
+                  refreshTokenIdleTtlMs: current.oauthRefreshInactivityMs,
+                  refreshTokenMaxTtlMs: current.oauthRefreshAbsoluteMs,
+                };
               },
               accessCursor,
               Date.now,
@@ -460,6 +500,7 @@ export async function startControlServer(
           config: config.identity,
           keyRing: identityKeyRing,
           sessionHmacKey: sessionKey,
+          securitySettings: () => securitySettings!.store.current(),
         });
         restrictedSessions = new RestrictedSessionAuthenticator(
           enrollmentRepository,
@@ -526,11 +567,33 @@ export async function startControlServer(
             new OidcLoginRepository(persistence),
             config.identity,
             sessionKey,
+            {
+              sessionSettings: () => {
+                const current = securitySettings!.store.current();
+                return {
+                  adminAbsoluteMs: current.adminSessionAbsoluteMs,
+                  adminInactivityMs: current.adminSessionInactivityMs,
+                  userAbsoluteMs: current.userSessionAbsoluteMs,
+                  userInactivityMs: current.userSessionInactivityMs,
+                };
+              },
+            },
           );
           oidcLink = new OidcLinkService(
             new OidcLinkRepository(persistence, stepUpRepository),
             config.identity,
             sessionKey,
+            {
+              sessionSettings: () => {
+                const current = securitySettings!.store.current();
+                return {
+                  adminAbsoluteMs: current.adminSessionAbsoluteMs,
+                  adminInactivityMs: current.adminSessionInactivityMs,
+                  userAbsoluteMs: current.userSessionAbsoluteMs,
+                  userInactivityMs: current.userSessionInactivityMs,
+                };
+              },
+            },
           );
           if (
             config.auth.mode === "builtin_oauth"
@@ -582,19 +645,21 @@ export async function startControlServer(
                           repository: new DatabaseOAuthRepository(
                             persistence,
                             databaseOAuthHasher,
-                            {
-                              accessTokenTtlMs:
-                                config.auth.builtinOAuth.accessTokenTtlMs,
-                              authorizationCodeTtlMs:
-                                config.auth.builtinOAuth.authorizationCodeTtlMs,
-                              refreshTokenIdleTtlMs:
-                                config.auth.builtinOAuth.refreshTokenIdleTtlMs,
-                              refreshTokenMaxTtlMs:
-                                config.auth.builtinOAuth.refreshTokenMaxTtlMs,
-                              maxAuthorizationCodes:
-                                config.limits.maxAuthorizationCodes,
-                              maxTokenRecords:
-                                config.limits.maxRefreshTokenRecords,
+                            () => {
+                              const current = securitySettings!.store.current();
+                              return {
+                                accessTokenTtlMs: current.oauthAccessTokenMs,
+                                authorizationCodeTtlMs:
+                                  databaseOAuthConfig!.authorizationCodeTtlMs,
+                                refreshTokenIdleTtlMs:
+                                  current.oauthRefreshInactivityMs,
+                                refreshTokenMaxTtlMs:
+                                  current.oauthRefreshAbsoluteMs,
+                                maxAuthorizationCodes:
+                                  config.limits.maxAuthorizationCodes,
+                                maxTokenRecords:
+                                  config.limits.maxRefreshTokenRecords,
+                              };
                             },
                           ),
                           intentState: oauthIntentState,

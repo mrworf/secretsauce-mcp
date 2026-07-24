@@ -32,6 +32,10 @@ import { loadIdentitySessionHmacKey } from "./identity/browserSessions.js";
 import { readVaultKeyFile } from "./vault/keyFile.js";
 import { OAuthIntentStateCodec } from "./oauth/intentState.js";
 import { LoginAttemptLimiter } from "./loginAttemptLimiter.js";
+import {
+  type SecuritySettings,
+  type SecuritySettingsStore,
+} from "./securitySettings.js";
 import { BRAND_ICON_PATH, BRAND_LOCKUP_PATH } from "./brandAssets.js";
 import { OAuthClientMetadataFetcher } from "./oauthClientMetadata.js";
 
@@ -119,6 +123,8 @@ export class BuiltinOAuthRuntime {
     options: {
       persistence?: PersistenceOwner;
       database?: Promise<DatabaseBuiltinOAuthServices>;
+      securitySettings?: () => SecuritySettings;
+      securitySettingsStore?: Promise<SecuritySettingsStore>;
     } = {},
   ) {
     this.state = config.auth.mode === "builtin_oauth" && config.auth.builtinOAuth.refreshTokenStoreFile !== undefined
@@ -150,6 +156,8 @@ export class BuiltinOAuthRuntime {
     this.database = options.database ?? createDatabaseBuiltinOAuthServices(
       config,
       options.persistence,
+      options.securitySettings,
+      options.securitySettingsStore,
     );
     void this.database?.catch(() => undefined);
   }
@@ -1182,6 +1190,8 @@ function emptyOAuthState(): BuiltinOAuthState {
 function createDatabaseBuiltinOAuthServices(
   config: GatewayConfig,
   persistence: PersistenceOwner | undefined,
+  securitySettings?: () => SecuritySettings,
+  securitySettingsStore?: Promise<SecuritySettingsStore>,
 ): Promise<DatabaseBuiltinOAuthServices> | undefined {
   if (
     config.auth.mode !== "builtin_oauth"
@@ -1193,6 +1203,11 @@ function createDatabaseBuiltinOAuthServices(
     || config.auth.builtinOAuth.tokenHmacKeyFile === undefined
   ) return Promise.reject(new DatabaseOAuthError("unavailable"));
   return (async () => {
+    const resolvedSettingsStore = await securitySettingsStore;
+    const currentSecuritySettings = securitySettings
+      ?? (resolvedSettingsStore === undefined
+        ? undefined
+        : () => resolvedSettingsStore.current());
     const keyRing = IdentityKeyRing.fromFiles(
       config.identity!.activeRootKeyId,
       config.identity!.rootKeyFiles,
@@ -1214,6 +1229,9 @@ function createDatabaseBuiltinOAuthServices(
         config: config.identity!,
         keyRing,
         sessionHmacKey: sessionKey,
+        ...(currentSecuritySettings === undefined
+          ? {}
+          : { securitySettings: currentSecuritySettings }),
       });
       hasher = new DatabaseOAuthTokenHasher(tokenKey);
       intentState = new OAuthIntentStateCodec(tokenKey);
@@ -1222,14 +1240,30 @@ function createDatabaseBuiltinOAuthServices(
         : undefined;
       if (auth === undefined) throw new DatabaseOAuthError("unavailable");
       return {
-        repository: new DatabaseOAuthRepository(persistence, hasher, {
-          accessTokenTtlMs: auth.accessTokenTtlMs,
-          authorizationCodeTtlMs: auth.authorizationCodeTtlMs,
-          refreshTokenIdleTtlMs: auth.refreshTokenIdleTtlMs,
-          refreshTokenMaxTtlMs: auth.refreshTokenMaxTtlMs,
-          maxAuthorizationCodes: config.limits.maxAuthorizationCodes,
-          maxTokenRecords: config.limits.maxRefreshTokenRecords,
-        }),
+        repository: new DatabaseOAuthRepository(
+          persistence,
+          hasher,
+          currentSecuritySettings === undefined
+            ? {
+                accessTokenTtlMs: auth.accessTokenTtlMs,
+                authorizationCodeTtlMs: auth.authorizationCodeTtlMs,
+                refreshTokenIdleTtlMs: auth.refreshTokenIdleTtlMs,
+                refreshTokenMaxTtlMs: auth.refreshTokenMaxTtlMs,
+                maxAuthorizationCodes: config.limits.maxAuthorizationCodes,
+                maxTokenRecords: config.limits.maxRefreshTokenRecords,
+              }
+            : () => {
+                const current = currentSecuritySettings();
+                return {
+                  accessTokenTtlMs: current.oauthAccessTokenMs,
+                  authorizationCodeTtlMs: auth.authorizationCodeTtlMs,
+                  refreshTokenIdleTtlMs: current.oauthRefreshInactivityMs,
+                  refreshTokenMaxTtlMs: current.oauthRefreshAbsoluteMs,
+                  maxAuthorizationCodes: config.limits.maxAuthorizationCodes,
+                  maxTokenRecords: config.limits.maxRefreshTokenRecords,
+                };
+              },
+        ),
         localAuthentication,
         keyRing,
         hasher,

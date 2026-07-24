@@ -231,17 +231,37 @@ export class AccessCursorCodec {
 export class AccessManagementRepository {
   constructor(
     private readonly owner: PersistenceOwner,
-    private readonly sessions: IdentityConfig["sessions"],
-    private readonly oauth: {
-      accessTokenTtlMs: number;
-      refreshTokenIdleTtlMs: number;
-      refreshTokenMaxTtlMs: number;
-    },
+    private readonly sessions:
+      | IdentityConfig["sessions"]
+      | (() => IdentityConfig["sessions"]),
+    private readonly oauth:
+      | {
+          accessTokenTtlMs: number;
+          refreshTokenIdleTtlMs: number;
+          refreshTokenMaxTtlMs: number;
+        }
+      | (() => {
+          accessTokenTtlMs: number;
+          refreshTokenIdleTtlMs: number;
+          refreshTokenMaxTtlMs: number;
+        }),
     private readonly cursors: AccessCursorCodec,
     private readonly now: () => number = Date.now,
     private readonly stepUps?: StepUpRepository,
     private readonly referenceAggregates?: ReferenceAggregateSource,
   ) {}
+
+  private currentSessions(): IdentityConfig["sessions"] {
+    return typeof this.sessions === "function" ? this.sessions() : this.sessions;
+  }
+
+  private currentOauth(): {
+    accessTokenTtlMs: number;
+    refreshTokenIdleTtlMs: number;
+    refreshTokenMaxTtlMs: number;
+  } {
+    return typeof this.oauth === "function" ? this.oauth() : this.oauth;
+  }
 
   async sessionsPage(input: {
     viewer: AccessViewer;
@@ -329,14 +349,14 @@ export class AccessManagementRepository {
           ORDER BY last_activity_at DESC, id
           LIMIT ?
         `, [
-          this.sessions.adminAbsoluteMs,
-          this.sessions.userAbsoluteMs,
-          this.sessions.adminInactivityMs,
-          this.sessions.userInactivityMs,
-          this.sessions.adminAbsoluteMs,
-          this.sessions.userAbsoluteMs,
-          this.sessions.adminInactivityMs,
-          this.sessions.userInactivityMs,
+          this.currentSessions().adminAbsoluteMs,
+          this.currentSessions().userAbsoluteMs,
+          this.currentSessions().adminInactivityMs,
+          this.currentSessions().userInactivityMs,
+          this.currentSessions().adminAbsoluteMs,
+          this.currentSessions().userAbsoluteMs,
+          this.currentSessions().adminInactivityMs,
+          this.currentSessions().userInactivityMs,
           now,
           input.scope,
           input.viewer.userId,
@@ -465,10 +485,10 @@ export class AccessManagementRepository {
           ORDER BY last_used_at DESC, id
           LIMIT ?
         `, [
-          this.oauth.refreshTokenMaxTtlMs,
-          this.oauth.refreshTokenIdleTtlMs,
-          this.oauth.refreshTokenMaxTtlMs,
-          this.oauth.refreshTokenIdleTtlMs,
+          this.currentOauth().refreshTokenMaxTtlMs,
+          this.currentOauth().refreshTokenIdleTtlMs,
+          this.currentOauth().refreshTokenMaxTtlMs,
+          this.currentOauth().refreshTokenIdleTtlMs,
           now,
           input.scope,
           input.viewer.userId,
@@ -636,10 +656,10 @@ export class AccessManagementRepository {
             ORDER BY last_used_at DESC, grant_id
             LIMIT ?
             `, [
-            this.oauth.refreshTokenMaxTtlMs,
-            this.oauth.refreshTokenIdleTtlMs,
-            this.oauth.refreshTokenMaxTtlMs,
-            this.oauth.refreshTokenIdleTtlMs,
+            this.currentOauth().refreshTokenMaxTtlMs,
+            this.currentOauth().refreshTokenIdleTtlMs,
+            this.currentOauth().refreshTokenMaxTtlMs,
+            this.currentOauth().refreshTokenIdleTtlMs,
             now,
             input.serviceId,
             input.status ?? null,

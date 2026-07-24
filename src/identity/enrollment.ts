@@ -6,6 +6,7 @@ import type { PersistenceTransaction } from "../persistence/transaction.js";
 import { UuidV7Generator, isUuidV7 } from "../persistence/uuidV7.js";
 import type { PersistenceOwner } from "../persistence/worker.js";
 import type { IdentityConfig } from "../types.js";
+import type { SecuritySettings } from "../securitySettings.js";
 import { InflightLimiter } from "../inflightLimiter.js";
 import type {
   ControlAuthenticationContext,
@@ -1035,6 +1036,7 @@ export interface LocalEnrollmentServiceOptions {
   random?: (size: number) => Buffer;
   uuid?: () => string;
   dummyTemporaryHash?: string;
+  securitySettings?: () => SecuritySettings;
 }
 
 export class LocalEnrollmentService {
@@ -1046,7 +1048,9 @@ export class LocalEnrollmentService {
   readonly #random: (size: number) => Buffer;
   readonly #uuid: () => string;
   readonly #dummyTemporaryHash: string;
-  readonly #passwordPolicy: PasswordPolicy;
+  #passwordPolicy: PasswordPolicy;
+  #passwordPolicyKey: string;
+  readonly #securitySettings: (() => SecuritySettings) | undefined;
   readonly #loginLimiter: EnrollmentAttemptLimiter;
   readonly #passwordLimiter: EnrollmentAttemptLimiter;
   readonly #totpLimiter: EnrollmentAttemptLimiter;
@@ -1066,6 +1070,8 @@ export class LocalEnrollmentService {
     const generator = new UuidV7Generator({ now: this.#now });
     this.#uuid = options.uuid ?? (() => generator.next());
     this.#dummyTemporaryHash = options.dummyTemporaryHash;
+    this.#securitySettings = options.securitySettings;
+    this.#passwordPolicyKey = "";
     this.#passwordPolicy = new PasswordPolicy({
       minimumLength: options.config.password.minimumLength,
       ...(options.config.password.compromisedBlocklistFile === undefined
@@ -1073,18 +1079,30 @@ export class LocalEnrollmentService {
         : { operatorBlocklistFile: options.config.password.compromisedBlocklistFile }),
     });
     this.#loginLimiter = new EnrollmentAttemptLimiter(
-      options.config.limits.loginAttempts,
-      options.config.limits.loginWindowMs,
+      () => ({
+        limit: this.#securitySettings?.().loginAttempts
+          ?? options.config.limits.loginAttempts,
+        windowMs: this.#securitySettings?.().loginWindowMs
+          ?? options.config.limits.loginWindowMs,
+      }),
       this.#now,
     );
     this.#passwordLimiter = new EnrollmentAttemptLimiter(
-      options.config.limits.passwordAttempts,
-      options.config.limits.passwordWindowMs,
+      () => ({
+        limit: this.#securitySettings?.().passwordAttempts
+          ?? options.config.limits.passwordAttempts,
+        windowMs: this.#securitySettings?.().passwordWindowMs
+          ?? options.config.limits.passwordWindowMs,
+      }),
       this.#now,
     );
     this.#totpLimiter = new EnrollmentAttemptLimiter(
-      options.config.limits.totpAttempts,
-      options.config.limits.totpWindowMs,
+      () => ({
+        limit: this.#securitySettings?.().totpAttempts
+          ?? options.config.limits.totpAttempts,
+        windowMs: this.#securitySettings?.().totpWindowMs
+          ?? options.config.limits.totpWindowMs,
+      }),
       this.#now,
     );
     this.#passwordInflight = new InflightLimiter(
@@ -1113,7 +1131,8 @@ export class LocalEnrollmentService {
   ): Promise<{ temporaryPassword: string; expiresAt: number }> {
     if (!isUuidV7(userId)) throw new EnrollmentError("invalid_request");
     const temporaryPassword = generateTemporaryPassword(
-      this.#config.password.minimumLength,
+      this.#securitySettings?.().passwordMinimumLength
+        ?? this.#config.password.minimumLength,
       this.#random,
     );
     const encodedHash = await hashPassword(Buffer.from(temporaryPassword, "utf8"));
@@ -1126,6 +1145,26 @@ export class LocalEnrollmentService {
       audit,
     });
     return { temporaryPassword, expiresAt };
+  }
+
+  private passwordPolicy(): PasswordPolicy {
+    const current = this.#securitySettings?.();
+    const minimumLength = current?.passwordMinimumLength
+      ?? this.#config.password.minimumLength;
+    const key = `${minimumLength}:${current?.passwordBlocklistVersion ?? 1}`;
+    if (key !== this.#passwordPolicyKey) {
+      this.#passwordPolicy = new PasswordPolicy({
+        minimumLength,
+        ...(this.#config.password.compromisedBlocklistFile === undefined
+          ? {}
+          : {
+              operatorBlocklistFile:
+                this.#config.password.compromisedBlocklistFile,
+            }),
+      });
+      this.#passwordPolicyKey = key;
+    }
+    return this.#passwordPolicy;
   }
 
   async temporaryLogin(input: unknown): Promise<RestrictedLoginResult> {
@@ -1255,7 +1294,7 @@ export class LocalEnrollmentService {
     if (session.purpose !== "initial_enrollment") throw new EnrollmentError("invalid_request");
     const candidate = await this.#repository.pending(session.sessionId, session.userId);
     const profile = candidate ?? await this.#initialProfile(session.userId);
-    const normalized = this.#passwordPolicy.validate(newPassword, {
+    const normalized = this.passwordPolicy().validate(newPassword, {
       email: profile.email,
       givenName: profile.givenName,
       familyName: profile.familyName,
@@ -1332,7 +1371,7 @@ export class LocalEnrollmentService {
     if (pending === undefined || safeNow(this.#now) >= pending.expiresAt) {
       throw new EnrollmentError("authentication_failed");
     }
-    const password = this.#passwordPolicy.validate(input.newPassword, {
+    const password = this.passwordPolicy().validate(input.newPassword, {
       email: pending.email,
       givenName: pending.givenName,
       familyName: pending.familyName,
@@ -1415,7 +1454,7 @@ export class LocalEnrollmentService {
     if (!eligiblePasswordChangeCandidate(candidate)) {
       throw new EnrollmentError("authentication_failed");
     }
-    const password = this.#passwordPolicy.validate(input.newPassword, {
+    const password = this.passwordPolicy().validate(input.newPassword, {
       email: candidate.email,
       givenName: candidate.givenName,
       familyName: candidate.familyName,
@@ -1546,7 +1585,7 @@ export class LocalEnrollmentService {
       input.currentTotp,
       source,
     );
-    const password = this.#passwordPolicy.validate(input.newPassword, {
+    const password = this.passwordPolicy().validate(input.newPassword, {
       email: candidate.email,
       givenName: candidate.givenName,
       familyName: candidate.familyName,
@@ -2027,20 +2066,20 @@ function validRestrictedState(
 }
 
 class EnrollmentAttemptLimiter {
-  readonly #entries = new Map<string, { count: number; startedAt: number; seenAt: number }>();
+  readonly #entries = new Map<string, { count: number; resetAt: number; seenAt: number }>();
 
   constructor(
-    readonly limit: number,
-    readonly windowMs: number,
+    readonly settings: () => { limit: number; windowMs: number },
     readonly now: () => number,
   ) {}
 
   take(source: string, account: string): boolean {
     const now = safeNow(this.now);
+    const { limit } = this.settings();
     this.sweep(now);
     const sourceEntry = this.current(`s:${source}`, now);
     const accountEntry = this.current(`a:${account}`, now);
-    if (sourceEntry.count >= this.limit || accountEntry.count >= this.limit) return false;
+    if (sourceEntry.count >= limit || accountEntry.count >= limit) return false;
     sourceEntry.count += 1;
     sourceEntry.seenAt = now;
     accountEntry.count += 1;
@@ -2051,17 +2090,24 @@ class EnrollmentAttemptLimiter {
   private current(
     key: string,
     now: number,
-  ): { count: number; startedAt: number; seenAt: number } {
+  ): { count: number; resetAt: number; seenAt: number } {
     const existing = this.#entries.get(key);
-    if (existing !== undefined && now - existing.startedAt < this.windowMs) return existing;
-    const created = { count: 0, startedAt: now, seenAt: now };
+    if (existing !== undefined && now < existing.resetAt) return existing;
+    const created = {
+      count: 0,
+      resetAt: now + this.settings().windowMs,
+      seenAt: now,
+    };
     this.#entries.set(key, created);
     return created;
   }
 
   private sweep(now: number): void {
+    const { windowMs } = this.settings();
     for (const [key, entry] of this.#entries) {
-      if (now - entry.seenAt >= this.windowMs) this.#entries.delete(key);
+      if (now - entry.seenAt >= windowMs && now >= entry.resetAt) {
+        this.#entries.delete(key);
+      }
     }
     while (this.#entries.size > 20_000) {
       const oldest = this.#entries.keys().next().value as string | undefined;

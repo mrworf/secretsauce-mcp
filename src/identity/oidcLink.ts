@@ -375,6 +375,7 @@ export class OidcLinkService {
   readonly #uuid: () => string;
   readonly #now: () => number;
   readonly #random: (size: number) => Buffer;
+  readonly #sessionSettings: () => IdentityConfig["sessions"];
 
   constructor(
     private readonly repository: OidcLinkRepository,
@@ -384,12 +385,14 @@ export class OidcLinkService {
       uuid?: () => string;
       now?: () => number;
       random?: (size: number) => Buffer;
+      sessionSettings?: () => IdentityConfig["sessions"];
     } = {},
   ) {
     if (sessionKey.byteLength !== 32) throw new Error("Invalid browser session key.");
     this.#sessionKey = Buffer.from(sessionKey);
     this.#now = options.now ?? Date.now;
     this.#random = options.random ?? randomBytes;
+    this.#sessionSettings = options.sessionSettings ?? (() => this.config.sessions);
     const generator = new UuidV7Generator({ now: this.#now });
     this.#uuid = options.uuid ?? (() => generator.next());
   }
@@ -451,7 +454,7 @@ export class OidcLinkService {
       sessionToken,
       csrfToken,
       "user",
-      this.config.sessions,
+      this.#sessionSettings(),
       this.#sessionKey,
       issuedAt,
     );
@@ -462,13 +465,14 @@ export class OidcLinkService {
       linkId: this.nextUuid(),
       eventId: this.nextUuid(),
       session,
-      sessionSettings: this.config.sessions,
+      sessionSettings: this.#sessionSettings(),
       correlationId,
     });
     const roleClass = linked.role === "user" ? "user" : "admin";
+    const sessions = this.#sessionSettings();
     const absoluteMs = roleClass === "user"
-      ? this.config.sessions.userAbsoluteMs
-      : this.config.sessions.adminAbsoluteMs;
+      ? sessions.userAbsoluteMs
+      : sessions.adminAbsoluteMs;
     return {
       sessionId: session.id,
       userId: linked.userId,

@@ -16,12 +16,18 @@ const limits: Record<Exclude<ControlRateLimitClass, "none">, number> = {
   search: 30,
 };
 
+export interface ControlRateLimitSettings {
+  management: { attempts: number; windowMs: number };
+  search: { attempts: number; windowMs: number };
+}
+
 export class ControlRateLimiter {
   readonly #entries = new Map<string, RateWindow>();
 
   constructor(
     private readonly now: () => number = Date.now,
     private readonly maxEntries = 10_000,
+    private readonly settings?: () => ControlRateLimitSettings,
   ) {
     if (!Number.isInteger(maxEntries) || maxEntries < 1) throw new Error("maxEntries must be positive.");
   }
@@ -38,7 +44,11 @@ export class ControlRateLimiter {
       `${rateClass}:source:${safeIdentity(directSource)}`,
       ...(principalId === undefined ? [] : [`${rateClass}:principal:${safeIdentity(principalId)}`]),
     ];
-    const limit = limits[rateClass];
+    const dynamic = rateClass === "management" || rateClass === "search"
+      ? this.settings?.()[rateClass]
+      : undefined;
+    const limit = dynamic?.attempts ?? limits[rateClass];
+    const windowMs = dynamic?.windowMs ?? 60_000;
     let retryAfterSeconds = 0;
     for (const key of keys) {
       const window = this.#entries.get(key);
@@ -57,7 +67,7 @@ export class ControlRateLimiter {
     for (const key of keys) {
       const window = this.#entries.get(key);
       if (window === undefined || window.resetAt <= now) {
-        this.#entries.set(key, { count: 1, resetAt: now + 60_000 });
+        this.#entries.set(key, { count: 1, resetAt: now + windowMs });
       } else {
         window.count += 1;
       }

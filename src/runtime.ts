@@ -15,6 +15,11 @@ import { VaultResolveCapabilityIssuer } from "./vault/capabilities.js";
 import { CapabilityRuntimeVault, type RuntimeVault } from "./runtimeVault.js";
 import { ApiKeyRepository, ApiKeyVerifierPool } from "./apiKeys.js";
 import { ActiveSelfApiKeyDetector } from "./selfApiKeyProtection.js";
+import {
+  SecuritySettingsRepository,
+  SecuritySettingsStore,
+  securitySettingsSeed,
+} from "./securitySettings.js";
 
 export interface GatewayRuntimeOptions {
   auditSink?: AuditSink;
@@ -60,13 +65,41 @@ export class GatewayRuntime {
       );
       const capabilities = options.capabilities ?? createCapabilityDependencies(config, auditSink);
       secretRuntime = options.secretRuntime ?? createSecretRuntime(config, capabilities.tokenBroker);
+      const securitySettingsRepository = persistence === undefined
+        || config.identity === undefined
+        ? undefined
+        : new SecuritySettingsRepository(persistence);
+      const securitySettingsStore = securitySettingsRepository === undefined
+        ? undefined
+        : securitySettingsRepository.initialize(securitySettingsSeed(config))
+          .then((settings) => new SecuritySettingsStore(settings));
+      void securitySettingsStore?.catch(() => undefined);
       const builtinOAuth = options.builtinOAuth ?? new BuiltinOAuthRuntime(config, {
         ...(persistence === undefined ? {} : { persistence }),
+        ...(securitySettingsStore === undefined ? {} : { securitySettingsStore }),
       });
       const maintenance = options.maintenance ?? new MaintenanceRegistry(config.limits.stateSweepIntervalMs);
       maintenance.register((now) => capabilities.tokenBroker.sweepExpired(now));
       maintenance.register((now) => capabilities.denialStore.sweep(now));
       maintenance.register((now) => builtinOAuth.sweep(now));
+      if (
+        securitySettingsRepository !== undefined
+        && securitySettingsStore !== undefined
+      ) {
+        let refreshInFlight = false;
+        maintenance.register(() => {
+          if (refreshInFlight) return;
+          refreshInFlight = true;
+          void Promise.all([
+            securitySettingsRepository.read(),
+            securitySettingsStore,
+          ]).then(([next, store]) => {
+            if (next.version > store.current().version) store.replace(next);
+          }).catch(() => undefined).finally(() => {
+            refreshInFlight = false;
+          });
+        });
+      }
       if (config.runtime?.authority === "database" && persistence !== undefined) {
         const consumer = new RuntimeInvalidationConsumer(
           persistence,

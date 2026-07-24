@@ -362,6 +362,80 @@ describe("database OAuth foundation", () => {
     hasher.close();
   });
 
+  it("applies live OAuth lifetime reductions without extending issued tokens", async () => {
+    const fixture = await eligibleLocalUser("live-lifetimes");
+    const hasher = new DatabaseOAuthTokenHasher(Buffer.alloc(32, 109));
+    const clock = { value: NOW };
+    const settings = {
+      accessTokenTtlMs: 5 * 60_000,
+      authorizationCodeTtlMs: 10 * 60_000,
+      refreshTokenIdleTtlMs: 30 * 86_400_000,
+      refreshTokenMaxTtlMs: 90 * 86_400_000,
+      maxAuthorizationCodes: 100,
+      maxTokenRecords: 1_000,
+    };
+    const repository = new DatabaseOAuthRepository(
+      fixture.worker,
+      hasher,
+      () => settings,
+      { now: () => clock.value },
+    );
+    const verifier = "l".repeat(43);
+    const authorization = await repository.authorizeLocal({
+      proof: proof(fixture.userId, 59_503_334),
+      client: client(),
+      redirectUri: "https://client.example.org/callback",
+      resource: "https://mcp.example.org",
+      scopes: ["mcp:access"],
+      codeChallenge: challenge(verifier),
+    });
+    const tokens = await repository.exchangeAuthorizationCode({
+      code: authorization.code,
+      clientIdentifier: client().identifier,
+      redirectUri: client().redirectUris[0]!,
+      resource: "https://mcp.example.org",
+      codeVerifier: verifier,
+    });
+    expect(tokens.expiresIn).toBe(300);
+
+    settings.accessTokenTtlMs = 60_000;
+    clock.value += 60_000;
+    await expect(repository.authenticateAccessToken({
+      accessToken: tokens.accessToken,
+      resource: "https://mcp.example.org",
+      requiredScopes: ["mcp:access"],
+    })).rejects.toEqual(new DatabaseOAuthError("invalid_grant"));
+
+    const shortVerifier = "s".repeat(43);
+    const shortAuthorization = await repository.authorizeLocal({
+      proof: {
+        ...proof(fixture.userId, 59_503_336),
+        verifiedAt: clock.value,
+      },
+      client: client(),
+      redirectUri: "https://client.example.org/callback",
+      resource: "https://mcp.example.org",
+      scopes: ["mcp:access"],
+      codeChallenge: challenge(shortVerifier),
+    });
+    const shortTokens = await repository.exchangeAuthorizationCode({
+      code: shortAuthorization.code,
+      clientIdentifier: client().identifier,
+      redirectUri: client().redirectUris[0]!,
+      resource: "https://mcp.example.org",
+      codeVerifier: shortVerifier,
+    });
+    expect(shortTokens.expiresIn).toBe(60);
+    settings.accessTokenTtlMs = 15 * 60_000;
+    clock.value += 60_000;
+    await expect(repository.authenticateAccessToken({
+      accessToken: shortTokens.accessToken,
+      resource: "https://mcp.example.org",
+      requiredScopes: ["mcp:access"],
+    })).rejects.toEqual(new DatabaseOAuthError("invalid_grant"));
+    hasher.close();
+  });
+
   it("rejects noncanonical PKCE, stale proofs, lost eligibility, and mismatched exchanges without partial mutation", async () => {
     const fixture = await eligibleLocalUser("deny");
     const hasher = new DatabaseOAuthTokenHasher(Buffer.alloc(32, 94));

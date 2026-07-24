@@ -6,14 +6,18 @@ const envelopeSchema = z.object({
   version: z.literal(1),
   flowId: z.string().uuid(),
   providerId: z.string().regex(/^[a-z][a-z0-9_.-]{0,63}$/),
-  purpose: z.enum(["login", "restricted_link", "superadmin_link"]),
+  purpose: z.enum(["login", "restricted_link", "superadmin_link", "mcp_oauth"]),
   rootKeyId: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/),
   iv: z.string().regex(/^[A-Za-z0-9_-]{16}$/),
   tag: z.string().regex(/^[A-Za-z0-9_-]{22}$/),
   ciphertext: z.string().min(1).max(4096).regex(/^[A-Za-z0-9_-]+$/),
 }).strict();
 
-export type OidcFlowPurpose = "login" | "restricted_link" | "superadmin_link";
+export type OidcFlowPurpose =
+  | "login"
+  | "restricted_link"
+  | "superadmin_link"
+  | "mcp_oauth";
 
 export interface OidcFlowSecrets {
   nonce: string;

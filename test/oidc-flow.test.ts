@@ -30,6 +30,43 @@ afterEach(async () => {
 });
 
 describe("durable verified OIDC flow", () => {
+  it("binds an MCP OAuth flow to one durable intent without exposing it in provider state", async () => {
+    const fixture = flowFixture(oidcNetwork({
+      kid: "unused",
+      kty: "RSA",
+      alg: "RS256",
+      n: "sXchDaQebH_MnDfqRzL4n9bAm0HDiJAsA0hHYq1Z9Q",
+      e: "AQAB",
+    }, (request) => jsonResponse({ id_token: "unused" }, request.url.toString())));
+    const intentId = "018f1f2e-7b3c-7a10-8000-000000000299";
+    const started = await fixture.service.begin("workforce", {
+      purpose: "mcp_oauth",
+      oauthIntentId: intentId,
+    });
+    const state = new URL(started.authorizationUrl).searchParams.get("state");
+    const stored = await fixture.worker.execute({
+      run: (database) => database.read((query) => query.get<{
+        purpose: string;
+        oauth_intent_id: string;
+        database_text: string;
+      }>(`
+        SELECT purpose, oauth_intent_id,
+          (SELECT group_concat(sql, ' ') FROM sqlite_master) AS database_text
+        FROM identity_oidc_flows
+      `)),
+    });
+    expect(stored).toMatchObject({
+      purpose: "mcp_oauth",
+      oauth_intent_id: intentId,
+    });
+    expect(state).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    expect(state).not.toContain(intentId);
+    await expect(fixture.service.begin("workforce", {
+      purpose: "mcp_oauth",
+    })).rejects.toEqual(new OidcFlowError());
+    fixture.close();
+  });
+
   it("stores only a state hash and encrypted PKCE/nonce, then verifies and consumes one callback", async () => {
     const signing = await generateKeyPair("RS256");
     const jwk = {

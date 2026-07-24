@@ -24,6 +24,7 @@ import {
   type DatabaseOAuthRepository,
 } from "../src/oauth/databaseOAuth.js";
 import { IdentityKeyRing } from "../src/identity/totp.js";
+import { OAuthIntentStateCodec } from "../src/oauth/intentState.js";
 
 describe("auth", () => {
   const originalStubGlobal = vi.stubGlobal.bind(vi);
@@ -235,6 +236,7 @@ describe("auth", () => {
     } as unknown as DatabaseOAuthRepository;
     const keyRing = new IdentityKeyRing("root", { root: Buffer.alloc(32, 71) });
     const hasher = new DatabaseOAuthTokenHasher(Buffer.alloc(32, 72));
+    const intentState = new OAuthIntentStateCodec(Buffer.alloc(32, 72));
     const services = {
       repository,
       localAuthentication: {
@@ -254,6 +256,7 @@ describe("auth", () => {
       },
       keyRing,
       hasher,
+      intentState,
     } as unknown as DatabaseBuiltinOAuthServices;
     const builtin = new BuiltinOAuthRuntime(config, {
       database: Promise.resolve(services),

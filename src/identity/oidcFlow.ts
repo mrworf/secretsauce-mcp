@@ -27,6 +27,7 @@ interface OidcFlowRow {
   actor_user_id: string | null;
   actor_session_id: string | null;
   target_version: number | null;
+  oauth_intent_id: string | null;
   redirect_uri: string;
   expires_at: number;
 }
@@ -37,6 +38,7 @@ export interface OidcFlowBinding {
   actorUserId?: string;
   actorSessionId?: string;
   targetVersion?: number;
+  oauthIntentId?: string;
 }
 
 export interface OidcAuthorizationStart {
@@ -107,8 +109,9 @@ export class OidcFlowRepository {
       INSERT INTO identity_oidc_flows (
         id, provider_id, purpose, state_hash, envelope_json,
         target_user_id, actor_user_id, actor_session_id, target_version,
-        redirect_uri, created_at, expires_at, claimed_at, consumed_at, version
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, 1)
+        oauth_intent_id, redirect_uri, created_at, expires_at,
+        claimed_at, consumed_at, version
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, 1)
     `, [
       input.id,
       input.providerId,
@@ -119,6 +122,7 @@ export class OidcFlowRepository {
       input.binding.actorUserId ?? null,
       input.binding.actorSessionId ?? null,
       input.binding.targetVersion ?? null,
+      input.binding.oauthIntentId ?? null,
       input.redirectUri,
       now,
       input.expiresAt,
@@ -133,7 +137,8 @@ export class OidcFlowRepository {
           const row = transaction.get<OidcFlowRow>(`
             SELECT
               id, provider_id, purpose, envelope_json, target_user_id,
-              actor_user_id, actor_session_id, target_version, redirect_uri,
+              actor_user_id, actor_session_id, target_version, oauth_intent_id,
+              redirect_uri,
               expires_at
             FROM identity_oidc_flows
             WHERE provider_id = ? AND state_hash = ?
@@ -328,6 +333,7 @@ export class OidcFlowService {
           ...(flow.actor_user_id === null ? {} : { actorUserId: flow.actor_user_id }),
           ...(flow.actor_session_id === null ? {} : { actorSessionId: flow.actor_session_id }),
           ...(flow.target_version === null ? {} : { targetVersion: flow.target_version }),
+          ...(flow.oauth_intent_id === null ? {} : { oauthIntentId: flow.oauth_intent_id }),
         },
       };
     } catch {
@@ -373,11 +379,20 @@ function validateBinding(binding: OidcFlowBinding): void {
     (binding.actorSessionId !== undefined && !isUuidV7(binding.actorSessionId)) ||
     (binding.targetVersion !== undefined &&
       (!Number.isSafeInteger(binding.targetVersion) || binding.targetVersion < 1)) ||
+    (binding.oauthIntentId !== undefined && !isUuidV7(binding.oauthIntentId)) ||
     (binding.purpose === "login" &&
       (binding.targetUserId !== undefined ||
         binding.actorUserId !== undefined ||
         binding.actorSessionId !== undefined ||
-        binding.targetVersion !== undefined))
+        binding.targetVersion !== undefined ||
+        binding.oauthIntentId !== undefined)) ||
+    (binding.purpose === "mcp_oauth" &&
+      (binding.oauthIntentId === undefined ||
+        binding.targetUserId !== undefined ||
+        binding.actorUserId !== undefined ||
+        binding.actorSessionId !== undefined ||
+        binding.targetVersion !== undefined)) ||
+    (binding.purpose !== "mcp_oauth" && binding.oauthIntentId !== undefined)
   ) throw new OidcFlowError();
 }
 

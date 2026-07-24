@@ -9,6 +9,7 @@ import type {
 } from "../persistence/transaction.js";
 import { canonicalJson } from "../vault/canonicalJson.js";
 import { PersistenceError } from "../persistence/errors.js";
+import type { ProviderAssertion } from "../identity/provider.js";
 
 const OPAQUE_VALUE_PATTERN = /^[A-Za-z0-9_-]{43}$/;
 
@@ -91,6 +92,28 @@ export interface DatabaseOAuthAccessAuthentication {
   subject: string;
   scopes: string[];
   mode: "builtin_oauth";
+}
+
+export interface DatabaseOAuthIntentInput {
+  client: DatabaseOAuthClientInput;
+  redirectUri: string;
+  resource: string;
+  scopes: string[];
+  codeChallenge: string;
+  providerId: string;
+  stateEnvelopeJson?: string;
+}
+
+export interface DatabaseOAuthIntent {
+  id: string;
+  handle: string;
+  expiresAt: number;
+}
+
+export interface DatabaseOAuthExternalAuthorization {
+  code: string;
+  redirectUri: string;
+  stateEnvelopeJson?: string;
 }
 
 type RefreshRotationResult =
@@ -229,6 +252,247 @@ export class DatabaseOAuthRepository {
     this.#random = options.random ?? randomBytes;
     const generator = new UuidV7Generator({ now: this.#now });
     this.#uuid = options.uuid ?? (() => generator.next());
+  }
+
+  async createExternalIntent(
+    input: DatabaseOAuthIntentInput,
+  ): Promise<DatabaseOAuthIntent> {
+    const normalized = normalizeIntentInput(input);
+    const now = safeNow(this.#now);
+    const handle = opaque(this.#random);
+    const handleHash = this.hasher.hash("intent", handle);
+    const id = this.nextUuid();
+    const clientId = this.nextUuid();
+    const expiresAt = now + this.settings.authorizationCodeTtlMs;
+    try {
+      await this.owner.execute({
+        run: (database) => database.withOperationalTransaction((transaction) => {
+          transaction.run(
+            "DELETE FROM oauth_authorization_intents WHERE expires_at <= ?",
+            [now],
+          );
+          const count = transaction.get<{ count: number }>(
+            "SELECT count(*) AS count FROM oauth_authorization_intents",
+          )?.count ?? this.settings.maxAuthorizationCodes;
+          if (count >= this.settings.maxAuthorizationCodes) {
+            throw new PersistenceError("oauth_capacity_exceeded");
+          }
+          const client = upsertClient(
+            transaction,
+            clientId,
+            normalized.client,
+            now,
+          );
+          transaction.run(`
+            INSERT INTO oauth_authorization_intents (
+              id, handle_hash, client_id, redirect_uri, resource, scopes_json,
+              code_challenge, state_envelope_json, provider_id,
+              created_at, expires_at, consumed_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)
+          `, [
+            id,
+            handleHash,
+            client.id,
+            normalized.redirectUri,
+            normalized.resource,
+            JSON.stringify(normalized.scopes),
+            normalized.codeChallenge,
+            normalized.stateEnvelopeJson ?? null,
+            normalized.providerId,
+            now,
+            expiresAt,
+          ]);
+        }),
+      });
+      return { id, handle, expiresAt };
+    } catch (error) {
+      throw mapDatabaseOAuthError(error);
+    }
+  }
+
+  async resolveExternalIntent(
+    handle: string,
+    providerId: string,
+  ): Promise<{ id: string }> {
+    if (!/^[a-z][a-z0-9_.-]{0,63}$/.test(providerId)) {
+      throw new DatabaseOAuthError("invalid_authorization");
+    }
+    let handleHash: string;
+    try {
+      handleHash = this.hasher.hash("intent", handle);
+    } catch {
+      throw new DatabaseOAuthError("invalid_authorization");
+    }
+    const now = safeNow(this.#now);
+    const intent = await this.owner.execute({
+      run: (database) => database.read((query) => query.get<{ id: string }>(`
+        SELECT id FROM oauth_authorization_intents
+        WHERE handle_hash = ? AND provider_id = ?
+          AND consumed_at IS NULL AND expires_at > ?
+      `, [handleHash, providerId, now])),
+    });
+    if (intent === undefined) {
+      throw new DatabaseOAuthError("invalid_authorization");
+    }
+    return intent;
+  }
+
+  async authorizeExternalIntent(
+    intentId: string,
+    assertion: ProviderAssertion,
+    correlationId: string,
+  ): Promise<DatabaseOAuthExternalAuthorization> {
+    if (
+      !isUuidV7(intentId)
+      || !assertion.mfa.verified
+      || assertion.providerId.length < 1
+      || assertion.providerId.length > 64
+      || assertion.issuer.length < 1
+      || assertion.issuer.length > 2048
+      || assertion.subject.length < 1
+      || assertion.subject.length > 1024
+      || !/^(?:req_)?[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(
+        correlationId,
+      )
+    ) throw new DatabaseOAuthError("invalid_authorization");
+    const now = safeNow(this.#now);
+    const code = opaque(this.#random);
+    const codeHash = this.hasher.hash("authorization_code", code);
+    const grantId = this.nextUuid();
+    const codeId = this.nextUuid();
+    try {
+      const result = await this.owner.execute({
+        run: (database) => database.withGeneratedAdministrativeAudit(
+          (transaction) => {
+            const record = transaction.get<ExternalIntentRow>(`
+              SELECT
+                intent.id, intent.client_id, intent.redirect_uri,
+                intent.resource, intent.scopes_json, intent.code_challenge,
+                intent.state_envelope_json, intent.provider_id,
+                intent.expires_at, intent.consumed_at,
+                external.user_id
+              FROM oauth_authorization_intents intent
+              JOIN external_identities external
+                ON external.provider_id = intent.provider_id
+                AND external.issuer = ?
+                AND external.subject = ?
+              WHERE intent.id = ? AND intent.provider_id = ?
+            `, [
+              assertion.issuer,
+              assertion.subject,
+              intentId,
+              assertion.providerId,
+            ]);
+            const current = record === undefined
+              ? undefined
+              : currentEligibility(transaction, record.user_id);
+            if (
+              record === undefined
+              || record.consumed_at !== null
+              || record.expires_at <= now
+              || current === undefined
+              || !eligibleForGrant(current, "oidc")
+            ) throw new PersistenceError("oauth_invalid_authorization");
+            const consumed = transaction.run(`
+              UPDATE oauth_authorization_intents SET consumed_at = ?
+              WHERE id = ? AND consumed_at IS NULL AND expires_at > ?
+            `, [now, record.id, now]);
+            if (consumed.changes !== 1) {
+              throw new PersistenceError("oauth_invalid_authorization");
+            }
+            const scopes = parseStoredScopes(record.scopes_json);
+            const absoluteExpiresAt =
+              now + this.settings.refreshTokenMaxTtlMs;
+            const idleExpiresAt = Math.min(
+              absoluteExpiresAt,
+              now + this.settings.refreshTokenIdleTtlMs,
+            );
+            transaction.run(`
+              INSERT INTO oauth_grants (
+                id, user_id, client_id, resource, scopes_json,
+                authentication_method, issued_security_epoch,
+                issued_global_epoch, issued_access_ttl_ms,
+                issued_refresh_idle_ms, issued_refresh_absolute_ms,
+                status, issued_at, last_used_at, absolute_expires_at,
+                idle_expires_at, revoked_at, revocation_reason, version
+              ) VALUES (?, ?, ?, ?, ?, 'oidc', ?, ?, ?, ?, ?, 'active',
+                ?, ?, ?, ?, NULL, NULL, 1)
+            `, [
+              grantId,
+              record.user_id,
+              record.client_id,
+              record.resource,
+              JSON.stringify(scopes),
+              current.security_epoch,
+              current.global_security_epoch,
+              this.settings.accessTokenTtlMs,
+              this.settings.refreshTokenIdleTtlMs,
+              this.settings.refreshTokenMaxTtlMs,
+              now,
+              now,
+              absoluteExpiresAt,
+              idleExpiresAt,
+            ]);
+            transaction.run(`
+              INSERT INTO oauth_authorization_codes (
+                id, code_hash, grant_id, user_id, client_id, redirect_uri,
+                resource, scopes_json, code_challenge,
+                issued_security_epoch, issued_global_epoch,
+                issued_at, expires_at, consumed_at
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)
+            `, [
+              codeId,
+              codeHash,
+              grantId,
+              record.user_id,
+              record.client_id,
+              record.redirect_uri,
+              record.resource,
+              JSON.stringify(scopes),
+              record.code_challenge,
+              current.security_epoch,
+              current.global_security_epoch,
+              now,
+              now + this.settings.authorizationCodeTtlMs,
+            ]);
+            return {
+              value: {
+                redirectUri: record.redirect_uri,
+                stateEnvelopeJson: record.state_envelope_json,
+              },
+              auditInput: {
+                actor: {
+                  type: "system" as const,
+                  id: record.user_id,
+                  label: `user:${record.user_id}`,
+                  role: "user",
+                  authenticationMethod: "oidc",
+                },
+                action: "oauth.grant_authorize",
+                result: "allow" as const,
+                target: {
+                  type: "oauth_grant",
+                  id: grantId,
+                  label: `client:${record.client_id}`,
+                },
+                changes: [{ field: "grant", after: "active" }],
+                correlationId,
+                source: { category: "oauth" },
+              },
+            };
+          },
+        ),
+      });
+      return {
+        code,
+        redirectUri: result.redirectUri,
+        ...(result.stateEnvelopeJson === null
+          ? {}
+          : { stateEnvelopeJson: result.stateEnvelopeJson }),
+      };
+    } catch (error) {
+      throw mapDatabaseOAuthError(error);
+    }
   }
 
   async authorizeLocal(
@@ -1055,6 +1319,20 @@ interface AccessTokenRow {
   family_idle_expires_at: number;
 }
 
+interface ExternalIntentRow {
+  id: string;
+  client_id: string;
+  redirect_uri: string;
+  resource: string;
+  scopes_json: string;
+  code_challenge: string;
+  state_envelope_json: string | null;
+  provider_id: string;
+  expires_at: number;
+  consumed_at: number | null;
+  user_id: string;
+}
+
 function eligibility(row: EligibilityRow): DatabaseOAuthEligibility {
   const hasEffectiveService = row.has_effective_service === 1;
   return {
@@ -1133,6 +1411,51 @@ function normalizeAuthorizationInput(
     scopes: [...input.scopes].sort(),
     codeChallenge: input.codeChallenge,
   };
+}
+
+function normalizeIntentInput(
+  input: DatabaseOAuthIntentInput,
+): DatabaseOAuthIntentInput {
+  const normalized = normalizeAuthorizationInput({
+    proof: {
+      userId: "018f1f2e-7b3c-7a10-8000-000000000001",
+      role: "user",
+      securityEpoch: 1,
+      globalSecurityEpoch: 1,
+      acceptedTotpStep: 0,
+      verifiedAt: 0,
+      correlationId: "req_12345678-1234-4234-8234-123456789abc",
+    },
+    client: input.client,
+    redirectUri: input.redirectUri,
+    resource: input.resource,
+    scopes: input.scopes,
+    codeChallenge: input.codeChallenge,
+  });
+  if (
+    !/^[a-z][a-z0-9_.-]{0,63}$/.test(input.providerId)
+    || input.stateEnvelopeJson !== undefined && (
+      input.stateEnvelopeJson.length < 2
+      || input.stateEnvelopeJson.length > 8192
+      || !isJsonObject(input.stateEnvelopeJson)
+    )
+  ) throw new DatabaseOAuthError("invalid_authorization");
+  return {
+    ...normalized,
+    providerId: input.providerId,
+    ...(input.stateEnvelopeJson === undefined
+      ? {}
+      : { stateEnvelopeJson: input.stateEnvelopeJson }),
+  };
+}
+
+function isJsonObject(value: string): boolean {
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    return parsed !== null && typeof parsed === "object" && !Array.isArray(parsed);
+  } catch {
+    return false;
+  }
 }
 
 function normalizeRefreshInput(

@@ -61,6 +61,12 @@ import {
   OidcLinkService,
 } from "../identity/oidcLink.js";
 import {
+  DatabaseOAuthRepository,
+  DatabaseOAuthTokenHasher,
+} from "../oauth/databaseOAuth.js";
+import { OAuthIntentStateCodec } from "../oauth/intentState.js";
+import { readVaultKeyFile } from "../vault/keyFile.js";
+import {
   denyControlAuthentication,
   controlAuthentication,
   type ControlAuthenticator,
@@ -308,6 +314,8 @@ export async function startControlServer(
   let credentialVault: CredentialVaultCoordinator | undefined;
   let policyManagement: PolicyManagementService | undefined;
   let identityKeyRing: IdentityKeyRing | undefined;
+  let databaseOAuthHasher: DatabaseOAuthTokenHasher | undefined;
+  let oauthIntentState: OAuthIntentStateCodec | undefined;
   try {
     let localIdentity: LocalIdentityControl | undefined;
     if (config.identity !== undefined) {
@@ -419,6 +427,21 @@ export async function startControlServer(
             config.identity,
             sessionKey,
           );
+          if (
+            config.auth.mode === "builtin_oauth"
+            && config.auth.builtinOAuth.identitySource === "database"
+            && config.auth.builtinOAuth.tokenHmacKeyFile !== undefined
+          ) {
+            const tokenKey = readVaultKeyFile(
+              config.auth.builtinOAuth.tokenHmacKeyFile,
+            );
+            try {
+              databaseOAuthHasher = new DatabaseOAuthTokenHasher(tokenKey);
+              oauthIntentState = new OAuthIntentStateCodec(tokenKey);
+            } finally {
+              tokenKey.fill(0);
+            }
+          }
         }
         localIdentity = {
           authentication: localAuthentication,
@@ -445,6 +468,33 @@ export async function startControlServer(
                   providers: config.identity.oidc.providers,
                   flowTtlMs: config.identity.oidc.flowTtlMs,
                   link: oidcLink,
+                  ...(databaseOAuthHasher === undefined
+                    || oauthIntentState === undefined
+                    || config.auth.mode !== "builtin_oauth"
+                    ? {}
+                    : {
+                        mcpOAuth: {
+                          repository: new DatabaseOAuthRepository(
+                            persistence,
+                            databaseOAuthHasher,
+                            {
+                              accessTokenTtlMs:
+                                config.auth.builtinOAuth.accessTokenTtlMs,
+                              authorizationCodeTtlMs:
+                                config.auth.builtinOAuth.authorizationCodeTtlMs,
+                              refreshTokenIdleTtlMs:
+                                config.auth.builtinOAuth.refreshTokenIdleTtlMs,
+                              refreshTokenMaxTtlMs:
+                                config.auth.builtinOAuth.refreshTokenMaxTtlMs,
+                              maxAuthorizationCodes:
+                                config.limits.maxAuthorizationCodes,
+                              maxTokenRecords:
+                                config.limits.maxRefreshTokenRecords,
+                            },
+                          ),
+                          intentState: oauthIntentState,
+                        },
+                      }),
                 },
               }),
         };
@@ -480,6 +530,8 @@ export async function startControlServer(
     oidcFlow?.close();
     oidcLogin?.close();
     oidcLink?.close();
+    databaseOAuthHasher?.close();
+    oauthIntentState?.close();
     serviceManagement?.close();
     localAuthentication?.close();
     identityKeyRing?.destroy();
@@ -504,6 +556,8 @@ export async function startControlServer(
         oidcFlow?.close();
         oidcLogin?.close();
         oidcLink?.close();
+        databaseOAuthHasher?.close();
+        oauthIntentState?.close();
         serviceManagement?.close();
         localAuthentication?.close();
         identityKeyRing?.destroy();

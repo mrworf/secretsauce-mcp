@@ -30,6 +30,7 @@ import {
 import { IdentityKeyRing } from "./identity/totp.js";
 import { loadIdentitySessionHmacKey } from "./identity/browserSessions.js";
 import { readVaultKeyFile } from "./vault/keyFile.js";
+import { OAuthIntentStateCodec } from "./oauth/intentState.js";
 import { LoginAttemptLimiter } from "./loginAttemptLimiter.js";
 import { BRAND_ICON_PATH, BRAND_LOCKUP_PATH } from "./brandAssets.js";
 import { OAuthClientMetadataFetcher } from "./oauthClientMetadata.js";
@@ -187,6 +188,7 @@ export class BuiltinOAuthRuntime {
       services.localAuthentication.close();
       services.keyRing.destroy();
       services.hasher.close();
+      services.intentState.close();
     } catch {
       // Startup already reports database OAuth initialization failures.
     }
@@ -198,6 +200,7 @@ export interface DatabaseBuiltinOAuthServices {
   localAuthentication: LocalAuthenticationService;
   keyRing: IdentityKeyRing;
   hasher: DatabaseOAuthTokenHasher;
+  intentState: OAuthIntentStateCodec;
 }
 
 export function isBuiltinOAuthRequest(config: GatewayConfig, request: IncomingMessage): boolean {
@@ -333,6 +336,12 @@ function renderLoginPage(
 <label for="totp">Authenticator code <input id="totp" name="totp" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" required></label>`
     : `<label for="username">Username <input id="username" name="username" autocomplete="username" required></label>
 <label for="password">Password <input id="password" name="password" type="password" autocomplete="current-password" required></label>`;
+  const oidcButtons = databaseIdentity
+    ? Object.values(config.identity?.oidc?.providers ?? {})
+      .map((provider) =>
+        `<button type="submit" name="oidc_provider" value="${escapeHtml(provider.id)}">Continue with ${escapeHtml(provider.displayName)}</button>`)
+      .join("\n")
+    : "";
   response.writeHead(statusCode, AUTHORIZE_PAGE_HEADERS);
   response.end(`<!doctype html>
 <html lang="en">
@@ -596,6 +605,7 @@ ${error}
 ${identityFields}
 </div>
 <div class="actions"><button type="submit">Sign in and connect</button></div>
+${oidcButtons === "" ? "" : `<div class="actions">${oidcButtons}</div>`}
 </form>
 </section>
 </main>
@@ -794,6 +804,44 @@ async function handleDatabaseAuthorizePost(
   }
   try {
     const services = await runtime.databaseServices();
+    const requestedProvider = body.get("oidc_provider");
+    if (requestedProvider !== null) {
+      const provider = config.identity?.oidc?.providers[requestedProvider];
+      if (provider === undefined) {
+        writeOAuthError(response, 400, "invalid_request");
+        return;
+      }
+      const clientStateEnvelope = services.intentState.encrypt(
+        body.get("state") ?? undefined,
+        provider.id,
+      );
+      const intent = await services.repository.createExternalIntent({
+        client: {
+          identifier: validation.clientId,
+          displayName: validation.clientName ?? "MCP client",
+          redirectUris: [validation.redirectUri],
+        },
+        redirectUri: validation.redirectUri,
+        resource: validation.resource,
+        scopes: validation.scopes,
+        codeChallenge: validation.codeChallenge,
+        providerId: provider.id,
+        ...(clientStateEnvelope === undefined
+          ? {}
+          : { stateEnvelopeJson: clientStateEnvelope }),
+      });
+      const begin = new URL(
+        `/api/v2/auth/oidc/${encodeURIComponent(provider.id)}/mcp-begin`,
+        provider.redirectOrigin,
+      );
+      begin.searchParams.set("intent", intent.handle);
+      response.writeHead(302, {
+        ...OAUTH_SENSITIVE_RESPONSE_HEADERS,
+        location: begin.toString(),
+      });
+      response.end();
+      return;
+    }
     const correlationId = `req_${randomUUID()}`;
     const proof = await services.localAuthentication.verifyMcpProof({
       email: body.get("username") ?? "",
@@ -1156,6 +1204,7 @@ function createDatabaseBuiltinOAuthServices(
     );
     let localAuthentication: LocalAuthenticationService | undefined;
     let hasher: DatabaseOAuthTokenHasher | undefined;
+    let intentState: OAuthIntentStateCodec | undefined;
     try {
       localAuthentication = await LocalAuthenticationService.create({
         repository: new LocalAuthenticationRepository(persistence),
@@ -1164,6 +1213,7 @@ function createDatabaseBuiltinOAuthServices(
         sessionHmacKey: sessionKey,
       });
       hasher = new DatabaseOAuthTokenHasher(tokenKey);
+      intentState = new OAuthIntentStateCodec(tokenKey);
       const auth = config.auth.mode === "builtin_oauth"
         ? config.auth.builtinOAuth
         : undefined;
@@ -1180,10 +1230,12 @@ function createDatabaseBuiltinOAuthServices(
         localAuthentication,
         keyRing,
         hasher,
+        intentState,
       };
     } catch (error) {
       localAuthentication?.close();
       hasher?.close();
+      intentState?.close();
       keyRing.destroy();
       throw error;
     } finally {

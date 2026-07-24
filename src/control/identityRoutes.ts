@@ -13,6 +13,8 @@ import {
   type OidcLinkService,
 } from "../identity/oidcLink.js";
 import type { OidcProviderConfig } from "../types.js";
+import type { DatabaseOAuthRepository } from "../oauth/databaseOAuth.js";
+import type { OAuthIntentStateCodec } from "../oauth/intentState.js";
 import {
   EnrollmentError,
   type LocalEnrollmentService,
@@ -52,6 +54,10 @@ export interface LocalIdentityControl {
     providers: Record<string, OidcProviderConfig>;
     flowTtlMs: number;
     link?: OidcLinkService;
+    mcpOAuth?: {
+      repository: DatabaseOAuthRepository;
+      intentState: OAuthIntentStateCodec;
+    };
   };
 }
 
@@ -297,6 +303,65 @@ function registerOidcLoginRoutes(
   registry: ControlRouteRegistry,
   oidc: NonNullable<LocalIdentityControl["oidc"]>,
 ): void {
+  if (oidc.mcpOAuth !== undefined) {
+    registry.register(defineControlRoute({
+      id: "identity.oidc_mcp_begin",
+      method: "GET",
+      path: "/api/v2/auth/oidc/{provider_id}/mcp-begin",
+      summary: "Begin external MCP authorization",
+      tags: ["Identity"],
+      authentication: "public",
+      permission: null,
+      stepUp: "none",
+      schemas: {
+        query: z.object({
+          intent: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
+        }).strict(),
+        params: z.object({
+          provider_id: z.string().regex(/^[a-z][a-z0-9_.-]{0,63}$/),
+        }).strict(),
+        response: z.null(),
+      },
+      rateLimit: "authentication",
+      secretFields: [],
+      cache: "no-store",
+      concurrency: "none",
+      idempotency: "none",
+      redirectResponse: true,
+      successStatuses: [302],
+      handler: async ({ params, query, reply }) => {
+        try {
+          const intent = await oidc.mcpOAuth!.repository.resolveExternalIntent(
+            query.intent,
+            params.provider_id,
+          );
+          const started = await oidc.flow.begin(params.provider_id, {
+            purpose: "mcp_oauth",
+            oauthIntentId: intent.id,
+          });
+          const state = new URL(started.authorizationUrl).searchParams.get("state");
+          if (state === null) throw new Error("missing OIDC state");
+          setControlOidcFlowCookie(
+            reply,
+            state,
+            Math.max(1, Math.ceil(oidc.flowTtlMs / 1_000)),
+          );
+          return {
+            data: null,
+            statusCode: 302,
+            redirectLocation: started.authorizationUrl,
+          };
+        } catch {
+          throw new ControlContractError(
+            401,
+            "unauthenticated",
+            "Authentication failed.",
+          );
+        }
+      },
+    }));
+  }
+
   registry.register(defineControlRoute({
     id: "identity.oidc_providers",
     method: "GET",
@@ -398,6 +463,7 @@ function registerOidcLoginRoutes(
     redirectResponse: true,
     successStatuses: [302],
     handler: async ({ params, query, request, reply }) => {
+      let redirectLocation = "/control/";
       try {
         const state = query.state;
         const code = query.code;
@@ -436,6 +502,27 @@ function registerOidcLoginRoutes(
           oidc.link !== undefined
         ) {
           await oidc.link.completeAdmin(completed.assertion, completed.binding, request.id);
+        } else if (
+          completed.binding.purpose === "mcp_oauth"
+          && completed.binding.oauthIntentId !== undefined
+          && oidc.mcpOAuth !== undefined
+        ) {
+          const authorization =
+            await oidc.mcpOAuth.repository.authorizeExternalIntent(
+              completed.binding.oauthIntentId,
+              completed.assertion,
+              request.id,
+            );
+          const redirect = new URL(authorization.redirectUri);
+          redirect.searchParams.set("code", authorization.code);
+          const clientState = oidc.mcpOAuth.intentState.decrypt(
+            authorization.stateEnvelopeJson,
+            params.provider_id,
+          );
+          if (clientState !== undefined) {
+            redirect.searchParams.set("state", clientState);
+          }
+          redirectLocation = redirect.toString();
         } else {
           throw new Error("OIDC purpose mismatch");
         }
@@ -444,7 +531,7 @@ function registerOidcLoginRoutes(
       } finally {
         clearControlOidcFlowCookie(reply);
       }
-      return { data: null, statusCode: 302, redirectLocation: "/control/" };
+      return { data: null, statusCode: 302, redirectLocation };
     },
   }));
 }

@@ -1345,6 +1345,80 @@ DROP TABLE accepted_totp_steps_pre_oauth;
 CREATE INDEX accepted_totp_steps_time_idx
   ON accepted_totp_steps (accepted_at, user_id, time_step);
 
+ALTER TABLE identity_oidc_flows RENAME TO identity_oidc_flows_pre_mcp_oauth;
+
+CREATE TABLE identity_oidc_flows (
+  id TEXT PRIMARY KEY CHECK (
+    length(id) = 36 AND id = lower(id)
+    AND substr(id, 15, 1) = '7'
+    AND substr(id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND id NOT GLOB '*[^0-9a-f-]*'
+  ),
+  provider_id TEXT NOT NULL CHECK (
+    length(provider_id) BETWEEN 1 AND 64
+    AND provider_id = lower(provider_id)
+    AND provider_id NOT GLOB '*[^a-z0-9_.-]*'
+  ),
+  purpose TEXT NOT NULL CHECK (
+    purpose IN ('login', 'restricted_link', 'superadmin_link', 'mcp_oauth')
+  ),
+  state_hash TEXT NOT NULL UNIQUE CHECK (
+    length(state_hash) = 64 AND state_hash = lower(state_hash)
+    AND state_hash NOT GLOB '*[^0-9a-f]*'
+  ),
+  envelope_json TEXT NOT NULL CHECK (
+    length(envelope_json) BETWEEN 1 AND 8192 AND json_valid(envelope_json)
+  ),
+  target_user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
+  actor_user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
+  actor_session_id TEXT CHECK (
+    actor_session_id IS NULL OR length(actor_session_id) = 36
+  ),
+  target_version INTEGER CHECK (
+    target_version IS NULL OR target_version > 0
+  ),
+  oauth_intent_id TEXT CHECK (
+    oauth_intent_id IS NULL OR (
+      length(oauth_intent_id) = 36 AND oauth_intent_id = lower(oauth_intent_id)
+    )
+  ),
+  redirect_uri TEXT NOT NULL CHECK (length(redirect_uri) BETWEEN 8 AND 2048),
+  created_at INTEGER NOT NULL CHECK (created_at >= 0),
+  expires_at INTEGER NOT NULL CHECK (expires_at > created_at),
+  claimed_at INTEGER CHECK (claimed_at IS NULL OR claimed_at >= created_at),
+  consumed_at INTEGER CHECK (
+    consumed_at IS NULL OR (
+      claimed_at IS NOT NULL AND consumed_at >= claimed_at
+    )
+  ),
+  version INTEGER NOT NULL DEFAULT 1 CHECK (version > 0),
+  CHECK (
+    (purpose = 'mcp_oauth' AND oauth_intent_id IS NOT NULL)
+    OR (purpose <> 'mcp_oauth' AND oauth_intent_id IS NULL)
+  )
+) STRICT;
+
+INSERT INTO identity_oidc_flows (
+  id, provider_id, purpose, state_hash, envelope_json,
+  target_user_id, actor_user_id, actor_session_id, target_version,
+  oauth_intent_id, redirect_uri, created_at, expires_at,
+  claimed_at, consumed_at, version
+)
+SELECT
+  id, provider_id, purpose, state_hash, envelope_json,
+  target_user_id, actor_user_id, actor_session_id, target_version,
+  NULL, redirect_uri, created_at, expires_at, claimed_at, consumed_at, version
+FROM identity_oidc_flows_pre_mcp_oauth;
+
+DROP TABLE identity_oidc_flows_pre_mcp_oauth;
+
+CREATE INDEX identity_oidc_flows_expiry_idx
+  ON identity_oidc_flows (expires_at, state_hash);
+CREATE INDEX identity_oidc_flows_target_idx
+  ON identity_oidc_flows (target_user_id, provider_id, created_at);
+CREATE INDEX identity_oidc_flows_oauth_intent_idx
+  ON identity_oidc_flows (oauth_intent_id, consumed_at, expires_at);
+
 CREATE TABLE oauth_clients (
   id TEXT PRIMARY KEY CHECK (
     length(id) = 36 AND id = lower(id)

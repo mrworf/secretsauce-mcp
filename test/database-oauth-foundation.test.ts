@@ -12,6 +12,7 @@ import {
 } from "../src/oauth/databaseOAuth.js";
 import { IdentityRepository } from "../src/identity/repository.js";
 import { PersistenceWorker } from "../src/persistence/worker.js";
+import { OAuthIntentStateCodec } from "../src/oauth/intentState.js";
 
 const NOW = 1_785_100_000_000;
 const SERVICE_ID = "018f1f2e-7b3c-7a10-8000-000000000101";
@@ -26,6 +27,23 @@ afterEach(async () => {
 });
 
 describe("database OAuth foundation", () => {
+  it("encrypts client state with canonical authenticated envelopes and rejects tampering", () => {
+    const codec = new OAuthIntentStateCodec(Buffer.alloc(32, 90));
+    const envelope = codec.encrypt(
+      "client-state-value",
+      "workforce",
+      () => Buffer.alloc(12, 89),
+    );
+    expect(envelope).toBeTypeOf("string");
+    expect(envelope).not.toContain("client-state-value");
+    expect(codec.decrypt(envelope, "workforce")).toBe("client-state-value");
+    expect(() => codec.decrypt(envelope, "other-provider")).toThrow();
+    const parsed = JSON.parse(envelope!) as { tag: string };
+    parsed.tag = `${parsed.tag.slice(0, -1)}${parsed.tag.endsWith("A") ? "B" : "A"}`;
+    expect(() => codec.decrypt(JSON.stringify(parsed), "workforce")).toThrow();
+    codec.close();
+  });
+
   it("uses canonical, domain-separated, key-only opaque token hashes", () => {
     const key = Buffer.alloc(32, 91);
     const hasher = new DatabaseOAuthTokenHasher(key);
@@ -521,6 +539,81 @@ describe("database OAuth foundation", () => {
       requiredScopes: ["mcp:access"],
     })).rejects.toEqual(new DatabaseOAuthError("invalid_grant"));
     restartedHasher.close();
+  });
+
+  it("binds an external intent to one linked eligible UUID and issues a single-use code after verified MFA", async () => {
+    const fixture = await eligibleLocalUser("external-intent");
+    await fixture.worker.execute({
+      run: (database) => database.withOperationalTransaction((transaction) => {
+        transaction.run(`
+          INSERT INTO external_identities (
+            id, user_id, provider_id, issuer, subject,
+            version, created_at, updated_at
+          ) VALUES (?, ?, 'workforce', 'https://id.example.org',
+            'linked-subject', 1, ?, ?)
+        `, [LINK_ID, fixture.userId, NOW, NOW]);
+      }),
+    });
+    const hasher = new DatabaseOAuthTokenHasher(Buffer.alloc(32, 97));
+    const repository = oauthRepository(fixture.worker, hasher);
+    const verifier = "o".repeat(43);
+    const intent = await repository.createExternalIntent({
+      client: client(),
+      redirectUri: "https://client.example.org/callback",
+      resource: "https://mcp.example.org",
+      scopes: ["mcp:access"],
+      codeChallenge: challenge(verifier),
+      providerId: "workforce",
+      stateEnvelopeJson: JSON.stringify({ encrypted: "client-state" }),
+    });
+    await expect(repository.resolveExternalIntent(
+      intent.handle,
+      "workforce",
+    )).resolves.toEqual({ id: intent.id });
+    await expect(repository.resolveExternalIntent(
+      `${intent.handle.slice(0, -1)}A`,
+      "workforce",
+    )).rejects.toEqual(new DatabaseOAuthError("invalid_authorization"));
+    await expect(repository.authorizeExternalIntent(intent.id, {
+      providerId: "workforce",
+      issuer: "https://id.example.org",
+      subject: "linked-subject",
+      authenticationTime: NOW,
+      mfa: { verified: false, evidence: [] },
+    }, "req_12345678-1234-4234-8234-123456789ab3"))
+      .rejects.toEqual(new DatabaseOAuthError("invalid_authorization"));
+
+    const authorization = await repository.authorizeExternalIntent(intent.id, {
+      providerId: "workforce",
+      issuer: "https://id.example.org",
+      subject: "linked-subject",
+      authenticationTime: NOW,
+      mfa: { verified: true, evidence: ["acr"] },
+    }, "req_12345678-1234-4234-8234-123456789ab4");
+    expect(authorization).toMatchObject({
+      redirectUri: "https://client.example.org/callback",
+      stateEnvelopeJson: JSON.stringify({ encrypted: "client-state" }),
+    });
+    const tokens = await repository.exchangeAuthorizationCode({
+      code: authorization.code,
+      clientIdentifier: "https://client.example.org/metadata.json",
+      redirectUri: authorization.redirectUri,
+      codeVerifier: verifier,
+    });
+    await expect(repository.authenticateAccessToken({
+      accessToken: tokens.accessToken,
+      resource: "https://mcp.example.org",
+      requiredScopes: ["mcp:access"],
+    })).resolves.toMatchObject({ subject: fixture.userId });
+    await expect(repository.authorizeExternalIntent(intent.id, {
+      providerId: "workforce",
+      issuer: "https://id.example.org",
+      subject: "linked-subject",
+      authenticationTime: NOW,
+      mfa: { verified: true, evidence: ["acr"] },
+    }, "req_12345678-1234-4234-8234-123456789ab5"))
+      .rejects.toEqual(new DatabaseOAuthError("invalid_authorization"));
+    hasher.close();
   });
 });
 

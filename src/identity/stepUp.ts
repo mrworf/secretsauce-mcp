@@ -806,6 +806,12 @@ function bindRequestOperation(
 }
 
 export function controlStepUpBodyDigest(value: unknown): string {
+  if (Buffer.isBuffer(value)) {
+    return createHash("sha256")
+      .update(`${BODY_DOMAIN}:binary\0`, "utf8")
+      .update(value)
+      .digest("hex");
+  }
   return bodyDigest(value);
 }
 

@@ -12,6 +12,7 @@ import { PersistenceWorker } from "../src/persistence/worker.js";
 const NOW = 1_800_000_000_000;
 const USER_ID = "018f1f2e-7b3c-7a10-8000-000000000001";
 const OTHER_USER_ID = "018f1f2e-7b3c-7a10-8000-000000000002";
+const THIRD_USER_ID = "018f1f2e-7b3c-7a10-8000-000000000003";
 const ARCHIVE_ID = "018f1f2e-7b3c-7a10-8000-000000000010";
 const OPERATION_ID = "018f1f2e-7b3c-7a10-8000-000000000020";
 const SHA = "a".repeat(64);
@@ -157,6 +158,34 @@ describe("durable restore state", () => {
     })).rejects.toEqual(new RestoreStateError("conflict"));
   });
 
+  it("enforces one actor upload and the inclusive global byte boundary", async () => {
+    const { repository } = await fixture();
+    await repository.createStage({
+      subjectUserId: USER_ID,
+      archiveId: ARCHIVE_ID,
+      archiveSha256: SHA,
+      archiveBytes: 256 * 1024 * 1024,
+    });
+    await expect(repository.createStage({
+      subjectUserId: USER_ID,
+      archiveId: ARCHIVE_ID,
+      archiveSha256: SHA,
+      archiveBytes: 1,
+    })).rejects.toEqual(new RestoreStateError("conflict"));
+    await repository.createStage({
+      subjectUserId: OTHER_USER_ID,
+      archiveId: ARCHIVE_ID,
+      archiveSha256: SHA,
+      archiveBytes: 256 * 1024 * 1024,
+    });
+    await expect(repository.createStage({
+      subjectUserId: THIRD_USER_ID,
+      archiveId: ARCHIVE_ID,
+      archiveSha256: SHA,
+      archiveBytes: 1,
+    })).rejects.toEqual(new RestoreStateError("conflict"));
+  });
+
   it("advances one exact restore operation through bounded recovery phases", async () => {
     const { repository } = await fixture();
     expect(await repository.state()).toMatchObject({ phase: "inactive" });
@@ -234,6 +263,7 @@ async function fixture() {
       for (const [id, email] of [
         [USER_ID, "restore@example.org"],
         [OTHER_USER_ID, "other@example.org"],
+        [THIRD_USER_ID, "third@example.org"],
       ]) {
         transaction.run(`
           INSERT INTO users (

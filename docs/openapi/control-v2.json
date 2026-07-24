@@ -19,6 +19,7 @@
                   "stale_version",
                   "identity_conflict",
                   "service_conflict",
+                  "restore_conflict",
                   "last_active_superadmin",
                   "idempotency_conflict",
                   "rate_limited",
@@ -180,6 +181,72 @@
             "type": "integer"
           }
         },
+        "type": "object"
+      },
+      "RestoreStage": {
+        "additionalProperties": false,
+        "description": "Actor-bound restore upload state without a local path or secret material.",
+        "properties": {
+          "archive_bytes": {
+            "maximum": 268435456,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "archive_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "completed_at": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "created_at": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "expires_at": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "failure_code": {
+            "maxLength": 64,
+            "minLength": 1,
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "validated",
+              "previewed",
+              "committing",
+              "completed",
+              "failed",
+              "expired"
+            ],
+            "type": "string"
+          },
+          "updated_at": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "version": {
+            "exclusiveMinimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "archive_id",
+          "archive_bytes",
+          "state",
+          "expires_at",
+          "version",
+          "created_at",
+          "updated_at"
+        ],
         "type": "object"
       }
     },
@@ -844,6 +911,359 @@
         "x-rate-limit-class": "none",
         "x-secret-fields": [],
         "x-step-up": "none"
+      }
+    },
+    "/api/v2/restores/{stage_id}": {
+      "get": {
+        "operationId": "restores.read_stage",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "stage_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/RestoreStage"
+                    },
+                    "meta": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "api_version": {
+                          "enum": [
+                            "v2"
+                          ],
+                          "type": "string"
+                        },
+                        "request_id": {
+                          "pattern": "^req_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "request_id",
+                        "api_version"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful response."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "Invalid request. Validation details contain only a JSON Pointer and rule."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "Authentication is required."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "The operation is forbidden or requires human step-up."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "The route or an authorized resource was not found."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "The resource version or idempotency digest conflicts."
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "The request body exceeds its bounded limit."
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "A required expected resource version is missing."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "A bounded request rate was exceeded."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "The request failed without exposing internal details."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "A required local subsystem is unavailable."
+          }
+        },
+        "security": [
+          {
+            "browserSession": []
+          }
+        ],
+        "summary": "Read an actor-bound restore stage",
+        "tags": [
+          "Restores"
+        ],
+        "x-audit-action": "none",
+        "x-authentication-methods": [
+          "browser_session"
+        ],
+        "x-cache-class": "no-store",
+        "x-permission": "restore",
+        "x-rate-limit-class": "management",
+        "x-secret-fields": [],
+        "x-step-up": "five_minutes"
+      }
+    },
+    "/api/v2/restores/stages": {
+      "post": {
+        "operationId": "restores.create_stage",
+        "requestBody": {
+          "content": {
+            "application/gzip": {
+              "schema": {
+                "format": "binary",
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/RestoreStage"
+                    },
+                    "meta": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "api_version": {
+                          "enum": [
+                            "v2"
+                          ],
+                          "type": "string"
+                        },
+                        "request_id": {
+                          "pattern": "^req_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "request_id",
+                        "api_version"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful response."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "Invalid request. Validation details contain only a JSON Pointer and rule."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "Authentication is required."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "The operation is forbidden or requires human step-up."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "The route or an authorized resource was not found."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "The resource version or idempotency digest conflicts."
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "The request body exceeds its bounded limit."
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "A required expected resource version is missing."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "A bounded request rate was exceeded."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "The request failed without exposing internal details."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "A required local subsystem is unavailable."
+          }
+        },
+        "security": [
+          {
+            "browserSession": []
+          }
+        ],
+        "summary": "Validate and stage a portable restore archive",
+        "tags": [
+          "Restores"
+        ],
+        "x-audit-action": "restore.stage",
+        "x-authentication-methods": [
+          "browser_session"
+        ],
+        "x-binary-request-max-bytes": 268435456,
+        "x-cache-class": "no-store",
+        "x-permission": "restore",
+        "x-rate-limit-class": "management",
+        "x-secret-fields": [],
+        "x-step-up": "five_minutes"
       }
     }
   },

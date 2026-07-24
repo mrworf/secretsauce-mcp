@@ -145,7 +145,11 @@ function registerRoute(
         body: {
           required: true,
           content: {
-            "application/json": { schema: route.schemas.body },
+            [route.binaryRequest?.contentType ?? "application/json"]: {
+              schema: route.binaryRequest === undefined
+                ? route.schemas.body
+                : { type: "string", format: "binary" },
+            },
           },
         },
       }),
@@ -163,6 +167,12 @@ function registerRoute(
       : {
           "x-binary-response-max-bytes":
             route.binaryResponse.maxBytes,
+        }),
+    ...(route.binaryRequest === undefined
+      ? {}
+      : {
+          "x-binary-request-max-bytes":
+            route.binaryRequest.maxBytes,
         }),
   } as unknown as RouteConfig);
 }

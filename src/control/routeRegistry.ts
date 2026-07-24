@@ -94,6 +94,10 @@ export interface ControlRouteDefinition {
     filename: string;
     maxBytes: number;
   };
+  binaryRequest?: {
+    contentType: "application/gzip";
+    maxBytes: number;
+  };
   redirectResponse?: boolean;
   successStatuses?: readonly number[];
   handler(context: ControlHandlerContext): Promise<ControlHandlerResult> | ControlHandlerResult;
@@ -212,6 +216,9 @@ export function installControlRoutes(
     application.route({
       method: definition.method,
       url: fastifyPath(definition.path),
+      ...(definition.binaryRequest === undefined
+        ? {}
+        : { bodyLimit: definition.binaryRequest.maxBytes }),
       config: {
         controlSecurity: {
           public: definition.authentication === "public",
@@ -470,6 +477,7 @@ function stepUpOperation(
 function targetIds(...values: unknown[]): string[] {
   const targets = new Set<string>();
   const visit = (value: unknown, key?: string): void => {
+    if (ArrayBuffer.isView(value)) return;
     if (typeof value === "string") {
       if ((key === undefined || key === "id" || key.endsWith("_id")) && isUuidLike(value)) {
         targets.add(value);
@@ -599,6 +607,21 @@ function validateDefinition(definition: ControlRouteDefinition): void {
     )
   ) {
     throw new Error("Invalid control binary response metadata.");
+  }
+  if (
+    definition.binaryRequest !== undefined
+    && (
+      isPublic
+      || definition.method !== "POST"
+      || definition.schemas.body === undefined
+      || definition.cache !== "no-store"
+      || definition.binaryRequest.contentType !== "application/gzip"
+      || !Number.isSafeInteger(definition.binaryRequest.maxBytes)
+      || definition.binaryRequest.maxBytes < 1
+      || definition.binaryRequest.maxBytes > 256 * 1024 * 1024
+    )
+  ) {
+    throw new Error("Invalid control binary request metadata.");
   }
   if (
     definition.redirectResponse &&

@@ -172,6 +172,11 @@ import { registerDashboardRoutes } from "./dashboardRoutes.js";
 import { PortableBackupCoordinator } from "../backupCoordinator.js";
 import type { BackupVaultClient } from "../vault/client.js";
 import type { VaultBackupCapabilityIssuer } from "../vault/capabilities.js";
+import {
+  PrivateRestoreStageStore,
+  RestoreStageCoordinator,
+} from "../restoreStaging.js";
+import { RestoreStateRepository } from "../restoreState.js";
 
 export interface ControlApplicationOptions {
   authenticator?: ControlAuthenticator;
@@ -209,6 +214,7 @@ export interface ControlApplicationOptions {
   statusDashboard?: StatusDashboardService;
   securityDashboard?: SecurityDashboardService;
   backupCoordinator?: PortableBackupCoordinator;
+  restoreStages?: RestoreStageCoordinator;
 }
 
 export function createControlApplication(
@@ -252,6 +258,11 @@ export function createControlApplication(
     genReqId: createRequestId,
     logController: new LogController({ disableRequestLogging: true }),
   });
+  application.addContentTypeParser(
+    "application/gzip",
+    { parseAs: "buffer" },
+    (_request, body, done) => done(null, body),
+  );
   void application.register(cookie);
   const security = controlSecurityHooks(
     control,
@@ -288,6 +299,7 @@ export function createControlApplication(
     options.vaultReadiness,
     options.identityReadiness,
     options.backupCoordinator,
+    options.restoreStages,
   );
   if (options.localIdentity !== undefined) {
     registerLocalIdentityRoutes(routeRegistry, options.localIdentity);
@@ -416,6 +428,7 @@ export async function startControlServer(
     backupVaultClient?: BackupVaultClient;
     backupCapabilityIssuer?: VaultBackupCapabilityIssuer;
     referenceAggregates?: ReferenceAggregateSource;
+    restoreStages?: RestoreStageCoordinator;
   } = {},
 ): Promise<ControlServerApplication> {
   if (config.control === undefined || config.persistence === undefined) {
@@ -465,6 +478,7 @@ export async function startControlServer(
   let statusDashboard: StatusDashboardService | undefined;
   let securityDashboard: SecurityDashboardService | undefined;
   let backupCoordinator: PortableBackupCoordinator | undefined;
+  let restoreStages = options.restoreStages;
   let activityAggregationTimer: NodeJS.Timeout | undefined;
   const apiKeyVerifier = new ApiKeyVerifierPool();
   let selfApiKeyDetector: ActiveSelfApiKeyDetector | undefined;
@@ -801,6 +815,7 @@ export async function startControlServer(
       options.backupCapabilityIssuer,
       stepUpRepository,
     );
+    restoreStages ??= restoreStageCoordinatorFromEnvironment(persistence);
     server = createControlApplication(config, {
       persistence,
       ...options,
@@ -825,6 +840,7 @@ export async function startControlServer(
       ...(statusDashboard === undefined ? {} : { statusDashboard }),
       ...(securityDashboard === undefined ? {} : { securityDashboard }),
       backupCoordinator,
+      ...(restoreStages === undefined ? {} : { restoreStages }),
     });
     await server.listen({
       host: config.control.host,
@@ -907,6 +923,23 @@ export async function startControlServer(
       return closePromise;
     },
   };
+}
+
+export function restoreStageCoordinatorFromEnvironment(
+  persistence: PersistenceOwner,
+  environment: NodeJS.ProcessEnv = process.env,
+): RestoreStageCoordinator | undefined {
+  const directory = environment.SECRETSAUCE_RESTORE_DIRECTORY;
+  const recoveryKeyFile =
+    environment.SECRETSAUCE_RESTORE_RECOVERY_KEY_FILE;
+  if ((directory === undefined) !== (recoveryKeyFile === undefined)) {
+    throw new Error("Restore deployment configuration is incomplete.");
+  }
+  if (directory === undefined) return undefined;
+  return new RestoreStageCoordinator(
+    new RestoreStateRepository(persistence),
+    new PrivateRestoreStageStore(directory),
+  );
 }
 
 function registeredRoute(request: FastifyRequest): string {

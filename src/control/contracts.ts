@@ -15,6 +15,7 @@ export const CONTROL_ERROR_CODES = [
   "stale_version",
   "identity_conflict",
   "service_conflict",
+  "restore_conflict",
   "last_active_superadmin",
   "idempotency_conflict",
   "rate_limited",

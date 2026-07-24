@@ -8,6 +8,8 @@ import {
 } from "./routeRegistry.js";
 import type { PortableBackupCoordinator } from "../backupCoordinator.js";
 import { registerBackupRoutes } from "./backupRoutes.js";
+import type { RestoreStageCoordinator } from "../restoreStaging.js";
+import { registerRestoreRoutes } from "./restoreRoutes.js";
 
 const readinessValueSchema = z.enum(["ready", "unavailable", "unsupported"]);
 const healthDataSchema = z.object({
@@ -35,6 +37,7 @@ export function createDefaultControlRouteRegistry(
   vaultReadiness?: () => Promise<"ready" | "unavailable" | "unsupported">,
   identityReadiness?: () => Promise<"ready" | "unavailable" | "unsupported">,
   backupCoordinator?: PortableBackupCoordinator,
+  restoreStages?: RestoreStageCoordinator,
 ): ControlRouteRegistry {
   const registry = new ControlRouteRegistry();
   registry.register({
@@ -116,5 +119,6 @@ export function createDefaultControlRouteRegistry(
     }),
   });
   registerBackupRoutes(registry, backupCoordinator);
+  registerRestoreRoutes(registry, restoreStages);
   return registry;
 }

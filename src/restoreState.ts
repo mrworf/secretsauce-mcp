@@ -6,6 +6,8 @@ import { PersistenceError } from "./persistence/errors.js";
 const STAGE_TTL_MS = 60 * 60_000;
 const RECOVERY_TTL_MS = 24 * 60 * 60_000;
 const MAX_ARCHIVE_BYTES = 256 * 1024 * 1024;
+const MAX_ACTIVE_STAGES = 4;
+const MAX_ACTIVE_STAGE_BYTES = 512 * 1024 * 1024;
 const MAX_OBJECTS = 10_000;
 const MAX_SUMMARY_COUNT = 100_000;
 
@@ -177,13 +179,35 @@ export class RestoreStateRepository {
     archiveId: string;
     archiveSha256: string;
     archiveBytes: number;
+    storageKey?: string;
   }): Promise<RestoreStage> {
     validateStageInput(input);
     const id = this.#uuid.next();
-    const storageKey = this.#uuid.next();
+    const storageKey = input.storageKey ?? this.#uuid.next();
+    validateUuid(storageKey);
     return this.owner.execute({
       run: (database) => database.withOperationalTransaction((transaction) => {
         const now = transaction.timestamp();
+        expireRows(transaction, now, 100);
+        const active = transaction.get<{
+          stage_count: number;
+          total_bytes: number;
+          actor_count: number;
+        }>(`
+          SELECT count(*) AS stage_count,
+            coalesce(sum(archive_bytes), 0) AS total_bytes,
+            coalesce(sum(CASE WHEN subject_user_id = ? THEN 1 ELSE 0 END), 0)
+              AS actor_count
+          FROM restore_stages
+          WHERE state IN ('validated', 'previewed', 'committing')
+            AND expires_at > ?
+        `, [input.subjectUserId, now]);
+        if (
+          active === undefined
+          || active.actor_count !== 0
+          || active.stage_count >= MAX_ACTIVE_STAGES
+          || active.total_bytes + input.archiveBytes > MAX_ACTIVE_STAGE_BYTES
+        ) throw new RestoreStateError("conflict");
         const expiresAt = now + STAGE_TTL_MS;
         transaction.run(`
           INSERT INTO restore_stages (
@@ -206,6 +230,63 @@ export class RestoreStateRepository {
         return stageById(transaction, id)!;
       }),
     }).then(wireStage);
+  }
+
+  async failStage(
+    stageId: string,
+    subjectUserId: string,
+    failureCode: string,
+  ): Promise<void> {
+    validateUuid(stageId);
+    validateUuid(subjectUserId);
+    validateCode(failureCode);
+    await this.owner.execute({
+      run: (database) => database.withOperationalTransaction((transaction) => {
+        const now = transaction.timestamp();
+        const result = transaction.run(`
+          UPDATE restore_stages
+          SET state = 'failed', failure_code = ?, completed_at = ?,
+            version = version + 1, updated_at = ?
+          WHERE id = ? AND subject_user_id = ?
+            AND state IN ('validated', 'previewed')
+        `, [failureCode, now, now, stageId, subjectUserId]);
+        if (result.changes !== 1) throw new RestoreStateError("conflict");
+      }),
+    });
+  }
+
+  async expiredStageStorageKeys(limit = 100): Promise<string[]> {
+    if (!Number.isSafeInteger(limit) || limit < 1 || limit > 1_000) {
+      throw new RestoreStateError("invalid");
+    }
+    return this.owner.execute({
+      run: (database) => database.read((query) =>
+        query.all<{ storage_key: string }>(`
+          SELECT storage_key FROM restore_stages
+          WHERE state = 'expired'
+          ORDER BY expires_at, id LIMIT ?
+        `, [limit]).map((row) => row.storage_key)),
+    });
+  }
+
+  async deleteExpiredStages(storageKeys: readonly string[]): Promise<number> {
+    if (
+      !Array.isArray(storageKeys)
+      || storageKeys.length < 1
+      || storageKeys.length > 1_000
+    ) throw new RestoreStateError("invalid");
+    for (const key of storageKeys) validateUuid(key);
+    if (new Set(storageKeys).size !== storageKeys.length) {
+      throw new RestoreStateError("invalid");
+    }
+    return this.owner.execute({
+      run: (database) => database.withOperationalTransaction((transaction) =>
+        transaction.run(`
+          DELETE FROM restore_stages
+          WHERE state = 'expired'
+            AND storage_key IN (${storageKeys.map(() => "?").join(", ")})
+        `, [...storageKeys]).changes),
+    });
   }
 
   async stageForActor(
@@ -567,6 +648,7 @@ function validateStageInput(input: {
   archiveId: string;
   archiveSha256: string;
   archiveBytes: number;
+  storageKey?: string;
 }): void {
   validateUuid(input.subjectUserId);
   validateUuid(input.archiveId);

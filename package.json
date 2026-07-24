@@ -21,6 +21,7 @@
     "identity:bootstrap": "node dist/identity/bootstrapCli.js",
     "identity:break-glass": "node dist/identity/breakGlassCli.js",
     "runtime:activate-v2": "node dist/runtime/activateCli.js",
+    "migrate:v1": "node dist/v1MigrationCli.js",
     "dev:control-web": "vite",
     "pretest": "npm run build",
     "test": "vitest run"

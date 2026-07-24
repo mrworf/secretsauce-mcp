@@ -84,6 +84,7 @@ export class V1MigrationResolvedPlan {
 
   constructor(
     readonly base: V1MigrationPlan,
+    allowlistSha256: string,
     dispositions: CredentialDisposition[],
     values: Map<string, Buffer>,
   ) {
@@ -92,6 +93,7 @@ export class V1MigrationResolvedPlan {
       .update("secretsauce-v1-migration-resolution-v1\0")
       .update(canonicalControlJson({
         basePlanDigest: base.digest,
+        allowlistSha256,
         resolutionMode: "allowlisted",
         dispositions: dispositions.map((entry) => ({
           credentialId: entry.credentialId,
@@ -189,7 +191,12 @@ export function resolveV1MigrationCredentials(
         });
       }
     }
-    return new V1MigrationResolvedPlan(plan, dispositions, values);
+    return new V1MigrationResolvedPlan(
+      plan,
+      allowlist.sha256,
+      dispositions,
+      values,
+    );
   } catch (error) {
     for (const value of values.values()) value.fill(0);
     values.clear();
@@ -198,6 +205,7 @@ export function resolveV1MigrationCredentials(
 }
 
 function readAllowlist(path: string): {
+  sha256: string;
   environment: Set<string>;
   files: Set<string>;
 } {
@@ -283,6 +291,7 @@ function readAllowlist(path: string): {
       || file.includes("\0"))
   ) invalidAllowlist();
   return {
+    sha256: createHash("sha256").update(bytes).digest("hex"),
     environment: new Set(environment),
     files: new Set(files),
   };

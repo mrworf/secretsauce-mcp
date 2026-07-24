@@ -1719,6 +1719,144 @@ BEGIN
 END;
 `;
 
+const migration0015 = `
+CREATE TABLE api_keys (
+  id TEXT PRIMARY KEY CHECK (
+    length(id) = 36 AND id = lower(id)
+    AND substr(id, 15, 1) = '7'
+    AND substr(id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND id NOT GLOB '*[^0-9a-f-]*'
+  ),
+  identifier TEXT NOT NULL UNIQUE CHECK (
+    length(identifier) = 16
+    AND identifier NOT GLOB '*[^A-Za-z0-9_-]*'
+  ),
+  verifier_hash TEXT NOT NULL CHECK (
+    length(verifier_hash) BETWEEN 64 AND 512
+    AND verifier_hash LIKE '$argon2id$%'
+  ),
+  nickname TEXT NOT NULL CHECK (length(nickname) BETWEEN 1 AND 512),
+  last_four TEXT NOT NULL CHECK (
+    length(last_four) = 4
+    AND last_four NOT GLOB '*[^A-Za-z0-9_-]*'
+  ),
+  api_role TEXT NOT NULL CHECK (
+    api_role IN ('service', 'all_services', 'system')
+  ),
+  service_id TEXT CHECK (
+    service_id IS NULL OR (
+      length(service_id) = 36
+      AND service_id = lower(service_id)
+      AND substr(service_id, 15, 1) = '7'
+      AND substr(service_id, 20, 1) IN ('8', '9', 'a', 'b')
+      AND service_id NOT GLOB '*[^0-9a-f-]*'
+    )
+  ),
+  expiration_policy TEXT NOT NULL CHECK (
+    expiration_policy IN ('forever', 'timestamp')
+  ),
+  expires_at INTEGER CHECK (expires_at IS NULL OR expires_at >= 0),
+  status TEXT NOT NULL CHECK (status IN ('active', 'expired', 'revoked')),
+  creator_id TEXT NOT NULL CHECK (
+    length(creator_id) = 36
+    AND creator_id = lower(creator_id)
+    AND substr(creator_id, 15, 1) = '7'
+    AND substr(creator_id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND creator_id NOT GLOB '*[^0-9a-f-]*'
+  ),
+  version INTEGER NOT NULL DEFAULT 1 CHECK (version > 0),
+  created_at INTEGER NOT NULL CHECK (created_at >= 0),
+  updated_at INTEGER NOT NULL CHECK (updated_at >= created_at),
+  last_used_at INTEGER CHECK (
+    last_used_at IS NULL OR last_used_at >= created_at
+  ),
+  revoked_at INTEGER CHECK (
+    revoked_at IS NULL OR revoked_at >= created_at
+  ),
+  CHECK (
+    (api_role = 'service' AND service_id IS NOT NULL)
+    OR (api_role IN ('all_services', 'system') AND service_id IS NULL)
+  ),
+  CHECK (
+    (expiration_policy = 'forever' AND expires_at IS NULL)
+    OR (expiration_policy = 'timestamp' AND expires_at IS NOT NULL)
+  ),
+  CHECK (
+    (status = 'revoked' AND revoked_at IS NOT NULL)
+    OR (status IN ('active', 'expired') AND revoked_at IS NULL)
+  )
+) STRICT;
+
+CREATE INDEX api_keys_status_expiry_idx
+  ON api_keys (status, expires_at, id);
+CREATE INDEX api_keys_service_status_idx
+  ON api_keys (service_id, status, id)
+  WHERE service_id IS NOT NULL;
+CREATE INDEX api_keys_creator_idx
+  ON api_keys (creator_id, created_at, id);
+
+CREATE TABLE api_key_activity (
+  id TEXT PRIMARY KEY CHECK (
+    length(id) = 36 AND id = lower(id)
+    AND substr(id, 15, 1) = '7'
+    AND substr(id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND id NOT GLOB '*[^0-9a-f-]*'
+  ),
+  api_key_id TEXT NOT NULL REFERENCES api_keys(id) ON DELETE CASCADE,
+  nickname_snapshot TEXT NOT NULL CHECK (
+    length(nickname_snapshot) BETWEEN 1 AND 512
+  ),
+  last_four_snapshot TEXT NOT NULL CHECK (
+    length(last_four_snapshot) = 4
+    AND last_four_snapshot NOT GLOB '*[^A-Za-z0-9_-]*'
+  ),
+  api_role_snapshot TEXT NOT NULL CHECK (
+    api_role_snapshot IN ('service', 'all_services', 'system')
+  ),
+  service_id_snapshot TEXT CHECK (
+    service_id_snapshot IS NULL OR length(service_id_snapshot) = 36
+  ),
+  action TEXT NOT NULL CHECK (
+    length(action) BETWEEN 1 AND 128
+    AND action NOT GLOB '*[^a-z0-9_.-]*'
+  ),
+  outcome TEXT NOT NULL CHECK (
+    outcome IN ('allow', 'deny', 'error')
+  ),
+  target_type TEXT NOT NULL CHECK (
+    length(target_type) BETWEEN 1 AND 64
+    AND target_type NOT GLOB '*[^a-z0-9_.-]*'
+  ),
+  target_id TEXT CHECK (
+    target_id IS NULL OR length(target_id) BETWEEN 1 AND 128
+  ),
+  request_id TEXT NOT NULL CHECK (length(request_id) BETWEEN 1 AND 128),
+  source_digest TEXT CHECK (
+    source_digest IS NULL OR (
+      length(source_digest) = 64
+      AND source_digest = lower(source_digest)
+      AND source_digest NOT GLOB '*[^0-9a-f]*'
+    )
+  ),
+  failure_code TEXT CHECK (
+    failure_code IS NULL OR (
+      length(failure_code) BETWEEN 1 AND 128
+      AND failure_code NOT GLOB '*[^a-z0-9_.-]*'
+    )
+  ),
+  occurred_at INTEGER NOT NULL CHECK (occurred_at >= 0),
+  CHECK (
+    (outcome = 'allow' AND failure_code IS NULL)
+    OR (outcome IN ('deny', 'error') AND failure_code IS NOT NULL)
+  )
+) STRICT;
+
+CREATE INDEX api_key_activity_key_time_idx
+  ON api_key_activity (api_key_id, occurred_at DESC, id DESC);
+CREATE INDEX api_key_activity_time_idx
+  ON api_key_activity (occurred_at, id);
+`;
+
 export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [
   {
     version: 1,
@@ -1789,6 +1927,11 @@ export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [
     version: 14,
     name: "multiuser_mcp_oauth",
     sql: migration0014,
+  },
+  {
+    version: 15,
+    name: "system_owned_api_keys",
+    sql: migration0015,
   },
 ];
 

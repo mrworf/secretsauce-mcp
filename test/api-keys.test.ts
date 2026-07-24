@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   ALL_SERVICES_KEY_CONFIRMATION,
+  ApiKeyCursorCodec,
   ApiKeyError,
   ApiKeyRepository,
   ApiKeyService,
@@ -99,6 +100,30 @@ describe("system API key primitives", () => {
     ]) {
       expectApiKeyError(() => parseExpiration(expiration), "invalid_request");
     }
+  });
+
+  it("binds canonical metadata cursors to browser actor, filters, resource, and expiry", () => {
+    const clock = { value: NOW };
+    const cursors = new ApiKeyCursorCodec(Buffer.alloc(32, 60), () => clock.value);
+    const binding = {
+      kind: "list" as const,
+      actorId: SUPERADMIN_ID,
+      actorRole: "superadmin" as const,
+      filter: '{"role":null}',
+    };
+    const cursor = cursors.encode(binding, { time: NOW, id: KEY_ID });
+    expect(cursors.decode(cursor, binding)).toEqual({ time: NOW, id: KEY_ID });
+    expectApiKeyError(
+      () => cursors.decode(cursor, { ...binding, filter: '{"role":"system"}' }),
+      "invalid_request",
+    );
+    expectApiKeyError(
+      () => cursors.decode(`${cursor.slice(0, -1)}0`, binding),
+      "invalid_request",
+    );
+    clock.value += 15 * 60_000;
+    expectApiKeyError(() => cursors.decode(cursor, binding), "invalid_request");
+    cursors.close();
   });
 
   it("zeros candidates and fails closed when verifier concurrency is saturated", async () => {
@@ -578,6 +603,164 @@ describe("system API key control authentication", () => {
   });
 });
 
+describe("system API key HTTP lifecycle", () => {
+  it("serves strict browser-only create, metadata, update, activity, revoke, and rotation contracts", async () => {
+    const fixture = await apiKeyFixture("routes");
+    const cursors = new ApiKeyCursorCodec(Buffer.alloc(32, 61), () => NOW);
+    const authenticator = await SystemApiKeyAuthenticator.create(
+      fixture.repository,
+      browserDelegate(),
+    );
+    const application = createControlApplication(controlConfig(), {
+      persistence: fixture.worker,
+      authenticator,
+      authorization: {
+        authorizeScope: async () => true,
+        verifyStepUp: async () => true,
+      },
+      apiKeys: {
+        repository: fixture.repository,
+        service: fixture.service,
+        cursors,
+      },
+    });
+    const created = await application.inject({
+      method: "POST",
+      url: "/api/v2/api-keys",
+      headers: mutationHeaders(),
+      payload: {
+        nickname: "Route automation",
+        api_role: "system",
+        expiration: { policy: "days", days: 2 },
+      },
+    });
+    expect(created.statusCode).toBe(201);
+    expect(created.headers["cache-control"]).toBe("no-store");
+    expect(created.headers.etag).toBe('"1"');
+    const createdBody = created.json().data;
+    expect(createdBody).toMatchObject({
+      one_time_value_displayed: true,
+      api_key: {
+        id: KEY_ID,
+        nickname: "Route automation",
+        api_role: "system",
+        expiration_policy: "timestamp",
+      },
+    });
+    expect(createdBody.one_time_key).toMatch(
+      /^ssk_v1_[A-Za-z0-9_-]{16}_[A-Za-z0-9_-]{43}$/,
+    );
+
+    const detail = await application.inject({
+      method: "GET",
+      url: `/api/v2/api-keys/${KEY_ID}`,
+      headers: browserHeaders(),
+    });
+    expect(detail.statusCode).toBe(200);
+    expect(JSON.stringify(detail.json())).not.toContain(createdBody.one_time_key);
+
+    const shortenedExpiry = NOW + 86_400_000;
+    const updated = await application.inject({
+      method: "PATCH",
+      url: `/api/v2/api-keys/${KEY_ID}`,
+      headers: mutationHeaders({ "if-match": '"1"' }),
+      payload: {
+        nickname: "Renamed route automation",
+        expires_at: shortenedExpiry,
+      },
+    });
+    expect(updated.statusCode).toBe(200);
+    expect(updated.json().data).toMatchObject({
+      nickname: "Renamed route automation",
+      expires_at: shortenedExpiry,
+      version: 2,
+    });
+
+    const activity = await application.inject({
+      method: "GET",
+      url: `/api/v2/api-keys/${KEY_ID}/activity?limit=1`,
+      headers: browserHeaders(),
+    });
+    expect(activity.statusCode).toBe(200);
+    expect(activity.json().data.activity).toHaveLength(1);
+    expect(JSON.stringify(activity.json())).not.toContain(createdBody.one_time_key);
+
+    const rotated = await application.inject({
+      method: "POST",
+      url: `/api/v2/api-keys/${KEY_ID}/rotate`,
+      headers: mutationHeaders({ "if-match": '"2"' }),
+      payload: { justification: "Scheduled credential rotation." },
+    });
+    expect(rotated.statusCode).toBe(201);
+    expect(rotated.headers["cache-control"]).toBe("no-store");
+    expect(rotated.json().data).toMatchObject({
+      one_time_value_displayed: true,
+      api_key: { id: OTHER_KEY_ID, version: 1 },
+    });
+    expect(rotated.json().data.one_time_key).not.toBe(createdBody.one_time_key);
+
+    const page = await application.inject({
+      method: "GET",
+      url: "/api/v2/api-keys?limit=1",
+      headers: browserHeaders(),
+    });
+    expect(page.statusCode).toBe(200);
+    expect(page.json().data.api_keys).toHaveLength(1);
+    expect(page.json().data.next_cursor).toMatch(/^[A-Za-z0-9_-]+\.[a-f0-9]{64}$/);
+    const next = await application.inject({
+      method: "GET",
+      url: `/api/v2/api-keys?limit=1&cursor=${
+        encodeURIComponent(page.json().data.next_cursor)
+      }`,
+      headers: browserHeaders(),
+    });
+    expect(next.statusCode).toBe(200);
+    expect(next.json().data.api_keys).toHaveLength(1);
+    const altered = `${page.json().data.next_cursor.slice(0, -1)}0`;
+    expect((await application.inject({
+      method: "GET",
+      url: `/api/v2/api-keys?limit=1&cursor=${encodeURIComponent(altered)}`,
+      headers: browserHeaders(),
+    })).statusCode).toBe(400);
+
+    const apiKeyDenied = await application.inject({
+      method: "GET",
+      url: "/api/v2/api-keys",
+      headers: {
+        host: "control.example.org",
+        authorization: `Bearer ${rotated.json().data.one_time_key}`,
+      },
+    });
+    expect(apiKeyDenied.statusCode).toBe(403);
+
+    const revoked = await application.inject({
+      method: "POST",
+      url: `/api/v2/api-keys/${OTHER_KEY_ID}/revoke`,
+      headers: mutationHeaders({ "if-match": '"1"' }),
+      payload: { justification: "Automation was retired." },
+    });
+    expect(revoked.statusCode).toBe(200);
+    expect(revoked.json().data).toMatchObject({
+      changed: true,
+      api_key: { id: OTHER_KEY_ID, status: "revoked", version: 2 },
+    });
+
+    const openapi = await application.inject({
+      method: "GET",
+      url: "/api/v2/openapi.json",
+      headers: { host: "control.example.org" },
+    });
+    expect(openapi.statusCode).toBe(200);
+    expect(openapi.json().paths["/api/v2/api-keys"]).toHaveProperty("post");
+    expect(openapi.json().paths["/api/v2/api-keys/{api_key_id}/rotate"])
+      .toHaveProperty("post");
+    expect(JSON.stringify(openapi.json())).not.toContain("ssk_v1_example");
+
+    await application.close();
+    cursors.close();
+  });
+});
+
 async function apiKeyFixture(
   name: string,
   now: () => number = () => NOW,
@@ -682,6 +865,22 @@ function browserDelegate(): ControlAuthenticator {
         }
       : undefined,
     verifyCsrf: async () => true,
+  };
+}
+
+function browserHeaders() {
+  return {
+    host: "control.example.org",
+    cookie: "browser=ok",
+  };
+}
+
+function mutationHeaders(extra: Record<string, string> = {}) {
+  return {
+    ...browserHeaders(),
+    origin: "https://control.example.org",
+    "x-csrf-token": "x".repeat(43),
+    ...extra,
   };
 }
 

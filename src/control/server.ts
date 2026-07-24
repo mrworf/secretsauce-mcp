@@ -138,9 +138,15 @@ import {
 } from "./accessRoutes.js";
 import type { ReferenceAggregateSource } from "../tokens.js";
 import {
+  ApiKeyCursorCodec,
   ApiKeyRepository,
+  ApiKeyService,
   SystemApiKeyAuthenticator,
 } from "../apiKeys.js";
+import {
+  registerApiKeyRoutes,
+  type ApiKeyRouteDependencies,
+} from "./apiKeyRoutes.js";
 
 export interface ControlApplicationOptions {
   authenticator?: ControlAuthenticator;
@@ -160,6 +166,7 @@ export interface ControlApplicationOptions {
   credentialVault?: CredentialVaultCoordinator;
   policyManagement?: PolicyManagementService;
   accessManagement?: AccessRouteDependencies;
+  apiKeys?: ApiKeyRouteDependencies;
 }
 
 export function createControlApplication(
@@ -238,6 +245,9 @@ export function createControlApplication(
   }
   if (options.accessManagement !== undefined) {
     registerAccessManagementRoutes(routeRegistry, options.accessManagement);
+  }
+  if (options.apiKeys !== undefined) {
+    registerApiKeyRoutes(routeRegistry, options.apiKeys);
   }
   options.registerControlRoutes?.(routeRegistry);
   installControlRoutes(
@@ -338,7 +348,9 @@ export async function startControlServer(
   let oauthIntentState: OAuthIntentStateCodec | undefined;
   let apiKeyRepository: ApiKeyRepository | undefined;
   let apiKeyAuthenticator: SystemApiKeyAuthenticator | undefined;
+  let apiKeyManagement: ApiKeyRouteDependencies | undefined;
   try {
+    apiKeyRepository = new ApiKeyRepository(persistence);
     let localIdentity: LocalIdentityControl | undefined;
     if (config.identity !== undefined) {
       identityKeyRing = IdentityKeyRing.fromFiles(
@@ -347,6 +359,11 @@ export async function startControlServer(
       );
       const sessionKey = loadIdentitySessionHmacKey(config.identity.sessionHmacKeyFile);
       try {
+        apiKeyManagement = {
+          repository: apiKeyRepository,
+          service: new ApiKeyService(apiKeyRepository),
+          cursors: new ApiKeyCursorCodec(sessionKey),
+        };
         const authenticationRepository = new LocalAuthenticationRepository(persistence);
         localAuthentication = await LocalAuthenticationService.create({
           repository: authenticationRepository,
@@ -550,7 +567,6 @@ export async function startControlServer(
         sessionKey.fill(0);
       }
     }
-    apiKeyRepository = new ApiKeyRepository(persistence);
     apiKeyAuthenticator = await SystemApiKeyAuthenticator.create(
       apiKeyRepository,
       localIdentity?.authenticator ?? denyControlAuthentication,
@@ -569,6 +585,7 @@ export async function startControlServer(
       ...(credentialVault === undefined ? {} : { credentialVault }),
       ...(policyManagement === undefined ? {} : { policyManagement }),
       ...(accessManagement === undefined ? {} : { accessManagement }),
+      ...(apiKeyManagement === undefined ? {} : { apiKeys: apiKeyManagement }),
     });
     await server.listen({
       host: config.control.host,
@@ -588,6 +605,7 @@ export async function startControlServer(
     databaseOAuthHasher?.close();
     oauthIntentState?.close();
     accessCursor?.close();
+    apiKeyManagement?.cursors.close();
     serviceManagement?.close();
     localAuthentication?.close();
     identityKeyRing?.destroy();
@@ -615,6 +633,7 @@ export async function startControlServer(
         databaseOAuthHasher?.close();
         oauthIntentState?.close();
         accessCursor?.close();
+        apiKeyManagement?.cursors.close();
         serviceManagement?.close();
         localAuthentication?.close();
         identityKeyRing?.destroy();

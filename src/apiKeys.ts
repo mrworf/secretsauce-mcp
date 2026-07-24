@@ -1,4 +1,9 @@
-import { createHash, randomBytes } from "node:crypto";
+import {
+  createHash,
+  createHmac,
+  randomBytes,
+  timingSafeEqual,
+} from "node:crypto";
 import { argon2id, hash as argon2Hash, verify as argon2Verify } from "argon2";
 import type { FastifyRequest } from "fastify";
 import type {
@@ -26,6 +31,9 @@ const ARGON2_SALT_BYTES = 16;
 const ARGON2_ENCODING =
   /^\$argon2id\$v=19\$m=65536,p=1,t=3\$[A-Za-z0-9+/]{22}\$[A-Za-z0-9+/]{43}$/;
 const DAY_MS = 86_400_000;
+const API_KEY_CURSOR_DOMAIN = "secretsauce.api-key-cursor.v1";
+const API_KEY_CURSOR_TTL_MS = 15 * 60_000;
+const API_KEY_CURSOR_PATTERN = /^[A-Za-z0-9_-]{1,2048}\.[a-f0-9]{64}$/;
 export const ALL_SERVICES_KEY_CONFIRMATION =
   "I UNDERSTAND THIS KEY COVERS CURRENT AND FUTURE SERVICES";
 
@@ -94,6 +102,109 @@ export interface ApiKeyActivityView {
   requestId: string;
   failureCode?: string;
   occurredAt: number;
+}
+
+export interface ApiKeyCursorBinding {
+  kind: "list" | "activity";
+  actorId: string;
+  actorRole: "admin" | "superadmin";
+  filter: string;
+  resourceId?: string;
+}
+
+interface ApiKeyCursorPayload extends ApiKeyCursorBinding {
+  v: 1;
+  lastTime: number;
+  lastId: string;
+  issuedAt: number;
+  expiresAt: number;
+}
+
+export class ApiKeyCursorCodec {
+  readonly #key: Buffer;
+
+  constructor(
+    key: Buffer,
+    private readonly now: () => number = Date.now,
+  ) {
+    if (key.byteLength !== 32) throw new ApiKeyError("unavailable");
+    this.#key = Buffer.from(key);
+  }
+
+  encode(
+    binding: ApiKeyCursorBinding,
+    last: { time: number; id: string },
+  ): string {
+    validateCursorBinding(binding);
+    if (!Number.isSafeInteger(last.time) || last.time < 0 || !isUuidV7(last.id)) {
+      throw new ApiKeyError("invalid_request");
+    }
+    const issuedAt = safeNow(this.now);
+    const expiresAt = issuedAt + API_KEY_CURSOR_TTL_MS;
+    if (!Number.isSafeInteger(expiresAt)) throw new ApiKeyError("unavailable");
+    const payload: ApiKeyCursorPayload = {
+      v: 1,
+      ...binding,
+      lastTime: last.time,
+      lastId: last.id,
+      issuedAt,
+      expiresAt,
+    };
+    const encoded = Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
+    const signature = createHmac("sha256", this.#key)
+      .update(API_KEY_CURSOR_DOMAIN)
+      .update("\0")
+      .update(encoded)
+      .digest("hex");
+    const cursor = `${encoded}.${signature}`;
+    if (cursor.length > 2_048) throw new ApiKeyError("unavailable");
+    return cursor;
+  }
+
+  decode(
+    cursor: unknown,
+    binding: ApiKeyCursorBinding,
+  ): { time: number; id: string } {
+    validateCursorBinding(binding);
+    if (typeof cursor !== "string" || !API_KEY_CURSOR_PATTERN.test(cursor)) {
+      throw new ApiKeyError("invalid_request");
+    }
+    const separator = cursor.lastIndexOf(".");
+    const encoded = cursor.slice(0, separator);
+    const supplied = cursor.slice(separator + 1);
+    if (Buffer.from(encoded, "base64url").toString("base64url") !== encoded) {
+      throw new ApiKeyError("invalid_request");
+    }
+    const expected = createHmac("sha256", this.#key)
+      .update(API_KEY_CURSOR_DOMAIN)
+      .update("\0")
+      .update(encoded)
+      .digest("hex");
+    if (
+      supplied.length !== expected.length ||
+      !timingSafeEqual(Buffer.from(supplied, "hex"), Buffer.from(expected, "hex"))
+    ) throw new ApiKeyError("invalid_request");
+    let value: unknown;
+    try {
+      value = JSON.parse(Buffer.from(encoded, "base64url").toString("utf8"));
+    } catch {
+      throw new ApiKeyError("invalid_request");
+    }
+    const payload = parseCursorPayload(value);
+    if (
+      payload.kind !== binding.kind ||
+      payload.actorId !== binding.actorId ||
+      payload.actorRole !== binding.actorRole ||
+      payload.filter !== binding.filter ||
+      payload.resourceId !== binding.resourceId ||
+      safeNow(this.now) >= payload.expiresAt
+    ) throw new ApiKeyError("invalid_request");
+    return { time: payload.lastTime, id: payload.lastId };
+  }
+
+  close(): void {
+    this.#key.fill(0);
+  }
 }
 
 interface ApiKeyActivityRow {
@@ -1398,6 +1509,70 @@ function mutationAudit(
 
 function escapeLike(value: string): string {
   return value.replaceAll("\\", "\\\\").replaceAll("%", "\\%").replaceAll("_", "\\_");
+}
+
+function validateCursorBinding(binding: ApiKeyCursorBinding): void {
+  if (
+    !["list", "activity"].includes(binding.kind) ||
+    !isUuidV7(binding.actorId) ||
+    !["admin", "superadmin"].includes(binding.actorRole) ||
+    typeof binding.filter !== "string" ||
+    binding.filter.length > 1_024 ||
+    /[\0\r\n]/.test(binding.filter) ||
+    (
+      binding.kind === "list"
+        ? binding.resourceId !== undefined
+        : binding.resourceId === undefined || !isUuidV7(binding.resourceId)
+    )
+  ) throw new ApiKeyError("invalid_request");
+}
+
+function parseCursorPayload(value: unknown): ApiKeyCursorPayload {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    throw new ApiKeyError("invalid_request");
+  }
+  const input = value as Record<string, unknown>;
+  const required = [
+    "v",
+    "kind",
+    "actorId",
+    "actorRole",
+    "filter",
+    "lastTime",
+    "lastId",
+    "issuedAt",
+    "expiresAt",
+  ];
+  const permitted = new Set([...required, "resourceId"]);
+  if (
+    Object.keys(input).some((key) => !permitted.has(key)) ||
+    required.some((key) => !(key in input)) ||
+    input.v !== 1 ||
+    !["list", "activity"].includes(String(input.kind)) ||
+    typeof input.actorId !== "string" ||
+    !isUuidV7(input.actorId) ||
+    !["admin", "superadmin"].includes(String(input.actorRole)) ||
+    typeof input.filter !== "string" ||
+    input.filter.length > 1_024 ||
+    /[\0\r\n]/.test(input.filter) ||
+    typeof input.lastTime !== "number" ||
+    !Number.isSafeInteger(input.lastTime) ||
+    input.lastTime < 0 ||
+    typeof input.lastId !== "string" ||
+    !isUuidV7(input.lastId) ||
+    typeof input.issuedAt !== "number" ||
+    !Number.isSafeInteger(input.issuedAt) ||
+    typeof input.expiresAt !== "number" ||
+    !Number.isSafeInteger(input.expiresAt) ||
+    input.expiresAt <= input.issuedAt ||
+    input.expiresAt - input.issuedAt !== API_KEY_CURSOR_TTL_MS ||
+    (
+      input.kind === "list"
+        ? "resourceId" in input
+        : typeof input.resourceId !== "string" || !isUuidV7(input.resourceId)
+    )
+  ) throw new ApiKeyError("invalid_request");
+  return input as unknown as ApiKeyCursorPayload;
 }
 
 function safeNow(now: () => number): number {

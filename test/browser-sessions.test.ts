@@ -20,6 +20,10 @@ import {
 } from "../src/identity/totp.js";
 import { IdentityRepository, type IdentityAuditContext } from "../src/identity/repository.js";
 import { createControlApplication, startControlServer } from "../src/control/server.js";
+import {
+  permissionOutcome,
+  type ControlCapability,
+} from "../src/control/permissions.js";
 import { createLogger } from "../src/logger.js";
 import { PersistenceWorker } from "../src/persistence/worker.js";
 import type { GatewayConfig, IdentityConfig } from "../src/types.js";
@@ -65,6 +69,30 @@ describe("durable browser sessions", () => {
     expect(documented.statusCode).toBe(200);
     expect(documented.json().paths).toHaveProperty("/api/v2/auth/login");
     expect(documented.json().paths).toHaveProperty("/api/v2/auth/step-up");
+    expect(documented.json().paths).toHaveProperty("/api/v2/api-keys");
+    expect(documented.json().paths).toHaveProperty(
+      "/api/v2/api-keys/{api_key_id}/activity",
+    );
+    expect(documented.json().paths["/api/v2/api-keys"].post.security)
+      .toEqual([{ browserSession: [] }]);
+    for (const path of Object.values(documented.json().paths) as Array<
+      Record<string, Record<string, unknown>>
+    >) {
+      for (const operation of Object.values(path)) {
+        const permission = operation["x-permission"];
+        const expectedApiKey = typeof permission === "string" &&
+          permission !== "public" &&
+          permission !== "authenticated" &&
+          (["service", "all_services", "system"] as const).some((role) => {
+            const outcome = permissionOutcome(role, permission as ControlCapability);
+            return outcome !== "deny" && outcome !== "no_account";
+          });
+        expect(
+          (operation["x-authentication-methods"] as string[]).includes("api_key"),
+          String(operation.operationId),
+        ).toBe(expectedApiKey);
+      }
+    }
     const health = await first.server.inject({
       method: "GET",
       url: "/api/v2/health",

@@ -75,6 +75,15 @@ interface CurrentRestoreSummary {
   revokedOauthGrants: number;
 }
 
+export interface EvaluatedRestorePlan {
+  stageId: string;
+  archiveSha256: string;
+  planDigest: string;
+  secretDisposition: RestoreSecretDisposition;
+  counts: RestoreCounts;
+  decoded: DecodedRestoreArchive;
+}
+
 export class RestorePreviewCoordinator {
   readonly #uuid: UuidV7Generator;
 
@@ -94,6 +103,25 @@ export class RestorePreviewCoordinator {
     stageId: string;
     passphrase?: Uint8Array;
   }): Promise<RestorePreview> {
+    return this.withEvaluatedPlan(input, async (plan) =>
+      this.repository.createPreview({
+        stageId: plan.stageId,
+        subjectUserId: input.actor.principalId,
+        archiveSha256: plan.archiveSha256,
+        planDigest: plan.planDigest,
+        secretDisposition: plan.secretDisposition,
+        counts: plan.counts,
+      }));
+  }
+
+  async withEvaluatedPlan<T>(
+    input: {
+      actor: ControlAuthenticationContext;
+      stageId: string;
+      passphrase?: Uint8Array;
+    },
+    use: (plan: EvaluatedRestorePlan) => T | Promise<T>,
+  ): Promise<T> {
     if (
       input.actor.method !== "browser_session"
       || input.actor.role !== "superadmin"
@@ -103,6 +131,7 @@ export class RestorePreviewCoordinator {
     }
     let archive: Buffer | undefined;
     let secrets: Buffer | undefined;
+    let delegated = false;
     try {
       if (
         input.passphrase !== undefined
@@ -149,15 +178,17 @@ export class RestorePreviewCoordinator {
         secretDisposition,
         counts,
       });
-      return await this.repository.createPreview({
+      delegated = true;
+      return await use({
         stageId: staged.stage.id,
-        subjectUserId: input.actor.principalId,
         archiveSha256: staged.stage.archiveSha256,
         planDigest,
         secretDisposition,
         counts,
+        decoded,
       });
     } catch (error) {
+      if (delegated) throw error;
       if (error instanceof RestorePreviewError) throw error;
       if (error instanceof RestoreStagingError) {
         throw new RestorePreviewError(error.code);

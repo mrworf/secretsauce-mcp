@@ -8,6 +8,10 @@ import {
   RestorePreviewError,
   type RestorePreviewCoordinator,
 } from "../restorePreview.js";
+import {
+  RestoreCommitError,
+  type RestoreCommitCoordinator,
+} from "../restoreCommit.js";
 import { ControlContractError } from "./contracts.js";
 import {
   defineControlRoute,
@@ -27,6 +31,20 @@ const archiveBody = z.custom<Buffer>(
 });
 const stageParams = z.object({ stage_id: uuid }).strict();
 const previewBody = z.object({
+  passphrase: z.string().superRefine((value, context) => {
+    const bytes = Buffer.byteLength(value, "utf8");
+    if (bytes < 12 || bytes > 1_024) {
+      context.addIssue({
+        code: "custom",
+        message: "Passphrase must be between 12 and 1024 UTF-8 bytes.",
+      });
+    }
+  }).optional(),
+}).strict();
+const commitBody = z.object({
+  preview_id: uuid,
+  confirmation: z.string().min(1).max(128),
+  justification: z.string().min(10).max(1_024),
   passphrase: z.string().superRefine((value, context) => {
     const bytes = Buffer.byteLength(value, "utf8");
     if (bytes < 12 || bytes > 1_024) {
@@ -89,11 +107,30 @@ const previewSchema = z.object({
   id: "RestorePreview",
   description: "Server-derived, actor-bound restore replacement preview.",
 });
+const commitSchema = z.object({
+  operation_id: uuid,
+  stage_id: uuid,
+  preview_id: uuid,
+  signed_out: z.literal(true),
+  services: z.number().int().nonnegative(),
+  destinations: z.number().int().nonnegative(),
+  credentials: z.number().int().nonnegative(),
+  policies: z.number().int().nonnegative(),
+  rules: z.number().int().nonnegative(),
+  remediations: z.number().int().nonnegative(),
+  revoked_api_keys: z.number().int().nonnegative(),
+  revoked_sessions: z.number().int().nonnegative(),
+  revoked_oauth_grants: z.number().int().nonnegative(),
+}).strict().meta({
+  id: "RestoreCommitResult",
+  description: "Completed restore counts. The initiating session is revoked.",
+});
 
 export function registerRestoreRoutes(
   registry: ControlRouteRegistry,
   coordinator?: RestoreStageCoordinator,
   previews?: RestorePreviewCoordinator,
+  commits?: RestoreCommitCoordinator,
 ): void {
   registry.register(defineControlRoute({
     id: "restores.create_stage",
@@ -252,6 +289,80 @@ export function registerRestoreRoutes(
       }
     },
   }));
+
+  registry.register(defineControlRoute({
+    id: "restores.commit",
+    method: "POST",
+    path: "/api/v2/restores/{stage_id}/commit",
+    summary: "Commit an exact previewed portable restore",
+    tags: ["Restores"],
+    authentication: ["browser_session"],
+    expandApiKeyAuthentication: false,
+    permission: "restore",
+    stepUp: "always",
+    schemas: {
+      params: stageParams,
+      body: commitBody,
+      response: commitSchema,
+    },
+    rateLimit: "management",
+    auditAction: "restore.commit",
+    secretFields: ["/passphrase"],
+    cache: "no-store",
+    concurrency: "none",
+    idempotency: "none",
+    handler: async ({
+      authentication,
+      params,
+      body,
+      requestId,
+      stepUpProof,
+    }) => {
+      if (
+        commits === undefined
+        || authentication === undefined
+        || stepUpProof === undefined
+      ) throw unavailable();
+      const passphraseBytes = body.passphrase === undefined
+        ? undefined
+        : Buffer.from(body.passphrase, "utf8");
+      try {
+        const result = await commits.commit({
+          actor: authentication,
+          stageId: params.stage_id,
+          previewId: body.preview_id,
+          confirmation: body.confirmation,
+          justification: body.justification,
+          correlationId: requestId,
+          stepUpProof,
+          ...(passphraseBytes === undefined
+            ? {}
+            : { passphrase: passphraseBytes }),
+        });
+        return {
+          data: {
+            operation_id: result.operationId,
+            stage_id: result.stageId,
+            preview_id: result.previewId,
+            signed_out: true as const,
+            services: result.services,
+            destinations: result.destinations,
+            credentials: result.credentials,
+            policies: result.policies,
+            rules: result.rules,
+            remediations: result.remediations,
+            revoked_api_keys: result.revokedApiKeys,
+            revoked_sessions: result.revokedSessions,
+            revoked_oauth_grants: result.revokedOauthGrants,
+          },
+        };
+      } catch (error) {
+        throw mapError(error);
+      } finally {
+        passphraseBytes?.fill(0);
+      }
+    },
+  }));
 }
 
 function wireStage(stage: RestoreStage): z.input<typeof stageSchema> {
@@ -277,6 +388,7 @@ function mapError(error: unknown): ControlContractError {
   if (
     !(error instanceof RestoreStagingError)
     && !(error instanceof RestorePreviewError)
+    && !(error instanceof RestoreCommitError)
   ) return unavailable();
   if (error.code === "invalid") {
     return new ControlContractError(
@@ -304,6 +416,13 @@ function mapError(error: unknown): ControlContractError {
       409,
       "restore_conflict",
       "Another restore archive is already staged.",
+    );
+  }
+  if (error.code === "health_failed" || error.code === "rollback_failed") {
+    return new ControlContractError(
+      503,
+      "restore_recovery_required",
+      "Restore recovery did not complete normally.",
     );
   }
   return unavailable();

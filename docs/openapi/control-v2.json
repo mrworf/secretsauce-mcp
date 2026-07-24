@@ -183,6 +183,82 @@
         },
         "type": "object"
       },
+      "RestoreCommitResult": {
+        "additionalProperties": false,
+        "description": "Completed restore counts. The initiating session is revoked.",
+        "properties": {
+          "credentials": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "destinations": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "operation_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "policies": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "preview_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "remediations": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "revoked_api_keys": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "revoked_oauth_grants": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "revoked_sessions": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "rules": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "services": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "signed_out": {
+            "enum": [
+              true
+            ],
+            "type": "boolean"
+          },
+          "stage_id": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "operation_id",
+          "stage_id",
+          "preview_id",
+          "signed_out",
+          "services",
+          "destinations",
+          "credentials",
+          "policies",
+          "rules",
+          "remediations",
+          "revoked_api_keys",
+          "revoked_sessions",
+          "revoked_oauth_grants"
+        ],
+        "type": "object"
+      },
       "RestorePreview": {
         "additionalProperties": false,
         "description": "Server-derived, actor-bound restore replacement preview.",
@@ -1234,6 +1310,219 @@
         "x-rate-limit-class": "management",
         "x-secret-fields": [],
         "x-step-up": "five_minutes"
+      }
+    },
+    "/api/v2/restores/{stage_id}/commit": {
+      "post": {
+        "operationId": "restores.commit",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "stage_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "confirmation": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "justification": {
+                    "maxLength": 1024,
+                    "minLength": 10,
+                    "type": "string"
+                  },
+                  "passphrase": {
+                    "type": "string"
+                  },
+                  "preview_id": {
+                    "format": "uuid",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "preview_id",
+                  "confirmation",
+                  "justification"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/RestoreCommitResult"
+                    },
+                    "meta": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "api_version": {
+                          "enum": [
+                            "v2"
+                          ],
+                          "type": "string"
+                        },
+                        "request_id": {
+                          "pattern": "^req_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "request_id",
+                        "api_version"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful response."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "Invalid request. Validation details contain only a JSON Pointer and rule."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "Authentication is required."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "The operation is forbidden or requires human step-up."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "The route or an authorized resource was not found."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "The resource version or idempotency digest conflicts."
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "The request body exceeds its bounded limit."
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "A required expected resource version is missing."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "A bounded request rate was exceeded."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "The request failed without exposing internal details."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "A required local subsystem is unavailable."
+          }
+        },
+        "security": [
+          {
+            "browserSession": []
+          }
+        ],
+        "summary": "Commit an exact previewed portable restore",
+        "tags": [
+          "Restores"
+        ],
+        "x-audit-action": "restore.commit",
+        "x-authentication-methods": [
+          "browser_session"
+        ],
+        "x-cache-class": "no-store",
+        "x-permission": "restore",
+        "x-rate-limit-class": "management",
+        "x-secret-fields": [
+          "/passphrase"
+        ],
+        "x-step-up": "always"
       }
     },
     "/api/v2/restores/{stage_id}/preview": {

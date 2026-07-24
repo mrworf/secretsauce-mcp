@@ -10,6 +10,7 @@ import type { PortableBackupCoordinator } from "../backupCoordinator.js";
 import { registerBackupRoutes } from "./backupRoutes.js";
 import type { RestoreStageCoordinator } from "../restoreStaging.js";
 import type { RestorePreviewCoordinator } from "../restorePreview.js";
+import type { RestoreCommitCoordinator } from "../restoreCommit.js";
 import { registerRestoreRoutes } from "./restoreRoutes.js";
 
 const readinessValueSchema = z.enum(["ready", "unavailable", "unsupported"]);
@@ -40,6 +41,7 @@ export function createDefaultControlRouteRegistry(
   backupCoordinator?: PortableBackupCoordinator,
   restoreStages?: RestoreStageCoordinator,
   restorePreviews?: RestorePreviewCoordinator,
+  restoreCommits?: RestoreCommitCoordinator,
 ): ControlRouteRegistry {
   const registry = new ControlRouteRegistry();
   registry.register({
@@ -121,6 +123,6 @@ export function createDefaultControlRouteRegistry(
     }),
   });
   registerBackupRoutes(registry, backupCoordinator);
-  registerRestoreRoutes(registry, restoreStages, restorePreviews);
+  registerRestoreRoutes(registry, restoreStages, restorePreviews, restoreCommits);
   return registry;
 }

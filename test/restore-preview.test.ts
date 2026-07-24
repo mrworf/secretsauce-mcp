@@ -33,6 +33,24 @@ afterEach(async () => {
 });
 
 describe("restore preview coordinator", () => {
+  it("propagates commit callback failures after exact plan evaluation", async () => {
+    const context = await fixture(vi.fn(async () => ({
+      validated: true as const,
+      recordCount: 1,
+    })));
+    const stage = await context.stages.stage({
+      actor: actor(),
+      archive: encryptedArchive(),
+    });
+    const failure = new Error("commit stopped");
+    await expect(context.previews.withEvaluatedPlan({
+      actor: actor(),
+      stageId: stage.id,
+    }, async () => {
+      throw failure;
+    })).rejects.toBe(failure);
+  });
+
   it("binds deterministic comparison counts and falls back for missing or wrong passphrases", async () => {
     const validateRestore = vi.fn(async (
       _capability: string,

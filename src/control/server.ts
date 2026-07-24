@@ -31,6 +31,9 @@ import {
   StepUpRepository,
   StepUpService,
 } from "../identity/stepUp.js";
+import { RestoreCommitCoordinator } from "../restoreCommit.js";
+import { RestoreReplacementRepository } from "../restoreReplacement.js";
+import { RestoreRecoveryManager } from "../restoreRecovery.js";
 import {
   LocalControlAuthenticator,
   LocalEnrollmentRepository,
@@ -218,6 +221,7 @@ export interface ControlApplicationOptions {
   backupCoordinator?: PortableBackupCoordinator;
   restoreStages?: RestoreStageCoordinator;
   restorePreviews?: RestorePreviewCoordinator;
+  restoreCommits?: RestoreCommitCoordinator;
   restoreMaintenance?: RestoreMaintenanceGate;
 }
 
@@ -305,6 +309,7 @@ export function createControlApplication(
     options.backupCoordinator,
     options.restoreStages,
     options.restorePreviews,
+    options.restoreCommits,
   );
   if (options.localIdentity !== undefined) {
     registerLocalIdentityRoutes(routeRegistry, options.localIdentity);
@@ -436,6 +441,7 @@ export async function startControlServer(
     referenceAggregates?: ReferenceAggregateSource;
     restoreStages?: RestoreStageCoordinator;
     restorePreviews?: RestorePreviewCoordinator;
+    restoreCommits?: RestoreCommitCoordinator;
     restoreMaintenance?: RestoreMaintenanceGate;
   } = {},
 ): Promise<ControlServerApplication> {
@@ -488,6 +494,8 @@ export async function startControlServer(
   let backupCoordinator: PortableBackupCoordinator | undefined;
   let restoreStages = options.restoreStages;
   let restorePreviews = options.restorePreviews;
+  let restoreCommits = options.restoreCommits;
+  let restoreRecovery: RestoreRecoveryManager | undefined;
   const restoreMaintenance =
     options.restoreMaintenance ?? new RestoreMaintenanceGate();
   let activityAggregationTimer: NodeJS.Timeout | undefined;
@@ -839,6 +847,52 @@ export async function startControlServer(
         options.backupCapabilityIssuer,
       );
     }
+    const restoreDirectory = process.env.SECRETSAUCE_RESTORE_DIRECTORY;
+    const restoreRecoveryKey =
+      process.env.SECRETSAUCE_RESTORE_RECOVERY_KEY_FILE;
+    if (
+      restoreCommits === undefined
+      && restorePreviews !== undefined
+      && restoreDirectory !== undefined
+      && restoreRecoveryKey !== undefined
+      && options.backupVaultClient !== undefined
+      && options.backupCapabilityIssuer !== undefined
+      && stepUpRepository !== undefined
+    ) {
+      const restoreRepository = new RestoreStateRepository(persistence);
+      restoreRecovery = new RestoreRecoveryManager(
+        restoreDirectory,
+        restoreRecoveryKey,
+        options.backupVaultClient,
+        options.backupCapabilityIssuer,
+      );
+      restoreCommits = new RestoreCommitCoordinator(
+        persistence,
+        config.persistence.databaseFile,
+        restoreRepository,
+        restorePreviews,
+        restoreMaintenance,
+        restoreRecovery,
+        new RestoreReplacementRepository(persistence),
+        options.backupVaultClient,
+        options.backupCapabilityIssuer,
+        stepUpRepository,
+        async () => {
+          const readiness = persistence.readiness;
+          if (
+            readiness.database !== "ready"
+            || readiness.schema !== "ready"
+            || readiness.administrativeAudit !== "ready"
+          ) return false;
+          try {
+            return (await options.backupVaultClient!.readiness()).status
+              === "ready";
+          } catch {
+            return false;
+          }
+        },
+      );
+    }
     server = createControlApplication(config, {
       persistence,
       ...options,
@@ -865,6 +919,7 @@ export async function startControlServer(
       backupCoordinator,
       ...(restoreStages === undefined ? {} : { restoreStages }),
       ...(restorePreviews === undefined ? {} : { restorePreviews }),
+      ...(restoreCommits === undefined ? {} : { restoreCommits }),
       restoreMaintenance,
     });
     await server.listen({
@@ -917,6 +972,7 @@ export async function startControlServer(
     serviceManagement?.close();
     localAuthentication?.close();
     identityKeyRing?.destroy();
+    restoreRecovery?.close();
     await persistence.close();
     throw error;
   }
@@ -949,6 +1005,7 @@ export async function startControlServer(
         serviceManagement?.close();
         localAuthentication?.close();
         identityKeyRing?.destroy();
+        restoreRecovery?.close();
         await persistence.close();
       })();
       return closePromise;

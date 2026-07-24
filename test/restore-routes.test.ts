@@ -8,6 +8,7 @@ import type { ControlAuthorizationSeam } from "../src/control/routeRegistry.js";
 import { createControlApplication } from "../src/control/server.js";
 import type { RestoreStageCoordinator } from "../src/restoreStaging.js";
 import type { RestorePreviewCoordinator } from "../src/restorePreview.js";
+import type { RestoreCommitCoordinator } from "../src/restoreCommit.js";
 import type { GatewayConfig } from "../src/types.js";
 import { RestoreMaintenanceGate } from "../src/restoreMaintenance.js";
 
@@ -238,6 +239,78 @@ describe("restore staging HTTP contracts", () => {
       "x-permission": "restore",
       "x-step-up": "five_minutes",
     });
+    expect(response.json().paths[
+      "/api/v2/restores/{stage_id}/commit"
+    ].post).toMatchObject({
+      security: [{ browserSession: [] }],
+      "x-permission": "restore",
+      "x-step-up": "always",
+    });
+    await application.close();
+  });
+
+  it("requires an exact always-step-up commit contract and clears passphrases", async () => {
+    const commit = vi.fn(async (input: { passphrase?: Uint8Array }) => {
+      expect(Buffer.from(input.passphrase!).toString("utf8")).toBe(
+        "correct passphrase",
+      );
+      return commitResult();
+    });
+    const application = app(
+      browserActor(),
+      {},
+      true,
+      undefined,
+      undefined,
+      { commit },
+    );
+    const response = await application.inject({
+      method: "POST",
+      url: `/api/v2/restores/${STAGE_ID}/commit`,
+      headers: {
+        ...browserHeaders(),
+        "content-type": "application/json",
+      },
+      payload: {
+        preview_id: previewResult().id,
+        confirmation: `RESTORE ${ARCHIVE_ID}`,
+        justification: "Replace the portable configuration now.",
+        passphrase: "correct passphrase",
+      },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json().data).toMatchObject({
+      stage_id: STAGE_ID,
+      preview_id: previewResult().id,
+      signed_out: true,
+      services: 1,
+      revoked_sessions: 2,
+    });
+    expect(response.body).not.toContain("correct passphrase");
+    expect(commit).toHaveBeenCalledWith(expect.objectContaining({
+      actor: browserActor(),
+      stageId: STAGE_ID,
+      previewId: previewResult().id,
+      confirmation: `RESTORE ${ARCHIVE_ID}`,
+      justification: "Replace the portable configuration now.",
+      stepUpProof: expect.objectContaining({ consumed: true }),
+    }));
+
+    const invalid = await application.inject({
+      method: "POST",
+      url: `/api/v2/restores/${STAGE_ID}/commit`,
+      headers: {
+        ...browserHeaders(),
+        "content-type": "application/json",
+      },
+      payload: {
+        preview_id: previewResult().id,
+        confirmation: `RESTORE ${ARCHIVE_ID}`,
+        justification: "short",
+      },
+    });
+    expect(invalid.statusCode).toBe(400);
+    expect(commit).toHaveBeenCalledOnce();
     await application.close();
   });
 });
@@ -253,6 +326,9 @@ function app(
     preview?: ReturnType<typeof vi.fn>;
   },
   maintenance?: RestoreMaintenanceGate,
+  commits?: {
+    commit?: ReturnType<typeof vi.fn>;
+  },
 ) {
   const authenticator: ControlAuthenticator = {
     authenticate: async () => actor,
@@ -265,9 +341,13 @@ function app(
       rule,
       _request: FastifyRequest,
       operation,
-    ) => allowStepUp
-      && rule === "five_minutes"
-      && operation.routeId.startsWith("restores."),
+    ) => {
+      if (!allowStepUp || !operation.routeId.startsWith("restores.")) {
+        return false;
+      }
+      return rule === "always" || rule === "five_minutes";
+    },
+    stepUpProof: () => ({ consumed: true }) as never,
   };
   return createControlApplication(config(), {
     authenticator,
@@ -282,6 +362,12 @@ function app(
     ...(maintenance === undefined
       ? {}
       : { restoreMaintenance: maintenance }),
+    ...(commits === undefined
+      ? {}
+      : {
+          restoreCommits:
+            commits as unknown as RestoreCommitCoordinator,
+        }),
   });
 }
 
@@ -330,6 +416,24 @@ function previewResult() {
     version: 1,
     createdAt: 1_800_000_000_000,
     updatedAt: 1_800_000_000_000,
+  };
+}
+
+function commitResult() {
+  return {
+    operationId: "018f1f2e-7b3c-7a10-8000-000000000013",
+    stageId: STAGE_ID,
+    previewId: previewResult().id,
+    signedOut: true as const,
+    services: 1,
+    destinations: 1,
+    credentials: 1,
+    policies: 1,
+    rules: 1,
+    remediations: 4,
+    revokedApiKeys: 1,
+    revokedSessions: 2,
+    revokedOauthGrants: 3,
   };
 }
 

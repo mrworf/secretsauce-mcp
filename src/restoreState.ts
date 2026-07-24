@@ -384,6 +384,31 @@ export class RestoreStateRepository {
     }).then(wirePreview);
   }
 
+  async previewForActor(
+    previewId: string,
+    stageId: string,
+    subjectUserId: string,
+  ): Promise<RestorePreview> {
+    validateUuid(previewId);
+    validateUuid(stageId);
+    validateUuid(subjectUserId);
+    return this.owner.execute({
+      run: (database) => database.withOperationalTransaction((transaction) => {
+        const now = transaction.timestamp();
+        expireRows(transaction, now, 100);
+        const row = transaction.get<PreviewRow>(`
+          SELECT * FROM restore_previews
+          WHERE id = ? AND stage_id = ? AND subject_user_id = ?
+        `, [previewId, stageId, subjectUserId]);
+        if (row === undefined) throw new RestoreStateError("not_found");
+        if (row.state === "expired" || row.expires_at <= now) {
+          throw new RestoreStateError("expired");
+        }
+        return wirePreview(row);
+      }),
+    });
+  }
+
   async claimPreview(input: {
     previewId: string;
     stageId: string;
@@ -394,36 +419,50 @@ export class RestoreStateRepository {
     validateClaimInput(input);
     return this.owner.execute({
       run: (database) => database.withOperationalTransaction((transaction) => {
-        const now = transaction.timestamp();
-        expireRows(transaction, now, 100);
-        const result = transaction.run(`
-          UPDATE restore_previews
-          SET state = 'claimed', claimed_at = ?, version = version + 1,
-            updated_at = ?
-          WHERE id = ? AND stage_id = ? AND subject_user_id = ?
-            AND archive_sha256 = ? AND plan_digest = ? AND state = 'ready'
-            AND expires_at > ?
-        `, [
-          now,
-          now,
-          input.previewId,
-          input.stageId,
-          input.subjectUserId,
-          input.archiveSha256,
-          input.planDigest,
-          now,
-        ]);
-        if (result.changes !== 1) throw new RestoreStateError("conflict");
-        const stage = transaction.run(`
-          UPDATE restore_stages
-          SET state = 'committing', version = version + 1, updated_at = ?
-          WHERE id = ? AND subject_user_id = ? AND state = 'previewed'
-            AND expires_at > ?
-        `, [now, input.stageId, input.subjectUserId, now]);
-        if (stage.changes !== 1) throw new RestoreStateError("conflict");
-        return wirePreview(previewById(transaction, input.previewId)!);
+        return this.claimPreviewInTransaction(transaction, input);
       }),
     });
+  }
+
+  claimPreviewInTransaction(
+    transaction: PersistenceTransaction,
+    input: {
+      previewId: string;
+      stageId: string;
+      subjectUserId: string;
+      archiveSha256: string;
+      planDigest: string;
+    },
+  ): RestorePreview {
+    validateClaimInput(input);
+    const now = transaction.timestamp();
+    expireRows(transaction, now, 100);
+    const result = transaction.run(`
+      UPDATE restore_previews
+      SET state = 'claimed', claimed_at = ?, version = version + 1,
+        updated_at = ?
+      WHERE id = ? AND stage_id = ? AND subject_user_id = ?
+        AND archive_sha256 = ? AND plan_digest = ? AND state = 'ready'
+        AND expires_at > ?
+    `, [
+      now,
+      now,
+      input.previewId,
+      input.stageId,
+      input.subjectUserId,
+      input.archiveSha256,
+      input.planDigest,
+      now,
+    ]);
+    if (result.changes !== 1) throw new RestoreStateError("conflict");
+    const stage = transaction.run(`
+      UPDATE restore_stages
+      SET state = 'committing', version = version + 1, updated_at = ?
+      WHERE id = ? AND subject_user_id = ? AND state = 'previewed'
+        AND expires_at > ?
+    `, [now, input.stageId, input.subjectUserId, now]);
+    if (stage.changes !== 1) throw new RestoreStateError("conflict");
+    return wirePreview(previewById(transaction, input.previewId)!);
   }
 
   async finalizePreview(
@@ -529,6 +568,26 @@ export class RestoreStateRepository {
             recovery_expires_at = NULL, version = version + 1, updated_at = ?
           WHERE singleton = 1 AND operation_id = ?
             AND phase IN ('maintenance', 'health_passed', 'rolled_back')
+        `, [now, operationId]);
+        if (result.changes !== 1) throw new RestoreStateError("conflict");
+        return wireState(stateRow(transaction));
+      }),
+    });
+  }
+
+  async markRolledBack(operationId: string): Promise<RestoreState> {
+    validateUuid(operationId);
+    return this.owner.execute({
+      run: (database) => database.withOperationalTransaction((transaction) => {
+        const now = transaction.timestamp();
+        const result = transaction.run(`
+          UPDATE restore_state
+          SET phase = 'rolled_back', version = version + 1, updated_at = ?
+          WHERE singleton = 1 AND operation_id = ?
+            AND phase IN (
+              'maintenance', 'snapshot_ready', 'vault_applied',
+              'database_committed'
+            )
         `, [now, operationId]);
         if (result.changes !== 1) throw new RestoreStateError("conflict");
         return wireState(stateRow(transaction));

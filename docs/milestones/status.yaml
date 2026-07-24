@@ -93,10 +93,10 @@ milestones:
   - id: "13"
     title: "Persisted Runtime Authorization"
     file: "docs/milestones/13-persisted-runtime-authorization.md"
-    status: "pending"
+    status: "in_progress"
     completed_at: null
     commit_hash: null
-    notes: ""
+    notes: "Decision-complete runtime cutover and security plan under docs/plans/milestone-13-persisted-runtime-authorization.md."
   - id: "14"
     title: "Multi-User MCP OAuth"
     file: "docs/milestones/14-multiuser-mcp-oauth.md"

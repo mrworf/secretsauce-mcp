@@ -11,6 +11,11 @@ export interface ControlAuthenticationContext {
   method: ControlAuthenticationMethod;
   principalId: string;
   role: ControlRole;
+  apiKey?: {
+    nickname: string;
+    lastFour: string;
+    serviceId?: string;
+  };
 }
 
 export interface ControlAuthenticator {

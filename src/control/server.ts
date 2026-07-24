@@ -137,6 +137,10 @@ import {
   type AccessRouteDependencies,
 } from "./accessRoutes.js";
 import type { ReferenceAggregateSource } from "../tokens.js";
+import {
+  ApiKeyRepository,
+  SystemApiKeyAuthenticator,
+} from "../apiKeys.js";
 
 export interface ControlApplicationOptions {
   authenticator?: ControlAuthenticator;
@@ -332,6 +336,8 @@ export async function startControlServer(
   let identityKeyRing: IdentityKeyRing | undefined;
   let databaseOAuthHasher: DatabaseOAuthTokenHasher | undefined;
   let oauthIntentState: OAuthIntentStateCodec | undefined;
+  let apiKeyRepository: ApiKeyRepository | undefined;
+  let apiKeyAuthenticator: SystemApiKeyAuthenticator | undefined;
   try {
     let localIdentity: LocalIdentityControl | undefined;
     if (config.identity !== undefined) {
@@ -544,9 +550,15 @@ export async function startControlServer(
         sessionKey.fill(0);
       }
     }
+    apiKeyRepository = new ApiKeyRepository(persistence);
+    apiKeyAuthenticator = await SystemApiKeyAuthenticator.create(
+      apiKeyRepository,
+      localIdentity?.authenticator ?? denyControlAuthentication,
+    );
     server = createControlApplication(config, {
       persistence,
       ...options,
+      authenticator: apiKeyAuthenticator,
       ...(localIdentity === undefined
         ? {}
         : { identityReadiness: async () => "ready" as const }),

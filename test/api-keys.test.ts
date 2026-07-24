@@ -1,4 +1,4 @@
-import { mkdtempSync } from "node:fs";
+import { chmodSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -8,6 +8,7 @@ import {
   ApiKeyRepository,
   ApiKeyService,
   ApiKeyVerifierPool,
+  SystemApiKeyAuthenticator,
   generateApiKey,
   hashApiKey,
   isSupportedApiKeyHash,
@@ -16,6 +17,11 @@ import {
   parseExpiration,
 } from "../src/apiKeys.js";
 import type { ControlAuthenticationContext } from "../src/control/authentication.js";
+import type { ControlAuthenticator } from "../src/control/authentication.js";
+import { defineControlRoute } from "../src/control/routeRegistry.js";
+import { createControlApplication } from "../src/control/server.js";
+import { z } from "../src/control/zod.js";
+import { validateConfig } from "../src/config.js";
 import { PersistenceWorker } from "../src/persistence/worker.js";
 
 const NOW = 1_785_000_000_000;
@@ -415,6 +421,163 @@ describe("system API key creation and metadata", () => {
   });
 });
 
+describe("system API key control authentication", () => {
+  it("authenticates an exact bearer independently of its creator and records safe use", async () => {
+    const fixture = await apiKeyFixture("authenticate");
+    const created = await fixture.service.create(fixture.superadmin, {
+      nickname: "Control client",
+      apiRole: "system",
+      expiration: { policy: "forever" },
+    }, CORRELATION);
+    await fixture.worker.execute({
+      run: (database) => database.withOperationalTransaction((transaction) => {
+        transaction.run(
+          "UPDATE users SET status = 'deactivated', updated_at = ?, version = version + 1 WHERE id = ?",
+          [NOW, SUPERADMIN_ID],
+        );
+      }),
+    });
+    const authenticator = await SystemApiKeyAuthenticator.create(
+      fixture.repository,
+      browserDelegate(),
+    );
+    const application = apiKeyApplication(authenticator);
+    const response = await application.inject({
+      method: "GET",
+      url: "/api/v2/test/api-principal",
+      headers: {
+        host: "control.example.org",
+        authorization: `Bearer ${created.oneTimeKey}`,
+      },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      data: {
+        method: "api_key",
+        principal_id: created.apiKey.id,
+        role: "system",
+        nickname: "Control client",
+        last_four: created.apiKey.lastFour,
+      },
+    });
+    const activity = await fixture.repository.activity({
+      actor: {
+        ...fixture.superadmin,
+        principalId: ADMIN_ID,
+        role: "admin",
+      },
+      id: created.apiKey.id,
+      limit: 10,
+    }).catch(() => undefined);
+    expect(activity).toBeUndefined();
+    const safeRows = await fixture.worker.execute({
+      run: (database) => database.read((query) => query.all<{
+        action: string;
+        outcome: string;
+        source_digest: string | null;
+      }>(`
+        SELECT action, outcome, source_digest
+        FROM api_key_activity
+        WHERE api_key_id = ?
+        ORDER BY occurred_at DESC, id DESC
+      `, [created.apiKey.id])),
+    });
+    expect(safeRows[0]).toEqual({
+      action: "api_keys.authenticate",
+      outcome: "allow",
+      source_digest: expect.stringMatching(/^[a-f0-9]{64}$/),
+    });
+    expect(JSON.stringify(safeRows)).not.toContain(created.oneTimeKey);
+    await application.close();
+  });
+
+  it("rejects malformed, wrong, expired, and revoked keys without browser fallback", async () => {
+    let now = NOW;
+    const fixture = await apiKeyFixture("auth-denials", () => now);
+    const created = await fixture.service.create(fixture.superadmin, {
+      nickname: "Short lived",
+      apiRole: "system",
+      expiration: { policy: "days", days: 1 },
+    }, CORRELATION);
+    const authenticator = await SystemApiKeyAuthenticator.create(
+      fixture.repository,
+      browserDelegate(),
+    );
+    const application = apiKeyApplication(authenticator);
+    const wrong = `${created.oneTimeKey.slice(0, -1)}${
+      created.oneTimeKey.endsWith("A") ? "B" : "A"
+    }`;
+    for (const authorization of [
+      "Basic ignored",
+      "Bearer malformed",
+      `Bearer ${wrong}`,
+    ]) {
+      const response = await application.inject({
+        method: "GET",
+        url: "/api/v2/test/api-principal",
+        headers: {
+          host: "control.example.org",
+          cookie: "browser=ok",
+          authorization,
+        },
+      });
+      expect(response.statusCode).toBe(401);
+    }
+    now += 86_400_000;
+    expect((await application.inject({
+      method: "GET",
+      url: "/api/v2/test/api-principal",
+      headers: { host: "control.example.org", authorization: `Bearer ${created.oneTimeKey}` },
+    })).statusCode).toBe(401);
+    expect(await fixture.repository.metadata(created.apiKey.id, fixture.superadmin))
+      .toMatchObject({ status: "expired", version: 2 });
+    await application.close();
+
+    const revokedFixture = await apiKeyFixture("auth-revoked");
+    const revoked = await revokedFixture.service.create(revokedFixture.superadmin, {
+      nickname: "Revoked client",
+      apiRole: "system",
+      expiration: { policy: "forever" },
+    }, CORRELATION);
+    await revokedFixture.repository.revoke({
+      actor: revokedFixture.superadmin,
+      id: revoked.apiKey.id,
+      expectedVersion: 1,
+      justification: "No longer needed",
+      correlationId: CORRELATION,
+    });
+    const revokedApplication = apiKeyApplication(await SystemApiKeyAuthenticator.create(
+      revokedFixture.repository,
+      browserDelegate(),
+    ));
+    expect((await revokedApplication.inject({
+      method: "GET",
+      url: "/api/v2/test/api-principal",
+      headers: { host: "control.example.org", authorization: `Bearer ${revoked.oneTimeKey}` },
+    })).statusCode).toBe(401);
+    await revokedApplication.close();
+  });
+
+  it("delegates requests without Authorization while API keys never satisfy CSRF", async () => {
+    const fixture = await apiKeyFixture("auth-delegate");
+    const authenticator = await SystemApiKeyAuthenticator.create(
+      fixture.repository,
+      browserDelegate(),
+    );
+    const application = apiKeyApplication(authenticator, ["browser_session"]);
+    const response = await application.inject({
+      method: "GET",
+      url: "/api/v2/test/api-principal",
+      headers: { host: "control.example.org", cookie: "browser=ok" },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      data: { method: "browser_session", role: "superadmin" },
+    });
+    await application.close();
+  });
+});
+
 async function apiKeyFixture(
   name: string,
   now: () => number = () => NOW,
@@ -507,4 +670,99 @@ function expectApiKeyError(operation: () => unknown, code: ApiKeyError["code"]):
     expect(error).toBeInstanceOf(ApiKeyError);
     expect(error).toMatchObject({ code });
   }
+}
+
+function browserDelegate(): ControlAuthenticator {
+  return {
+    authenticate: async (request) => request.headers.cookie === "browser=ok"
+      ? {
+          method: "browser_session",
+          principalId: SUPERADMIN_ID,
+          role: "superadmin",
+        }
+      : undefined,
+    verifyCsrf: async () => true,
+  };
+}
+
+function apiKeyApplication(
+  authenticator: ControlAuthenticator,
+  authentication: Array<"api_key" | "browser_session"> = ["api_key"],
+) {
+  return createControlApplication(controlConfig(), {
+    authenticator,
+    registerControlRoutes: (registry) => {
+      registry.register(defineControlRoute({
+        id: "test.api_key_principal",
+        method: "GET",
+        path: "/api/v2/test/api-principal",
+        summary: "Return the safe authenticated principal.",
+        tags: ["Test"],
+        authentication,
+        permission: "authenticated",
+        stepUp: "none",
+        schemas: {
+          response: z.object({
+            method: z.enum(["api_key", "browser_session"]),
+            principal_id: z.string(),
+            role: z.enum(["superadmin", "service", "all_services", "system"]),
+            nickname: z.string().optional(),
+            last_four: z.string().optional(),
+          }).strict(),
+        },
+        rateLimit: "management",
+        secretFields: [],
+        cache: "no-store",
+        concurrency: "none",
+        idempotency: "none",
+        handler: ({ authentication: context }) => ({
+          data: {
+            method: context!.method as "api_key" | "browser_session",
+            principal_id: context!.principalId,
+            role: context!.role as "superadmin" | "service" | "all_services" | "system",
+            ...(context!.apiKey === undefined
+              ? {}
+              : {
+                  nickname: context!.apiKey.nickname,
+                  last_four: context!.apiKey.lastFour,
+                }),
+          },
+        }),
+      }));
+    },
+  });
+}
+
+function controlConfig() {
+  const directory = mkdtempSync(join(tmpdir(), "secretsauce-api-key-control-"));
+  const keyFile = join(directory, "idempotency.key");
+  writeFileSync(keyFile, `${Buffer.alloc(32, 9).toString("base64url")}\n`, { mode: 0o600 });
+  chmodSync(keyFile, 0o600);
+  return validateConfig({
+    server: {
+      listen: "127.0.0.1:8080",
+      mcp_path: "/mcp",
+      resource: "https://mcp.example.org",
+    },
+    control: {
+      listen: "127.0.0.1:8081",
+      public_origin: "https://control.example.org",
+      idempotency_hmac_key_file: keyFile,
+    },
+    persistence: {
+      database_file: join(directory, "control.sqlite"),
+    },
+    auth: {
+      mode: "bearer",
+      bearer: { token_env: "TEST_GATEWAY_TOKEN" },
+    },
+    services: {
+      demo: {
+        type: "http",
+        name: "Demo",
+        no_auth: true,
+        destinations: [{ name: "primary", base_url: "https://api.example.org" }],
+      },
+    },
+  }, { TEST_GATEWAY_TOKEN: "data-plane-test-token" });
 }

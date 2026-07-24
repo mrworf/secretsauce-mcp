@@ -1,6 +1,11 @@
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { argon2id, hash as argon2Hash, verify as argon2Verify } from "argon2";
-import type { ControlAuthenticationContext } from "./control/authentication.js";
+import type { FastifyRequest } from "fastify";
+import type {
+  ControlAuthenticationContext,
+  ControlAuthenticator,
+} from "./control/authentication.js";
+import { ControlContractError } from "./control/contracts.js";
 import type { AdministrativeAuditEventInput } from "./persistence/administrativeAudit.js";
 import { PersistenceError } from "./persistence/errors.js";
 import type { PersistenceTransaction } from "./persistence/transaction.js";
@@ -126,6 +131,12 @@ interface ApiKeyRow {
   revoked_at: number | null;
 }
 
+export interface ApiKeyAuthenticationCandidate {
+  id: string;
+  identifier: string;
+  verifierHash: string;
+}
+
 export function generateApiKey(
   random: (size: number) => Buffer = randomBytes,
 ): GeneratedApiKey {
@@ -163,21 +174,18 @@ export function parseApiKey(value: unknown): ParsedApiKey {
   ) {
     throw new ApiKeyError("invalid_request");
   }
-  const pieces = value.split("_");
   if (
-    pieces.length !== 4 ||
-    pieces[0] !== "ssk" ||
-    pieces[1] !== "v1" ||
-    pieces[2]?.length !== IDENTIFIER_LENGTH ||
-    pieces[3]?.length !== SECRET_LENGTH
+    !value.startsWith(`${KEY_PREFIX}_`) ||
+    value[KEY_PREFIX.length + 1 + IDENTIFIER_LENGTH] !== "_"
   ) {
     throw new ApiKeyError("invalid_request");
   }
-  const identifier = pieces[2];
-  const secret = pieces[3];
+  const identifierStart = KEY_PREFIX.length + 1;
+  const identifier = value.slice(identifierStart, identifierStart + IDENTIFIER_LENGTH);
+  const secret = value.slice(identifierStart + IDENTIFIER_LENGTH + 1);
   if (
-    identifier === undefined ||
-    secret === undefined ||
+    identifier.length !== IDENTIFIER_LENGTH ||
+    secret.length !== SECRET_LENGTH ||
     !canonicalBase64url(identifier, IDENTIFIER_BYTES) ||
     !canonicalBase64url(secret, SECRET_BYTES)
   ) {
@@ -713,6 +721,120 @@ export class ApiKeyRepository {
       throw mapApiKeyError(error);
     }
   }
+
+  async authenticationCandidate(
+    identifier: string,
+  ): Promise<ApiKeyAuthenticationCandidate | undefined> {
+    if (!canonicalBase64url(identifier, IDENTIFIER_BYTES)) return undefined;
+    try {
+      return await this.owner.execute({
+        run: (database) => database.read((query) => {
+          const row = query.get<{
+            id: string;
+            identifier: string;
+            verifier_hash: string;
+          }>(
+            "SELECT id, identifier, verifier_hash FROM api_keys WHERE identifier = ?",
+            [identifier],
+          );
+          if (row === undefined || !isSupportedApiKeyHash(row.verifier_hash)) return undefined;
+          return {
+            id: row.id,
+            identifier: row.identifier,
+            verifierHash: row.verifier_hash,
+          };
+        }),
+      });
+    } catch {
+      throw new ApiKeyError("unavailable");
+    }
+  }
+
+  async completeAuthentication(input: {
+    candidate: ApiKeyAuthenticationCandidate;
+    verified: boolean;
+    requestId: string;
+    directSource: string;
+  }): Promise<ControlAuthenticationContext | undefined> {
+    if (
+      !isUuidV7(input.candidate.id) ||
+      !canonicalBase64url(input.candidate.identifier, IDENTIFIER_BYTES) ||
+      !isSupportedApiKeyHash(input.candidate.verifierHash) ||
+      typeof input.verified !== "boolean" ||
+      !/^req_[0-9a-f-]{36}$/.test(input.requestId) ||
+      input.directSource.length < 1 ||
+      input.directSource.length > 256 ||
+      /[\0\r\n]/.test(input.directSource)
+    ) throw new ApiKeyError("invalid_request");
+    const sourceDigest = createHash("sha256")
+      .update("secretsauce.api-key-source.v1\0", "utf8")
+      .update(input.directSource, "utf8")
+      .digest("hex");
+    try {
+      return await this.owner.execute({
+        run: (database) => database.withOperationalTransaction((transaction) => {
+          const row = transaction.get<ApiKeyRow>(
+            "SELECT * FROM api_keys WHERE id = ? AND identifier = ?",
+            [input.candidate.id, input.candidate.identifier],
+          );
+          if (row === undefined) return undefined;
+          const now = transaction.timestamp();
+          const expired = row.expires_at !== null && row.expires_at <= now;
+          const allowed = input.verified && row.status === "active" && !expired;
+          if (expired && row.status === "active") {
+            transaction.run(`
+              UPDATE api_keys
+              SET status = 'expired', updated_at = ?, version = version + 1
+              WHERE id = ? AND status = 'active'
+            `, [now, row.id]);
+          }
+          if (allowed) {
+            transaction.run(`
+              UPDATE api_keys
+              SET last_used_at = ?, updated_at = max(updated_at, ?)
+              WHERE id = ? AND status = 'active'
+            `, [now, now, row.id]);
+          }
+          const snapshot = allowed
+            ? { ...row, last_used_at: now, updated_at: Math.max(row.updated_at, now) }
+            : expired && row.status === "active"
+              ? { ...row, status: "expired" as const, updated_at: now, version: row.version + 1 }
+              : row;
+          insertActivity(transaction, snapshot, {
+            id: this.#uuid(),
+            action: "api_keys.authenticate",
+            outcome: allowed ? "allow" : "deny",
+            targetType: "control_api",
+            requestId: input.requestId,
+            sourceDigest,
+            ...(allowed
+              ? {}
+              : {
+                  failureCode: !input.verified
+                    ? "authentication_failed"
+                    : expired
+                      ? "expired"
+                      : row.status,
+                }),
+          });
+          if (!allowed) return undefined;
+          return {
+            method: "api_key",
+            principalId: row.id,
+            role: row.api_role,
+            apiKey: {
+              nickname: row.nickname,
+              lastFour: row.last_four,
+              ...(row.service_id === null ? {} : { serviceId: row.service_id }),
+            },
+          };
+        }),
+      });
+    } catch (error) {
+      if (error instanceof ApiKeyError) throw error;
+      throw new ApiKeyError("unavailable");
+    }
+  }
 }
 
 export class ApiKeyService {
@@ -799,6 +921,84 @@ export class ApiKeyService {
       correlationId,
     });
     return { apiKey, oneTimeKey: generated.value };
+  }
+}
+
+export class SystemApiKeyAuthenticator implements ControlAuthenticator {
+  private constructor(
+    private readonly repository: ApiKeyRepository,
+    private readonly verifier: ApiKeyVerifierPool,
+    private readonly dummyVerifier: string,
+    private readonly delegate: ControlAuthenticator,
+  ) {}
+
+  static async create(
+    repository: ApiKeyRepository,
+    delegate: ControlAuthenticator,
+    verifier = new ApiKeyVerifierPool(),
+  ): Promise<SystemApiKeyAuthenticator> {
+    const generated = generateApiKey();
+    const dummyVerifier = await hashApiKey(generated.raw);
+    return new SystemApiKeyAuthenticator(repository, verifier, dummyVerifier, delegate);
+  }
+
+  async authenticate(
+    request: FastifyRequest,
+  ): Promise<ControlAuthenticationContext | undefined> {
+    const authorization = request.headers.authorization;
+    if (authorization === undefined) return this.delegate.authenticate(request);
+    if (
+      typeof authorization !== "string" ||
+      authorization.length > 256 ||
+      !authorization.startsWith("Bearer ")
+    ) return undefined;
+    let parsed: ParsedApiKey;
+    try {
+      parsed = parseApiKey(authorization.slice(7));
+    } catch {
+      return undefined;
+    }
+    let candidate: ApiKeyAuthenticationCandidate | undefined;
+    try {
+      candidate = await this.repository.authenticationCandidate(parsed.identifier);
+      const verified = await this.verifier.check(
+        parsed.raw,
+        candidate?.verifierHash ?? this.dummyVerifier,
+      );
+      if (candidate === undefined) return undefined;
+      return await this.repository.completeAuthentication({
+        candidate,
+        verified,
+        requestId: request.id,
+        directSource: request.ip,
+      });
+    } catch (error) {
+      parsed.raw.fill(0);
+      if (error instanceof ApiKeyError && error.code === "rate_limited") {
+        throw new ControlContractError(
+          429,
+          "rate_limited",
+          "Request rate limit exceeded.",
+        );
+      }
+      if (error instanceof ApiKeyError && error.code === "unavailable") {
+        throw new ControlContractError(
+          503,
+          "maintenance",
+          "API key authentication is temporarily unavailable.",
+        );
+      }
+      return undefined;
+    }
+  }
+
+  verifyCsrf(
+    context: ControlAuthenticationContext,
+    proof: string,
+    request: FastifyRequest,
+  ): Promise<boolean> {
+    if (context.method === "api_key") return Promise.resolve(false);
+    return this.delegate.verifyCsrf(context, proof, request);
   }
 }
 

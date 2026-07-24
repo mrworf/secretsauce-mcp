@@ -114,10 +114,10 @@ milestones:
   - id: "16"
     title: "System-Owned API Keys"
     file: "docs/milestones/16-system-api-keys.md"
-    status: "in_progress"
-    completed_at: null
-    commit_hash: null
-    notes: "Decision-complete implementation plan committed; implementation and validation in progress."
+    status: "completed"
+    completed_at: "2026-07-24T04:07:00.000Z"
+    commit_hash: "f8c72be"
+    notes: "Implemented canonical one-way API keys with immutable service/all-services/system authority, creator-independent authentication, per-key/source limits, complete route-matrix enforcement, guarded lifecycle and user operations, safe authentication/route activity, strict browser-only management APIs, and responsive one-time-value UX; production build, current OpenAPI, and full 96-file/730-test regression pass."
   - id: "17"
     title: "Self-API-Key Protection"
     file: "docs/milestones/17-self-api-key-protection.md"

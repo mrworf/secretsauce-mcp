@@ -163,10 +163,10 @@ milestones:
   - id: "23"
     title: "V1 Migration"
     file: "docs/milestones/23-v1-migration.md"
-    status: "in_progress"
-    completed_at: null
-    commit_hash: null
-    notes: "Decision-complete implementation plan written before code changes."
+    status: "completed"
+    completed_at: "2026-07-24T11:30:27.000Z"
+    commit_hash: "7853c01"
+    notes: "Implemented bounded V1 parsing, deterministic strict conversion, allowlisted one-time credential resolution, atomic definitions and recovery-coordinated vault commits, terminal dry-run/commit UX, permanent database-only authority, remediation, and operator guidance; production builds and OpenAPI are current, and the full 136-file/924-test regression passes."
   - id: "24"
     title: "Release Hardening And Documentation"
     file: "docs/milestones/24-release-hardening-documentation.md"

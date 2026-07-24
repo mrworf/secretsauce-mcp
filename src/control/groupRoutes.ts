@@ -504,9 +504,9 @@ export function registerGroupAssignmentRoutes(
   }));
 
   registry.register(defineControlRoute({
-    id: "services.access",
+    id: "services.assignment_access",
     method: "GET",
-    path: "/api/v2/services/{service_id}/access",
+    path: "/api/v2/services/{service_id}/assignments/access",
     summary: "Explain effective ordinary-user service access",
     tags: ["Assignments"],
     authentication: ["browser_session"],

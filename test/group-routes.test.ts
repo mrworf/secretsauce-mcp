@@ -149,7 +149,7 @@ describe("group and assignment HTTP contracts", () => {
     expect(assignmentRead.headers.etag).toBe('"2"');
     const access = await fixture.application.inject({
       method: "GET",
-      url: `/api/v2/services/${service.id}/access`,
+      url: `/api/v2/services/${service.id}/assignments/access`,
       headers: { host: "control.example.org" },
     });
     expect(access.statusCode).toBe(200);

@@ -10,6 +10,7 @@ import { ServicesPage } from "./ServicePages";
 import { GroupsPage } from "./GroupPages";
 import { CredentialsPage } from "./CredentialPages";
 import { PoliciesPage } from "./PolicyPages";
+import { AccessPage } from "./AccessPages";
 
 function routes(role: HumanControlRole): RouteObject[] {
   return [{
@@ -30,6 +31,8 @@ function routes(role: HumanControlRole): RouteObject[] {
             ? <CredentialsPage />
           : item.path === "/policies"
             ? <PoliciesPage />
+          : item.path === "/access"
+            ? <AccessPage role={role} />
           : item.path === "/profile"
             ? <ProfilePage />
             : <PlaceholderPage />,

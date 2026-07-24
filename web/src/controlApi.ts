@@ -442,6 +442,87 @@ export interface OneTimeUser {
   expires_at?: number;
 }
 
+export interface AccessSession {
+  id: string;
+  user_id: string;
+  user_label: string;
+  role: UserRole;
+  current: boolean;
+  issued_at: number;
+  last_used_at: number;
+  expires_at: number;
+  status: "active" | "expired" | "revoked" | "invalid";
+}
+
+export interface OAuthGrantAccess {
+  id: string;
+  user_id: string;
+  user_label: string;
+  client_id: string;
+  client_identifier: string;
+  client_name: string;
+  resource: string;
+  scopes: string[];
+  authentication_method: "local_password_totp" | "oidc";
+  issued_at: number;
+  last_used_at: number;
+  expires_at: number;
+  oauth_grant_status: "active" | "expired" | "revoked" | "invalid";
+  usable: boolean;
+  services: string[];
+}
+
+export interface ServiceGrantAccess {
+  grant_id: string;
+  user_id: string;
+  user_label: string;
+  client_id: string;
+  client_identifier: string;
+  client_name: string;
+  service_id: string;
+  service_name: string;
+  issued_at: number;
+  last_used_at: number;
+  expires_at: number;
+  oauth_grant_status: "active" | "expired" | "revoked" | "invalid";
+  capability_status: "active" | "invalid";
+  credential_count: number;
+  policy_count: number;
+  references: {
+    gref: { active: number; expired: number; invalid: number };
+    sec: { active: number; expired: number; invalid: number };
+  };
+}
+
+export interface AccessControlApi
+  extends Pick<ServiceControlApi, "listServices"> {
+  listSessions(global?: boolean): Promise<{ items: AccessSession[]; next_cursor?: string }>;
+  listOAuthGrants(global?: boolean): Promise<{ items: OAuthGrantAccess[]; next_cursor?: string }>;
+  revokeSession(sessionId: string, global?: boolean): Promise<{
+    target_id: string;
+    revoked: boolean;
+  }>;
+  revokeOAuthGrant(grantId: string): Promise<{
+    target_id: string;
+    revoked: boolean;
+  }>;
+  serviceGrantAccess(serviceId: string): Promise<{
+    items: ServiceGrantAccess[];
+    next_cursor?: string;
+  }>;
+  invalidateCapabilities(
+    serviceId: string,
+    target:
+      | { kind: "service" }
+      | { kind: "assignment"; user_id: string },
+    justification: string,
+  ): Promise<{
+    capability_status: "invalidated";
+    invalidated_references: number;
+    oauth_grants_revoked: 0;
+  }>;
+}
+
 interface Envelope<T> {
   data: T;
 }
@@ -633,7 +714,7 @@ export type UserAction =
 
 export const browserControlApi:
   ControlApi & OidcControlApi & OidcManagementApi & ServiceControlApi &
-    GroupControlApi & CredentialControlApi & PolicyControlApi = {
+    GroupControlApi & CredentialControlApi & PolicyControlApi & AccessControlApi = {
   session: () => get<ControlSession>("/api/v2/auth/session"),
   oidcProviders: () => get<{ providers: OidcProviderLabel[] }>("/api/v2/auth/oidc/providers"),
   beginOidc: (providerId) => {
@@ -848,8 +929,34 @@ export const browserControlApi:
       true,
     ),
   serviceAccess: (serviceId) =>
-    get(`/api/v2/services/${encodeURIComponent(serviceId)}/access`),
+    get(`/api/v2/services/${encodeURIComponent(serviceId)}/assignments/access`),
   ownServices: () => get("/api/v2/users/me/services"),
+  listSessions: (global = false) =>
+    get(global ? "/api/v2/security/sessions" : "/api/v2/access/sessions"),
+  listOAuthGrants: (global = false) =>
+    get(global ? "/api/v2/security/oauth-grants" : "/api/v2/access/grants"),
+  revokeSession: (sessionId, global = false) =>
+    mutation(
+      global
+        ? `/api/v2/security/sessions/${encodeURIComponent(sessionId)}`
+        : `/api/v2/access/sessions/${encodeURIComponent(sessionId)}`,
+      "DELETE",
+      undefined,
+    ),
+  revokeOAuthGrant: (grantId) =>
+    mutation(
+      `/api/v2/access/grants/${encodeURIComponent(grantId)}`,
+      "DELETE",
+      undefined,
+    ),
+  serviceGrantAccess: (serviceId) =>
+    get(`/api/v2/services/${encodeURIComponent(serviceId)}/access`),
+  invalidateCapabilities: (serviceId, target, justification) =>
+    mutation(
+      `/api/v2/services/${encodeURIComponent(serviceId)}/capabilities/invalidate`,
+      "POST",
+      { target, justification },
+    ),
   listCredentials: (serviceId) =>
     get(`/api/v2/services/${encodeURIComponent(serviceId)}/credentials`),
   createCredential: (serviceId, input) =>

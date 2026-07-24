@@ -101,7 +101,7 @@ The authenticated browser API provides:
 - `GET|PUT /api/v2/services/{service_id}/groups/{group_id}/members`
 - `POST /api/v2/services/{service_id}/groups/{group_id}/archive`
 - `GET|PUT /api/v2/services/{service_id}/assignments`
-- `GET /api/v2/services/{service_id}/access`
+- `GET /api/v2/services/{service_id}/assignments/access`
 - `GET /api/v2/users/me/services`
 
 All request shapes are closed and bounded, reads are `no-store`, and mutations

@@ -160,6 +160,33 @@ export class VaultResolveCapabilityIssuer {
   }
 }
 
+export class VaultBackupCapabilityIssuer {
+  readonly #backupKey: Buffer;
+  readonly #now: () => number;
+
+  constructor(backupKey: Uint8Array, now: () => number = Date.now) {
+    this.#backupKey = validatedKey(backupKey);
+    this.#now = now;
+  }
+
+  issueBackup(
+    input: BackupCapabilityInput,
+    ttlMs = BACKUP_TTL_MS,
+  ): string {
+    const issuedAt = this.#now();
+    validateTtl(ttlMs, BACKUP_TTL_MS);
+    return sign({
+      version: 1,
+      kind: "backup",
+      capabilityId: randomUUID(),
+      issuedAt,
+      expiresAt: issuedAt + ttlMs,
+      caller: "backup",
+      ...input,
+    }, this.#backupKey, backupSchema);
+  }
+}
+
 function sign<T>(payload: T, key: Buffer, schema: z.ZodType<T>): string {
   const parsed = schema.safeParse(payload);
   if (!parsed.success) throw vaultError("vault_capability_invalid");

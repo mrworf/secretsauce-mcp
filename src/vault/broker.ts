@@ -13,6 +13,10 @@ import { createServer, type Server, type Socket } from "node:net";
 import { dirname } from "node:path";
 import type { z } from "zod";
 import { VaultCapabilityAuthority } from "./capabilities.js";
+import {
+  canonicalizeVaultBackupSelection,
+  digestVaultBackupSelection,
+} from "./backupSelection.js";
 import { exportEncryptedVaultArchive, importEncryptedVaultArchive } from "./archive.js";
 import {
   createRequestSchema,
@@ -306,10 +310,25 @@ export class VaultBrokerServer {
         if (this.#transfers.size >= MAX_TRANSFERS) throw vaultError("vault_capacity_exceeded");
         const capability = this.#capabilities.consumeBackup(payload.capability);
         if (capability.operation !== "export_encrypted") throw vaultError("vault_capability_invalid");
+        const selection = canonicalizeVaultBackupSelection(payload.selection);
+        const expectedDigest = Buffer.from(
+          digestVaultBackupSelection(selection),
+          "hex",
+        );
+        const capabilityDigest = Buffer.from(capability.operationDigest, "hex");
+        const digestMatches = timingSafeEqual(expectedDigest, capabilityDigest);
+        expectedDigest.fill(0);
+        capabilityDigest.fill(0);
+        if (!digestMatches) throw vaultError("vault_capability_invalid");
         const passphrase = decodePassphrase(payload.passphrase);
         let archive: Buffer | undefined;
         try {
-          archive = await exportEncryptedVaultArchive(this.#store, passphrase);
+          archive = await exportEncryptedVaultArchive(
+            this.#store,
+            passphrase,
+            {},
+            selection,
+          );
           const transferId = randomUUID();
           this.#transfers.set(transferId, {
             kind: "export",

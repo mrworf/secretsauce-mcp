@@ -2,6 +2,7 @@ import { createHmac } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { UuidV7Generator } from "../src/persistence/uuidV7.js";
 import {
+  VaultBackupCapabilityIssuer,
   VaultCapabilityAuthority,
   VaultResolveCapabilityIssuer,
 } from "../src/vault/capabilities.js";
@@ -73,6 +74,22 @@ describe("vault single-use capabilities", () => {
       ...resolveInput,
     });
     expect("issueBackup" in issuer).toBe(false);
+  });
+
+  it("lets backup coordination mount backup authority without resolve authority", () => {
+    const issuer = new VaultBackupCapabilityIssuer(
+      Buffer.alloc(32, 2),
+      () => now,
+    );
+    const input = {
+      operation: "export_encrypted" as const,
+      authorizationId: uuid.next(),
+      subjectId: ids.subjectId,
+      operationDigest: "c".repeat(64),
+    };
+    expect(createAuthority().consumeBackup(issuer.issueBackup(input)))
+      .toMatchObject({ kind: "backup", ...input });
+    expect("issueResolve" in issuer).toBe(false);
   });
 
   it("rejects wrong signatures, kind changes, non-canonical payloads, excessive TTLs, and expiry", () => {

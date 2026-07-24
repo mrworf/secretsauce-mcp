@@ -118,6 +118,31 @@ describe("passphrase-encrypted vault archives", () => {
       .rejects.toMatchObject({ code: "vault_archive_invalid" });
   });
 
+  it("rejects malformed filtered selection before randomness or KDF work", async () => {
+    const source = storeFixture("archive-invalid-selection", 55);
+    const created = source.store.create(
+      source.binding,
+      Buffer.from("selected-secret"),
+    );
+    let randomCalled = false;
+    await expect(exportEncryptedVaultArchive(
+      source.store,
+      Buffer.from("valid archive passphrase"),
+      {
+        randomBytes: () => {
+          randomCalled = true;
+          throw new Error("must not run");
+        },
+      },
+      [{
+        ...source.binding,
+        locator: created.locator,
+        generation: 0,
+      }],
+    )).rejects.toMatchObject({ code: "vault_archive_invalid" });
+    expect(randomCalled).toBe(false);
+  });
+
   it("rolls back an interruption after moving the old store but before publishing the staged restore", async () => {
     const source = storeFixture("archive-interruption-source", 60);
     source.store.create(source.binding, Buffer.from("incoming-secret"));

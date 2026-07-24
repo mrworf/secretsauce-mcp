@@ -11,6 +11,10 @@ import { randomUUID } from "node:crypto";
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { afterEach, describe, expect, it } from "vitest";
 import { UuidV7Generator } from "../src/persistence/uuidV7.js";
+import {
+  digestVaultBackupSelection,
+  type VaultBackupSelection,
+} from "../src/vault/backupSelection.js";
 import { VaultCapabilityAuthority } from "../src/vault/capabilities.js";
 import { BackupVaultClient, ControlVaultClient, DataVaultClient } from "../src/vault/client.js";
 import { encodeVaultKey } from "../src/vault/keyFile.js";
@@ -61,7 +65,16 @@ describe("standalone vault broker process", () => {
         binding: fixture.binding,
       }, (value) => value.toString())).resolves.toBe(secret.toString());
       const passphrase = Buffer.from("process backup passphrase");
-      const archive = await backup.exportEncrypted(issueBackup(fixture, "export_encrypted"), passphrase);
+      const selection = [{
+        ...fixture.binding,
+        locator: created.locator,
+        generation: 1,
+      }];
+      const archive = await backup.exportEncrypted(
+        issueBackup(fixture, "export_encrypted", selection),
+        passphrase,
+        selection,
+      );
       await control.replace({
         locator: created.locator,
         generation: 1,
@@ -237,12 +250,15 @@ function issueResolve(fixture: ProcessFixture, locator: string, generation: numb
 function issueBackup(
   fixture: ProcessFixture,
   operation: "export_encrypted" | "import_encrypted",
+  selection?: readonly VaultBackupSelection[],
 ): string {
   return fixture.authority.issueBackup({
     operation,
     authorizationId: new UuidV7Generator().next(),
     subjectId: new UuidV7Generator().next(),
-    operationDigest: operation === "export_encrypted" ? "e".repeat(64) : "f".repeat(64),
+    operationDigest: operation === "export_encrypted"
+      ? digestVaultBackupSelection(selection!)
+      : "f".repeat(64),
   });
 }
 

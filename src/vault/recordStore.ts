@@ -19,6 +19,10 @@ import {
 import { createCipheriv, createDecipheriv, randomBytes, randomUUID } from "node:crypto";
 import { basename, dirname, join } from "node:path";
 import { isUuidV7 } from "../persistence/uuidV7.js";
+import {
+  canonicalizeVaultBackupSelection,
+  type VaultBackupSelection,
+} from "./backupSelection.js";
 import { vaultError } from "./errors.js";
 
 const MAGIC = Buffer.from("SSVR", "ascii");
@@ -157,16 +161,31 @@ export class VaultRecordStore {
     this.#status = "degraded";
   }
 
-  forEachBackupRecord(visitor: (record: VaultBackupRecord) => void): number {
+  forEachBackupRecord(
+    visitor: (record: VaultBackupRecord) => void,
+    selection?: readonly VaultBackupSelection[],
+  ): number {
     this.#assertReady();
-    const locators = readdirSync(this.#directory)
-      .map((name) => RECORD_NAME_PATTERN.exec(name)?.[1])
-      .filter((value): value is string => value !== undefined)
-      .sort();
-    if (locators.length !== this.#recordCount) throw vaultError("vault_store_unavailable");
-    for (const locator of locators) {
-      const parsed = this.#readAndDecrypt(locator);
+    const visit = (
+      locator: string,
+      expected?: VaultBackupSelection,
+    ): void => {
+      let parsed: ParsedRecord;
       try {
+        parsed = this.#readAndDecrypt(locator);
+      } catch {
+        throw vaultError("vault_archive_invalid");
+      }
+      try {
+        if (
+          expected !== undefined
+          && (
+            parsed.generation !== expected.generation
+            || parsed.binding.serviceId !== expected.serviceId
+            || parsed.binding.destinationId !== expected.destinationId
+            || parsed.binding.credentialId !== expected.credentialId
+          )
+        ) throw vaultError("vault_archive_invalid");
         visitor({
           locator: parsed.locator,
           generation: parsed.generation,
@@ -179,8 +198,21 @@ export class VaultRecordStore {
       } finally {
         parsed.secret.fill(0);
       }
+    };
+    if (selection === undefined) {
+      const locators = readdirSync(this.#directory)
+        .map((name) => RECORD_NAME_PATTERN.exec(name)?.[1])
+        .filter((value): value is string => value !== undefined)
+        .sort();
+      if (locators.length !== this.#recordCount) {
+        throw vaultError("vault_store_unavailable");
+      }
+      for (const locator of locators) visit(locator);
+      return locators.length;
     }
-    return locators.length;
+    const selected = canonicalizeVaultBackupSelection(selection);
+    for (const item of selected) visit(item.locator, item);
+    return selected.length;
   }
 
   beginRestore(): VaultRestoreTransaction {

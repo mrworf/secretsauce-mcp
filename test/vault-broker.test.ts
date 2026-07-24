@@ -11,6 +11,10 @@ import { join } from "node:path";
 import { createHmac, randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { UuidV7Generator } from "../src/persistence/uuidV7.js";
+import {
+  digestVaultBackupSelection,
+  type VaultBackupSelection,
+} from "../src/vault/backupSelection.js";
 import { VaultCapabilityAuthority } from "../src/vault/capabilities.js";
 import { VaultBrokerServer } from "../src/vault/broker.js";
 import { BackupVaultClient, ControlVaultClient, DataVaultClient } from "../src/vault/client.js";
@@ -203,8 +207,21 @@ describe("isolated vault broker and typed clients", () => {
     const original = Buffer.from("backup-only-private-value");
     try {
       const created = await fixture.control.create({ binding: fixture.binding, secret: original });
-      const exportCapability = issueBackup(fixture, "export_encrypted");
-      const archive = await fixture.backup.exportEncrypted(exportCapability, passphrase);
+      const unselected = await fixture.control.create({
+        binding: fixture.binding,
+        secret: Buffer.from("must-not-be-exported"),
+      });
+      const selection = selected(fixture, created.locator, 1);
+      const exportCapability = issueBackup(
+        fixture,
+        "export_encrypted",
+        selection,
+      );
+      const archive = await fixture.backup.exportEncrypted(
+        exportCapability,
+        passphrase,
+        selection,
+      );
       expect(archive.includes(original)).toBe(false);
       expect(archive.includes(passphrase)).toBe(false);
 
@@ -223,17 +240,36 @@ describe("isolated vault broker and typed clients", () => {
         binding: fixture.binding,
       }, (value) => value.toString())).resolves.toBe(original.toString());
 
-      await expect(fixture.backup.exportEncrypted(exportCapability, passphrase))
+      await expect(fixture.backup.exportEncrypted(
+        exportCapability,
+        passphrase,
+        undefined as never,
+      ))
+        .rejects.toMatchObject({ code: "vault_frame_invalid" });
+      await expect(fixture.backup.exportEncrypted(
+        exportCapability,
+        passphrase,
+        selection,
+      ))
         .rejects.toMatchObject({ code: "vault_replay_detected" });
       const wrongOperation = issueBackup(fixture, "import_encrypted");
-      await expect(fixture.backup.exportEncrypted(wrongOperation, passphrase))
+      await expect(fixture.backup.exportEncrypted(
+        wrongOperation,
+        passphrase,
+        selection,
+      ))
         .rejects.toMatchObject({ code: "vault_capability_invalid" });
 
-      const manualCapability = issueBackup(fixture, "export_encrypted");
+      const manualCapability = issueBackup(
+        fixture,
+        "export_encrypted",
+        selection,
+      );
       const startPayload = await rawBackupPayload(fixture, "export_encrypted", {
         action: "start",
         capability: manualCapability,
         passphrase: passphrase.toString("base64url"),
+        selection,
       });
       const transferId = (startPayload as any).result.transferId as string;
       const wrongTransfer = await rawBackupPayload(fixture, "export_encrypted", {
@@ -264,11 +300,64 @@ describe("isolated vault broker and typed clients", () => {
         generation: 1,
         binding: fixture.binding,
       }, (value) => value.toString())).resolves.toBe(original.toString());
+      await expect(fixture.control.metadata(
+        unselected.locator,
+        fixture.binding,
+      )).rejects.toMatchObject({ code: "vault_record_not_found" });
       archive.fill(0);
       tampered.fill(0);
     } finally {
       passphrase.fill(0);
       original.fill(0);
+      await fixture.close();
+    }
+  });
+
+  it("rejects mismatched, missing, stale, and duplicate backup selections before export", async () => {
+    const fixture = await brokerFixture();
+    const passphrase = Buffer.from("selection failure passphrase");
+    try {
+      const created = await fixture.control.create({
+        binding: fixture.binding,
+        secret: Buffer.from("selected-private-value"),
+      });
+      const selection = selected(fixture, created.locator, 1);
+      const other = selected(
+        fixture,
+        "12345678-1234-4234-8234-123456789abc",
+        1,
+      );
+      await expect(fixture.backup.exportEncrypted(
+        issueBackup(fixture, "export_encrypted", other),
+        passphrase,
+        selection,
+      )).rejects.toMatchObject({ code: "vault_capability_invalid" });
+      await expect(fixture.backup.exportEncrypted(
+        issueBackup(fixture, "export_encrypted", other),
+        passphrase,
+        other,
+      )).rejects.toMatchObject({ code: "vault_archive_invalid" });
+
+      const stale = selected(fixture, created.locator, 2);
+      await expect(fixture.backup.exportEncrypted(
+        issueBackup(fixture, "export_encrypted", stale),
+        passphrase,
+        stale,
+      )).rejects.toMatchObject({ code: "vault_archive_invalid" });
+
+      const duplicateCapability = fixture.authority.issueBackup({
+        operation: "export_encrypted",
+        authorizationId: new UuidV7Generator().next(),
+        subjectId: new UuidV7Generator().next(),
+        operationDigest: "e".repeat(64),
+      });
+      await expect(fixture.backup.exportEncrypted(
+        duplicateCapability,
+        passphrase,
+        [...selection, ...selection],
+      )).rejects.toMatchObject({ code: "vault_archive_invalid" });
+    } finally {
+      passphrase.fill(0);
       await fixture.close();
     }
   });
@@ -380,13 +469,24 @@ async function brokerFixture(overrides: { operationGate?: () => Promise<void> } 
 function issueBackup(
   fixture: BrokerFixture,
   operation: "export_encrypted" | "import_encrypted",
+  selection?: readonly VaultBackupSelection[],
 ): string {
   return fixture.authority.issueBackup({
     operation,
     authorizationId: new UuidV7Generator().next(),
     subjectId: new UuidV7Generator().next(),
-    operationDigest: operation === "export_encrypted" ? "e".repeat(64) : "f".repeat(64),
+    operationDigest: operation === "export_encrypted"
+      ? digestVaultBackupSelection(selection!)
+      : "f".repeat(64),
   });
+}
+
+function selected(
+  fixture: BrokerFixture,
+  locator: string,
+  generation: number,
+): VaultBackupSelection[] {
+  return [{ ...fixture.binding, locator, generation }];
 }
 
 async function rawBackupPayload(

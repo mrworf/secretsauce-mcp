@@ -7,6 +7,10 @@ import {
   type VaultBackupRecord,
   type VaultRestoreTransaction,
 } from "./recordStore.js";
+import {
+  canonicalizeVaultBackupSelection,
+  type VaultBackupSelection,
+} from "./backupSelection.js";
 
 const MAGIC = Buffer.from("SSVA0001", "ascii");
 const VERSION = 1;
@@ -36,7 +40,11 @@ export async function exportEncryptedVaultArchive(
   store: VaultRecordStore,
   passphraseValue: Uint8Array,
   options: VaultArchiveOptions = {},
+  selection?: readonly VaultBackupSelection[],
 ): Promise<Buffer> {
+  const selected = selection === undefined
+    ? undefined
+    : canonicalizeVaultBackupSelection(selection);
   const passphrase = validatePassphrase(passphraseValue);
   const random = options.randomBytes ?? randomBytes;
   const archiveId = (options.randomUuid ?? randomUUID)();
@@ -45,7 +53,7 @@ export async function exportEncryptedVaultArchive(
     throw vaultError("vault_archive_invalid");
   }
   const salt = exactRandom(random, SALT_BYTES);
-  const recordCount = store.readiness().recordCount;
+  const recordCount = selected?.length ?? store.readiness().recordCount;
   if (recordCount > MAX_RECORDS) {
     passphrase.fill(0);
     salt.fill(0);
@@ -91,7 +99,7 @@ export async function exportEncryptedVaultArchive(
       } finally {
         serialized.fill(0);
       }
-    });
+    }, selected);
     if (exportedCount !== recordCount || seen !== recordCount) throw vaultError("vault_archive_invalid");
     if (pending.byteLength > 0) {
       chunks.push(encryptChunk(header, key!, sequence, 0, pending, random));

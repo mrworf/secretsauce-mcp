@@ -25,6 +25,7 @@ import {
 } from "./protocol.js";
 import { BoundedReplayCache } from "./replayCache.js";
 import type { VaultCredentialBinding, VaultRecordMetadata } from "./recordStore.js";
+import type { VaultBackupSelection } from "./backupSelection.js";
 
 const REQUEST_DEADLINE_MS = 5_000;
 const MIN_FRAME_BYTES = 88;
@@ -199,12 +200,17 @@ export class BackupVaultClient extends VaultClient {
     return this.readinessRequest();
   }
 
-  async exportEncrypted(capability: string, passphraseValue: Uint8Array): Promise<Buffer> {
+  async exportEncrypted(
+    capability: string,
+    passphraseValue: Uint8Array,
+    selection: readonly VaultBackupSelection[],
+  ): Promise<Buffer> {
     const passphrase = asBufferView(passphraseValue).toString("base64url");
     const start = await this.request("export_encrypted", {
       action: "start",
       capability,
       passphrase,
+      selection,
     }, transferStartResultSchema);
     const chunks: Buffer[] = [];
     let total = 0;

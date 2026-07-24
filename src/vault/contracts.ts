@@ -53,6 +53,11 @@ export const passphraseSchema = z.string().min(16).max(1_366).refine((value) => 
     && decoded.byteLength <= 1_024
     && decoded.toString("base64url") === value;
 });
+export const backupSelectionSchema = z.array(z.object({
+  ...bindingSchema.shape,
+  locator: locatorSchema,
+  generation: generationSchema,
+}).strict()).min(1).max(10_000);
 export const transferChunkSchema = z.string().max(87_382).refine((value) => {
   if (value.length === 0) return false;
   if (!/^[A-Za-z0-9_-]+$/.test(value)) return false;
@@ -66,6 +71,7 @@ export const exportRequestSchema = z.discriminatedUnion("action", [
     action: z.literal("start"),
     capability: z.string().min(1).max(8192),
     passphrase: passphraseSchema,
+    selection: backupSelectionSchema,
   }).strict(),
   z.object({
     action: z.literal("read"),

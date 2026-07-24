@@ -40,7 +40,7 @@ export const runtimeAuditProjectionSchema = z.object({
   subjectLabel: z.string().min(1).max(256),
   serviceId: uuidV7.optional(),
   serviceLabel: z.string().min(1).max(256).optional(),
-  destination: safeCode.max(64).optional(),
+  destination: z.string().min(1).max(128).regex(/^[a-z0-9][a-z0-9_.-]*$/).optional(),
   action: safeCode.optional(),
   method: z.string().min(1).max(16).regex(/^[A-Z]+$/).optional(),
   targetHost: z.string().min(1).max(253).optional(),

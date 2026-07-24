@@ -315,6 +315,80 @@ describe("audit logging", () => {
     expect(writes).toBe(0);
     expect(JSON.stringify(sink.events)).not.toContain("raw-secret");
   });
+
+  it("projects durable runtime events without opaque references or protected material", async () => {
+    const config = auditConfig(undefined, "http://127.0.0.1:1");
+    const sink = new AuditSink(config);
+    const durable: unknown[] = [];
+    sink.attachDurableWriter({
+      append: async (event) => {
+        durable.push(event);
+      },
+    });
+
+    sink.record({
+      type: "service_request",
+      request_id: "req_8ca2d86c-541c-4484-bcc0-feebb54f6311",
+      subject: "018f1f2e-7b3c-7a10-8000-000000000001",
+      service: "018f1f2e-7b3c-7a10-8000-000000000002",
+      destination: "primary",
+      access_ids: ["api_key"],
+      internal_reference_ids: ["grefrec_private"],
+      method: "GET",
+      target_host: "api.example.org",
+      target_path: "/widgets",
+      policy_decision: "allow",
+      request_timestamp: "2026-07-24T06:00:00.000Z",
+      request_duration_ms: 12,
+      tls_verify: true,
+      secret_tokenization_count: 1,
+      response_internal_reference_ids: ["secrec_private"],
+      error_message: "raw-secret",
+    });
+    await sink.flush();
+
+    expect(durable).toHaveLength(1);
+    expect(durable[0]).toMatchObject({
+      eventType: "service_request",
+      outcome: "allow",
+      subjectId: "018f1f2e-7b3c-7a10-8000-000000000001",
+      serviceId: "018f1f2e-7b3c-7a10-8000-000000000002",
+      targetPath: "/widgets",
+    });
+    const serialized = JSON.stringify(durable);
+    expect(serialized).not.toContain("grefrec_private");
+    expect(serialized).not.toContain("secrec_private");
+    expect(serialized).not.toContain("raw-secret");
+    expect(serialized).not.toContain("access_ids");
+    expect(serialized).not.toContain("error_message");
+  });
+
+  it("degrades durable readiness after a sanitized write failure and rejects later records", async () => {
+    const sink = new AuditSink(auditConfig(undefined, "http://127.0.0.1:1"));
+    sink.attachDurableWriter({
+      append: async () => {
+        throw new Error("raw-secret /private/control.sqlite");
+      },
+    });
+    expect(() => sink.record(toolEvent("list_services"))).not.toThrow();
+    await expect(sink.flush()).rejects.toMatchObject({ code: "audit_persistence_failed" });
+    expect(sink.durableDegraded).toBe(true);
+    expect(() => sink.record(toolEvent("service_request")))
+      .toThrowError(expect.objectContaining({ code: "audit_persistence_failed" }));
+  });
+
+  it("bounds the durable pending queue before accepting another runtime event", () => {
+    const sink = new AuditSink(auditConfig(undefined, "http://127.0.0.1:1"));
+    sink.attachDurableWriter({
+      append: () => new Promise<void>(() => undefined),
+    });
+    for (let index = 0; index < 1_024; index += 1) {
+      sink.record(toolEvent("list_services"));
+    }
+    expect(() => sink.record(toolEvent("service_request")))
+      .toThrowError(expect.objectContaining({ code: "audit_persistence_failed" }));
+    expect(sink.durableDegraded).toBe(true);
+  });
 });
 
 function toolEvent(tool: "list_services" | "service_request", subject = "actor"): AuditEvent {

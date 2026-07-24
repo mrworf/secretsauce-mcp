@@ -95,6 +95,15 @@ export function createGatewayServer(
     }
 
     if (isMcpPost(request, config.server.mcpPath)) {
+      if (auditSink.durableDegraded) {
+        writeJson(response, 503, {
+          error: {
+            code: "audit_unavailable",
+            message: "Runtime audit persistence is unavailable.",
+          },
+        });
+        return;
+      }
       let requiredScopes = configuredMcpScopes(config);
       try {
         const auth = await authenticateRequest(

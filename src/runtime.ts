@@ -63,6 +63,17 @@ export class GatewayRuntime {
             sanitizeAuditText: configuredAuditTextSanitizer(config),
           })
       );
+      if (config.runtime?.authority === "database" && persistence !== undefined) {
+        auditSink.attachDurableWriter({
+          append: async (event) => {
+            await persistence!.execute({
+              run: (database) => {
+                database.appendRuntimeAudit(event);
+              },
+            });
+          },
+        });
+      }
       const capabilities = options.capabilities ?? createCapabilityDependencies(config, auditSink);
       secretRuntime = options.secretRuntime ?? createSecretRuntime(config, capabilities.tokenBroker);
       const securitySettingsRepository = persistence === undefined
@@ -156,6 +167,7 @@ export class GatewayRuntime {
     const errors: unknown[] = [];
     try { this.#stopMaintenance(); } catch (error) { errors.push(error); }
     try { await this.builtinOAuth.close(); } catch (error) { errors.push(error); }
+    try { await this.auditSink.flush(); } catch (error) { errors.push(error); }
     if (this.persistence !== undefined) {
       try { await this.persistence.close(); } catch (error) { errors.push(error); }
     }

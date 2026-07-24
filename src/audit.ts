@@ -3,6 +3,14 @@ import { dirname } from "node:path";
 import { createLogger } from "./logger.js";
 import type { GatewayConfig } from "./types.js";
 import { sanitizeAuditEvent } from "./auditSanitizer.js";
+import type { RuntimeAuditProjection } from "./persistence/auditDocuments.js";
+import { PersistenceError } from "./persistence/errors.js";
+import { UuidV7Generator } from "./persistence/uuidV7.js";
+import { projectRuntimeAuditEvent } from "./runtimeAuditProjection.js";
+
+export interface DurableAuditWriter {
+  append(event: RuntimeAuditProjection): Promise<void>;
+}
 
 export interface ReferenceIssuedAuditEvent {
   type: "reference_issued";
@@ -105,6 +113,11 @@ export class AuditSink {
   #fd: number | undefined;
   #degraded = false;
   #closed = false;
+  readonly #uuid = new UuidV7Generator();
+  #durableWriter: DurableAuditWriter | undefined;
+  #durableTail: Promise<void> = Promise.resolve();
+  #durablePending = 0;
+  #durableDegraded = false;
 
   constructor(
     readonly config: GatewayConfig,
@@ -119,7 +132,11 @@ export class AuditSink {
   }
 
   get degraded(): boolean {
-    return this.#degraded;
+    return this.#degraded || this.#durableDegraded;
+  }
+
+  get durableDegraded(): boolean {
+    return this.#durableDegraded;
   }
 
   get closed(): boolean {
@@ -130,8 +147,16 @@ export class AuditSink {
     this.#events.length = 0;
   }
 
+  attachDurableWriter(writer: DurableAuditWriter): void {
+    if (this.#closed || this.#durableWriter !== undefined) {
+      throw new PersistenceError("audit_persistence_failed");
+    }
+    this.#durableWriter = writer;
+  }
+
   record(event: AuditEvent): AuditEvent {
     const sanitizedEvent = sanitizeAuditEvent(event, this.config);
+    this.enqueueDurable(sanitizedEvent);
     this.#events.push(sanitizedEvent);
     const capacity = this.config.audit.memoryEvents;
     if (this.#events.length > capacity) this.#events.splice(0, this.#events.length - capacity);
@@ -151,6 +176,11 @@ export class AuditSink {
     } catch {
       this.markDegraded("close");
     }
+  }
+
+  async flush(): Promise<void> {
+    await this.#durableTail;
+    if (this.#durableDegraded) throw new PersistenceError("audit_persistence_failed");
   }
 
   private initializeFile(): void {
@@ -182,6 +212,29 @@ export class AuditSink {
   private markDegraded(operation: "open" | "write" | "close"): void {
     this.#degraded = true;
     this.#logger.error("audit.write_failed", { operation });
+  }
+
+  private enqueueDurable(event: AuditEvent): void {
+    const writer = this.#durableWriter;
+    if (writer === undefined) return;
+    if (this.#durableDegraded || this.#durablePending >= 1_024) {
+      this.#durableDegraded = true;
+      throw new PersistenceError("audit_persistence_failed");
+    }
+    const projection = projectRuntimeAuditEvent(event, {
+      uuid: () => this.#uuid.next(),
+    });
+    this.#durablePending += 1;
+    const write = this.#durableTail.then(() => writer.append(projection));
+    this.#durableTail = write.then(
+      () => {
+        this.#durablePending -= 1;
+      },
+      () => {
+        this.#durablePending -= 1;
+        this.#durableDegraded = true;
+      },
+    );
   }
 }
 

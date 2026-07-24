@@ -109,3 +109,17 @@ responses.
 Schemas are closed and bounded. Reads and value responses are `no-store`;
 mutations use CSRF, permission/scope checks, strong ETags, audit metadata, and
 idempotency where retry safety is required.
+
+## Active SecretSauce management keys
+
+Ordinary credential create and value-replacement operations reject an active
+`ssk_v1` management API key before vault I/O. A browser superadmin can use the
+dedicated `PUT .../{credential_id}/self-api-key` workflow only with the exact
+risk acknowledgement, justification, current password and TOTP, and an
+operation-bound step-up proof. Its approval is bound to one API-key UUID and
+one credential vault generation; ordinary replacement or deletion removes it.
+
+Approved self-use remains subject to normal `gref`, assignment, destination,
+policy, capacity, vault, and live API-key checks. See
+[Self-API-key protection](self-api-key-protection.md) for the runtime ordering,
+YAML behavior, limitations, and audit contract.

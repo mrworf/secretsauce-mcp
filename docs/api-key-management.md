@@ -95,6 +95,9 @@ inventory and rotation remain explicit operator responsibilities.
 
 Control responses are non-cacheable. Keep request IDs for troubleshooting, but
 never attach the bearer value or full request/response bodies to diagnostics.
+Ordinary credential writes reject an active management key. The exceptional
+browser-superadmin workflow and its generation-bound runtime rules are
+documented in [Self-API-key protection](self-api-key-protection.md).
 The generated authenticated OpenAPI document at
 `/api/v2/openapi.json` is the source of truth for route contracts and each
 route's accepted authentication methods.

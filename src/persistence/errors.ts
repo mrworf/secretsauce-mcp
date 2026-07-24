@@ -16,6 +16,9 @@ export type PersistenceErrorCode =
   | "authentication_failed"
   | "authentication_method_required"
   | "totp_replayed"
+  | "oauth_invalid_authorization"
+  | "oauth_invalid_grant"
+  | "oauth_capacity_exceeded"
   | "persistence_closed";
 
 const messages: Record<PersistenceErrorCode, string> = {
@@ -36,6 +39,9 @@ const messages: Record<PersistenceErrorCode, string> = {
   authentication_failed: "Authentication failed.",
   authentication_method_required: "An eligible authentication method is required.",
   totp_replayed: "The authenticator code has already been used.",
+  oauth_invalid_authorization: "OAuth authorization is invalid.",
+  oauth_invalid_grant: "OAuth grant is invalid.",
+  oauth_capacity_exceeded: "OAuth state capacity is exhausted.",
   persistence_closed: "Persistence owner is closed.",
 };
 

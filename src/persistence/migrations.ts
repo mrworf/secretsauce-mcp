@@ -1324,6 +1324,27 @@ INSERT INTO runtime_invalidation_checkpoints (
 `;
 
 const migration0014 = `
+ALTER TABLE accepted_totp_steps RENAME TO accepted_totp_steps_pre_oauth;
+
+CREATE TABLE accepted_totp_steps (
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  time_step INTEGER NOT NULL CHECK (time_step >= 0),
+  purpose TEXT NOT NULL CHECK (
+    purpose IN ('confirmation', 'login', 'step_up', 'oauth')
+  ),
+  accepted_at INTEGER NOT NULL CHECK (accepted_at >= 0),
+  PRIMARY KEY (user_id, time_step)
+) STRICT, WITHOUT ROWID;
+
+INSERT INTO accepted_totp_steps (user_id, time_step, purpose, accepted_at)
+SELECT user_id, time_step, purpose, accepted_at
+FROM accepted_totp_steps_pre_oauth;
+
+DROP TABLE accepted_totp_steps_pre_oauth;
+
+CREATE INDEX accepted_totp_steps_time_idx
+  ON accepted_totp_steps (accepted_at, user_id, time_step);
+
 CREATE TABLE oauth_clients (
   id TEXT PRIMARY KEY CHECK (
     length(id) = 36 AND id = lower(id)

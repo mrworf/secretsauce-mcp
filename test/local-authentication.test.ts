@@ -31,6 +31,37 @@ afterEach(async () => {
 });
 
 describe("atomic local authentication", () => {
+  it("verifies an MCP proof without creating a browser session or consuming the TOTP step", async () => {
+    const fixture = await configuredIdentity("mcp-proof");
+    const code = totpCode(fixture.seed, NOW);
+    await expect(fixture.service.verifyMcpProof(
+      loginInput(fixture.email, fixture.password, code),
+    )).resolves.toMatchObject({
+      userId: fixture.userId,
+      role: "admin",
+      securityEpoch: 1,
+      globalSecurityEpoch: 1,
+      acceptedTotpStep: Math.floor(NOW / 30_000),
+      verifiedAt: NOW,
+      correlationId: CORRELATION,
+    });
+    expect(await fixture.worker.execute({
+      run: (database) => database.read((query) => query.get<{
+        sessions: number;
+        steps: number;
+      }>(`
+        SELECT
+          (SELECT count(*) FROM browser_sessions) AS sessions,
+          (SELECT count(*) FROM accepted_totp_steps) AS steps
+      `)),
+    })).toEqual({ sessions: 0, steps: 0 });
+
+    await expect(fixture.service.login(
+      loginInput(fixture.email, fixture.password, code),
+    )).resolves.toMatchObject({ userId: fixture.userId });
+    fixture.seed.fill(0);
+  });
+
   it("authenticates an active configured identity, consumes TOTP, and persists only hashed session values", async () => {
     const fixture = await configuredIdentity("success");
     const code = totpCode(fixture.seed, NOW);

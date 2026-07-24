@@ -1,9 +1,12 @@
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { createHash } from "node:crypto";
 import { afterEach, describe, expect, it } from "vitest";
 import {
+  DatabaseOAuthError,
   DatabaseOAuthEligibilityRepository,
+  DatabaseOAuthRepository,
   DatabaseOAuthTokenHasher,
   isCanonicalOpaqueOAuthValue,
 } from "../src/oauth/databaseOAuth.js";
@@ -168,7 +171,224 @@ describe("database OAuth foundation", () => {
       localEligible: false,
     });
   });
+
+  it("atomically creates a local grant and exchanges a single-use code without persisting raw values", async () => {
+    const fixture = await eligibleLocalUser("grant");
+    const hasher = new DatabaseOAuthTokenHasher(Buffer.alloc(32, 93));
+    const repository = oauthRepository(fixture.worker, hasher);
+    const verifier = "v".repeat(43);
+    const authorization = await repository.authorizeLocal({
+      proof: proof(fixture.userId, 59_503_333),
+      client: client(),
+      redirectUri: "https://client.example.org/callback",
+      resource: "https://mcp.example.org",
+      scopes: ["mcp:access"],
+      codeChallenge: challenge(verifier),
+    });
+
+    const authorized = await fixture.worker.execute({
+      run: (database) => database.read((query) => query.get<{
+        grants: number;
+        codes: number;
+        code_hash: string;
+        purpose: string;
+      }>(`
+        SELECT
+          (SELECT count(*) FROM oauth_grants) AS grants,
+          (SELECT count(*) FROM oauth_authorization_codes) AS codes,
+          (SELECT code_hash FROM oauth_authorization_codes) AS code_hash,
+          (SELECT purpose FROM accepted_totp_steps) AS purpose
+      `)),
+    });
+    expect(authorized).toEqual({
+      grants: 1,
+      codes: 1,
+      code_hash: hasher.hash("authorization_code", authorization.code),
+      purpose: "oauth",
+    });
+    expect(JSON.stringify(authorized)).not.toContain(authorization.code);
+
+    const tokens = await repository.exchangeAuthorizationCode({
+      code: authorization.code,
+      clientIdentifier: "https://client.example.org/metadata.json",
+      redirectUri: "https://client.example.org/callback",
+      resource: "https://mcp.example.org",
+      codeVerifier: verifier,
+    });
+    expect(tokens).toMatchObject({
+      tokenType: "Bearer",
+      expiresIn: 300,
+      scopes: ["mcp:access"],
+      grantId: authorization.grantId,
+    });
+    expect(tokens.accessToken).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    expect(tokens.refreshToken).toMatch(/^[A-Za-z0-9_-]{43}$/);
+
+    const stored = await fixture.worker.execute({
+      run: (database) => database.read((query) => query.get<{
+        consumed_at: number;
+        access_hash: string;
+        refresh_hash: string;
+        audit: string;
+      }>(`
+        SELECT
+          (SELECT consumed_at FROM oauth_authorization_codes) AS consumed_at,
+          (SELECT token_hash FROM oauth_access_tokens) AS access_hash,
+          (SELECT token_hash FROM oauth_refresh_tokens) AS refresh_hash,
+          (SELECT group_concat(action || ':' || target_label_snapshot)
+             FROM administrative_audit_events
+             WHERE action LIKE 'oauth.%') AS audit
+      `)),
+    });
+    expect(stored).toMatchObject({
+      consumed_at: NOW,
+      access_hash: hasher.hash("access", tokens.accessToken),
+      refresh_hash: hasher.hash("refresh", tokens.refreshToken),
+    });
+    expect(stored?.audit).toContain("oauth.grant_authorize");
+    expect(stored?.audit).toContain("oauth.code_exchange");
+    const serialized = JSON.stringify(stored);
+    expect(serialized).not.toContain(authorization.code);
+    expect(serialized).not.toContain(tokens.accessToken);
+    expect(serialized).not.toContain(tokens.refreshToken);
+
+    await expect(repository.exchangeAuthorizationCode({
+      code: authorization.code,
+      clientIdentifier: "https://client.example.org/metadata.json",
+      redirectUri: "https://client.example.org/callback",
+      codeVerifier: verifier,
+    })).rejects.toEqual(new DatabaseOAuthError("invalid_grant"));
+    hasher.close();
+  });
+
+  it("rejects noncanonical PKCE, stale proofs, lost eligibility, and mismatched exchanges without partial mutation", async () => {
+    const fixture = await eligibleLocalUser("deny");
+    const hasher = new DatabaseOAuthTokenHasher(Buffer.alloc(32, 94));
+    const repository = oauthRepository(fixture.worker, hasher);
+    const verifier = "w".repeat(43);
+    const request = {
+      proof: proof(fixture.userId, 59_503_334),
+      client: client(),
+      redirectUri: "https://client.example.org/callback",
+      resource: "https://mcp.example.org",
+      scopes: ["mcp:access"],
+      codeChallenge: challenge(verifier),
+    };
+    await expect(repository.authorizeLocal({
+      ...request,
+      codeChallenge: `${"A".repeat(42)}B`,
+    })).rejects.toEqual(new DatabaseOAuthError("invalid_authorization"));
+    await expect(repository.authorizeLocal({
+      ...request,
+      proof: { ...request.proof, securityEpoch: 999 },
+    })).rejects.toEqual(new DatabaseOAuthError("invalid_authorization"));
+
+    const authorization = await repository.authorizeLocal(request);
+    await expect(repository.authorizeLocal(request))
+      .rejects.toEqual(new DatabaseOAuthError("invalid_authorization"));
+    await expect(repository.exchangeAuthorizationCode({
+      code: authorization.code,
+      clientIdentifier: "https://client.example.org/metadata.json",
+      redirectUri: "https://client.example.org/wrong",
+      codeVerifier: verifier,
+    })).rejects.toEqual(new DatabaseOAuthError("invalid_grant"));
+    await fixture.worker.execute({
+      run: (database) => database.withOperationalTransaction((transaction) => {
+        transaction.run(
+          "DELETE FROM service_principal_assignments WHERE id = ?",
+          [ASSIGNMENT_ID],
+        );
+      }),
+    });
+    await expect(repository.exchangeAuthorizationCode({
+      code: authorization.code,
+      clientIdentifier: "https://client.example.org/metadata.json",
+      redirectUri: "https://client.example.org/callback",
+      codeVerifier: verifier,
+    })).rejects.toEqual(new DatabaseOAuthError("invalid_grant"));
+    expect(await fixture.worker.execute({
+      run: (database) => database.read((query) => query.get<{
+        consumed_at: null;
+        families: number;
+        tokens: number;
+      }>(`
+        SELECT
+          (SELECT consumed_at FROM oauth_authorization_codes) AS consumed_at,
+          (SELECT count(*) FROM oauth_refresh_families) AS families,
+          ((SELECT count(*) FROM oauth_refresh_tokens)
+            + (SELECT count(*) FROM oauth_access_tokens)) AS tokens
+      `)),
+    })).toEqual({ consumed_at: null, families: 0, tokens: 0 });
+    hasher.close();
+  });
 });
+
+async function eligibleLocalUser(label: string): Promise<{
+  worker: PersistenceWorker;
+  userId: string;
+}> {
+  const worker = open(label);
+  const identities = new IdentityRepository(worker, { now: () => NOW });
+  const user = await identities.createLocalIdentity({
+    profile: {
+      email: `${label}@example.org`,
+      givenName: "OAuth",
+      familyName: "User",
+    },
+    role: "user",
+    status: "active",
+  }, audit());
+  await worker.execute({
+    run: (database) => database.withOperationalTransaction((transaction) => {
+      transaction.run(`
+        UPDATE local_authenticator_states
+        SET password_state = 'configured', totp_state = 'configured',
+            version = version + 1, updated_at = ?
+        WHERE user_id = ?
+      `, [NOW, user.id]);
+      insertActiveService(transaction, user.id);
+    }),
+  });
+  return { worker, userId: user.id };
+}
+
+function oauthRepository(
+  worker: PersistenceWorker,
+  hasher: DatabaseOAuthTokenHasher,
+): DatabaseOAuthRepository {
+  return new DatabaseOAuthRepository(worker, hasher, {
+    accessTokenTtlMs: 5 * 60_000,
+    authorizationCodeTtlMs: 10 * 60_000,
+    refreshTokenIdleTtlMs: 30 * 86_400_000,
+    refreshTokenMaxTtlMs: 90 * 86_400_000,
+    maxAuthorizationCodes: 100,
+    maxTokenRecords: 1_000,
+  }, { now: () => NOW });
+}
+
+function client() {
+  return {
+    identifier: "https://client.example.org/metadata.json",
+    displayName: "Example Client",
+    redirectUris: ["https://client.example.org/callback"],
+  };
+}
+
+function proof(userId: string, acceptedTotpStep: number) {
+  return {
+    userId,
+    role: "user" as const,
+    securityEpoch: 1,
+    globalSecurityEpoch: 1,
+    acceptedTotpStep,
+    verifiedAt: NOW,
+    correlationId: "req_12345678-1234-4234-8234-123456789abc",
+  };
+}
+
+function challenge(verifier: string): string {
+  return createHash("sha256").update(verifier, "ascii").digest("base64url");
+}
 
 function open(label: string): PersistenceWorker {
   const worker = PersistenceWorker.open({

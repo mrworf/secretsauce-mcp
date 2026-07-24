@@ -83,6 +83,16 @@ export interface LoginResult {
   absoluteExpiresAt: number;
 }
 
+export interface LocalMcpAuthenticationProof {
+  userId: string;
+  role: "superadmin" | "admin" | "user";
+  securityEpoch: number;
+  globalSecurityEpoch: number;
+  acceptedTotpStep: number;
+  verifiedAt: number;
+  correlationId: string;
+}
+
 export interface LocalAuthenticationRepositoryOptions {
   now?: () => number;
 }
@@ -419,6 +429,72 @@ export class LocalAuthenticationService {
   }
 
   async login(input: unknown): Promise<LoginResult> {
+    const verified = await this.verifyLocalProof(input);
+    const {
+      candidate,
+      encodedHash,
+      acceptedStep,
+      parsed,
+    } = verified;
+    const issuedAt = safeTimestamp(this.#now);
+    const sessionToken = opaqueValue(this.#random);
+    const csrfToken = opaqueValue(this.#random);
+    const roleClass = candidate.role === "user" ? "user" : "admin";
+    const absoluteMs = roleClass === "admin"
+      ? this.#config.sessions.adminAbsoluteMs
+      : this.#config.sessions.userAbsoluteMs;
+    const inactivityMs = roleClass === "admin"
+      ? this.#config.sessions.adminInactivityMs
+      : this.#config.sessions.userInactivityMs;
+    const session: BrowserSessionMaterial = {
+      id: this.nextUuid(),
+      sessionHash: keyedHash(this.#sessionHmacKey, SESSION_DOMAIN, sessionToken),
+      csrfHash: keyedHash(this.#sessionHmacKey, CSRF_DOMAIN, csrfToken),
+      roleClass,
+      securityEpoch: candidate.securityEpoch,
+      globalSecurityEpoch: candidate.globalSecurityEpoch,
+      absoluteMs,
+      inactivityMs,
+      issuedAt,
+    };
+    await this.#repository.commitLogin({
+      candidate,
+      encodedHash,
+      envelopeJson: candidate.totpEnvelopeJson,
+      acceptedStep,
+      session,
+      correlationId: parsed.correlationId,
+    });
+    return {
+      sessionId: session.id,
+      userId: candidate.userId,
+      role: candidate.role,
+      sessionToken,
+      csrfToken,
+      issuedAt,
+      absoluteExpiresAt: issuedAt + absoluteMs,
+    };
+  }
+
+  async verifyMcpProof(input: unknown): Promise<LocalMcpAuthenticationProof> {
+    const verified = await this.verifyLocalProof(input);
+    return {
+      userId: verified.candidate.userId,
+      role: verified.candidate.role,
+      securityEpoch: verified.candidate.securityEpoch,
+      globalSecurityEpoch: verified.candidate.globalSecurityEpoch,
+      acceptedTotpStep: verified.acceptedStep,
+      verifiedAt: safeTimestamp(this.#now),
+      correlationId: verified.parsed.correlationId,
+    };
+  }
+
+  private async verifyLocalProof(input: unknown): Promise<{
+    candidate: EligibleLoginCandidate;
+    encodedHash: string;
+    acceptedStep: number;
+    parsed: ParsedLogin;
+  }> {
     let parsed: ParsedLogin;
     try {
       parsed = parseLogin(input);
@@ -501,45 +577,11 @@ export class LocalAuthenticationService {
       await this.deny(parsed.correlationId, "invalid");
       throw new LocalAuthenticationError("authentication_failed");
     }
-    candidate = eligibleCandidate;
-
-    const issuedAt = safeTimestamp(this.#now);
-    const sessionToken = opaqueValue(this.#random);
-    const csrfToken = opaqueValue(this.#random);
-    const roleClass = candidate.role === "user" ? "user" : "admin";
-    const absoluteMs = roleClass === "admin"
-      ? this.#config.sessions.adminAbsoluteMs
-      : this.#config.sessions.userAbsoluteMs;
-    const inactivityMs = roleClass === "admin"
-      ? this.#config.sessions.adminInactivityMs
-      : this.#config.sessions.userInactivityMs;
-    const session: BrowserSessionMaterial = {
-      id: this.nextUuid(),
-      sessionHash: keyedHash(this.#sessionHmacKey, SESSION_DOMAIN, sessionToken),
-      csrfHash: keyedHash(this.#sessionHmacKey, CSRF_DOMAIN, csrfToken),
-      roleClass,
-      securityEpoch: candidate.securityEpoch,
-      globalSecurityEpoch: candidate.globalSecurityEpoch,
-      absoluteMs,
-      inactivityMs,
-      issuedAt,
-    };
-    await this.#repository.commitLogin({
-      candidate,
-      encodedHash,
-      envelopeJson: candidate.totpEnvelopeJson ?? "",
-      acceptedStep,
-      session,
-      correlationId: parsed.correlationId,
-    });
     return {
-      sessionId: session.id,
-      userId: candidate.userId,
-      role: candidate.role,
-      sessionToken,
-      csrfToken,
-      issuedAt,
-      absoluteExpiresAt: issuedAt + absoluteMs,
+      candidate: eligibleCandidate,
+      encodedHash,
+      acceptedStep,
+      parsed,
     };
   }
 

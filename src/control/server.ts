@@ -162,6 +162,7 @@ import { InactivityJob } from "../inactivityJob.js";
 import { registerSecurityRoutes } from "./securityRoutes.js";
 import { GlobalSecurityEvents } from "../globalSecurityEvents.js";
 import { AuditSearchService } from "../auditSearch.js";
+import { AuditRetentionService } from "../auditRetention.js";
 import { registerAuditRoutes } from "./auditRoutes.js";
 
 export interface ControlApplicationOptions {
@@ -194,6 +195,7 @@ export interface ControlApplicationOptions {
   humanActivity?: Pick<HumanActivityRepository, "record">;
   inactivityJob?: InactivityJob;
   auditSearch?: AuditSearchService;
+  auditRetention?: AuditRetentionService;
 }
 
 export function createControlApplication(
@@ -315,7 +317,11 @@ export function createControlApplication(
     });
   }
   if (options.auditSearch !== undefined) {
-    registerAuditRoutes(routeRegistry, options.auditSearch);
+    registerAuditRoutes(
+      routeRegistry,
+      options.auditSearch,
+      options.auditRetention,
+    );
   }
   options.registerControlRoutes?.(routeRegistry);
   installControlRoutes(
@@ -423,6 +429,8 @@ export async function startControlServer(
   let inactivityJob: InactivityJob | undefined;
   let inactivityTimer: NodeJS.Timeout | undefined;
   let auditSearch: AuditSearchService | undefined;
+  let auditRetention: AuditRetentionService | undefined;
+  let auditMaintenanceTimer: NodeJS.Timeout | undefined;
   const apiKeyVerifier = new ApiKeyVerifierPool();
   let selfApiKeyDetector: ActiveSelfApiKeyDetector | undefined;
   try {
@@ -484,6 +492,12 @@ export async function startControlServer(
           sessionKey,
         );
         stepUpRepository = new StepUpRepository(persistence);
+        auditRetention = new AuditRetentionService(
+          persistence,
+          Date.now,
+          randomUUID,
+          stepUpRepository,
+        );
         securitySettings.globalEvents = new GlobalSecurityEvents(
           persistence,
           stepUpRepository,
@@ -739,6 +753,7 @@ export async function startControlServer(
       ...(securitySettings === undefined ? {} : { securitySettings }),
       ...(inactivityJob === undefined ? {} : { inactivityJob }),
       ...(auditSearch === undefined ? {} : { auditSearch }),
+      ...(auditRetention === undefined ? {} : { auditRetention }),
     });
     await server.listen({
       host: config.control.host,
@@ -750,9 +765,16 @@ export async function startControlServer(
       }, 60_000);
       inactivityTimer.unref();
     }
+    if (auditRetention !== undefined) {
+      auditMaintenanceTimer = setInterval(() => {
+        void auditRetention!.run().catch(() => undefined);
+      }, 3_600_000);
+      auditMaintenanceTimer.unref();
+    }
   } catch (error) {
     await server?.close().catch(() => undefined);
     if (inactivityTimer !== undefined) clearInterval(inactivityTimer);
+    if (auditMaintenanceTimer !== undefined) clearInterval(auditMaintenanceTimer);
     browserSessions?.close();
     stepUpAuthorization?.close();
     stepUp?.close();
@@ -783,6 +805,7 @@ export async function startControlServer(
       closePromise ??= (async () => {
         await startedServer.close();
         if (inactivityTimer !== undefined) clearInterval(inactivityTimer);
+        if (auditMaintenanceTimer !== undefined) clearInterval(auditMaintenanceTimer);
         browserSessions?.close();
         stepUpAuthorization?.close();
         stepUp?.close();

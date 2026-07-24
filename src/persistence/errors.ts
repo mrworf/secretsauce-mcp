@@ -22,6 +22,8 @@ export type PersistenceErrorCode =
   | "security_settings_invalid"
   | "security_settings_forbidden"
   | "security_settings_stale"
+  | "audit_retention_invalid"
+  | "audit_retention_stale"
   | "persistence_closed";
 
 const messages: Record<PersistenceErrorCode, string> = {
@@ -48,6 +50,8 @@ const messages: Record<PersistenceErrorCode, string> = {
   security_settings_invalid: "Security settings are invalid.",
   security_settings_forbidden: "Security settings access is forbidden.",
   security_settings_stale: "Security settings version is stale.",
+  audit_retention_invalid: "Audit retention settings are invalid.",
+  audit_retention_stale: "Audit retention settings version is stale.",
   persistence_closed: "Persistence owner is closed.",
 };
 

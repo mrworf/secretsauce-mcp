@@ -6,6 +6,7 @@ import {
   AuditSearchError,
   AuditSearchService,
 } from "../src/auditSearch.js";
+import { AuditRetentionService } from "../src/auditRetention.js";
 import type { ControlAuthenticationContext } from "../src/control/authentication.js";
 import type { ControlAuthenticator } from "../src/control/authentication.js";
 import { createControlApplication } from "../src/control/server.js";
@@ -147,11 +148,13 @@ describe("scoped audit search", () => {
     const allowed = createControlApplication(config, {
       persistence: fixture.worker,
       auditSearch: fixture.service,
+      auditRetention: fixture.retention,
       authenticator: fixedAuthenticator("superadmin"),
     });
     const denied = createControlApplication(config, {
       persistence: fixture.worker,
       auditSearch: fixture.service,
+      auditRetention: fixture.retention,
       authenticator: fixedAuthenticator("user"),
     });
     try {
@@ -232,6 +235,36 @@ describe("scoped audit search", () => {
         },
       });
       expect(invalidExport.statusCode).toBe(400);
+
+      const retention = await allowed.inject({
+        method: "GET",
+        url: "/api/v2/audits/retention",
+        headers: { host: "control.example.org" },
+      });
+      expect(retention.statusCode, retention.body).toBe(200);
+      expect(retention.headers.etag).toBe('"1"');
+      expect(retention.json().data.settings).toMatchObject({
+        administrative_days: 400,
+        runtime_days: 400,
+      });
+
+      const invalidRetention = await allowed.inject({
+        method: "PATCH",
+        url: "/api/v2/audits/retention",
+        headers: {
+          host: "control.example.org",
+          origin: "https://control.example.org",
+          "x-csrf-token": "valid-csrf-proof",
+          "if-match": '"1"',
+        },
+        payload: {
+          administrative_days: 400,
+          runtime_days: 400,
+          justification: "Capacity review",
+          acknowledgement: "I accept",
+        },
+      });
+      expect(invalidRetention.statusCode).toBe(400);
     } finally {
       await allowed.close();
       await denied.close();
@@ -250,6 +283,7 @@ function open() {
   return {
     worker,
     service: new AuditSearchService(worker, Buffer.alloc(32, 7), () => NOW),
+    retention: new AuditRetentionService(worker, () => NOW),
   };
 }
 

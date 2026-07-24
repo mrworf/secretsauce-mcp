@@ -180,6 +180,29 @@ export class PersistenceDatabase {
     }
   }
 
+  withGeneratedAdministrativeAuditOutcome<T>(
+    mutation: (transaction: PersistenceTransaction) => {
+      value: T;
+      auditInput: unknown;
+    },
+  ): T {
+    this.assertOpen();
+    const execute = this.#database.transaction(() => {
+      const result = mutation(new PersistenceTransaction(this.#database, this.#now));
+      if (isPromiseLike(result) || isPromiseLike(result.value)) {
+        throw new PersistenceError("database_unavailable");
+      }
+      const event = this.buildAuditEvent(result.auditInput);
+      this.insertAdministrativeAudit(event);
+      return result.value;
+    });
+    try {
+      return execute.immediate();
+    } catch (error) {
+      throw mapPersistenceError(error, "database_unavailable");
+    }
+  }
+
   withOperationalTransaction<T>(
     mutation: (transaction: PersistenceTransaction) => T,
   ): T {

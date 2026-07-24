@@ -73,6 +73,35 @@ export interface DatabaseOAuthTokenPair {
   grantId: string;
 }
 
+export interface DatabaseOAuthRefreshInput {
+  refreshToken: string;
+  clientIdentifier: string;
+  resource?: string;
+  scopes?: string[];
+  correlationId: string;
+}
+
+export interface DatabaseOAuthAccessInput {
+  accessToken: string;
+  resource: string;
+  requiredScopes: string[];
+}
+
+export interface DatabaseOAuthAccessAuthentication {
+  subject: string;
+  scopes: string[];
+  mode: "builtin_oauth";
+}
+
+type RefreshRotationResult =
+  | { kind: "replay" }
+  | {
+    kind: "rotated";
+    scopes: string[];
+    grantId: string;
+    accessExpiresAt: number;
+  };
+
 export class DatabaseOAuthError extends Error {
   constructor(
     readonly code:
@@ -540,6 +569,356 @@ export class DatabaseOAuthRepository {
     }
   }
 
+  async rotateRefreshToken(
+    input: DatabaseOAuthRefreshInput,
+  ): Promise<DatabaseOAuthTokenPair> {
+    const normalized = normalizeRefreshInput(input);
+    let refreshHash: string;
+    try {
+      refreshHash = this.hasher.hash("refresh", input.refreshToken);
+    } catch {
+      throw new DatabaseOAuthError("invalid_grant");
+    }
+    const nextRefreshToken = opaque(this.#random);
+    const nextAccessToken = opaque(this.#random);
+    const nextRefreshHash = this.hasher.hash("refresh", nextRefreshToken);
+    const nextAccessHash = this.hasher.hash("access", nextAccessToken);
+    const refreshId = this.nextUuid();
+    const accessId = this.nextUuid();
+    const now = safeNow(this.#now);
+    try {
+      const result = await this.owner.execute({
+        run: (database) => database.withGeneratedAdministrativeAuditOutcome<RefreshRotationResult>(
+          (transaction) => {
+            const record = transaction.get<RefreshTokenRow>(`
+              SELECT
+                token.id, token.family_id, token.sequence,
+                token.status AS token_status,
+                family.status AS family_status, family.current_sequence,
+                family.issued_at AS family_issued_at,
+                family.last_used_at AS family_last_used_at,
+                family.absolute_expires_at AS family_absolute_expires_at,
+                family.idle_expires_at AS family_idle_expires_at,
+                grant.id AS grant_id, grant.user_id, grant.client_id,
+                grant.resource, grant.scopes_json, grant.authentication_method,
+                grant.issued_security_epoch, grant.issued_global_epoch,
+                grant.issued_access_ttl_ms, grant.issued_refresh_idle_ms,
+                grant.issued_refresh_absolute_ms,
+                grant.status AS grant_status,
+                grant.issued_at AS grant_issued_at,
+                grant.absolute_expires_at AS grant_absolute_expires_at,
+                grant.idle_expires_at AS grant_idle_expires_at,
+                client.client_identifier
+              FROM oauth_refresh_tokens token
+              JOIN oauth_refresh_families family ON family.id = token.family_id
+              JOIN oauth_grants grant ON grant.id = family.grant_id
+              JOIN oauth_clients client ON client.id = grant.client_id
+              WHERE token.token_hash = ?
+            `, [refreshHash]);
+            if (
+              record !== undefined
+              && record.token_status === "used"
+              && record.family_status === "active"
+            ) {
+              transaction.run(`
+                UPDATE oauth_refresh_families
+                SET status = 'revoked', revoked_at = ?,
+                  revocation_reason = 'refresh_replay', version = version + 1
+                WHERE id = ? AND status = 'active'
+              `, [now, record.family_id]);
+              transaction.run(`
+                UPDATE oauth_refresh_tokens
+                SET status = 'revoked', used_at = coalesce(used_at, ?)
+                WHERE family_id = ? AND status = 'active'
+              `, [now, record.family_id]);
+              transaction.run(`
+                UPDATE oauth_access_tokens SET status = 'revoked'
+                WHERE family_id = ? AND status = 'active'
+              `, [record.family_id]);
+              return {
+                value: { kind: "replay" as const },
+                auditInput: refreshAudit(
+                  record,
+                  input.correlationId,
+                  "deny",
+                  "refresh_replay",
+                  [{ field: "family_status", before: "active", after: "revoked" }],
+                ),
+              };
+            }
+            const current = record === undefined
+              ? undefined
+              : currentEligibility(transaction, record.user_id);
+            const scopes = record === undefined
+              ? undefined
+              : parseStoredScopes(record.scopes_json);
+            const requestedScopes = normalized.scopes ?? scopes;
+            const currentAbsolute = record === undefined
+              ? 0
+              : Math.min(
+                record.family_absolute_expires_at,
+                record.grant_absolute_expires_at,
+                record.family_issued_at + this.settings.refreshTokenMaxTtlMs,
+                record.grant_issued_at + this.settings.refreshTokenMaxTtlMs,
+              );
+            const currentIdle = record === undefined
+              ? 0
+              : Math.min(
+                currentAbsolute,
+                record.family_idle_expires_at,
+                record.grant_idle_expires_at,
+                record.family_last_used_at + this.settings.refreshTokenIdleTtlMs,
+              );
+            if (
+              record === undefined
+              || record.token_status !== "active"
+              || record.family_status !== "active"
+              || record.grant_status !== "active"
+              || record.sequence !== record.current_sequence
+              || record.client_identifier !== input.clientIdentifier
+              || input.resource !== undefined && record.resource !== input.resource
+              || currentAbsolute <= now
+              || currentIdle <= now
+              || current === undefined
+              || !eligibleForGrant(current, record.authentication_method)
+              || current.security_epoch !== record.issued_security_epoch
+              || current.global_security_epoch !== record.issued_global_epoch
+              || scopes === undefined
+              || requestedScopes === undefined
+              || requestedScopes.some((scope) => !scopes.includes(scope))
+            ) throw new PersistenceError("oauth_invalid_grant");
+            const tokenCount = transaction.get<{ count: number }>(`
+              SELECT
+                (SELECT count(*) FROM oauth_refresh_tokens)
+                + (SELECT count(*) FROM oauth_access_tokens) AS count
+            `)?.count ?? 0;
+            if (tokenCount + 2 > this.settings.maxTokenRecords) {
+              throw new PersistenceError("oauth_capacity_exceeded");
+            }
+            const nextSequence = record.sequence + 1;
+            const idleExpiresAt = Math.min(
+              currentAbsolute,
+              now + Math.min(
+                record.issued_refresh_idle_ms,
+                this.settings.refreshTokenIdleTtlMs,
+              ),
+            );
+            const accessExpiresAt = now + Math.min(
+              record.issued_access_ttl_ms,
+              this.settings.accessTokenTtlMs,
+            );
+            const used = transaction.run(`
+              UPDATE oauth_refresh_tokens
+              SET status = 'used', used_at = ?
+              WHERE id = ? AND status = 'active'
+            `, [now, record.id]);
+            if (used.changes !== 1) {
+              throw new PersistenceError("oauth_invalid_grant");
+            }
+            transaction.run(`
+              INSERT INTO oauth_refresh_tokens (
+                id, token_hash, family_id, sequence, status, issued_at, used_at
+              ) VALUES (?, ?, ?, ?, 'active', ?, NULL)
+            `, [
+              refreshId,
+              nextRefreshHash,
+              record.family_id,
+              nextSequence,
+              now,
+            ]);
+            transaction.run(`
+              INSERT INTO oauth_access_tokens (
+                id, token_hash, grant_id, family_id, scopes_json,
+                issued_at, expires_at, last_used_at, status
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active')
+            `, [
+              accessId,
+              nextAccessHash,
+              record.grant_id,
+              record.family_id,
+              JSON.stringify(requestedScopes),
+              now,
+              accessExpiresAt,
+              now,
+            ]);
+            transaction.run(`
+              UPDATE oauth_refresh_families
+              SET current_sequence = ?, last_used_at = ?, idle_expires_at = ?,
+                version = version + 1
+              WHERE id = ? AND status = 'active'
+            `, [
+              nextSequence,
+              now,
+              idleExpiresAt,
+              record.family_id,
+            ]);
+            transaction.run(`
+              UPDATE oauth_grants
+              SET last_used_at = ?, idle_expires_at = ?, version = version + 1
+              WHERE id = ? AND status = 'active'
+            `, [now, idleExpiresAt, record.grant_id]);
+            return {
+              value: {
+                kind: "rotated" as const,
+                scopes: requestedScopes,
+                grantId: record.grant_id,
+                accessExpiresAt,
+              },
+              auditInput: refreshAudit(
+                record,
+                input.correlationId,
+                "allow",
+                undefined,
+                [
+                  { field: "sequence", before: record.sequence, after: nextSequence },
+                  { field: "scope_count", after: requestedScopes.length },
+                ],
+              ),
+            };
+          },
+        ),
+      });
+      if (result.kind === "replay") {
+        throw new DatabaseOAuthError("invalid_grant");
+      }
+      return {
+        accessToken: nextAccessToken,
+        refreshToken: nextRefreshToken,
+        tokenType: "Bearer",
+        expiresIn: Math.floor((result.accessExpiresAt - now) / 1_000),
+        scopes: result.scopes,
+        grantId: result.grantId,
+      };
+    } catch (error) {
+      throw mapDatabaseOAuthError(error);
+    }
+  }
+
+  async authenticateAccessToken(
+    input: DatabaseOAuthAccessInput,
+  ): Promise<DatabaseOAuthAccessAuthentication> {
+    if (
+      input.resource.length < 1
+      || input.resource.length > 2048
+      || input.requiredScopes.length > 32
+      || input.requiredScopes.some((scope) =>
+        scope.length < 1
+        || scope.length > 128
+        || !/^[A-Za-z0-9._:-]+$/.test(scope))
+      || new Set(input.requiredScopes).size !== input.requiredScopes.length
+    ) throw new DatabaseOAuthError("invalid_grant");
+    let tokenHash: string;
+    try {
+      tokenHash = this.hasher.hash("access", input.accessToken);
+    } catch {
+      throw new DatabaseOAuthError("invalid_grant");
+    }
+    const now = safeNow(this.#now);
+    try {
+      return await this.owner.execute({
+        run: (database) => database.withOperationalTransaction((transaction) => {
+          const record = transaction.get<AccessTokenRow>(`
+            SELECT
+              token.id, token.grant_id, token.family_id, token.scopes_json,
+              token.issued_at AS token_issued_at,
+              token.expires_at AS token_expires_at,
+              token.status AS token_status,
+              grant.user_id, grant.resource, grant.authentication_method,
+              grant.issued_security_epoch, grant.issued_global_epoch,
+              grant.issued_access_ttl_ms, grant.issued_refresh_idle_ms,
+              grant.status AS grant_status,
+              grant.issued_at AS grant_issued_at,
+              grant.last_used_at AS grant_last_used_at,
+              grant.absolute_expires_at AS grant_absolute_expires_at,
+              grant.idle_expires_at AS grant_idle_expires_at,
+              family.status AS family_status,
+              family.issued_at AS family_issued_at,
+              family.last_used_at AS family_last_used_at,
+              family.absolute_expires_at AS family_absolute_expires_at,
+              family.idle_expires_at AS family_idle_expires_at
+            FROM oauth_access_tokens token
+            JOIN oauth_grants grant ON grant.id = token.grant_id
+            JOIN oauth_refresh_families family ON family.id = token.family_id
+            WHERE token.token_hash = ?
+          `, [tokenHash]);
+          const current = record === undefined
+            ? undefined
+            : currentEligibility(transaction, record.user_id);
+          const scopes = record === undefined
+            ? undefined
+            : parseStoredScopes(record.scopes_json);
+          const absoluteExpiresAt = record === undefined
+            ? 0
+            : Math.min(
+              record.grant_absolute_expires_at,
+              record.family_absolute_expires_at,
+              record.grant_issued_at + this.settings.refreshTokenMaxTtlMs,
+              record.family_issued_at + this.settings.refreshTokenMaxTtlMs,
+            );
+          const idleExpiresAt = record === undefined
+            ? 0
+            : Math.min(
+              absoluteExpiresAt,
+              record.grant_idle_expires_at,
+              record.family_idle_expires_at,
+              record.grant_last_used_at + this.settings.refreshTokenIdleTtlMs,
+              record.family_last_used_at + this.settings.refreshTokenIdleTtlMs,
+            );
+          const accessExpiresAt = record === undefined
+            ? 0
+            : Math.min(
+              record.token_expires_at,
+              record.token_issued_at + this.settings.accessTokenTtlMs,
+            );
+          if (
+            record === undefined
+            || record.family_id === null
+            || record.token_status !== "active"
+            || record.grant_status !== "active"
+            || record.family_status !== "active"
+            || record.resource !== input.resource
+            || accessExpiresAt <= now
+            || absoluteExpiresAt <= now
+            || idleExpiresAt <= now
+            || current === undefined
+            || !eligibleForGrant(current, record.authentication_method)
+            || current.security_epoch !== record.issued_security_epoch
+            || current.global_security_epoch !== record.issued_global_epoch
+            || scopes === undefined
+            || input.requiredScopes.some((scope) => !scopes.includes(scope))
+          ) throw new PersistenceError("oauth_invalid_grant");
+          const refreshedIdle = Math.min(
+            absoluteExpiresAt,
+            now + Math.min(
+              record.issued_refresh_idle_ms,
+              this.settings.refreshTokenIdleTtlMs,
+            ),
+          );
+          transaction.run(`
+            UPDATE oauth_access_tokens SET last_used_at = ? WHERE id = ?
+          `, [now, record.id]);
+          transaction.run(`
+            UPDATE oauth_refresh_families
+            SET last_used_at = ?, idle_expires_at = ?, version = version + 1
+            WHERE id = ? AND status = 'active'
+          `, [now, refreshedIdle, record.family_id]);
+          transaction.run(`
+            UPDATE oauth_grants
+            SET last_used_at = ?, idle_expires_at = ?, version = version + 1
+            WHERE id = ? AND status = 'active'
+          `, [now, refreshedIdle, record.grant_id]);
+          return {
+            subject: record.user_id,
+            scopes,
+            mode: "builtin_oauth" as const,
+          };
+        }),
+      });
+    } catch (error) {
+      throw mapDatabaseOAuthError(error);
+    }
+  }
+
   private nextUuid(): string {
     const value = this.#uuid();
     if (!isUuidV7(value)) throw new DatabaseOAuthError("unavailable");
@@ -620,6 +999,62 @@ interface AuthorizationCodeRow {
   issued_access_ttl_ms: number;
 }
 
+interface RefreshTokenRow {
+  id: string;
+  family_id: string;
+  sequence: number;
+  token_status: string;
+  family_status: string;
+  current_sequence: number;
+  family_issued_at: number;
+  family_last_used_at: number;
+  family_absolute_expires_at: number;
+  family_idle_expires_at: number;
+  grant_id: string;
+  user_id: string;
+  client_id: string;
+  resource: string;
+  scopes_json: string;
+  authentication_method: "local_password_totp" | "oidc";
+  issued_security_epoch: number;
+  issued_global_epoch: number;
+  issued_access_ttl_ms: number;
+  issued_refresh_idle_ms: number;
+  issued_refresh_absolute_ms: number;
+  grant_status: string;
+  grant_issued_at: number;
+  grant_absolute_expires_at: number;
+  grant_idle_expires_at: number;
+  client_identifier: string;
+}
+
+interface AccessTokenRow {
+  id: string;
+  grant_id: string;
+  family_id: string | null;
+  scopes_json: string;
+  token_issued_at: number;
+  token_expires_at: number;
+  token_status: string;
+  user_id: string;
+  resource: string;
+  authentication_method: "local_password_totp" | "oidc";
+  issued_security_epoch: number;
+  issued_global_epoch: number;
+  issued_access_ttl_ms: number;
+  issued_refresh_idle_ms: number;
+  grant_status: string;
+  grant_issued_at: number;
+  grant_last_used_at: number;
+  grant_absolute_expires_at: number;
+  grant_idle_expires_at: number;
+  family_status: string;
+  family_issued_at: number;
+  family_last_used_at: number;
+  family_absolute_expires_at: number;
+  family_idle_expires_at: number;
+}
+
 function eligibility(row: EligibilityRow): DatabaseOAuthEligibility {
   const hasEffectiveService = row.has_effective_service === 1;
   return {
@@ -698,6 +1133,95 @@ function normalizeAuthorizationInput(
     scopes: [...input.scopes].sort(),
     codeChallenge: input.codeChallenge,
   };
+}
+
+function normalizeRefreshInput(
+  input: DatabaseOAuthRefreshInput,
+): DatabaseOAuthRefreshInput {
+  if (
+    input.clientIdentifier.length < 1
+    || input.clientIdentifier.length > 2048
+    || input.resource !== undefined
+      && (input.resource.length < 1 || input.resource.length > 2048)
+    || input.scopes !== undefined && (
+      input.scopes.length < 1
+      || input.scopes.length > 32
+      || input.scopes.some((scope) =>
+        scope.length < 1
+        || scope.length > 128
+        || !/^[A-Za-z0-9._:-]+$/.test(scope))
+      || new Set(input.scopes).size !== input.scopes.length
+    )
+    || !/^(?:req_)?[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(
+      input.correlationId,
+    )
+  ) throw new DatabaseOAuthError("invalid_grant");
+  return {
+    ...input,
+    ...(input.scopes === undefined ? {} : { scopes: [...input.scopes].sort() }),
+  };
+}
+
+function eligibleForGrant(
+  row: EligibilityRow,
+  method: "local_password_totp" | "oidc",
+): boolean {
+  const base = row.role === "user"
+    && row.status === "active"
+    && row.has_effective_service === 1;
+  return method === "oidc"
+    ? base
+    : base
+      && row.password_state === "configured"
+      && row.totp_state === "configured";
+}
+
+function refreshAudit(
+  record: RefreshTokenRow,
+  correlationId: string,
+  result: "allow" | "deny",
+  failureCode: string | undefined,
+  changes: Array<{
+    field: string;
+    before?: string | number | boolean;
+    after?: string | number | boolean;
+  }>,
+) {
+  return {
+    actor: {
+      type: "system" as const,
+      id: record.client_id,
+      label: `client:${record.client_id}`,
+      authenticationMethod: "oauth_refresh",
+    },
+    action: result === "allow" ? "oauth.refresh_rotate" : "oauth.refresh_replay",
+    result,
+    target: {
+      type: "oauth_grant",
+      id: record.grant_id,
+      label: `grant:${record.grant_id}`,
+    },
+    changes,
+    correlationId,
+    source: { category: "oauth" },
+    ...(failureCode === undefined ? {} : { failureCode }),
+  };
+}
+
+function mapDatabaseOAuthError(error: unknown): DatabaseOAuthError {
+  if (error instanceof DatabaseOAuthError) return error;
+  if (error instanceof PersistenceError) {
+    if (error.code === "oauth_invalid_authorization") {
+      return new DatabaseOAuthError("invalid_authorization");
+    }
+    if (error.code === "oauth_invalid_grant") {
+      return new DatabaseOAuthError("invalid_grant");
+    }
+    if (error.code === "oauth_capacity_exceeded") {
+      return new DatabaseOAuthError("capacity_exceeded");
+    }
+  }
+  return new DatabaseOAuthError("unavailable");
 }
 
 function upsertClient(

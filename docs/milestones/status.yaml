@@ -142,10 +142,10 @@ milestones:
   - id: "20"
     title: "Activity, Status, And Security Dashboards"
     file: "docs/milestones/20-activity-status-security-dashboards.md"
-    status: "in_progress"
-    completed_at: null
-    commit_hash: null
-    notes: "Decision-complete implementation plan written before code changes."
+    status: "completed"
+    completed_at: "2026-07-24T07:52:14.000Z"
+    commit_hash: "d52092a"
+    notes: "Implemented atomic low-cardinality hourly activity and bounded rebuilds, scope-first privacy-suppressed reports, sanitized status and closed security signals with durable guarded remediations, strict browser-only APIs, responsive operator workspaces, and operator guidance; OpenAPI current, 10k-event targets pass, and full 111-file/804-test regression passes."
   - id: "21"
     title: "Backup Export"
     file: "docs/milestones/21-backup-export.md"

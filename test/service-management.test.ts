@@ -140,6 +140,73 @@ describe("durable service ownership", () => {
     expect(controlConfig().services).toEqual({});
   });
 
+  it("enforces immutable service/all-services API-key authority independently of system keys", async () => {
+    const fixture = await serviceFixture("api-key-authority");
+    const first = await fixture.create("first-service", "First service");
+    const second = await fixture.create("second-service", "Second service");
+    const serviceKey = await insertApiKey(
+      fixture.worker,
+      "018f1f2e-7b3c-7a10-8000-000000000071",
+      "service",
+      first.id,
+      fixture.superadmin.principalId,
+      31,
+    );
+    const allServicesKey = await insertApiKey(
+      fixture.worker,
+      "018f1f2e-7b3c-7a10-8000-000000000072",
+      "all_services",
+      undefined,
+      fixture.superadmin.principalId,
+      32,
+    );
+    const systemKey = await insertApiKey(
+      fixture.worker,
+      "018f1f2e-7b3c-7a10-8000-000000000073",
+      "system",
+      undefined,
+      fixture.superadmin.principalId,
+      33,
+    );
+
+    expect(await fixture.service.detail(serviceKey, first.id))
+      .toMatchObject({ id: first.id });
+    await expect(fixture.service.detail(serviceKey, second.id))
+      .rejects.toMatchObject({ code: "not_found" });
+    expect(await fixture.service.updateProfile(
+      serviceKey,
+      first.id,
+      first.version,
+      { name: "Updated by scoped automation" },
+      CORRELATION,
+    )).toMatchObject({ name: "Updated by scoped automation", version: first.version + 1 });
+
+    const created = await fixture.service.create(
+      allServicesKey,
+      { slug: "future-service", name: "Future service" },
+      "api-create-service-0001",
+      CORRELATION,
+    );
+    expect(created.service.slug).toBe("future-service");
+    expect((await fixture.service.list(allServicesKey, {
+      limit: 10,
+    })).services.map(({ slug }) => slug)).toEqual([
+      "first-service",
+      "future-service",
+      "second-service",
+    ]);
+    await expect(fixture.service.create(
+      serviceKey,
+      { slug: "forbidden-service", name: "Forbidden service" },
+      "api-create-service-0002",
+      CORRELATION,
+    )).rejects.toMatchObject({ code: "not_found" });
+    await expect(fixture.service.detail(systemKey, first.id))
+      .rejects.toMatchObject({ code: "not_found" });
+    await expect(fixture.service.list(systemKey, { limit: 10 }))
+      .rejects.toMatchObject({ code: "not_found" });
+  });
+
   it("assigns only active admins and grants exact assigned-service visibility", async () => {
     const fixture = await serviceFixture("assign");
     const created = await fixture.create("managed", "Managed");
@@ -1328,6 +1395,51 @@ function browser(
   role: "user" | "admin" | "superadmin",
 ): ControlAuthenticationContext {
   return { method: "browser_session", principalId, role };
+}
+
+async function insertApiKey(
+  worker: PersistenceWorker,
+  id: string,
+  role: "service" | "all_services" | "system",
+  serviceId: string | undefined,
+  creatorId: string,
+  byte: number,
+): Promise<ControlAuthenticationContext> {
+  const identifier = Buffer.alloc(12, byte).toString("base64url");
+  const nickname = `${role} automation`;
+  const lastFour = Buffer.alloc(3, byte).toString("base64url");
+  await worker.execute({
+    run: (database) => database.withOperationalTransaction((transaction) => {
+      transaction.run(`
+        INSERT INTO api_keys (
+          id, identifier, verifier_hash, nickname, last_four, api_role,
+          service_id, expiration_policy, expires_at, status, creator_id,
+          version, created_at, updated_at, last_used_at, revoked_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, 'forever', NULL, 'active', ?, 1, ?, ?, NULL, NULL)
+      `, [
+        id,
+        identifier,
+        `$argon2id$${"x".repeat(64)}`,
+        nickname,
+        lastFour,
+        role,
+        serviceId ?? null,
+        creatorId,
+        NOW,
+        NOW,
+      ]);
+    }),
+  });
+  return {
+    method: "api_key",
+    principalId: id,
+    role,
+    apiKey: {
+      nickname,
+      lastFour,
+      ...(serviceId === undefined ? {} : { serviceId }),
+    },
+  };
 }
 
 function mutationHeaders(extra: Record<string, string> = {}) {

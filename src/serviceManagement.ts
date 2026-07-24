@@ -26,6 +26,12 @@ import {
 } from "./serviceConfiguration.js";
 import type { UserRelationshipResolver } from "./identity/userAdministration.js";
 import type { AlwaysStepUpHandle, StepUpRepository } from "./identity/stepUp.js";
+import {
+  administrativeActorSnapshot,
+  currentApiKey,
+  requireAllServicesApiKeyAuthority,
+  requireServiceApiKeyAuthority,
+} from "./apiKeyAuthority.js";
 import { persistRuntimeSnapshot } from "./runtimeSnapshots.js";
 
 const MAX_SERVICE_ADMINS = 200;
@@ -108,7 +114,7 @@ export interface ServiceRevisionView {
   digest: string;
   publicationGeneration: number;
   sourceRevisionId?: string;
-  actorRole: "admin" | "superadmin";
+  actorRole: "admin" | "superadmin" | "service" | "all_services";
   publishedAt: number;
 }
 
@@ -248,7 +254,10 @@ export class ServiceManagementAuthorization implements ControlAuthorizationSeam 
     outcome: PermissionOutcome,
     request: FastifyRequest,
   ): Promise<boolean> {
-    if (outcome === "all_services") return context.role === "superadmin";
+    if (outcome === "all_services") {
+      return context.role === "superadmin" ||
+        (context.method === "api_key" && context.role === "all_services");
+    }
     if (outcome === "assigned_services") {
       const serviceId = serviceIdFromRequest(request);
       if (serviceId !== undefined) {
@@ -263,7 +272,11 @@ export class ServiceManagementAuthorization implements ControlAuthorizationSeam 
       return context.role === "user" &&
         request.routeOptions.url === "/api/v2/users/me/services";
     }
-    if (outcome === "scoped_service") return false;
+    if (outcome === "scoped_service") {
+      return context.method === "api_key" &&
+        context.role === "service" &&
+        context.apiKey?.serviceId === serviceIdFromRequest(request);
+    }
     return this.delegate.authorizeScope(context, capability, outcome, request);
   }
 
@@ -297,7 +310,7 @@ export class ServiceManagementRepository {
     try {
       return await this.owner.execute({
         run: (database) => database.withGeneratedAdministrativeAudit((transaction) => {
-          requireSuperadmin(transaction, input.actor);
+          requireServiceCreator(transaction, input.actor);
           const result = transaction.idempotent(input.idempotency, () => {
             const count = transaction.get<{ count: number }>(
               "SELECT count(*) AS count FROM services",
@@ -381,7 +394,19 @@ export class ServiceManagementRepository {
         run: (database) => database.read((query) => {
           const clauses: string[] = [];
           const parameters: Array<string | number> = [];
-          if (input.actor.role === "admin") {
+          if (input.actor.method === "api_key") currentApiKey(query, input.actor);
+          if (input.actor.method === "api_key" && input.actor.role === "service") {
+            clauses.push("s.id = ?");
+            if (input.actor.apiKey?.serviceId === undefined) {
+              throw new PersistenceError("authentication_failed");
+            }
+            parameters.push(input.actor.apiKey.serviceId);
+          } else if (
+            input.actor.method === "api_key" &&
+            input.actor.role === "all_services"
+          ) {
+            // The immutable role covers current and future services.
+          } else if (input.actor.role === "admin") {
             clauses.push(`EXISTS (
               SELECT 1
               FROM service_admins visible JOIN users actor ON actor.id = visible.user_id
@@ -829,7 +854,7 @@ export class ServiceManagementRepository {
             digest: string;
             publication_generation: number;
             source_revision_id: string | null;
-            actor_role: "admin" | "superadmin";
+            actor_role: "admin" | "superadmin" | "service" | "all_services";
             published_at: number;
           }>(`
             SELECT id, sequence, digest, publication_generation,
@@ -985,7 +1010,7 @@ export class ServiceManagementRepository {
     try {
       return await this.owner.execute({
         run: (database) => database.withGeneratedAdministrativeAudit((transaction) => {
-          requireSuperadmin(transaction, input.actor);
+          requireServiceCreator(transaction, input.actor);
           const result = transaction.idempotent(input.idempotency, () => {
             const source = requiredService(transaction, input.sourceServiceId);
             const count = transaction.get<{ count: number }>(
@@ -1211,7 +1236,7 @@ export class ServiceManagementRepository {
     try {
       return await this.owner.execute({
         run: (database) => database.withGeneratedAdministrativeAudit((transaction) => {
-          requireSuperadmin(transaction, input.actor);
+          requireServiceCreator(transaction, input.actor);
           const result = transaction.idempotent(input.idempotency, () => {
             const current = requiredService(transaction, input.serviceId);
             if (current.version !== input.expectedVersion) {
@@ -1840,13 +1865,18 @@ export class ServiceManagementService {
     if (q !== undefined && (q !== q.trim() || q.length < 1 || q.length > 512)) {
       throw new ServiceManagementError("invalid_request");
     }
-    const serviceIds = actor.role === "admin"
+    const serviceIds = actor.method === "browser_session" && actor.role === "admin"
       ? await this.relationships.relatedServiceIds(actor.principalId)
       : [];
+    const scopeValues = actor.method === "api_key"
+      ? [`api:${actor.role}:${actor.apiKey?.serviceId ?? "all"}`]
+      : actor.role === "superadmin"
+        ? ["all"]
+        : serviceIds;
     const binding = {
       routeId: "services.list",
       principalId: actor.principalId,
-      scopeDigest: digest(actor.role === "superadmin" ? ["all"] : serviceIds),
+      scopeDigest: digest(scopeValues),
       sort: "slug-id",
       filterDigest: digest([q ?? "", input.lifecycle ?? ""]),
     };
@@ -1946,9 +1976,10 @@ function requiredScopedService(
   actor: ControlAuthenticationContext,
   serviceId: string,
 ): ServiceRow {
-  if (actor.method !== "browser_session") {
-    throw new PersistenceError("authentication_failed");
+  if (requireServiceApiKeyAuthority(query, actor, serviceId)) {
+    return requiredService(query, serviceId);
   }
+  if (actor.method !== "browser_session") throw new PersistenceError("authentication_failed");
   const currentActor = query.get<{ role: string; status: string }>(
     "SELECT role, status FROM users WHERE id = ?",
     [actor.principalId],
@@ -2291,13 +2322,7 @@ function validationAudit(
   validation: ServiceValidationView,
 ): AdministrativeAuditEventInput {
   return {
-    actor: {
-      type: "browser_session",
-      id: actor.principalId,
-      label: `user:${actor.principalId}`,
-      role: actor.role,
-      authenticationMethod: actor.method,
-    },
+    actor: administrativeActorSnapshot(actor),
     action: "service.validate",
     result: validation.valid ? "allow" : "deny",
     target: { type: "service", id: serviceId, label: `service:${serviceId}` },
@@ -2363,6 +2388,17 @@ function rowVisible(
   serviceId: string,
   actor: ControlAuthenticationContext,
 ): boolean {
+  if (actor.method === "api_key") {
+    try {
+      return requireServiceApiKeyAuthority(transaction, actor, serviceId);
+    } catch (error) {
+      if (
+        !(error instanceof PersistenceError) ||
+        error.code !== "authentication_failed"
+      ) throw error;
+      return false;
+    }
+  }
   if (actor.role === "superadmin") return true;
   return actor.role === "admin" && transaction.get(
     `SELECT 1
@@ -2371,6 +2407,14 @@ function rowVisible(
        AND actor.role = 'admin' AND actor.status = 'active'`,
     [serviceId, actor.principalId],
   ) !== undefined;
+}
+
+function requireServiceCreator(
+  transaction: Pick<PersistenceTransaction, "get">,
+  actor: ControlAuthenticationContext,
+): void {
+  if (requireAllServicesApiKeyAuthority(transaction, actor)) return;
+  requireSuperadmin(transaction, actor);
 }
 
 function requireSuperadmin(
@@ -2398,13 +2442,7 @@ function serviceAudit(
   changes: NonNullable<AdministrativeAuditEventInput["changes"]>,
 ): AdministrativeAuditEventInput {
   return {
-    actor: {
-      type: "browser_session",
-      id: actor.principalId,
-      label: `user:${actor.principalId}`,
-      role: actor.role,
-      authenticationMethod: actor.method,
-    },
+    actor: administrativeActorSnapshot(actor),
     action,
     result: "allow",
     target: { type: "service", id: serviceId, label: `service:${slug}` },

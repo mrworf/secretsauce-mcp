@@ -172,6 +172,47 @@ describe("control route registry", () => {
     }
   });
 
+  it("derives API-key authentication only for statically permitted matrix capabilities", () => {
+    const registry = new ControlRouteRegistry();
+    registry.register({
+      ...mutationRoute(vi.fn()),
+      id: "test.service_configuration",
+      authentication: ["browser_session"],
+      permission: "configure_service",
+    });
+    registry.register({
+      ...mutationRoute(vi.fn()),
+      id: "test.key_lifecycle",
+      path: "/api/v2/test/key-lifecycle/{resource_id}",
+      authentication: ["browser_session"],
+      permission: "manage_api_keys",
+    });
+    registry.register({
+      ...mutationRoute(vi.fn()),
+      id: "test.own_security",
+      path: "/api/v2/test/own-security/{resource_id}",
+      authentication: ["browser_session"],
+      permission: "authenticated",
+    });
+    expect(registry.definitions().map(({ id, authentication }) => ({
+      id,
+      authentication,
+    }))).toEqual([
+      {
+        id: "test.service_configuration",
+        authentication: ["browser_session", "api_key"],
+      },
+      {
+        id: "test.key_lifecycle",
+        authentication: ["browser_session"],
+      },
+      {
+        id: "test.own_security",
+        authentication: ["browser_session"],
+      },
+    ]);
+  });
+
   it("validates closed body/query/params, headers, permissions, and response envelopes", async () => {
     const mutation = vi.fn(async (context) => ({
       data: {

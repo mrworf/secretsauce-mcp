@@ -17,6 +17,7 @@ import {
   parseIdempotencyKey,
 } from "./contracts.js";
 import {
+  CONTROL_ROLES,
   permissionNeedsHumanStepUp,
   permissionNeedsScope,
   permissionOutcome,
@@ -163,12 +164,33 @@ export class ControlRouteRegistry {
     }
     this.#keys.add(key);
     this.#ids.add(definition.id);
-    this.#definitions.push(definition);
+    this.#definitions.push(withStaticApiKeyAuthentication(definition));
   }
 
   definitions(): readonly ControlRouteDefinition[] {
     return [...this.#definitions];
   }
+}
+
+function withStaticApiKeyAuthentication(
+  definition: ControlRouteDefinition,
+): ControlRouteDefinition {
+  if (
+    definition.authentication === "public" ||
+    !definition.authentication.includes("browser_session") ||
+    definition.authentication.includes("api_key") ||
+    definition.permission === null ||
+    definition.permission === "authenticated"
+  ) return definition;
+  const apiRoles = CONTROL_ROLES.filter((role) =>
+    ["service", "all_services", "system"].includes(role));
+  const permitted = apiRoles.some((role) => {
+    const outcome = permissionOutcome(role, definition.permission as ControlCapability);
+    return outcome !== "deny" && outcome !== "no_account";
+  });
+  return permitted
+    ? { ...definition, authentication: [...definition.authentication, "api_key"] }
+    : definition;
 }
 
 export function installControlRoutes(

@@ -410,7 +410,7 @@ export function registerServiceManagementRoutes(
           digest: z.string().regex(/^[a-f0-9]{64}$/),
           publication_generation: z.number().int().positive(),
           source_revision_id: z.string().uuid().optional(),
-          actor_role: z.enum(["admin", "superadmin"]),
+          actor_role: z.enum(["admin", "superadmin", "service", "all_services"]),
           published_at: z.number().int().nonnegative(),
         }).strict()).max(100),
       }).strict(),

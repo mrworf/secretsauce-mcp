@@ -1857,6 +1857,52 @@ CREATE INDEX api_key_activity_time_idx
   ON api_key_activity (occurred_at, id);
 `;
 
+const migration0016 = `
+ALTER TABLE service_config_versions RENAME TO service_config_versions_pre_api_keys;
+
+CREATE TABLE service_config_versions (
+  id TEXT PRIMARY KEY CHECK (
+    length(id) = 36 AND id = lower(id)
+    AND substr(id, 15, 1) = '7'
+    AND substr(id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND id NOT GLOB '*[^0-9a-f-]*'
+  ),
+  service_id TEXT NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+  sequence INTEGER NOT NULL CHECK (sequence > 0),
+  document_json TEXT NOT NULL CHECK (
+    length(document_json) BETWEEN 2 AND 1048576 AND json_valid(document_json)
+  ),
+  digest TEXT NOT NULL CHECK (
+    length(digest) = 64 AND digest = lower(digest)
+    AND digest NOT GLOB '*[^0-9a-f]*'
+  ),
+  source_revision_id TEXT,
+  publication_generation INTEGER NOT NULL CHECK (publication_generation > 0),
+  actor_user_id TEXT NOT NULL,
+  actor_role TEXT NOT NULL CHECK (
+    actor_role IN ('admin', 'superadmin', 'service', 'all_services')
+  ),
+  published_at INTEGER NOT NULL CHECK (published_at >= 0),
+  UNIQUE (service_id, sequence)
+) STRICT;
+
+INSERT INTO service_config_versions (
+  id, service_id, sequence, document_json, digest, source_revision_id,
+  publication_generation, actor_user_id, actor_role, published_at
+)
+SELECT
+  id, service_id, sequence, document_json, digest, source_revision_id,
+  publication_generation, actor_user_id, actor_role, published_at
+FROM service_config_versions_pre_api_keys;
+
+DROP TABLE service_config_versions_pre_api_keys;
+
+CREATE INDEX service_config_versions_service_idx
+  ON service_config_versions (service_id, sequence DESC, id);
+CREATE INDEX service_config_versions_retention_idx
+  ON service_config_versions (service_id, published_at, id);
+`;
+
 export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [
   {
     version: 1,
@@ -1932,6 +1978,11 @@ export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [
     version: 15,
     name: "system_owned_api_keys",
     sql: migration0015,
+  },
+  {
+    version: 16,
+    name: "api_key_service_revision_actors",
+    sql: migration0016,
   },
 ];
 

@@ -1,4 +1,8 @@
 import type { ControlAuthenticationContext } from "./control/authentication.js";
+import {
+  administrativeActorSnapshot,
+  requireServiceApiKeyAuthority,
+} from "./apiKeyAuthority.js";
 import type { ControlIdempotencyHasher } from "./control/idempotency.js";
 import {
   CredentialPlacementError,
@@ -1011,7 +1015,7 @@ function requireScopedService(
   serviceId: string,
   mutable: boolean,
 ): { id: string; lifecycle: string } {
-  if (!isUuidV7(serviceId) || actor.method !== "browser_session") {
+  if (!isUuidV7(serviceId)) {
     throw new PersistenceError("identity_not_found");
   }
   const service = query.get<{ id: string; lifecycle: string }>(
@@ -1019,6 +1023,10 @@ function requireScopedService(
     [serviceId],
   );
   if (service === undefined || (mutable && service.lifecycle === "archived")) {
+    throw new PersistenceError("identity_not_found");
+  }
+  if (requireServiceApiKeyAuthority(query, actor, serviceId)) return service;
+  if (actor.method !== "browser_session") {
     throw new PersistenceError("identity_not_found");
   }
   if (actor.role === "superadmin") {
@@ -1690,13 +1698,7 @@ function credentialAudit(
   changes: NonNullable<AdministrativeAuditEventInput["changes"]>,
 ): AdministrativeAuditEventInput {
   return {
-    actor: {
-      type: "browser_session",
-      id: actor.principalId,
-      label: `user:${actor.principalId}`,
-      role: actor.role,
-      authenticationMethod: actor.method,
-    },
+    actor: administrativeActorSnapshot(actor),
     action,
     result: "allow",
     target: {

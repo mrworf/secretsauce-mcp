@@ -102,7 +102,7 @@ export interface ServiceRevision {
   digest: string;
   publication_generation: number;
   source_revision_id?: string;
-  actor_role: "admin" | "superadmin";
+  actor_role: "admin" | "superadmin" | "service" | "all_services";
   published_at: number;
 }
 

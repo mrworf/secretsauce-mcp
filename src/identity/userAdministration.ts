@@ -21,6 +21,10 @@ import {
   type IdentityStatus,
 } from "./contracts.js";
 import { parseIdentityProfile } from "./validation.js";
+import {
+  administrativeActorSnapshot,
+  currentApiKey,
+} from "../apiKeyAuthority.js";
 
 const CURSOR_DOMAIN = "secretsauce.user-list-cursor.v1";
 const CURSOR_TTL_MS = 15 * 60_000;
@@ -75,10 +79,12 @@ interface UserAdministrationRow extends UserAdministrationView {
 
 export interface UserRelationshipResolver {
   relatedServiceIds(actorUserId: string, targetUserId?: string): Promise<readonly string[]>;
+  userRelatedToService(targetUserId: string, serviceId: string): Promise<boolean>;
 }
 
 export const denyUserRelationships: UserRelationshipResolver = {
   relatedServiceIds: async () => [],
+  userRelatedToService: async () => false,
 };
 
 export class UserManagementAuthorization implements ControlAuthorizationSeam {
@@ -96,7 +102,22 @@ export class UserManagementAuthorization implements ControlAuthorizationSeam {
     if (
       capability === "invite_ordinary_user" &&
       outcome === "all_services"
-    ) return context.role === "superadmin";
+    ) {
+      return context.role === "superadmin" ||
+        (context.method === "api_key" && context.role === "all_services");
+    }
+    if (
+      capability === "invite_ordinary_user" &&
+      outcome === "ordinary_users_without_assignment"
+    ) return context.method === "api_key" && context.role === "system";
+    if (
+      capability === "invite_ordinary_user" &&
+      outcome === "scoped_service"
+    ) {
+      return context.method === "api_key" &&
+        context.role === "service" &&
+        context.apiKey?.serviceId !== undefined;
+    }
     if (
       capability === "invite_ordinary_user" &&
       outcome === "assigned_services"
@@ -107,17 +128,30 @@ export class UserManagementAuthorization implements ControlAuthorizationSeam {
     if (
       ["all_ordinary_users", "all_ordinary_users_step_up", "last_superadmin_rules"]
         .includes(outcome)
-    ) return context.role === "superadmin";
+    ) {
+      if (outcome === "last_superadmin_rules") return context.role === "superadmin";
+      return context.role === "superadmin" ||
+        (context.method === "api_key" &&
+          (context.role === "all_services" || context.role === "system"));
+    }
     if (outcome.startsWith("related_users")) {
       const targetId = requestTargetUserId(request);
       if (
         outcome === "related_users_not_self" &&
         (targetId === undefined || targetId === context.principalId)
       ) return false;
-      const serviceIds = await this.relationships.relatedServiceIds(
-        context.principalId,
-        targetId,
-      );
+      if (
+        context.method === "api_key" &&
+        context.role === "service" &&
+        context.apiKey?.serviceId !== undefined &&
+        targetId !== undefined
+      ) {
+        return this.relationships.userRelatedToService(
+          targetId,
+          context.apiKey.serviceId,
+        );
+      }
+      const serviceIds = await this.relationships.relatedServiceIds(context.principalId, targetId);
       return serviceIds.length > 0;
     }
     return this.delegate.authorizeScope(context, capability, outcome, request);
@@ -141,7 +175,7 @@ interface UserCursorPayload {
   v: 1;
   route: "users.list";
   actorId: string;
-  actorRole: "superadmin" | "admin";
+  actorRole: "superadmin" | "admin" | "service" | "all_services" | "system";
   scope: string;
   q: string | null;
   role: IdentityRole | null;
@@ -214,10 +248,14 @@ export class UserAdministrationRepository {
     private readonly now: () => number = Date.now,
   ) {}
 
-  async user(userId: string): Promise<UserAdministrationView | undefined> {
+  async user(
+    userId: string,
+    actor?: ControlAuthenticationContext,
+  ): Promise<UserAdministrationView | undefined> {
     if (!isUuidV7(userId)) return undefined;
     return this.owner.execute({
       run: (database) => database.read((query) => {
+        if (actor?.method === "api_key") currentApiKey(query, actor, this.now);
         const row = query.get<UserAdministrationRow>(userSelect("WHERE u.id = ?"), [userId]);
         return row === undefined ? undefined : projectUser(row);
       }),
@@ -232,6 +270,8 @@ export class UserAdministrationRepository {
     lastEmail?: string;
     lastId?: string;
     serviceIds?: readonly string[];
+    allowedRoles?: readonly IdentityRole[];
+    actor?: ControlAuthenticationContext;
   }): Promise<{ users: UserAdministrationView[]; last?: { email: string; id: string } }> {
     const clauses: string[] = [];
     const parameters: (string | number)[] = [];
@@ -272,6 +312,14 @@ export class UserAdministrationRepository {
       )`);
       parameters.push(...input.serviceIds);
     }
+    if (input.allowedRoles !== undefined) {
+      if (
+        input.allowedRoles.length < 1 ||
+        input.allowedRoles.some((role) => !IDENTITY_ROLES.includes(role))
+      ) throw new UserAdministrationError("invalid_request");
+      clauses.push(`u.role IN (${input.allowedRoles.map(() => "?").join(",")})`);
+      parameters.push(...input.allowedRoles);
+    }
     if (input.q !== undefined) {
       clauses.push(`(
         u.normalized_email LIKE ? ESCAPE '\\'
@@ -296,6 +344,7 @@ export class UserAdministrationRepository {
     parameters.push(input.limit + 1);
     return this.owner.execute({
       run: (database) => database.read((query) => {
+        if (input.actor?.method === "api_key") currentApiKey(query, input.actor, this.now);
         const rows = query.all<UserAdministrationRow>(`
           ${userSelect(clauses.length === 0 ? "" : `WHERE ${clauses.join(" AND ")}`)}
           ORDER BY u.normalized_email ASC, u.id ASC
@@ -331,7 +380,7 @@ export class UserAdministrationRepository {
     try {
       return await this.owner.execute({
         run: (database) => database.withGeneratedAdministrativeAudit((transaction) => {
-          const actor = requiredCurrentActor(transaction, input.actor);
+          const actor = requiredCurrentActor(transaction, input.actor, this.now);
           const target = requiredUserRow(transaction, input.targetUserId);
           if (target.version !== input.expectedVersion) {
             throw new PersistenceError("identity_stale");
@@ -389,7 +438,7 @@ export class UserAdministrationRepository {
           return {
             value: projectUser(requiredUserRow(transaction, target.id)),
             auditInput: profileAudit({
-              actor,
+              actor: input.actor,
               target,
               correlationId: input.correlationId,
               emailChanged,
@@ -428,13 +477,13 @@ export class UserAdministrationService {
     actor: ControlAuthenticationContext,
     targetUserId: unknown,
   ): Promise<UserAdministrationView> {
-    requireBrowserActor(actor);
+    requireUserAdministrationActor(actor);
     if (typeof targetUserId !== "string" || !isUuidV7(targetUserId)) {
       throw new UserAdministrationError("not_found");
     }
-    const target = await this.repository.user(targetUserId);
+    const target = await this.repository.user(targetUserId, actor);
     if (target === undefined) throw new UserAdministrationError("not_found");
-    const services = await this.relationships.relatedServiceIds(actor.principalId, target.id);
+    const services = await relatedServices(this.relationships, actor, target.id);
     if (!canView(actor, target, services)) throw new UserAdministrationError("not_found");
     return target;
   }
@@ -443,16 +492,30 @@ export class UserAdministrationService {
     actor: ControlAuthenticationContext,
     input: unknown,
   ): Promise<{ users: UserAdministrationView[]; nextCursor?: string }> {
-    requireBrowserActor(actor);
-    if (actor.role !== "superadmin" && actor.role !== "admin") {
+    requireUserAdministrationActor(actor);
+    if (
+      actor.role !== "superadmin" &&
+      actor.role !== "admin" &&
+      actor.role !== "service" &&
+      actor.role !== "all_services" &&
+      actor.role !== "system"
+    ) {
       throw new UserAdministrationError("forbidden");
     }
-    const scopeIds = await this.relationships.relatedServiceIds(actor.principalId);
+    const scopeIds = actor.method === "api_key"
+      ? actor.role === "service" && actor.apiKey?.serviceId !== undefined
+        ? [actor.apiKey.serviceId]
+        : []
+      : await this.relationships.relatedServiceIds(actor.principalId);
     if (actor.role === "admin" && scopeIds.length === 0) {
       throw new UserAdministrationError("forbidden");
     }
     const parsed = parseListInput(input);
-    const scope = actor.role === "superadmin" ? "all" : scopeFingerprint(scopeIds);
+    const scope = actor.role === "superadmin"
+      ? "all"
+      : actor.method === "api_key"
+        ? `api:${actor.role}:${actor.apiKey?.serviceId ?? "all"}`
+        : scopeFingerprint(scopeIds);
     let lastEmail: string | undefined;
     let lastId: string | undefined;
     if (parsed.cursor !== undefined) {
@@ -470,7 +533,15 @@ export class UserAdministrationService {
     }
     const page = await this.repository.list({
       limit: parsed.limit,
-      ...(actor.role === "admin" ? { serviceIds: scopeIds } : {}),
+      ...(
+        actor.role === "admin" || (actor.method === "api_key" && actor.role === "service")
+          ? { serviceIds: scopeIds }
+          : {}
+      ),
+      ...(actor.method === "api_key"
+        ? { allowedRoles: actor.role === "system" ? ["user", "admin"] : ["user"] }
+        : {}),
+      actor,
       ...(parsed.q === undefined ? {} : { q: parsed.q }),
       ...(parsed.role === undefined ? {} : { role: parsed.role }),
       ...(parsed.status === undefined ? {} : { status: parsed.status }),
@@ -513,11 +584,11 @@ export class UserAdministrationService {
     profile: unknown,
     correlationId: string,
   ): Promise<UserAdministrationView> {
-    requireBrowserActor(actor);
+    requireUserAdministrationActor(actor);
     if (typeof targetUserId !== "string" || !isUuidV7(targetUserId)) {
       throw new UserAdministrationError("not_found");
     }
-    const services = await this.relationships.relatedServiceIds(actor.principalId, targetUserId);
+    const services = await relatedServices(this.relationships, actor, targetUserId);
     return this.update(
       actor,
       targetUserId,
@@ -541,7 +612,7 @@ export class UserAdministrationService {
       (expectedVersion as number) < 1 ||
       !validCorrelationId(correlationId)
     ) throw new UserAdministrationError("invalid_request");
-    const target = await this.repository.user(targetUserId);
+    const target = await this.repository.user(targetUserId, actor);
     if (target === undefined || !canEdit(actor, target, services)) {
       throw new UserAdministrationError("not_found");
     }
@@ -595,7 +666,13 @@ function requiredUserRow(
 function requiredCurrentActor(
   transaction: PersistenceTransaction,
   actor: ControlAuthenticationContext,
-): UserAdministrationRow {
+  now: () => number,
+): UserAdministrationRow | ControlAuthenticationContext {
+  if (actor.method === "api_key") {
+    currentApiKey(transaction, actor, now);
+    if (actor.role !== "system") throw new PersistenceError("identity_not_found");
+    return actor;
+  }
   const current = requiredUserRow(transaction, actor.principalId);
   if (
     actor.method !== "browser_session" ||
@@ -606,10 +683,16 @@ function requiredCurrentActor(
 }
 
 function requireProfileAuthority(
-  actor: UserAdministrationRow,
+  actor: UserAdministrationRow | ControlAuthenticationContext,
   target: UserAdministrationRow,
   affectedServiceIds: readonly string[],
 ): void {
+  if ("method" in actor) {
+    if (actor.method === "api_key" && actor.role === "system" && target.role !== "superadmin") {
+      return;
+    }
+    throw new PersistenceError("identity_not_found");
+  }
   if (actor.id === target.id) return;
   if (actor.role === "superadmin") return;
   if (
@@ -625,6 +708,12 @@ function canView(
   target: UserAdministrationView,
   serviceIds: readonly string[],
 ): boolean {
+  if (actor.method === "api_key") {
+    if (target.role === "superadmin") return false;
+    if (actor.role === "system") return target.role === "user" || target.role === "admin";
+    if (actor.role === "all_services") return target.role === "user";
+    return actor.role === "service" && target.role === "user" && serviceIds.length > 0;
+  }
   return actor.principalId === target.id ||
     actor.role === "superadmin" ||
     (actor.role === "admin" && target.role === "user" && serviceIds.length > 0);
@@ -635,6 +724,9 @@ function canEdit(
   target: UserAdministrationView,
   serviceIds: readonly string[],
 ): boolean {
+  if (actor.method === "api_key") {
+    return actor.role === "system" && target.role !== "superadmin";
+  }
   if (actor.principalId === target.id) return true;
   if (actor.role === "superadmin") return true;
   return actor.role === "admin" &&
@@ -659,7 +751,7 @@ function projectUser(row: UserAdministrationRow): UserAdministrationView {
 }
 
 function profileAudit(input: {
-  actor: UserAdministrationRow;
+  actor: ControlAuthenticationContext;
   target: UserAdministrationRow;
   correlationId: string;
   emailChanged: boolean;
@@ -668,14 +760,8 @@ function profileAudit(input: {
   restrictedSessionsRevoked: number;
 }): AdministrativeAuditEventInput {
   return {
-    actor: {
-      type: "browser_session",
-      id: input.actor.id,
-      label: `user:${input.actor.id}`,
-      role: input.actor.role,
-      authenticationMethod: "browser_session",
-    },
-    action: input.actor.id === input.target.id
+    actor: administrativeActorSnapshot(input.actor),
+    action: input.actor.principalId === input.target.id
       ? "identity.self_profile_update"
       : "identity.profile_update",
     result: "allow",
@@ -771,7 +857,8 @@ function parseCursorPayload(value: unknown): UserCursorPayload {
     input.route !== "users.list" ||
     typeof input.actorId !== "string" ||
     !isUuidV7(input.actorId) ||
-    !["superadmin", "admin"].includes(String(input.actorRole)) ||
+    !["superadmin", "admin", "service", "all_services", "system"]
+      .includes(String(input.actorRole)) ||
     typeof input.scope !== "string" ||
     input.scope.length < 1 ||
     input.scope.length > 128 ||
@@ -795,6 +882,37 @@ function requireBrowserActor(actor: ControlAuthenticationContext): void {
     !isUuidV7(actor.principalId) ||
     !["user", "admin", "superadmin"].includes(actor.role)
   ) throw new UserAdministrationError("forbidden");
+}
+
+function requireUserAdministrationActor(actor: ControlAuthenticationContext): void {
+  if (
+    !isUuidV7(actor.principalId) ||
+    (
+      actor.method === "browser_session"
+        ? !["user", "admin", "superadmin"].includes(actor.role)
+        : actor.method !== "api_key" ||
+          !["service", "all_services", "system"].includes(actor.role) ||
+          actor.apiKey === undefined
+    )
+  ) throw new UserAdministrationError("forbidden");
+}
+
+async function relatedServices(
+  relationships: UserRelationshipResolver,
+  actor: ControlAuthenticationContext,
+  targetUserId: string,
+): Promise<readonly string[]> {
+  if (
+    actor.method === "api_key" &&
+    actor.role === "service" &&
+    actor.apiKey?.serviceId !== undefined
+  ) {
+    return await relationships.userRelatedToService(targetUserId, actor.apiKey.serviceId)
+      ? [actor.apiKey.serviceId]
+      : [];
+  }
+  if (actor.method === "api_key") return [];
+  return relationships.relatedServiceIds(actor.principalId, targetUserId);
 }
 
 function scopeFingerprint(serviceIds: readonly string[]): string {

@@ -28,9 +28,15 @@ afterEach(async () => {
 
 describe("authorized user profiles", () => {
   it("adapts matrix outcomes with fail-closed user and invitation scopes", async () => {
+    const serviceId = "018f1f2e-7b3c-7a10-8000-000000000010";
+    const targetId = "018f1f2e-7b3c-7a10-8000-000000000011";
     const authorization = new UserManagementAuthorization({
       authorizeScope: async () => false,
       verifyStepUp: async () => true,
+    }, {
+      relatedServiceIds: async () => [],
+      userRelatedToService: async (userId, scopedServiceId) =>
+        userId === targetId && scopedServiceId === serviceId,
     });
     const request = { params: {} } as FastifyRequest;
     await expect(authorization.authorizeScope(
@@ -49,6 +55,37 @@ describe("authorized user profiles", () => {
       browser("018f1f2e-7b3c-7a10-8000-000000000001", "superadmin"),
       "view_ordinary_users",
       "all_ordinary_users",
+      request,
+    )).resolves.toBe(true);
+    const serviceKey = apiActor(
+      "018f1f2e-7b3c-7a10-8000-000000000012",
+      "service",
+      serviceId,
+    );
+    await expect(authorization.authorizeScope(
+      serviceKey,
+      "invite_ordinary_user",
+      "scoped_service",
+      request,
+    )).resolves.toBe(true);
+    await expect(authorization.authorizeScope(
+      serviceKey,
+      "view_ordinary_users",
+      "related_users",
+      { params: { user_id: targetId } } as unknown as FastifyRequest,
+    )).resolves.toBe(true);
+    await expect(authorization.authorizeScope(
+      serviceKey,
+      "view_ordinary_users",
+      "related_users",
+      {
+        params: { user_id: "018f1f2e-7b3c-7a10-8000-000000000013" },
+      } as unknown as FastifyRequest,
+    )).resolves.toBe(false);
+    await expect(authorization.authorizeScope(
+      apiActor("018f1f2e-7b3c-7a10-8000-000000000014", "system"),
+      "invite_ordinary_user",
+      "ordinary_users_without_assignment",
       request,
     )).resolves.toBe(true);
   });
@@ -260,6 +297,89 @@ describe("authorized user profiles", () => {
     await expect(fixture.service.detail(fixture.superadmin, first.id))
       .resolves.toMatchObject({ email: first.email, givenName: "Ada" });
   });
+
+  it("scopes API-key visibility and reserves profile edits for system keys", async () => {
+    const fixture = await userFixture("api-visibility");
+    const ordinary = await fixture.create("api-ordinary@example.org", "user");
+    const admin = await fixture.create("api-admin@example.org", "admin");
+    const protectedAdmin = await fixture.create("api-superadmin@example.org", "superadmin");
+    const serviceId = "018f1f2e-7b3c-7a10-8000-000000000141";
+    const serviceKey = await insertApiKey(
+      fixture.worker,
+      "018f1f2e-7b3c-7a10-8000-000000000142",
+      "service",
+      fixture.superadmin.principalId,
+      51,
+      serviceId,
+      ordinary.id,
+    );
+    const allServicesKey = await insertApiKey(
+      fixture.worker,
+      "018f1f2e-7b3c-7a10-8000-000000000143",
+      "all_services",
+      fixture.superadmin.principalId,
+      52,
+    );
+    const systemKey = await insertApiKey(
+      fixture.worker,
+      "018f1f2e-7b3c-7a10-8000-000000000144",
+      "system",
+      fixture.superadmin.principalId,
+      53,
+    );
+    const relationships = {
+      relatedServiceIds: async () => [],
+      userRelatedToService: async (targetUserId: string, requestedServiceId: string) =>
+        targetUserId === ordinary.id && requestedServiceId === serviceId,
+    };
+    const apiService = new UserAdministrationService(
+      new UserAdministrationRepository(fixture.worker, () => fixture.clock.value),
+      new UserCursorCodec(Buffer.alloc(32, 92), () => fixture.clock.value),
+      relationships,
+      () => fixture.clock.value,
+    );
+    services.add(apiService);
+
+    await expect(apiService.detail(serviceKey, ordinary.id))
+      .resolves.toMatchObject({ id: ordinary.id, role: "user" });
+    await expect(apiService.detail(serviceKey, admin.id))
+      .rejects.toEqual(new UserAdministrationError("not_found"));
+    expect((await apiService.list(serviceKey, {})).users.map(({ id }) => id))
+      .toEqual([ordinary.id]);
+    expect((await apiService.list(allServicesKey, {})).users.map(({ role }) => role))
+      .toEqual(["user"]);
+    expect(new Set(
+      (await apiService.list(systemKey, {})).users.map(({ role }) => role),
+    )).toEqual(new Set(["user", "admin"]));
+    await expect(apiService.detail(systemKey, protectedAdmin.id))
+      .rejects.toEqual(new UserAdministrationError("not_found"));
+
+    const updated = await apiService.updateOther(
+      systemKey,
+      admin.id,
+      admin.version,
+      {
+        email: admin.email,
+        givenName: "System",
+        familyName: "Managed",
+      },
+      CORRELATION,
+    );
+    expect(updated).toMatchObject({ id: admin.id, givenName: "System" });
+    for (const actor of [serviceKey, allServicesKey]) {
+      await expect(apiService.updateOther(
+        actor,
+        ordinary.id,
+        ordinary.version,
+        {
+          email: ordinary.email,
+          givenName: "Forbidden",
+          familyName: "Edit",
+        },
+        CORRELATION,
+      )).rejects.toEqual(new UserAdministrationError("not_found"));
+    }
+  });
 });
 
 async function userFixture(label: string) {
@@ -312,6 +432,89 @@ function browser(
   role: "user" | "admin" | "superadmin",
 ): ControlAuthenticationContext {
   return { method: "browser_session", principalId, role };
+}
+
+function apiActor(
+  principalId: string,
+  role: "service" | "all_services" | "system",
+  serviceId?: string,
+): ControlAuthenticationContext {
+  return {
+    method: "api_key",
+    principalId,
+    role,
+    apiKey: {
+      nickname: `${role} automation`,
+      lastFour: "safe",
+      ...(serviceId === undefined ? {} : { serviceId }),
+    },
+  };
+}
+
+async function insertApiKey(
+  worker: PersistenceWorker,
+  id: string,
+  role: "service" | "all_services" | "system",
+  creatorId: string,
+  byte: number,
+  serviceId?: string,
+  relatedUserId?: string,
+): Promise<ControlAuthenticationContext> {
+  const identifier = Buffer.alloc(12, byte).toString("base64url");
+  const nickname = `${role} automation`;
+  const lastFour = Buffer.alloc(3, byte).toString("base64url");
+  await worker.execute({
+    run: (database) => database.withOperationalTransaction((transaction) => {
+      if (serviceId !== undefined) {
+        transaction.run(`
+          INSERT INTO services (
+            id, slug, name, description, documentation_url, lifecycle,
+            draft_digest, published_revision_id, published_digest,
+            publication_generation, version, created_at, updated_at
+          ) VALUES (?, 'api-scope', 'API scope', NULL, NULL, 'draft', ?, NULL, NULL, 0, 1, ?, ?)
+        `, [serviceId, "0".repeat(64), NOW, NOW]);
+        if (relatedUserId !== undefined) {
+          transaction.run(`
+            INSERT INTO service_principal_assignments (
+              id, service_id, selector_kind, group_id, user_id,
+              assigned_by_user_id, created_at
+            ) VALUES (
+              '018f1f2e-7b3c-7a10-8000-000000000145',
+              ?, 'user', NULL, ?, ?, ?
+            )
+          `, [serviceId, relatedUserId, creatorId, NOW]);
+        }
+      }
+      transaction.run(`
+        INSERT INTO api_keys (
+          id, identifier, verifier_hash, nickname, last_four, api_role,
+          service_id, expiration_policy, expires_at, status, creator_id,
+          version, created_at, updated_at, last_used_at, revoked_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, 'forever', NULL, 'active', ?, 1, ?, ?, NULL, NULL)
+      `, [
+        id,
+        identifier,
+        `$argon2id$${"x".repeat(64)}`,
+        nickname,
+        lastFour,
+        role,
+        serviceId ?? null,
+        creatorId,
+        NOW,
+        NOW,
+      ]);
+    }),
+  });
+  return {
+    method: "api_key",
+    principalId: id,
+    role,
+    apiKey: {
+      nickname,
+      lastFour,
+      ...(serviceId === undefined ? {} : { serviceId }),
+    },
+  };
 }
 
 function audit(): IdentityAuditContext {

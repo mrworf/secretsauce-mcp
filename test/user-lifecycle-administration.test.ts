@@ -294,6 +294,185 @@ describe("guarded user lifecycle administration", () => {
       CORRELATION,
     )).rejects.toEqual(new UserLifecycleAdministrationError("not_found"));
   });
+
+  it("enforces all-services and system API-key user authority without exposing superadmins", async () => {
+    const fixture = await lifecycleFixture("api-roles");
+    const ordinary = await fixture.create("api-user@example.org", "user", "active");
+    const scopedTarget = await fixture.create("api-scoped-target@example.org", "user", "active");
+    const admin = await fixture.create("api-admin@example.org", "admin", "active");
+    const protectedAdmin = await fixture.create(
+      "api-protected@example.org",
+      "superadmin",
+      "active",
+    );
+    const allServices = await insertApiKey(
+      fixture.worker,
+      "018f1f2e-7b3c-7a10-8000-000000000121",
+      "all_services",
+      fixture.actor.principalId,
+      41,
+    );
+    const system = await insertApiKey(
+      fixture.worker,
+      "018f1f2e-7b3c-7a10-8000-000000000122",
+      "system",
+      fixture.actor.principalId,
+      42,
+    );
+    const serviceId = "018f1f2e-7b3c-7a10-8000-000000000123";
+    await insertService(fixture.worker, serviceId);
+    await insertUserAssignment(fixture.worker, serviceId, scopedTarget.id, fixture.actor.principalId);
+    const serviceKey = await insertApiKey(
+      fixture.worker,
+      "018f1f2e-7b3c-7a10-8000-000000000124",
+      "service",
+      fixture.actor.principalId,
+      43,
+      serviceId,
+    );
+    const scopedLifecycle = new UserLifecycleAdministrationService(
+      new UserLifecycleAdministrationRepository(fixture.worker, undefined, () => NOW),
+      new ControlIdempotencyHasher(Buffer.alloc(32, 78)),
+      {
+        password: { minimumLength: 12 },
+        temporaryPasswordTtlMs: 72 * 60 * 60_000,
+      },
+      {
+        relatedServiceIds: async () => [],
+        userRelatedToService: async (userId, requestedServiceId) =>
+          userId === scopedTarget.id && requestedServiceId === serviceId,
+      },
+      () => NOW,
+    );
+
+    const reset = await fixture.service.resetPassword(
+      allServices,
+      ordinary.id,
+      ordinary.version,
+      { justification: "Automated account recovery." },
+      "api-all-password-reset",
+      CORRELATION,
+    );
+    expect(reset).toMatchObject({
+      oneTimeValueDisplayed: true,
+      user: { id: ordinary.id, passwordState: "temporary" },
+    });
+    expect(reset.temporaryPassword).toMatch(/^[A-Za-z0-9_-]{24}$/);
+    await expect(fixture.service.resetPassword(
+      allServices,
+      admin.id,
+      admin.version,
+      { justification: "Admins are outside all-services authority." },
+      "api-all-admin-reset",
+      CORRELATION,
+    )).rejects.toEqual(new UserLifecycleAdministrationError("not_found"));
+
+    const invitedAdmin = await fixture.service.invite(
+      system,
+      {
+        email: "api-invited-admin@example.org",
+        given_name: "API",
+        family_name: "Admin",
+        role: "admin",
+      },
+      "api-system-admin-invite",
+      CORRELATION,
+    );
+    expect(invitedAdmin.user).toMatchObject({ role: "admin", status: "invited" });
+    await expect(fixture.service.invite(
+      allServices,
+      {
+        email: "api-denied-admin@example.org",
+        given_name: "Denied",
+        family_name: "Admin",
+        role: "admin",
+      },
+      "api-all-admin-invite",
+      CORRELATION,
+    )).rejects.toEqual(new UserLifecycleAdministrationError("not_found"));
+    const scopedInvite = await scopedLifecycle.invite(
+      serviceKey,
+      {
+        email: "api-scoped-user@example.org",
+        given_name: "Scoped",
+        family_name: "User",
+        role: "user",
+      },
+      "api-service-user-invite",
+      CORRELATION,
+    );
+    expect(await assignmentCount(
+      fixture.worker,
+      serviceId,
+      scopedInvite.user.id,
+    )).toBe(1);
+    await expect(scopedLifecycle.resetPassword(
+      serviceKey,
+      scopedTarget.id,
+      scopedTarget.version,
+      { justification: "Scoped account recovery." },
+      "api-service-password-reset",
+      CORRELATION,
+    )).resolves.toMatchObject({
+      oneTimeValueDisplayed: true,
+      user: { id: scopedTarget.id, passwordState: "temporary" },
+    });
+    await expect(scopedLifecycle.resetTotp(
+      serviceKey,
+      ordinary.id,
+      reset.user.version,
+      { justification: "Cross-scope reset is forbidden." },
+      "api-service-cross-scope-reset",
+      CORRELATION,
+    )).rejects.toEqual(new UserLifecycleAdministrationError("not_found"));
+    await expect(scopedLifecycle.invite(
+      serviceKey,
+      {
+        email: "api-scoped-admin@example.org",
+        given_name: "Scoped",
+        family_name: "Admin",
+        role: "admin",
+      },
+      "api-service-admin-invite",
+      CORRELATION,
+    )).rejects.toEqual(new UserLifecycleAdministrationError("not_found"));
+
+    const suspended = await fixture.service.transition(
+      "suspend",
+      system,
+      admin.id,
+      admin.version,
+      { justification: "Automated administrative suspension." },
+      CORRELATION,
+    );
+    expect(suspended.status).toBe("suspended");
+    const demoted = await fixture.service.changeRole(
+      system,
+      admin.id,
+      suspended.version,
+      { role: "user", justification: "Administrator access removed." },
+      CORRELATION,
+    );
+    expect(demoted.role).toBe("user");
+
+    for (const actor of [allServices, system]) {
+      await expect(fixture.service.resetTotp(
+        actor,
+        protectedAdmin.id,
+        protectedAdmin.version,
+        { justification: "Forbidden superadmin target." },
+        `api-superadmin-denial-${actor.role}`,
+        CORRELATION,
+      )).rejects.toEqual(new UserLifecycleAdministrationError("not_found"));
+    }
+    await expect(fixture.service.changeRole(
+      system,
+      ordinary.id,
+      reset.user.version,
+      { role: "superadmin", justification: "Forbidden privilege grant." },
+      CORRELATION,
+    )).rejects.toEqual(new UserLifecycleAdministrationError("not_found"));
+  });
 });
 
 async function lifecycleFixture(label: string) {
@@ -347,6 +526,105 @@ function browser(
   role: "superadmin" | "admin" | "user",
 ): ControlAuthenticationContext {
   return { method: "browser_session", principalId, role };
+}
+
+async function insertApiKey(
+  worker: PersistenceWorker,
+  id: string,
+  role: "service" | "all_services" | "system",
+  creatorId: string,
+  byte: number,
+  serviceId?: string,
+): Promise<ControlAuthenticationContext> {
+  const identifier = Buffer.alloc(12, byte).toString("base64url");
+  const nickname = `${role} automation`;
+  const lastFour = Buffer.alloc(3, byte).toString("base64url");
+  await worker.execute({
+    run: (database) => database.withOperationalTransaction((transaction) => {
+      transaction.run(`
+        INSERT INTO api_keys (
+          id, identifier, verifier_hash, nickname, last_four, api_role,
+          service_id, expiration_policy, expires_at, status, creator_id,
+          version, created_at, updated_at, last_used_at, revoked_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, 'forever', NULL, 'active', ?, 1, ?, ?, NULL, NULL)
+      `, [
+        id,
+        identifier,
+        `$argon2id$${"x".repeat(64)}`,
+        nickname,
+        lastFour,
+        role,
+        serviceId ?? null,
+        creatorId,
+        NOW,
+        NOW,
+      ]);
+    }),
+  });
+  return {
+    method: "api_key",
+    principalId: id,
+    role,
+    apiKey: {
+      nickname,
+      lastFour,
+      ...(serviceId === undefined ? {} : { serviceId }),
+    },
+  };
+}
+
+async function insertService(worker: PersistenceWorker, serviceId: string): Promise<void> {
+  await worker.execute({
+    run: (database) => database.withOperationalTransaction((transaction) => {
+      transaction.run(`
+        INSERT INTO services (
+          id, slug, name, description, documentation_url, lifecycle,
+          draft_digest, published_revision_id, published_digest,
+          publication_generation, version, created_at, updated_at
+        ) VALUES (?, 'api-invite', 'API invite', NULL, NULL, 'draft', ?, NULL, NULL, 0, 1, ?, ?)
+      `, [serviceId, "0".repeat(64), NOW, NOW]);
+      transaction.run(`
+        INSERT INTO service_assignment_states (
+          service_id, version, authorization_generation, created_at, updated_at
+        ) VALUES (?, 1, 0, ?, ?)
+      `, [serviceId, NOW, NOW]);
+    }),
+  });
+}
+
+async function assignmentCount(
+  worker: PersistenceWorker,
+  serviceId: string,
+  userId: string,
+): Promise<number> {
+  return worker.execute({
+    run: (database) => database.read((query) => query.get<{ count: number }>(`
+      SELECT count(*) AS count
+      FROM service_principal_assignments
+      WHERE service_id = ? AND selector_kind = 'user' AND user_id = ?
+    `, [serviceId, userId])?.count ?? 0),
+  });
+}
+
+async function insertUserAssignment(
+  worker: PersistenceWorker,
+  serviceId: string,
+  userId: string,
+  actorId: string,
+): Promise<void> {
+  await worker.execute({
+    run: (database) => database.withOperationalTransaction((transaction) => {
+      transaction.run(`
+        INSERT INTO service_principal_assignments (
+          id, service_id, selector_kind, group_id, user_id,
+          assigned_by_user_id, created_at
+        ) VALUES (
+          '018f1f2e-7b3c-7a10-8000-000000000125',
+          ?, 'user', NULL, ?, ?, ?
+        )
+      `, [serviceId, userId, actorId, NOW]);
+    }),
+  });
 }
 
 function audit(): IdentityAuditContext {

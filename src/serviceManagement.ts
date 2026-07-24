@@ -240,6 +240,52 @@ export class ServiceRelationshipRepository implements UserRelationshipResolver {
       return [];
     }
   }
+
+  async userRelatedToService(targetUserId: string, serviceId: string): Promise<boolean> {
+    if (!isUuidV7(targetUserId) || !isUuidV7(serviceId)) return false;
+    try {
+      return await this.owner.execute({
+        run: (database) => database.read((query) => query.get(`
+          SELECT 1
+          FROM users target
+          WHERE target.id = ? AND target.role = 'user'
+            AND EXISTS (
+              SELECT 1 FROM services service
+              WHERE service.id = ?
+                AND (
+                  EXISTS (
+                    SELECT 1 FROM service_principal_assignments all_assignment
+                    WHERE all_assignment.service_id = service.id
+                      AND all_assignment.selector_kind = 'all'
+                  )
+                  OR EXISTS (
+                    SELECT 1 FROM service_principal_assignments direct
+                    WHERE direct.service_id = service.id
+                      AND direct.selector_kind = 'user'
+                      AND direct.user_id = target.id
+                  )
+                  OR EXISTS (
+                    SELECT 1
+                    FROM service_principal_assignments selected
+                    JOIN service_groups g
+                      ON g.service_id = selected.service_id
+                      AND g.id = selected.group_id
+                    JOIN service_group_members gm
+                      ON gm.service_id = g.service_id
+                      AND gm.group_id = g.id
+                    WHERE selected.service_id = service.id
+                      AND selected.selector_kind = 'group'
+                      AND g.lifecycle = 'active'
+                      AND gm.user_id = target.id
+                  )
+                )
+            )
+        `, [targetUserId, serviceId]) !== undefined),
+      });
+    } catch {
+      return false;
+    }
+  }
 }
 
 export class ServiceManagementAuthorization implements ControlAuthorizationSeam {

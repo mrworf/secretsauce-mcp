@@ -20,6 +20,10 @@ import {
   type UserRelationshipResolver,
 } from "./userAdministration.js";
 import { parseIdentityProfile } from "./validation.js";
+import {
+  administrativeActorSnapshot,
+  currentApiKey,
+} from "../apiKeyAuthority.js";
 
 export class UserLifecycleAdministrationError extends Error {
   constructor(
@@ -77,10 +81,14 @@ export class UserLifecycleAdministrationRepository {
     private readonly now: () => number = Date.now,
   ) {}
 
-  async user(userId: string): Promise<UserAdministrationView | undefined> {
+  async user(
+    userId: string,
+    actor?: ControlAuthenticationContext,
+  ): Promise<UserAdministrationView | undefined> {
     if (!isUuidV7(userId)) return undefined;
     return this.owner.execute({
       run: (database) => database.read((query) => {
+        if (actor?.method === "api_key") currentApiKey(query, actor, this.now);
         const row = query.get<UserLifecycleRow>(userSelect("WHERE u.id = ?"), [userId]);
         return row === undefined ? undefined : projectUser(row);
       }),
@@ -96,12 +104,27 @@ export class UserLifecycleAdministrationRepository {
     expiresAt: number;
     correlationId: string;
     affectedServiceIds: readonly string[];
+    assignment?: {
+      serviceId: string;
+      assignmentId: string;
+      globalEventId: string;
+      userEventId: string;
+    };
     idempotency: IdempotencyExecutionInput;
   }): Promise<IdempotencyExecutionResult<UserAdministrationView>> {
     if (
       !isUuidV7(input.userId) ||
       !isSupportedPasswordHash(input.encodedHash) ||
-      !Number.isSafeInteger(input.expiresAt)
+      !Number.isSafeInteger(input.expiresAt) ||
+      (
+        input.assignment !== undefined &&
+        (
+          !isUuidV7(input.assignment.serviceId) ||
+          !isUuidV7(input.assignment.assignmentId) ||
+          !isUuidV7(input.assignment.globalEventId) ||
+          !isUuidV7(input.assignment.userEventId)
+        )
+      )
     ) throw new UserLifecycleAdministrationError("invalid_request");
     const audit = lifecycleAudit({
       actor: input.actor,
@@ -121,8 +144,9 @@ export class UserLifecycleAdministrationRepository {
           input.idempotency,
           audit,
           (transaction) => {
-            const actor = requiredActor(transaction, input.actor);
+            const actor = requiredActor(transaction, input.actor, this.now);
             requireInviteAuthority(actor, input.role, input.affectedServiceIds);
+            requireInvitationAssignment(actor, input.assignment, input.affectedServiceIds);
             const now = transaction.timestamp();
             if (input.expiresAt <= now) throw new PersistenceError("database_unavailable");
             if (transaction.get<{ id: string }>(
@@ -157,6 +181,15 @@ export class UserLifecycleAdministrationRepository {
                 consumed_at, revoked_at, version
               ) VALUES (?, ?, 'initial_enrollment', ?, ?, NULL, NULL, 1)
             `, [input.userId, input.encodedHash, now, input.expiresAt]);
+            if (input.assignment !== undefined) {
+              assignInvitedUser(
+                transaction,
+                input.assignment,
+                input.userId,
+                input.actor.principalId,
+                now,
+              );
+            }
             return {
               value: projectUser(requiredUser(transaction, input.userId)),
               resultReference: input.userId,
@@ -184,7 +217,14 @@ export class UserLifecycleAdministrationRepository {
       "identity.password_reset",
       input.idempotency,
       (transaction, actor, target) => {
-        requireLifecycleAuthority(actor, target, input.affectedServiceIds, false);
+        requireLifecycleAuthority(
+          transaction,
+          actor,
+          target,
+          input.affectedServiceIds,
+          false,
+          ["service", "all_services", "system"],
+        );
         requireActiveTarget(target);
         const now = transaction.timestamp();
         if (input.expiresAt <= now) throw new PersistenceError("database_unavailable");
@@ -224,7 +264,14 @@ export class UserLifecycleAdministrationRepository {
       "identity.totp_reset",
       input.idempotency,
       (transaction, actor, target) => {
-        requireLifecycleAuthority(actor, target, input.affectedServiceIds, false);
+        requireLifecycleAuthority(
+          transaction,
+          actor,
+          target,
+          input.affectedServiceIds,
+          false,
+          ["service", "all_services", "system"],
+        );
         requireActiveTarget(target);
         const now = transaction.timestamp();
         const counts = revokeSessions(transaction, target.id, now);
@@ -257,7 +304,14 @@ export class UserLifecycleAdministrationRepository {
       input,
       `identity.${input.transition}`,
       (transaction, actor, target) => {
-        requireLifecycleAuthority(actor, target, input.affectedServiceIds, false);
+        requireLifecycleAuthority(
+          transaction,
+          actor,
+          target,
+          input.affectedServiceIds,
+          false,
+          ["system"],
+        );
         requireStatusTransition(target.status, nextStatus);
         requireNotLastActiveSuperadmin(transaction, target, target.role, nextStatus);
         const now = transaction.timestamp();
@@ -307,7 +361,14 @@ export class UserLifecycleAdministrationRepository {
       "identity.enrollment_restore",
       input.idempotency,
       (transaction, actor, target) => {
-        requireLifecycleAuthority(actor, target, input.affectedServiceIds, false);
+        requireLifecycleAuthority(
+          transaction,
+          actor,
+          target,
+          input.affectedServiceIds,
+          false,
+          ["system"],
+        );
         if (target.status !== "deactivated") throw new PersistenceError("invalid_identity_transition");
         const now = transaction.timestamp();
         if (input.expiresAt <= now) throw new PersistenceError("database_unavailable");
@@ -354,7 +415,17 @@ export class UserLifecycleAdministrationRepository {
       input,
       "identity.role_change",
       (transaction, actor, target) => {
-        if (actor.role !== "superadmin" || input.role === target.role) {
+        if (
+          input.role === target.role ||
+          (
+            "method" in actor
+              ? actor.method !== "api_key" ||
+                actor.role !== "system" ||
+                target.role === "superadmin" ||
+                input.role === "superadmin"
+              : actor.role !== "superadmin"
+          )
+        ) {
           throw new PersistenceError("identity_not_found");
         }
         requireNotLastActiveSuperadmin(transaction, target, input.role, target.status);
@@ -384,9 +455,15 @@ export class UserLifecycleAdministrationRepository {
       ],
     });
     const execute = (transaction: PersistenceTransaction): DeletedUserResult => {
-      const { actor, target } = currentMutationRows(transaction, input);
+      const { actor, target } = currentMutationRows(transaction, input, this.now);
       if (
-        actor.role !== "superadmin" ||
+        (
+          "method" in actor
+            ? actor.method !== "api_key" ||
+              actor.role !== "system" ||
+              target.role === "superadmin"
+            : actor.role !== "superadmin"
+        ) ||
         target.role === "superadmin" ||
         target.status !== "deactivated"
       ) throw new PersistenceError("identity_not_found");
@@ -420,7 +497,7 @@ export class UserLifecycleAdministrationRepository {
     idempotency: IdempotencyExecutionInput,
     mutation: (
       transaction: PersistenceTransaction,
-      actor: UserLifecycleRow,
+      actor: UserLifecycleRow | ControlAuthenticationContext,
       target: UserLifecycleRow,
     ) => UserAdministrationView,
   ): Promise<IdempotencyExecutionResult<UserAdministrationView>> {
@@ -435,7 +512,7 @@ export class UserLifecycleAdministrationRepository {
     });
     const execute = (transaction: PersistenceTransaction) =>
       transaction.idempotent(idempotency, () => {
-        const { actor, target } = currentMutationRows(transaction, input);
+        const { actor, target } = currentMutationRows(transaction, input, this.now);
         return {
           value: mutation(transaction, actor, target),
           resultReference: target.id,
@@ -453,7 +530,7 @@ export class UserLifecycleAdministrationRepository {
             idempotency,
             audit,
             (transaction) => {
-              const { actor, target } = currentMutationRows(transaction, input);
+              const { actor, target } = currentMutationRows(transaction, input, this.now);
               return {
                 value: mutation(transaction, actor, target),
                 resultReference: target.id,
@@ -472,7 +549,7 @@ export class UserLifecycleAdministrationRepository {
     action: string,
     mutation: (
       transaction: PersistenceTransaction,
-      actor: UserLifecycleRow,
+      actor: UserLifecycleRow | ControlAuthenticationContext,
       target: UserLifecycleRow,
     ) => UserAdministrationView,
     changes: NonNullable<AdministrativeAuditEventInput["changes"]> = [],
@@ -487,7 +564,7 @@ export class UserLifecycleAdministrationRepository {
       changes,
     });
     const execute = (transaction: PersistenceTransaction) => {
-      const { actor, target } = currentMutationRows(transaction, input);
+      const { actor, target } = currentMutationRows(transaction, input, this.now);
       return mutation(transaction, actor, target);
     };
     try {
@@ -525,7 +602,11 @@ export class UserLifecycleAdministrationService {
   ): Promise<OneTimeUserResult> {
     requireActor(actor);
     const parsed = parseInvitation(body);
-    const affectedServiceIds = await this.relationships.relatedServiceIds(actor.principalId);
+    const affectedServiceIds = actor.method === "api_key"
+      ? actor.role === "service" && actor.apiKey?.serviceId !== undefined
+        ? [actor.apiKey.serviceId]
+        : []
+      : await this.relationships.relatedServiceIds(actor.principalId);
     const material = await this.temporaryMaterial();
     const userId = this.nextUuid();
     const result = await this.repository.invite({
@@ -537,6 +618,18 @@ export class UserLifecycleAdministrationService {
       expiresAt: material.expiresAt,
       correlationId: requireCorrelationId(correlationId),
       affectedServiceIds,
+      ...(actor.method === "api_key" &&
+          actor.role === "service" &&
+          actor.apiKey?.serviceId !== undefined
+        ? {
+            assignment: {
+              serviceId: actor.apiKey.serviceId,
+              assignmentId: this.nextUuid(),
+              globalEventId: this.nextUuid(),
+              userEventId: this.nextUuid(),
+            },
+          }
+        : {}),
       idempotency: this.idempotencyInput(
         actor,
         "users.invite",
@@ -546,7 +639,7 @@ export class UserLifecycleAdministrationService {
     });
     const user = result.kind === "executed"
       ? result.value
-      : await this.requiredUser(result.resultReference);
+      : await this.requiredUser(actor, result.resultReference);
     return result.kind === "executed"
       ? {
           user,
@@ -595,7 +688,7 @@ export class UserLifecycleAdministrationService {
     });
     const user = result.kind === "executed"
       ? result.value
-      : await this.requiredUser(result.resultReference);
+      : await this.requiredUser(actor, result.resultReference);
     return result.kind === "executed"
       ? {
           user,
@@ -639,7 +732,7 @@ export class UserLifecycleAdministrationService {
     });
     return result.kind === "executed"
       ? result.value
-      : this.requiredUser(result.resultReference);
+      : this.requiredUser(actor, result.resultReference);
   }
 
   async transition(
@@ -702,7 +795,7 @@ export class UserLifecycleAdministrationService {
     });
     const user = result.kind === "executed"
       ? result.value
-      : await this.requiredUser(result.resultReference);
+      : await this.requiredUser(actor, result.resultReference);
     return result.kind === "executed"
       ? {
           user,
@@ -775,10 +868,13 @@ export class UserLifecycleAdministrationService {
       throw new UserLifecycleAdministrationError("invalid_request");
     }
     const justification = parseJustification(body, extraBodyKeys);
-    const affectedServiceIds = await this.relationships.relatedServiceIds(
-      actor.principalId,
-      id,
-    );
+    const affectedServiceIds = actor.method === "api_key"
+      ? actor.role === "service" &&
+          actor.apiKey?.serviceId !== undefined &&
+          await this.relationships.userRelatedToService(id, actor.apiKey.serviceId)
+        ? [actor.apiKey.serviceId]
+        : []
+      : await this.relationships.relatedServiceIds(actor.principalId, id);
     return {
       actor,
       targetUserId: id,
@@ -834,9 +930,21 @@ export class UserLifecycleAdministrationService {
     return { temporaryPassword, encodedHash, expiresAt };
   }
 
-  private async requiredUser(userId: string): Promise<UserAdministrationView> {
-    const user = await this.repository.user(userId);
-    if (user === undefined) throw new UserLifecycleAdministrationError("not_found");
+  private async requiredUser(
+    actor: ControlAuthenticationContext,
+    userId: string,
+  ): Promise<UserAdministrationView> {
+    const user = await this.repository.user(userId, actor);
+    if (
+      user === undefined ||
+      (
+        actor.method === "api_key" &&
+        (
+          user.role === "superadmin" ||
+          (actor.role !== "system" && user.role !== "user")
+        )
+      )
+    ) throw new UserLifecycleAdministrationError("not_found");
     return user;
   }
 
@@ -850,8 +958,12 @@ export class UserLifecycleAdministrationService {
 function currentMutationRows(
   transaction: PersistenceTransaction,
   input: MutationContext,
-): { actor: UserLifecycleRow; target: UserLifecycleRow } {
-  const actor = requiredActor(transaction, input.actor);
+  now: () => number,
+): {
+  actor: UserLifecycleRow | ControlAuthenticationContext;
+  target: UserLifecycleRow;
+} {
+  const actor = requiredActor(transaction, input.actor, now);
   const target = requiredUser(transaction, input.targetUserId);
   if (target.version !== input.expectedVersion) throw new PersistenceError("identity_stale");
   return { actor, target };
@@ -860,7 +972,12 @@ function currentMutationRows(
 function requiredActor(
   transaction: PersistenceTransaction,
   actor: ControlAuthenticationContext,
-): UserLifecycleRow {
+  now: () => number,
+): UserLifecycleRow | ControlAuthenticationContext {
+  if (actor.method === "api_key") {
+    currentApiKey(transaction, actor, now);
+    return actor;
+  }
   const current = requiredUser(transaction, actor.principalId);
   if (
     actor.method !== "browser_session" ||
@@ -880,10 +997,24 @@ function requiredUser(
 }
 
 function requireInviteAuthority(
-  actor: UserLifecycleRow,
+  actor: UserLifecycleRow | ControlAuthenticationContext,
   invitedRole: "admin" | "user",
   affectedServiceIds: readonly string[],
 ): void {
+  if ("method" in actor) {
+    if (
+      actor.method === "api_key" &&
+      (
+        (actor.role === "service" &&
+          invitedRole === "user" &&
+          affectedServiceIds.length === 1 &&
+          actor.apiKey?.serviceId === affectedServiceIds[0]) ||
+        (actor.role === "all_services" && invitedRole === "user") ||
+        (actor.role === "system" && (invitedRole === "user" || invitedRole === "admin"))
+      )
+    ) return;
+    throw new PersistenceError("identity_not_found");
+  }
   if (actor.role === "superadmin") return;
   if (
     actor.role === "admin" &&
@@ -893,12 +1024,57 @@ function requireInviteAuthority(
   throw new PersistenceError("identity_not_found");
 }
 
+function requireInvitationAssignment(
+  actor: UserLifecycleRow | ControlAuthenticationContext,
+  assignment: {
+    serviceId: string;
+    assignmentId: string;
+    globalEventId: string;
+    userEventId: string;
+  } | undefined,
+  affectedServiceIds: readonly string[],
+): void {
+  if (
+    "method" in actor &&
+    actor.method === "api_key" &&
+    actor.role === "service"
+  ) {
+    if (
+      assignment === undefined ||
+      actor.apiKey?.serviceId !== assignment.serviceId ||
+      affectedServiceIds.length !== 1 ||
+      affectedServiceIds[0] !== assignment.serviceId
+    ) throw new PersistenceError("identity_not_found");
+    return;
+  }
+  if (assignment !== undefined) throw new PersistenceError("identity_not_found");
+}
+
 function requireLifecycleAuthority(
-  actor: UserLifecycleRow,
+  transaction: PersistenceTransaction,
+  actor: UserLifecycleRow | ControlAuthenticationContext,
   target: UserLifecycleRow,
   affectedServiceIds: readonly string[],
   allowSelf: boolean,
+  allowedApiRoles: readonly ("service" | "all_services" | "system")[],
 ): void {
+  if ("method" in actor) {
+    if (
+      actor.method !== "api_key" ||
+      !allowedApiRoles.includes(actor.role as "service" | "all_services" | "system") ||
+      target.role === "superadmin"
+    ) throw new PersistenceError("identity_not_found");
+    if (actor.role === "system" && (target.role === "user" || target.role === "admin")) return;
+    if (actor.role === "all_services" && target.role === "user") return;
+    if (
+      actor.role === "service" &&
+      target.role === "user" &&
+      affectedServiceIds.length === 1 &&
+      actor.apiKey?.serviceId === affectedServiceIds[0] &&
+      userRelatedToService(transaction, target.id, affectedServiceIds[0]!)
+    ) return;
+    throw new PersistenceError("identity_not_found");
+  }
   if (allowSelf && actor.id === target.id) return;
   if (actor.role === "superadmin") return;
   if (
@@ -908,6 +1084,98 @@ function requireLifecycleAuthority(
     affectedServiceIds.length > 0
   ) return;
   throw new PersistenceError("identity_not_found");
+}
+
+function userRelatedToService(
+  transaction: PersistenceTransaction,
+  userId: string,
+  serviceId: string,
+): boolean {
+  return transaction.get(`
+    SELECT 1
+    FROM users target
+    WHERE target.id = ? AND target.role = 'user'
+      AND EXISTS (
+        SELECT 1 FROM services service
+        WHERE service.id = ?
+          AND (
+            EXISTS (
+              SELECT 1 FROM service_principal_assignments all_assignment
+              WHERE all_assignment.service_id = service.id
+                AND all_assignment.selector_kind = 'all'
+            )
+            OR EXISTS (
+              SELECT 1 FROM service_principal_assignments direct
+              WHERE direct.service_id = service.id
+                AND direct.selector_kind = 'user'
+                AND direct.user_id = target.id
+            )
+            OR EXISTS (
+              SELECT 1
+              FROM service_principal_assignments selected
+              JOIN service_groups g
+                ON g.service_id = selected.service_id
+                AND g.id = selected.group_id
+              JOIN service_group_members gm
+                ON gm.service_id = g.service_id
+                AND gm.group_id = g.id
+              WHERE selected.service_id = service.id
+                AND selected.selector_kind = 'group'
+                AND g.lifecycle = 'active'
+                AND gm.user_id = target.id
+            )
+          )
+      )
+  `, [userId, serviceId]) !== undefined;
+}
+
+function assignInvitedUser(
+  transaction: PersistenceTransaction,
+  assignment: {
+    serviceId: string;
+    assignmentId: string;
+    globalEventId: string;
+    userEventId: string;
+  },
+  userId: string,
+  actorId: string,
+  now: number,
+): void {
+  const state = transaction.get<{ version: number; authorization_generation: number }>(`
+    SELECT version, authorization_generation
+    FROM service_assignment_states WHERE service_id = ?
+  `, [assignment.serviceId]);
+  if (state === undefined) throw new PersistenceError("identity_not_found");
+  transaction.run(`
+    INSERT INTO service_principal_assignments (
+      id, service_id, selector_kind, group_id, user_id,
+      assigned_by_user_id, created_at
+    ) VALUES (?, ?, 'user', NULL, ?, ?, ?)
+  `, [
+    assignment.assignmentId,
+    assignment.serviceId,
+    userId,
+    actorId,
+    now,
+  ]);
+  const generation = state.authorization_generation + 1;
+  const updated = transaction.run(`
+    UPDATE service_assignment_states
+    SET authorization_generation = ?, version = version + 1, updated_at = ?
+    WHERE service_id = ? AND version = ?
+  `, [generation, now, assignment.serviceId, state.version]);
+  if (updated.changes !== 1) throw new PersistenceError("identity_stale");
+  for (const [id, affectedUserId] of [
+    [assignment.globalEventId, null],
+    [assignment.userEventId, userId],
+  ] as const) {
+    transaction.run(`
+      INSERT INTO assignment_invalidation_events (
+        id, service_id, affected_user_id, authorization_generation, reason,
+        created_at, dispatched_at, attempts
+      ) VALUES (?, ?, ?, ?, 'service_selector', ?, NULL, 0)
+    `, [id, assignment.serviceId, affectedUserId, generation, now]);
+  }
 }
 
 function requireActiveTarget(target: UserLifecycleRow): void {
@@ -1030,13 +1298,7 @@ function lifecycleAudit(input: {
   changes: NonNullable<AdministrativeAuditEventInput["changes"]>;
 }): AdministrativeAuditEventInput {
   return {
-    actor: {
-      type: "browser_session",
-      id: input.actor.principalId,
-      label: `user:${input.actor.principalId}`,
-      role: input.actor.role,
-      authenticationMethod: "browser_session",
-    },
+    actor: administrativeActorSnapshot(input.actor),
     action: input.action,
     result: "allow",
     target: {
@@ -1120,9 +1382,14 @@ function parseRoleChange(value: unknown): IdentityRole {
 
 function requireActor(actor: ControlAuthenticationContext): void {
   if (
-    actor.method !== "browser_session" ||
     !isUuidV7(actor.principalId) ||
-    !["superadmin", "admin", "user"].includes(actor.role)
+    (
+      actor.method === "browser_session"
+        ? !["superadmin", "admin", "user"].includes(actor.role)
+        : actor.method !== "api_key" ||
+          !["service", "all_services", "system"].includes(actor.role) ||
+          actor.apiKey === undefined
+    )
   ) throw new UserLifecycleAdministrationError("forbidden");
 }
 

@@ -383,7 +383,11 @@
           },
           "state": {
             "enum": [
-              "ready"
+              "ready",
+              "claimed",
+              "completed",
+              "failed",
+              "expired"
             ],
             "type": "string"
           },
@@ -439,6 +443,75 @@
           "id": {
             "format": "uuid",
             "type": "string"
+          },
+          "state": {
+            "enum": [
+              "validated",
+              "previewed",
+              "committing",
+              "completed",
+              "failed",
+              "expired"
+            ],
+            "type": "string"
+          },
+          "updated_at": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "version": {
+            "exclusiveMinimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "archive_id",
+          "archive_bytes",
+          "state",
+          "expires_at",
+          "version",
+          "created_at",
+          "updated_at"
+        ],
+        "type": "object"
+      },
+      "RestoreStatus": {
+        "additionalProperties": false,
+        "description": "Actor-bound restore stage with its latest safe preview or result.",
+        "properties": {
+          "archive_bytes": {
+            "maximum": 268435456,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "archive_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "completed_at": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "created_at": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "expires_at": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "failure_code": {
+            "maxLength": 64,
+            "minLength": 1,
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "preview": {
+            "$ref": "#/components/schemas/RestorePreview"
           },
           "state": {
             "enum": [
@@ -1158,7 +1231,7 @@
                   "additionalProperties": false,
                   "properties": {
                     "data": {
-                      "$ref": "#/components/schemas/RestoreStage"
+                      "$ref": "#/components/schemas/RestoreStatus"
                     },
                     "meta": {
                       "additionalProperties": false,

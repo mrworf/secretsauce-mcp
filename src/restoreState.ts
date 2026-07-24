@@ -409,6 +409,26 @@ export class RestoreStateRepository {
     });
   }
 
+  async latestPreviewForStage(
+    stageId: string,
+    subjectUserId: string,
+  ): Promise<RestorePreview | undefined> {
+    validateUuid(stageId);
+    validateUuid(subjectUserId);
+    return this.owner.execute({
+      run: (database) => database.withOperationalTransaction((transaction) => {
+        expireRows(transaction, transaction.timestamp(), 100);
+        const row = transaction.get<PreviewRow>(`
+          SELECT * FROM restore_previews
+          WHERE stage_id = ? AND subject_user_id = ?
+          ORDER BY created_at DESC, id DESC
+          LIMIT 1
+        `, [stageId, subjectUserId]);
+        return row === undefined ? undefined : wirePreview(row);
+      }),
+    });
+  }
+
   async claimPreview(input: {
     previewId: string;
     stageId: string;

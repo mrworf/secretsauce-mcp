@@ -4,6 +4,7 @@ import {
   type BackupControlApi,
   type UserRole,
 } from "./controlApi";
+import { RestoreWorkspace } from "./RestoreWorkspace";
 
 export const BACKUP_EXCLUSIONS_ACKNOWLEDGEMENT =
   "I understand this backup permanently excludes identities, access grants, audit history, runtime state, and deployment configuration.";
@@ -210,6 +211,8 @@ export function BackupPage({
           {submitting ? "Creating protected archive…" : "Create and download backup"}
         </button>
       </form>
+      <hr className="workspace-divider" />
+      <RestoreWorkspace role={role} />
     </section>
   );
 }

@@ -16,6 +16,7 @@ import {
   type RestoreCounts,
   type RestorePreview,
   type RestoreSecretDisposition,
+  type RestoreStage,
 } from "./restoreState.js";
 import {
   type BackupCapabilityInput,
@@ -112,6 +113,36 @@ export class RestorePreviewCoordinator {
         secretDisposition: plan.secretDisposition,
         counts: plan.counts,
       }));
+  }
+
+  async status(
+    actor: ControlAuthenticationContext,
+    stageId: string,
+  ): Promise<{ stage: RestoreStage; preview?: RestorePreview }> {
+    if (
+      actor.method !== "browser_session"
+      || actor.role !== "superadmin"
+    ) throw new RestorePreviewError("forbidden");
+    try {
+      const stage = await this.stages.status(actor, stageId);
+      const preview = await this.repository.latestPreviewForStage(
+        stageId,
+        actor.principalId,
+      );
+      return {
+        stage,
+        ...(preview === undefined ? {} : { preview }),
+      };
+    } catch (error) {
+      if (error instanceof RestorePreviewError) throw error;
+      if (error instanceof RestoreStagingError) {
+        throw new RestorePreviewError(error.code);
+      }
+      if (error instanceof RestoreStateError) {
+        throw new RestorePreviewError(error.restoreCode);
+      }
+      throw new RestorePreviewError("unavailable");
+    }
   }
 
   async withEvaluatedPlan<T>(

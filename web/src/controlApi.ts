@@ -182,6 +182,92 @@ export interface BackupControlApi {
   }): Promise<Blob>;
 }
 
+export interface RestoreCounts {
+  services: number;
+  destinations: number;
+  credentials: number;
+  policies: number;
+  rules: number;
+  available_secrets: number;
+  unavailable_secrets: number;
+  replacements: number;
+  removals: number;
+  revoked_api_keys: number;
+  revoked_sessions: number;
+  revoked_oauth_grants: number;
+  remediations: number;
+}
+
+export interface RestorePreview {
+  id: string;
+  stage_id: string;
+  archive_sha256: string;
+  plan_digest: string;
+  secret_disposition: "configuration_only" | "encrypted_secrets";
+  counts: RestoreCounts;
+  confirmation_phrase: string;
+  state: "ready" | "claimed" | "completed" | "failed" | "expired";
+  expires_at: number;
+  version: number;
+}
+
+export interface RestoreStage {
+  id: string;
+  archive_id: string;
+  archive_bytes: number;
+  state: "validated" | "previewed" | "committing" | "completed" | "failed" | "expired";
+  expires_at: number;
+  completed_at?: number;
+  failure_code?: string;
+  version: number;
+  created_at: number;
+  updated_at: number;
+  preview?: RestorePreview;
+}
+
+export interface RestoreCommitResult {
+  operation_id: string;
+  stage_id: string;
+  preview_id: string;
+  signed_out: true;
+  services: number;
+  destinations: number;
+  credentials: number;
+  policies: number;
+  rules: number;
+  remediations: number;
+  revoked_api_keys: number;
+  revoked_sessions: number;
+  revoked_oauth_grants: number;
+}
+
+export interface RestoreControlApi {
+  stageRestore(input: {
+    archive: File;
+    password: string;
+    totp: string;
+  }): Promise<RestoreStage>;
+  restoreStatus(stageId: string): Promise<RestoreStage>;
+  resumeRestore(input: {
+    stageId: string;
+    password: string;
+    totp: string;
+  }): Promise<RestoreStage>;
+  previewRestore(input: {
+    stageId: string;
+    passphrase?: string;
+  }): Promise<RestorePreview>;
+  commitRestore(input: {
+    stageId: string;
+    previewId: string;
+    confirmation: string;
+    justification: string;
+    passphrase?: string;
+    password: string;
+    totp: string;
+  }): Promise<RestoreCommitResult>;
+}
+
 export type ApiKeyRole = "service" | "all_services" | "system";
 export type ApiKeyStatus = "active" | "expired" | "revoked";
 
@@ -1176,7 +1262,7 @@ export const browserControlApi:
   ControlApi & OidcControlApi & OidcManagementApi & ServiceControlApi &
     GroupControlApi & CredentialControlApi & PolicyControlApi & AccessControlApi &
     ApiKeyControlApi & SecurityControlApi & AuditControlApi & DashboardControlApi &
-    BackupControlApi = {
+    BackupControlApi & RestoreControlApi = {
   session: () => get<ControlSession>("/api/v2/auth/session"),
   activityDashboard: (input = {}) => {
     const query = new URLSearchParams();
@@ -1191,6 +1277,16 @@ export const browserControlApi:
     updateDashboardRemediationWithStepUp(remediation, input),
   rebuildActivity: (input) => rebuildActivityWithStepUp(input),
   createPortableBackup: (input) => createPortableBackupWithStepUp(input),
+  stageRestore: (input) => stageRestoreWithStepUp(input),
+  restoreStatus: (stageId) =>
+    interactiveGet(`/api/v2/restores/${encodeURIComponent(stageId)}`),
+  resumeRestore: (input) => resumeRestoreWithStepUp(input),
+  previewRestore: (input) => mutation(
+    `/api/v2/restores/${encodeURIComponent(input.stageId)}/preview`,
+    "POST",
+    input.passphrase === undefined ? {} : { passphrase: input.passphrase },
+  ),
+  commitRestore: (input) => commitRestoreWithStepUp(input),
   auditEvents: (domain, filter = {}) => {
     const query = auditQuery(filter);
     query.set("limit", "50");
@@ -1981,6 +2077,90 @@ async function createPortableBackupWithStepUp(input: {
     },
     body: JSON.stringify(body),
   });
+}
+
+async function stageRestoreWithStepUp(input: {
+  archive: File;
+  password: string;
+  totp: string;
+}): Promise<RestoreStage> {
+  const session = await browserControlApi.session();
+  const stepUp = await performStepUp(session, input.password, input.totp);
+  if (stepUp.mode !== "five_minutes") {
+    throw new ControlApiError(
+      "step_up_required",
+      "A fresh proof is required to stage a restore.",
+    );
+  }
+  return request("/api/v2/restores/stages", {
+    method: "POST",
+    headers: {
+      "content-type": "application/gzip",
+      "x-csrf-token": session.csrf_token,
+    },
+    body: input.archive,
+  });
+}
+
+async function resumeRestoreWithStepUp(input: {
+  stageId: string;
+  password: string;
+  totp: string;
+}): Promise<RestoreStage> {
+  const session = await browserControlApi.session();
+  const stepUp = await performStepUp(session, input.password, input.totp);
+  if (stepUp.mode !== "five_minutes") {
+    throw new ControlApiError(
+      "step_up_required",
+      "A fresh proof is required to resume a restore.",
+    );
+  }
+  return interactiveGet(
+    `/api/v2/restores/${encodeURIComponent(input.stageId)}`,
+  );
+}
+
+async function commitRestoreWithStepUp(input: {
+  stageId: string;
+  previewId: string;
+  confirmation: string;
+  justification: string;
+  passphrase?: string;
+  password: string;
+  totp: string;
+}): Promise<RestoreCommitResult> {
+  const body = {
+    preview_id: input.previewId,
+    confirmation: input.confirmation,
+    justification: input.justification,
+    ...(input.passphrase === undefined ? {} : { passphrase: input.passphrase }),
+  };
+  const session = await browserControlApi.session();
+  const routeId = "restores.commit";
+  const stepUp = await performStepUp(session, input.password, input.totp, {
+    method: "POST",
+    route_id: routeId,
+    target_ids: [input.stageId],
+    body,
+  });
+  if (stepUp.mode !== "always" || stepUp.proof === undefined) {
+    throw new ControlApiError(
+      "step_up_required",
+      "A proof for this exact restore is required.",
+    );
+  }
+  return request(
+    `/api/v2/restores/${encodeURIComponent(input.stageId)}/commit`,
+    {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-csrf-token": session.csrf_token,
+        "x-step-up-proof": stepUp.proof,
+      },
+      body: JSON.stringify(body),
+    },
+  );
 }
 
 async function performStepUp(

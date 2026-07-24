@@ -14,6 +14,113 @@ afterEach(() => {
 });
 
 describe("service browser API", () => {
+  it("stages raw restore bytes and binds commit proof to the exact safe body", async () => {
+    const requests: Array<{ url: string; init: RequestInit }> = [];
+    const stageId = "018f1f2e-7b3c-7a10-8000-000000000070";
+    const previewId = "018f1f2e-7b3c-7a10-8000-000000000071";
+    const responses = [
+      envelope({
+        user_id: SERVICE.id,
+        role: "superadmin",
+        csrf_token: "x".repeat(43),
+        expires_at: 10,
+      }),
+      envelope({ mode: "five_minutes", expires_at: 10 }),
+      envelope({
+        id: stageId,
+        archive_id: "018f1f2e-7b3c-7a10-8000-000000000072",
+        archive_bytes: 7,
+        state: "validated",
+        expires_at: 10,
+        version: 1,
+        created_at: 1,
+        updated_at: 1,
+      }),
+      envelope({
+        user_id: SERVICE.id,
+        role: "superadmin",
+        csrf_token: "x".repeat(43),
+        expires_at: 10,
+      }),
+      envelope({ mode: "always", expires_at: 10, proof: "p".repeat(43) }),
+      envelope({
+        operation_id: "018f1f2e-7b3c-7a10-8000-000000000073",
+        stage_id: stageId,
+        preview_id: previewId,
+        signed_out: true,
+        services: 1,
+        destinations: 1,
+        credentials: 1,
+        policies: 1,
+        rules: 1,
+        remediations: 4,
+        revoked_api_keys: 2,
+        revoked_sessions: 3,
+        revoked_oauth_grants: 4,
+      }),
+    ];
+    vi.stubGlobal("fetch", vi.fn(async (url: string, init: RequestInit) => {
+      requests.push({ url, init });
+      return responses.shift()!;
+    }));
+    const archive = new File(["archive"], "portable.tar.gz", {
+      type: "application/gzip",
+    });
+    await browserControlApi.stageRestore({
+      archive,
+      password: "stage-password",
+      totp: "123456",
+    });
+    expect(requests[2]).toMatchObject({
+      url: "/api/v2/restores/stages",
+      init: {
+        method: "POST",
+        body: archive,
+        headers: {
+          "content-type": "application/gzip",
+          "x-csrf-token": "x".repeat(43),
+        },
+      },
+    });
+    expect(String(requests[2]!.init.body)).not.toContain("stage-password");
+
+    const body = {
+      preview_id: previewId,
+      confirmation: "RESTORE exact-archive",
+      justification: "Approved replacement.",
+      passphrase: "archive-passphrase",
+    };
+    await browserControlApi.commitRestore({
+      stageId,
+      previewId,
+      confirmation: body.confirmation,
+      justification: body.justification,
+      passphrase: body.passphrase,
+      password: "commit-password",
+      totp: "654321",
+    });
+    expect(JSON.parse(String(requests[4]!.init.body))).toEqual({
+      password: "commit-password",
+      totp: "654321",
+      operation: {
+        method: "POST",
+        route_id: "restores.commit",
+        target_ids: [stageId],
+        body,
+      },
+    });
+    expect(requests[5]).toMatchObject({
+      url: `/api/v2/restores/${stageId}/commit`,
+      init: {
+        method: "POST",
+        headers: { "x-step-up-proof": "p".repeat(43) },
+      },
+    });
+    expect(JSON.parse(String(requests[5]!.init.body))).toEqual(body);
+    expect(String(requests[5]!.init.body)).not.toContain("commit-password");
+    expect(String(requests[5]!.init.body)).not.toContain("654321");
+  });
+
   it("binds a binary backup to the exact stepped-up body and validates delivery headers", async () => {
     const requests: Array<{ url: string; init: RequestInit }> = [];
     const responses = [

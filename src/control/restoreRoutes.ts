@@ -100,12 +100,18 @@ const previewSchema = z.object({
   secret_disposition: z.enum(["configuration_only", "encrypted_secrets"]),
   counts: restoreCountsSchema,
   confirmation_phrase: z.string().min(1).max(128),
-  state: z.literal("ready"),
+  state: z.enum(["ready", "claimed", "completed", "failed", "expired"]),
   expires_at: z.number().int().nonnegative(),
   version: z.number().int().positive(),
 }).strict().meta({
   id: "RestorePreview",
   description: "Server-derived, actor-bound restore replacement preview.",
+});
+const statusSchema = stageSchema.extend({
+  preview: previewSchema.optional(),
+}).strict().meta({
+  id: "RestoreStatus",
+  description: "Actor-bound restore stage with its latest safe preview or result.",
 });
 const commitSchema = z.object({
   operation_id: uuid,
@@ -195,7 +201,7 @@ export function registerRestoreRoutes(
     stepUp: "five_minutes",
     schemas: {
       params: stageParams,
-      response: stageSchema,
+      response: statusSchema,
     },
     rateLimit: "management",
     secretFields: [],
@@ -207,6 +213,20 @@ export function registerRestoreRoutes(
         throw unavailable();
       }
       try {
+        if (previews !== undefined) {
+          const status = await previews.status(
+            authentication,
+            params.stage_id,
+          );
+          return {
+            data: {
+              ...wireStage(status.stage),
+              ...(status.preview === undefined
+                ? {}
+                : { preview: wirePreview(status.preview) }),
+            },
+          };
+        }
         return {
           data: wireStage(
             await coordinator.status(authentication, params.stage_id),
@@ -254,34 +274,7 @@ export function registerRestoreRoutes(
             ? {}
             : { passphrase: passphraseBytes }),
         });
-        return {
-          data: {
-            id: preview.id,
-            stage_id: preview.stageId,
-            archive_sha256: preview.archiveSha256,
-            plan_digest: preview.planDigest,
-            secret_disposition: preview.secretDisposition,
-            counts: {
-              services: preview.counts.services,
-              destinations: preview.counts.destinations,
-              credentials: preview.counts.credentials,
-              policies: preview.counts.policies,
-              rules: preview.counts.rules,
-              available_secrets: preview.counts.availableSecrets,
-              unavailable_secrets: preview.counts.unavailableSecrets,
-              replacements: preview.counts.replacements,
-              removals: preview.counts.removals,
-              revoked_api_keys: preview.counts.revokedApiKeys,
-              revoked_sessions: preview.counts.revokedSessions,
-              revoked_oauth_grants: preview.counts.revokedOauthGrants,
-              remediations: preview.counts.remediations,
-            },
-            confirmation_phrase: preview.confirmationPhrase,
-            state: "ready" as const,
-            expires_at: preview.expiresAt,
-            version: preview.version,
-          },
-        };
+        return { data: wirePreview(preview) };
       } catch (error) {
         throw mapError(error);
       } finally {
@@ -381,6 +374,37 @@ function wireStage(stage: RestoreStage): z.input<typeof stageSchema> {
     version: stage.version,
     created_at: stage.createdAt,
     updated_at: stage.updatedAt,
+  };
+}
+
+function wirePreview(
+  preview: Awaited<ReturnType<RestorePreviewCoordinator["preview"]>>,
+): z.input<typeof previewSchema> {
+  return {
+    id: preview.id,
+    stage_id: preview.stageId,
+    archive_sha256: preview.archiveSha256,
+    plan_digest: preview.planDigest,
+    secret_disposition: preview.secretDisposition,
+    counts: {
+      services: preview.counts.services,
+      destinations: preview.counts.destinations,
+      credentials: preview.counts.credentials,
+      policies: preview.counts.policies,
+      rules: preview.counts.rules,
+      available_secrets: preview.counts.availableSecrets,
+      unavailable_secrets: preview.counts.unavailableSecrets,
+      replacements: preview.counts.replacements,
+      removals: preview.counts.removals,
+      revoked_api_keys: preview.counts.revokedApiKeys,
+      revoked_sessions: preview.counts.revokedSessions,
+      revoked_oauth_grants: preview.counts.revokedOauthGrants,
+      remediations: preview.counts.remediations,
+    },
+    confirmation_phrase: preview.confirmationPhrase,
+    state: preview.state,
+    expires_at: preview.expiresAt,
+    version: preview.version,
   };
 }
 

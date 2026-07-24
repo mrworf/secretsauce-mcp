@@ -1038,6 +1038,163 @@ button:disabled {
   border-radius: 0.75rem;
 }
 
+.workspace-divider {
+  width: 100%;
+  margin: 2.5rem 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
+
+.restore-workspace,
+.restore-panel,
+.restore-confirm,
+.restore-preview,
+.restore-danger,
+.restore-result {
+  display: grid;
+  gap: 1rem;
+}
+
+.restore-progress {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.35rem;
+  padding: 0;
+  list-style: none;
+}
+
+.restore-progress li {
+  display: grid;
+  justify-items: center;
+  gap: 0.35rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+.restore-progress li span {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border: 2px solid var(--border);
+  border-radius: 50%;
+}
+
+.restore-progress .restore-progress-active {
+  color: var(--text);
+  font-weight: 800;
+}
+
+.restore-progress .restore-progress-active span {
+  color: white;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.restore-intake-grid,
+.restore-summary-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.restore-panel,
+.restore-preview,
+.restore-result {
+  padding: 1rem;
+  background: var(--surface-subtle);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+}
+
+.restore-panel label,
+.restore-danger label,
+.restore-identity label {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.restore-panel input,
+.restore-danger input,
+.restore-danger textarea,
+.restore-identity input {
+  width: 100%;
+}
+
+.restore-summary-grid section {
+  padding: 0.9rem;
+  background: var(--surface);
+  border-left: 4px solid var(--accent);
+  border-radius: 0.5rem;
+}
+
+.restore-summary-grid h4,
+.restore-summary-grid ul,
+.restore-panel h3,
+.restore-result h3 {
+  margin: 0;
+}
+
+.restore-summary-grid ul {
+  padding-left: 1.2rem;
+  line-height: 1.55;
+}
+
+.restore-danger {
+  padding: clamp(1rem, 3vw, 1.5rem);
+  background: color-mix(in srgb, #9b2c20 10%, var(--surface));
+  border: 2px solid #9b2c20;
+  border-radius: 0.75rem;
+}
+
+.restore-danger code {
+  overflow-wrap: anywhere;
+}
+
+.restore-counts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.restore-counts div {
+  min-width: 0;
+  padding: 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+}
+
+.restore-counts dt {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.restore-counts dd {
+  margin: 0.3rem 0 0;
+  overflow-wrap: anywhere;
+  font-weight: 800;
+}
+
+@media (min-width: 760px) {
+  .restore-intake-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .restore-summary-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .restore-summary-grid section:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
 @media (min-width: 760px) {
   .backup-mode-grid {
     grid-template-columns: 1fr 1fr;

@@ -98,7 +98,7 @@ function inspectReference(
   reference: string,
 ): TokenRecord | undefined {
   try {
-    return broker.validateTokenUse(auth, target, reference);
+    return broker.preflightTokenUse(auth, target, reference);
   } catch (error) {
     if (error instanceof GatewayError) return undefined;
     throw error;

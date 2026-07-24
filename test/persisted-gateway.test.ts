@@ -9,7 +9,10 @@ import type {
   RuntimeReferenceGrant,
 } from "../src/runtimeAuthority.js";
 import type { RuntimeServiceSnapshot } from "../src/runtimeSnapshots.js";
-import type { RuntimeVault } from "../src/runtimeVault.js";
+import type {
+  RuntimeVault,
+  RuntimeVaultResolveInput,
+} from "../src/runtimeVault.js";
 import type { AuthContext, GatewayConfig } from "../src/types.js";
 
 const SUBJECT = "018f1f2e-7b3c-7a10-8000-000000000001";
@@ -18,6 +21,7 @@ const DESTINATION_ID = "018f1f2e-7b3c-7a10-8000-000000000011";
 const CREDENTIAL_ID = "018f1f2e-7b3c-7a10-8000-000000000012";
 const SNAPSHOT_ID = "018f1f2e-7b3c-7a10-8000-000000000013";
 const POLICY_ID = "018f1f2e-7b3c-7a10-8000-000000000014";
+const SECOND_CREDENTIAL_ID = "018f1f2e-7b3c-7a10-8000-000000000017";
 const LOCATOR = "12345678-1234-4234-8234-123456789abc";
 const resources: RequestDependencies[] = [];
 
@@ -80,6 +84,46 @@ describe("persisted gateway privileged ordering", () => {
     )).not.toThrow();
   });
 
+  it("rejects unsafe headers, cookies, and oversized raw bodies before vault", async () => {
+    const cases = [
+      {
+        input: {
+          ...request("REFERENCE"),
+          headers: { "X-API-Key": "REFERENCE", host: "attacker.example.org" },
+        },
+        code: "destination_not_allowed",
+      },
+      {
+        input: {
+          ...request("REFERENCE"),
+          headers: { "X-API-Key": "REFERENCE", cookie: "session=opaque" },
+        },
+        code: "cookie_not_allowed",
+      },
+      {
+        input: {
+          ...request("REFERENCE"),
+          method: "POST",
+          body: "x".repeat(1_048_577),
+        },
+        code: "request_too_large",
+      },
+    ];
+    for (const testCase of cases) {
+      const fixture = runtimeRequestFixture("allow");
+      const input = JSON.parse(
+        JSON.stringify(testCase.input).replaceAll("REFERENCE", fixture.reference),
+      );
+      await expect(executeServiceRequest(
+        fixture.config,
+        fixture.auth,
+        input,
+        fixture.dependencies,
+      )).rejects.toMatchObject({ code: testCase.code });
+      expect(fixture.vault.resolveCalls).toBe(0);
+    }
+  });
+
   it("maps vault failure only after authorization, policy, and admission", async () => {
     const fixture = runtimeRequestFixture("allow");
     await expect(executeServiceRequest(
@@ -133,6 +177,60 @@ describe("persisted gateway privileged ordering", () => {
       await once(server, "close");
     }
   });
+
+  it("requires every requested credential policy and resolves multiple credentials", async () => {
+    const received: Array<[string, string]> = [];
+    const server = createServer((request, response) => {
+      received.push([
+        String(request.headers["x-api-key"] ?? ""),
+        String(request.headers["x-second-key"] ?? ""),
+      ]);
+      response.end("ok");
+    });
+    server.listen(0, "127.0.0.1");
+    await once(server, "listening");
+    const address = server.address();
+    if (address === null || typeof address === "string") {
+      throw new Error("listener unavailable");
+    }
+    const vault = new SuccessfulRuntimeVault(new Map([
+      [CREDENTIAL_ID, "first-secret"],
+      [SECOND_CREDENTIAL_ID, "second-secret"],
+    ]));
+    const fixture = runtimeRequestFixture("allow", undefined, {
+      vault,
+      multiCredential: true,
+      destination: {
+        baseUrl: `http://127.0.0.1:${address.port}/`,
+        schemes: ["http"],
+        hosts: [{ type: "exact", value: "127.0.0.1" }],
+        ports: [address.port],
+        tlsVerify: false,
+      },
+    });
+    try {
+      await expect(executeServiceRequest(
+        fixture.config,
+        fixture.auth,
+        {
+          ...request(fixture.references[0]!),
+          headers: {
+            "X-API-Key": fixture.references[0]!,
+            "X-Second-Key": fixture.references[1]!,
+          },
+        },
+        fixture.dependencies,
+      )).resolves.toMatchObject({ status_code: 200 });
+      expect(received).toEqual([["first-secret", "second-secret"]]);
+      expect(vault.resolveCalls).toBe(2);
+      expect(vault.buffers.every(
+        (buffer) => buffer.every((value) => value === 0),
+      )).toBe(true);
+    } finally {
+      server.close();
+      await once(server, "close");
+    }
+  });
 });
 
 function runtimeRequestFixture(
@@ -149,6 +247,7 @@ function runtimeRequestFixture(
   options: {
     vault?: FailingRuntimeVault | SuccessfulRuntimeVault;
     destination?: Partial<RuntimeServiceSnapshot["destinations"][number]>;
+    multiCredential?: boolean;
   } = {},
 ) {
   capacity ??= {
@@ -162,7 +261,11 @@ function runtimeRequestFixture(
     scopes: ["gateway.request"],
     mode: "oauth",
   };
-  const snapshot = runtimeSnapshot(policyMode, options.destination);
+  const snapshot = runtimeSnapshot(
+    policyMode,
+    options.destination,
+    options.multiCredential,
+  );
   const view: PersistedRuntimeServiceView = {
     snapshot,
     subject: { id: SUBJECT, securityEpoch: 4, groupIds: [] },
@@ -177,13 +280,13 @@ function runtimeRequestFixture(
     serviceAuthorizationGeneration: 2,
     subjectSecurityEpoch: 4,
     globalReferenceEpoch: 1,
-    accesses: [{
-      id: CREDENTIAL_ID,
-      kind: "credential",
-      credentialId: CREDENTIAL_ID,
-      credentialAuthorizationGeneration: 3,
-      usageHint: "Set header X-API-Key to the reference",
-    }],
+    accesses: snapshot.credentials.map((credential) => ({
+      id: credential.id,
+      kind: "credential" as const,
+      credentialId: credential.id,
+      credentialAuthorizationGeneration: credential.authorizationGeneration,
+      usageHint: `Set header ${credential.usage.name} to the reference`,
+    })),
   };
   const authority: RuntimeAuthority = {
     readiness: async () => ({ activation: "ready", serviceCount: 1 }),
@@ -205,7 +308,7 @@ function runtimeRequestFixture(
     {
       service: "runtime-api",
       destination: "primary",
-      access_ids: [CREDENTIAL_ID],
+      access_ids: snapshot.credentials.map(({ id }) => id),
       reason: "Prepare persisted request.",
     },
     grant,
@@ -216,6 +319,7 @@ function runtimeRequestFixture(
     dependencies,
     vault,
     reference: issued.tokens[0]!.token,
+    references: issued.tokens.map(({ token }) => token),
   };
 }
 
@@ -237,20 +341,30 @@ class FailingRuntimeVault implements RuntimeVault {
 class SuccessfulRuntimeVault implements RuntimeVault {
   resolveCalls = 0;
   lastBuffer: Buffer | undefined;
+  readonly buffers: Buffer[] = [];
 
-  constructor(private readonly secret: string) {}
+  readonly #secrets: ReadonlyMap<string, string>;
+
+  constructor(secret: string | ReadonlyMap<string, string>) {
+    this.#secrets = typeof secret === "string"
+      ? new Map([[CREDENTIAL_ID, secret]])
+      : secret;
+  }
 
   readiness(): Promise<"ready"> {
     return Promise.resolve("ready");
   }
 
   async resolve<T>(
-    _input: unknown,
+    input: RuntimeVaultResolveInput,
     callback: (secret: Buffer) => T | Promise<T>,
   ): Promise<T> {
     this.resolveCalls += 1;
-    const secret = Buffer.from(this.secret, "utf8");
+    const value = this.#secrets.get(input.credentialId);
+    if (value === undefined) throw new Error("missing test secret");
+    const secret = Buffer.from(value, "utf8");
     this.lastBuffer = secret;
+    this.buffers.push(secret);
     try {
       return await callback(secret);
     } finally {
@@ -266,6 +380,7 @@ function runtimeSnapshot(
   destinationOverride: Partial<
     RuntimeServiceSnapshot["destinations"][number]
   > = {},
+  multiCredential = false,
 ): RuntimeServiceSnapshot {
   return {
     formatVersion: 1,
@@ -303,7 +418,21 @@ function runtimeSnapshot(
       generation: 5,
       authorizationGeneration: 3,
       selector: { kind: "all", groupIds: [], userIds: [] },
-    }],
+    }, ...(multiCredential ? [{
+      id: SECOND_CREDENTIAL_ID,
+      name: "Second key",
+      usage: {
+        kind: "header" as const,
+        name: "X-Second-Key",
+        enforceHeaderOwnership: true,
+      },
+      status: "configured" as const,
+      vaultState: "ready",
+      locator: "22345678-1234-4234-8234-123456789abc",
+      generation: 2,
+      authorizationGeneration: 3,
+      selector: { kind: "all" as const, groupIds: [], userIds: [] },
+    }] : [])],
     policies: [
       {
         id: POLICY_ID,
@@ -311,6 +440,13 @@ function runtimeSnapshot(
         evaluationGeneration: 1,
         rules: [],
       },
+      ...(multiCredential ? [{
+        id: "018f1f2e-7b3c-7a10-8000-000000000018",
+        credentialId: SECOND_CREDENTIAL_ID,
+        mode,
+        evaluationGeneration: 1,
+        rules: [],
+      }] : []),
       {
         id: "018f1f2e-7b3c-7a10-8000-000000000016",
         credentialId: CREDENTIAL_ID,

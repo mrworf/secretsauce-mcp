@@ -413,6 +413,15 @@ async function executePersistedServiceRequest(
     destination: target.destination.id,
   };
   const broker = dependencies.capabilities.tokenBroker;
+  const callerHeaders = input.headers ?? {};
+  rejectCallerControlledHeaders(callerHeaders);
+  if (prohibitedCookieHeaderNames(callerHeaders).length > 0) {
+    throw new GatewayError(
+      "cookie_not_allowed",
+      "Cookie headers are not allowed in service requests.",
+    );
+  }
+  assertRawRequestBound(input.body, input.method, config.limits.maxRequestBodyBytes);
   const records: TokenRecord[] = [];
   if (view.snapshot.credentials.length === 0) {
     if (
@@ -462,6 +471,18 @@ async function executePersistedServiceRequest(
     view.snapshot.service.slug,
     target.destination.id,
     uniqueRecords,
+  );
+  const preflightHeaders = enforceCredentialHeaderUsage(
+    {
+      headers: callerHeaders,
+      query: input.query ?? {},
+      body: input.body,
+    },
+    broker,
+    auth,
+    tokenTarget,
+    unresolvedService,
+    createLogger(config.logging),
   );
   const credentialIds = [...new Set(uniqueRecords.flatMap((record) =>
     record.credentialId === undefined ? [] : [record.credentialId]))];
@@ -563,7 +584,12 @@ async function executePersistedServiceRequest(
           () => executeServiceRequest(
             nestedConfig,
             auth,
-            { ...input, service: service.id, destination: target.destination.id },
+            {
+              ...input,
+              service: service.id,
+              destination: target.destination.id,
+              headers: preflightHeaders,
+            },
             nestedDependencies,
           ),
         );
@@ -602,6 +628,27 @@ async function executePersistedServiceRequest(
     }
   } finally {
     release();
+  }
+}
+
+function assertRawRequestBound(
+  body: unknown,
+  method: string,
+  maximum: number,
+): void {
+  if (
+    body === undefined
+    || method.toUpperCase() === "GET"
+    || method.toUpperCase() === "HEAD"
+  ) return;
+  let encoded: string;
+  try {
+    encoded = typeof body === "string" ? body : JSON.stringify(body);
+  } catch {
+    throw new GatewayError("destination_not_allowed", "Request body is invalid.");
+  }
+  if (Buffer.byteLength(encoded, "utf8") > maximum) {
+    throw new GatewayError("request_too_large", "Request body is too large.");
   }
 }
 

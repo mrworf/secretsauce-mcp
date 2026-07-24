@@ -317,6 +317,31 @@ describe("persisted runtime discovery", () => {
     }
   });
 
+  it("honors direct, all-user, and active group service selectors", async () => {
+    const fixture = await runtimeFixture("selectors");
+    await fixture.publish("direct-api", fixture.user.id);
+    await fixture.publish("all-api", undefined, { kind: "all" });
+    await fixture.publish("group-api", undefined, {
+      kind: "group",
+      userId: fixture.user.id,
+    });
+    await new RuntimeActivationRepository(fixture.worker, () => NOW).activate({
+      correlationId: CORRELATION,
+      osActor: "test-operator",
+    });
+    const authority = new PersistedRuntimeAuthority(fixture.worker);
+
+    await expect(authority.listServices({
+      subject: fixture.user.id,
+      scopes: ["gateway.read"],
+      mode: "oauth",
+    })).resolves.toEqual([
+      expect.objectContaining({ id: "direct-api" }),
+      expect.objectContaining({ id: "all-api" }),
+      expect.objectContaining({ id: "group-api" }),
+    ]);
+  });
+
   it("issues subject, destination, snapshot, and generation-bound references", async () => {
     const fixture = await runtimeFixture("references");
     const published = await fixture.publish("reference-api", fixture.user.id);
@@ -361,6 +386,14 @@ describe("persisted runtime discovery", () => {
         ...auth,
         subject: fixture.suspendedUser.id,
       },
+      { service: "reference-api", destination: "primary" },
+      issued.tokens[0]!.token,
+    )).toThrowError(expect.objectContaining({ code: "reference_invalid" }));
+    expect(() => new TokenBroker(
+      referenceConfig(),
+      () => NOW,
+    ).preflightTokenUse(
+      auth,
       { service: "reference-api", destination: "primary" },
       issued.tokens[0]!.token,
     )).toThrowError(expect.objectContaining({ code: "reference_invalid" }));
@@ -554,6 +587,89 @@ describe("persisted runtime discovery", () => {
       serviceAuthorizationGeneration: 1,
     });
   });
+
+  it("applies a committed policy change on the next authorization read", async () => {
+    const fixture = await runtimeFixture("policy-refresh");
+    const published = await fixture.publish(
+      "policy-refresh-api",
+      fixture.user.id,
+    );
+    await new RuntimeActivationRepository(fixture.worker, () => NOW).activate({
+      correlationId: CORRELATION,
+      osActor: "test-operator",
+    });
+    const broker = new TokenBroker(referenceConfig(), () => NOW);
+    const invalidations = new RuntimeInvalidationConsumer(
+      fixture.worker,
+      broker,
+      () => NOW,
+    );
+    const authority = new PersistedRuntimeAuthority(
+      fixture.worker,
+      () => invalidations.poll(),
+    );
+    const auth = {
+      subject: fixture.user.id,
+      scopes: ["gateway.read"],
+      mode: "oauth" as const,
+    };
+    await expect(authority.describeServicePolicy(
+      auth,
+      "policy-refresh-api",
+    )).resolves.toMatchObject({ policy: { mode: "deny" } });
+    const referenceInput = {
+      service: "policy-refresh-api",
+      access_ids: ["gateway_access"],
+      reason: "Keep the reference across a policy-only change.",
+    };
+    const issued = broker.issueRuntimeTokens(
+      auth,
+      referenceInput,
+      await authority.authorizeReferences(auth, referenceInput),
+    );
+    const referenceRecord = broker.preflightTokenUse(
+      auth,
+      { service: "policy-refresh-api", destination: "primary" },
+      issued.tokens[0]!.token,
+    );
+    const policyId = "018f1f2e-7b3c-7a10-8000-000000000096";
+    await fixture.worker.execute({
+      run: (database) => database.withOperationalTransaction((transaction) => {
+        transaction.run(`
+          INSERT INTO policies (
+            id, service_id, credential_id, name, normalized_name, description,
+            operating_mode, lifecycle, evaluation_generation, version,
+            created_at, updated_at
+          ) VALUES (?, ?, NULL, 'Runtime allow', 'runtime allow', NULL,
+            'allow', 'active', 1, 1, ?, ?)
+        `, [policyId, published.id, NOW, NOW]);
+        transaction.run(`
+          INSERT INTO policy_invalidation_events (
+            id, service_id, policy_id, rule_id, affected_user_id,
+            evaluation_generation, reason, created_at, dispatched_at, attempts
+          ) VALUES (?, ?, ?, NULL, NULL, 1, 'policy', ?, NULL, 0)
+        `, [
+          "018f1f2e-7b3c-7a10-8000-000000000097",
+          published.id,
+          policyId,
+          NOW,
+        ]);
+      }),
+    });
+
+    await expect(authority.describeServicePolicy(
+      auth,
+      "policy-refresh-api",
+    )).resolves.toMatchObject({ policy: { mode: "allow" } });
+    await expect(authority.validateReferences(
+      auth,
+      "policy-refresh-api",
+      "primary",
+      [referenceRecord],
+    )).resolves.toMatchObject({
+      snapshot: { policies: [expect.objectContaining({ mode: "allow" })] },
+    });
+  });
 });
 
 async function runtimeFixture(label: string) {
@@ -629,25 +745,64 @@ async function runtimeFixture(label: string) {
     superadmin,
     user,
     suspendedUser,
-    publish: async (slug: string, assignedUserId?: string) => {
+    publish: async (
+      slug: string,
+      assignedUserId?: string,
+      selector?: { kind: "all" } | { kind: "group"; userId: string },
+    ) => {
       let view = (await service.create(
         superadmin,
         { slug, name: slug },
         `create-${slug}-0001`,
         CORRELATION,
       )).service;
-      if (assignedUserId !== undefined) {
+      if (assignedUserId !== undefined || selector !== undefined) {
         await worker.execute({
           run: (database) => database.withOperationalTransaction((transaction) => {
+            if (selector?.kind === "group") {
+              const groupId = nextFixtureUuid(`${slug}-group`);
+              transaction.run(`
+                INSERT INTO service_groups (
+                  id, service_id, name, normalized_name, description,
+                  lifecycle, version, created_at, updated_at
+                ) VALUES (?, ?, 'Runtime group', 'runtime group', NULL,
+                  'active', 1, ?, ?)
+              `, [groupId, view.id, NOW, NOW]);
+              transaction.run(`
+                INSERT INTO service_group_members (
+                  service_id, group_id, user_id, assigned_by_user_id, created_at
+                ) VALUES (?, ?, ?, ?, ?)
+              `, [
+                view.id,
+                groupId,
+                selector.userId,
+                superadmin.principalId,
+                NOW,
+              ]);
+              transaction.run(`
+                INSERT INTO service_principal_assignments (
+                  id, service_id, selector_kind, group_id, user_id,
+                  assigned_by_user_id, created_at
+                ) VALUES (?, ?, 'group', ?, NULL, ?, ?)
+              `, [
+                nextFixtureUuid(`${slug}-group-assignment`),
+                view.id,
+                groupId,
+                superadmin.principalId,
+                NOW,
+              ]);
+              return;
+            }
             transaction.run(`
               INSERT INTO service_principal_assignments (
                 id, service_id, selector_kind, group_id, user_id,
                 assigned_by_user_id, created_at
-              ) VALUES (?, ?, 'user', NULL, ?, ?, ?)
+              ) VALUES (?, ?, ?, NULL, ?, ?, ?)
             `, [
               nextFixtureUuid(slug),
               view.id,
-              assignedUserId,
+              selector?.kind === "all" ? "all" : "user",
+              assignedUserId ?? null,
               superadmin.principalId,
               NOW,
             ]);

@@ -276,7 +276,6 @@ export class PersistedRuntimeAuthority implements RuntimeAuthority {
         || record.serviceId !== view.snapshot.service.id
         || record.destination !== selectedDestination.slug
         || record.destinationId !== selectedDestination.id
-        || record.snapshotId !== view.snapshot.id
         || record.publicationGeneration
           !== view.snapshot.service.publicationGeneration
         || record.serviceAuthorizationGeneration

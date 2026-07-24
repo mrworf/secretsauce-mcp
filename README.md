@@ -61,6 +61,8 @@ For every downstream request, the gateway validates the authenticated client, re
 - [System-owned management API keys](docs/api-key-management.md)
 - [Self-API-key protection](docs/self-api-key-protection.md)
 - [Security settings and automation](docs/security-settings-automation.md)
+- [Operator dashboards](docs/operator-dashboards.md)
+- [Audit search and retention](docs/audit-search-retention.md)
 - [Codex and ChatGPT setup](docs/codex-setup.md), including hosted ChatGPT web configuration
 - [Security notes](docs/security-notes.md)
 - [Branch protection](docs/branch-protection.md)

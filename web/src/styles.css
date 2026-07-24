@@ -1515,6 +1515,118 @@ button:disabled {
   justify-self: start;
 }
 
+.security-workspace,
+.security-settings-form,
+.security-settings-form fieldset,
+.security-action-form,
+.sensitive-confirmation,
+.security-event-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.security-settings-form fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+}
+
+.security-settings-form legend {
+  padding: 0 0.4rem;
+  font-weight: 800;
+}
+
+.security-field-grid,
+.security-danger-grid,
+.security-job-facts {
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+}
+
+.security-field-grid label,
+.sensitive-confirmation label {
+  display: grid;
+  align-content: start;
+  gap: 0.35rem;
+  font-weight: 700;
+}
+
+.security-field-grid small {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.sensitive-confirmation {
+  padding: 1rem;
+  background: var(--surface-subtle);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+}
+
+.sensitive-confirmation p {
+  margin: 0;
+}
+
+.sensitive-confirmation code {
+  overflow-wrap: anywhere;
+}
+
+.security-job-facts {
+  margin: 1rem 0;
+}
+
+.security-job-facts div {
+  padding: 0.8rem;
+  background: var(--surface-subtle);
+  border-radius: 0.65rem;
+}
+
+.security-job-facts dt {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.security-job-facts dd {
+  margin: 0.25rem 0 0;
+  font-weight: 750;
+}
+
+.danger-zone {
+  border-color: #b42318;
+}
+
+.danger-panel {
+  padding: 1rem;
+  border: 1px solid #b42318;
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, #b42318 7%, var(--surface));
+}
+
+.danger-panel h3 {
+  margin-top: 0;
+}
+
+.security-event-list {
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.security-event-list li {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.8rem;
+  background: var(--surface-subtle);
+  border-radius: 0.65rem;
+}
+
+.security-event-list li span {
+  color: var(--muted);
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #0f141b;

@@ -80,7 +80,12 @@ describe("durable browser sessions", () => {
     >) {
       for (const operation of Object.values(path)) {
         const permission = operation["x-permission"];
-        const expectedApiKey = typeof permission === "string" &&
+        const explicitlyBrowserOnly = [
+          "security.inactivity_job.get",
+          "security.inactivity_job.run",
+        ].includes(String(operation.operationId));
+        const expectedApiKey = !explicitlyBrowserOnly &&
+          typeof permission === "string" &&
           permission !== "public" &&
           permission !== "authenticated" &&
           (["service", "all_services", "system"] as const).some((role) => {

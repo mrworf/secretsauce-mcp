@@ -1,9 +1,11 @@
 import type { ControlAuthenticationContext } from "./control/authentication.js";
 import { administrativeActorSnapshot, currentApiKey } from "./apiKeyAuthority.js";
 import { PASSWORD_BLOCKLIST_VERSION } from "./identity/password.js";
+import type { AlwaysStepUpHandle, StepUpRepository } from "./identity/stepUp.js";
 import { PersistenceError } from "./persistence/errors.js";
-import type { PersistenceQuery } from "./persistence/transaction.js";
+import type { PersistenceQuery, PersistenceTransaction } from "./persistence/transaction.js";
 import type { PersistenceOwner } from "./persistence/worker.js";
+import type { AdministrativeAuditEventInput } from "./persistence/administrativeAudit.js";
 import type { GatewayConfig } from "./types.js";
 
 export interface SecuritySettings {
@@ -235,11 +237,14 @@ export class SecuritySettingsRepository {
     patch: SecuritySettingsPatch;
     justification: string;
     correlationId: string;
+    proof?: AlwaysStepUpHandle;
+    stepUps?: Pick<StepUpRepository, "withConsumedProofGenerated">;
   }): Promise<SecuritySettings> {
     validateUpdateInput(input);
     try {
-      return await this.owner.execute({
-        run: (database) => database.withGeneratedAdministrativeAudit((transaction) => {
+      const mutation = (
+        transaction: PersistenceTransaction,
+      ): { value: SecuritySettings; auditInput: AdministrativeAuditEventInput } => {
           authorizeMutation(transaction, input.actor, input.patch, this.now);
           const currentRow = readRow(transaction);
           if (currentRow === undefined) throw new PersistenceError("database_unavailable");
@@ -331,7 +336,18 @@ export class SecuritySettingsRepository {
               source: { category: "security" },
             },
           };
-        }),
+      };
+      if (input.proof !== undefined) {
+        if (input.stepUps === undefined) {
+          throw new PersistenceError("authentication_failed");
+        }
+        return await input.stepUps.withConsumedProofGenerated(
+          input.proof,
+          mutation,
+        );
+      }
+      return await this.owner.execute({
+        run: (database) => database.withGeneratedAdministrativeAudit(mutation),
       });
     } catch (error) {
       if (error instanceof SecuritySettingsError) throw error;

@@ -78,6 +78,7 @@ export interface ControlRouteDefinition {
   summary: string;
   tags: readonly string[];
   authentication: "public" | readonly ControlAuthenticationMethod[];
+  expandApiKeyAuthentication?: boolean;
   permission: ControlCapability | "authenticated" | null;
   stepUp: ControlStepUpRule;
   schemas: ControlRouteSchemas;
@@ -177,6 +178,7 @@ function withStaticApiKeyAuthentication(
   definition: ControlRouteDefinition,
 ): ControlRouteDefinition {
   if (
+    definition.expandApiKeyAuthentication === false ||
     definition.authentication === "public" ||
     !definition.authentication.includes("browser_session") ||
     definition.authentication.includes("api_key") ||

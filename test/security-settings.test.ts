@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import type { ControlAuthenticationContext } from "../src/control/authentication.js";
+import { AlwaysStepUpHandle } from "../src/identity/stepUp.js";
 import { PersistenceWorker } from "../src/persistence/worker.js";
 import {
   SecuritySettingsError,
@@ -224,6 +225,35 @@ describe("security settings repository", () => {
       justification: "Wrong API role.",
       correlationId: CORRELATION,
     }), "forbidden");
+  });
+
+  it("runs an always-mode settings change inside the proof transaction", async () => {
+    const fixture = await setup("proof");
+    const initial = await fixture.repository.initialize(DEFAULT_SEED);
+    let proofTransactionUsed = false;
+    const updated = await fixture.repository.update({
+      actor: browserSuperadmin(),
+      expectedVersion: initial.version,
+      patch: { stepUpMode: "always" },
+      justification: "Require exact-operation step-up.",
+      correlationId: CORRELATION,
+      proof: new AlwaysStepUpHandle(
+        "018f1f2e-7b3c-7a10-8000-000000000011",
+        "018f1f2e-7b3c-7a10-8000-000000000012",
+        SUPERADMIN_ID,
+      ),
+      stepUps: {
+        withConsumedProofGenerated: async (_proof, mutation) => {
+          proofTransactionUsed = true;
+          return fixture.worker.execute({
+            run: (database) =>
+              database.withGeneratedAdministrativeAudit(mutation),
+          });
+        },
+      },
+    });
+    expect(updated.stepUpMode).toBe("always");
+    expect(proofTransactionUsed).toBe(true);
   });
 });
 

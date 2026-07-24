@@ -588,6 +588,107 @@ export interface AccessControlApi
   }>;
 }
 
+export interface SecuritySettings {
+  password_minimum_length: number;
+  password_blocklist_version: number;
+  password_policy_version: number;
+  admin_session_absolute_ms: number;
+  admin_session_inactivity_ms: number;
+  user_session_absolute_ms: number;
+  user_session_inactivity_ms: number;
+  oauth_access_token_ms: number;
+  oauth_refresh_inactivity_ms: number;
+  oauth_refresh_absolute_ms: number;
+  step_up_mode: "five_minutes" | "always";
+  login_attempts: number;
+  login_window_ms: number;
+  password_attempts: number;
+  password_window_ms: number;
+  totp_attempts: number;
+  totp_window_ms: number;
+  management_api_attempts: number;
+  management_api_window_ms: number;
+  search_attempts: number;
+  search_window_ms: number;
+  backup_attempts: number;
+  backup_window_ms: number;
+  inactivity_suspension_days: number | null;
+  suspended_deactivation_days: number | null;
+  security_job_interval_ms: number;
+  security_job_batch_size: number;
+  security_job_wall_time_ms: number;
+  version: number;
+  created_at: number;
+  updated_at: number;
+}
+
+export interface SecurityJobState {
+  next_run_at: number;
+  lease_expires_at: number | null;
+  last_started_at: number | null;
+  last_completed_at: number | null;
+  last_outcome: "completed" | "partial" | "skipped" | "error" | null;
+  last_code: string | null;
+  suspended_count: number;
+  deactivated_count: number;
+  protected_count: number;
+  version: number;
+}
+
+export interface GlobalSecurityEvent {
+  id: string;
+  kind: "password_change" | "totp_reset";
+  actor_user_id: string;
+  actor_role: "superadmin";
+  justification: string;
+  affected_users: number;
+  resulting_global_epoch: number;
+  resulting_password_policy_version: number;
+  created_at: number;
+  replayed?: boolean;
+}
+
+export type SecuritySettingsPatch = Partial<Omit<
+  SecuritySettings,
+  "password_policy_version" | "version" | "created_at" | "updated_at"
+>>;
+
+export interface SecurityControlApi {
+  securitySettings(): Promise<SecuritySettings>;
+  updateSecuritySettings(
+    current: SecuritySettings,
+    patch: SecuritySettingsPatch,
+    input: {
+      justification: string;
+      acknowledgement: string;
+      password: string;
+      totp: string;
+    },
+  ): Promise<SecuritySettings>;
+  inactivityJob(): Promise<SecurityJobState>;
+  runInactivityJob(input: {
+    justification: string;
+    acknowledgement: string;
+    password: string;
+    totp: string;
+    step_up_mode: "five_minutes" | "always";
+  }): Promise<SecurityJobState>;
+  securityEvents(): Promise<{
+    items: GlobalSecurityEvent[];
+    state_version: number;
+  }>;
+  executeGlobalSecurityEvent(
+    kind: "password_change" | "totp_reset",
+    version: number,
+    input: {
+      justification: string;
+      acknowledgement: string;
+      password: string;
+      totp: string;
+    },
+  ): Promise<GlobalSecurityEvent>;
+}
+
 interface Envelope<T> {
   data: T;
 }
@@ -815,8 +916,22 @@ export type UserAction =
 export const browserControlApi:
   ControlApi & OidcControlApi & OidcManagementApi & ServiceControlApi &
     GroupControlApi & CredentialControlApi & PolicyControlApi & AccessControlApi &
-    ApiKeyControlApi = {
+    ApiKeyControlApi & SecurityControlApi = {
   session: () => get<ControlSession>("/api/v2/auth/session"),
+  securitySettings: () =>
+    interactiveGet<SecuritySettings>("/api/v2/security/settings"),
+  updateSecuritySettings: (current, patch, input) =>
+    updateSecuritySettingsWithStepUp(current, patch, input),
+  inactivityJob: () =>
+    interactiveGet<SecurityJobState>("/api/v2/security/jobs/inactivity"),
+  runInactivityJob: (input) => runInactivityJobWithStepUp(input),
+  securityEvents: () =>
+    interactiveGet<{
+      items: GlobalSecurityEvent[];
+      state_version: number;
+    }>("/api/v2/security/events"),
+  executeGlobalSecurityEvent: (kind, version, input) =>
+    executeGlobalSecurityEventWithStepUp(kind, version, input),
   oidcProviders: () => get<{ providers: OidcProviderLabel[] }>("/api/v2/auth/oidc/providers"),
   beginOidc: (providerId) => {
     if (!/^[a-z][a-z0-9_.-]{0,63}$/.test(providerId)) {
@@ -1248,6 +1363,166 @@ function safeProviderId(providerId: string): string {
 
 async function get<T>(path: string): Promise<T> {
   return request<T>(path, { method: "GET" });
+}
+
+async function interactiveGet<T>(path: string): Promise<T> {
+  return request<T>(path, {
+    method: "GET",
+    headers: { "x-secretsauce-user-activity": "interactive" },
+  });
+}
+
+async function updateSecuritySettingsWithStepUp(
+  current: SecuritySettings,
+  patch: SecuritySettingsPatch,
+  input: {
+    justification: string;
+    acknowledgement: string;
+    password: string;
+    totp: string;
+  },
+): Promise<SecuritySettings> {
+  const body = {
+    ...patch,
+    justification: input.justification,
+    acknowledgement: input.acknowledgement,
+  };
+  const session = await browserControlApi.session();
+  const operation = {
+    method: "PATCH" as const,
+    route_id: "security.settings.update",
+    target_ids: [],
+    expected_version: current.version,
+    body,
+  };
+  const stepUp = await performStepUp(
+    session,
+    input.password,
+    input.totp,
+    current.step_up_mode === "always" ? operation : undefined,
+  );
+  return request("/api/v2/security/settings", {
+    method: "PATCH",
+    headers: {
+      "content-type": "application/json",
+      "x-csrf-token": session.csrf_token,
+      "if-match": `"${current.version}"`,
+      ...(stepUp.proof === undefined
+        ? {}
+        : { "x-step-up-proof": stepUp.proof }),
+    },
+    body: JSON.stringify(body),
+  });
+}
+
+async function runInactivityJobWithStepUp(input: {
+  justification: string;
+  acknowledgement: string;
+  password: string;
+  totp: string;
+  step_up_mode: "five_minutes" | "always";
+}): Promise<SecurityJobState> {
+  const body = {
+    justification: input.justification,
+    acknowledgement: input.acknowledgement,
+  };
+  const session = await browserControlApi.session();
+  const stepUp = await performStepUp(
+    session,
+    input.password,
+    input.totp,
+    input.step_up_mode === "always"
+      ? {
+          method: "POST",
+          route_id: "security.inactivity_job.run",
+          target_ids: [],
+          body,
+        }
+      : undefined,
+  );
+  return request("/api/v2/security/jobs/inactivity/run", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-csrf-token": session.csrf_token,
+      ...(stepUp.proof === undefined
+        ? {}
+        : { "x-step-up-proof": stepUp.proof }),
+    },
+    body: JSON.stringify(body),
+  });
+}
+
+async function executeGlobalSecurityEventWithStepUp(
+  kind: "password_change" | "totp_reset",
+  version: number,
+  input: {
+    justification: string;
+    acknowledgement: string;
+    password: string;
+    totp: string;
+  },
+): Promise<GlobalSecurityEvent> {
+  const body = {
+    justification: input.justification,
+    acknowledgement: input.acknowledgement,
+  };
+  const session = await browserControlApi.session();
+  const idempotencyKey = crypto.randomUUID();
+  const routeId = `security.events.${kind}`;
+  const stepUp = await performStepUp(session, input.password, input.totp, {
+    method: "POST",
+    route_id: routeId,
+    target_ids: [],
+    expected_version: version,
+    idempotency_key: idempotencyKey,
+    body,
+  });
+  if (stepUp.proof === undefined) {
+    throw new ControlApiError(
+      "step_up_required",
+      "A proof for this exact security event is required.",
+    );
+  }
+  const suffix = kind === "password_change" ? "password-change" : "totp-reset";
+  return request(`/api/v2/security/events/${suffix}`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-csrf-token": session.csrf_token,
+      "x-step-up-proof": stepUp.proof,
+      "if-match": `"${version}"`,
+      "idempotency-key": idempotencyKey,
+    },
+    body: JSON.stringify(body),
+  });
+}
+
+async function performStepUp(
+  session: ControlSession,
+  password: string,
+  totp: string,
+  operation?: {
+    method: "POST" | "PUT" | "PATCH" | "DELETE";
+    route_id: string;
+    target_ids: string[];
+    expected_version?: number;
+    idempotency_key?: string;
+    body: unknown;
+  },
+): Promise<{ mode: "five_minutes" | "always"; proof?: string }> {
+  return request("/api/v2/auth/step-up", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-csrf-token": session.csrf_token,
+    },
+    body: JSON.stringify({
+      password,
+      totp,
+      ...(operation === undefined ? {} : { operation }),
+    }),
+  });
 }
 
 async function mutation<T>(

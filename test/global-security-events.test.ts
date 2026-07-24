@@ -133,6 +133,7 @@ describe("global security events", () => {
       id === "security.events.password_change")!;
     const totp = routes.find(({ id }) => id === "security.events.totp_reset")!;
     const list = routes.find(({ id }) => id === "security.events.list")!;
+    const job = routes.find(({ id }) => id === "security.inactivity_job.run")!;
 
     expect(password).toMatchObject({
       authentication: ["browser_session"],
@@ -157,6 +158,14 @@ describe("global security events", () => {
     expect(list.schemas.query!.safeParse({ limit: "100" }).success).toBe(true);
     expect(list.schemas.query!.safeParse({ limit: "101" }).success).toBe(false);
     expect(list.schemas.query!.safeParse({ limit: "0" }).success).toBe(false);
+    expect(job).toMatchObject({
+      authentication: ["browser_session"],
+      permission: "manage_global_settings",
+      expandApiKeyAuthentication: false,
+      stepUp: "five_minutes",
+      concurrency: "none",
+      idempotency: "none",
+    });
   });
 });
 

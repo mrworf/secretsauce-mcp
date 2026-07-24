@@ -13,6 +13,8 @@ import { ControlContractError } from "./contracts.js";
 import { defineControlRoute, type ControlRouteRegistry } from "./routeRegistry.js";
 import { z } from "./zod.js";
 import type { ControlIdempotencyHasher } from "./idempotency.js";
+import type { StepUpRepository } from "../identity/stepUp.js";
+import { administrativeActorSnapshot } from "../apiKeyAuthority.js";
 
 const ACKNOWLEDGEMENT = "I ACCEPT SYSTEM-WIDE SECURITY POLICY CHANGES";
 const integer = z.number().int();
@@ -111,6 +113,7 @@ export interface SecurityRouteDependencies {
   inactivityJob: InactivityJob;
   globalEvents?: GlobalSecurityEvents;
   idempotency?: ControlIdempotencyHasher;
+  stepUps?: StepUpRepository;
 }
 
 export function registerSecurityRoutes(
@@ -162,6 +165,7 @@ export function registerSecurityRoutes(
       body,
       expectedVersion,
       requestId,
+      stepUpProof,
     }) => run(async () => {
       const patch = patchFromWire(body);
       if (
@@ -179,6 +183,9 @@ export function registerSecurityRoutes(
         patch,
         justification: body.justification,
         correlationId: requestId,
+        ...(stepUpProof === undefined
+          ? {}
+          : { proof: stepUpProof, stepUps: dependencies.stepUps }),
       });
       dependencies.store.replace(value);
       return { data: wireSettings(value), version: value.version };
@@ -192,6 +199,7 @@ export function registerSecurityRoutes(
     summary: "Read inactivity automation state",
     tags: ["Security"],
     authentication: ["browser_session"],
+    expandApiKeyAuthentication: false,
     permission: "manage_global_settings",
     stepUp: "none",
     schemas: { response: jobSchema },
@@ -213,8 +221,9 @@ export function registerSecurityRoutes(
     summary: "Run inactivity automation now",
     tags: ["Security"],
     authentication: ["browser_session"],
+    expandApiKeyAuthentication: false,
     permission: "manage_global_settings",
-    stepUp: "always",
+    stepUp: "five_minutes",
     schemas: {
       body: z.object({
         justification: z.string().min(1).max(1_024),
@@ -228,8 +237,41 @@ export function registerSecurityRoutes(
     cache: "no-store",
     concurrency: "none",
     idempotency: "none",
-    handler: async () => {
-      const state = await dependencies.inactivityJob.run(true);
+    handler: async ({
+      authentication,
+      body,
+      requestId,
+      stepUpProof,
+    }) => {
+      if (stepUpProof !== undefined && dependencies.stepUps === undefined) {
+        throw new ControlContractError(
+          503,
+          "maintenance",
+          "Security automation is unavailable.",
+        );
+      }
+      const state = await dependencies.inactivityJob.run(
+        true,
+        stepUpProof === undefined
+          ? undefined
+          : {
+              proof: stepUpProof,
+              stepUps: dependencies.stepUps!,
+              audit: {
+                actor: administrativeActorSnapshot(authentication!),
+                action: "security.inactivity_job.run",
+                result: "allow",
+                target: {
+                  type: "security_job",
+                  label: "inactivity",
+                },
+                justification: body.justification,
+                changes: [{ field: "job_run", after: "started" }],
+                correlationId: requestId,
+                source: { category: "security" },
+              },
+            },
+      );
       return { data: wireJob(state), version: state.version };
     },
   }));
@@ -262,20 +304,31 @@ function registerGlobalEventRoutes(
       query: z.object({
         limit: z.string().regex(/^(?:[1-9]|[1-9]\d|100)$/).optional(),
       }).strict(),
-      response: z.object({ items: z.array(eventSchema).max(100) }).strict(),
+      response: z.object({
+        items: z.array(eventSchema).max(100),
+        state_version: integer.positive(),
+      }).strict(),
     },
     rateLimit: "search",
     secretFields: [],
     cache: "no-store",
     concurrency: "none",
     idempotency: "none",
-    handler: async ({ query }) => ({
-      data: {
-        items: (await events.list(
+    handler: async ({ query }) => {
+      const [items, stateVersion] = await Promise.all([
+        events.list(
           query.limit === undefined ? 100 : Number(query.limit),
-        )).map(wireEvent),
-      },
-    }),
+        ),
+        events.stateVersion(),
+      ]);
+      return {
+        data: {
+          items: items.map(wireEvent),
+          state_version: stateVersion,
+        },
+        version: stateVersion,
+      };
+    },
   }));
   registerGlobalEvent(
     registry,

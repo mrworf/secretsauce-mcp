@@ -4,6 +4,7 @@ import type { PersistenceTransaction } from "./persistence/transaction.js";
 import { UuidV7Generator, isUuidV7 } from "./persistence/uuidV7.js";
 import type { PersistenceOwner } from "./persistence/worker.js";
 import type { SecuritySettings } from "./securitySettings.js";
+import type { AlwaysStepUpHandle, StepUpRepository } from "./identity/stepUp.js";
 
 interface Candidate {
   id: string;
@@ -78,14 +79,28 @@ export class InactivityJob {
     });
   }
 
-  async run(force = false): Promise<InactivityJobState> {
+  async run(
+    force = false,
+    authorization?: {
+      proof: AlwaysStepUpHandle;
+      stepUps: Pick<StepUpRepository, "withConsumedProof">;
+      audit: AdministrativeAuditEventInput;
+    },
+  ): Promise<InactivityJobState> {
     const startedAt = safeNow(this.now);
     const settings = this.settings();
-    const acquired = await this.acquire(
-      startedAt,
-      settings.securityJobWallTimeMs,
-      force,
-    );
+    const acquired = authorization === undefined
+      ? await this.acquire(startedAt, settings.securityJobWallTimeMs, force)
+      : await authorization.stepUps.withConsumedProof(
+          authorization.proof,
+          authorization.audit,
+          (transaction) => this.acquireTransaction(
+            transaction,
+            startedAt,
+            settings.securityJobWallTimeMs,
+            force,
+          ),
+        );
     if (!acquired) return this.state();
     let suspended = 0;
     let deactivated = 0;
@@ -146,8 +161,18 @@ export class InactivityJob {
     force: boolean,
   ): Promise<boolean> {
     return this.owner.execute({
-      run: (database) => database.withOperationalTransaction((transaction) => {
-        const result = transaction.run(`
+      run: (database) => database.withOperationalTransaction((transaction) =>
+        this.acquireTransaction(transaction, now, wallTimeMs, force)),
+    });
+  }
+
+  private acquireTransaction(
+    transaction: PersistenceTransaction,
+    now: number,
+    wallTimeMs: number,
+    force: boolean,
+  ): boolean {
+    const result = transaction.run(`
           UPDATE security_job_state
           SET lease_owner = ?, lease_expires_at = ?,
               last_started_at = ?, last_outcome = NULL, last_code = NULL,
@@ -164,9 +189,7 @@ export class InactivityJob {
           now,
           now,
         ]);
-        return result.changes === 1;
-      }),
-    });
+    return result.changes === 1;
   }
 
   private async transitionOne(

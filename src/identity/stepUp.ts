@@ -272,6 +272,19 @@ export class StepUpRepository {
     auditInput: AdministrativeAuditEventInput,
     mutation: (transaction: PersistenceTransaction) => T,
   ): Promise<T> {
+    return this.withConsumedProofGenerated(handle, (transaction) => ({
+      value: mutation(transaction),
+      auditInput,
+    }));
+  }
+
+  async withConsumedProofGenerated<T>(
+    handle: AlwaysStepUpHandle,
+    mutation: (transaction: PersistenceTransaction) => {
+      value: T;
+      auditInput: AdministrativeAuditEventInput;
+    },
+  ): Promise<T> {
     if (handle.consumed) throw new PersistenceError("authentication_failed");
     const now = safeNow(this.now);
     const result = await this.owner.execute({
@@ -299,7 +312,7 @@ export class StepUpRepository {
             )
         `, [now, handle.proofId, handle.sessionId, handle.userId, now, now]);
         if (consumed.changes !== 1) throw new PersistenceError("authentication_failed");
-        return { value: mutation(transaction), auditInput };
+        return mutation(transaction);
       }),
     });
     handle[consumeHandle]();

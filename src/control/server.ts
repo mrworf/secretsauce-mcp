@@ -187,6 +187,7 @@ export interface ControlApplicationOptions {
     store: SecuritySettingsStore;
     globalEvents?: GlobalSecurityEvents;
     idempotency?: ControlIdempotencyHasher;
+    stepUps?: StepUpRepository;
   };
   humanActivity?: Pick<HumanActivityRepository, "record">;
   inactivityJob?: InactivityJob;
@@ -480,6 +481,7 @@ export async function startControlServer(
           stepUpRepository,
         );
         securitySettings.idempotency = idempotencyHasher;
+        securitySettings.stepUps = stepUpRepository;
         stepUp = new StepUpService({
           authenticationRepository,
           repository: stepUpRepository,

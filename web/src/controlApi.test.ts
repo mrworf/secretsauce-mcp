@@ -155,6 +155,77 @@ describe("service browser API", () => {
     expect(String(requests[2]!.init.body)).not.toContain("current-password");
     expect(String(requests[2]!.init.body)).not.toContain("123456");
   });
+
+  it("marks only explicit security reads and binds global events exactly", async () => {
+    const requests: Array<{ url: string; init: RequestInit }> = [];
+    const responses = [
+      envelope({ items: [], state_version: 7 }),
+      envelope({
+        user_id: SERVICE.id,
+        role: "superadmin",
+        csrf_token: "x".repeat(43),
+        expires_at: 10,
+      }),
+      envelope({ mode: "always", expires_at: 10, proof: "p".repeat(43) }),
+      envelope({
+        id: "018f1f2e-7b3c-7a10-8000-000000000060",
+        kind: "totp_reset",
+        actor_user_id: SERVICE.id,
+        actor_role: "superadmin",
+        justification: "Replace authenticators.",
+        affected_users: 2,
+        resulting_global_epoch: 8,
+        resulting_password_policy_version: 2,
+        created_at: 10,
+        replayed: false,
+      }),
+    ];
+    vi.stubGlobal("fetch", vi.fn(async (url: string, init: RequestInit) => {
+      requests.push({ url, init });
+      return responses.shift()!;
+    }));
+    vi.spyOn(crypto, "randomUUID").mockReturnValue(
+      "018f1f2e-7b3c-7a10-8000-000000000099",
+    );
+
+    await browserControlApi.securityEvents();
+    await browserControlApi.executeGlobalSecurityEvent("totp_reset", 7, {
+      justification: "Replace authenticators.",
+      acknowledgement: "ERASE ALL LOCAL TOTP AUTHENTICATORS",
+      password: "current-password",
+      totp: "123456",
+    });
+
+    expect(requests[0]).toMatchObject({
+      url: "/api/v2/security/events",
+      init: {
+        method: "GET",
+        headers: { "x-secretsauce-user-activity": "interactive" },
+      },
+    });
+    expect(JSON.parse(String(requests[2]!.init.body))).toEqual({
+      password: "current-password",
+      totp: "123456",
+      operation: {
+        method: "POST",
+        route_id: "security.events.totp_reset",
+        target_ids: [],
+        expected_version: 7,
+        idempotency_key: "018f1f2e-7b3c-7a10-8000-000000000099",
+        body: {
+          justification: "Replace authenticators.",
+          acknowledgement: "ERASE ALL LOCAL TOTP AUTHENTICATORS",
+        },
+      },
+    });
+    expect(requests[3]!.init.headers).toMatchObject({
+      "x-step-up-proof": "p".repeat(43),
+      "if-match": "\"7\"",
+      "idempotency-key": "018f1f2e-7b3c-7a10-8000-000000000099",
+    });
+    expect(String(requests[3]!.init.body)).not.toContain("current-password");
+    expect(String(requests[3]!.init.body)).not.toContain("123456");
+  });
 });
 
 const SERVICE: ControlServiceDetail = {

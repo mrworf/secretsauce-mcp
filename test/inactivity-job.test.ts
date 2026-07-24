@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { InactivityJob } from "../src/inactivityJob.js";
 import { IdentityRepository } from "../src/identity/repository.js";
+import { AlwaysStepUpHandle } from "../src/identity/stepUp.js";
 import {
   SecuritySettingsRepository,
   SecuritySettingsStore,
@@ -112,6 +113,51 @@ describe("leased inactivity automation", () => {
     });
     const before = await job.state();
     expect(await job.run(true)).toEqual(before);
+  });
+
+  it("acquires a forced manual run inside an always-proof transaction", async () => {
+    const now = { value: START };
+    const worker = open(now);
+    const identities = new IdentityRepository(worker, { now: () => now.value });
+    const root = await create(identities, "proof-root", "superadmin");
+    const repository = new SecuritySettingsRepository(worker, () => now.value);
+    const store = new SecuritySettingsStore(await repository.initialize(seed()));
+    const job = new InactivityJob(worker, () => store.current(), () => now.value);
+    let proofTransactionUsed = false;
+    const state = await job.run(true, {
+      proof: new AlwaysStepUpHandle(
+        "018f1f2e-7b3c-7a10-8000-000000000031",
+        "018f1f2e-7b3c-7a10-8000-000000000032",
+        root.id,
+      ),
+      stepUps: {
+        withConsumedProof: async (_proof, event, mutation) => {
+          proofTransactionUsed = true;
+          return worker.execute({
+            run: (database) => database.withGeneratedAdministrativeAudit(
+              (transaction) => ({ value: mutation(transaction), auditInput: event }),
+            ),
+          });
+        },
+      },
+      audit: {
+        actor: {
+          type: "browser_session",
+          id: root.id,
+          label: `user:${root.id}`,
+          role: "superadmin",
+          authenticationMethod: "browser_session",
+        },
+        action: "security.inactivity_job.run",
+        result: "allow",
+        target: { type: "security_job", label: "inactivity" },
+        justification: "Run now.",
+        correlationId: "req_12345678-1234-4234-8234-123456789abd",
+        source: { category: "security" },
+      },
+    });
+    expect(proofTransactionUsed).toBe(true);
+    expect(state.lastOutcome).toBe("skipped");
   });
 });
 

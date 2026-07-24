@@ -272,6 +272,47 @@ describe("scoped audit search", () => {
       await fixture.worker.close();
     }
   });
+
+  it("returns the first scoped FTS page within the local 10k-row target", async () => {
+    const fixture = open();
+    try {
+      await fixture.worker.execute({
+        run: (database) => database.withOperationalTransaction((transaction) => {
+          for (let index = 1; index <= 10_000; index += 1) {
+            const eventId =
+              `018f1f2e-7b3c-7a10-8000-${index.toString().padStart(12, "0")}`;
+            transaction.run(`
+              INSERT INTO administrative_audit_events (
+                event_id, occurred_at, actor_type, actor_id_snapshot,
+                actor_label_snapshot, actor_role_snapshot, authentication_method,
+                action, result, target_type, target_id_snapshot,
+                target_label_snapshot, service_id_snapshot, justification,
+                changes_json, correlation_id, source_json, failure_code,
+                sequence, category, service_label_snapshot
+              ) VALUES (?, ?, 'system', NULL, 'maintenance job', 'system', 'job',
+                'audit.fixture', 'allow', 'audit_fixture', NULL, 'fixture',
+                NULL, NULL, '[]', ?, '{}', NULL, ?, 'audit', NULL)
+            `, [eventId, NOW - index, CORRELATION_ID, index]);
+            transaction.run(`
+              INSERT INTO administrative_audit_fts (rowid, event_id, document)
+              VALUES (?, ?, ?)
+            `, [index, eventId, index === 10_000 ? "needle audit fixture" : "routine audit fixture"]);
+          }
+        }),
+      });
+      const started = performance.now();
+      const page = await fixture.service.search(superadmin(), "administrative", {
+        q: "needle",
+        limit: 50,
+      });
+      const elapsed = performance.now() - started;
+      expect(page.events).toHaveLength(1);
+      expect(elapsed).toBeLessThan(1_000);
+    } finally {
+      fixture.service.close();
+      await fixture.worker.close();
+    }
+  }, 10_000);
 });
 
 function open() {

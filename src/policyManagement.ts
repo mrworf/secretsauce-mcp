@@ -185,6 +185,13 @@ interface RuleProfile {
   selector?: NormalizedPrincipalSelector;
 }
 
+interface PolicyBulkCopySpec {
+  sourcePolicyId: string;
+  targetServiceId: string;
+  boundary: PolicyBoundary;
+  name?: string;
+}
+
 export class PolicyManagementError extends Error {
   constructor(readonly code:
     | "invalid_request"
@@ -720,6 +727,195 @@ export class PolicyManagementRepository {
     });
   }
 
+  async bulkCopy(input: {
+    actor: ControlAuthenticationContext;
+    sourceServiceId: string;
+    batchId: string;
+    copies: readonly PolicyBulkCopySpec[];
+    correlationId: string;
+    idempotency: IdempotencyExecutionInput;
+  }): Promise<IdempotencyExecutionResult<string>> {
+    return this.audited((transaction) => {
+      requireScopedService(transaction, input.actor, input.sourceServiceId, false);
+      const result = transaction.idempotent(input.idempotency, () => {
+        if (input.copies.length < 1 || input.copies.length > 20) {
+          throw new PersistenceError("identity_conflict");
+        }
+        const prepared = input.copies.map((copy) => {
+          requireScopedService(transaction, input.actor, copy.targetServiceId, true);
+          validateBoundary(transaction, copy.targetServiceId, copy.boundary);
+          const source = policyDetail(
+            transaction,
+            input.sourceServiceId,
+            copy.sourcePolicyId,
+          );
+          const copied = copyProfiles(copyDocument(source));
+          return {
+            ...copy,
+            profile: copy.name === undefined
+              ? copied.profile
+              : {
+                  ...copied.profile,
+                  ...normalizedProfile(copy.name, copied.profile.description),
+                },
+            rules: copied.rules,
+            preserveSelectors: input.sourceServiceId === copy.targetServiceId,
+          };
+        });
+        const boundaryKeys = prepared.map((copy) =>
+          `${copy.targetServiceId}:${copy.boundary.kind === "service"
+            ? "service"
+            : copy.boundary.credentialId}`);
+        if (new Set(boundaryKeys).size !== boundaryKeys.length) {
+          throw new PersistenceError("identity_conflict");
+        }
+        const targetCounts = new Map<string, number>();
+        for (const copy of prepared) {
+          targetCounts.set(
+            copy.targetServiceId,
+            (targetCounts.get(copy.targetServiceId) ?? 0) + 1,
+          );
+          const occupied = copy.boundary.kind === "service"
+            ? transaction.get(`
+                SELECT 1 FROM policies
+                WHERE service_id = ? AND credential_id IS NULL
+                  AND lifecycle = 'active'
+              `, [copy.targetServiceId])
+            : transaction.get(`
+                SELECT 1 FROM policies
+                WHERE service_id = ? AND credential_id = ?
+                  AND lifecycle = 'active'
+              `, [copy.targetServiceId, copy.boundary.credentialId]);
+          if (occupied !== undefined) throw new PersistenceError("identity_conflict");
+        }
+        for (const [serviceId, added] of targetCounts) {
+          const existing = transaction.get<{ count: number }>(
+            "SELECT count(*) AS count FROM policies WHERE service_id = ?",
+            [serviceId],
+          )?.count ?? MAX_POLICIES_PER_SERVICE;
+          if (existing + added > MAX_POLICIES_PER_SERVICE) {
+            throw new PersistenceError("identity_conflict");
+          }
+        }
+        const addedRules = prepared.reduce((sum, copy) => sum + copy.rules.length, 0);
+        const totalRules = transaction.get<{ count: number }>(
+          "SELECT count(*) AS count FROM policy_rules",
+        )?.count ?? MAX_RULES_TOTAL;
+        if (
+          totalRules + addedRules > MAX_RULES_TOTAL
+          || prepared.some((copy) => copy.rules.length > MAX_RULES_PER_POLICY)
+        ) throw new PersistenceError("identity_conflict");
+
+        const now = transaction.timestamp();
+        prepared.forEach((copy, ordinal) => {
+          const policyId = this.#uuid();
+          transaction.run(`
+            INSERT INTO policies (
+              id, service_id, credential_id, name, normalized_name, description,
+              operating_mode, lifecycle, evaluation_generation, version,
+              created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, 'active', 1, 1, ?, ?)
+          `, [
+            policyId,
+            copy.targetServiceId,
+            copy.boundary.kind === "credential"
+              ? copy.boundary.credentialId
+              : null,
+            copy.profile.name,
+            copy.profile.normalizedName,
+            copy.profile.description ?? null,
+            copy.profile.operatingMode,
+            now,
+            now,
+          ]);
+          const policy = requiredPolicy(transaction, copy.targetServiceId, policyId);
+          for (const source of copy.rules) {
+            const { selector: sourceSelector, ...sourceWithoutSelector } = source;
+            const selector = copy.preserveSelectors ? sourceSelector : undefined;
+            const profile: RuleProfile = {
+              ...sourceWithoutSelector,
+              enabled: copy.preserveSelectors && source.enabled,
+              ...(selector === undefined ? {} : { selector }),
+            };
+            if (selector !== undefined) {
+              validateSelectorTargets(transaction, copy.targetServiceId, selector);
+            }
+            const ruleId = this.#uuid();
+            insertRule(transaction, ruleId, policy, profile, now);
+            if (selector !== undefined) {
+              replaceRuleAssignments(
+                transaction,
+                this.#uuid,
+                input.actor.principalId,
+                policy,
+                ruleId,
+                selector,
+                now,
+              );
+            }
+          }
+          invalidatePolicy(
+            transaction,
+            this.#uuid,
+            policy,
+            null,
+            null,
+            1,
+            "copy",
+          );
+          transaction.run(`
+            INSERT INTO policy_copy_batch_members (
+              batch_id, ordinal, service_id, policy_id
+            ) VALUES (?, ?, ?, ?)
+          `, [input.batchId, ordinal, copy.targetServiceId, policyId]);
+        });
+        return {
+          value: input.batchId,
+          resultReference: input.batchId,
+          responseStatus: 201,
+        };
+      });
+      return {
+        value: result,
+        auditInput: policyAudit(
+          input.actor,
+          "policy.bulk_copy",
+          input.sourceServiceId,
+          input.batchId,
+          input.correlationId,
+          [
+            { field: "copy_count", after: input.copies.length },
+            {
+              field: "cross_service_count",
+              after: input.copies.filter(
+                ({ targetServiceId }) => targetServiceId !== input.sourceServiceId,
+              ).length,
+            },
+          ],
+        ),
+      };
+    });
+  }
+
+  async copyBatch(
+    actor: ControlAuthenticationContext,
+    batchId: string,
+  ): Promise<PolicyDetailView[]> {
+    return this.read((query) => {
+      const rows = query.all<{ service_id: string; policy_id: string }>(`
+        SELECT service_id, policy_id
+        FROM policy_copy_batch_members
+        WHERE batch_id = ?
+        ORDER BY ordinal
+      `, [batchId]);
+      if (rows.length < 1) throw new PersistenceError("identity_not_found");
+      return rows.map((row) => {
+        requireScopedService(query, actor, row.service_id, false);
+        return policyDetail(query, row.service_id, row.policy_id);
+      });
+    });
+  }
+
   async deleteArchived(input: {
     actor: ControlAuthenticationContext;
     serviceId: string;
@@ -1105,6 +1301,36 @@ export class PolicyManagementService {
         sourcePolicyId: sourcePolicy,
       },
     );
+  }
+
+  async bulkCopy(
+    actor: ControlAuthenticationContext,
+    sourceServiceId: string,
+    body: unknown,
+    idempotencyKey: string,
+    correlationId: string,
+  ): Promise<{ policies: PolicyDetailView[]; replayed: boolean }> {
+    const sourceService = requiredUuid(sourceServiceId);
+    const copies = bulkCopyBody(body);
+    const batchId = this.#uuid();
+    const result = await this.repository.bulkCopy({
+      actor,
+      sourceServiceId: sourceService,
+      batchId,
+      copies,
+      correlationId: requiredCorrelation(correlationId),
+      idempotency: this.idempotencyInput(
+        actor,
+        "policies.bulk-copy",
+        idempotencyKey,
+        { sourceServiceId: sourceService, copies },
+      ),
+    });
+    const id = result.kind === "executed" ? result.value : result.resultReference;
+    return {
+      policies: await this.repository.copyBatch(actor, id),
+      replayed: result.kind === "replayed",
+    };
   }
 
   async importPolicy(
@@ -1961,6 +2187,37 @@ function importBody(value: unknown): {
     boundary: normalizeBoundary(value.boundary),
     document: parseCopyDocument(value.document),
   };
+}
+
+function bulkCopyBody(value: unknown): PolicyBulkCopySpec[] {
+  if (!plainObject(value)) invalid();
+  requireKeys(value, ["copies"]);
+  if (
+    !Array.isArray(value.copies)
+    || value.copies.length < 1
+    || value.copies.length > 20
+  ) invalid();
+  return value.copies.map((copy) => {
+    if (!plainObject(copy)) invalid();
+    requireKeys(
+      copy,
+      ["source_policy_id", "target_service_id", "boundary", "name"],
+      ["name"],
+    );
+    if (
+      typeof copy.source_policy_id !== "string"
+      || typeof copy.target_service_id !== "string"
+      || (copy.name !== undefined && typeof copy.name !== "string")
+    ) invalid();
+    return {
+      sourcePolicyId: requiredUuid(copy.source_policy_id),
+      targetServiceId: requiredUuid(copy.target_service_id),
+      boundary: normalizeBoundary(copy.boundary),
+      ...(copy.name === undefined
+        ? {}
+        : { name: normalizedProfile(copy.name, undefined).name }),
+    };
+  });
 }
 
 function parseCopyDocument(value: unknown): PolicyCopyDocument {

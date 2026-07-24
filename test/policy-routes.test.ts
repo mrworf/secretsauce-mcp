@@ -102,6 +102,54 @@ describe("policy HTTP contracts", () => {
       /credential_value|vault_locator|authorization|cookie|gateway_reference/i,
     );
 
+    const bulkTarget = (await fixture.services.create(
+      fixture.superadmin,
+      { slug: "policy-bulk-target", name: "Policy bulk target" },
+      "create-policy-bulk-target",
+      CORRELATION,
+    )).service;
+    const bulkPayload = {
+      copies: [{
+        source_policy_id: policyId,
+        target_service_id: bulkTarget.id,
+        boundary: { kind: "service" },
+      }],
+    };
+    const bulk = await fixture.application.inject({
+      method: "POST",
+      url: `/api/v2/services/${service.id}/policies/bulk-copy`,
+      headers: mutationHeaders({ "idempotency-key": "route-bulk-copy-01" }),
+      payload: bulkPayload,
+    });
+    expect(bulk.statusCode).toBe(201);
+    expect(bulk.json().data.policies[0]).toMatchObject({
+      service_id: bulkTarget.id,
+      rules: [{ enabled: false }],
+    });
+    const bulkReplay = await fixture.application.inject({
+      method: "POST",
+      url: `/api/v2/services/${service.id}/policies/bulk-copy`,
+      headers: mutationHeaders({ "idempotency-key": "route-bulk-copy-01" }),
+      payload: bulkPayload,
+    });
+    expect(bulkReplay.statusCode).toBe(200);
+    expect(bulkReplay.json().data.policies[0].id)
+      .toBe(bulk.json().data.policies[0].id);
+
+    const hostileBulk = await fixture.application.inject({
+      method: "POST",
+      url: `/api/v2/services/${service.id}/policies/bulk-copy`,
+      headers: mutationHeaders({ "idempotency-key": "hostile-route-bulk" }),
+      payload: {
+        copies: [{
+          ...bulkPayload.copies[0],
+          credential_value: "must-not-echo",
+        }],
+      },
+    });
+    expect(hostileBulk.statusCode).toBe(400);
+    expect(JSON.stringify(hostileBulk.json())).not.toContain("must-not-echo");
+
     const hostile = await fixture.application.inject({
       method: "POST",
       url: `/api/v2/services/${service.id}/policies/import`,
@@ -150,6 +198,9 @@ describe("policy HTTP contracts", () => {
     );
     expect(documented.json().paths).toHaveProperty(
       "/api/v2/services/{service_id}/policies/{policy_id}/rules/{rule_id}/assignments",
+    );
+    expect(documented.json().paths).toHaveProperty(
+      "/api/v2/services/{service_id}/policies/bulk-copy",
     );
   });
 });

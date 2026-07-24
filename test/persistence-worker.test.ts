@@ -68,7 +68,7 @@ describe("persistence worker ownership", () => {
         },
       })).rejects.toMatchObject({ code: "database_unavailable" });
       await expect(worker.execute({ run: (database) => database.schemaVersion }))
-        .resolves.toBe(11);
+        .resolves.toBe(12);
     } finally {
       await worker.close();
     }
@@ -97,7 +97,7 @@ describe("persistence worker ownership", () => {
         administrativeAudit: "ready",
       });
       await expect(restarted.execute({ run: (database) => database.schemaVersion }))
-        .resolves.toBe(11);
+        .resolves.toBe(12);
     } finally {
       await restarted.close();
     }

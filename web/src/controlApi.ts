@@ -86,8 +86,9 @@ export interface ServiceValidation {
       | "service_archived"
       | "service_admin_required"
       | "destination_required"
-      | "credential_reconciliation_required";
-    pointer: "/lifecycle" | "/admins" | "/destinations" | "/credentials";
+      | "credential_reconciliation_required"
+      | "policy_configuration_invalid";
+    pointer: "/lifecycle" | "/admins" | "/destinations" | "/credentials" | "/policies";
   }>;
   warnings: Array<{
     code: "tls_verification_disabled";
@@ -353,6 +354,14 @@ export interface PolicyControlApi
     policyId: string,
     input: { target_service_id: string; boundary: PolicyBoundary; name?: string },
   ): Promise<ControlPolicyDetail>;
+  bulkCopyPolicies(serviceId: string, input: {
+    copies: Array<{
+      source_policy_id: string;
+      target_service_id: string;
+      boundary: PolicyBoundary;
+      name?: string;
+    }>;
+  }): Promise<{ policies: ControlPolicyDetail[] }>;
   importPolicy(
     serviceId: string,
     input: { boundary: PolicyBoundary; document: PolicyCopyDocument },
@@ -950,6 +959,14 @@ export const browserControlApi:
   clonePolicy: (serviceId, policyId, input) =>
     mutation(
       `/api/v2/services/${encodeURIComponent(serviceId)}/policies/${encodeURIComponent(policyId)}/clone`,
+      "POST",
+      input,
+      undefined,
+      true,
+    ),
+  bulkCopyPolicies: (serviceId, input) =>
+    mutation(
+      `/api/v2/services/${encodeURIComponent(serviceId)}/policies/bulk-copy`,
       "POST",
       input,
       undefined,

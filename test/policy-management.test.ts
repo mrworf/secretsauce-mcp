@@ -189,6 +189,62 @@ describe("durable policy management", () => {
       "clone-policy-cross-service",
       CORRELATION,
     )).replayed).toBe(true);
+
+    const bulkTargetA = await fixture.service("bulk-policy-a");
+    const bulkTargetB = await fixture.service("bulk-policy-b");
+    const bulk = await fixture.policies.bulkCopy(
+      fixture.superadmin,
+      service.id,
+      {
+        copies: [
+          {
+            source_policy_id: created.policy.id,
+            target_service_id: bulkTargetA.id,
+            boundary: { kind: "service" },
+            name: "Bulk policy A",
+          },
+          {
+            source_policy_id: created.policy.id,
+            target_service_id: bulkTargetB.id,
+            boundary: { kind: "service" },
+            name: "Bulk policy B",
+          },
+        ],
+      },
+      "bulk-copy-policy-01",
+      CORRELATION,
+    );
+    expect(bulk.replayed).toBe(false);
+    expect(bulk.policies.map(({ name }) => name)).toEqual([
+      "Bulk policy A",
+      "Bulk policy B",
+    ]);
+    expect(bulk.policies.every(({ rules }) =>
+      rules.every((copiedRule) =>
+        !copiedRule.enabled && copiedRule.selector === undefined))).toBe(true);
+    expect(new Set(bulk.policies.map(({ id }) => id)).size).toBe(2);
+    expect((await fixture.policies.bulkCopy(
+      fixture.superadmin,
+      service.id,
+      {
+        copies: [
+          {
+            source_policy_id: created.policy.id,
+            target_service_id: bulkTargetA.id,
+            boundary: { kind: "service" },
+            name: "Bulk policy A",
+          },
+          {
+            source_policy_id: created.policy.id,
+            target_service_id: bulkTargetB.id,
+            boundary: { kind: "service" },
+            name: "Bulk policy B",
+          },
+        ],
+      },
+      "bulk-copy-policy-01",
+      CORRELATION,
+    )).replayed).toBe(true);
   });
 
   it("rejects unsafe, unassigned, stale, duplicate-boundary, and cross-scope input", async () => {
@@ -300,6 +356,43 @@ describe("durable policy management", () => {
       first.id,
       policy.id,
     )).rejects.toEqual(new PolicyManagementError("not_found"));
+
+    await fixture.policies.createPolicy(
+      fixture.superadmin,
+      second.id,
+      {
+        boundary: { kind: "service" },
+        name: "Occupied target",
+        operating_mode: "deny",
+      },
+      "occupied-target-policy",
+      CORRELATION,
+    );
+    const cleanTarget = await fixture.service("clean-bulk-target");
+    await expect(fixture.policies.bulkCopy(
+      fixture.superadmin,
+      first.id,
+      {
+        copies: [
+          {
+            source_policy_id: policy.id,
+            target_service_id: cleanTarget.id,
+            boundary: { kind: "service" },
+          },
+          {
+            source_policy_id: policy.id,
+            target_service_id: second.id,
+            boundary: { kind: "service" },
+          },
+        ],
+      },
+      "atomic-bulk-conflict",
+      CORRELATION,
+    )).rejects.toEqual(new PolicyManagementError("conflict"));
+    expect(await fixture.policies.policies(
+      fixture.superadmin,
+      cleanTarget.id,
+    )).toEqual([]);
   });
 
   it("archives before permanent deletion and disables every rule", async () => {
@@ -352,6 +445,42 @@ describe("durable policy management", () => {
       archived.version,
       CORRELATION,
     )).resolves.toBeUndefined();
+  });
+
+  it("blocks publication when an enabled rule assignment becomes invalid", async () => {
+    const fixture = await policyFixture("publication");
+    const service = await fixture.service("publication-policy-api");
+    const ordinary = await fixture.identity("publication-user@example.org", "user");
+    const group = await fixture.group(service.id, "Temporary readers", [ordinary.id]);
+    await fixture.assignService(service.id, group.id);
+    const policy = (await fixture.policies.createPolicy(
+      fixture.superadmin,
+      service.id,
+      {
+        boundary: { kind: "service" },
+        name: "Publication policy",
+        operating_mode: "deny",
+      },
+      "publication-policy-create",
+      CORRELATION,
+    )).policy;
+    await fixture.policies.createRule(
+      fixture.superadmin,
+      service.id,
+      policy.id,
+      ruleBody({
+        name: "Temporary group rule",
+        selector: { kind: "groups", group_ids: [group.id] },
+      }),
+      "publication-policy-rule",
+      CORRELATION,
+    );
+
+    await fixture.archiveGroup(service.id, group.id, group.version);
+    expect((await fixture.validateService(service.id)).issues).toContainEqual({
+      code: "policy_configuration_invalid",
+      pointer: "/policies",
+    });
   });
 
   it("snapshots live access and uses the shared evaluator for complete explanations", async () => {
@@ -588,6 +717,24 @@ async function policyFixture(label: string) {
         ),
       });
     },
+    archiveGroup: async (serviceId: string, groupId: string, version: number) => {
+      await groups.archiveGroup({
+        actor: superadmin,
+        serviceId,
+        groupId,
+        expectedVersion: version,
+        justification: "Policy publication validation fixture.",
+        correlationId: CORRELATION,
+        idempotency: idempotency(
+          new ControlIdempotencyHasher(Buffer.alloc(32, 94)),
+          superadmin.principalId,
+          "groups.archive",
+          `archive-${serviceId}-${groupId}`,
+        ),
+      });
+    },
+    validateService: (serviceId: string) =>
+      serviceManager.validate(superadmin, serviceId, CORRELATION),
     invalidationCount: (policyId: string) => worker.execute({
       run: (database) => database.read((query) =>
         query.get<{ count: number }>(

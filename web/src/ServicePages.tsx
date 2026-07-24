@@ -1099,6 +1099,9 @@ function validationIssue(code: ServiceValidation["issues"][number]["code"]): str
   if (code === "credential_reconciliation_required") {
     return "Resolve pending credential vault work before publication.";
   }
+  if (code === "policy_configuration_invalid") {
+    return "Assign every enabled policy rule before publication.";
+  }
   return "Archived services cannot be published.";
 }
 

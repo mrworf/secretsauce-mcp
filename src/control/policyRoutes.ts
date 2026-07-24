@@ -137,6 +137,14 @@ const cloneInput = z.object({
   boundary,
   name: z.string().min(1).max(120).optional(),
 }).strict();
+const bulkCopyInput = z.object({
+  copies: z.array(z.object({
+    source_policy_id: uuid,
+    target_service_id: uuid,
+    boundary,
+    name: z.string().min(1).max(120).optional(),
+  }).strict()).min(1).max(20),
+}).strict();
 const importInput = z.object({ boundary, document: copyDocument }).strict();
 const simulationInput = z.object({
   user_id: uuid,
@@ -590,6 +598,43 @@ function registerPolicyTransfer(
         context.params.policy_id,
       ),
     })),
+  }));
+  registry.register(defineControlRoute({
+    id: "policies.bulk-copy",
+    method: "POST",
+    path: "/api/v2/services/{service_id}/policies/bulk-copy",
+    summary: "Atomically copy complete policy sets to permitted boundaries",
+    tags: ["Policies"],
+    authentication: ["browser_session"],
+    permission: "manage_credentials_policies",
+    stepUp: "none",
+    schemas: {
+      params: serviceParams,
+      body: bulkCopyInput,
+      response: z.object({
+        policies: z.array(detailSchema).min(1).max(20),
+      }).strict(),
+    },
+    rateLimit: "management",
+    auditAction: "policy.bulk_copy",
+    secretFields: [],
+    cache: "no-store",
+    concurrency: "none",
+    idempotency: "required",
+    successStatuses: [200, 201],
+    handler: async (context) => run(async () => {
+      const result = await policies.bulkCopy(
+        context.authentication!,
+        context.params.service_id,
+        context.body,
+        context.idempotencyKey!,
+        context.requestId,
+      );
+      return {
+        data: { policies: result.policies.map(wireDetail) },
+        statusCode: result.replayed ? 200 : 201,
+      };
+    }),
   }));
   registry.register(defineControlRoute({
     id: "policies.clone",

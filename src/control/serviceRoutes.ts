@@ -103,9 +103,16 @@ const validationSchema = z.object({
       "service_admin_required",
       "destination_required",
       "credential_reconciliation_required",
+      "policy_configuration_invalid",
     ]),
-    pointer: z.enum(["/lifecycle", "/admins", "/destinations", "/credentials"]),
-  }).strict()).max(4),
+    pointer: z.enum([
+      "/lifecycle",
+      "/admins",
+      "/destinations",
+      "/credentials",
+      "/policies",
+    ]),
+  }).strict()).max(5),
   warnings: z.array(z.object({
     code: z.literal("tls_verification_disabled"),
     pointer: z.string().regex(/^\/destinations\/(?:0|[1-5]?\d|6[0-3])\/tls_verify$/),

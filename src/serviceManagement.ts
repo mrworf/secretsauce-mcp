@@ -78,8 +78,9 @@ export interface ServiceValidationIssue {
     | "service_archived"
     | "service_admin_required"
     | "destination_required"
-    | "credential_reconciliation_required";
-  pointer: "/lifecycle" | "/admins" | "/destinations" | "/credentials";
+    | "credential_reconciliation_required"
+    | "policy_configuration_invalid";
+  pointer: "/lifecycle" | "/admins" | "/destinations" | "/credentials" | "/policies";
 }
 
 export interface ServiceValidationWarning {
@@ -2087,6 +2088,38 @@ function validationView(
     issues.push({
       code: "credential_reconciliation_required",
       pointer: "/credentials",
+    });
+  }
+  if (query.get(`
+    SELECT 1
+    FROM policies p
+    JOIN policy_rules r ON r.policy_id = p.id
+    WHERE p.service_id = ? AND p.lifecycle = 'active' AND r.enabled = 1
+      AND NOT EXISTS (
+        SELECT 1 FROM policy_rule_principal_assignments a
+        WHERE a.rule_id = r.id
+      )
+      OR p.service_id = ? AND p.lifecycle = 'active' AND r.enabled = 1
+      AND EXISTS (
+        SELECT 1
+        FROM policy_rule_principal_assignments a
+        LEFT JOIN service_groups g
+          ON a.selector_kind = 'group' AND g.id = a.group_id
+        LEFT JOIN users u
+          ON a.selector_kind = 'user' AND u.id = a.user_id
+        WHERE a.rule_id = r.id
+          AND (
+            a.selector_kind = 'group'
+              AND (g.id IS NULL OR g.lifecycle <> 'active')
+            OR a.selector_kind = 'user'
+              AND (u.id IS NULL OR u.role <> 'user' OR u.status <> 'active')
+          )
+      )
+    LIMIT 1
+  `, [service.id, service.id]) !== undefined) {
+    issues.push({
+      code: "policy_configuration_invalid",
+      pointer: "/policies",
     });
   }
   const warnings: ServiceValidationWarning[] = [];

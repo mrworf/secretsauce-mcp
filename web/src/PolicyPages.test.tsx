@@ -212,6 +212,7 @@ function fakeApi(): PolicyControlApi & {
     deletePolicyRule: async (rule) => ({ rule_id: rule.id, deleted: true }),
     copyPolicy: async () => COPY,
     clonePolicy: async () => POLICY,
+    bulkCopyPolicies: async () => ({ policies: [POLICY] }),
     importPolicy: async () => POLICY,
     simulatePolicy: vi.fn<PolicyControlApi["simulatePolicy"]>(async (
       _serviceId,

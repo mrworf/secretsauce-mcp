@@ -1225,6 +1225,27 @@ CREATE INDEX policy_invalidation_events_service_idx
   );
 `;
 
+const migration0012 = `
+CREATE TABLE policy_copy_batch_members (
+  batch_id TEXT NOT NULL CHECK (
+    length(batch_id) = 36 AND batch_id = lower(batch_id)
+    AND substr(batch_id, 15, 1) = '7'
+    AND substr(batch_id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND batch_id NOT GLOB '*[^0-9a-f-]*'
+  ),
+  ordinal INTEGER NOT NULL CHECK (ordinal >= 0 AND ordinal < 20),
+  service_id TEXT NOT NULL,
+  policy_id TEXT NOT NULL,
+  PRIMARY KEY (batch_id, ordinal),
+  UNIQUE (batch_id, policy_id),
+  FOREIGN KEY (service_id, policy_id)
+    REFERENCES policies(service_id, id) ON DELETE CASCADE
+) STRICT;
+
+CREATE INDEX policy_copy_batch_members_policy_idx
+  ON policy_copy_batch_members (service_id, policy_id, batch_id);
+`;
+
 export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [
   {
     version: 1,
@@ -1280,6 +1301,11 @@ export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [
     version: 11,
     name: "policy_management_explanation",
     sql: migration0011,
+  },
+  {
+    version: 12,
+    name: "policy_bulk_copy_idempotency",
+    sql: migration0012,
   },
 ];
 

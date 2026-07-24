@@ -347,6 +347,8 @@ function PolicyEditor({
         )}
         <ImportPolicy services={services} credentials={credentials}
           initialDocument={copy} api={api} onImported={onChanged} />
+        <BulkCopyPolicy policy={policy} services={services} api={api}
+          onCopied={onChanged} />
       </section>
 
       <section className="danger-zone" aria-labelledby="policy-lifecycle-heading">
@@ -682,6 +684,49 @@ function PolicySimulationPanel({
         </div>
       )}
     </section>
+  );
+}
+
+function BulkCopyPolicy({
+  policy,
+  services,
+  api,
+  onCopied,
+}: {
+  policy: ControlPolicyDetail;
+  services: ControlService[];
+  api: PolicyControlApi;
+  onCopied(): void;
+}) {
+  const targets = services.filter(({ id }) => id !== policy.service_id);
+  const [targetServiceId, setTargetServiceId] = useState(targets[0]?.id ?? "");
+  const [error, setError] = useState("");
+  if (targets.length === 0) return null;
+  return (
+    <form className="compact-create-form" onSubmit={(event) => {
+      event.preventDefault();
+      setError("");
+      void api.bulkCopyPolicies(policy.service_id, {
+        copies: [{
+          source_policy_id: policy.id,
+          target_service_id: targetServiceId,
+          boundary: { kind: "service" },
+        }],
+      }).then(onCopied, (caught) => setError(messageFor(caught)));
+    }}>
+      <label>Bulk-copy target service<select value={targetServiceId}
+        onChange={(event) => setTargetServiceId(event.target.value)}>
+        {targets.map((service) => (
+          <option key={service.id} value={service.id}>{service.name}</option>
+        ))}
+      </select></label>
+      <button type="submit">Add to atomic bulk copy</button>
+      <p className="muted-copy">
+        The API accepts up to 20 complete policy copies atomically. Cross-service
+        rules arrive disabled and unassigned.
+      </p>
+      {error !== "" && <p className="form-error" role="alert">{error}</p>}
+    </form>
   );
 }
 

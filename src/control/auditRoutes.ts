@@ -61,6 +61,29 @@ const pageSchema = z.object({
   events: z.array(eventSchema).max(100),
   next_cursor: z.string().max(2_048).optional(),
 }).strict();
+const exportFilterSchema = z.object({
+  q: z.string().min(1).max(256).optional(),
+  category: z.enum(AUDIT_CATEGORIES).optional(),
+  outcome: outcomeSchema.optional(),
+  action: z.string().min(1).max(128).regex(/^[a-z][a-z0-9_.-]*$/).optional(),
+  service_id: z.string().uuid().optional(),
+  actor_id: z.string().uuid().optional(),
+  preset: presetSchema.optional(),
+  start_utc: utcSchema.optional(),
+  end_utc: utcSchema.optional(),
+  justification: z.string().min(1).max(1_024)
+    .refine((value) => value === value.trim() && !/[\0\r\n]/.test(value)),
+}).strict();
+const exportSchema = z.object({
+  filename: z.enum([
+    "secretsauce-administrative-audit.ndjson",
+    "secretsauce-runtime-audit.ndjson",
+  ]),
+  media_type: z.literal("application/x-ndjson"),
+  content: z.string().max(5 * 1_024 * 1_024),
+  row_count: z.number().int().min(0).max(10_000),
+  byte_count: z.number().int().min(0).max(5 * 1_024 * 1_024),
+}).strict();
 
 export function registerAuditRoutes(
   registry: ControlRouteRegistry,
@@ -124,6 +147,48 @@ function registerDomain(
             filter(query),
             `audits.${domain}`,
           )),
+        };
+      } catch (error) {
+        throw contractError(error);
+      }
+    },
+  }));
+  registry.register(defineControlRoute({
+    id: `audits.${domain}.export`,
+    method: "POST",
+    path: `/api/v2/audits/${domain}/export`,
+    summary: `Export scoped ${domain} audit evidence as bounded NDJSON`,
+    tags: ["Audit"],
+    authentication: ["browser_session"],
+    permission: "export_audit",
+    stepUp: "none",
+    schemas: { body: exportFilterSchema, response: exportSchema },
+    rateLimit: "search",
+    auditAction: "audit.export",
+    secretFields: [],
+    cache: "no-store",
+    concurrency: "none",
+    idempotency: "none",
+    handler: async ({ authentication, body, requestId }) => {
+      try {
+        const { justification, ...rawFilter } = body;
+        const exported = await service.export(
+          authentication!,
+          domain,
+          filter(rawFilter),
+          justification,
+          requestId,
+        );
+        return {
+          data: {
+            filename: exported.filename as
+              | "secretsauce-administrative-audit.ndjson"
+              | "secretsauce-runtime-audit.ndjson",
+            media_type: exported.mediaType,
+            content: exported.content,
+            row_count: exported.rowCount,
+            byte_count: exported.byteCount,
+          },
         };
       } catch (error) {
         throw contractError(error);

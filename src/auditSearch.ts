@@ -26,6 +26,14 @@ export interface AuditSearchPage {
   nextCursor?: string;
 }
 
+export interface AuditExport {
+  filename: string;
+  mediaType: "application/x-ndjson";
+  content: string;
+  rowCount: number;
+  byteCount: number;
+}
+
 export interface AuditSearchEvent {
   domain: AuditDomain;
   eventId: string;
@@ -56,7 +64,7 @@ interface AuditRow extends Record<string, unknown> {
 
 export class AuditSearchError extends Error {
   constructor(
-    readonly code: "forbidden" | "invalid_filter",
+    readonly code: "forbidden" | "invalid_filter" | "export_limit",
   ) {
     super(code);
     this.name = "AuditSearchError";
@@ -189,6 +197,80 @@ export class AuditSearchService {
             }),
           }
         : {}),
+    };
+  }
+
+  async export(
+    authentication: ControlAuthenticationContext,
+    domain: AuditDomain,
+    input: Omit<AuditSearchFilter, "limit" | "cursor">,
+    justification: string,
+    requestId: string,
+  ): Promise<AuditExport> {
+    requireExplorer(authentication);
+    let cursor: string | undefined;
+    const lines: string[] = [];
+    let byteCount = 0;
+    do {
+      const page = await this.search(
+        authentication,
+        domain,
+        {
+          ...input,
+          limit: 100,
+          ...(cursor === undefined ? {} : { cursor }),
+        },
+        `audits.${domain}.export`,
+      );
+      for (const event of page.events) {
+        if (lines.length >= 10_000) throw new AuditSearchError("export_limit");
+        const line = `${JSON.stringify(event)}\n`;
+        const nextBytes = byteCount + Buffer.byteLength(line, "utf8");
+        if (nextBytes > 5 * 1_024 * 1_024) throw new AuditSearchError("export_limit");
+        lines.push(line);
+        byteCount = nextBytes;
+      }
+      cursor = page.nextCursor;
+    } while (cursor !== undefined);
+
+    await this.persistence.execute({
+      run: (database) => {
+        database.appendAdministrativeAudit({
+          actor: {
+            type: "browser_session",
+            id: authentication.principalId,
+            label: `user:${authentication.principalId}`,
+            role: authentication.role,
+            authenticationMethod: authentication.method,
+          },
+          category: "audit",
+          action: "audit.export",
+          result: "allow",
+          target: { type: "audit_domain", label: domain },
+          ...(input.serviceId === undefined ? {} : {
+            serviceId: input.serviceId,
+            serviceLabel: `service:${input.serviceId}`,
+          }),
+          justification,
+          changes: [
+            {
+              field: "filter_fields",
+              after: Object.keys(input).sort().join(",") || "none",
+            },
+            { field: "row_count", after: lines.length },
+            { field: "byte_count", after: byteCount },
+          ],
+          correlationId: requestId,
+          source: { category: "control", client: "browser" },
+        });
+      },
+    });
+    return {
+      filename: `secretsauce-${domain}-audit.ndjson`,
+      mediaType: "application/x-ndjson",
+      content: lines.join(""),
+      rowCount: lines.length,
+      byteCount,
     };
   }
 

@@ -176,6 +176,62 @@ describe("scoped audit search", () => {
         headers: { host: "control.example.org" },
       });
       expect(forbidden.statusCode).toBe(403);
+
+      const exported = await allowed.inject({
+        method: "POST",
+        url: "/api/v2/audits/administrative/export",
+        headers: {
+          host: "control.example.org",
+          origin: "https://control.example.org",
+          "x-csrf-token": "valid-csrf-proof",
+        },
+        payload: {
+          q: "review",
+          preset: "24h",
+          justification: "Incident evidence review",
+        },
+      });
+      expect(exported.statusCode, exported.body).toBe(200);
+      expect(exported.json().data).toMatchObject({
+        filename: "secretsauce-administrative-audit.ndjson",
+        media_type: "application/x-ndjson",
+        row_count: 1,
+      });
+      const lines = exported.json().data.content.trim().split("\n");
+      expect(lines).toHaveLength(1);
+      expect(JSON.parse(lines[0])).toMatchObject({
+        domain: "administrative",
+        action: "security.password_change",
+      });
+      expect(exported.body).not.toContain("Incident evidence review");
+
+      const exportAudit = await fixture.worker.execute({
+        run: (database) => database.read((query) => query.get<{
+          action: string;
+          changes_json: string;
+        }>(`
+          SELECT action, changes_json
+          FROM administrative_audit_events
+          WHERE action = 'audit.export'
+        `)),
+      });
+      expect(exportAudit?.action).toBe("audit.export");
+      expect(exportAudit?.changes_json).toContain("row_count");
+      expect(exportAudit?.changes_json).not.toContain("review");
+
+      const invalidExport = await allowed.inject({
+        method: "POST",
+        url: "/api/v2/audits/administrative/export",
+        headers: {
+          host: "control.example.org",
+          origin: "https://control.example.org",
+          "x-csrf-token": "valid-csrf-proof",
+        },
+        payload: {
+          justification: "line one\nline two",
+        },
+      });
+      expect(invalidExport.statusCode).toBe(400);
     } finally {
       await allowed.close();
       await denied.close();

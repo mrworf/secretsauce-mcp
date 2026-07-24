@@ -35,6 +35,11 @@ export interface V1MigrationCommitResult {
   remediationCount: number;
 }
 
+export interface V1MigratedVaultRecord {
+  locator: string;
+  generation: number;
+}
+
 type FaultPhase =
   | "after_preflight"
   | "after_portable_rows"
@@ -63,6 +68,21 @@ export class V1MigrationCommitRepository {
     if (!validateV1MigrationPlan(input.plan)) {
       throw new V1MigrationCommitError("invalid_plan");
     }
+    const guard = await this.preflight();
+    this.fault?.("after_preflight");
+    return this.commitPlan({
+      plan: input.plan,
+      guard,
+      migrationId: this.#uuid(),
+      planDigest: input.plan.digest,
+      resolutionMode: "definitions_only",
+      records: new Map(),
+      correlationId: input.correlationId,
+      osActor: input.osActor,
+    });
+  }
+
+  async preflight(): Promise<V1MigrationPreflight> {
     let guard: V1MigrationPreflight;
     try {
       guard = await new V1MigrationStateRepository(this.owner).preflight();
@@ -72,18 +92,50 @@ export class V1MigrationCommitRepository {
       }
       throw new V1MigrationCommitError("unavailable");
     }
+    return guard;
+  }
+
+  commitResolved(input: {
+    plan: V1MigrationPlan;
+    guard: V1MigrationPreflight;
+    migrationId: string;
+    planDigest: string;
+    records: ReadonlyMap<string, V1MigratedVaultRecord>;
+    correlationId: string;
+    osActor: string;
+  }): Promise<V1MigrationCommitResult> {
+    if (
+      !validateV1MigrationPlan(input.plan)
+      || !/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(input.migrationId)
+      || !/^[a-f0-9]{64}$/.test(input.planDigest)
+      || !validRecords(input.plan, input.records)
+    ) throw new V1MigrationCommitError("invalid_plan");
+    return this.commitPlan({
+      ...input,
+      resolutionMode: "resolved_credentials",
+    });
+  }
+
+  private async commitPlan(input: {
+    plan: V1MigrationPlan;
+    guard: V1MigrationPreflight;
+    migrationId: string;
+    planDigest: string;
+    resolutionMode: "definitions_only" | "resolved_credentials";
+    records: ReadonlyMap<string, V1MigratedVaultRecord>;
+    correlationId: string;
+    osActor: string;
+  }): Promise<V1MigrationCommitResult> {
     try {
-      this.fault?.("after_preflight");
       return await this.owner.execute({
         run: (database) => database.withGeneratedAdministrativeAudit((transaction) => {
-          assertGuard(transaction, guard);
+          assertGuard(transaction, input.guard);
           const now = transaction.timestamp();
-          const migrationId = this.#uuid();
-          insertPortableRows(transaction, input.plan, now);
+          insertPortableRows(transaction, input.plan, input.records, now);
           this.fault?.("after_portable_rows");
 
-          const activationGeneration = guard.activationGeneration + 1;
-          const globalReferenceEpoch = guard.globalReferenceEpoch + 1;
+          const activationGeneration = input.guard.activationGeneration + 1;
+          const globalReferenceEpoch = input.guard.globalReferenceEpoch + 1;
           const activation = transaction.run(`
             UPDATE runtime_activation
             SET state = 'active', activation_generation = ?,
@@ -96,9 +148,9 @@ export class V1MigrationCommitRepository {
             globalReferenceEpoch,
             now,
             now,
-            guard.activationVersion,
-            guard.activationGeneration,
-            guard.globalReferenceEpoch,
+            input.guard.activationVersion,
+            input.guard.activationGeneration,
+            input.guard.globalReferenceEpoch,
           ]);
           if (activation.changes !== 1) {
             throw new PersistenceError("identity_conflict");
@@ -110,20 +162,22 @@ export class V1MigrationCommitRepository {
             UPDATE v1_migration_state SET
               state = 'completed', migration_id = ?, source_sha256 = ?,
               plan_digest = ?, source_schema_version = 1,
-              resolution_mode = 'definitions_only',
+              resolution_mode = ?,
               service_count = ?, destination_count = ?, credential_count = ?,
-              configured_credential_count = 0, policy_count = ?, rule_count = ?,
+              configured_credential_count = ?, policy_count = ?, rule_count = ?,
               discarded_acl_count = ?, retained_slug_count = ?,
               generated_slug_count = ?, activation_generation = ?,
               completed_at = ?, updated_at = ?, version = version + 1
             WHERE singleton = 1 AND state = 'pending' AND version = ?
           `, [
-            migrationId,
+            input.migrationId,
             input.plan.sourceSha256,
-            input.plan.digest,
+            input.planDigest,
+            input.resolutionMode,
             counts.services,
             counts.destinations,
             counts.credentials,
+            input.records.size,
             counts.policies,
             counts.rules,
             counts.discardedAclEntries,
@@ -132,7 +186,7 @@ export class V1MigrationCommitRepository {
             activationGeneration,
             now,
             now,
-            guard.migrationStateVersion,
+            input.guard.migrationStateVersion,
           ]);
           if (marker.changes !== 1) throw new PersistenceError("identity_conflict");
           this.fault?.("after_marker");
@@ -140,13 +194,14 @@ export class V1MigrationCommitRepository {
           const remediationCount = insertRemediations(
             transaction,
             input.plan,
-            migrationId,
+            input.migrationId,
+            input.records,
             now,
             this.#uuid,
           );
           this.fault?.("after_remediations");
           const result = {
-            migrationId,
+            migrationId: input.migrationId,
             activationGeneration,
             globalReferenceEpoch,
             serviceCount: counts.services,
@@ -165,7 +220,7 @@ export class V1MigrationCommitRepository {
               result: "allow" as const,
               target: {
                 type: "v1_migration",
-                id: migrationId,
+                id: input.migrationId,
                 label: "portable v1 configuration migration",
               },
               justification: "Make migrated database configuration the sole runtime authority.",
@@ -176,7 +231,7 @@ export class V1MigrationCommitRepository {
                 { field: "policy_count", after: counts.policies },
                 { field: "rule_count", after: counts.rules },
                 { field: "discarded_acl_count", after: counts.discardedAclEntries },
-                { field: "configured_credential_count", after: 0 },
+                { field: "configured_credential_count", after: input.records.size },
                 { field: "activation_generation", after: activationGeneration },
               ],
               correlationId: input.correlationId,
@@ -252,6 +307,7 @@ function assertGuard(
 function insertPortableRows(
   transaction: PersistenceTransaction,
   plan: V1MigrationPlan,
+  records: ReadonlyMap<string, V1MigratedVaultRecord>,
   now: number,
 ): void {
   for (const service of plan.services) {
@@ -297,6 +353,7 @@ function insertPortableRows(
       ]);
     }
     for (const credential of service.credentials) {
+      const record = records.get(credential.id);
       transaction.run(`
         INSERT INTO service_credentials (
           id, service_id, name, normalized_name, description, usage_kind,
@@ -304,8 +361,8 @@ function insertPortableRows(
           status, vault_state, vault_locator, vault_generation, last_four,
           value_updated_at, authorization_generation, version, created_at,
           updated_at
-        ) VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, 'unconfigured', 'idle',
-          NULL, NULL, NULL, NULL, 0, 1, ?, ?)
+        ) VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, 'idle',
+          ?, ?, NULL, ?, 0, 1, ?, ?)
       `, [
         credential.id,
         service.id,
@@ -316,6 +373,10 @@ function insertPortableRows(
         credential.placement.prefix ?? null,
         credential.placement.suffix ?? null,
         credential.placement.enforceHeaderOwnership ? 1 : 0,
+        record === undefined ? "unconfigured" : "configured",
+        record?.locator ?? null,
+        record?.generation ?? null,
+        record === undefined ? null : now,
         now,
         now,
       ]);
@@ -366,6 +427,7 @@ function insertRemediations(
   transaction: PersistenceTransaction,
   plan: V1MigrationPlan,
   migrationId: string,
+  records: ReadonlyMap<string, V1MigratedVaultRecord>,
   now: number,
   uuid: () => string,
 ): number {
@@ -388,12 +450,32 @@ function insertRemediations(
     insert(service.id, "assign_service_admin", null);
     insert(service.id, "assign_service_access", null);
     for (const credential of service.credentials) {
-      insert(service.id, "supply_credential", credential.id);
+      if (!records.has(credential.id)) {
+        insert(service.id, "supply_credential", credential.id);
+      }
     }
     insert(service.id, "review_enable_policy", service.policy.id);
     insert(service.id, "validate_publish_service", null);
   }
   return count;
+}
+
+function validRecords(
+  plan: V1MigrationPlan,
+  records: ReadonlyMap<string, V1MigratedVaultRecord>,
+): boolean {
+  const credentialIds = new Set(plan.services.flatMap((service) =>
+    service.credentials.map(({ id }) => id)));
+  if (records.size < 1 || records.size > credentialIds.size) return false;
+  for (const [credentialId, record] of records) {
+    if (
+      !credentialIds.has(credentialId)
+      || !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(record.locator)
+      || !Number.isSafeInteger(record.generation)
+      || record.generation < 1
+    ) return false;
+  }
+  return true;
 }
 
 function boundedOsActor(value: string): string {

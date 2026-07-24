@@ -538,6 +538,10 @@ export async function startControlServer(
         securityDashboard = new SecurityDashboardService(persistence, {
           findingKey: sessionKey,
           stepUps: stepUpRepository,
+          identityReadiness: async () => "ready",
+          ...(options.vaultReadiness === undefined
+            ? {}
+            : { vaultReadiness: options.vaultReadiness }),
         });
         auditRetention = new AuditRetentionService(
           persistence,

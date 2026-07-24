@@ -189,6 +189,176 @@ describe("closed security dashboard and remediations", () => {
     await expect(fixture.security.snapshot({ ...admin(), role: "user" }))
       .rejects.toEqual(new SecurityDashboardError("forbidden"));
   });
+
+  it("classifies the closed historical signal catalog without widening admin scope", async () => {
+    const fixture = await seeded();
+    await fixture.worker.execute({
+      run: (database) => {
+        const base = {
+          actor: {
+            type: "system" as const,
+            label: "security-event",
+            authenticationMethod: "system",
+          },
+          category: "security" as const,
+          target: { type: "security_event", label: "security-event" },
+          changes: [],
+          source: { category: "security" },
+        };
+        database.appendAdministrativeAudit({
+          ...base,
+          action: "identity.login",
+          result: "deny",
+          failureCode: "authentication.limited",
+          correlationId: "req_71345678-1234-4234-8234-123456789abc",
+        });
+        database.appendAdministrativeAudit({
+          ...base,
+          action: "api_keys.authenticate",
+          result: "deny",
+          failureCode: "authentication.invalid",
+          serviceId: SERVICE_ONE,
+          correlationId: "req_72345678-1234-4234-8234-123456789abc",
+        });
+        database.appendAdministrativeAudit({
+          ...base,
+          action: "identity.step_up",
+          result: "deny",
+          failureCode: "authentication.invalid",
+          correlationId: "req_77345678-1234-4234-8234-123456789abc",
+        });
+        database.appendAdministrativeAudit({
+          ...base,
+          action: "service.publish",
+          result: "deny",
+          failureCode: "rate_limited",
+          serviceId: SERVICE_ONE,
+          correlationId: "req_78345678-1234-4234-8234-123456789abc",
+        });
+        database.appendAdministrativeAudit({
+          ...base,
+          action: "identity.break_glass_reset",
+          result: "allow",
+          correlationId: "req_73345678-1234-4234-8234-123456789abc",
+        });
+        database.appendAdministrativeAudit({
+          ...base,
+          action: "security.global_password_change",
+          result: "allow",
+          correlationId: "req_74345678-1234-4234-8234-123456789abc",
+        });
+        database.appendAdministrativeAudit({
+          ...base,
+          action: "identity.suspend",
+          result: "allow",
+          correlationId: "req_75345678-1234-4234-8234-123456789abc",
+        });
+        database.appendAdministrativeAudit({
+          ...base,
+          action: "identity.deactivate",
+          result: "deny",
+          failureCode: "last_superadmin",
+          correlationId: "req_76345678-1234-4234-8234-123456789abc",
+        });
+        database.appendRuntimeAudit({
+          eventId: "018f1f2e-7b3c-7a10-8000-000000000041",
+          occurredAt: NOW,
+          eventType: "self_api_key_approved_use",
+          outcome: "allow",
+          category: "security",
+          actorType: "oauth_user",
+          subjectId: USER_ID,
+          subjectLabel: "Private User",
+          serviceId: SERVICE_ONE,
+          serviceLabel: "Alpha Service",
+          destination: "primary",
+          action: "self_api_key_approved_use",
+          method: "GET",
+          targetHost: "api.example.org",
+          targetPath: "/private",
+          source: {},
+          details: {},
+        });
+      },
+    });
+
+    const scoped = await fixture.security.snapshot(admin());
+    expect(scoped.signals).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: "api_key.authentication_failure" }),
+      expect.objectContaining({ code: "control.rate_limited" }),
+      expect.objectContaining({ code: "self_api_key.approved_use" }),
+    ]));
+    expect(JSON.stringify(scoped)).not.toContain("break_glass.used");
+
+    const global = await fixture.security.snapshot(superadmin());
+    for (const code of [
+      "authentication.rate_limited",
+      "authentication.step_up_failure",
+      "break_glass.used",
+      "security.global_password_change",
+      "identity.suspended",
+      "last_superadmin.protected",
+    ]) {
+      expect(global.signals).toEqual(expect.arrayContaining([
+        expect.objectContaining({ code }),
+      ]));
+    }
+    expect(JSON.stringify(global)).not.toContain("/private");
+  });
+
+  it("turns degraded current state into sanitized remediations", async () => {
+    const fixture = await seeded();
+    await fixture.worker.execute({
+      run: (database) => database.withOperationalTransaction((transaction) => {
+        transaction.run(`
+          UPDATE activity_projection_state
+          SET last_outcome = 'error', last_completed_at = ?, last_code = 'failed'
+          WHERE singleton = 1
+        `, [NOW]);
+        transaction.run(`
+          UPDATE api_keys
+          SET created_at = ?, updated_at = ?
+          WHERE service_id = ?
+        `, [NOW - 91 * 86_400_000, NOW, SERVICE_ONE]);
+        transaction.run(
+          "UPDATE services SET lifecycle = 'archived' WHERE id = ?",
+          [SERVICE_ONE],
+        );
+      }),
+    });
+    const owner = {
+      readiness: {
+        database: "ready" as const,
+        schema: "unsupported" as const,
+        administrativeAudit: "unavailable" as const,
+      },
+      execute: fixture.worker.execute.bind(fixture.worker),
+      close: fixture.worker.close.bind(fixture.worker),
+    };
+    const security = new SecurityDashboardService(owner, {
+      now: () => NOW,
+      findingKey: new Uint8Array(32).fill(8),
+      vaultReadiness: async () => {
+        throw new Error("/private/vault.socket");
+      },
+      identityReadiness: async () => "invalid" as never,
+    });
+    const snapshot = await security.snapshot(superadmin());
+    for (const code of [
+      "api_key.never_used",
+      "api_key.active_for_archived_service",
+      "job.activity_degraded",
+      "component.schema_unsupported",
+      "component.audit_unavailable",
+      "component.vault_unavailable",
+      "component.identity_unavailable",
+    ]) {
+      expect(snapshot.remediations).toEqual(expect.arrayContaining([
+        expect.objectContaining({ code }),
+      ]));
+    }
+    expect(JSON.stringify(snapshot)).not.toContain("/private");
+  });
 });
 
 async function seeded() {

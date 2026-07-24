@@ -63,7 +63,7 @@ export class SecurityDashboardError extends Error {
 
 interface CurrentFinding {
   code: string;
-  category: "identity" | "credential" | "api_key";
+  category: "identity" | "credential" | "api_key" | "component";
   severity: Severity;
   serviceId?: string;
   count: number;
@@ -96,6 +96,8 @@ export class SecurityDashboardService {
       findingKey?: Uint8Array;
       uuid?: () => string;
       stepUps?: Pick<StepUpRepository, "withConsumedProofGenerated">;
+      vaultReadiness?: () => Promise<"ready" | "unavailable" | "unsupported">;
+      identityReadiness?: () => Promise<"ready" | "unavailable" | "unsupported">;
     } = {},
   ) {
     this.now = options.now ?? Date.now;
@@ -103,11 +105,19 @@ export class SecurityDashboardService {
     const generator = new UuidV7Generator({ now: this.now });
     this.#uuid = options.uuid ?? (() => generator.next());
     this.stepUps = options.stepUps;
+    this.vaultReadiness = options.vaultReadiness;
+    this.identityReadiness = options.identityReadiness;
   }
 
   private readonly now: () => number;
   private readonly stepUps:
     | Pick<StepUpRepository, "withConsumedProofGenerated">
+    | undefined;
+  private readonly vaultReadiness:
+    | (() => Promise<"ready" | "unavailable" | "unsupported">)
+    | undefined;
+  private readonly identityReadiness:
+    | (() => Promise<"ready" | "unavailable" | "unsupported">)
     | undefined;
 
   async snapshot(
@@ -116,10 +126,11 @@ export class SecurityDashboardService {
     requireViewer(actor);
     const now = safeNow(this.now);
     try {
-      await this.reconcile(now);
+      const componentFindings = await this.readComponentFindings(now);
+      await this.reconcile(now, componentFindings);
       return await this.owner.execute({
         run: (database) => database.read((query) =>
-          readSnapshot(query, actor, now)),
+          readSnapshot(query, actor, now, componentFindings)),
       });
     } catch (error) {
       if (error instanceof SecurityDashboardError) throw error;
@@ -201,10 +212,13 @@ export class SecurityDashboardService {
     }
   }
 
-  private async reconcile(now: number): Promise<void> {
+  private async reconcile(
+    now: number,
+    componentFindings: CurrentFinding[],
+  ): Promise<void> {
     await this.owner.execute({
       run: (database) => database.withOperationalTransaction((transaction) => {
-        const findings = currentFindings(transaction, now);
+        const findings = currentFindings(transaction, now, componentFindings);
         const activeHashes: string[] = [];
         for (const finding of findings) {
           const hash = this.findingHash(finding);
@@ -250,7 +264,8 @@ export class SecurityDashboardService {
           } else {
             transaction.run(`
               UPDATE dashboard_remediations
-              SET severity = ?, last_seen_at = ?, version = version + 1,
+              SET severity = ?, last_seen_at = ?,
+                version = version + CASE WHEN severity <> ? THEN 1 ELSE 0 END,
                 updated_at = ?
               WHERE id = ? AND (
                 severity <> ? OR last_seen_at <> ?
@@ -258,6 +273,7 @@ export class SecurityDashboardService {
             `, [
               finding.severity,
               finding.lastSeenAt,
+              finding.severity,
               now,
               existing.id,
               finding.severity,
@@ -293,11 +309,49 @@ export class SecurityDashboardService {
       .update(finding.serviceId ?? "global")
       .digest("hex");
   }
+
+  private async readComponentFindings(now: number): Promise<CurrentFinding[]> {
+    const readiness = this.owner.readiness;
+    const [vault, identity] = await Promise.all([
+      safeReadiness(this.vaultReadiness),
+      safeReadiness(this.identityReadiness),
+    ]);
+    const states = [
+      ["component.database_unavailable", readiness.database],
+      ["component.schema_unsupported", readiness.schema],
+      ["component.audit_unavailable", readiness.administrativeAudit],
+      [
+        vault === "unsupported"
+          ? "component.vault_unsupported"
+          : "component.vault_unavailable",
+        vault,
+      ],
+      [
+        identity === "unsupported"
+          ? "component.identity_unsupported"
+          : "component.identity_unavailable",
+        identity,
+      ],
+    ] as const;
+    return states
+      .filter(([, state]) => state !== "ready")
+      .map(([code]) => ({
+        code,
+        category: "component" as const,
+        severity: code === "component.database_unavailable"
+          ? "critical" as const
+          : "warning" as const,
+        count: 1,
+        firstSeenAt: now,
+        lastSeenAt: now,
+      }));
+  }
 }
 
 function currentFindings(
   query: PersistenceQuery,
   now: number,
+  componentFindings: CurrentFinding[] = [],
 ): CurrentFinding[] {
   const rows = query.all<{
     code: string;
@@ -332,6 +386,21 @@ function currentFindings(
       AND coalesce(api_keys.last_used_at, api_keys.created_at) <= ?
     GROUP BY api_keys.service_id
     UNION ALL
+    SELECT 'api_key.never_used', 'api_key', 'warning', api_keys.service_id,
+      count(*), min(api_keys.created_at), max(api_keys.updated_at)
+    FROM api_keys
+    WHERE api_keys.status = 'active' AND api_keys.last_used_at IS NULL
+      AND api_keys.created_at <= ?
+    GROUP BY api_keys.service_id
+    UNION ALL
+    SELECT 'api_key.active_for_archived_service', 'api_key', 'critical',
+      api_keys.service_id, count(*), min(api_keys.created_at),
+      max(api_keys.updated_at)
+    FROM api_keys
+    JOIN services ON services.id = api_keys.service_id
+    WHERE api_keys.status = 'active' AND services.lifecycle = 'archived'
+    GROUP BY api_keys.service_id
+    UNION ALL
     SELECT 'identity.pending_enrollment', 'identity', 'warning', NULL,
       count(*), min(users.created_at), max(users.updated_at)
     FROM users
@@ -354,8 +423,32 @@ function currentFindings(
           ))
       )
     HAVING count(*) > 0
-  `, [now - STALE_KEY_MS]);
-  return rows.map((row) => ({
+    UNION ALL
+    SELECT 'job.audit_degraded', 'component', 'warning', NULL, 1,
+      coalesce(last_completed_at, ?), coalesce(last_completed_at, ?)
+    FROM audit_maintenance_state
+    WHERE singleton = 1 AND last_outcome IN ('error', 'partial')
+    UNION ALL
+    SELECT 'job.activity_degraded', 'component', 'warning', NULL, 1,
+      coalesce(last_completed_at, ?), coalesce(last_completed_at, ?)
+    FROM activity_projection_state
+    WHERE singleton = 1 AND last_outcome IN ('error', 'partial')
+    UNION ALL
+    SELECT 'job.inactivity_degraded', 'component', 'warning', NULL, 1,
+      coalesce(last_completed_at, ?), coalesce(last_completed_at, ?)
+    FROM security_job_state
+    WHERE job_name = 'inactivity' AND last_outcome IN ('error', 'partial')
+  `, [
+    now - STALE_KEY_MS,
+    now - STALE_KEY_MS,
+    now,
+    now,
+    now,
+    now,
+    now,
+    now,
+  ]);
+  return [...rows.map((row) => ({
     code: row.code,
     category: row.category,
     severity: row.severity,
@@ -363,13 +456,14 @@ function currentFindings(
     count: row.finding_count,
     firstSeenAt: row.first_seen_at,
     lastSeenAt: row.last_seen_at,
-  }));
+  })), ...componentFindings];
 }
 
 function readSnapshot(
   query: PersistenceQuery,
   actor: ControlAuthenticationContext,
   now: number,
+  componentFindings: CurrentFinding[],
 ): SecurityDashboardSnapshot {
   const remediations = query.all<RemediationRow>(`
     WITH authorized_services(service_id) AS MATERIALIZED (
@@ -410,6 +504,8 @@ function readSnapshot(
       SELECT
         CASE
           WHEN event_type = 'self_api_key_blocked' THEN 'self_api_key.blocked'
+          WHEN event_type = 'self_api_key_approved_use'
+            THEN 'self_api_key.approved_use'
           WHEN category = 'authentication' AND outcome IN ('deny', 'error')
             THEN 'authentication.failure'
           ELSE 'security.runtime'
@@ -419,7 +515,73 @@ function readSnapshot(
         service_id_snapshot AS service_id, occurred_at
       FROM runtime_audit_events
       WHERE event_type = 'self_api_key_blocked'
+        OR event_type = 'self_api_key_approved_use'
         OR (category = 'authentication' AND outcome IN ('deny', 'error'))
+      UNION ALL
+      SELECT
+        CASE
+          WHEN failure_code LIKE '%limited%' THEN
+            CASE WHEN action = 'api_keys.authenticate'
+              THEN 'api_key.rate_limited'
+              WHEN action IN (
+                'identity.login', 'identity.step_up', 'identity.oidc_assertion'
+              ) THEN 'authentication.rate_limited'
+              ELSE 'control.rate_limited' END
+          WHEN failure_code LIKE '%last_superadmin%'
+            THEN 'last_superadmin.protected'
+          WHEN action = 'identity.login' THEN 'authentication.failure'
+          WHEN action = 'identity.step_up' THEN 'authentication.step_up_failure'
+          WHEN action = 'identity.oidc_assertion'
+            THEN 'authentication.oidc_failure'
+          WHEN action = 'api_keys.authenticate'
+            THEN 'api_key.authentication_failure'
+          WHEN action = 'identity.break_glass_reset' THEN 'break_glass.used'
+          WHEN action = 'security.global_password_change'
+            THEN 'security.global_password_change'
+          WHEN action = 'security.global_totp_reset'
+            THEN 'security.global_totp_reset'
+          WHEN action = 'identity.suspend' THEN 'identity.suspended'
+          WHEN action = 'identity.deactivate' THEN 'identity.deactivated'
+          WHEN action = 'identity.reactivate' THEN 'identity.reactivated'
+          WHEN action = 'identity.status_change' THEN 'identity.status_changed'
+          WHEN action = 'identity.role_change' THEN 'identity.role_changed'
+          WHEN action = 'identity.delete' THEN 'identity.deleted'
+          ELSE 'security.administrative'
+        END AS code,
+        CASE
+          WHEN failure_code LIKE '%last_superadmin%' THEN 'critical'
+          WHEN action IN (
+            'identity.break_glass_reset',
+            'security.global_password_change',
+            'security.global_totp_reset'
+          ) THEN 'critical'
+          WHEN action IN ('identity.suspend', 'identity.deactivate',
+            'identity.role_change', 'identity.delete') THEN 'info'
+          ELSE 'warning'
+        END AS severity,
+        service_id_snapshot AS service_id, occurred_at
+      FROM administrative_audit_events
+      WHERE
+        (action IN (
+          'identity.login',
+          'identity.step_up',
+          'identity.oidc_assertion',
+          'api_keys.authenticate'
+        )
+          AND result IN ('deny', 'error'))
+        OR action IN (
+          'identity.break_glass_reset',
+          'security.global_password_change',
+          'security.global_totp_reset',
+          'identity.suspend',
+          'identity.deactivate',
+          'identity.reactivate',
+          'identity.status_change',
+          'identity.role_change',
+          'identity.delete'
+        )
+        OR failure_code LIKE '%limited%'
+        OR failure_code LIKE '%last_superadmin%'
     )
     SELECT code, severity, service_id, count(*) AS signal_count,
       min(occurred_at) AS first_seen_at, max(occurred_at) AS last_seen_at
@@ -432,7 +594,11 @@ function readSnapshot(
     ORDER BY last_seen_at DESC, code, service_id
     LIMIT 100
   `, [actor.role, actor.role, actor.principalId, actor.role]);
-  const currentCounts = new Map(currentFindings(query, now).map((finding) => [
+  const currentCounts = new Map(currentFindings(
+    query,
+    now,
+    componentFindings,
+  ).map((finding) => [
     `${finding.code}\0${finding.serviceId ?? "global"}`,
     finding.count,
   ]));
@@ -577,4 +743,20 @@ function safeNow(now: () => number): number {
     throw new SecurityDashboardError("unavailable");
   }
   return value;
+}
+
+async function safeReadiness(
+  adapter:
+    | (() => Promise<"ready" | "unavailable" | "unsupported">)
+    | undefined,
+): Promise<"ready" | "unavailable" | "unsupported"> {
+  if (adapter === undefined) return "unavailable";
+  try {
+    const state = await adapter();
+    return state === "ready" || state === "unsupported"
+      ? state
+      : "unavailable";
+  } catch {
+    return "unavailable";
+  }
 }

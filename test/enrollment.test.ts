@@ -232,11 +232,11 @@ describe("restricted initial local enrollment", () => {
     await fixture.worker.execute({
       run: (database) => database.withOperationalTransaction((transaction) => {
         transaction.run(`
-          UPDATE users
+          UPDATE identity_security_state
           SET password_policy_version = password_policy_version + 1,
               version = version + 1, updated_at = ?
-          WHERE id = ?
-        `, [START, fixture.userId]);
+          WHERE singleton = 1
+        `, [START]);
       }),
     });
     await expect(fixture.service.confirmInitial(restricted, {

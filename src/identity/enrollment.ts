@@ -80,6 +80,7 @@ interface EnrollmentCandidate {
   securityEpoch: number;
   globalSecurityEpoch: number;
   passwordPolicyVersion: number;
+  currentPasswordPolicyVersion: number;
   passwordState: string;
   totpState: string;
   temporaryHash: string | null;
@@ -90,6 +91,8 @@ interface EnrollmentCandidate {
   temporaryVersion: number | null;
   passwordHash: string | null;
   passwordVersion: number | null;
+  passwordChangeEpoch: number | null;
+  currentPasswordChangeEpoch: number;
   totpAuthenticatorId: string | null;
   totpEnvelopeJson: string | null;
   totpRootKeyId: string | null;
@@ -141,6 +144,7 @@ interface PendingEnrollment {
   status: string;
   passwordPolicyVersion: number;
   currentPasswordPolicyVersion: number;
+  currentPasswordChangeEpoch: number;
   securityEpoch: number;
   globalSecurityEpoch: number;
 }
@@ -227,6 +231,7 @@ export class LocalEnrollmentRepository {
           u.security_epoch AS securityEpoch,
           sec.global_security_epoch AS globalSecurityEpoch,
           u.password_policy_version AS passwordPolicyVersion,
+          sec.password_policy_version AS currentPasswordPolicyVersion,
           a.password_state AS passwordState, a.totp_state AS totpState,
           tp.encoded_hash AS temporaryHash,
           tp.purpose AS temporaryPurpose,
@@ -235,6 +240,8 @@ export class LocalEnrollmentRepository {
           tp.revoked_at AS temporaryRevokedAt,
           tp.version AS temporaryVersion,
           pw.encoded_hash AS passwordHash, pw.version AS passwordVersion,
+          pw.password_change_epoch AS passwordChangeEpoch,
+          sec.password_change_epoch AS currentPasswordChangeEpoch,
           ta.id AS totpAuthenticatorId, ta.envelope_json AS totpEnvelopeJson,
           ta.root_key_id AS totpRootKeyId, ta.generation AS totpGeneration,
           a.version AS authenticatorVersion
@@ -259,6 +266,7 @@ export class LocalEnrollmentRepository {
           u.security_epoch AS securityEpoch,
           sec.global_security_epoch AS globalSecurityEpoch,
           u.password_policy_version AS passwordPolicyVersion,
+          sec.password_policy_version AS currentPasswordPolicyVersion,
           a.password_state AS passwordState, a.totp_state AS totpState,
           tp.encoded_hash AS temporaryHash,
           tp.purpose AS temporaryPurpose,
@@ -267,6 +275,8 @@ export class LocalEnrollmentRepository {
           tp.revoked_at AS temporaryRevokedAt,
           tp.version AS temporaryVersion,
           pw.encoded_hash AS passwordHash, pw.version AS passwordVersion,
+          pw.password_change_epoch AS passwordChangeEpoch,
+          sec.password_change_epoch AS currentPasswordChangeEpoch,
           ta.id AS totpAuthenticatorId, ta.envelope_json AS totpEnvelopeJson,
           ta.root_key_id AS totpRootKeyId, ta.generation AS totpGeneration,
           a.version AS authenticatorVersion
@@ -502,7 +512,8 @@ export class LocalEnrollmentRepository {
           p.expires_at AS expiresAt,
           u.email, u.given_name AS givenName, u.family_name AS familyName,
           u.status, p.password_policy_version AS passwordPolicyVersion,
-          u.password_policy_version AS currentPasswordPolicyVersion,
+          sec.password_policy_version AS currentPasswordPolicyVersion,
+          sec.password_change_epoch AS currentPasswordChangeEpoch,
           u.security_epoch AS securityEpoch,
           sec.global_security_epoch AS globalSecurityEpoch
         FROM identity_pending_totp p
@@ -546,17 +557,20 @@ export class LocalEnrollmentRepository {
           `, [input.session.userId, input.acceptedStep, now]);
           transaction.run(`
             INSERT INTO local_password_credentials (
-              user_id, encoded_hash, policy_version, version, created_at, updated_at
-            ) VALUES (?, ?, ?, 1, ?, ?)
+              user_id, encoded_hash, policy_version, password_change_epoch,
+              version, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, 1, ?, ?)
             ON CONFLICT(user_id) DO UPDATE SET
               encoded_hash = excluded.encoded_hash,
               policy_version = excluded.policy_version,
+              password_change_epoch = excluded.password_change_epoch,
               version = local_password_credentials.version + 1,
               updated_at = excluded.updated_at
           `, [
             input.session.userId,
             input.encodedHash,
             input.pending.passwordPolicyVersion,
+            currentPending.currentPasswordChangeEpoch,
             now,
             now,
           ]);
@@ -584,9 +598,14 @@ export class LocalEnrollmentRepository {
           const activated = transaction.run(`
             UPDATE users
             SET status = 'active', security_epoch = security_epoch + 1,
+                password_policy_version = ?,
                 version = version + 1, updated_at = ?
             WHERE id = ? AND status IN ('invited', 'enrollment_required')
-          `, [now, input.session.userId]);
+          `, [
+            currentPending.currentPasswordPolicyVersion,
+            now,
+            input.session.userId,
+          ]);
           if (activated.changes !== 1) throw new PersistenceError("authentication_failed");
           const browserSessionsRevoked = Number(transaction.run(`
             UPDATE browser_sessions
@@ -678,17 +697,20 @@ export class LocalEnrollmentRepository {
           acceptTotpStep(transaction, input.session.userId, input.acceptedStep, now);
           transaction.run(`
             INSERT INTO local_password_credentials (
-              user_id, encoded_hash, policy_version, version, created_at, updated_at
-            ) VALUES (?, ?, ?, 1, ?, ?)
+              user_id, encoded_hash, policy_version, password_change_epoch,
+              version, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, 1, ?, ?)
             ON CONFLICT(user_id) DO UPDATE SET
               encoded_hash = excluded.encoded_hash,
               policy_version = excluded.policy_version,
+              password_change_epoch = excluded.password_change_epoch,
               version = local_password_credentials.version + 1,
               updated_at = excluded.updated_at
           `, [
             input.session.userId,
             input.encodedHash,
-            current.passwordPolicyVersion,
+            current.currentPasswordPolicyVersion,
+            current.currentPasswordChangeEpoch,
             now,
             now,
           ]);
@@ -697,6 +719,14 @@ export class LocalEnrollmentRepository {
             SET password_state = 'configured', version = version + 1, updated_at = ?
             WHERE user_id = ?
           `, [now, input.session.userId]);
+          transaction.run(`
+            UPDATE users SET password_policy_version = ?, updated_at = ?
+            WHERE id = ?
+          `, [
+            current.currentPasswordPolicyVersion,
+            now,
+            input.session.userId,
+          ]);
           const counts = finalizeCredentialChange(
             transaction,
             input.session.userId,
@@ -830,11 +860,13 @@ export class LocalEnrollmentRepository {
           );
           const passwordChanged = transaction.run(`
             UPDATE local_password_credentials
-            SET encoded_hash = ?, policy_version = ?, version = version + 1, updated_at = ?
+            SET encoded_hash = ?, policy_version = ?,
+                password_change_epoch = ?, version = version + 1, updated_at = ?
             WHERE user_id = ? AND version = ?
           `, [
             input.encodedHash,
-            current.passwordPolicyVersion,
+            current.currentPasswordPolicyVersion,
+            current.currentPasswordChangeEpoch,
             now,
             input.browserSession.userId,
             current.passwordVersion,
@@ -842,6 +874,14 @@ export class LocalEnrollmentRepository {
           if (passwordChanged.changes !== 1) {
             throw new PersistenceError("authentication_failed");
           }
+          transaction.run(`
+            UPDATE users SET password_policy_version = ?, updated_at = ?
+            WHERE id = ?
+          `, [
+            current.currentPasswordPolicyVersion,
+            now,
+            input.browserSession.userId,
+          ]);
           const counts = finalizeCredentialChange(
             transaction,
             input.browserSession.userId,
@@ -1751,8 +1791,9 @@ export class LocalEnrollmentService {
       givenName: candidate.givenName,
       familyName: candidate.familyName,
       status: candidate.status,
-      passwordPolicyVersion: candidate.passwordPolicyVersion,
-      currentPasswordPolicyVersion: candidate.passwordPolicyVersion,
+      passwordPolicyVersion: candidate.currentPasswordPolicyVersion,
+      currentPasswordPolicyVersion: candidate.currentPasswordPolicyVersion,
+      currentPasswordChangeEpoch: candidate.currentPasswordChangeEpoch,
       securityEpoch: candidate.securityEpoch,
       globalSecurityEpoch: candidate.globalSecurityEpoch,
     };
@@ -2167,13 +2208,24 @@ function eligibleTotpRecoveryCandidate(
 function eligiblePasswordChangeCandidate(
   candidate: EnrollmentCandidate | undefined,
 ): candidate is EnrollmentCandidate {
+  const reset = candidate?.passwordState === "temporary"
+    && candidate.temporaryPurpose === "password_reset"
+    && candidate.temporaryConsumedAt !== null
+    && candidate.temporaryRevokedAt === null;
+  const policy = candidate?.passwordState === "configured"
+    && candidate.passwordHash !== null
+    && candidate.passwordVersion !== null
+    && (
+      candidate.passwordPolicyVersion < candidate.currentPasswordPolicyVersion
+      || (
+        candidate.passwordChangeEpoch !== null
+        && candidate.passwordChangeEpoch < candidate.currentPasswordChangeEpoch
+      )
+    );
   return candidate !== undefined &&
     candidate.status === "active" &&
-    candidate.passwordState === "temporary" &&
+    (reset || policy) &&
     candidate.totpState === "configured" &&
-    candidate.temporaryPurpose === "password_reset" &&
-    candidate.temporaryConsumedAt !== null &&
-    candidate.temporaryRevokedAt === null &&
     candidate.totpAuthenticatorId !== null &&
     candidate.totpEnvelopeJson !== null &&
     candidate.totpRootKeyId !== null &&
@@ -2206,6 +2258,7 @@ function requiredEnrollmentCandidate(
       u.security_epoch AS securityEpoch,
       sec.global_security_epoch AS globalSecurityEpoch,
       u.password_policy_version AS passwordPolicyVersion,
+      sec.password_policy_version AS currentPasswordPolicyVersion,
       a.password_state AS passwordState, a.totp_state AS totpState,
       tp.encoded_hash AS temporaryHash,
       tp.purpose AS temporaryPurpose,
@@ -2214,6 +2267,8 @@ function requiredEnrollmentCandidate(
       tp.revoked_at AS temporaryRevokedAt,
       tp.version AS temporaryVersion,
       pw.encoded_hash AS passwordHash, pw.version AS passwordVersion,
+      pw.password_change_epoch AS passwordChangeEpoch,
+      sec.password_change_epoch AS currentPasswordChangeEpoch,
       ta.id AS totpAuthenticatorId, ta.envelope_json AS totpEnvelopeJson,
       ta.root_key_id AS totpRootKeyId, ta.generation AS totpGeneration,
       a.version AS authenticatorVersion
@@ -2266,6 +2321,8 @@ function sameTotpRecoveryCandidate(
     current.totpState === "not_configured" &&
     current.passwordHash === candidate.passwordHash &&
     current.passwordVersion === candidate.passwordVersion &&
+    current.passwordChangeEpoch === candidate.passwordChangeEpoch &&
+    current.currentPasswordChangeEpoch === candidate.currentPasswordChangeEpoch &&
     current.authenticatorVersion === candidate.authenticatorVersion;
 }
 
@@ -2277,6 +2334,10 @@ function samePasswordChangeCandidate(
     current.securityEpoch === candidate.securityEpoch &&
     current.globalSecurityEpoch === candidate.globalSecurityEpoch &&
     current.passwordPolicyVersion === candidate.passwordPolicyVersion &&
+    current.currentPasswordPolicyVersion ===
+      candidate.currentPasswordPolicyVersion &&
+    current.passwordChangeEpoch === candidate.passwordChangeEpoch &&
+    current.currentPasswordChangeEpoch === candidate.currentPasswordChangeEpoch &&
     current.temporaryHash === candidate.temporaryHash &&
     current.temporaryVersion === candidate.temporaryVersion &&
     current.totpAuthenticatorId === candidate.totpAuthenticatorId &&
@@ -2293,6 +2354,10 @@ function sameConfiguredCandidate(
     current.securityEpoch === candidate.securityEpoch &&
     current.globalSecurityEpoch === candidate.globalSecurityEpoch &&
     current.passwordPolicyVersion === candidate.passwordPolicyVersion &&
+    current.currentPasswordPolicyVersion ===
+      candidate.currentPasswordPolicyVersion &&
+    current.passwordChangeEpoch === candidate.passwordChangeEpoch &&
+    current.currentPasswordChangeEpoch === candidate.currentPasswordChangeEpoch &&
     current.passwordHash === candidate.passwordHash &&
     current.passwordVersion === candidate.passwordVersion &&
     current.totpAuthenticatorId === candidate.totpAuthenticatorId &&
@@ -2496,7 +2561,8 @@ function requiredPending(
       p.root_key_id AS rootKeyId, p.generation, p.expires_at AS expiresAt,
       u.email, u.given_name AS givenName, u.family_name AS familyName,
       u.status, p.password_policy_version AS passwordPolicyVersion,
-      u.password_policy_version AS currentPasswordPolicyVersion,
+      sec.password_policy_version AS currentPasswordPolicyVersion,
+      sec.password_change_epoch AS currentPasswordChangeEpoch,
       u.security_epoch AS securityEpoch,
       sec.global_security_epoch AS globalSecurityEpoch
     FROM identity_pending_totp p

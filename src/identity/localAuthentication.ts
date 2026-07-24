@@ -11,6 +11,8 @@ import type { IdentityAuditContext } from "./repository.js";
 import {
   hashPassword,
   isSupportedPasswordHash,
+  PasswordPolicy,
+  PasswordPolicyError,
   verifyPasswordHash,
 } from "./password.js";
 import {
@@ -26,6 +28,8 @@ const SESSION_VALUE_BYTES = 32;
 const HASH_PATTERN = /^[a-f0-9]{64}$/;
 const SESSION_DOMAIN = "secretsauce.browser-session.v1";
 const CSRF_DOMAIN = "secretsauce.browser-csrf.v1";
+const RESTRICTED_SESSION_DOMAIN = "secretsauce.restricted-session.v1";
+const RESTRICTED_CSRF_DOMAIN = "secretsauce.restricted-csrf.v1";
 const ACCOUNT_DOMAIN = "secretsauce.login-account.v1";
 
 export class LocalAuthenticationError extends Error {
@@ -49,6 +53,13 @@ export interface LoginCandidate {
   totpState: string;
   encodedHash: string | null;
   passwordVersion: number | null;
+  credentialPolicyVersion: number | null;
+  credentialPasswordChangeEpoch: number | null;
+  currentPasswordPolicyVersion: number;
+  currentPasswordChangeEpoch: number;
+  email: string;
+  givenName: string;
+  familyName: string;
   totpAuthenticatorId: string | null;
   totpEnvelopeJson: string | null;
   totpGeneration: number | null;
@@ -60,6 +71,8 @@ type EligibleLoginCandidate = LoginCandidate & {
   totpAuthenticatorId: string;
   totpEnvelopeJson: string;
   totpGeneration: number;
+  credentialPolicyVersion: number;
+  credentialPasswordChangeEpoch: number;
 };
 
 export interface BrowserSessionMaterial {
@@ -74,6 +87,16 @@ export interface BrowserSessionMaterial {
   issuedAt: number;
 }
 
+interface PolicyRestrictedSessionMaterial {
+  id: string;
+  sessionHash: string;
+  csrfHash: string;
+  securityEpoch: number;
+  globalSecurityEpoch: number;
+  issuedAt: number;
+  expiresAt: number;
+}
+
 export interface LoginResult {
   sessionId: string;
   userId: string;
@@ -82,6 +105,7 @@ export interface LoginResult {
   csrfToken: string;
   issuedAt: number;
   absoluteExpiresAt: number;
+  purpose?: "password_change";
 }
 
 export interface LocalMcpAuthenticationProof {
@@ -126,21 +150,39 @@ export class LocalAuthenticationRepository {
     try {
       await this.#owner.execute({
         run: (database) => database.withGeneratedAdministrativeAudit((transaction) => {
-          const user = transaction.get<{ id: string; password_policy_version: number }>(
-            "SELECT id, password_policy_version FROM users WHERE id = ?",
+          const user = transaction.get<{
+            id: string;
+            password_policy_version: number;
+            password_change_epoch: number;
+          }>(`
+            SELECT u.id, s.password_policy_version,
+              s.password_change_epoch
+            FROM users u
+            JOIN identity_security_state s ON s.singleton = 1
+            WHERE u.id = ?
+          `,
             [input.userId],
           );
           if (user === undefined) throw new PersistenceError("identity_not_found");
           transaction.run(`
             INSERT INTO local_password_credentials (
-              user_id, encoded_hash, policy_version, version, created_at, updated_at
-            ) VALUES (?, ?, ?, 1, ?, ?)
+              user_id, encoded_hash, policy_version, password_change_epoch,
+              version, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, 1, ?, ?)
             ON CONFLICT(user_id) DO UPDATE SET
               encoded_hash = excluded.encoded_hash,
               policy_version = excluded.policy_version,
+              password_change_epoch = excluded.password_change_epoch,
               version = local_password_credentials.version + 1,
               updated_at = excluded.updated_at
-          `, [input.userId, input.encodedHash, user.password_policy_version, now, now]);
+          `, [
+            input.userId,
+            input.encodedHash,
+            user.password_policy_version,
+            user.password_change_epoch,
+            now,
+            now,
+          ]);
           transaction.run(`
             INSERT INTO local_totp_authenticators (
               id, user_id, envelope_json, root_key_id, generation,
@@ -196,6 +238,12 @@ export class LocalAuthenticationRepository {
           a.totp_state AS totpState,
           p.encoded_hash AS encodedHash,
           p.version AS passwordVersion,
+          p.policy_version AS credentialPolicyVersion,
+          p.password_change_epoch AS credentialPasswordChangeEpoch,
+          s.password_policy_version AS currentPasswordPolicyVersion,
+          s.password_change_epoch AS currentPasswordChangeEpoch,
+          u.email AS email, u.given_name AS givenName,
+          u.family_name AS familyName,
           t.id AS totpAuthenticatorId,
           t.envelope_json AS totpEnvelopeJson,
           t.generation AS totpGeneration
@@ -223,6 +271,12 @@ export class LocalAuthenticationRepository {
           a.totp_state AS totpState,
           p.encoded_hash AS encodedHash,
           p.version AS passwordVersion,
+          p.policy_version AS credentialPolicyVersion,
+          p.password_change_epoch AS credentialPasswordChangeEpoch,
+          s.password_policy_version AS currentPasswordPolicyVersion,
+          s.password_change_epoch AS currentPasswordChangeEpoch,
+          u.email AS email, u.given_name AS givenName,
+          u.family_name AS familyName,
           t.id AS totpAuthenticatorId,
           t.envelope_json AS totpEnvelopeJson,
           t.generation AS totpGeneration
@@ -243,11 +297,15 @@ export class LocalAuthenticationRepository {
     acceptedStep: number;
     session: BrowserSessionMaterial;
     correlationId: string;
+    advancePolicy: boolean;
   }): Promise<void> {
     try {
       await this.#owner.execute({
         run: (database) => database.withGeneratedAdministrativeAudit((transaction) => {
           requireCurrentEligibleCandidate(transaction, input);
+          if (input.advancePolicy) {
+            advancePasswordPolicy(transaction, input.candidate, input.session.issuedAt);
+          }
           if (transaction.get<{ present: number }>(
             "SELECT 1 AS present FROM accepted_totp_steps WHERE user_id = ? AND time_step = ?",
             [input.candidate.userId, input.acceptedStep],
@@ -322,6 +380,90 @@ export class LocalAuthenticationRepository {
     }
   }
 
+  async commitPolicyRestrictedLogin(input: {
+    candidate: EligibleLoginCandidate;
+    encodedHash: string;
+    envelopeJson: string;
+    acceptedStep: number;
+    session: PolicyRestrictedSessionMaterial;
+    correlationId: string;
+  }): Promise<void> {
+    try {
+      await this.#owner.execute({
+        run: (database) => database.withGeneratedAdministrativeAudit((transaction) => {
+          requireCurrentEligibleCandidate(transaction, input);
+          if (transaction.get<{ present: number }>(
+            "SELECT 1 AS present FROM accepted_totp_steps WHERE user_id = ? AND time_step = ?",
+            [input.candidate.userId, input.acceptedStep],
+          ) !== undefined) throw new PersistenceError("totp_replayed");
+          transaction.run(`
+            INSERT INTO accepted_totp_steps (user_id, time_step, purpose, accepted_at)
+            VALUES (?, ?, 'login', ?)
+          `, [input.candidate.userId, input.acceptedStep, input.session.issuedAt]);
+          transaction.run(`
+            UPDATE identity_restricted_sessions
+            SET revoked_at = ?, version = version + 1
+            WHERE user_id = ? AND revoked_at IS NULL
+          `, [input.session.issuedAt, input.candidate.userId]);
+          transaction.run(`
+            INSERT INTO identity_restricted_sessions (
+              id, user_id, purpose, session_hash, csrf_hash,
+              issued_security_epoch, issued_global_epoch,
+              issued_at, expires_at, revoked_at, version
+            ) VALUES (?, ?, 'password_change', ?, ?, ?, ?, ?, ?, NULL, 1)
+          `, [
+            input.session.id,
+            input.candidate.userId,
+            input.session.sessionHash,
+            input.session.csrfHash,
+            input.session.securityEpoch,
+            input.session.globalSecurityEpoch,
+            input.session.issuedAt,
+            input.session.expiresAt,
+          ]);
+          transaction.run(`
+            UPDATE users
+            SET last_authenticated_at = ?, updated_at = ?
+            WHERE id = ?
+          `, [
+            input.session.issuedAt,
+            input.session.issuedAt,
+            input.candidate.userId,
+          ]);
+          return {
+            value: undefined,
+            auditInput: {
+              actor: {
+                type: "browser_session",
+                id: input.candidate.userId,
+                label: `user:${input.candidate.userId}`,
+                role: input.candidate.role,
+                authenticationMethod: "local_password_totp",
+              },
+              action: "identity.login",
+              result: "allow",
+              target: {
+                type: "user",
+                id: input.candidate.userId,
+                label: `user:${input.candidate.userId}`,
+              },
+              changes: [
+                { field: "restricted_session", after: "password_change" },
+              ],
+              correlationId: input.correlationId,
+              source: { category: "authentication" },
+            } satisfies AdministrativeAuditEventInput,
+          };
+        }),
+      });
+    } catch (error) {
+      if (error instanceof PersistenceError && error.code === "totp_replayed") {
+        throw new LocalAuthenticationError("authentication_failed");
+      }
+      throw new LocalAuthenticationError("authentication_unavailable");
+    }
+  }
+
   async recordDenied(correlationId: string, failureCode: "invalid" | "limited" | "unavailable"): Promise<void> {
     await this.#owner.execute({
       run: (database) => {
@@ -372,6 +514,8 @@ export class LocalAuthenticationService {
   readonly #passwordInflight: InflightLimiter;
   readonly #totpInflight: InflightLimiter;
   readonly #securitySettings: (() => SecuritySettings) | undefined;
+  #passwordPolicy: PasswordPolicy | undefined;
+  #passwordPolicyKey = "";
 
   private constructor(options: LocalAuthenticationServiceOptions & {
     dummyPasswordHash: string;
@@ -451,10 +595,49 @@ export class LocalAuthenticationService {
       encodedHash,
       acceptedStep,
       parsed,
+      passwordPolicy,
     } = verified;
     const issuedAt = safeTimestamp(this.#now);
     const sessionToken = opaqueValue(this.#random);
     const csrfToken = opaqueValue(this.#random);
+    if (passwordPolicy === "change_required") {
+      const expiresAt = issuedAt + this.#config.restrictedSessionTtlMs;
+      const session: PolicyRestrictedSessionMaterial = {
+        id: this.nextUuid(),
+        sessionHash: keyedHash(
+          this.#sessionHmacKey,
+          RESTRICTED_SESSION_DOMAIN,
+          sessionToken,
+        ),
+        csrfHash: keyedHash(
+          this.#sessionHmacKey,
+          RESTRICTED_CSRF_DOMAIN,
+          csrfToken,
+        ),
+        securityEpoch: candidate.securityEpoch,
+        globalSecurityEpoch: candidate.globalSecurityEpoch,
+        issuedAt,
+        expiresAt,
+      };
+      await this.#repository.commitPolicyRestrictedLogin({
+        candidate,
+        encodedHash,
+        envelopeJson: candidate.totpEnvelopeJson,
+        acceptedStep,
+        session,
+        correlationId: parsed.correlationId,
+      });
+      return {
+        sessionId: session.id,
+        userId: candidate.userId,
+        role: candidate.role,
+        sessionToken,
+        csrfToken,
+        issuedAt,
+        absoluteExpiresAt: expiresAt,
+        purpose: "password_change",
+      };
+    }
     const roleClass = candidate.role === "user" ? "user" : "admin";
     const securitySettings = this.#securitySettings?.();
     const absoluteMs = roleClass === "admin"
@@ -485,6 +668,7 @@ export class LocalAuthenticationService {
       acceptedStep,
       session,
       correlationId: parsed.correlationId,
+      advancePolicy: passwordPolicy === "advance",
     });
     return {
       sessionId: session.id,
@@ -499,6 +683,10 @@ export class LocalAuthenticationService {
 
   async verifyMcpProof(input: unknown): Promise<LocalMcpAuthenticationProof> {
     const verified = await this.verifyLocalProof(input);
+    if (verified.passwordPolicy !== "current") {
+      await this.deny(verified.parsed.correlationId, "invalid");
+      throw new LocalAuthenticationError("authentication_failed");
+    }
     return {
       userId: verified.candidate.userId,
       role: verified.candidate.role,
@@ -515,6 +703,7 @@ export class LocalAuthenticationService {
     encodedHash: string;
     acceptedStep: number;
     parsed: ParsedLogin;
+    passwordPolicy: "current" | "advance" | "change_required";
   }> {
     let parsed: ParsedLogin;
     try {
@@ -598,12 +787,67 @@ export class LocalAuthenticationService {
       await this.deny(parsed.correlationId, "invalid");
       throw new LocalAuthenticationError("authentication_failed");
     }
+    const passwordPolicy = this.passwordPolicyStatus(
+      eligibleCandidate,
+      parsed.password,
+    );
     return {
       candidate: eligibleCandidate,
       encodedHash,
       acceptedStep,
       parsed,
+      passwordPolicy,
     };
+  }
+
+  private passwordPolicyStatus(
+    candidate: EligibleLoginCandidate,
+    suppliedPassword: string,
+  ): "current" | "advance" | "change_required" {
+    if (
+      candidate.credentialPasswordChangeEpoch
+        < candidate.currentPasswordChangeEpoch
+    ) return "change_required";
+    if (
+      candidate.credentialPolicyVersion === candidate.currentPasswordPolicyVersion
+    ) return "current";
+    if (
+      candidate.credentialPolicyVersion > candidate.currentPasswordPolicyVersion
+      || candidate.credentialPasswordChangeEpoch
+        > candidate.currentPasswordChangeEpoch
+    ) throw new LocalAuthenticationError("authentication_unavailable");
+    let normalized: Buffer | undefined;
+    try {
+      const settings = this.#securitySettings?.();
+      const minimumLength = settings?.passwordMinimumLength
+        ?? this.#config.password.minimumLength;
+      const blocklistVersion = settings?.passwordBlocklistVersion ?? 1;
+      const key = `${minimumLength}:${blocklistVersion}`;
+      if (this.#passwordPolicy === undefined || key !== this.#passwordPolicyKey) {
+        this.#passwordPolicy = new PasswordPolicy({
+          minimumLength,
+          ...(this.#config.password.compromisedBlocklistFile === undefined
+            ? {}
+            : {
+                operatorBlocklistFile:
+                  this.#config.password.compromisedBlocklistFile,
+              }),
+        });
+        this.#passwordPolicyKey = key;
+      }
+      normalized = this.#passwordPolicy.validate(suppliedPassword, {
+        email: candidate.email,
+        givenName: candidate.givenName,
+        familyName: candidate.familyName,
+        productName: "SecretSauce",
+      });
+      return "advance";
+    } catch (error) {
+      if (error instanceof PasswordPolicyError) return "change_required";
+      throw error;
+    } finally {
+      normalized?.fill(0);
+    }
   }
 
   close(): void {
@@ -674,6 +918,8 @@ function isEligible(candidate: LoginCandidate | undefined): candidate is Eligibl
     candidate.totpState === "configured" &&
     candidate.encodedHash !== null &&
     candidate.passwordVersion !== null &&
+    candidate.credentialPolicyVersion !== null &&
+    candidate.credentialPasswordChangeEpoch !== null &&
     candidate.totpAuthenticatorId !== null &&
     candidate.totpEnvelopeJson !== null &&
     candidate.totpGeneration !== null;
@@ -695,14 +941,22 @@ function requireCurrentEligibleCandidate(
     totp_state: string;
     encoded_hash: string;
     password_version: number;
+    credential_policy_version: number;
+    credential_password_change_epoch: number;
+    current_password_policy_version: number;
+    current_password_change_epoch: number;
     envelope_json: string;
     totp_generation: number;
   }>(`
     SELECT
       u.status, u.security_epoch,
       s.global_security_epoch,
+      s.password_policy_version AS current_password_policy_version,
+      s.password_change_epoch AS current_password_change_epoch,
       a.password_state, a.totp_state,
       p.encoded_hash, p.version AS password_version,
+      p.policy_version AS credential_policy_version,
+      p.password_change_epoch AS credential_password_change_epoch,
       t.envelope_json, t.generation AS totp_generation
     FROM users u
     JOIN identity_security_state s ON s.singleton = 1
@@ -719,10 +973,53 @@ function requireCurrentEligibleCandidate(
     row.security_epoch !== input.candidate.securityEpoch ||
     row.global_security_epoch !== input.candidate.globalSecurityEpoch ||
     row.password_version !== input.candidate.passwordVersion ||
+    row.credential_policy_version !==
+      input.candidate.credentialPolicyVersion ||
+    row.credential_password_change_epoch !==
+      input.candidate.credentialPasswordChangeEpoch ||
+    row.current_password_policy_version !==
+      input.candidate.currentPasswordPolicyVersion ||
+    row.current_password_change_epoch !==
+      input.candidate.currentPasswordChangeEpoch ||
     row.totp_generation !== input.candidate.totpGeneration ||
     row.encoded_hash !== input.encodedHash ||
     row.envelope_json !== input.envelopeJson
   ) throw new PersistenceError("authentication_failed");
+}
+
+function advancePasswordPolicy(
+  transaction: PersistenceTransaction,
+  candidate: LoginCandidate,
+  now: number,
+): void {
+  const credential = transaction.run(`
+    UPDATE local_password_credentials
+    SET policy_version = ?, password_change_epoch = ?,
+        version = version + 1, updated_at = ?
+    WHERE user_id = ? AND version = ? AND policy_version = ?
+      AND password_change_epoch = ?
+  `, [
+    candidate.currentPasswordPolicyVersion,
+    candidate.currentPasswordChangeEpoch,
+    now,
+    candidate.userId,
+    candidate.passwordVersion,
+    candidate.credentialPolicyVersion,
+    candidate.credentialPasswordChangeEpoch,
+  ]);
+  const user = transaction.run(`
+    UPDATE users
+    SET password_policy_version = ?, version = version + 1, updated_at = ?
+    WHERE id = ? AND password_policy_version = ?
+  `, [
+    candidate.currentPasswordPolicyVersion,
+    now,
+    candidate.userId,
+    candidate.credentialPolicyVersion,
+  ]);
+  if (credential.changes !== 1 || user.changes !== 1) {
+    throw new PersistenceError("authentication_failed");
+  }
 }
 
 function successfulAudit(

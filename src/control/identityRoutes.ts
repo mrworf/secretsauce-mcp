@@ -67,6 +67,7 @@ const sessionDataSchema = z.object({
   role: roleSchema,
   csrf_token: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
   expires_at: z.number().int().nonnegative(),
+  purpose: z.literal("password_change").optional(),
 }).strict();
 
 export function registerLocalIdentityRoutes(
@@ -123,17 +124,23 @@ export function registerLocalIdentityRoutes(
           source: request.ip,
           correlationId: request.id,
         });
-        setControlSessionCookie(
-          reply,
-          result.sessionToken,
-          Math.max(1, Math.floor((result.absoluteExpiresAt - result.issuedAt) / 1_000)),
+        const maxAge = Math.max(
+          1,
+          Math.floor((result.absoluteExpiresAt - result.issuedAt) / 1_000),
         );
+        if (result.purpose === "password_change") {
+          setControlEnrollmentCookie(reply, result.sessionToken, maxAge);
+          clearControlSessionCookie(reply);
+        } else {
+          setControlSessionCookie(reply, result.sessionToken, maxAge);
+        }
         return {
           data: {
             user_id: result.userId,
             role: result.role,
             csrf_token: result.csrfToken,
             expires_at: result.absoluteExpiresAt,
+            ...(result.purpose === undefined ? {} : { purpose: result.purpose }),
           },
         };
       } catch (error) {

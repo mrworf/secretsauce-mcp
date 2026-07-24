@@ -16,6 +16,7 @@ import {
 } from "../src/identity/totp.js";
 import { IdentityRepository, type IdentityAuditContext } from "../src/identity/repository.js";
 import type { IdentityConfig } from "../src/types.js";
+import type { SecuritySettings } from "../src/securitySettings.js";
 import { PersistenceWorker } from "../src/persistence/worker.js";
 
 const NOW = 1_785_000_000_000;
@@ -327,11 +328,98 @@ describe("atomic local authentication", () => {
     }
     fixture.seed.fill(0);
   });
+
+  it("advances a compliant old policy only after successful password and TOTP verification", async () => {
+    const config = identityConfig();
+    const settings = securitySettings(config, {
+      passwordMinimumLength: 20,
+      passwordPolicyVersion: 2,
+    });
+    const fixture = await configuredIdentity(
+      "policy-advance",
+      config,
+      () => settings,
+    );
+    await setGlobalPasswordState(fixture.worker, 2, 1);
+    const result = await fixture.service.login(loginInput(
+      fixture.email,
+      fixture.password,
+      totpCode(fixture.seed, NOW),
+    ));
+    expect(result.purpose).toBeUndefined();
+    expect(await fixture.worker.execute({
+      run: (database) => database.read((query) => query.get<{
+        credential: number;
+        user: number;
+      }>(`
+        SELECT
+          (SELECT policy_version FROM local_password_credentials
+            WHERE user_id = ?) AS credential,
+          (SELECT password_policy_version FROM users
+            WHERE id = ?) AS user
+      `, [fixture.userId, fixture.userId])),
+    })).toEqual({ credential: 2, user: 2 });
+    fixture.seed.fill(0);
+  });
+
+  it("routes noncompliant and global-epoch credentials to password change and denies MCP proof", async () => {
+    const config = identityConfig();
+    const settings = securitySettings(config, {
+      passwordMinimumLength: 40,
+      passwordPolicyVersion: 2,
+    });
+    const fixture = await configuredIdentity(
+      "policy-change",
+      config,
+      () => settings,
+    );
+    await setGlobalPasswordState(fixture.worker, 2, 1);
+    const result = await fixture.service.login(loginInput(
+      fixture.email,
+      fixture.password,
+      totpCode(fixture.seed, NOW),
+    ));
+    expect(result).toMatchObject({ purpose: "password_change" });
+    expect(await fixture.worker.execute({
+      run: (database) => database.read((query) => query.get<{
+        browser: number;
+        restricted: number;
+        policy: number;
+      }>(`
+        SELECT
+          (SELECT count(*) FROM browser_sessions) AS browser,
+          (SELECT count(*) FROM identity_restricted_sessions
+            WHERE purpose = 'password_change' AND revoked_at IS NULL) AS restricted,
+          (SELECT policy_version FROM local_password_credentials
+            WHERE user_id = ?) AS policy
+      `, [fixture.userId])),
+    })).toEqual({ browser: 0, restricted: 1, policy: 1 });
+    fixture.seed.fill(0);
+
+    const epochFixture = await configuredIdentity(
+      "epoch-change",
+      config,
+      () => settings,
+    );
+    await setGlobalPasswordState(epochFixture.worker, 1, 2);
+    await expect(epochFixture.service.verifyMcpProof(loginInput(
+      epochFixture.email,
+      epochFixture.password,
+      totpCode(epochFixture.seed, NOW),
+    ))).rejects.toEqual(new LocalAuthenticationError("authentication_failed"));
+    expect(await epochFixture.worker.execute({
+      run: (database) => database.read((query) => query.get<{ steps: number }>(
+        "SELECT count(*) AS steps FROM accepted_totp_steps",
+      )?.steps ?? -1),
+    })).toBe(0);
+    epochFixture.seed.fill(0);
+  });
 });
 
 async function configuredIdentity(
   name: string,
   config: IdentityConfig = identityConfig(),
+  securitySettingsProvider?: () => SecuritySettings,
 ): Promise<{
   databaseFile: string;
   worker: PersistenceWorker;
@@ -380,6 +468,9 @@ async function configuredIdentity(
     keyRing,
     sessionHmacKey: sessionKey,
     now: () => NOW,
+    ...(securitySettingsProvider === undefined
+      ? {}
+      : { securitySettings: securitySettingsProvider }),
   });
   services.add(service);
   return {
@@ -426,6 +517,63 @@ function identityConfig(): IdentityConfig {
       maxTotpVerificationsPerSource: 2,
     },
   };
+}
+
+function securitySettings(
+  config: IdentityConfig,
+  overrides: Partial<SecuritySettings> = {},
+): SecuritySettings {
+  return {
+    passwordMinimumLength: config.password.minimumLength,
+    passwordBlocklistVersion: 1,
+    passwordPolicyVersion: 1,
+    adminSessionAbsoluteMs: config.sessions.adminAbsoluteMs,
+    adminSessionInactivityMs: config.sessions.adminInactivityMs,
+    userSessionAbsoluteMs: config.sessions.userAbsoluteMs,
+    userSessionInactivityMs: config.sessions.userInactivityMs,
+    oauthAccessTokenMs: 300_000,
+    oauthRefreshInactivityMs: 30 * 86_400_000,
+    oauthRefreshAbsoluteMs: 90 * 86_400_000,
+    stepUpMode: config.stepUpMode,
+    loginAttempts: config.limits.loginAttempts,
+    loginWindowMs: config.limits.loginWindowMs,
+    passwordAttempts: config.limits.passwordAttempts,
+    passwordWindowMs: config.limits.passwordWindowMs,
+    totpAttempts: config.limits.totpAttempts,
+    totpWindowMs: config.limits.totpWindowMs,
+    managementApiAttempts: 120,
+    managementApiWindowMs: 60_000,
+    searchAttempts: 30,
+    searchWindowMs: 60_000,
+    backupAttempts: 2,
+    backupWindowMs: 3_600_000,
+    inactivitySuspensionDays: null,
+    suspendedDeactivationDays: null,
+    securityJobIntervalMs: 300_000,
+    securityJobBatchSize: 500,
+    securityJobWallTimeMs: 30_000,
+    version: 1,
+    createdAt: NOW,
+    updatedAt: NOW,
+    ...overrides,
+  };
+}
+
+async function setGlobalPasswordState(
+  worker: PersistenceWorker,
+  policyVersion: number,
+  passwordChangeEpoch: number,
+): Promise<void> {
+  await worker.execute({
+    run: (database) => database.withOperationalTransaction((transaction) => {
+      transaction.run(`
+        UPDATE identity_security_state
+        SET password_policy_version = ?, password_change_epoch = ?,
+            version = version + 1, updated_at = ?
+        WHERE singleton = 1
+      `, [policyVersion, passwordChangeEpoch, NOW]);
+    }),
+  });
 }
 
 function loginInput(

@@ -13,6 +13,29 @@ export interface SubstitutionResult<T> {
   responseSecretRecords: ResponseSecretTokenRecord[];
 }
 
+export function assertRequestReferencePlacement(
+  headers: Record<string, string>,
+  query: Record<string, unknown>,
+  body: unknown,
+): void {
+  assertValueReferencePlacement(headers);
+  assertValueReferencePlacement(query);
+  const decoded = decodeDeclaredBase64Body(headers, body, "request");
+  if (decoded !== undefined) {
+    if (isJsonLikeText(headers, decoded)) {
+      assertJsonTextReferencePlacement(decoded);
+    } else {
+      assertValueReferencePlacement(decoded);
+    }
+    return;
+  }
+  if (typeof body === "string" && isJsonLikeText(headers, body)) {
+    assertJsonTextReferencePlacement(body);
+    return;
+  }
+  assertValueReferencePlacement(body);
+}
+
 export function substituteTokens<T>(
   value: T,
   broker: TokenBroker,
@@ -95,6 +118,46 @@ function substituteJsonTextTokens(
     value = value.slice(0, range.start) + range.replacement + value.slice(range.end);
   }
   return { value, records, responseSecretRecords };
+}
+
+function assertJsonTextReferencePlacement(text: string): void {
+  const allowed = new Set<string>();
+  for (const stringRange of findCompleteJsonStringRanges(text)) {
+    if (stringRange.isPropertyName) continue;
+    const raw = text.slice(stringRange.start, stringRange.end);
+    for (const match of raw.matchAll(tokenPattern)) {
+      const start = stringRange.start + match.index;
+      allowed.add(`${start}:${start + match[0].length}`);
+    }
+  }
+  for (const match of text.matchAll(tokenPattern)) {
+    const start = match.index;
+    if (!allowed.has(`${start}:${start + match[0].length}`)) {
+      throw new GatewayError(
+        "reference_invalid",
+        "Opaque references in JSON must be string values, not property names or syntax.",
+      );
+    }
+  }
+}
+
+function assertValueReferencePlacement(value: unknown): void {
+  if (Array.isArray(value)) {
+    for (const item of value) assertValueReferencePlacement(item);
+    return;
+  }
+  if (!value || typeof value !== "object") return;
+  for (const [key, item] of Object.entries(value)) {
+    if (tokenPattern.test(key)) {
+      tokenPattern.lastIndex = 0;
+      throw new GatewayError(
+        "reference_invalid",
+        "Opaque references cannot be used as property names.",
+      );
+    }
+    tokenPattern.lastIndex = 0;
+    assertValueReferencePlacement(item);
+  }
 }
 
 function redeemToken(

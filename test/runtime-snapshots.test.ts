@@ -43,6 +43,11 @@ describe("persisted runtime snapshot activation", () => {
   it("activates every published service atomically and only once", async () => {
     const fixture = await runtimeFixture("activate");
     const published = await fixture.publish("runtime-api");
+    const authority = new PersistedRuntimeAuthority(fixture.worker);
+    await expect(authority.readiness()).resolves.toEqual({
+      activation: "inactive",
+      serviceCount: 0,
+    });
     const before = await runtimeRows(fixture.worker, published.id);
     expect(before).toMatchObject({
       snapshotCount: 1,
@@ -67,6 +72,10 @@ describe("persisted runtime snapshot activation", () => {
       globalReferenceEpoch: 1,
       version: 2,
       activatedAt: NOW,
+    });
+    await expect(authority.readiness()).resolves.toEqual({
+      activation: "ready",
+      serviceCount: 1,
     });
 
     const active = await runtimeRows(fixture.worker, published.id);
@@ -120,6 +129,17 @@ describe("persisted runtime snapshot activation", () => {
       snapshots: 0,
       activeServices: 0,
       activationAudits: 0,
+    });
+  });
+
+  it("reports unavailable readiness without exposing persistence failures", async () => {
+    const authority = new PersistedRuntimeAuthority({
+      execute: () => Promise.reject(new Error("sensitive database failure")),
+    } as unknown as PersistenceWorker);
+
+    await expect(authority.readiness()).resolves.toEqual({
+      activation: "unavailable",
+      serviceCount: 0,
     });
   });
 
@@ -429,6 +449,38 @@ describe("persisted runtime discovery", () => {
       { service: "stale-api", destination: "primary" },
       issued.tokens[0]!.token,
     );
+    const grant = await authority.authorizeReferences(auth, input);
+    const responseReference = broker.withRuntimeSecrets(
+      auth,
+      "stale-api",
+      new Map(),
+      () => broker.issueOrReuseResponseSecret(
+        auth,
+        "stale-api",
+        "downstream-returned-secret",
+      ),
+      {
+        serviceId: grant.serviceId,
+        destination: grant.destination,
+        destinationId: grant.destinationId,
+        snapshotId: grant.snapshotId,
+        publicationGeneration: grant.publicationGeneration,
+        serviceAuthorizationGeneration: grant.serviceAuthorizationGeneration,
+        subjectSecurityEpoch: grant.subjectSecurityEpoch,
+        globalReferenceEpoch: grant.globalReferenceEpoch,
+      },
+    );
+    const responseRecord = broker.preflightResponseSecretUse(
+      auth,
+      "stale-api",
+      responseReference.token,
+    );
+    await expect(authority.validateReferences(
+      auth,
+      "stale-api",
+      "primary",
+      [responseRecord],
+    )).resolves.toBeDefined();
 
     published = await fixture.service.updateProfile(
       fixture.superadmin,
@@ -449,6 +501,12 @@ describe("persisted runtime discovery", () => {
       "stale-api",
       "primary",
       [record],
+    )).rejects.toMatchObject({ code: "reference_invalid" });
+    await expect(authority.validateReferences(
+      auth,
+      "stale-api",
+      "primary",
+      [responseRecord],
     )).rejects.toMatchObject({ code: "reference_invalid" });
   });
 

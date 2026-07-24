@@ -59,6 +59,14 @@ export interface ResponseSecretTokenRecord {
   tokenHash: string;
   subject: string;
   service: string;
+  serviceId?: string;
+  destination?: string;
+  destinationId?: string;
+  snapshotId?: string;
+  publicationGeneration?: number;
+  serviceAuthorizationGeneration?: number;
+  subjectSecurityEpoch?: number;
+  globalReferenceEpoch?: number;
   secret: string;
   issuedAt: number;
   lastUsedAt: number;
@@ -77,6 +85,17 @@ export interface ConfiguredTokenMatch {
   record: TokenRecord;
 }
 
+export interface RuntimeReferenceBindings {
+  serviceId: string;
+  destination: string;
+  destinationId: string;
+  snapshotId: string;
+  publicationGeneration: number;
+  serviceAuthorizationGeneration: number;
+  subjectSecurityEpoch: number;
+  globalReferenceEpoch: number;
+}
+
 export type TokenInspectionReason = "unknown" | "expired" | "wrong_subject" | "wrong_service";
 export type TokenInspection = { valid: true } | { valid: false; reason: TokenInspectionReason };
 
@@ -91,6 +110,7 @@ export class TokenBroker {
     subject: string;
     service: string;
     secrets: ReadonlyMap<string, string>;
+    bindings?: RuntimeReferenceBindings;
   }>();
 
   constructor(
@@ -284,12 +304,21 @@ export class TokenBroker {
   issueOrReuseResponseSecret(auth: AuthContext, service: string, secret: string): ResponseSecretIssueResult {
     this.sweepExpired();
     if (!secret) throw new GatewayError("reference_invalid", "Response secret must not be empty.");
+    const runtime = this.runtimeSecrets.getStore();
+    const bindings = runtime?.subject === auth.subject && runtime.service === service
+      ? runtime.bindings
+      : undefined;
     const index = this.responseSecretIndex(auth.subject, service, secret);
     const existingId = this.responseSecretIdsByIndex.get(index);
     if (existingId !== undefined) {
       const existing = this.responseSecretsById.get(existingId);
       const token = this.tokenValuesById.get(existingId);
-      if (existing && token && !this.isExpired(existing)) {
+      if (
+        existing
+        && token
+        && !this.isExpired(existing)
+        && responseBindingsMatch(existing, bindings)
+      ) {
         this.refresh(existing);
         return { token, record: existing, reused: true };
       }
@@ -304,6 +333,7 @@ export class TokenBroker {
       tokenHash: hashToken(token),
       subject: auth.subject,
       service,
+      ...(bindings ?? {}),
       secret,
       issuedAt: now,
       lastUsedAt: now,
@@ -318,6 +348,16 @@ export class TokenBroker {
   }
 
   validateResponseSecretUse(auth: AuthContext, service: string, tokenValue: string): ResponseSecretTokenRecord {
+    const record = this.preflightResponseSecretUse(auth, service, tokenValue);
+    this.refresh(record);
+    return record;
+  }
+
+  preflightResponseSecretUse(
+    auth: AuthContext,
+    service: string,
+    tokenValue: string,
+  ): ResponseSecretTokenRecord {
     const record = this.responseSecretsByHash.get(hashToken(tokenValue));
     if (!record) throw new GatewayError("reference_invalid", "Unknown response secret reference.");
     if (this.isExpired(record)) {
@@ -326,8 +366,15 @@ export class TokenBroker {
     }
     if (record.subject !== auth.subject) throw new GatewayError("reference_invalid", "Response secret reference is not bound to this subject.");
     if (record.service !== service) throw new GatewayError("reference_invalid", "Response secret reference is not bound to this service.");
-    this.refresh(record);
     return record;
+  }
+
+  consumePreflightedResponseSecret(record: ResponseSecretTokenRecord): void {
+    const current = this.responseSecretsByHash.get(record.tokenHash);
+    if (current !== record || this.isExpired(record)) {
+      throw new GatewayError("reference_expired", "Response secret reference has expired.");
+    }
+    this.refresh(record);
   }
 
   findConfiguredTokenForSecret(auth: AuthContext, service: string, secret: string): ConfiguredTokenMatch | undefined {
@@ -361,11 +408,13 @@ export class TokenBroker {
     service: string,
     secrets: ReadonlyMap<string, string>,
     callback: () => T | Promise<T>,
+    bindings?: RuntimeReferenceBindings,
   ): T | Promise<T> {
     return this.runtimeSecrets.run({
       subject: auth.subject,
       service,
       secrets,
+      ...(bindings === undefined ? {} : { bindings }),
     }, callback);
   }
 
@@ -548,4 +597,20 @@ function generateResponseSecretTokenValue(): string {
 
 function hashToken(token: string): string {
   return createHash("sha256").update(token).digest("base64url");
+}
+
+function responseBindingsMatch(
+  record: ResponseSecretTokenRecord,
+  bindings: RuntimeReferenceBindings | undefined,
+): boolean {
+  if (bindings === undefined) return record.serviceId === undefined;
+  return record.serviceId === bindings.serviceId
+    && record.destination === bindings.destination
+    && record.destinationId === bindings.destinationId
+    && record.snapshotId === bindings.snapshotId
+    && record.publicationGeneration === bindings.publicationGeneration
+    && record.serviceAuthorizationGeneration
+      === bindings.serviceAuthorizationGeneration
+    && record.subjectSecurityEpoch === bindings.subjectSecurityEpoch
+    && record.globalReferenceEpoch === bindings.globalReferenceEpoch;
 }

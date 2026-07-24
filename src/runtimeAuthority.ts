@@ -14,7 +14,7 @@ import type {
 } from "./runtimeSnapshots.js";
 import type { AuthContext, CredentialUsageConfig } from "./types.js";
 import type { TokenRequestInput } from "./tokens.js";
-import type { TokenRecord } from "./tokens.js";
+import type { ResponseSecretTokenRecord, TokenRecord } from "./tokens.js";
 
 const MAX_ACTIVE_SERVICES = 1_000;
 
@@ -70,7 +70,7 @@ export interface RuntimeAuthority {
     auth: AuthContext,
     service: string,
     destination: string,
-    records: readonly TokenRecord[],
+    records: readonly (TokenRecord | ResponseSecretTokenRecord)[],
   ): Promise<PersistedRuntimeServiceView>;
 }
 
@@ -258,7 +258,7 @@ export class PersistedRuntimeAuthority implements RuntimeAuthority {
     auth: AuthContext,
     service: string,
     destination: string,
-    records: readonly TokenRecord[],
+    records: readonly (TokenRecord | ResponseSecretTokenRecord)[],
   ): Promise<PersistedRuntimeServiceView> {
     const view = await this.serviceView(auth, service);
     const selectedDestination = runtimeDestination(view.snapshot, destination);
@@ -288,7 +288,7 @@ export class PersistedRuntimeAuthority implements RuntimeAuthority {
           "Gateway reference is stale or has different authorization bindings.",
         );
       }
-      if (record.kind === "credential") {
+      if ("kind" in record && record.kind === "credential") {
         const credential = view.snapshot.credentials.find(
           ({ id }) => id === record.credentialId,
         );

@@ -7,8 +7,16 @@ import { getService, resolveDestination } from "./registry.js";
 import { audit } from "./audit.js";
 import { bodySummary, createLogger, headerNames } from "./logger.js";
 import { prohibitedCookieHeaderNames, stripCookieHeaders } from "./cookies.js";
-import { substituteRequestBodyTokens, substituteTokens } from "./substitution.js";
-import type { TokenRecord } from "./tokens.js";
+import {
+  assertRequestReferencePlacement,
+  substituteRequestBodyTokens,
+  substituteTokens,
+} from "./substitution.js";
+import type {
+  ResponseSecretTokenRecord,
+  RuntimeReferenceBindings,
+  TokenRecord,
+} from "./tokens.js";
 import type { AuthContext, GatewayConfig } from "./types.js";
 import {
   assertSafeBinaryBody,
@@ -37,6 +45,7 @@ import type {
 } from "./runtimeSnapshots.js";
 import { ServiceRequestLimiter } from "./serviceRequestLimiter.js";
 import { canonicalJson } from "./vault/canonicalJson.js";
+import type { PolicyEvaluationExplanation } from "./policy.js";
 
 export interface ServiceRequestInput {
   service: string;
@@ -412,6 +421,8 @@ async function executePersistedServiceRequest(
     service: view.snapshot.service.slug,
     destination: target.destination.id,
   };
+  const requestStarted = Date.now();
+  const requestId = createRequestId();
   const broker = dependencies.capabilities.tokenBroker;
   const callerHeaders = input.headers ?? {};
   rejectCallerControlledHeaders(callerHeaders);
@@ -422,7 +433,12 @@ async function executePersistedServiceRequest(
     );
   }
   assertRawRequestBound(input.body, input.method, config.limits.maxRequestBodyBytes);
-  const records: TokenRecord[] = [];
+  assertRequestReferencePlacement(
+    callerHeaders,
+    input.query ?? {},
+    input.body,
+  );
+  const records: Array<TokenRecord | ResponseSecretTokenRecord> = [];
   if (view.snapshot.credentials.length === 0) {
     if (
       typeof input.service_reference !== "string"
@@ -456,6 +472,14 @@ async function executePersistedServiceRequest(
     input.query,
     input.body,
   ])) {
+    if (token.startsWith("sec_")) {
+      records.push(broker.preflightResponseSecretUse(
+        auth,
+        view.snapshot.service.slug,
+        token,
+      ));
+      continue;
+    }
     const record = broker.preflightTokenUse(auth, tokenTarget, token);
     if (record.kind !== "credential" || record.credentialId === undefined) {
       throw new GatewayError(
@@ -485,7 +509,9 @@ async function executePersistedServiceRequest(
     createLogger(config.logging),
   );
   const credentialIds = [...new Set(uniqueRecords.flatMap((record) =>
-    record.credentialId === undefined ? [] : [record.credentialId]))];
+    !("kind" in record) || record.credentialId === undefined
+      ? []
+      : [record.credentialId]))];
   const explanation = evaluateRuntimePolicy(
     consistentView.snapshot,
     consistentView.subject.id,
@@ -505,21 +531,84 @@ async function executePersistedServiceRequest(
         : { matched_rule: decisive.decisiveRuleId }),
       policy_mode: decisive?.mode ?? "deny",
       suggestion: "Use an allowed request or ask the user to update service policy.",
-    });
+    }, requestId);
+    audit({
+      type: "service_request",
+      request_id: denial.request_id,
+      subject: auth.subject,
+      service: consistentView.snapshot.service.id,
+      destination: runtimeDestinationId(
+        consistentView.snapshot,
+        target.destination.id,
+      ),
+      access_ids: credentialIds,
+      internal_reference_ids: uniqueRecords.map(({ id }) => id),
+      method: input.method.toUpperCase(),
+      target_host: target.url.hostname,
+      target_path: target.methodPath,
+      policy_decision: "deny",
+      ...(decisive?.decisiveRuleId === undefined
+        ? {}
+        : { matched_policy_rule: decisive.decisiveRuleId }),
+      request_timestamp: new Date(requestStarted).toISOString(),
+      request_duration_ms: Date.now() - requestStarted,
+      tls_verify: target.tls.verify,
+      secret_tokenization_count: 0,
+      error_code: "policy_denied",
+      error_message: "Denied by persisted service or credential policy.",
+    }, dependencies.auditSink);
     throw new GatewayError(
       "policy_denied",
       "Denied by persisted service or credential policy.",
       denial.request_id,
     );
   }
-  const release = acquireServiceRequest(
-    dependencies.capabilities.serviceRequestLimiter,
-    auth.subject,
-    consistentView.snapshot.service.id,
+  const responseSafeguards = runtimeResponseSafeguards(
+    consistentView.snapshot,
+    explanation,
   );
+  let release: () => void;
+  try {
+    release = acquireServiceRequest(
+      dependencies.capabilities.serviceRequestLimiter,
+      auth.subject,
+      consistentView.snapshot.service.id,
+    );
+  } catch (error) {
+    if (!(error instanceof GatewayError) || error.code !== "capacity_exceeded") {
+      throw error;
+    }
+    audit({
+      type: "service_request",
+      request_id: requestId,
+      subject: auth.subject,
+      service: consistentView.snapshot.service.id,
+      destination: runtimeDestinationId(
+        consistentView.snapshot,
+        target.destination.id,
+      ),
+      access_ids: credentialIds,
+      internal_reference_ids: uniqueRecords.map(({ id }) => id),
+      method: input.method.toUpperCase(),
+      target_host: target.url.hostname,
+      target_path: target.methodPath,
+      policy_decision: "allow",
+      request_timestamp: new Date(requestStarted).toISOString(),
+      request_duration_ms: Date.now() - requestStarted,
+      tls_verify: target.tls.verify,
+      secret_tokenization_count: 0,
+      error_code: error.code,
+      error_message: error.message,
+    }, dependencies.auditSink);
+    throw error;
+  }
   try {
     for (const record of uniqueRecords) {
-      broker.consumePreflightedToken(record);
+      if ("kind" in record) {
+        broker.consumePreflightedToken(record);
+      } else {
+        broker.consumePreflightedResponseSecret(record);
+      }
     }
     const credentials = credentialIds.map((credentialId) => {
       const credential = consistentView.snapshot.credentials.find(
@@ -540,7 +629,6 @@ async function executePersistedServiceRequest(
     if (credentials.length > 0 && dependencies.runtimeVault === undefined) {
       throw new GatewayError("config_error", "Runtime vault is unavailable.");
     }
-    const requestId = createRequestId();
     const operationDigest = createHash("sha256")
       .update(canonicalJson({
         subjectId: auth.subject,
@@ -559,6 +647,7 @@ async function executePersistedServiceRequest(
           consistentView.snapshot,
           auth.subject,
           resolved,
+          responseSafeguards,
         );
         const nestedConfig: GatewayConfig = {
           ...config,
@@ -577,6 +666,21 @@ async function executePersistedServiceRequest(
             ),
           },
         };
+        const bindings: RuntimeReferenceBindings = {
+          serviceId: consistentView.snapshot.service.id,
+          destination: target.destination.id,
+          destinationId: runtimeDestinationId(
+            consistentView.snapshot,
+            target.destination.id,
+          ),
+          snapshotId: consistentView.snapshot.id,
+          publicationGeneration:
+            consistentView.snapshot.service.publicationGeneration,
+          serviceAuthorizationGeneration:
+            consistentView.snapshot.serviceAuthorizationGeneration,
+          subjectSecurityEpoch: consistentView.subject.securityEpoch,
+          globalReferenceEpoch: uniqueRecords[0]?.globalReferenceEpoch ?? 0,
+        };
         return await broker.withRuntimeSecrets(
           auth,
           service.id,
@@ -592,6 +696,7 @@ async function executePersistedServiceRequest(
             },
             nestedDependencies,
           ),
+          bindings,
         );
       }
       return dependencies.runtimeVault!.resolve({
@@ -656,7 +761,7 @@ function configuredReferences(values: unknown[]): string[] {
   const references = new Set<string>();
   const visit = (value: unknown): void => {
     if (typeof value === "string") {
-      for (const match of value.matchAll(/gref_[A-Za-z0-9_-]+/g)) {
+      for (const match of value.matchAll(/(?:gref|sec)_[A-Za-z0-9_-]+/g)) {
         references.add(match[0]);
       }
       return;
@@ -737,6 +842,10 @@ function runtimeServiceConfig(
   snapshot: RuntimeServiceSnapshot,
   subject: string,
   secrets: ReadonlyMap<string, string> = new Map(),
+  responseSafeguards?: Pick<
+    PolicyRuleConfig,
+    "secretlint" | "binaryResponse"
+  >,
 ): ServiceConfig {
   return {
     id: snapshot.service.slug,
@@ -774,7 +883,120 @@ function runtimeServiceConfig(
     })),
     tls: { verify: true },
     access: { users: [subject] },
-    policy: { mode: "allow", rules: [] },
+    policy: {
+      mode: "allow",
+      rules: responseSafeguards === undefined
+        ? []
+        : [{
+            id: "persisted-response-safeguards",
+            effect: "allow",
+            priority: 1,
+            methods: [],
+            hosts: [],
+            paths: [],
+            ...responseSafeguards,
+          }],
+    },
+  };
+}
+
+function runtimeResponseSafeguards(
+  snapshot: RuntimeServiceSnapshot,
+  explanation: PolicyEvaluationExplanation,
+): Pick<PolicyRuleConfig, "secretlint" | "binaryResponse"> {
+  const selected = explanation.boundaries.flatMap((boundary) => {
+    if (boundary.selectedRuleIds.length === 0) return [defaultSafeguards()];
+    return boundary.selectedRuleIds.map((ruleId) => {
+      const rule = snapshot.policies
+        .flatMap((policy) => policy.rules)
+        .find(({ id }) => id === ruleId);
+      if (rule === undefined) {
+        throw new GatewayError("config_error", "Selected runtime policy rule is unavailable.");
+      }
+      return parseRuntimeSafeguards(rule.responseSafeguards);
+    });
+  });
+  const safeguards = selected.length === 0 ? [defaultSafeguards()] : selected;
+  const enabledSecretlint = safeguards.filter(
+    ({ secretlint }) => secretlint.enabled,
+  );
+  const disabledRuleIds = enabledSecretlint.length === 0
+    ? []
+    : enabledSecretlint
+      .map(({ secretlint }) => new Set(secretlint.disabledRuleIds))
+      .reduce((intersection, disabled) =>
+        new Set([...intersection].filter((id) => disabled.has(id))));
+  const maximums = safeguards
+    .map(({ binaryResponse }) => binaryResponse.maxBytes)
+    .filter((value): value is number => value !== null);
+  return {
+    secretlint: enabledSecretlint.length === 0
+      ? { enabled: false }
+      : { disabledRuleIds: [...disabledRuleIds].sort() },
+    binaryResponse: {
+      scan: safeguards.some(({ binaryResponse }) => binaryResponse.scan),
+      maxBytes: maximums.length === 0 ? null : Math.min(...maximums),
+    },
+  };
+}
+
+function parseRuntimeSafeguards(value: unknown): RuntimeSafeguards {
+  if (!value || typeof value !== "object") {
+    throw new GatewayError("config_error", "Runtime response safeguards are invalid.");
+  }
+  const candidate = value as {
+    secretlint?: { enabled?: unknown; disabledRuleIds?: unknown };
+    binaryResponse?: { scan?: unknown; maxBytes?: unknown };
+  };
+  if (
+    typeof candidate.secretlint?.enabled !== "boolean"
+    || !Array.isArray(candidate.secretlint.disabledRuleIds)
+    || candidate.secretlint.disabledRuleIds.some(
+      (id) => typeof id !== "string",
+    )
+    || typeof candidate.binaryResponse?.scan !== "boolean"
+    || (
+      candidate.binaryResponse.maxBytes !== null
+      && (
+        !Number.isSafeInteger(candidate.binaryResponse.maxBytes)
+        || Number(candidate.binaryResponse.maxBytes) < 1
+      )
+    )
+  ) {
+    throw new GatewayError("config_error", "Runtime response safeguards are invalid.");
+  }
+  return {
+    secretlint: {
+      enabled: candidate.secretlint.enabled,
+      disabledRuleIds: [...new Set(
+        candidate.secretlint.disabledRuleIds as string[],
+      )].sort(),
+    },
+    binaryResponse: {
+      scan: candidate.binaryResponse.scan,
+      maxBytes: candidate.binaryResponse.maxBytes as number | null,
+    },
+  };
+}
+
+interface RuntimeSafeguards {
+  secretlint: {
+    enabled: boolean;
+    disabledRuleIds: string[];
+  };
+  binaryResponse: {
+    scan: boolean;
+    maxBytes: number | null;
+  };
+}
+
+function defaultSafeguards(): RuntimeSafeguards {
+  return {
+    secretlint: { enabled: true, disabledRuleIds: [] },
+    binaryResponse: {
+      scan: true,
+      maxBytes: DEFAULT_BINARY_RESPONSE_MAX_BYTES,
+    },
   };
 }
 

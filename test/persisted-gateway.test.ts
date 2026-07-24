@@ -53,6 +53,19 @@ describe("persisted gateway privileged ordering", () => {
         fixture.dependencies,
       )).rejects.toMatchObject({ code: testCase.code });
       expect(fixture.vault.resolveCalls).toBe(0);
+      if (testCase.code === "policy_denied") {
+        const serialized = JSON.stringify(fixture.dependencies.auditSink.events);
+        expect(fixture.dependencies.auditSink.events).toContainEqual(
+          expect.objectContaining({
+            type: "service_request",
+            service: SERVICE_ID,
+            destination: DESTINATION_ID,
+            policy_decision: "deny",
+            error_code: "policy_denied",
+          }),
+        );
+        expect(serialized).not.toContain(fixture.reference);
+      }
     }
   });
 
@@ -82,6 +95,16 @@ describe("persisted gateway privileged ordering", () => {
       { service: "runtime-api", destination: "primary" },
       fixture.reference,
     )).not.toThrow();
+    expect(fixture.dependencies.auditSink.events).toContainEqual(
+      expect.objectContaining({
+        type: "service_request",
+        service: SERVICE_ID,
+        destination: DESTINATION_ID,
+        error_code: "capacity_exceeded",
+      }),
+    );
+    expect(JSON.stringify(fixture.dependencies.auditSink.events))
+      .not.toContain(fixture.reference);
   });
 
   it("rejects unsafe headers, cookies, and oversized raw bodies before vault", async () => {
@@ -107,6 +130,25 @@ describe("persisted gateway privileged ordering", () => {
           body: "x".repeat(1_048_577),
         },
         code: "request_too_large",
+      },
+      {
+        input: {
+          ...request("REFERENCE"),
+          method: "POST",
+          headers: {
+            "X-API-Key": "REFERENCE",
+            "content-type": "application/json",
+          },
+          body: "{\"REFERENCE\":\"not-a-valid-placement\"}",
+        },
+        code: "reference_invalid",
+      },
+      {
+        input: {
+          ...request("REFERENCE"),
+          query: { REFERENCE: "not-a-valid-placement" },
+        },
+        code: "reference_invalid",
       },
     ];
     for (const testCase of cases) {
@@ -231,6 +273,58 @@ describe("persisted gateway privileged ordering", () => {
       await once(server, "close");
     }
   });
+
+  it("applies the selected persisted response safeguards", async () => {
+    const server = createServer((_request, response) => {
+      response.setHeader("content-type", "application/octet-stream");
+      response.end("vault-secret");
+    });
+    server.listen(0, "127.0.0.1");
+    await once(server, "listening");
+    const address = server.address();
+    if (address === null || typeof address === "string") {
+      throw new Error("listener unavailable");
+    }
+    const fixture = runtimeRequestFixture("allow", undefined, {
+      vault: new SuccessfulRuntimeVault("vault-secret"),
+      destination: {
+        baseUrl: `http://127.0.0.1:${address.port}/`,
+        schemes: ["http"],
+        hosts: [{ type: "exact", value: "127.0.0.1" }],
+        ports: [address.port],
+        tlsVerify: false,
+      },
+    });
+    fixture.snapshot.policies[0]!.mode = "deny";
+    fixture.snapshot.policies[0]!.rules = [{
+      id: "018f1f2e-7b3c-7a10-8000-000000000019",
+      effect: "allow",
+      priority: 100,
+      enabled: true,
+      methods: ["GET"],
+      hosts: [],
+      paths: [],
+      responseSafeguards: {
+        secretlint: { enabled: true, disabledRuleIds: [] },
+        binaryResponse: { scan: false, maxBytes: null },
+      },
+      selector: { kind: "all", groupIds: [], userIds: [] },
+    }];
+    try {
+      await expect(executeServiceRequest(
+        fixture.config,
+        fixture.auth,
+        request(fixture.reference),
+        fixture.dependencies,
+      )).resolves.toMatchObject({
+        status_code: 200,
+        body_encoding: "mcp_blob",
+      });
+    } finally {
+      server.close();
+      await once(server, "close");
+    }
+  });
 });
 
 function runtimeRequestFixture(
@@ -318,6 +412,7 @@ function runtimeRequestFixture(
     auth,
     dependencies,
     vault,
+    snapshot,
     reference: issued.tokens[0]!.token,
     references: issued.tokens.map(({ token }) => token),
   };

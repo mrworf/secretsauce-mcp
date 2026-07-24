@@ -213,6 +213,51 @@ describe("reference broker", () => {
     expect(broker.validateResponseSecretUse(auth("henric@example.com"), "portainer-prod", first.token).secret).toBe("returned-secret");
   });
 
+  it("binds persisted response references to the exact runtime authority", () => {
+    const broker = new TokenBroker(tokenConfig());
+    const bindings = {
+      serviceId: "018f1f2e-7b3c-7a10-8000-000000000010",
+      destination: "primary",
+      destinationId: "018f1f2e-7b3c-7a10-8000-000000000011",
+      snapshotId: "018f1f2e-7b3c-7a10-8000-000000000012",
+      publicationGeneration: 3,
+      serviceAuthorizationGeneration: 4,
+      subjectSecurityEpoch: 5,
+      globalReferenceEpoch: 6,
+    };
+    const issued = broker.withRuntimeSecrets(
+      auth("henric@example.com"),
+      "portainer-prod",
+      new Map(),
+      () => broker.issueOrReuseResponseSecret(
+        auth("henric@example.com"),
+        "portainer-prod",
+        "returned-secret",
+      ),
+      bindings,
+    );
+
+    expect(issued.record).toMatchObject(bindings);
+    expect(broker.preflightResponseSecretUse(
+      auth("henric@example.com"),
+      "portainer-prod",
+      issued.token,
+    )).toBe(issued.record);
+
+    const replacement = broker.withRuntimeSecrets(
+      auth("henric@example.com"),
+      "portainer-prod",
+      new Map(),
+      () => broker.issueOrReuseResponseSecret(
+        auth("henric@example.com"),
+        "portainer-prod",
+        "returned-secret",
+      ),
+      { ...bindings, destination: "secondary" },
+    );
+    expect(replacement.token).not.toBe(issued.token);
+  });
+
   it("isolates response secret references by subject and service and expires them", () => {
     let now = 1_000;
     const broker = new TokenBroker(tokenConfig(), () => now);

@@ -3,6 +3,7 @@ import { timingSafeEqual } from "node:crypto";
 import type { IncomingMessage } from "node:http";
 import { GatewayError } from "./errors.js";
 import type { AuthContext, GatewayConfig } from "./types.js";
+import type { BuiltinOAuthRuntime } from "./builtinOAuth.js";
 
 const jwksCache = new Map<string, JWTVerifyGetKey>();
 const publicKeyCache = new Map<string, ReturnType<typeof importSPKI>>();
@@ -11,6 +12,7 @@ export async function authenticateRequest(
   request: IncomingMessage,
   config: GatewayConfig,
   requiredScopes: string[] = [],
+  builtinRuntime?: BuiltinOAuthRuntime,
 ): Promise<AuthContext> {
   const bearer = extractBearerToken(request);
   if (bearer === undefined) {
@@ -30,9 +32,22 @@ export async function authenticateRequest(
 
   if (config.auth.mode === "builtin_oauth") {
     const builtin = config.auth.builtinOAuth;
+    if (builtin.identitySource === "database") {
+      if (builtinRuntime === undefined) {
+        throw new GatewayError("unauthenticated", "Invalid OAuth access token.");
+      }
+      try {
+        return await builtinRuntime.authenticateDatabaseAccessToken(
+          bearer,
+          config.server.resource ?? builtin.issuer,
+          requiredScopes,
+        );
+      } catch {
+        throw new GatewayError("unauthenticated", "Invalid OAuth access token.");
+      }
+    }
     if (
-      builtin.identitySource !== "static"
-      || builtin.signingPublicKeyPem === undefined
+      builtin.signingPublicKeyPem === undefined
     ) {
       throw new GatewayError("unauthenticated", "Invalid OAuth access token.");
     }

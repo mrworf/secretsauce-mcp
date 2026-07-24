@@ -57,7 +57,9 @@ export class GatewayRuntime {
       );
       const capabilities = options.capabilities ?? createCapabilityDependencies(config, auditSink);
       secretRuntime = options.secretRuntime ?? createSecretRuntime(config, capabilities.tokenBroker);
-      const builtinOAuth = options.builtinOAuth ?? new BuiltinOAuthRuntime(config);
+      const builtinOAuth = options.builtinOAuth ?? new BuiltinOAuthRuntime(config, {
+        ...(persistence === undefined ? {} : { persistence }),
+      });
       const maintenance = options.maintenance ?? new MaintenanceRegistry(config.limits.stateSweepIntervalMs);
       maintenance.register((now) => capabilities.tokenBroker.sweepExpired(now));
       maintenance.register((now) => capabilities.denialStore.sweep(now));
@@ -111,6 +113,7 @@ export class GatewayRuntime {
   private async closeOwnedResources(): Promise<void> {
     const errors: unknown[] = [];
     try { this.#stopMaintenance(); } catch (error) { errors.push(error); }
+    try { await this.builtinOAuth.close(); } catch (error) { errors.push(error); }
     if (this.persistence !== undefined) {
       try { await this.persistence.close(); } catch (error) { errors.push(error); }
     }

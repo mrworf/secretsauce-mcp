@@ -1,4 +1,11 @@
-import { createHash, pbkdf2, pbkdf2Sync, randomBytes, timingSafeEqual } from "node:crypto";
+import {
+  createHash,
+  pbkdf2,
+  pbkdf2Sync,
+  randomBytes,
+  randomUUID,
+  timingSafeEqual,
+} from "node:crypto";
 import { chmodSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { promisify } from "node:util";
@@ -8,6 +15,21 @@ import { createLogger } from "./logger.js";
 import type { BuiltinOAuthAuthConfig, GatewayConfig } from "./types.js";
 import { readBoundedBody, RequestBodyError } from "./httpBody.js";
 import { InflightLimiter } from "./inflightLimiter.js";
+import type { PersistenceOwner } from "./persistence/worker.js";
+import {
+  DatabaseOAuthError,
+  DatabaseOAuthRepository,
+  DatabaseOAuthTokenHasher,
+  isCanonicalOpaqueOAuthValue,
+  type DatabaseOAuthAccessAuthentication,
+} from "./oauth/databaseOAuth.js";
+import {
+  LocalAuthenticationRepository,
+  LocalAuthenticationService,
+} from "./identity/localAuthentication.js";
+import { IdentityKeyRing } from "./identity/totp.js";
+import { loadIdentitySessionHmacKey } from "./identity/browserSessions.js";
+import { readVaultKeyFile } from "./vault/keyFile.js";
 import { LoginAttemptLimiter } from "./loginAttemptLimiter.js";
 import { BRAND_ICON_PATH, BRAND_LOCKUP_PATH } from "./brandAssets.js";
 import { OAuthClientMetadataFetcher } from "./oauthClientMetadata.js";
@@ -89,12 +111,23 @@ export class BuiltinOAuthRuntime {
   readonly passwordLimiter: InflightLimiter;
   readonly loginAttemptLimiter: LoginAttemptLimiter;
   readonly clientMetadataFetcher: OAuthClientMetadataFetcher;
+  readonly database: Promise<DatabaseBuiltinOAuthServices> | undefined;
 
-  constructor(readonly config: GatewayConfig) {
+  constructor(
+    readonly config: GatewayConfig,
+    options: {
+      persistence?: PersistenceOwner;
+      database?: Promise<DatabaseBuiltinOAuthServices>;
+    } = {},
+  ) {
     this.state = config.auth.mode === "builtin_oauth" && config.auth.builtinOAuth.refreshTokenStoreFile !== undefined
       ? loadRefreshState(config)
       : emptyOAuthState();
-    if (config.auth.mode === "builtin_oauth" && config.auth.builtinOAuth.refreshTokenStoreFile === undefined) {
+    if (
+      config.auth.mode === "builtin_oauth"
+      && config.auth.builtinOAuth.identitySource === "static"
+      && config.auth.builtinOAuth.refreshTokenStoreFile === undefined
+    ) {
       createLogger(config.logging).warn("oauth.refresh_state_ephemeral", { restart_continuity: false });
     }
     this.bodyLimiter = new InflightLimiter(
@@ -113,12 +146,58 @@ export class BuiltinOAuthRuntime {
       config.limits.maxOAuthClientMetadataInflight,
       config.limits.maxOAuthClientMetadataInflightPerOrigin,
     );
+    this.database = options.database ?? createDatabaseBuiltinOAuthServices(
+      config,
+      options.persistence,
+    );
+    void this.database?.catch(() => undefined);
   }
 
   sweep(now = Date.now()): void {
     sweepAuthorizationCodes(this.state, now);
     if (sweepRefreshGrants(this.state, now)) persistRefreshStateSafely(this.config, this.state);
   }
+
+  async databaseServices(): Promise<DatabaseBuiltinOAuthServices> {
+    if (this.database === undefined) throw new DatabaseOAuthError("unavailable");
+    try {
+      return await this.database;
+    } catch {
+      throw new DatabaseOAuthError("unavailable");
+    }
+  }
+
+  async authenticateDatabaseAccessToken(
+    accessToken: string,
+    resource: string,
+    requiredScopes: string[],
+  ): Promise<DatabaseOAuthAccessAuthentication> {
+    const services = await this.databaseServices();
+    return services.repository.authenticateAccessToken({
+      accessToken,
+      resource,
+      requiredScopes,
+    });
+  }
+
+  async close(): Promise<void> {
+    if (this.database === undefined) return;
+    try {
+      const services = await this.database;
+      services.localAuthentication.close();
+      services.keyRing.destroy();
+      services.hasher.close();
+    } catch {
+      // Startup already reports database OAuth initialization failures.
+    }
+  }
+}
+
+export interface DatabaseBuiltinOAuthServices {
+  repository: DatabaseOAuthRepository;
+  localAuthentication: LocalAuthenticationService;
+  keyRing: IdentityKeyRing;
+  hasher: DatabaseOAuthTokenHasher;
 }
 
 export function isBuiltinOAuthRequest(config: GatewayConfig, request: IncomingMessage): boolean {
@@ -246,6 +325,14 @@ function renderLoginPage(
   const error = errorMessage === undefined
     ? ""
     : `<div class="error" role="alert"><strong>Sign-in failed.</strong> ${escapeHtml(errorMessage)}</div>`;
+  const databaseIdentity = config.auth.mode === "builtin_oauth"
+    && config.auth.builtinOAuth.identitySource === "database";
+  const identityFields = databaseIdentity
+    ? `<label for="username">Email <input id="username" name="username" type="email" autocomplete="username" required></label>
+<label for="password">Password <input id="password" name="password" type="password" autocomplete="current-password" required></label>
+<label for="totp">Authenticator code <input id="totp" name="totp" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" required></label>`
+    : `<label for="username">Username <input id="username" name="username" autocomplete="username" required></label>
+<label for="password">Password <input id="password" name="password" type="password" autocomplete="current-password" required></label>`;
   response.writeHead(statusCode, AUTHORIZE_PAGE_HEADERS);
   response.end(`<!doctype html>
 <html lang="en">
@@ -506,8 +593,7 @@ ${hidden}
 </div>
 ${error}
 <div class="field-grid">
-<label for="username">Username <input id="username" name="username" autocomplete="username" required></label>
-<label for="password">Password <input id="password" name="password" type="password" autocomplete="current-password" required></label>
+${identityFields}
 </div>
 <div class="actions"><button type="submit">Sign in and connect</button></div>
 </form>
@@ -565,9 +651,12 @@ function permissionDescription(scope: string): string {
 async function handleAuthorizePost(config: GatewayConfig, request: IncomingMessage, response: ServerResponse, runtime: BuiltinOAuthRuntime): Promise<void> {
   const auth = config.auth.mode === "builtin_oauth" ? config.auth.builtinOAuth : undefined;
   if (auth === undefined) throw new Error("Expected built-in OAuth config");
+  if (auth.identitySource === "database") {
+    await handleDatabaseAuthorizePost(config, request, response, runtime);
+    return;
+  }
   if (
-    auth.identitySource !== "static"
-    || auth.adminUsername === undefined
+    auth.adminUsername === undefined
     || auth.adminPasswordHash === undefined
   ) {
     writeOAuthError(response, 503, "temporarily_unavailable");
@@ -679,6 +768,81 @@ async function handleAuthorizePost(config: GatewayConfig, request: IncomingMessa
   response.end();
 }
 
+async function handleDatabaseAuthorizePost(
+  config: GatewayConfig,
+  request: IncomingMessage,
+  response: ServerResponse,
+  runtime: BuiltinOAuthRuntime,
+): Promise<void> {
+  let body: URLSearchParams;
+  try {
+    const limitedBody = await readLimitedFormBody(config, request, response, runtime);
+    if (limitedBody === undefined) return;
+    body = limitedBody;
+  } catch (error) {
+    if (error instanceof RequestBodyError) {
+      closeAfterResponse(request, response);
+      writeOAuthError(response, error.statusCode, oauthBodyError(error));
+      return;
+    }
+    throw error;
+  }
+  const validation = await validateAuthorizationRequest(config, body, runtime);
+  if (!validation.ok) {
+    writeJson(response, 400, { error: validation.error });
+    return;
+  }
+  try {
+    const services = await runtime.databaseServices();
+    const correlationId = `req_${randomUUID()}`;
+    const proof = await services.localAuthentication.verifyMcpProof({
+      email: body.get("username") ?? "",
+      password: body.get("password") ?? "",
+      totp: body.get("totp") ?? "",
+      source: request.socket.remoteAddress ?? "unknown",
+      correlationId,
+    });
+    const authorization = await services.repository.authorizeLocal({
+      proof,
+      client: {
+        identifier: validation.clientId,
+        displayName: validation.clientName ?? "MCP client",
+        redirectUris: [validation.redirectUri],
+      },
+      redirectUri: validation.redirectUri,
+      resource: validation.resource,
+      scopes: validation.scopes,
+      codeChallenge: validation.codeChallenge,
+    });
+    const redirect = new URL(validation.redirectUri);
+    redirect.searchParams.set("code", authorization.code);
+    const state = body.get("state");
+    if (state) redirect.searchParams.set("state", state);
+    response.writeHead(302, {
+      ...OAUTH_SENSITIVE_RESPONSE_HEADERS,
+      location: redirect.toString(),
+    });
+    response.end();
+  } catch (error) {
+    if (
+      error instanceof DatabaseOAuthError
+      && (error.code === "capacity_exceeded" || error.code === "unavailable")
+    ) {
+      response.setHeader("retry-after", "1");
+      writeOAuthError(response, 503, "temporarily_unavailable");
+      return;
+    }
+    renderLoginPage(
+      config,
+      response,
+      body,
+      validation,
+      401,
+      "The sign-in details could not be verified.",
+    );
+  }
+}
+
 async function handleTokenPost(config: GatewayConfig, request: IncomingMessage, response: ServerResponse, runtime: BuiltinOAuthRuntime): Promise<void> {
   const auth = config.auth.mode === "builtin_oauth" ? config.auth.builtinOAuth : undefined;
   if (auth === undefined) throw new Error("Expected built-in OAuth config");
@@ -719,6 +883,10 @@ async function exchangeAuthorizationCode(
 ): Promise<void> {
   const auth = config.auth.mode === "builtin_oauth" ? config.auth.builtinOAuth : undefined;
   if (auth === undefined) throw new Error("Expected built-in OAuth config");
+  if (auth.identitySource === "database") {
+    await exchangeDatabaseAuthorizationCode(config, body, response, runtime);
+    return;
+  }
   const code = body.get("code") ?? "";
   const oauthState = runtime.state;
   const authorizationCodes = oauthState.authorizationCodes;
@@ -784,6 +952,10 @@ async function exchangeRefreshToken(
 ): Promise<void> {
   const auth = config.auth.mode === "builtin_oauth" ? config.auth.builtinOAuth : undefined;
   if (auth === undefined) throw new Error("Expected built-in OAuth config");
+  if (auth.identitySource === "database") {
+    await exchangeDatabaseRefreshToken(config, body, response, runtime);
+    return;
+  }
   const oauthState = runtime.state;
   const now = Date.now();
   if (sweepRefreshGrants(oauthState, now)) persistRefreshStateSafely(config, oauthState);
@@ -865,8 +1037,160 @@ async function exchangeRefreshToken(
   });
 }
 
+async function exchangeDatabaseAuthorizationCode(
+  config: GatewayConfig,
+  body: URLSearchParams,
+  response: ServerResponse,
+  runtime: BuiltinOAuthRuntime,
+): Promise<void> {
+  try {
+    const services = await runtime.databaseServices();
+    const tokens = await services.repository.exchangeAuthorizationCode({
+      code: body.get("code") ?? "",
+      clientIdentifier: body.get("client_id") ?? "",
+      redirectUri: body.get("redirect_uri") ?? "",
+      ...(body.get("resource") === null
+        ? {}
+        : { resource: body.get("resource")! }),
+      codeVerifier: body.get("code_verifier") ?? "",
+    });
+    writeDatabaseTokenResponse(response, tokens);
+  } catch (error) {
+    writeDatabaseTokenError(response, error);
+  }
+}
+
+async function exchangeDatabaseRefreshToken(
+  config: GatewayConfig,
+  body: URLSearchParams,
+  response: ServerResponse,
+  runtime: BuiltinOAuthRuntime,
+): Promise<void> {
+  try {
+    const services = await runtime.databaseServices();
+    const auth = config.auth.mode === "builtin_oauth"
+      ? config.auth.builtinOAuth
+      : undefined;
+    if (auth === undefined) throw new DatabaseOAuthError("unavailable");
+    const scope = body.get("scope");
+    const tokens = await services.repository.rotateRefreshToken({
+      refreshToken: body.get("refresh_token") ?? "",
+      clientIdentifier: body.get("client_id") ?? "",
+      ...(body.get("resource") === null
+        ? {}
+        : { resource: body.get("resource")! }),
+      ...(scope === null || scope.trim() === ""
+        ? {}
+        : { scopes: scopesFromRequest(scope, auth.requiredScopes) }),
+      correlationId: `req_${randomUUID()}`,
+    });
+    writeDatabaseTokenResponse(response, tokens);
+  } catch (error) {
+    writeDatabaseTokenError(response, error);
+  }
+}
+
+function writeDatabaseTokenResponse(
+  response: ServerResponse,
+  tokens: {
+    accessToken: string;
+    refreshToken: string;
+    tokenType: "Bearer";
+    expiresIn: number;
+    scopes: string[];
+  },
+): void {
+  writeJson(response, 200, {
+    access_token: tokens.accessToken,
+    refresh_token: tokens.refreshToken,
+    token_type: tokens.tokenType,
+    expires_in: tokens.expiresIn,
+    scope: tokens.scopes.join(" "),
+  });
+}
+
+function writeDatabaseTokenError(
+  response: ServerResponse,
+  error: unknown,
+): void {
+  if (
+    error instanceof DatabaseOAuthError
+    && (error.code === "capacity_exceeded" || error.code === "unavailable")
+  ) {
+    response.setHeader("retry-after", "1");
+    writeOAuthError(response, 503, "temporarily_unavailable");
+    return;
+  }
+  writeOAuthError(response, 400, "invalid_grant");
+}
+
 function emptyOAuthState(): BuiltinOAuthState {
   return { authorizationCodes: new Map(), refreshGrants: new Map(), refreshTokens: new Map() };
+}
+
+function createDatabaseBuiltinOAuthServices(
+  config: GatewayConfig,
+  persistence: PersistenceOwner | undefined,
+): Promise<DatabaseBuiltinOAuthServices> | undefined {
+  if (
+    config.auth.mode !== "builtin_oauth"
+    || config.auth.builtinOAuth.identitySource !== "database"
+  ) return undefined;
+  if (
+    persistence === undefined
+    || config.identity === undefined
+    || config.auth.builtinOAuth.tokenHmacKeyFile === undefined
+  ) return Promise.reject(new DatabaseOAuthError("unavailable"));
+  return (async () => {
+    const keyRing = IdentityKeyRing.fromFiles(
+      config.identity!.activeRootKeyId,
+      config.identity!.rootKeyFiles,
+    );
+    const sessionKey = loadIdentitySessionHmacKey(
+      config.identity!.sessionHmacKeyFile,
+    );
+    const tokenKey = readVaultKeyFile(
+      config.auth.mode === "builtin_oauth"
+        ? config.auth.builtinOAuth.tokenHmacKeyFile!
+        : "",
+    );
+    let localAuthentication: LocalAuthenticationService | undefined;
+    let hasher: DatabaseOAuthTokenHasher | undefined;
+    try {
+      localAuthentication = await LocalAuthenticationService.create({
+        repository: new LocalAuthenticationRepository(persistence),
+        config: config.identity!,
+        keyRing,
+        sessionHmacKey: sessionKey,
+      });
+      hasher = new DatabaseOAuthTokenHasher(tokenKey);
+      const auth = config.auth.mode === "builtin_oauth"
+        ? config.auth.builtinOAuth
+        : undefined;
+      if (auth === undefined) throw new DatabaseOAuthError("unavailable");
+      return {
+        repository: new DatabaseOAuthRepository(persistence, hasher, {
+          accessTokenTtlMs: auth.accessTokenTtlMs,
+          authorizationCodeTtlMs: auth.authorizationCodeTtlMs,
+          refreshTokenIdleTtlMs: auth.refreshTokenIdleTtlMs,
+          refreshTokenMaxTtlMs: auth.refreshTokenMaxTtlMs,
+          maxAuthorizationCodes: config.limits.maxAuthorizationCodes,
+          maxTokenRecords: config.limits.maxRefreshTokenRecords,
+        }),
+        localAuthentication,
+        keyRing,
+        hasher,
+      };
+    } catch (error) {
+      localAuthentication?.close();
+      hasher?.close();
+      keyRing.destroy();
+      throw error;
+    } finally {
+      sessionKey.fill(0);
+      tokenKey.fill(0);
+    }
+  })();
 }
 
 function sweepAuthorizationCodes(state: BuiltinOAuthState, now: number): void {
@@ -1104,7 +1428,11 @@ async function validateAuthorizationRequest(
   }
 
   const codeChallenge = body.get("code_challenge");
-  if (!codeChallenge) return { ok: false, error: "invalid_request" };
+  if (
+    !codeChallenge
+    || auth.identitySource === "database"
+      && !isCanonicalOpaqueOAuthValue(codeChallenge)
+  ) return { ok: false, error: "invalid_request" };
 
   const scopes = scopesFromRequest(body.get("scope"), auth.requiredScopes);
   if (scopes.some((scope) => !auth.requiredScopes.includes(scope))) return { ok: false, error: "invalid_scope" };

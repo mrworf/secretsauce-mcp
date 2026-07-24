@@ -97,7 +97,12 @@ export function createGatewayServer(
     if (isMcpPost(request, config.server.mcpPath)) {
       let requiredScopes = configuredMcpScopes(config);
       try {
-        const auth = await authenticateRequest(request, config);
+        const auth = await authenticateRequest(
+          request,
+          config,
+          [],
+          runtime.builtinOAuth,
+        );
         const body = await readJsonBody(request, config.limits.maxInboundBodyBytes, config.limits.inboundBodyTimeoutMs);
         requiredScopes = requiredScopesForMcpBody(body);
         requireScopes(auth, requiredScopes);
@@ -151,7 +156,12 @@ export function createGatewayServer(
 
     if (isMcpGet(request, config.server.mcpPath) || isMcpDelete(request, config.server.mcpPath)) {
       try {
-        const auth = await authenticateRequest(request, config);
+        const auth = await authenticateRequest(
+          request,
+          config,
+          [],
+          runtime.builtinOAuth,
+        );
         (request as AuthenticatedRequest).auth = auth;
         logger.debug("mcp.request_authenticated", {
           method: request.method,

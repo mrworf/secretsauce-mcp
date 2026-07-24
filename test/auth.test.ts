@@ -7,7 +7,11 @@ import { join } from "node:path";
 import { exportJWK, exportPKCS8, generateKeyPair, SignJWT } from "jose";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { authenticateRequest } from "../src/auth.js";
-import { hashBuiltinOAuthPassword } from "../src/builtinOAuth.js";
+import {
+  BuiltinOAuthRuntime,
+  hashBuiltinOAuthPassword,
+  type DatabaseBuiltinOAuthServices,
+} from "../src/builtinOAuth.js";
 import { validateConfig } from "../src/config.js";
 import { GatewayError } from "../src/errors.js";
 import { createGatewayServer } from "../src/server.js";
@@ -15,6 +19,11 @@ import { TokenBroker } from "../src/tokens.js";
 import type { GatewayConfig } from "../src/types.js";
 import { setOAuthClientMetadataTestFetch } from "../src/oauthClientMetadata.js";
 import { GatewayRuntime } from "../src/runtime.js";
+import {
+  DatabaseOAuthTokenHasher,
+  type DatabaseOAuthRepository,
+} from "../src/oauth/databaseOAuth.js";
+import { IdentityKeyRing } from "../src/identity/totp.js";
 
 describe("auth", () => {
   const originalStubGlobal = vi.stubGlobal.bind(vi);
@@ -157,6 +166,160 @@ describe("auth", () => {
       expect(jwksBody.keys).toHaveLength(1);
       expect(jwks.headers.get("cache-control")).toBeNull();
       expect(jwks.headers.get("pragma")).toBeNull();
+    } finally {
+      await fixture.close();
+    }
+  });
+
+  it("routes database OAuth authorize, code, refresh, and stateless MCP authentication through the durable runtime", async () => {
+    const staticConfig = await builtinOAuthConfig();
+    const config: GatewayConfig = {
+      ...staticConfig,
+      auth: {
+        mode: "builtin_oauth",
+        builtinOAuth: {
+          ...(staticConfig.auth.mode === "builtin_oauth"
+            ? staticConfig.auth.builtinOAuth
+            : (() => { throw new Error("unexpected auth mode"); })()),
+          identitySource: "database",
+          adminUsername: undefined,
+          adminPasswordHash: undefined,
+          signingPrivateKeyPem: undefined,
+          signingPublicKeyPem: undefined,
+          signingKeyId: undefined,
+          tokenHmacKeyFile: "/not-read-by-injected-runtime",
+        },
+      },
+    };
+    setOAuthClientMetadataTestFetch(async (input) => new Response(JSON.stringify({
+      client_id: String(input),
+      client_name: "ChatGPT",
+      redirect_uris: ["https://chatgpt.com/oauth/callback"],
+    }), { status: 200, headers: { "content-type": "application/json" } }));
+    const calls: string[] = [];
+    const repository = {
+      authorizeLocal: async () => {
+        calls.push("authorize");
+        return { code: "database-code", grantId: "grant", expiresAt: Date.now() + 60_000 };
+      },
+      exchangeAuthorizationCode: async () => {
+        calls.push("code");
+        return {
+          accessToken: "database-access",
+          refreshToken: "database-refresh",
+          tokenType: "Bearer" as const,
+          expiresIn: 300,
+          scopes: ["gateway.read"],
+          grantId: "grant",
+        };
+      },
+      rotateRefreshToken: async () => {
+        calls.push("refresh");
+        return {
+          accessToken: "rotated-access",
+          refreshToken: "rotated-refresh",
+          tokenType: "Bearer" as const,
+          expiresIn: 300,
+          scopes: ["gateway.read"],
+          grantId: "grant",
+        };
+      },
+      authenticateAccessToken: async (input: { accessToken: string }) => {
+        calls.push(`access:${input.accessToken}`);
+        return {
+          subject: "018f1f2e-7b3c-7a10-8000-000000000201",
+          scopes: ["gateway.read"],
+          mode: "builtin_oauth" as const,
+        };
+      },
+    } as unknown as DatabaseOAuthRepository;
+    const keyRing = new IdentityKeyRing("root", { root: Buffer.alloc(32, 71) });
+    const hasher = new DatabaseOAuthTokenHasher(Buffer.alloc(32, 72));
+    const services = {
+      repository,
+      localAuthentication: {
+        verifyMcpProof: async () => {
+          calls.push("proof");
+          return {
+            userId: "018f1f2e-7b3c-7a10-8000-000000000201",
+            role: "user" as const,
+            securityEpoch: 1,
+            globalSecurityEpoch: 1,
+            acceptedTotpStep: 1,
+            verifiedAt: Date.now(),
+            correlationId: "req_12345678-1234-4234-8234-123456789abc",
+          };
+        },
+        close: () => undefined,
+      },
+      keyRing,
+      hasher,
+    } as unknown as DatabaseBuiltinOAuthServices;
+    const builtin = new BuiltinOAuthRuntime(config, {
+      database: Promise.resolve(services),
+    });
+    const runtime = new GatewayRuntime(config, { builtinOAuth: builtin });
+    const fixture = await startServer(config, runtime);
+    try {
+      const verifier = "d".repeat(43);
+      const malformed = await localRequest(`${fixture.baseUrl}/oauth/authorize`, {
+        method: "POST",
+        body: authorizationBody({
+          username: "user@example.org",
+          password: "correct-password",
+          totp: "123456",
+          code_challenge: `${"A".repeat(42)}B`,
+        }),
+      });
+      expect(malformed.status).toBe(400);
+      expect(calls).toEqual([]);
+      const authorize = await localRequest(`${fixture.baseUrl}/oauth/authorize`, {
+        method: "POST",
+        body: authorizationBody({
+          username: "user@example.org",
+          password: "correct-password",
+          totp: "123456",
+          code_challenge: pkceChallenge(verifier),
+        }),
+      });
+      expect(authorize.status).toBe(302);
+      expect(new URL(authorize.headers.location ?? "").searchParams.get("code"))
+        .toBe("database-code");
+
+      const code = await localRequest(`${fixture.baseUrl}/oauth/token`, {
+        method: "POST",
+        body: tokenBody(
+          "database-code",
+          "https://chatgpt.com/oauth/callback",
+          verifier,
+        ),
+      });
+      expect(code.status).toBe(200);
+      expect(JSON.parse(code.body)).toMatchObject({
+        access_token: "database-access",
+        refresh_token: "database-refresh",
+      });
+      const refresh = await localRequest(`${fixture.baseUrl}/oauth/token`, {
+        method: "POST",
+        body: refreshBody("database-refresh"),
+      });
+      expect(refresh.status).toBe(200);
+      expect(JSON.parse(refresh.body)).toMatchObject({
+        access_token: "rotated-access",
+        refresh_token: "rotated-refresh",
+      });
+      const mcp = await localRequest(`${fixture.baseUrl}/mcp`, {
+        method: "GET",
+        headers: { authorization: "Bearer rotated-access" },
+      });
+      expect(mcp.status).toBe(405);
+      expect(calls).toEqual([
+        "proof",
+        "authorize",
+        "code",
+        "refresh",
+        "access:rotated-access",
+      ]);
     } finally {
       await fixture.close();
     }
@@ -1575,8 +1738,10 @@ async function authorizeCode(baseUrl: string, redirectUri: string, verifier: str
   return code ?? "";
 }
 
-async function startServer(config: GatewayConfig) {
-  const server = createGatewayServer(config);
+async function startServer(config: GatewayConfig, runtime?: GatewayRuntime) {
+  const server = createGatewayServer(config, {
+    ...(runtime === undefined ? {} : { runtime }),
+  });
   server.listen(0, "127.0.0.1");
   await once(server, "listening");
   const address = server.address();

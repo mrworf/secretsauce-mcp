@@ -3,6 +3,16 @@ import { parse } from "yaml";
 import { describe, expect, it } from "vitest";
 
 describe("release container deployment", () => {
+  it("can compile native dependencies without shipping the toolchain", () => {
+    const dockerfile = readFileSync("Dockerfile", "utf8");
+    const runtime = dockerfile.slice(dockerfile.lastIndexOf("FROM node:22-alpine"));
+    expect(dockerfile).toContain("FROM node:22-alpine AS native-build");
+    expect(dockerfile).toContain("RUN apk add --no-cache python3 make g++");
+    expect(dockerfile).toContain("FROM native-build AS deps");
+    expect(dockerfile).toContain("FROM native-build AS build");
+    expect(runtime).not.toMatch(/\b(?:python3|make|g\+\+)\b/);
+  });
+
   it("runs the production image as an unprivileged read-only-compatible user", () => {
     const dockerfile = readFileSync("Dockerfile", "utf8");
     const runtime = dockerfile.slice(dockerfile.lastIndexOf("FROM node:22-alpine"));
@@ -45,7 +55,11 @@ describe("release container deployment", () => {
     expect(smoke).toContain('"method":"tools/call"');
     expect(smoke).toContain("docker restart");
     expect(smoke).toContain("mcp-session-id");
+    expect(smoke).toContain(
+      "docker exec \"${container_name}\" stat -c '%s' /var/lib/secretsauce/audit/audit.jsonl",
+    );
     expect(smoke).toContain("audit_size_after");
+    expect(smoke).not.toContain('wc -c <"${audit_directory}/audit.jsonl"');
     expect(smoke).not.toContain("--privileged");
     expect(smoke).not.toMatch(/docker\s+run[\s\S]*--user\s+(?:0|root)/);
   });

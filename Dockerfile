@@ -1,9 +1,12 @@
-FROM node:22-alpine AS deps
+FROM node:22-alpine AS native-build
+RUN apk add --no-cache python3 make g++
+
+FROM native-build AS deps
 WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm ci --omit=dev
 
-FROM node:22-alpine AS build
+FROM native-build AS build
 WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm ci

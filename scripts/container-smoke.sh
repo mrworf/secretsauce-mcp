@@ -120,13 +120,13 @@ wait_ready
 verify_initialize
 verify_tools
 verify_tool_call
-test -s "${audit_directory}/audit.jsonl"
-audit_size_before="$(wc -c <"${audit_directory}/audit.jsonl")"
+audit_size_before="$(docker exec "${container_name}" stat -c '%s' /var/lib/secretsauce/audit/audit.jsonl)"
+test "${audit_size_before}" -gt 0
 docker restart "${container_name}" >/dev/null
 wait_ready
 verify_initialize
 verify_tools
 verify_tool_call
-audit_size_after="$(wc -c <"${audit_directory}/audit.jsonl")"
+audit_size_after="$(docker exec "${container_name}" stat -c '%s' /var/lib/secretsauce/audit/audit.jsonl)"
 test "${audit_size_after}" -ge "${audit_size_before}"
 echo "Container release smoke passed."

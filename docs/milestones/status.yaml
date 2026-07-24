@@ -121,10 +121,10 @@ milestones:
   - id: "17"
     title: "Self-API-Key Protection"
     file: "docs/milestones/17-self-api-key-protection.md"
-    status: "pending"
+    status: "in_progress"
     completed_at: null
     commit_hash: null
-    notes: ""
+    notes: "Decision-complete plan committed before implementation; work is limited to milestone 17."
   - id: "18"
     title: "Security Settings And Automation"
     file: "docs/milestones/18-security-settings-automation.md"

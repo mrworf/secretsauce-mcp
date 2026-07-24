@@ -149,10 +149,10 @@ milestones:
   - id: "21"
     title: "Backup Export"
     file: "docs/milestones/21-backup-export.md"
-    status: "in_progress"
-    completed_at: null
-    commit_hash: null
-    notes: "Decision-complete implementation plan written before code changes."
+    status: "completed"
+    completed_at: "2026-07-24T08:55:34.000Z"
+    commit_hash: "b275a39"
+    notes: "Implemented canonical portable projection, strict deterministic gzip/ustar archives, exact selection-bound encrypted vault export, bounded audited coordination, strict browser/system APIs, responsive secret-clearing UX, and operator guidance; OpenAPI current, focused 55-test acceptance passes, and full 117-file/838-test regression passes."
   - id: "22"
     title: "Restore"
     file: "docs/milestones/22-restore.md"

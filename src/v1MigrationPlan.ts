@@ -162,18 +162,12 @@ export function createV1MigrationPlan(
     return convertService(sourceKey, slug, service, ids);
   });
 
-  const canonicalProjection = {
-    formatVersion: 1,
+  const digest = migrationPlanDigest({
     sourceSchemaVersion: source.schemaVersion,
     sourceSha256: source.sha256,
-    resolutionMode: "metadata_only",
     discardedAclEntryCount: source.discardedAclEntryCount,
-    services: services.map(projectForDigest),
-  };
-  const digest = createHash("sha256")
-    .update("secretsauce-v1-migration-plan-v1\0")
-    .update(canonicalControlJson(canonicalProjection))
-    .digest("hex");
+    services,
+  });
   const counts = {
     services: services.length,
     destinations: sum(services, (service) => service.draft.destinations.length),
@@ -211,6 +205,86 @@ export function createV1MigrationPlan(
     digest,
     report,
   };
+}
+
+export function validateV1MigrationPlan(plan: V1MigrationPlan): boolean {
+  try {
+    if (
+      plan.sourceSchemaVersion !== 1
+      || plan.resolutionMode !== "metadata_only"
+      || !/^[a-f0-9]{64}$/.test(plan.sourceSha256)
+      || plan.report.resolutionMode !== "metadata_only"
+      || plan.report.sourceSha256 !== plan.sourceSha256
+      || plan.report.sourceSchemaVersion !== 1
+      || plan.report.planDigest !== plan.digest
+    ) return false;
+    const counts = {
+      services: plan.services.length,
+      destinations: sum(plan.services, (service) => service.draft.destinations.length),
+      credentials: sum(plan.services, (service) => service.credentials.length),
+      policies: plan.services.length,
+      rules: sum(plan.services, (service) => service.policy.rules.length),
+    };
+    if (
+      counts.services !== plan.report.counts.services
+      || counts.destinations !== plan.report.counts.destinations
+      || counts.credentials !== plan.report.counts.credentials
+      || counts.policies !== plan.report.counts.policies
+      || counts.rules !== plan.report.counts.rules
+      || plan.report.counts.configuredCredentials !== 0
+      || plan.report.counts.unconfiguredCredentials !== counts.credentials
+      || plan.report.counts.retainedServiceSlugs
+        + plan.report.counts.generatedServiceSlugs !== counts.services
+      || !Number.isSafeInteger(plan.report.counts.discardedAclEntries)
+      || plan.report.counts.discardedAclEntries < 0
+    ) return false;
+    const seen = new Set<string>();
+    for (const service of plan.services) {
+      const canonical = canonicalServiceDraft(service.draft);
+      if (
+        !isUuidV7(service.id)
+        || seen.has(service.id)
+        || service.lifecycle !== "draft"
+        || canonicalControlJson(canonical.document) !== canonicalControlJson(service.draft)
+        || canonicalControlJson(service.profile) !== canonicalControlJson(service.draft.service)
+        || service.policy.name !== "Migrated service policy"
+        || service.policy.normalizedName !== "migrated service policy"
+        || service.policy.lifecycle !== "active"
+        || !isUuidV7(service.policy.id)
+        || seen.has(service.policy.id)
+      ) return false;
+      seen.add(service.id);
+      seen.add(service.policy.id);
+      for (const destination of service.draft.destinations) {
+        if (!isUuidV7(destination.id) || seen.has(destination.id)) return false;
+        seen.add(destination.id);
+      }
+      for (const credential of service.credentials) {
+        if (
+          !isUuidV7(credential.id)
+          || seen.has(credential.id)
+          || credential.status !== "unconfigured"
+        ) return false;
+        seen.add(credential.id);
+      }
+      for (const rule of service.policy.rules) {
+        if (
+          !isUuidV7(rule.id)
+          || seen.has(rule.id)
+          || rule.enabled !== false
+        ) return false;
+        seen.add(rule.id);
+      }
+    }
+    return plan.digest === migrationPlanDigest({
+      sourceSchemaVersion: 1,
+      sourceSha256: plan.sourceSha256,
+      discardedAclEntryCount: plan.report.counts.discardedAclEntries,
+      services: plan.services,
+    });
+  } catch {
+    return false;
+  }
 }
 
 function generateIdMap(
@@ -511,6 +585,25 @@ function projectForDigest(service: V1MigrationServicePlan): unknown {
     credentials: service.credentials.map(({ source: _source, ...credential }) => credential),
     policy: service.policy,
   };
+}
+
+function migrationPlanDigest(input: {
+  sourceSchemaVersion: 1;
+  sourceSha256: string;
+  discardedAclEntryCount: number;
+  services: V1MigrationServicePlan[];
+}): string {
+  return createHash("sha256")
+    .update("secretsauce-v1-migration-plan-v1\0")
+    .update(canonicalControlJson({
+      formatVersion: 1,
+      sourceSchemaVersion: input.sourceSchemaVersion,
+      sourceSha256: input.sourceSha256,
+      resolutionMode: "metadata_only",
+      discardedAclEntryCount: input.discardedAclEntryCount,
+      services: input.services.map(projectForDigest),
+    }))
+    .digest("hex");
 }
 
 function cloneIdMap(input: V1MigrationIdMap): V1MigrationIdMap {

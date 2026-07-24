@@ -8,6 +8,7 @@ import {
   AccessManagementRepository,
 } from "../src/accessManagement.js";
 import { IdentityRepository } from "../src/identity/repository.js";
+import type { AlwaysStepUpHandle, StepUpRepository } from "../src/identity/stepUp.js";
 import { PersistenceWorker } from "../src/persistence/worker.js";
 
 const NOW = 1_785_200_000_000;
@@ -20,6 +21,8 @@ const FAMILY_ONE = "018f1f2e-7b3c-7a10-8000-000000000306";
 const SERVICE_ID = "018f1f2e-7b3c-7a10-8000-000000000307";
 const SNAPSHOT_ID = "018f1f2e-7b3c-7a10-8000-000000000308";
 const ASSIGNMENT_ID = "018f1f2e-7b3c-7a10-8000-000000000309";
+const REFRESH_ID = "018f1f2e-7b3c-7a10-8000-000000000311";
+const ACCESS_ID = "018f1f2e-7b3c-7a10-8000-000000000312";
 const workers = new Set<PersistenceWorker>();
 const codecs = new Set<AccessCursorCodec>();
 
@@ -156,9 +159,108 @@ describe("access management projections", () => {
       services: [],
     });
   });
+
+  it("revokes only an own session or grant, tears down token records, and is idempotent", async () => {
+    const fixture = await setup();
+    const denied = await fixture.repository.revokeGrant({
+      viewer: { userId: fixture.userOne, role: "user" },
+      grantId: GRANT_TWO,
+      correlationId: correlationId("1"),
+    });
+    expect(denied).toMatchObject({ revoked: false, grantsRevoked: 0 });
+
+    const session = await fixture.repository.revokeSession({
+      viewer: { userId: fixture.userOne, role: "user" },
+      sessionId: SESSION_ONE,
+      correlationId: correlationId("2"),
+    });
+    expect(session).toMatchObject({ revoked: true, sessionsRevoked: 1 });
+    const grant = await fixture.repository.revokeGrant({
+      viewer: { userId: fixture.userOne, role: "user" },
+      grantId: GRANT_ONE,
+      correlationId: correlationId("3"),
+    });
+    expect(grant).toMatchObject({ revoked: true, grantsRevoked: 1 });
+    const repeated = await fixture.repository.revokeGrant({
+      viewer: { userId: fixture.userOne, role: "user" },
+      grantId: GRANT_ONE,
+      correlationId: correlationId("4"),
+    });
+    expect(repeated).toMatchObject({ revoked: false, grantsRevoked: 0 });
+
+    const state = await fixture.worker.execute({
+      run: (database) => database.read((query) => query.get<{
+        session_revoked: number;
+        grant_status: string;
+        family_status: string;
+        refresh_status: string;
+        access_status: string;
+      }>(`
+        SELECT
+          (SELECT count(*) FROM browser_sessions
+            WHERE id = ? AND revoked_at IS NOT NULL) AS session_revoked,
+          (SELECT status FROM oauth_grants WHERE id = ?) AS grant_status,
+          (SELECT status FROM oauth_refresh_families
+            WHERE id = ?) AS family_status,
+          (SELECT status FROM oauth_refresh_tokens
+            WHERE id = ?) AS refresh_status,
+          (SELECT status FROM oauth_access_tokens
+            WHERE id = ?) AS access_status
+      `, [SESSION_ONE, GRANT_ONE, FAMILY_ONE, REFRESH_ID, ACCESS_ID])),
+    });
+    expect(state).toEqual({
+      session_revoked: 1,
+      grant_status: "revoked",
+      family_status: "revoked",
+      refresh_status: "revoked",
+      access_status: "revoked",
+    });
+  });
+
+  it("requires superadmin, exact confirmation, idempotency, and step-up for bulk revocation", async () => {
+    const fixture = await setup(true);
+    const idempotency = {
+      keyHash: "7".repeat(64),
+      principalId: fixture.superadmin,
+      routeId: "access.oauth.bulk_revoke",
+      requestDigest: "8".repeat(64),
+    };
+    const base = {
+      viewer: { userId: fixture.superadmin, role: "superadmin" as const },
+      target: { kind: "user" as const, id: fixture.userTwo },
+      justification: "Remove a compromised connection.",
+      correlationId: correlationId("5"),
+      idempotency,
+    };
+    await expect(fixture.repository.revokeGrantBulk({
+      ...base,
+      confirmation: `REVOKE USER ${fixture.userTwo}`,
+    })).rejects.toEqual(new AccessManagementError("forbidden"));
+    await expect(fixture.repository.revokeGrantBulk({
+      ...base,
+      confirmation: "REVOKE USER wrong",
+      stepUpProof: fakeProof(fixture.superadmin),
+    })).rejects.toEqual(new AccessManagementError("invalid_request"));
+
+    const result = await fixture.repository.revokeGrantBulk({
+      ...base,
+      confirmation: `REVOKE USER ${fixture.userTwo}`,
+      stepUpProof: fakeProof(fixture.superadmin),
+    });
+    expect(result).toMatchObject({
+      kind: "executed",
+      value: { grantsRevoked: 1, revoked: true },
+    });
+    const replay = await fixture.repository.revokeGrantBulk({
+      ...base,
+      confirmation: `REVOKE USER ${fixture.userTwo}`,
+      stepUpProof: fakeProof(fixture.superadmin),
+    });
+    expect(replay).toMatchObject({ kind: "replayed" });
+  });
 });
 
-async function setup(): Promise<{
+async function setup(withStepUp = false): Promise<{
   worker: PersistenceWorker;
   repository: AccessManagementRepository;
   codec: AccessCursorCodec;
@@ -230,11 +332,33 @@ async function setup(): Promise<{
         NOW + 90 * 86_400_000,
         NOW + 30 * 86_400_000,
       ]);
+      transaction.run(`
+        INSERT INTO oauth_refresh_tokens (
+          id, token_hash, family_id, sequence, status, issued_at, used_at
+        ) VALUES (?, ?, ?, 0, 'active', ?, NULL)
+      `, [REFRESH_ID, "3".repeat(64), FAMILY_ONE, NOW - 1_000]);
+      transaction.run(`
+        INSERT INTO oauth_access_tokens (
+          id, token_hash, grant_id, family_id, scopes_json,
+          issued_at, expires_at, last_used_at, status
+        ) VALUES (?, ?, ?, ?, '["gateway.read"]', ?, ?, ?, 'active')
+      `, [
+        ACCESS_ID,
+        "4".repeat(64),
+        GRANT_ONE,
+        FAMILY_ONE,
+        NOW - 1_000,
+        NOW + 300_000,
+        NOW - 1_000,
+      ]);
       insertService(transaction, first.id);
     }),
   });
   const codec = new AccessCursorCodec(Buffer.alloc(32, 81));
   codecs.add(codec);
+  const stepUps = withStepUp
+    ? fakeStepUps(worker)
+    : undefined;
   const repository = new AccessManagementRepository(
     worker,
     {
@@ -250,6 +374,7 @@ async function setup(): Promise<{
     },
     codec,
     () => NOW,
+    stepUps,
   );
   return {
     worker,
@@ -370,4 +495,31 @@ function audit() {
     correlationId: "req_12345678-1234-4234-8234-123456789abc",
     source: { category: "identity" },
   };
+}
+
+function correlationId(suffix: string): string {
+  return `req_12345678-1234-4234-8234-123456789ab${suffix}`;
+}
+
+function fakeProof(userId: string): AlwaysStepUpHandle {
+  return {
+    proofId: SESSION_ONE,
+    sessionId: SESSION_ONE,
+    userId,
+    consumed: false,
+  } as AlwaysStepUpHandle;
+}
+
+function fakeStepUps(worker: PersistenceWorker): StepUpRepository {
+  return {
+    withConsumedProof: async (_proof, auditInput, mutation) =>
+      worker.execute({
+        run: (database) => database.withGeneratedAdministrativeAudit(
+          (transaction) => ({
+            value: mutation(transaction),
+            auditInput,
+          }),
+        ),
+      }),
+  } as StepUpRepository;
 }

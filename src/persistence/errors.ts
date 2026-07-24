@@ -19,6 +19,9 @@ export type PersistenceErrorCode =
   | "oauth_invalid_authorization"
   | "oauth_invalid_grant"
   | "oauth_capacity_exceeded"
+  | "security_settings_invalid"
+  | "security_settings_forbidden"
+  | "security_settings_stale"
   | "persistence_closed";
 
 const messages: Record<PersistenceErrorCode, string> = {
@@ -42,6 +45,9 @@ const messages: Record<PersistenceErrorCode, string> = {
   oauth_invalid_authorization: "OAuth authorization is invalid.",
   oauth_invalid_grant: "OAuth grant is invalid.",
   oauth_capacity_exceeded: "OAuth state capacity is exhausted.",
+  security_settings_invalid: "Security settings are invalid.",
+  security_settings_forbidden: "Security settings access is forbidden.",
+  security_settings_stale: "Security settings version is stale.",
   persistence_closed: "Persistence owner is closed.",
 };
 

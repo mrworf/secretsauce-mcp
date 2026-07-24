@@ -2006,6 +2006,207 @@ CREATE INDEX credential_self_api_key_approvals_service_idx
   ON credential_self_api_key_approvals (service_id, credential_id);
 `;
 
+const migration0018 = `
+ALTER TABLE users ADD COLUMN last_qualifying_activity_at INTEGER
+  CHECK (
+    last_qualifying_activity_at IS NULL
+    OR last_qualifying_activity_at >= created_at
+  );
+ALTER TABLE users ADD COLUMN suspended_at INTEGER
+  CHECK (suspended_at IS NULL OR suspended_at >= created_at);
+ALTER TABLE users ADD COLUMN suspension_origin TEXT
+  CHECK (suspension_origin IS NULL OR suspension_origin IN ('manual', 'inactivity'));
+ALTER TABLE users ADD COLUMN suspension_rule_version INTEGER
+  CHECK (suspension_rule_version IS NULL OR suspension_rule_version > 0);
+
+CREATE TRIGGER users_suspension_metadata_insert_guard
+BEFORE INSERT ON users
+WHEN
+  (NEW.suspended_at IS NULL) <> (NEW.suspension_origin IS NULL)
+  OR (
+    NEW.suspension_origin = 'inactivity'
+    AND NEW.suspension_rule_version IS NULL
+  )
+  OR (
+    NEW.suspension_origin IS NOT NULL
+    AND NEW.status <> 'suspended'
+  )
+BEGIN
+  SELECT RAISE(ABORT, 'invalid suspension metadata');
+END;
+
+CREATE TRIGGER users_suspension_metadata_update_guard
+BEFORE UPDATE OF status, suspended_at, suspension_origin, suspension_rule_version
+ON users
+WHEN
+  (NEW.suspended_at IS NULL) <> (NEW.suspension_origin IS NULL)
+  OR (
+    NEW.suspension_origin = 'inactivity'
+    AND NEW.suspension_rule_version IS NULL
+  )
+  OR (
+    NEW.suspension_origin IS NOT NULL
+    AND NEW.status <> 'suspended'
+  )
+BEGIN
+  SELECT RAISE(ABORT, 'invalid suspension metadata');
+END;
+
+ALTER TABLE identity_security_state
+  ADD COLUMN password_policy_version INTEGER NOT NULL DEFAULT 1
+  CHECK (password_policy_version > 0);
+ALTER TABLE identity_security_state
+  ADD COLUMN password_change_epoch INTEGER NOT NULL DEFAULT 1
+  CHECK (password_change_epoch > 0);
+ALTER TABLE local_password_credentials
+  ADD COLUMN password_change_epoch INTEGER NOT NULL DEFAULT 1
+  CHECK (password_change_epoch > 0);
+
+CREATE TABLE security_settings (
+  singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
+  password_minimum_length INTEGER NOT NULL
+    CHECK (password_minimum_length BETWEEN 8 AND 128),
+  password_blocklist_version INTEGER NOT NULL
+    CHECK (password_blocklist_version BETWEEN 1 AND 2147483647),
+  password_policy_version INTEGER NOT NULL CHECK (password_policy_version > 0),
+  admin_session_absolute_ms INTEGER NOT NULL
+    CHECK (admin_session_absolute_ms BETWEEN 3600000 AND 86400000),
+  admin_session_inactivity_ms INTEGER NOT NULL
+    CHECK (admin_session_inactivity_ms BETWEEN 300000 AND 7200000),
+  user_session_absolute_ms INTEGER NOT NULL
+    CHECK (user_session_absolute_ms BETWEEN 3600000 AND 259200000),
+  user_session_inactivity_ms INTEGER NOT NULL
+    CHECK (user_session_inactivity_ms BETWEEN 300000 AND 86400000),
+  oauth_access_token_ms INTEGER NOT NULL
+    CHECK (oauth_access_token_ms BETWEEN 60000 AND 900000),
+  oauth_refresh_inactivity_ms INTEGER NOT NULL
+    CHECK (oauth_refresh_inactivity_ms BETWEEN 86400000 AND 7776000000),
+  oauth_refresh_absolute_ms INTEGER NOT NULL
+    CHECK (oauth_refresh_absolute_ms BETWEEN 604800000 AND 31536000000),
+  step_up_mode TEXT NOT NULL
+    CHECK (step_up_mode IN ('five_minutes', 'always')),
+  login_attempts INTEGER NOT NULL CHECK (login_attempts BETWEEN 3 AND 20),
+  login_window_ms INTEGER NOT NULL
+    CHECK (login_window_ms BETWEEN 300000 AND 3600000),
+  password_attempts INTEGER NOT NULL CHECK (password_attempts BETWEEN 3 AND 20),
+  password_window_ms INTEGER NOT NULL
+    CHECK (password_window_ms BETWEEN 300000 AND 3600000),
+  totp_attempts INTEGER NOT NULL CHECK (totp_attempts BETWEEN 3 AND 10),
+  totp_window_ms INTEGER NOT NULL
+    CHECK (totp_window_ms BETWEEN 60000 AND 900000),
+  management_api_attempts INTEGER NOT NULL
+    CHECK (management_api_attempts BETWEEN 10 AND 600),
+  management_api_window_ms INTEGER NOT NULL
+    CHECK (management_api_window_ms BETWEEN 60000 AND 3600000),
+  search_attempts INTEGER NOT NULL CHECK (search_attempts BETWEEN 5 AND 120),
+  search_window_ms INTEGER NOT NULL
+    CHECK (search_window_ms BETWEEN 60000 AND 3600000),
+  backup_attempts INTEGER NOT NULL CHECK (backup_attempts BETWEEN 1 AND 10),
+  backup_window_ms INTEGER NOT NULL
+    CHECK (backup_window_ms BETWEEN 900000 AND 86400000),
+  inactivity_suspension_days INTEGER
+    CHECK (
+      inactivity_suspension_days IS NULL
+      OR inactivity_suspension_days BETWEEN 1 AND 3650
+    ),
+  suspended_deactivation_days INTEGER
+    CHECK (
+      suspended_deactivation_days IS NULL
+      OR suspended_deactivation_days BETWEEN 1 AND 3650
+    ),
+  security_job_interval_ms INTEGER NOT NULL
+    CHECK (security_job_interval_ms BETWEEN 60000 AND 86400000),
+  security_job_batch_size INTEGER NOT NULL
+    CHECK (security_job_batch_size BETWEEN 50 AND 2000),
+  security_job_wall_time_ms INTEGER NOT NULL
+    CHECK (security_job_wall_time_ms BETWEEN 5000 AND 120000),
+  version INTEGER NOT NULL DEFAULT 1 CHECK (version > 0),
+  created_at INTEGER NOT NULL CHECK (created_at >= 0),
+  updated_at INTEGER NOT NULL CHECK (updated_at >= created_at),
+  CHECK (admin_session_inactivity_ms < admin_session_absolute_ms),
+  CHECK (user_session_inactivity_ms < user_session_absolute_ms),
+  CHECK (oauth_refresh_inactivity_ms <= oauth_refresh_absolute_ms)
+) STRICT;
+
+CREATE TABLE security_global_events (
+  id TEXT PRIMARY KEY CHECK (
+    length(id) = 36 AND id = lower(id)
+    AND substr(id, 15, 1) = '7'
+    AND substr(id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND id NOT GLOB '*[^0-9a-f-]*'
+  ),
+  kind TEXT NOT NULL CHECK (kind IN ('password_change', 'totp_reset')),
+  actor_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  actor_role TEXT NOT NULL CHECK (actor_role = 'superadmin'),
+  justification TEXT NOT NULL CHECK (
+    length(justification) BETWEEN 1 AND 1024
+    AND justification = trim(justification)
+    AND instr(justification, char(0)) = 0
+    AND instr(justification, char(10)) = 0
+    AND instr(justification, char(13)) = 0
+  ),
+  affected_users INTEGER NOT NULL CHECK (affected_users >= 0),
+  resulting_global_epoch INTEGER NOT NULL CHECK (resulting_global_epoch > 0),
+  resulting_password_policy_version INTEGER NOT NULL
+    CHECK (resulting_password_policy_version > 0),
+  created_at INTEGER NOT NULL CHECK (created_at >= 0)
+) STRICT;
+
+CREATE INDEX security_global_events_time_idx
+  ON security_global_events (created_at DESC, id DESC);
+
+CREATE TABLE security_job_state (
+  job_name TEXT PRIMARY KEY CHECK (job_name = 'inactivity'),
+  next_run_at INTEGER NOT NULL CHECK (next_run_at >= 0),
+  lease_owner TEXT CHECK (
+    lease_owner IS NULL
+    OR (
+      length(lease_owner) = 36
+      AND lease_owner = lower(lease_owner)
+      AND substr(lease_owner, 15, 1) = '7'
+      AND substr(lease_owner, 20, 1) IN ('8', '9', 'a', 'b')
+      AND lease_owner NOT GLOB '*[^0-9a-f-]*'
+    )
+  ),
+  lease_expires_at INTEGER CHECK (
+    lease_expires_at IS NULL OR lease_expires_at >= 0
+  ),
+  cursor_time INTEGER CHECK (cursor_time IS NULL OR cursor_time >= 0),
+  cursor_id TEXT CHECK (
+    cursor_id IS NULL
+    OR (
+      length(cursor_id) = 36
+      AND cursor_id = lower(cursor_id)
+      AND substr(cursor_id, 15, 1) = '7'
+      AND substr(cursor_id, 20, 1) IN ('8', '9', 'a', 'b')
+      AND cursor_id NOT GLOB '*[^0-9a-f-]*'
+    )
+  ),
+  last_started_at INTEGER CHECK (last_started_at IS NULL OR last_started_at >= 0),
+  last_completed_at INTEGER CHECK (
+    last_completed_at IS NULL OR last_completed_at >= 0
+  ),
+  last_outcome TEXT CHECK (
+    last_outcome IS NULL OR last_outcome IN ('completed', 'partial', 'skipped', 'error')
+  ),
+  last_code TEXT CHECK (
+    last_code IS NULL
+    OR (
+      length(last_code) BETWEEN 1 AND 64
+      AND last_code NOT GLOB '*[^a-z0-9_.-]*'
+    )
+  ),
+  suspended_count INTEGER NOT NULL DEFAULT 0 CHECK (suspended_count >= 0),
+  deactivated_count INTEGER NOT NULL DEFAULT 0 CHECK (deactivated_count >= 0),
+  protected_count INTEGER NOT NULL DEFAULT 0 CHECK (protected_count >= 0),
+  version INTEGER NOT NULL DEFAULT 1 CHECK (version > 0),
+  created_at INTEGER NOT NULL CHECK (created_at >= 0),
+  updated_at INTEGER NOT NULL CHECK (updated_at >= created_at),
+  CHECK ((lease_owner IS NULL) = (lease_expires_at IS NULL)),
+  CHECK ((cursor_time IS NULL) = (cursor_id IS NULL))
+) STRICT;
+`;
+
 export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [
   {
     version: 1,
@@ -2091,6 +2292,11 @@ export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [
     version: 17,
     name: "self_api_key_protection",
     sql: migration0017,
+  },
+  {
+    version: 18,
+    name: "security_settings_automation",
+    sql: migration0018,
   },
 ];
 

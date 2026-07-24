@@ -152,6 +152,11 @@ import {
   registerApiKeyRoutes,
   type ApiKeyRouteDependencies,
 } from "./apiKeyRoutes.js";
+import {
+  SecuritySettingsRepository,
+  SecuritySettingsStore,
+  securitySettingsSeed,
+} from "../securitySettings.js";
 
 export interface ControlApplicationOptions {
   authenticator?: ControlAuthenticator;
@@ -173,6 +178,10 @@ export interface ControlApplicationOptions {
   accessManagement?: AccessRouteDependencies;
   apiKeys?: ApiKeyRouteDependencies;
   apiKeyActivity?: ControlApiKeyActivityRecorder;
+  securitySettings?: {
+    repository: SecuritySettingsRepository;
+    store: SecuritySettingsStore;
+  };
 }
 
 export function createControlApplication(
@@ -362,6 +371,7 @@ export async function startControlServer(
   let apiKeyRepository: ApiKeyRepository | undefined;
   let apiKeyAuthenticator: SystemApiKeyAuthenticator | undefined;
   let apiKeyManagement: ApiKeyRouteDependencies | undefined;
+  let securitySettings: ControlApplicationOptions["securitySettings"];
   const apiKeyVerifier = new ApiKeyVerifierPool();
   let selfApiKeyDetector: ActiveSelfApiKeyDetector | undefined;
   try {
@@ -372,6 +382,15 @@ export async function startControlServer(
     );
     let localIdentity: LocalIdentityControl | undefined;
     if (config.identity !== undefined) {
+      const securitySettingsRepository = new SecuritySettingsRepository(
+        persistence,
+      );
+      const initialSecuritySettings =
+        await securitySettingsRepository.initialize(securitySettingsSeed(config));
+      securitySettings = {
+        repository: securitySettingsRepository,
+        store: new SecuritySettingsStore(initialSecuritySettings),
+      };
       identityKeyRing = IdentityKeyRing.fromFiles(
         config.identity.activeRootKeyId,
         config.identity.rootKeyFiles,
@@ -608,6 +627,7 @@ export async function startControlServer(
       ...(policyManagement === undefined ? {} : { policyManagement }),
       ...(accessManagement === undefined ? {} : { accessManagement }),
       ...(apiKeyManagement === undefined ? {} : { apiKeys: apiKeyManagement }),
+      ...(securitySettings === undefined ? {} : { securitySettings }),
     });
     await server.listen({
       host: config.control.host,

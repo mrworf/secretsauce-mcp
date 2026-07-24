@@ -15,7 +15,7 @@ describe("persistence migrations", () => {
     const file = databasePath("fresh");
     const persistence = open(file);
     try {
-      expect(persistence.schemaVersion).toBe(17);
+      expect(persistence.schemaVersion).toBe(18);
       expect(persistence.migrationHistory()).toEqual([
         {
           version: 1,
@@ -102,6 +102,11 @@ describe("persistence migrations", () => {
           name: "self_api_key_protection",
           checksum: expect.stringMatching(/^[a-f0-9]{64}$/),
         },
+        {
+          version: 18,
+          name: "security_settings_automation",
+          checksum: expect.stringMatching(/^[a-f0-9]{64}$/),
+        },
       ]);
       expect(statSync(file).mode & 0o777).toBe(0o600);
 
@@ -163,6 +168,9 @@ describe("persistence migrations", () => {
           "api_keys",
           "browser_sessions",
           "credential_self_api_key_approvals",
+          "security_global_events",
+          "security_job_state",
+          "security_settings",
         ].sort());
         expect(inspection.prepare(
           "PRAGMA table_info(local_authenticator_states)",
@@ -206,6 +214,16 @@ describe("persistence migrations", () => {
           "justification_digest",
           "approved_at",
         ]);
+        expect(inspection.prepare(
+          "PRAGMA table_info(users)",
+        ).all().map((row) => (row as { name: string }).name)).toEqual(
+          expect.arrayContaining([
+            "last_qualifying_activity_at",
+            "suspended_at",
+            "suspension_origin",
+            "suspension_rule_version",
+          ]),
+        );
       } finally {
         inspection.close();
       }
@@ -218,17 +236,17 @@ describe("persistence migrations", () => {
     const file = databasePath("ordered");
     const migrations = [
       ...PERSISTENCE_MIGRATIONS,
-      testMigration(18, "eighteenth", "CREATE TABLE eighteenth_fixture (id INTEGER PRIMARY KEY) STRICT;"),
       testMigration(19, "nineteenth", "CREATE TABLE nineteenth_fixture (id INTEGER PRIMARY KEY) STRICT;"),
+      testMigration(20, "twentieth", "CREATE TABLE twentieth_fixture (id INTEGER PRIMARY KEY) STRICT;"),
     ];
     const first = open(file, migrations);
-    expect(first.schemaVersion).toBe(19);
-    expect(first.migrationHistory().map(({ version }) => version)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]);
+    expect(first.schemaVersion).toBe(20);
+    expect(first.migrationHistory().map(({ version }) => version)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]);
     first.close();
 
     const restarted = open(file, migrations);
     try {
-      expect(restarted.schemaVersion).toBe(19);
+      expect(restarted.schemaVersion).toBe(20);
       expect(restarted.migrationHistory().map(({ name }) => name)).toEqual([
         "persistence_and_administrative_audit_foundation",
         "control_idempotency_foundation",
@@ -247,8 +265,9 @@ describe("persistence migrations", () => {
         "system_owned_api_keys",
         "api_key_service_revision_actors",
         "self_api_key_protection",
-        "eighteenth",
+        "security_settings_automation",
         "nineteenth",
+        "twentieth",
       ]);
     } finally {
       restarted.close();
@@ -257,7 +276,7 @@ describe("persistence migrations", () => {
 
   it("rejects unknown future, partial, and checksum-drifted schemas safely", () => {
     const futureFile = initializedPath("future");
-    edit(futureFile, (database) => database.pragma("user_version = 18"));
+    edit(futureFile, (database) => database.pragma("user_version = 19"));
     expectPersistenceError(() => open(futureFile), "schema_unsupported", futureFile);
 
     const partialFile = databasePath("partial");
@@ -282,7 +301,7 @@ describe("persistence migrations", () => {
     const file = initializedPath("rollback");
     const migrations = [
       ...PERSISTENCE_MIGRATIONS,
-      testMigration(18, "broken", `
+      testMigration(19, "broken", `
         CREATE TABLE should_rollback (id INTEGER PRIMARY KEY) STRICT;
         INSERT INTO table_that_does_not_exist (id) VALUES (1);
       `),
@@ -292,12 +311,12 @@ describe("persistence migrations", () => {
 
     const inspection = new Database(file);
     try {
-      expect(inspection.pragma("user_version", { simple: true })).toBe(17);
+      expect(inspection.pragma("user_version", { simple: true })).toBe(18);
       expect(inspection.prepare(
         "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'should_rollback'",
       ).get()).toBeUndefined();
       expect(inspection.prepare("SELECT count(*) AS count FROM schema_migrations").get())
-        .toEqual({ count: 17 });
+        .toEqual({ count: 18 });
     } finally {
       inspection.close();
     }

@@ -50,6 +50,7 @@ export async function startSecretSauceApplication(
       control = await startControlServer(config, {
         persistence: runtime.persistence,
         restoreMaintenance: runtime.restoreMaintenance,
+        referenceAggregates: runtime.capabilities.tokenBroker,
         ...(controlVault === undefined
           ? {}
           : { vaultReadiness: controlVault.readiness }),

@@ -1,4 +1,4 @@
-import { chmodSync, mkdtempSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { createServer as createNetServer } from "node:net";
 import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
@@ -20,6 +20,14 @@ afterEach(async () => {
 });
 
 describe("combined SecretSauce application", () => {
+  it("shares only the bounded runtime aggregate seam with control", () => {
+    const source = readFileSync("src/application.ts", "utf8");
+    expect(source).toContain(
+      "referenceAggregates: runtime.capabilities.tokenBroker",
+    );
+    expect(source).not.toContain("runtime.capabilities.tokenBroker.records");
+  });
+
   it("serves gateway and control listeners through one database owner", async () => {
     const dataPort = await unusedPort();
     const controlPort = await unusedPort();

@@ -117,9 +117,10 @@ keeps credential-less export usable and returns a generic unavailable error for
 encrypted export.
 
 If one container performs both gateway runtime and backup coordination, mount
-the data-plane/resolve pair and backup/backup-capability pair as separate
-read-only files. Do not mount the control caller key, vault root keys, or
-encrypted store into that container.
+the data-plane/resolve, control-plane, and backup/backup-capability keys as
+separate read-only files. The broker permits the control key to perform
+write-only credential management and never resolve/export. Do not mount vault
+root keys or the encrypted store into that container.
 
 ## Audit and troubleshooting
 

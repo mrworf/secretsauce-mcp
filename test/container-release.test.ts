@@ -62,4 +62,20 @@ describe("release container deployment", () => {
     expect(smoke).toBeLessThan(login);
     expect(login).toBeLessThan(publish);
   });
+
+  it("audits production dependencies before build and tests", () => {
+    const workflow = parse(readFileSync(".github/workflows/ci.yml", "utf8")) as any;
+    const steps = workflow.jobs["quality-gates"].steps as Array<Record<string, unknown>>;
+    const audit = steps.findIndex((step) => step.run === "npm run audit:production");
+    const build = steps.findIndex((step) => step.run === "npm run build");
+    const test = steps.findIndex((step) => step.run === "npm test");
+    expect(audit).toBeGreaterThan(-1);
+    expect(audit).toBeLessThan(build);
+    expect(build).toBeLessThan(test);
+    const packageJson = JSON.parse(readFileSync("package.json", "utf8")) as {
+      scripts: Record<string, string>;
+    };
+    expect(packageJson.scripts["audit:production"])
+      .toBe("npm audit --omit=dev --audit-level=high");
+  });
 });

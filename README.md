@@ -226,7 +226,10 @@ root key is unavailable.
 The image default command (and `npm start`) starts one application process that
 owns both configured listeners and the single SQLite writer. The
 `start:gateway` and `start:control` scripts are diagnostic single-surface
-entrypoints and are not a supported concurrent database-mode deployment.
+entrypoints and are not a supported concurrent database-mode deployment. The
+combined application mounts separate data, control, and backup caller keys; the
+broker restricts each key to its fixed operation set and keeps root keys and the
+encrypted store outside the application container.
 
 `node dist/vault/healthCli.js` performs an authenticated, sanitized readiness
 check and prints only `ready` or `unavailable`. The optional control-process
@@ -239,8 +242,9 @@ configuration the sole MCP authority, follow
 
 Encrypted portable backup additionally requires the backup caller and
 backup-capability keys as a complete read-only pair. Credential-less backup
-continues to work when that pair is absent. The gateway never mounts the
-control-plane caller key, root keys, or encrypted vault store. See
+continues to work when that pair is absent. The application never mounts
+root keys or encrypted vault store. The control-plane caller key is mounted for
+write-only credential management and cannot resolve or export values. See
 [Portable Backup Export](docs/backup-export.md) for archive contents,
 permanent exclusions, system-key automation, and operator custody.
 
@@ -256,9 +260,9 @@ See [Portable Restore](docs/restore.md) before enabling or operating it.
 One-time V1 YAML migration uses a stopped, empty database-authority target and a
 host-local terminal command. Credential definitions import safely without
 values by default; optional value import requires an exact mode-`0400`
-allowlist, a temporarily mounted control-vault caller key, and the complete
-stable restore-recovery deployment. Do not leave the control caller key in the
-ordinary gateway runtime. See
+allowlist, the application's control-vault caller key, and the complete stable
+restore-recovery deployment. Run migration only while the application is
+stopped. See
 [One-time V1 YAML migration](docs/v1-migration.md).
 
 ### Initial v2 identity bootstrap

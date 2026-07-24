@@ -122,8 +122,11 @@ vault mounts, invalidation, reference, readiness, and rollback constraints.
 The database runtime requires `SECRETSAUCE_VAULT_SOCKET`,
 `SECRETSAUCE_VAULT_DATA_KEY_FILE`, and
 `SECRETSAUCE_VAULT_RESOLVE_KEY_FILE`. Supplying an incomplete or invalid runtime
-vault setup stops startup. The gateway caller mounts only the data-plane and
-resolve-capability keys.
+vault setup stops startup. When the control listener is configured, the combined
+application also requires `SECRETSAUCE_VAULT_CONTROL_KEY_FILE` for write-only
+credential management. The broker enforces distinct data, control, and backup
+operation sets even though the application owns both listeners. The application
+never mounts vault root keys or the encrypted store.
 
 After at least one service is published, stop the database-owning gateway and
 run `CONFIG_PATH=/absolute/path/to/config.yaml npm run runtime:activate-v2` from
@@ -144,8 +147,8 @@ reads `SECRETSAUCE_V1_CONFIG`.
 `SECRETSAUCE_MIGRATION_ALLOWLIST_FILE`, an absolute canonical mode-`0400`
 selection file. A resolved commit also requires the control vault caller,
 complete backup-only vault pair, and complete restore directory/recovery-key
-pair. The control caller key is for the stopped host-local migration process
-only and must not remain mounted in the ordinary gateway runtime.
+pair. The migration command reuses the application's control caller key while
+the application is stopped; it still cannot resolve or export credentials.
 
 See [One-time V1 YAML migration](v1-migration.md) for the exact dry-run,
 confirmation, recovery, sole-authority, and remediation workflow.

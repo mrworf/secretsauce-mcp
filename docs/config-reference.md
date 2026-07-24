@@ -122,6 +122,23 @@ database mode never falls back to YAML. In this mode `/health` reports stable
 `database`, `schema`, `runtime_activation`, and `vault` checks and returns `503`
 when any required check is unavailable.
 
+### One-time V1 migration inputs
+
+The migration-only command uses `CONFIG_PATH` for the empty V2
+database-authority target and `SECRETSAUCE_V1_CONFIG` for the separate absolute
+canonical V1 source. Neither the running gateway nor database-authority startup
+reads `SECRETSAUCE_V1_CONFIG`.
+
+`--resolve-credentials` additionally requires
+`SECRETSAUCE_MIGRATION_ALLOWLIST_FILE`, an absolute canonical mode-`0400`
+selection file. A resolved commit also requires the control vault caller,
+complete backup-only vault pair, and complete restore directory/recovery-key
+pair. The control caller key is for the stopped host-local migration process
+only and must not remain mounted in the ordinary gateway runtime.
+
+See [One-time V1 YAML migration](v1-migration.md) for the exact dry-run,
+confirmation, recovery, sole-authority, and remediation workflow.
+
 On a fresh database, run `CONFIG_PATH=/absolute/path/to/config.yaml npm run
 identity:bootstrap` from an interactive terminal on the gateway host. In Docker,
 use an interactive exec such as `docker compose exec secretsauce npm run

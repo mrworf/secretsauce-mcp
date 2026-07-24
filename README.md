@@ -65,6 +65,7 @@ For every downstream request, the gateway validates the authenticated client, re
 - [Audit search and retention](docs/audit-search-retention.md)
 - [Portable backup export](docs/backup-export.md)
 - [Portable restore](docs/restore.md)
+- [One-time V1 YAML migration](docs/v1-migration.md)
 - [Codex and ChatGPT setup](docs/codex-setup.md), including hosted ChatGPT web configuration
 - [Security notes](docs/security-notes.md)
 - [Branch protection](docs/branch-protection.md)
@@ -237,6 +238,14 @@ base64url file with mode `0400`. Keep both mounts stable across restart. A
 successful restore signs out every browser session, revokes all API and OAuth
 access, and leaves restored services in draft with explicit remediation work.
 See [Portable Restore](docs/restore.md) before enabling or operating it.
+
+One-time V1 YAML migration uses a stopped, empty database-authority target and a
+host-local terminal command. Credential definitions import safely without
+values by default; optional value import requires an exact mode-`0400`
+allowlist, a temporarily mounted control-vault caller key, and the complete
+stable restore-recovery deployment. Do not leave the control caller key in the
+ordinary gateway runtime. See
+[One-time V1 YAML migration](docs/v1-migration.md).
 
 ### Initial v2 identity bootstrap
 

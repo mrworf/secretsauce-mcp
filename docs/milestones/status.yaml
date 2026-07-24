@@ -107,10 +107,10 @@ milestones:
   - id: "15"
     title: "Access, Session, And Grant Management"
     file: "docs/milestones/15-access-session-grant-management.md"
-    status: "in_progress"
-    completed_at: null
-    commit_hash: null
-    notes: "Decision-complete access/session/grant management plan under docs/plans/milestone-15-access-session-grant-management.md."
+    status: "completed"
+    completed_at: "2026-07-24T02:53:51.000Z"
+    commit_hash: "f081d66"
+    notes: "Implemented row-scoped session/grant projections, effective status and signed pagination, atomic own/global revocation with guarded user/client/all bulk operations, service-admin aggregate-only capability views and invalidation, strict APIs, and responsive role-aware UX; production build, current OpenAPI, and full 94-file/707-test regression pass."
   - id: "16"
     title: "System-Owned API Keys"
     file: "docs/milestones/16-system-api-keys.md"

@@ -25,6 +25,8 @@ const ASSIGNMENT_ID = "018f1f2e-7b3c-7a10-8000-000000000309";
 const REFRESH_ID = "018f1f2e-7b3c-7a10-8000-000000000311";
 const ACCESS_ID = "018f1f2e-7b3c-7a10-8000-000000000312";
 const INVALIDATION_ID = "018f1f2e-7b3c-7a10-8000-000000000313";
+const CREDENTIAL_ID = "018f1f2e-7b3c-7a10-8000-000000000315";
+const POLICY_ID = "018f1f2e-7b3c-7a10-8000-000000000316";
 const workers = new Set<PersistenceWorker>();
 const codecs = new Set<AccessCursorCodec>();
 
@@ -261,6 +263,43 @@ describe("access management projections", () => {
     expect(replay).toMatchObject({ kind: "replayed" });
   });
 
+  it.each([
+    {
+      name: "client",
+      target: { kind: "client" as const, id: CLIENT_ID },
+      confirmation: `REVOKE CLIENT ${CLIENT_ID}`,
+      expected: 2,
+      hash: "9",
+    },
+    {
+      name: "all",
+      target: { kind: "all" as const },
+      confirmation: "REVOKE ALL OAUTH GRANTS",
+      expected: 2,
+      hash: "a",
+    },
+  ])("revokes the $name bulk target without widening its contract", async (variant) => {
+    const fixture = await setup(true);
+    const result = await fixture.repository.revokeGrantBulk({
+      viewer: { userId: fixture.superadmin, role: "superadmin" },
+      target: variant.target,
+      confirmation: variant.confirmation,
+      justification: `Revoke the exact ${variant.name} boundary.`,
+      correlationId: correlationId("8"),
+      idempotency: {
+        keyHash: variant.hash.repeat(64),
+        principalId: fixture.superadmin,
+        routeId: `access.oauth.${variant.name}_revoke`,
+        requestDigest: "b".repeat(64),
+      },
+      stepUpProof: fakeProof(fixture.superadmin),
+    });
+    expect(result).toMatchObject({
+      kind: "executed",
+      value: { grantsRevoked: variant.expected },
+    });
+  });
+
   it("projects only a currently administered service with aggregate-only reference state", async () => {
     const fixture = await setup();
     const page = await fixture.repository.serviceAccessPage({
@@ -330,6 +369,36 @@ describe("access management projections", () => {
       `, [INVALIDATION_ID, GRANT_ONE])),
     });
     expect(state).toEqual({ events: 1, grant_status: "active" });
+    await fixture.repository.invalidateCapabilities({
+      viewer: { userId: fixture.admin, role: "admin" },
+      serviceId: SERVICE_ID,
+      target: { kind: "credential", id: CREDENTIAL_ID },
+      eventId: "018f1f2e-7b3c-7a10-8000-000000000317",
+      justification: "Invalidate one credential boundary.",
+      correlationId: correlationId("9"),
+    });
+    await fixture.repository.invalidateCapabilities({
+      viewer: { userId: fixture.admin, role: "admin" },
+      serviceId: SERVICE_ID,
+      target: { kind: "policy", id: POLICY_ID },
+      eventId: "018f1f2e-7b3c-7a10-8000-000000000318",
+      justification: "Invalidate one policy boundary.",
+      correlationId: correlationId("a"),
+    });
+    await fixture.repository.invalidateCapabilities({
+      viewer: { userId: fixture.admin, role: "admin" },
+      serviceId: SERVICE_ID,
+      target: { kind: "service" },
+      eventId: "018f1f2e-7b3c-7a10-8000-000000000319",
+      justification: "Invalidate the whole service boundary.",
+      correlationId: correlationId("b"),
+    });
+    expect(fixture.invalidations).toEqual([
+      { subject: fixture.userOne, serviceId: SERVICE_ID },
+      { serviceId: SERVICE_ID, credentialId: CREDENTIAL_ID },
+      { serviceId: SERVICE_ID },
+      { serviceId: SERVICE_ID },
+    ]);
     await expect(fixture.repository.invalidateCapabilities({
       viewer: { userId: fixture.userTwo, role: "admin" },
       serviceId: SERVICE_ID,
@@ -579,6 +648,25 @@ function insertService(
       service_id, version, authorization_generation, created_at, updated_at
     ) VALUES (?, 1, 1, ?, ?)
   `, [SERVICE_ID, NOW, NOW]);
+  transaction.run(`
+    INSERT INTO service_credentials (
+      id, service_id, name, normalized_name, description,
+      usage_kind, usage_name, usage_prefix, usage_suffix,
+      enforce_header_ownership, status, vault_state, vault_locator,
+      vault_generation, last_four, value_updated_at,
+      authorization_generation, version, created_at, updated_at
+    ) VALUES (?, ?, 'API key', 'api key', NULL, 'header', 'X-API-Key',
+      NULL, NULL, 0, 'unconfigured', 'idle', NULL, NULL, NULL, NULL,
+      1, 1, ?, ?)
+  `, [CREDENTIAL_ID, SERVICE_ID, NOW, NOW]);
+  transaction.run(`
+    INSERT INTO policies (
+      id, service_id, credential_id, name, normalized_name, description,
+      operating_mode, lifecycle, evaluation_generation, version,
+      created_at, updated_at
+    ) VALUES (?, ?, NULL, 'Service policy', 'service policy', NULL,
+      'deny', 'active', 1, 1, ?, ?)
+  `, [POLICY_ID, SERVICE_ID, NOW, NOW]);
   transaction.run(`
     UPDATE runtime_activation
     SET state = 'active', activation_generation = 1,

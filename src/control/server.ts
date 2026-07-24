@@ -136,6 +136,7 @@ import {
   registerAccessManagementRoutes,
   type AccessRouteDependencies,
 } from "./accessRoutes.js";
+import type { ReferenceAggregateSource } from "../tokens.js";
 
 export interface ControlApplicationOptions {
   authenticator?: ControlAuthenticator;
@@ -296,6 +297,7 @@ export async function startControlServer(
   config: GatewayConfig,
   options: Pick<ControlApplicationOptions, "vaultReadiness"> & {
     credentialVaultClient?: CredentialControlVault;
+    referenceAggregates?: ReferenceAggregateSource;
   } = {},
 ): Promise<ControlServerApplication> {
   if (config.control === undefined || config.persistence === undefined) {
@@ -385,6 +387,7 @@ export async function startControlServer(
               accessCursor,
               Date.now,
               stepUpRepository,
+              options.referenceAggregates,
             ),
             browserSessions,
             idempotency: idempotencyHasher,

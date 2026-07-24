@@ -29,7 +29,7 @@ function routes(role: HumanControlRole): RouteObject[] {
           : item.path === "/groups"
             ? <GroupsPage />
           : item.path === "/credentials"
-            ? <CredentialsPage />
+            ? <CredentialsPage role={role} />
           : item.path === "/policies"
             ? <PoliciesPage />
           : item.path === "/access"

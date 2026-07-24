@@ -241,6 +241,14 @@ export interface ControlCredential {
   updated_at: number;
 }
 
+export interface SelfApiKeyApproval {
+  api_key_id: string;
+  nickname: string;
+  last_four: string;
+  vault_generation: number;
+  approved_at: number;
+}
+
 export type PolicyBoundary =
   | { kind: "service" }
   | { kind: "credential"; credential_id: string };
@@ -449,6 +457,20 @@ export interface CredentialControlApi
     value: string,
     captureLastFour: boolean,
   ): Promise<ControlCredential>;
+  approveSelfApiKey(
+    credential: ControlCredential,
+    input: {
+      value: string;
+      capture_last_four: boolean;
+      justification: string;
+      risk_acknowledgement: string;
+      password: string;
+      totp: string;
+    },
+  ): Promise<{
+    credential: ControlCredential;
+    approval: SelfApiKeyApproval;
+  }>;
   deleteCredentialValue(
     credential: ControlCredential,
     justification: string,
@@ -1095,6 +1117,8 @@ export const browserControlApi:
       credential.version,
       true,
     ),
+  approveSelfApiKey: (credential, input) =>
+    approveSelfApiKeyWithStepUp(credential, input),
   deleteCredentialValue: (credential, justification) =>
     mutation(
       `/api/v2/services/${credential.service_id}/credentials/${credential.id}/value`,
@@ -1293,6 +1317,73 @@ async function deleteServiceWithStepUp(
     },
     body: JSON.stringify(body),
   });
+}
+
+async function approveSelfApiKeyWithStepUp(
+  credential: ControlCredential,
+  input: {
+    value: string;
+    capture_last_four: boolean;
+    justification: string;
+    risk_acknowledgement: string;
+    password: string;
+    totp: string;
+  },
+): Promise<{
+  credential: ControlCredential;
+  approval: SelfApiKeyApproval;
+}> {
+  const session = await browserControlApi.session();
+  const idempotencyKey = crypto.randomUUID();
+  const body = {
+    value: input.value,
+    capture_last_four: input.capture_last_four,
+    justification: input.justification,
+    risk_acknowledgement: input.risk_acknowledgement,
+  };
+  const operation = {
+    method: "PUT" as const,
+    route_id: "credentials.self_api_key.approve",
+    target_ids: [credential.id, credential.service_id].sort(),
+    expected_version: credential.version,
+    idempotency_key: idempotencyKey,
+    body,
+  };
+  const stepUp = await request<{
+    mode: "five_minutes" | "always";
+    proof?: string;
+  }>("/api/v2/auth/step-up", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-csrf-token": session.csrf_token,
+    },
+    body: JSON.stringify({
+      password: input.password,
+      totp: input.totp,
+      operation,
+    }),
+  });
+  if (stepUp.mode !== "always" || stepUp.proof === undefined) {
+    throw new ControlApiError(
+      "step_up_required",
+      "A proof for this exact credential approval is required.",
+    );
+  }
+  return request(
+    `/api/v2/services/${credential.service_id}/credentials/${credential.id}/self-api-key`,
+    {
+      method: "PUT",
+      headers: {
+        "content-type": "application/json",
+        "x-csrf-token": session.csrf_token,
+        "x-step-up-proof": stepUp.proof,
+        "if-match": `"${credential.version}"`,
+        "idempotency-key": idempotencyKey,
+      },
+      body: JSON.stringify(body),
+    },
+  );
 }
 
 async function request<T>(path: string, init: RequestInit): Promise<T> {

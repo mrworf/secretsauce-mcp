@@ -1,7 +1,12 @@
 // @vitest-environment jsdom
 // @vitest-environment-options {"url":"https://control.example.org/control/services"}
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { browserControlApi, ControlApiError, type ControlServiceDetail } from "./controlApi";
+import {
+  browserControlApi,
+  ControlApiError,
+  type ControlCredential,
+  type ControlServiceDetail,
+} from "./controlApi";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -80,6 +85,76 @@ describe("service browser API", () => {
     }));
     expect(fetch).toHaveBeenCalledTimes(2);
   });
+
+  it("binds self API key approval to the exact body, credential version, and one proof", async () => {
+    const requests: Array<{ url: string; init: RequestInit }> = [];
+    const approval = {
+      api_key_id: "018f1f2e-7b3c-7a10-8000-000000000030",
+      nickname: "Recursive integration",
+      last_four: "CAgI",
+      vault_generation: 4,
+      approved_at: 10,
+    };
+    const responses = [
+      envelope({
+        user_id: SERVICE.id,
+        role: "superadmin",
+        csrf_token: "x".repeat(43),
+        expires_at: 10,
+      }),
+      envelope({ mode: "always", expires_at: 10, proof: "p".repeat(43) }),
+      envelope({ credential: CREDENTIAL, approval }),
+    ];
+    vi.stubGlobal("fetch", vi.fn(async (url: string, init: RequestInit) => {
+      requests.push({ url, init });
+      return responses.shift()!;
+    }));
+    vi.spyOn(crypto, "randomUUID").mockReturnValue(
+      "018f1f2e-7b3c-7a10-8000-000000000099",
+    );
+    const raw =
+      "ssk_v1_AQEBAQEBAQEBAQEB_AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI";
+    const body = {
+      value: raw,
+      capture_last_four: true,
+      justification: "Explicit recursive integration.",
+      risk_acknowledgement:
+        "I ACCEPT RECURSIVE SECRETSAUCE MANAGEMENT AUTHORITY",
+    };
+
+    await expect(browserControlApi.approveSelfApiKey(CREDENTIAL, {
+      ...body,
+      password: "current-password",
+      totp: "123456",
+    })).resolves.toEqual({ credential: CREDENTIAL, approval });
+
+    expect(requests).toHaveLength(3);
+    expect(JSON.parse(String(requests[1]!.init.body))).toEqual({
+      password: "current-password",
+      totp: "123456",
+      operation: {
+        method: "PUT",
+        route_id: "credentials.self_api_key.approve",
+        target_ids: [SERVICE.id, CREDENTIAL.id],
+        expected_version: CREDENTIAL.version,
+        idempotency_key: "018f1f2e-7b3c-7a10-8000-000000000099",
+        body,
+      },
+    });
+    expect(requests[2]).toMatchObject({
+      url:
+        `/api/v2/services/${SERVICE.id}/credentials/${CREDENTIAL.id}/self-api-key`,
+      init: { method: "PUT" },
+    });
+    expect(requests[2]!.init.headers).toMatchObject({
+      "x-step-up-proof": "p".repeat(43),
+      "if-match": `"${CREDENTIAL.version}"`,
+      "idempotency-key": "018f1f2e-7b3c-7a10-8000-000000000099",
+    });
+    expect(JSON.parse(String(requests[2]!.init.body))).toEqual(body);
+    expect(String(requests[2]!.init.body)).not.toContain("current-password");
+    expect(String(requests[2]!.init.body)).not.toContain("123456");
+  });
 });
 
 const SERVICE: ControlServiceDetail = {
@@ -95,6 +170,24 @@ const SERVICE: ControlServiceDetail = {
   created_at: 1,
   updated_at: 2,
   destinations: [],
+};
+
+const CREDENTIAL: ControlCredential = {
+  id: "018f1f2e-7b3c-7a10-8000-000000000020",
+  service_id: SERVICE.id,
+  name: "Self API key",
+  placement: {
+    kind: "header",
+    name: "Authorization",
+    prefix: "Bearer ",
+    enforce_header_ownership: true,
+  },
+  selector: { kind: "all", group_ids: [], user_ids: [] },
+  status: "configured",
+  authorization_generation: 1,
+  version: 3,
+  created_at: 1,
+  updated_at: 2,
 };
 
 function envelope(data: unknown): Response {

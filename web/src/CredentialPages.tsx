@@ -6,13 +6,20 @@ import {
   type ControlService,
   type ControlUser,
   type CredentialControlApi,
+  type SelfApiKeyApproval,
   type ServiceGroup,
+  type UserRole,
 } from "./controlApi";
+
+export const SELF_API_KEY_RISK_ACKNOWLEDGEMENT =
+  "I ACCEPT RECURSIVE SECRETSAUCE MANAGEMENT AUTHORITY";
 
 export function CredentialsPage({
   api = browserControlApi,
+  role = "admin",
 }: {
   api?: CredentialControlApi;
+  role?: UserRole;
 }) {
   const [services, setServices] = useState<ControlService[]>([]);
   const [serviceId, setServiceId] = useState("");
@@ -20,6 +27,9 @@ export function CredentialsPage({
   const [selectedId, setSelectedId] = useState<string>();
   const [groups, setGroups] = useState<ServiceGroup[]>([]);
   const [users, setUsers] = useState<ControlUser[]>([]);
+  const [approvals, setApprovals] = useState<
+    Record<string, SelfApiKeyApproval>
+  >({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -149,7 +159,23 @@ export function CredentialsPage({
                 groups={groups}
                 users={users}
                 api={api}
-                onChanged={() => void loadService(service.id, selected.id)}
+                role={role}
+                approval={approvals[selected.id]}
+                onChanged={() => {
+                  setApprovals((current) => withoutKey(current, selected.id));
+                  void loadService(service.id, selected.id);
+                }}
+                onApproved={(result) => {
+                  setCredentials((current) => current.map((item) =>
+                    item.id === result.credential.id
+                      ? result.credential
+                      : item
+                  ));
+                  setApprovals((current) => ({
+                    ...current,
+                    [result.credential.id]: result.approval,
+                  }));
+                }}
               />
             )}
           </div>
@@ -209,13 +235,22 @@ function CredentialEditor({
   groups,
   users,
   api,
+  role,
+  approval,
   onChanged,
+  onApproved,
 }: {
   credential: ControlCredential;
   groups: ServiceGroup[];
   users: ControlUser[];
   api: CredentialControlApi;
+  role: UserRole;
+  approval?: SelfApiKeyApproval;
   onChanged(): void;
+  onApproved(result: {
+    credential: ControlCredential;
+    approval: SelfApiKeyApproval;
+  }): void;
 }) {
   const [value, setValue] = useState("");
   const [capture, setCapture] = useState(false);
@@ -282,6 +317,14 @@ function CredentialEditor({
           <p className="muted-copy">The submitted value is cleared after this attempt and is never shown again.</p>
           <button type="submit">Write value</button>
         </form>
+      )}
+      {role === "superadmin" && !archived && (
+        <SelfApiKeyRiskApproval
+          credential={credential}
+          approval={approval}
+          api={api}
+          onApproved={onApproved}
+        />
       )}
       {!archived && (
         <form className="assignment-grid credential-assignment" onSubmit={(event) => {
@@ -381,7 +424,152 @@ function toggle(values: string[], value: string): string[] {
     : [...values, value];
 }
 
+function withoutKey<T>(
+  values: Record<string, T>,
+  key: string,
+): Record<string, T> {
+  const next = { ...values };
+  delete next[key];
+  return next;
+}
+
+function SelfApiKeyRiskApproval({
+  credential,
+  approval,
+  api,
+  onApproved,
+}: {
+  credential: ControlCredential;
+  approval?: SelfApiKeyApproval;
+  api: CredentialControlApi;
+  onApproved(result: {
+    credential: ControlCredential;
+    approval: SelfApiKeyApproval;
+  }): void;
+}) {
+  const [value, setValue] = useState("");
+  const [capture, setCapture] = useState(false);
+  const [justification, setJustification] = useState("");
+  const [acknowledgement, setAcknowledgement] = useState("");
+  const [password, setPassword] = useState("");
+  const [totp, setTotp] = useState("");
+  const [error, setError] = useState("");
+  const ready = acknowledgement === SELF_API_KEY_RISK_ACKNOWLEDGEMENT &&
+    justification.trim() !== "" &&
+    justification === justification.trim() &&
+    password !== "" &&
+    /^\d{6}$/.test(totp);
+
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    if (!ready) return;
+    const submittedValue = value;
+    const submittedPassword = password;
+    const submittedTotp = totp;
+    setValue("");
+    setPassword("");
+    setTotp("");
+    setError("");
+    void api.approveSelfApiKey(credential, {
+      value: submittedValue,
+      capture_last_four: capture,
+      justification,
+      risk_acknowledgement: acknowledgement,
+      password: submittedPassword,
+      totp: submittedTotp,
+    }).then(onApproved, (caught) => setError(messageFor(caught)))
+      .finally(() => {
+        setValue("");
+        setPassword("");
+        setTotp("");
+      });
+  }
+
+  return (
+    <section className="self-api-key-risk" aria-labelledby={`self-risk-${credential.id}`}>
+      <h4 id={`self-risk-${credential.id}`}>Recursive management authority</h4>
+      <p>
+        This exceptional workflow stores an active SecretSauce management API key.
+        A referenced request could then manage this deployment within every remaining
+        service, credential, destination, and policy boundary.
+      </p>
+      <p className="muted-copy">
+        Approval is bound to this credential and vault generation. Runtime use still
+        requires a scoped gateway reference and revalidates the key’s live status.
+      </p>
+      {approval !== undefined && (
+        <dl className="self-api-key-approval" aria-label="Current self API key approval">
+          <div><dt>Status</dt><dd>Approved; live status revalidated per use</dd></div>
+          <div><dt>API key</dt><dd>{approval.nickname}</dd></div>
+          <div><dt>Last four</dt><dd>{approval.last_four}</dd></div>
+          <div><dt>Vault generation</dt><dd>{approval.vault_generation}</dd></div>
+          <div><dt>Approved</dt><dd>
+            {new Date(approval.approved_at).toLocaleString()}
+          </dd></div>
+        </dl>
+      )}
+      <form className="profile-form" autoComplete="off" onSubmit={submit}>
+        <label>
+          Active SecretSauce API key
+          <input
+            required
+            type="password"
+            name="self-api-key-value"
+            maxLength={65_536}
+            autoComplete="new-password"
+            value={value}
+            onChange={(event) => setValue(event.target.value)}
+          />
+        </label>
+        <label className="checkbox-label">
+          <input type="checkbox" checked={capture}
+            onChange={(event) => setCapture(event.target.checked)} />
+          Capture a printable last-four hint
+        </label>
+        <label>
+          Justification
+          <textarea required maxLength={512} value={justification}
+            onChange={(event) => setJustification(event.target.value)} />
+        </label>
+        <label>
+          Type the exact risk acknowledgement
+          <span className="confirmation-phrase">
+            {SELF_API_KEY_RISK_ACKNOWLEDGEMENT}
+          </span>
+          <input required autoComplete="off" value={acknowledgement}
+            onChange={(event) => setAcknowledgement(event.target.value)} />
+        </label>
+        <label>
+          Current password
+          <input required type="password" autoComplete="current-password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)} />
+        </label>
+        <label>
+          Current TOTP code
+          <input required inputMode="numeric" pattern="\d{6}" maxLength={6}
+            autoComplete="one-time-code" value={totp}
+            onChange={(event) => setTotp(event.target.value)} />
+        </label>
+        <p className="muted-copy">
+          The API key, password, and TOTP code are cleared after this attempt.
+        </p>
+        <button className="danger-button" type="submit" disabled={!ready}>
+          Approve recursive authority
+        </button>
+      </form>
+      {error !== "" && <p className="form-error" role="alert">{error}</p>}
+    </section>
+  );
+}
+
 function messageFor(error: unknown): string {
+  if (
+    error instanceof ControlApiError &&
+    error.code === "active_self_api_key"
+  ) {
+    return "Active SecretSauce API keys require the superadmin recursive-authority workflow.";
+  }
   if (error instanceof ControlApiError) return error.message;
   return "The credential operation could not be completed.";
 }

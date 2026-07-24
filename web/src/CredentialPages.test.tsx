@@ -11,7 +11,10 @@ import type {
   CredentialControlApi,
   ServiceGroup,
 } from "./controlApi";
-import { CredentialsPage } from "./CredentialPages";
+import {
+  CredentialsPage,
+  SELF_API_KEY_RISK_ACKNOWLEDGEMENT,
+} from "./CredentialPages";
 
 afterEach(cleanup);
 
@@ -67,6 +70,58 @@ describe("credential workspace", () => {
         direct_assignment_confirmed: true,
       },
     ));
+  });
+
+  it("limits recursive key approval to superadmins and clears every submitted secret", async () => {
+    const adminApi = fakeApi();
+    const admin = render(<CredentialsPage api={adminApi} role="admin" />);
+    await screen.findByText(/Remediation required/);
+    expect(screen.queryByRole("heading", {
+      name: "Recursive management authority",
+    })).not.toBeInTheDocument();
+    admin.unmount();
+
+    const user = userEvent.setup();
+    const api = fakeApi();
+    render(<CredentialsPage api={api} role="superadmin" />);
+    expect(await screen.findByRole("heading", {
+      name: "Recursive management authority",
+    })).toBeInTheDocument();
+
+    const raw = "ssk_v1_AQEBAQEBAQEBAQEB_AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI";
+    await user.type(screen.getByLabelText("Active SecretSauce API key"), raw);
+    await user.type(
+      screen.getByLabelText("Justification"),
+      "Required recursive integration.",
+    );
+    await user.type(
+      screen.getByLabelText(/Type the exact risk acknowledgement/),
+      SELF_API_KEY_RISK_ACKNOWLEDGEMENT,
+    );
+    await user.type(screen.getByLabelText("Current password"), "fresh-password");
+    await user.type(screen.getByLabelText("Current TOTP code"), "123456");
+    await user.click(screen.getByRole("button", {
+      name: "Approve recursive authority",
+    }));
+
+    await waitFor(() => expect(api.approveSelfApiKey).toHaveBeenCalledWith(
+      expect.objectContaining({ id: CREDENTIAL.id }),
+      {
+        value: raw,
+        capture_last_four: false,
+        justification: "Required recursive integration.",
+        risk_acknowledgement: SELF_API_KEY_RISK_ACKNOWLEDGEMENT,
+        password: "fresh-password",
+        totp: "123456",
+      },
+    ));
+    expect(screen.getByLabelText("Active SecretSauce API key")).toHaveValue("");
+    expect(screen.getByLabelText("Current password")).toHaveValue("");
+    expect(screen.getByLabelText("Current TOTP code")).toHaveValue("");
+    expect(await screen.findByText("Approved management key")).toBeInTheDocument();
+    expect(screen.getAllByText("CAgI")).toHaveLength(2);
+    expect(document.body.textContent).not.toContain(raw);
+    expect(window.location.href).not.toContain("ssk_v1");
   });
 });
 
@@ -131,6 +186,8 @@ function fakeApi(): CredentialControlApi & {
   replaceCredentialValue: ReturnType<typeof vi.fn<CredentialControlApi["replaceCredentialValue"]>>;
   replaceCredentialAssignments:
     ReturnType<typeof vi.fn<CredentialControlApi["replaceCredentialAssignments"]>>;
+  approveSelfApiKey:
+    ReturnType<typeof vi.fn<CredentialControlApi["approveSelfApiKey"]>>;
 } {
   return {
     listServices: async () => ({ services: [SERVICE] }),
@@ -157,6 +214,21 @@ function fakeApi(): CredentialControlApi & {
       ...credential,
       status: "configured",
       version: 2,
+    })),
+    approveSelfApiKey: vi.fn(async (credential, _input) => ({
+      credential: {
+        ...credential,
+        status: "configured",
+        last_four: "CAgI",
+        version: credential.version + 1,
+      },
+      approval: {
+        api_key_id: "018f1f2e-7b3c-7a10-8000-000000000099",
+        nickname: "Approved management key",
+        last_four: "CAgI",
+        vault_generation: 1,
+        approved_at: 1_800_000_000_000,
+      },
     })),
     deleteCredentialValue: async (credential) => ({
       ...credential,

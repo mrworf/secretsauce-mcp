@@ -100,10 +100,10 @@ milestones:
   - id: "14"
     title: "Multi-User MCP OAuth"
     file: "docs/milestones/14-multiuser-mcp-oauth.md"
-    status: "in_progress"
-    completed_at: null
-    commit_hash: null
-    notes: "Decision-complete multi-user OAuth plan under docs/plans/milestone-14-multiuser-mcp-oauth.md."
+    status: "completed"
+    completed_at: "2026-07-24T02:22:04.000Z"
+    commit_hash: "9542715"
+    notes: "Database built-in OAuth now supports eligible ordinary users through local password+TOTP or linked assured OIDC, durable hash-only opaque grants/tokens, transactional code and refresh rotation with replay revocation, request-time UUID/epoch/resource/scope/service eligibility, security revocation, bounded cleanup, HTTP/MCP integration, and operator guidance; production build, current OpenAPI, and full 91-file/693-test suite pass."
   - id: "15"
     title: "Access, Session, And Grant Management"
     file: "docs/milestones/15-access-session-grant-management.md"

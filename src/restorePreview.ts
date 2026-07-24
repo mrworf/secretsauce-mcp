@@ -281,6 +281,12 @@ function restoreCounts(
     ? decoded.secretSelection.length
     : 0;
   const unavailableSecrets = decoded.secretSelection.length - availableSecrets;
+  const servicesWithUnavailableSecrets = new Set(
+    decoded.secretSelection
+      .filter((entry) =>
+        disposition !== "encrypted_secrets")
+      .map((entry) => entry.serviceId),
+  ).size;
   return {
     services: decoded.counts.services,
     destinations: decoded.counts.destinations,
@@ -294,10 +300,10 @@ function restoreCounts(
     revokedApiKeys: current.revokedApiKeys,
     revokedSessions: current.revokedSessions,
     revokedOauthGrants: current.revokedOauthGrants,
-    remediations: decoded.counts.services * 2
+    remediations: decoded.counts.services * 3
       + decoded.counts.policies
       + unavailableSecrets
-      + (unavailableSecrets > 0 ? 1 : 0),
+      + servicesWithUnavailableSecrets,
   };
 }
 

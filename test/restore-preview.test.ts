@@ -69,7 +69,7 @@ describe("restore preview coordinator", () => {
         revokedApiKeys: 0,
         revokedSessions: 0,
         revokedOauthGrants: 0,
-        remediations: 5,
+        remediations: 6,
       },
     });
     expect(validateRestore).not.toHaveBeenCalled();
@@ -95,7 +95,7 @@ describe("restore preview coordinator", () => {
       counts: {
         availableSecrets: 1,
         unavailableSecrets: 0,
-        remediations: 3,
+        remediations: 4,
       },
     });
     expect(correct.planDigest).not.toBe(missing.planDigest);

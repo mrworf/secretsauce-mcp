@@ -241,7 +241,13 @@ async function handleGatewayServiceReferences(
   args: Record<string, unknown> | undefined, _config: GatewayConfig, auth: AuthContext, dependencies: RequestDependencies,
 ): Promise<ToolResult> {
   const input = parseServiceReferenceRequest(args);
-  const result = dependencies.capabilities.tokenBroker.issueTokens(auth, input);
+  const result = dependencies.runtimeAuthority === undefined
+    ? dependencies.capabilities.tokenBroker.issueTokens(auth, input)
+    : dependencies.capabilities.tokenBroker.issueRuntimeTokens(
+      auth,
+      input,
+      await dependencies.runtimeAuthority.authorizeReferences(auth, input),
+    );
   auditTool(auth, "get_gateway_service_references", "allow", { service: input.service }, dependencies.auditSink);
   const references = result.tokens.map((item) => ({
     access_id: item.credential_id,

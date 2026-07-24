@@ -5,6 +5,7 @@ import type { AuditSink, ReferenceIssuedAuditEvent } from "./audit.js";
 import { referenceIssuedAuditEvent } from "./audit.js";
 import type { AuthContext, GatewayConfig } from "./types.js";
 import { credentialUsageHint } from "./credentialUsage.js";
+import type { RuntimeReferenceGrant } from "./runtimeAuthority.js";
 
 export interface TokenRequestInput {
   service: string;
@@ -37,6 +38,14 @@ export interface TokenRecord {
   accessId: string;
   kind: "credential" | "service";
   credentialId?: string;
+  serviceId?: string;
+  destinationId?: string;
+  snapshotId?: string;
+  publicationGeneration?: number;
+  serviceAuthorizationGeneration?: number;
+  credentialAuthorizationGeneration?: number;
+  subjectSecurityEpoch?: number;
+  globalReferenceEpoch?: number;
   reason: string;
   issuedAt: number;
   lastUsedAt: number;
@@ -155,7 +164,83 @@ export class TokenBroker {
     return { tokens: issued, audit };
   }
 
+  issueRuntimeTokens(
+    auth: AuthContext,
+    input: TokenRequestInput,
+    grant: RuntimeReferenceGrant,
+  ): TokenIssueResult {
+    this.sweepExpired();
+    this.ensureCapacity(auth.subject, grant.accesses.length);
+    const now = this.now();
+    const issued: TokenIssueResult["tokens"] = [];
+    const internalReferenceIds: string[] = [];
+    for (const access of grant.accesses) {
+      const token = generateTokenValue();
+      const id = `grefrec_${randomUUID()}`;
+      const record: TokenRecord = {
+        id,
+        tokenHash: hashToken(token),
+        subject: auth.subject,
+        service: grant.service,
+        serviceId: grant.serviceId,
+        destination: grant.destination,
+        destinationId: grant.destinationId,
+        snapshotId: grant.snapshotId,
+        publicationGeneration: grant.publicationGeneration,
+        serviceAuthorizationGeneration: grant.serviceAuthorizationGeneration,
+        subjectSecurityEpoch: grant.subjectSecurityEpoch,
+        globalReferenceEpoch: grant.globalReferenceEpoch,
+        accessId: access.id,
+        kind: access.kind,
+        ...(access.credentialId === undefined
+          ? {}
+          : { credentialId: access.credentialId }),
+        ...(access.credentialAuthorizationGeneration === undefined
+          ? {}
+          : {
+              credentialAuthorizationGeneration:
+                access.credentialAuthorizationGeneration,
+            }),
+        reason: input.reason,
+        issuedAt: now,
+        lastUsedAt: now,
+        idleExpiresAt: now + this.config.tokens.idleTtlMs,
+        maxExpiresAt: now + this.config.tokens.maxTtlMs,
+      };
+      this.recordsByHash.set(record.tokenHash, record);
+      this.tokenValuesById.set(record.id, token);
+      internalReferenceIds.push(id);
+      issued.push({
+        credential_id: access.id,
+        token,
+        usage_hint: access.usageHint,
+        expires_at: new Date(record.maxExpiresAt).toISOString(),
+      });
+    }
+    const event = referenceIssuedAuditEvent({
+      type: "reference_issued",
+      subject: auth.subject,
+      service: grant.serviceId,
+      destination: grant.destinationId,
+      access_ids: grant.accesses.map(({ id }) => id),
+      internal_reference_ids: internalReferenceIds,
+      reason: input.reason,
+      timestamp: new Date(now).toISOString(),
+    }, this.auditSink);
+    return { tokens: issued, audit: event };
+  }
+
   validateTokenUse(auth: AuthContext, target: TokenUseTarget, tokenValue: string): TokenRecord {
+    const record = this.preflightTokenUse(auth, target, tokenValue);
+    this.refresh(record);
+    return record;
+  }
+
+  preflightTokenUse(
+    auth: AuthContext,
+    target: TokenUseTarget,
+    tokenValue: string,
+  ): TokenRecord {
     const hash = hashToken(tokenValue);
     const record = this.recordsByHash.get(hash);
     if (!record) throw new GatewayError("reference_invalid", "Unknown gateway reference.");
@@ -171,9 +256,15 @@ export class TokenBroker {
       throw new GatewayError("reference_invalid", "Gateway reference is not bound to this destination.");
     }
 
-    record.lastUsedAt = now;
-    record.idleExpiresAt = Math.min(now + this.config.tokens.idleTtlMs, record.maxExpiresAt);
     return record;
+  }
+
+  consumePreflightedToken(record: TokenRecord): void {
+    const current = this.recordsByHash.get(record.tokenHash);
+    if (current !== record || this.isExpired(record)) {
+      throw new GatewayError("reference_expired", "Gateway reference has expired.");
+    }
+    this.refresh(record);
   }
 
   validateServiceReferenceUse(auth: AuthContext, target: TokenUseTarget, tokenValue: string): TokenRecord {
@@ -302,6 +393,41 @@ export class TokenBroker {
       responseSecrets: this.responseSecretsById.size,
       tokenValues: this.tokenValuesById.size,
     };
+  }
+
+  invalidate(input: {
+    subject?: string;
+    serviceId?: string;
+    credentialId?: string;
+  }): number {
+    let removed = 0;
+    for (const [hash, record] of this.recordsByHash) {
+      if (
+        (input.subject === undefined || record.subject === input.subject)
+        && (input.serviceId === undefined || record.serviceId === input.serviceId)
+        && (
+          input.credentialId === undefined
+          || record.credentialId === input.credentialId
+        )
+      ) {
+        this.deleteConfiguredToken(hash, record.id);
+        removed += 1;
+      }
+    }
+    for (const record of [...this.responseSecretsById.values()]) {
+      if (
+        (input.subject === undefined || record.subject === input.subject)
+        && input.credentialId === undefined
+        && input.serviceId === undefined
+      ) {
+        this.deleteResponseSecret(
+          record.id,
+          this.responseSecretIndex(record.subject, record.service, record.secret),
+        );
+        removed += 1;
+      }
+    }
+    return removed;
   }
 
   assertResponseSecretCapacity(auth: AuthContext, service: string, secrets: Iterable<string>): void {

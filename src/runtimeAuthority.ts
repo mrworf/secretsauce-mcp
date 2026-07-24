@@ -13,6 +13,8 @@ import type {
   RuntimeServiceSnapshot,
 } from "./runtimeSnapshots.js";
 import type { AuthContext, CredentialUsageConfig } from "./types.js";
+import type { TokenRequestInput } from "./tokens.js";
+import type { TokenRecord } from "./tokens.js";
 
 const MAX_ACTIVE_SERVICES = 1_000;
 
@@ -27,6 +29,25 @@ export interface PersistedRuntimeServiceView {
   subject: RuntimeSubject;
 }
 
+export interface RuntimeReferenceGrant {
+  service: string;
+  serviceId: string;
+  destination: string;
+  destinationId: string;
+  snapshotId: string;
+  publicationGeneration: number;
+  serviceAuthorizationGeneration: number;
+  subjectSecurityEpoch: number;
+  globalReferenceEpoch: number;
+  accesses: Array<{
+    id: string;
+    kind: "credential" | "service";
+    usageHint: string;
+    credentialId?: string;
+    credentialAuthorizationGeneration?: number;
+  }>;
+}
+
 export interface RuntimeAuthority {
   listServices(auth: AuthContext): Promise<ServiceSummary[]>;
   describeServicePolicy(
@@ -36,6 +57,16 @@ export interface RuntimeAuthority {
   serviceView(
     auth: AuthContext,
     service: string,
+  ): Promise<PersistedRuntimeServiceView>;
+  authorizeReferences(
+    auth: AuthContext,
+    input: TokenRequestInput,
+  ): Promise<RuntimeReferenceGrant>;
+  validateReferences(
+    auth: AuthContext,
+    service: string,
+    destination: string,
+    records: readonly TokenRecord[],
   ): Promise<PersistedRuntimeServiceView>;
 }
 
@@ -119,6 +150,131 @@ export class PersistedRuntimeAuthority implements RuntimeAuthority {
     });
     if ("error" in result) throw runtimeError(result.error, service);
     return result.view;
+  }
+
+  async authorizeReferences(
+    auth: AuthContext,
+    input: TokenRequestInput,
+  ): Promise<RuntimeReferenceGrant> {
+    if (!input.reason.trim()) {
+      throw new GatewayError("reference_invalid", "Reference request reason is required.");
+    }
+    if (input.access_ids.length === 0) {
+      throw new GatewayError("unknown_access", "At least one access id is required.");
+    }
+    const { snapshot, subject } = await this.serviceView(auth, input.service);
+    const destination = runtimeDestination(snapshot, input.destination);
+    const state = await this.owner.execute({
+      run: (database) => database.read((query) => query.get<{
+        state: string;
+        global_reference_epoch: number;
+      }>("SELECT state, global_reference_epoch FROM runtime_activation WHERE singleton = 1")),
+    });
+    if (state?.state !== "active") throw runtimeError("config_error");
+    const accesses = input.access_ids.map((accessId) => {
+      if (snapshot.credentials.length === 0) {
+        if (accessId !== GATEWAY_ACCESS_ID) {
+          throw new GatewayError("unknown_access", `Unknown access id: ${accessId}`);
+        }
+        return {
+          id: accessId,
+          kind: "service" as const,
+          usageHint: GATEWAY_ACCESS_USAGE_HINT,
+        };
+      }
+      const credential = snapshot.credentials.find(({ id }) => id === accessId);
+      if (credential === undefined) {
+        throw new GatewayError("unknown_access", `Unknown access id: ${accessId}`);
+      }
+      if (
+        credential.status !== "configured"
+        || credential.locator === undefined
+        || credential.generation === undefined
+        || !selectorAllows(credential.selector, subject)
+      ) {
+        throw new GatewayError(
+          "unknown_access",
+          `Access is unavailable: ${accessId}`,
+        );
+      }
+      return {
+        id: credential.id,
+        kind: "credential" as const,
+        credentialId: credential.id,
+        credentialAuthorizationGeneration: credential.authorizationGeneration,
+        usageHint: credentialUsageHint(runtimeCredentialUsage(credential)),
+      };
+    });
+    return {
+      service: snapshot.service.slug,
+      serviceId: snapshot.service.id,
+      destination: destination.slug,
+      destinationId: destination.id,
+      snapshotId: snapshot.id,
+      publicationGeneration: snapshot.service.publicationGeneration,
+      serviceAuthorizationGeneration: snapshot.serviceAuthorizationGeneration,
+      subjectSecurityEpoch: subject.securityEpoch,
+      globalReferenceEpoch: state.global_reference_epoch,
+      accesses,
+    };
+  }
+
+  async validateReferences(
+    auth: AuthContext,
+    service: string,
+    destination: string,
+    records: readonly TokenRecord[],
+  ): Promise<PersistedRuntimeServiceView> {
+    const view = await this.serviceView(auth, service);
+    const selectedDestination = runtimeDestination(view.snapshot, destination);
+    const state = await this.owner.execute({
+      run: (database) => database.read((query) => query.get<{
+        state: string;
+        global_reference_epoch: number;
+      }>("SELECT state, global_reference_epoch FROM runtime_activation WHERE singleton = 1")),
+    });
+    if (state?.state !== "active") throw runtimeError("config_error");
+    for (const record of records) {
+      if (
+        record.subject !== view.subject.id
+        || record.service !== view.snapshot.service.slug
+        || record.serviceId !== view.snapshot.service.id
+        || record.destination !== selectedDestination.slug
+        || record.destinationId !== selectedDestination.id
+        || record.snapshotId !== view.snapshot.id
+        || record.publicationGeneration
+          !== view.snapshot.service.publicationGeneration
+        || record.serviceAuthorizationGeneration
+          !== view.snapshot.serviceAuthorizationGeneration
+        || record.subjectSecurityEpoch !== view.subject.securityEpoch
+        || record.globalReferenceEpoch !== state.global_reference_epoch
+      ) {
+        throw new GatewayError(
+          "reference_invalid",
+          "Gateway reference is stale or has different authorization bindings.",
+        );
+      }
+      if (record.kind === "credential") {
+        const credential = view.snapshot.credentials.find(
+          ({ id }) => id === record.credentialId,
+        );
+        if (
+          credential === undefined
+          || credential.status !== "configured"
+          || credential.locator === undefined
+          || credential.generation === undefined
+          || !selectorAllows(credential.selector, view.subject)
+          || credential.authorizationGeneration
+            !== record.credentialAuthorizationGeneration
+        ) {
+          throw new GatewayError(
+            "reference_invalid",
+            "Gateway credential reference is no longer authorized.",
+          );
+        }
+      }
+    }
+    return view;
   }
 }
 
@@ -292,18 +448,49 @@ function accessMethods(
       && selectorAllows(credential.selector, subject))
     .map((credential) => ({
       id: credential.id,
-      usage_hint: credentialUsageHint({
-        kind: credential.usage.kind,
-        name: credential.usage.name,
-        ...(credential.usage.prefix === undefined
-          ? {}
-          : { prefix: credential.usage.prefix }),
-        ...(credential.usage.suffix === undefined
-          ? {}
-          : { suffix: credential.usage.suffix }),
-        enforce: credential.usage.enforceHeaderOwnership,
-      } satisfies CredentialUsageConfig),
+      usage_hint: credentialUsageHint(runtimeCredentialUsage(credential)),
     }));
+}
+
+function runtimeCredentialUsage(
+  credential: RuntimeServiceSnapshot["credentials"][number],
+): CredentialUsageConfig {
+  return {
+    kind: credential.usage.kind,
+    name: credential.usage.name,
+    ...(credential.usage.prefix === undefined
+      ? {}
+      : { prefix: credential.usage.prefix }),
+    ...(credential.usage.suffix === undefined
+      ? {}
+      : { suffix: credential.usage.suffix }),
+    enforce: credential.usage.enforceHeaderOwnership,
+  };
+}
+
+function runtimeDestination(
+  snapshot: RuntimeServiceSnapshot,
+  requested: string | undefined,
+): RuntimeServiceSnapshot["destinations"][number] {
+  if (requested !== undefined) {
+    const destination = snapshot.destinations.find(
+      ({ id, slug }) => id === requested || slug === requested,
+    );
+    if (destination === undefined) {
+      throw new GatewayError(
+        "unknown_destination",
+        `Unknown destination: ${requested}`,
+      );
+    }
+    return destination;
+  }
+  if (snapshot.destinations.length === 1) {
+    return snapshot.destinations[0]!;
+  }
+  throw new GatewayError(
+    "unknown_destination",
+    "destination is required when a service has multiple destinations",
+  );
 }
 
 function matcherStrings(matchers: unknown[]): string[] {

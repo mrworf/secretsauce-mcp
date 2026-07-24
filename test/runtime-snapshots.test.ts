@@ -21,6 +21,8 @@ import {
 } from "../src/runtime/activateCli.js";
 import type { GatewayConfig } from "../src/types.js";
 import { PersistedRuntimeAuthority } from "../src/runtimeAuthority.js";
+import { TokenBroker } from "../src/tokens.js";
+import { RuntimeInvalidationConsumer } from "../src/runtimeInvalidation.js";
 
 const NOW = 1_785_000_000_000;
 const CORRELATION = "req_12345678-1234-4234-8234-123456789abc";
@@ -311,6 +313,178 @@ describe("persisted runtime discovery", () => {
       })).rejects.toMatchObject({ code: "unauthenticated" });
     }
   });
+
+  it("issues subject, destination, snapshot, and generation-bound references", async () => {
+    const fixture = await runtimeFixture("references");
+    const published = await fixture.publish("reference-api", fixture.user.id);
+    await new RuntimeActivationRepository(fixture.worker, () => NOW).activate({
+      correlationId: CORRELATION,
+      osActor: "test-operator",
+    });
+    const authority = new PersistedRuntimeAuthority(fixture.worker);
+    const auth = {
+      subject: fixture.user.id,
+      scopes: ["gateway.references"],
+      mode: "oauth" as const,
+    };
+    const input = {
+      service: "reference-api",
+      access_ids: ["gateway_access"],
+      reason: "Read the assigned runtime service.",
+    };
+    const grant = await authority.authorizeReferences(auth, input);
+    const broker = new TokenBroker(referenceConfig(), () => NOW);
+    const issued = broker.issueRuntimeTokens(auth, input, grant);
+    expect(issued.tokens).toHaveLength(1);
+    const record = broker.validateServiceReferenceUse(
+      auth,
+      { service: "reference-api", destination: "primary" },
+      issued.tokens[0]!.token,
+    );
+    expect(record).toMatchObject({
+      subject: fixture.user.id,
+      service: "reference-api",
+      serviceId: published.id,
+      destination: "primary",
+      snapshotId: grant.snapshotId,
+      publicationGeneration: 1,
+      serviceAuthorizationGeneration: 0,
+      subjectSecurityEpoch: 1,
+      globalReferenceEpoch: 1,
+      kind: "service",
+    });
+    expect(() => broker.validateServiceReferenceUse(
+      {
+        ...auth,
+        subject: fixture.suspendedUser.id,
+      },
+      { service: "reference-api", destination: "primary" },
+      issued.tokens[0]!.token,
+    )).toThrowError(expect.objectContaining({ code: "reference_invalid" }));
+  });
+
+  it("rejects a preflighted reference after the active publication changes", async () => {
+    const fixture = await runtimeFixture("stale");
+    let published = await fixture.publish("stale-api", fixture.user.id);
+    await new RuntimeActivationRepository(fixture.worker, () => NOW).activate({
+      correlationId: CORRELATION,
+      osActor: "test-operator",
+    });
+    const authority = new PersistedRuntimeAuthority(fixture.worker);
+    const auth = {
+      subject: fixture.user.id,
+      scopes: ["gateway.request"],
+      mode: "oauth" as const,
+    };
+    const input = {
+      service: "stale-api",
+      destination: "primary",
+      access_ids: ["gateway_access"],
+      reason: "Exercise a generation-bound reference.",
+    };
+    const broker = new TokenBroker(referenceConfig(), () => NOW);
+    const issued = broker.issueRuntimeTokens(
+      auth,
+      input,
+      await authority.authorizeReferences(auth, input),
+    );
+    const record = broker.preflightTokenUse(
+      auth,
+      { service: "stale-api", destination: "primary" },
+      issued.tokens[0]!.token,
+    );
+
+    published = await fixture.service.updateProfile(
+      fixture.superadmin,
+      published.id,
+      published.version,
+      { name: "New snapshot" },
+      CORRELATION,
+    );
+    await fixture.service.publish(
+      fixture.superadmin,
+      published.id,
+      published.version,
+      CORRELATION,
+    );
+
+    await expect(authority.validateReferences(
+      auth,
+      "stale-api",
+      "primary",
+      [record],
+    )).rejects.toMatchObject({ code: "reference_invalid" });
+  });
+
+  it("consumes targeted invalidations after evicting only affected references", async () => {
+    const fixture = await runtimeFixture("invalidations");
+    const first = await fixture.publish("first-api", fixture.user.id);
+    await fixture.publish("second-api", fixture.user.id);
+    await new RuntimeActivationRepository(fixture.worker, () => NOW).activate({
+      correlationId: CORRELATION,
+      osActor: "test-operator",
+    });
+    await fixture.worker.execute({
+      run: (database) => database.withOperationalTransaction((transaction) => {
+        transaction.run(
+          "UPDATE service_invalidation_events SET dispatched_at = ? WHERE dispatched_at IS NULL",
+          [NOW],
+        );
+      }),
+    });
+    const authority = new PersistedRuntimeAuthority(fixture.worker);
+    const auth = {
+      subject: fixture.user.id,
+      scopes: ["gateway.references"],
+      mode: "oauth" as const,
+    };
+    const broker = new TokenBroker(referenceConfig(), () => NOW);
+    for (const service of ["first-api", "second-api"]) {
+      const input = {
+        service,
+        access_ids: ["gateway_access"],
+        reason: "Prepare targeted invalidation coverage.",
+      };
+      broker.issueRuntimeTokens(
+        auth,
+        input,
+        await authority.authorizeReferences(auth, input),
+      );
+    }
+    expect(broker.stats().configured).toBe(2);
+    const invalidationId = "018f1f2e-7b3c-7a10-8000-000000000099";
+    await fixture.worker.execute({
+      run: (database) => database.withOperationalTransaction((transaction) => {
+        transaction.run(`
+          INSERT INTO service_invalidation_events (
+            id, service_id, publication_generation, reason,
+            created_at, dispatched_at, attempts
+          ) VALUES (?, ?, 2, 'publication', ?, NULL, 0)
+        `, [invalidationId, first.id, NOW]);
+      }),
+    });
+
+    await expect(new RuntimeInvalidationConsumer(
+      fixture.worker,
+      broker,
+    ).poll()).resolves.toBe(1);
+    expect(broker.stats().configured).toBe(1);
+    await expect(fixture.worker.execute({
+      run: (database) => database.read((query) => ({
+        event: query.get<{ dispatched_at: number; attempts: number }>(`
+          SELECT dispatched_at, attempts
+          FROM service_invalidation_events WHERE id = ?
+        `, [invalidationId]),
+        checkpoint: query.get<{ last_event_id: string }>(`
+          SELECT last_event_id FROM runtime_invalidation_checkpoints
+          WHERE stream_name = 'service'
+        `),
+      })),
+    })).resolves.toMatchObject({
+      event: { dispatched_at: expect.any(Number), attempts: 1 },
+      checkpoint: { last_event_id: invalidationId },
+    });
+  });
 });
 
 async function runtimeFixture(label: string) {
@@ -573,5 +747,15 @@ function databaseRuntimeConfig(): GatewayConfig {
     services: {},
     warnings: [],
     debugDiagnostics: [],
+  };
+}
+
+function referenceConfig(): GatewayConfig {
+  return {
+    ...databaseRuntimeConfig(),
+    limits: {
+      maxTokenRecords: 100,
+      maxTokenRecordsPerSubject: 20,
+    } as GatewayConfig["limits"],
   };
 }

@@ -8,6 +8,7 @@ import { PersistenceWorker, type PersistenceOwner } from "./persistence/worker.j
 import { PACKAGE_VERSION } from "./version.js";
 import { sanitizeAuditText } from "./auditSanitizer.js";
 import { PersistedRuntimeAuthority, type RuntimeAuthority } from "./runtimeAuthority.js";
+import { RuntimeInvalidationConsumer } from "./runtimeInvalidation.js";
 
 export interface GatewayRuntimeOptions {
   auditSink?: AuditSink;
@@ -52,6 +53,15 @@ export class GatewayRuntime {
       maintenance.register((now) => capabilities.tokenBroker.sweepExpired(now));
       maintenance.register((now) => capabilities.denialStore.sweep(now));
       maintenance.register((now) => builtinOAuth.sweep(now));
+      if (config.runtime?.authority === "database" && persistence !== undefined) {
+        const invalidations = new RuntimeInvalidationConsumer(
+          persistence,
+          capabilities.tokenBroker,
+        );
+        maintenance.register(() => {
+          void invalidations.poll();
+        });
+      }
       const stopMaintenance = options.startMaintenance?.(config) ?? maintenance.start();
       this.auditSink = auditSink;
       this.secretRuntime = secretRuntime;

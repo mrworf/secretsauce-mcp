@@ -41,6 +41,7 @@ describe("durable policy management", () => {
     const service = await fixture.service("policy-api");
     const ordinary = await fixture.identity("user@example.org", "user");
     const group = await fixture.group(service.id, "Readers", [ordinary.id]);
+    await fixture.assignService(service.id, group.id);
 
     const created = await fixture.policies.createPolicy(
       fixture.superadmin,
@@ -130,6 +131,64 @@ describe("durable policy management", () => {
       /credential_value|vault_locator|authorization|cookie|gateway_reference/i,
     );
     expect(await fixture.invalidationCount(created.policy.id)).toBe(2);
+
+    const credential = (await fixture.credentials.create(
+      fixture.superadmin,
+      service.id,
+      {
+        name: "Clone boundary",
+        placement: { kind: "query", name: "token" },
+        selector: { kind: "all" },
+      },
+      "clone-boundary-credential",
+      CORRELATION,
+    )).credential;
+    const sameServiceClone = await fixture.policies.clonePolicy(
+      fixture.superadmin,
+      service.id,
+      created.policy.id,
+      {
+        target_service_id: service.id,
+        boundary: { kind: "credential", credential_id: credential.id },
+        name: "Credential request policy",
+      },
+      "clone-policy-same-service",
+      CORRELATION,
+    );
+    expect(sameServiceClone.policy).toMatchObject({
+      boundary: { kind: "credential", credentialId: credential.id },
+      name: "Credential request policy",
+    });
+    expect(sameServiceClone.policy.rules[0]).toMatchObject({
+      enabled: true,
+      selector: { kind: "explicit", userIds: [ordinary.id] },
+    });
+
+    const targetService = await fixture.service("copied-policy-api");
+    const crossServiceClone = await fixture.policies.clonePolicy(
+      fixture.superadmin,
+      service.id,
+      created.policy.id,
+      {
+        target_service_id: targetService.id,
+        boundary: { kind: "service" },
+      },
+      "clone-policy-cross-service",
+      CORRELATION,
+    );
+    expect(crossServiceClone.policy.rules[0]).toMatchObject({ enabled: false });
+    expect(crossServiceClone.policy.rules[0]?.selector).toBeUndefined();
+    expect((await fixture.policies.clonePolicy(
+      fixture.superadmin,
+      service.id,
+      created.policy.id,
+      {
+        target_service_id: targetService.id,
+        boundary: { kind: "service" },
+      },
+      "clone-policy-cross-service",
+      CORRELATION,
+    )).replayed).toBe(true);
   });
 
   it("rejects unsafe, unassigned, stale, duplicate-boundary, and cross-scope input", async () => {
@@ -170,6 +229,25 @@ describe("durable policy management", () => {
         selector: undefined,
       }),
       "missing-selector1",
+      CORRELATION,
+    )).rejects.toEqual(new PolicyManagementError("invalid_request"));
+
+    await expect(fixture.policies.importPolicy(
+      fixture.superadmin,
+      second.id,
+      {
+        boundary: { kind: "service" },
+        document: {
+          format_version: 1,
+          policy: {
+            name: "Hostile import",
+            operating_mode: "deny",
+            rules: [],
+            credential_value: "must-not-be-accepted",
+          },
+        },
+      },
+      "hostile-policy-import",
       CORRELATION,
     )).rejects.toEqual(new PolicyManagementError("invalid_request"));
 

@@ -117,6 +117,11 @@ import {
   type CredentialControlVault,
 } from "../credentialVaultCoordinator.js";
 import { registerCredentialRoutes } from "./credentialRoutes.js";
+import {
+  PolicyManagementRepository,
+  PolicyManagementService,
+} from "../policyManagement.js";
+import { registerPolicyRoutes } from "./policyRoutes.js";
 
 export interface ControlApplicationOptions {
   authenticator?: ControlAuthenticator;
@@ -134,6 +139,7 @@ export interface ControlApplicationOptions {
   groupAssignments?: GroupAssignmentService;
   credentialManagement?: CredentialManagementService;
   credentialVault?: CredentialVaultCoordinator;
+  policyManagement?: PolicyManagementService;
 }
 
 export function createControlApplication(
@@ -206,6 +212,9 @@ export function createControlApplication(
       options.credentialManagement,
       options.credentialVault,
     );
+  }
+  if (options.policyManagement !== undefined) {
+    registerPolicyRoutes(routeRegistry, options.policyManagement);
   }
   options.registerControlRoutes?.(routeRegistry);
   installControlRoutes(
@@ -297,6 +306,7 @@ export async function startControlServer(
   let groupAssignments: GroupAssignmentService | undefined;
   let credentialManagement: CredentialManagementService | undefined;
   let credentialVault: CredentialVaultCoordinator | undefined;
+  let policyManagement: PolicyManagementService | undefined;
   let identityKeyRing: IdentityKeyRing | undefined;
   try {
     let localIdentity: LocalIdentityControl | undefined;
@@ -358,6 +368,10 @@ export async function startControlServer(
         const credentialRepository = new CredentialManagementRepository(persistence);
         credentialManagement = new CredentialManagementService(
           credentialRepository,
+          idempotencyHasher,
+        );
+        policyManagement = new PolicyManagementService(
+          new PolicyManagementRepository(persistence),
           idempotencyHasher,
         );
         if (options.credentialVaultClient !== undefined) {
@@ -449,6 +463,7 @@ export async function startControlServer(
       ...(groupAssignments === undefined ? {} : { groupAssignments }),
       ...(credentialManagement === undefined ? {} : { credentialManagement }),
       ...(credentialVault === undefined ? {} : { credentialVault }),
+      ...(policyManagement === undefined ? {} : { policyManagement }),
     });
     await server.listen({
       host: config.control.host,

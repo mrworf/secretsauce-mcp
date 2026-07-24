@@ -111,12 +111,14 @@ export interface PolicyCopyDocument {
           max_bytes: number | null;
         };
       };
-      selector?: {
-        kind: "all" | "principals";
-        group_ids?: string[];
-        user_ids?: string[];
-        direct_assignment_confirmed?: boolean;
-      };
+      selector?:
+        | { kind: "all" }
+        | {
+            kind: "principals";
+            group_ids: string[];
+            user_ids: string[];
+            direct_assignment_confirmed: boolean;
+          };
     }>;
   };
 }
@@ -605,6 +607,119 @@ export class PolicyManagementRepository {
     });
   }
 
+  async importPolicy(input: {
+    actor: ControlAuthenticationContext;
+    serviceId: string;
+    policyId: string;
+    ruleIds: readonly string[];
+    boundary: PolicyBoundary;
+    profile: PolicyProfile;
+    rules: readonly RuleProfile[];
+    preserveSelectors: boolean;
+    correlationId: string;
+    idempotency: IdempotencyExecutionInput;
+  }): Promise<IdempotencyExecutionResult<string>> {
+    return this.audited((transaction) => {
+      requireScopedService(transaction, input.actor, input.serviceId, true);
+      const result = transaction.idempotent(input.idempotency, () => {
+        if (input.rules.length !== input.ruleIds.length) {
+          throw new PersistenceError("identity_conflict");
+        }
+        validateBoundary(transaction, input.serviceId, input.boundary);
+        const existing = transaction.get<{ count: number }>(
+          "SELECT count(*) AS count FROM policies WHERE service_id = ?",
+          [input.serviceId],
+        )?.count ?? MAX_POLICIES_PER_SERVICE;
+        const totalRules = transaction.get<{ count: number }>(
+          "SELECT count(*) AS count FROM policy_rules",
+        )?.count ?? MAX_RULES_TOTAL;
+        if (
+          existing >= MAX_POLICIES_PER_SERVICE
+          || input.rules.length > MAX_RULES_PER_POLICY
+          || totalRules + input.rules.length > MAX_RULES_TOTAL
+        ) throw new PersistenceError("identity_conflict");
+        const now = transaction.timestamp();
+        transaction.run(`
+          INSERT INTO policies (
+            id, service_id, credential_id, name, normalized_name, description,
+            operating_mode, lifecycle, evaluation_generation, version,
+            created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, 'active', 1, 1, ?, ?)
+        `, [
+          input.policyId,
+          input.serviceId,
+          input.boundary.kind === "credential"
+            ? input.boundary.credentialId
+            : null,
+          input.profile.name,
+          input.profile.normalizedName,
+          input.profile.description ?? null,
+          input.profile.operatingMode,
+          now,
+          now,
+        ]);
+        const policy = requiredPolicy(transaction, input.serviceId, input.policyId);
+        input.rules.forEach((source, index) => {
+          const ruleId = input.ruleIds[index]!;
+          const { selector: sourceSelector, ...sourceWithoutSelector } = source;
+          const selector = input.preserveSelectors ? sourceSelector : undefined;
+          const profile: RuleProfile = {
+            ...sourceWithoutSelector,
+            enabled: input.preserveSelectors && source.enabled,
+            ...(selector === undefined ? {} : { selector }),
+          };
+          if (selector !== undefined) {
+            validateSelectorTargets(transaction, input.serviceId, selector);
+          }
+          insertRule(transaction, ruleId, policy, profile, now);
+          if (selector !== undefined) {
+            replaceRuleAssignments(
+              transaction,
+              this.#uuid,
+              input.actor.principalId,
+              policy,
+              ruleId,
+              selector,
+              now,
+            );
+          }
+        });
+        invalidatePolicy(
+          transaction,
+          this.#uuid,
+          policy,
+          null,
+          null,
+          1,
+          "copy",
+        );
+        return {
+          value: input.policyId,
+          resultReference: input.policyId,
+          responseStatus: 201,
+        };
+      });
+      return {
+        value: result,
+        auditInput: policyAudit(
+          input.actor,
+          "policy.copy",
+          input.serviceId,
+          result.kind === "executed" ? result.value : result.resultReference,
+          input.correlationId,
+          [
+            { field: "boundary_kind", after: input.boundary.kind },
+            { field: "rule_count", after: input.rules.length },
+            {
+              field: "selectors_preserved",
+              after: input.preserveSelectors ? 1 : 0,
+            },
+          ],
+        ),
+      };
+    });
+  }
+
   async deleteArchived(input: {
     actor: ControlAuthenticationContext;
     serviceId: string;
@@ -958,6 +1073,61 @@ export class PolicyManagementService {
     });
   }
 
+  async clonePolicy(
+    actor: ControlAuthenticationContext,
+    sourceServiceId: string,
+    sourcePolicyId: string,
+    body: unknown,
+    idempotencyKey: string,
+    correlationId: string,
+  ): Promise<{ policy: PolicyDetailView; replayed: boolean }> {
+    const sourceService = requiredUuid(sourceServiceId);
+    const sourcePolicy = requiredUuid(sourcePolicyId);
+    const target = cloneBody(body);
+    const document = await this.repository.copy(actor, sourceService, sourcePolicy);
+    const copied = copyProfiles(document);
+    const profile = target.name === undefined
+      ? copied.profile
+      : {
+          ...copied.profile,
+          ...normalizedProfile(target.name, copied.profile.description),
+        };
+    return this.importNormalized(
+      actor,
+      target.serviceId,
+      target.boundary,
+      { ...copied, profile },
+      sourceService === target.serviceId,
+      idempotencyKey,
+      correlationId,
+      {
+        sourceServiceId: sourceService,
+        sourcePolicyId: sourcePolicy,
+      },
+    );
+  }
+
+  async importPolicy(
+    actor: ControlAuthenticationContext,
+    serviceId: string,
+    body: unknown,
+    idempotencyKey: string,
+    correlationId: string,
+  ): Promise<{ policy: PolicyDetailView; replayed: boolean }> {
+    const targetService = requiredUuid(serviceId);
+    const input = importBody(body);
+    return this.importNormalized(
+      actor,
+      targetService,
+      input.boundary,
+      copyProfiles(input.document),
+      true,
+      idempotencyKey,
+      correlationId,
+      { imported: true },
+    );
+  }
+
   deleteArchived(
     actor: ControlAuthenticationContext,
     serviceId: string,
@@ -1025,6 +1195,42 @@ export class PolicyManagementService {
     } catch {
       throw new PolicyManagementError("invalid_request");
     }
+  }
+
+  private async importNormalized(
+    actor: ControlAuthenticationContext,
+    serviceId: string,
+    boundary: PolicyBoundary,
+    input: { profile: PolicyProfile; rules: RuleProfile[] },
+    preserveSelectors: boolean,
+    idempotencyKey: string,
+    correlationId: string,
+    source: unknown,
+  ): Promise<{ policy: PolicyDetailView; replayed: boolean }> {
+    const policyId = this.#uuid();
+    const ruleIds = input.rules.map(() => this.#uuid());
+    const result = await this.repository.importPolicy({
+      actor,
+      serviceId,
+      policyId,
+      ruleIds,
+      boundary,
+      profile: input.profile,
+      rules: input.rules,
+      preserveSelectors,
+      correlationId: requiredCorrelation(correlationId),
+      idempotency: this.idempotencyInput(
+        actor,
+        "policies.copy",
+        idempotencyKey,
+        { serviceId, boundary, input, preserveSelectors, source },
+      ),
+    });
+    const id = result.kind === "executed" ? result.value : result.resultReference;
+    return {
+      policy: await this.repository.policy(actor, serviceId, id),
+      replayed: result.kind === "replayed",
+    };
   }
 }
 
@@ -1588,13 +1794,8 @@ function validateSelectorTargets(
     }
   }
   if (selector.userIds.length > 0) {
-    const placeholders = selector.userIds.map(() => "?").join(",");
-    const count = query.get<{ count: number }>(`
-      SELECT count(*) AS count FROM users
-      WHERE role = 'user' AND status = 'active'
-        AND id IN (${placeholders})
-    `, selector.userIds)?.count ?? -1;
-    if (count !== selector.userIds.length) {
+    if (selector.userIds.some((userId) =>
+      !serviceAuthorizes(query, serviceId, userId))) {
       throw new PersistenceError("identity_not_found");
     }
   }
@@ -1714,6 +1915,132 @@ function policyBody(value: unknown): {
     invalid();
   }
   return { boundary, profile: policyProfileFields(value) };
+}
+
+function normalizeBoundary(value: unknown): PolicyBoundary {
+  if (!plainObject(value)) invalid();
+  if (value.kind === "service" && Object.keys(value).length === 1) {
+    return { kind: "service" };
+  }
+  if (
+    value.kind === "credential"
+    && Object.keys(value).sort().join(",") === "credential_id,kind"
+    && typeof value.credential_id === "string"
+  ) {
+    return {
+      kind: "credential",
+      credentialId: requiredUuid(value.credential_id),
+    };
+  }
+  invalid();
+}
+
+function cloneBody(value: unknown): {
+  serviceId: string;
+  boundary: PolicyBoundary;
+  name?: string;
+} {
+  if (!plainObject(value)) invalid();
+  requireKeys(value, ["target_service_id", "boundary", "name"], ["name"]);
+  if (typeof value.target_service_id !== "string") invalid();
+  if (value.name !== undefined && typeof value.name !== "string") invalid();
+  return {
+    serviceId: requiredUuid(value.target_service_id),
+    boundary: normalizeBoundary(value.boundary),
+    ...(value.name === undefined ? {} : { name: value.name }),
+  };
+}
+
+function importBody(value: unknown): {
+  boundary: PolicyBoundary;
+  document: PolicyCopyDocument;
+} {
+  if (!plainObject(value)) invalid();
+  requireKeys(value, ["boundary", "document"]);
+  return {
+    boundary: normalizeBoundary(value.boundary),
+    document: parseCopyDocument(value.document),
+  };
+}
+
+function parseCopyDocument(value: unknown): PolicyCopyDocument {
+  if (!plainObject(value)) invalid();
+  requireKeys(value, ["format_version", "policy"]);
+  if (value.format_version !== 1 || !plainObject(value.policy)) invalid();
+  requireKeys(
+    value.policy,
+    ["name", "description", "operating_mode", "rules"],
+    ["description"],
+  );
+  if (!Array.isArray(value.policy.rules) || value.policy.rules.length > MAX_RULES_PER_POLICY) {
+    invalid();
+  }
+  const profile = policyProfileFields(value.policy);
+  const rules = value.policy.rules.map((rule) => ruleBody(rule));
+  return copyDocumentFromProfiles(profile, rules);
+}
+
+function copyProfiles(document: PolicyCopyDocument): {
+  profile: PolicyProfile;
+  rules: RuleProfile[];
+} {
+  const profile = policyProfileFields({
+    name: document.policy.name,
+    ...(document.policy.description === undefined
+      ? {}
+      : { description: document.policy.description }),
+    operating_mode: document.policy.operating_mode,
+  });
+  const rules = document.policy.rules.map((rule) => ruleBody(rule));
+  return { profile, rules };
+}
+
+function copyDocumentFromProfiles(
+  profile: PolicyProfile,
+  rules: readonly RuleProfile[],
+): PolicyCopyDocument {
+  return {
+    format_version: 1,
+    policy: {
+      name: profile.name,
+      ...(profile.description === undefined ? {} : {
+        description: profile.description,
+      }),
+      operating_mode: profile.operatingMode,
+      rules: rules.map((rule) => ({
+        name: rule.name,
+        ...(rule.reason === undefined ? {} : { reason: rule.reason }),
+        effect: rule.effect,
+        priority: rule.priority,
+        enabled: rule.enabled,
+        methods: [...rule.matchers.methods],
+        hosts: [...rule.matchers.hosts],
+        paths: [...rule.matchers.paths],
+        response_safeguards: {
+          secretlint: {
+            enabled: rule.safeguards.secretlint.enabled,
+            disabled_rule_ids: [...rule.safeguards.secretlint.disabledRuleIds],
+          },
+          binary_response: {
+            scan: rule.safeguards.binaryResponse.scan,
+            max_bytes: rule.safeguards.binaryResponse.maxBytes,
+          },
+        },
+        ...(rule.selector === undefined
+          ? {}
+          : rule.selector.kind === "all"
+            ? { selector: { kind: "all" as const } }
+            : {
+                selector: {
+                  kind: "principals" as const,
+                  group_ids: [...rule.selector.groupIds],
+                  user_ids: [...rule.selector.userIds],
+                  direct_assignment_confirmed: rule.selector.userIds.length > 0,
+                },
+              }),
+      })),
+    },
+  };
 }
 
 function policyProfile(value: unknown): PolicyProfile {

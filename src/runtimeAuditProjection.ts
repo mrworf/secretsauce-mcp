@@ -42,9 +42,11 @@ export function projectRuntimeAuditEvent(
     case "service_request":
       return {
         ...base,
-        outcome: event.error_code === undefined
-          ? event.policy_decision
-          : "error",
+        outcome: event.policy_decision === "deny"
+          ? "deny"
+          : event.error_code === undefined
+            ? "allow"
+            : "error",
         destination: event.destination,
         action: "service_request",
         method: event.method,
@@ -61,6 +63,7 @@ export function projectRuntimeAuditEvent(
         durationMs: Math.max(0, Math.trunc(event.request_duration_ms)),
         tlsVerify: event.tls_verify,
         tokenizationCount: event.secret_tokenization_count,
+        credentialUseCount: event.credential_use_count ?? 0,
         details: {
           policy_decision: event.policy_decision,
           ...(event.binary_scan_bypassed === undefined

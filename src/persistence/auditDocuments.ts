@@ -57,6 +57,7 @@ export const runtimeAuditProjectionSchema = z.object({
   durationMs: z.number().int().nonnegative().max(86_400_000).optional(),
   tlsVerify: z.boolean().optional(),
   tokenizationCount: z.number().int().nonnegative().max(100_000).optional(),
+  credentialUseCount: z.number().int().nonnegative().max(100_000).optional(),
   details: z.record(
     z.string().min(1).max(64).regex(/^[a-z][a-z0-9_.-]*$/),
     runtimeDetailValue,
@@ -171,7 +172,12 @@ function primitiveText(value: string | number | boolean | null | undefined): str
 
 function rejectProhibitedAuditMaterial(input: unknown): void {
   const visit = (value: unknown, key = ""): void => {
-    if (/(?:authorization|cookie|password|secret|token|credential|request_body|response_body|headers?)/i.test(key)) {
+    const aggregateSafeCounter =
+      key === "tokenizationCount" || key === "credentialUseCount";
+    if (
+      !aggregateSafeCounter
+      && /(?:authorization|cookie|password|secret|token|credential|request_body|response_body|headers?)/i.test(key)
+    ) {
       throw new PersistenceError("invalid_audit_event");
     }
     if (typeof value === "string" && prohibitedValue.test(value)) {

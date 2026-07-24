@@ -2391,6 +2391,125 @@ INSERT INTO audit_maintenance_state (
 ) VALUES (1, 0, 1, 0, 0);
 `;
 
+const migration0020 = `
+ALTER TABLE runtime_audit_events ADD COLUMN credential_use_count INTEGER NOT NULL DEFAULT 0
+  CHECK (credential_use_count BETWEEN 0 AND 100000);
+
+CREATE TABLE activity_hourly (
+  bucket_start INTEGER NOT NULL CHECK (
+    bucket_start >= 0 AND bucket_start % 3600000 = 0
+  ),
+  service_id TEXT NOT NULL,
+  service_label_snapshot TEXT NOT NULL CHECK (
+    length(service_label_snapshot) BETWEEN 1 AND 256
+  ),
+  destination TEXT NOT NULL CHECK (length(destination) BETWEEN 1 AND 128),
+  method TEXT NOT NULL CHECK (
+    length(method) BETWEEN 1 AND 16 AND method NOT GLOB '*[^A-Z]*'
+  ),
+  endpoint_category_kind TEXT NOT NULL CHECK (
+    endpoint_category_kind IN ('policy_rule', 'boundary_default')
+  ),
+  endpoint_category TEXT NOT NULL CHECK (
+    length(endpoint_category) BETWEEN 1 AND 256
+  ),
+  decision TEXT NOT NULL CHECK (decision IN ('allow', 'deny', 'error')),
+  status_class TEXT NOT NULL CHECK (
+    status_class IN ('none', '1xx', '2xx', '3xx', '4xx', '5xx')
+  ),
+  request_count INTEGER NOT NULL CHECK (request_count > 0),
+  credential_use_count INTEGER NOT NULL CHECK (credential_use_count >= 0),
+  tokenization_count INTEGER NOT NULL CHECK (tokenization_count >= 0),
+  duration_sum_ms INTEGER NOT NULL CHECK (duration_sum_ms >= 0),
+  duration_count INTEGER NOT NULL CHECK (duration_count >= 0),
+  first_occurred_at INTEGER NOT NULL CHECK (first_occurred_at >= bucket_start),
+  last_occurred_at INTEGER NOT NULL CHECK (last_occurred_at >= first_occurred_at),
+  PRIMARY KEY (
+    bucket_start, service_id, destination, method, endpoint_category_kind,
+    endpoint_category, decision, status_class
+  )
+) WITHOUT ROWID, STRICT;
+
+CREATE INDEX activity_hourly_service_time_idx
+  ON activity_hourly (service_id, bucket_start DESC);
+CREATE INDEX activity_hourly_time_idx
+  ON activity_hourly (bucket_start DESC);
+
+CREATE TABLE activity_hourly_subjects (
+  bucket_start INTEGER NOT NULL CHECK (
+    bucket_start >= 0 AND bucket_start % 3600000 = 0
+  ),
+  service_id TEXT NOT NULL,
+  subject_id TEXT NOT NULL,
+  PRIMARY KEY (bucket_start, service_id, subject_id)
+) WITHOUT ROWID, STRICT;
+
+CREATE TABLE activity_projected_events (
+  event_id TEXT PRIMARY KEY,
+  sequence INTEGER NOT NULL UNIQUE,
+  projected_at INTEGER NOT NULL CHECK (projected_at >= 0)
+) STRICT;
+
+CREATE TABLE activity_projection_state (
+  singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
+  next_run_at INTEGER NOT NULL CHECK (next_run_at >= 0),
+  lease_owner TEXT,
+  lease_expires_at INTEGER,
+  cursor_sequence INTEGER NOT NULL DEFAULT 0 CHECK (cursor_sequence >= 0),
+  last_started_at INTEGER,
+  last_completed_at INTEGER,
+  last_outcome TEXT CHECK (
+    last_outcome IS NULL OR last_outcome IN ('completed', 'partial', 'skipped', 'error')
+  ),
+  last_code TEXT,
+  projected_count INTEGER NOT NULL DEFAULT 0 CHECK (projected_count >= 0),
+  deleted_bucket_count INTEGER NOT NULL DEFAULT 0 CHECK (deleted_bucket_count >= 0),
+  version INTEGER NOT NULL DEFAULT 1 CHECK (version > 0),
+  created_at INTEGER NOT NULL CHECK (created_at >= 0),
+  updated_at INTEGER NOT NULL CHECK (updated_at >= created_at),
+  CHECK ((lease_owner IS NULL) = (lease_expires_at IS NULL))
+) STRICT;
+
+INSERT INTO activity_projection_state (
+  singleton, next_run_at, version, created_at, updated_at
+) VALUES (1, 0, 1, 0, 0);
+
+CREATE TABLE dashboard_remediations (
+  id TEXT PRIMARY KEY,
+  finding_key_hash TEXT NOT NULL UNIQUE CHECK (
+    length(finding_key_hash) = 64
+    AND finding_key_hash NOT GLOB '*[^a-f0-9]*'
+  ),
+  code TEXT NOT NULL CHECK (
+    length(code) BETWEEN 1 AND 64 AND code NOT GLOB '*[^a-z0-9_.-]*'
+  ),
+  category TEXT NOT NULL CHECK (
+    category IN ('identity', 'credential', 'api_key', 'component', 'migration', 'restore')
+  ),
+  severity TEXT NOT NULL CHECK (severity IN ('info', 'warning', 'critical')),
+  service_id TEXT,
+  generation INTEGER NOT NULL CHECK (generation > 0),
+  state TEXT NOT NULL CHECK (
+    state IN ('open', 'acknowledged', 'dismissed', 'resolved')
+  ),
+  first_seen_at INTEGER NOT NULL CHECK (first_seen_at >= 0),
+  last_seen_at INTEGER NOT NULL CHECK (last_seen_at >= first_seen_at),
+  acknowledged_by TEXT,
+  acknowledged_at INTEGER,
+  dismissed_by TEXT,
+  dismissed_at INTEGER,
+  justification TEXT CHECK (
+    justification IS NULL OR length(justification) BETWEEN 1 AND 1024
+  ),
+  version INTEGER NOT NULL DEFAULT 1 CHECK (version > 0),
+  created_at INTEGER NOT NULL CHECK (created_at >= 0),
+  updated_at INTEGER NOT NULL CHECK (updated_at >= created_at)
+) STRICT;
+
+CREATE INDEX dashboard_remediations_state_scope_idx
+  ON dashboard_remediations (state, service_id, severity, last_seen_at DESC);
+`;
+
 export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [
   {
     version: 1,
@@ -2486,6 +2605,11 @@ export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [
     version: 19,
     name: "audit_search_retention",
     sql: migration0019,
+  },
+  {
+    version: 20,
+    name: "activity_status_security_dashboards",
+    sql: migration0020,
   },
 ];
 

@@ -18,7 +18,7 @@ const SERVICE_ID = "018f1f2e-7b3c-7a10-8000-000000000003";
 const CORRELATION_ID = "req_8ca2d86c-541c-4484-bcc0-feebb54f6311";
 
 const fixtureMigration: PersistenceMigration = {
-  version: 20,
+  version: 21,
   name: "test_repository_fixtures",
   sql: `
     CREATE TABLE test_parent (
@@ -113,6 +113,195 @@ describe("transactional administrative audit", () => {
       expect(state).toEqual({
         events: [{ event_id: runtimeId }],
         matches: [{ event_id: runtimeId }],
+      });
+    } finally {
+      await worker.close();
+    }
+  });
+
+  it("projects bounded service activity counters without raw request dimensions", async () => {
+    const worker = open(databasePath("runtime-activity"));
+    const base = {
+      occurredAt: 1_785_000_000_000,
+      eventType: "service_request",
+      outcome: "allow",
+      category: "authorization",
+      actorType: "oauth_user",
+      subjectId: ACTOR_ID,
+      subjectLabel: "Ada User",
+      serviceId: SERVICE_ID,
+      serviceLabel: "Payments Gateway",
+      destination: "primary",
+      action: "service_request",
+      method: "POST",
+      targetHost: "api.example.org",
+      targetPath: "/private/customer/42",
+      downstreamStatus: 201,
+      policyRule: "widgets.write",
+      source: { category: "mcp" },
+      details: { policy_decision: "allow" },
+    } as const;
+    try {
+      await worker.execute({
+        run: (database) => database.appendRuntimeAudit({
+          ...base,
+          eventId: "018f1f2e-7b3c-7a10-8000-000000000004",
+          credentialUseCount: 2,
+          tokenizationCount: 3,
+          durationMs: 20,
+        }),
+      });
+      await worker.execute({
+        run: (database) => database.appendRuntimeAudit({
+          ...base,
+          eventId: "018f1f2e-7b3c-7a10-8000-000000000005",
+          occurredAt: base.occurredAt + 1_000,
+          credentialUseCount: 1,
+          tokenizationCount: 4,
+          durationMs: 30,
+        }),
+      });
+
+      const state = await worker.execute({
+        run: (database) => database.read((query) => ({
+          activity: query.all(`
+            SELECT
+              service_id, service_label_snapshot, destination, method,
+              endpoint_category_kind, endpoint_category, decision, status_class,
+              request_count, credential_use_count, tokenization_count,
+              duration_sum_ms, duration_count
+            FROM activity_hourly
+          `),
+          subjects: query.get(
+            "SELECT count(*) AS count FROM activity_hourly_subjects",
+          ),
+          projected: query.get(
+            "SELECT count(*) AS count FROM activity_projected_events",
+          ),
+          columns: query.all("PRAGMA table_info(activity_hourly)"),
+        })),
+      });
+      expect(state.activity).toEqual([{
+        service_id: SERVICE_ID,
+        service_label_snapshot: "Payments Gateway",
+        destination: "primary",
+        method: "POST",
+        endpoint_category_kind: "policy_rule",
+        endpoint_category: "widgets.write",
+        decision: "allow",
+        status_class: "2xx",
+        request_count: 2,
+        credential_use_count: 3,
+        tokenization_count: 7,
+        duration_sum_ms: 50,
+        duration_count: 2,
+      }]);
+      expect(state.subjects).toEqual({ count: 1 });
+      expect(state.projected).toEqual({ count: 2 });
+      expect(state.columns.map((column) => (column as { name: string }).name))
+        .not.toEqual(expect.arrayContaining(["target_host", "target_path", "correlation_id"]));
+      expect(JSON.stringify(state.activity)).not.toContain("/private/customer/42");
+    } finally {
+      await worker.close();
+    }
+  });
+
+  it("classifies default-boundary denials and rejects unbounded counters", async () => {
+    const worker = open(databasePath("runtime-activity-boundary"));
+    const base = {
+      occurredAt: 1_785_000_000_000,
+      eventType: "service_request",
+      outcome: "deny",
+      category: "authorization",
+      actorType: "oauth_user",
+      subjectId: ACTOR_ID,
+      subjectLabel: "Ada User",
+      serviceId: SERVICE_ID,
+      serviceLabel: "Payments Gateway",
+      destination: "primary",
+      action: "service_request",
+      method: "GET",
+      source: {},
+      details: {},
+    } as const;
+    try {
+      await worker.execute({
+        run: (database) => database.appendRuntimeAudit({
+          ...base,
+          eventId: "018f1f2e-7b3c-7a10-8000-000000000004",
+        }),
+      });
+      await expect(worker.execute({
+        run: (database) => database.appendRuntimeAudit({
+          ...base,
+          eventId: "018f1f2e-7b3c-7a10-8000-000000000005",
+          credentialUseCount: 100_001,
+        }),
+      })).rejects.toMatchObject({ code: "invalid_audit_event" });
+
+      const state = await worker.execute({
+        run: (database) => database.read((query) => ({
+          activity: query.get(`
+            SELECT endpoint_category_kind, endpoint_category, decision,
+              status_class, request_count
+            FROM activity_hourly
+          `),
+          events: query.get("SELECT count(*) AS count FROM runtime_audit_events"),
+        })),
+      });
+      expect(state).toEqual({
+        activity: {
+          endpoint_category_kind: "boundary_default",
+          endpoint_category: "boundary_default_deny",
+          decision: "deny",
+          status_class: "none",
+          request_count: 1,
+        },
+        events: { count: 1 },
+      });
+    } finally {
+      await worker.close();
+    }
+  });
+
+  it("rolls runtime event and search writes back when activity projection fails", async () => {
+    const worker = open(databasePath("runtime-activity-rollback"));
+    try {
+      await worker.execute({
+        run: (database) => database.withOperationalTransaction((transaction) => {
+          transaction.run("DROP TABLE activity_hourly");
+        }),
+      });
+      await expect(worker.execute({
+        run: (database) => database.appendRuntimeAudit({
+          eventId: "018f1f2e-7b3c-7a10-8000-000000000004",
+          occurredAt: 1_785_000_000_000,
+          eventType: "service_request",
+          outcome: "allow",
+          category: "authorization",
+          actorType: "oauth_user",
+          subjectId: ACTOR_ID,
+          subjectLabel: "Ada User",
+          serviceId: SERVICE_ID,
+          serviceLabel: "Payments Gateway",
+          destination: "primary",
+          action: "service_request",
+          method: "POST",
+          source: {},
+          details: {},
+        }),
+      })).rejects.toMatchObject({ code: "audit_persistence_failed" });
+      const state = await worker.execute({
+        run: (database) => database.read((query) => ({
+          events: query.get("SELECT count(*) AS count FROM runtime_audit_events"),
+          index: query.get("SELECT count(*) AS count FROM runtime_audit_fts"),
+          projected: query.get("SELECT count(*) AS count FROM activity_projected_events"),
+        })),
+      });
+      expect(state).toEqual({
+        events: { count: 0 },
+        index: { count: 0 },
+        projected: { count: 0 },
       });
     } finally {
       await worker.close();
@@ -238,7 +427,7 @@ describe("transactional administrative audit", () => {
 
   it("rolls a mutation back and degrades readiness when audit insertion fails", async () => {
     const failureMigration: PersistenceMigration = {
-      version: 21,
+      version: 22,
       name: "test_audit_failure",
       sql: `
         CREATE TRIGGER reject_test_audit

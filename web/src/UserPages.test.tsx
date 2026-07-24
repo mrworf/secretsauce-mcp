@@ -89,6 +89,7 @@ describe("user and profile views", () => {
     const api = fakeApi();
     render(<MemoryRouter><ProfilePage api={api} /></MemoryRouter>);
     const givenName = await screen.findByLabelText("Given name");
+    await waitFor(() => expect(givenName).toHaveValue("Target"));
     await user.clear(givenName);
     await user.type(givenName, "Updated");
     await user.click(screen.getByRole("button", { name: "Save profile" }));

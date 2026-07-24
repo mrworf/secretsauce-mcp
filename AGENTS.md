@@ -24,4 +24,5 @@
 - A route-level `stepUp: "always"` must be able to issue and consume an exact operation-bound proof even when the configured default step-up mode is `five_minutes`; the default controls unbound elevation, not stricter route overrides.
 - Database-managed destination host regexes must use the anchored linear-time subset; never execute arbitrary management-supplied regular expressions during validation or routing.
 - Require security-sensitive base64url inputs, including signature and MAC segments, to decode and re-encode to the exact original text; permissive decoders can otherwise accept alternate encodings through non-zero unused bits.
+- UI tests that edit asynchronously loaded controlled forms must wait for the loaded value before typing; finding the initially rendered input alone does not prove hydration has completed.
 - Multi-result idempotent operations must store a single opaque UUID result reference and resolve members through a durable scoped table; do not serialize result lists into the UUID-constrained idempotency record.

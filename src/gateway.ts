@@ -298,6 +298,11 @@ export async function executeServiceRequest(
     ...querySubstitution.records,
     ...bodySubstitution.records,
   ];
+  const credentialUseCount = new Set(
+    tokenRecords
+      .filter((record) => record.kind === "credential")
+      .map((record) => record.credentialId),
+  ).size;
 
   const downstream = buildDownstreamRequest(config, target.url, input.method, substitutedHeaders, substitutedQuery, substitutedBody, target.tls.verify);
   logger.debug("service_request.downstream_ready", {
@@ -311,7 +316,7 @@ export async function executeServiceRequest(
     target_path: target.methodPath,
     tls_verify: target.tls.verify,
     matched_policy_rule: policy.matchedRule,
-    credential_count: new Set(tokenRecords.filter((record) => record.kind === "credential").map((record) => record.credentialId)).size,
+    credential_count: credentialUseCount,
     placeholder_count: new Set(tokenRecords.map((record) => record.id)).size,
     request_shape: {
       header_names: headerNames(callerHeaders),
@@ -414,6 +419,7 @@ export async function executeServiceRequest(
     request_duration_ms: Date.now() - started,
     tls_verify: target.tls.verify,
     secret_tokenization_count: tokenized.secretTokenizationCount,
+    credential_use_count: credentialUseCount,
     secret_rule_ids: tokenized.ruleIds,
     response_internal_reference_ids: tokenized.internalRecordIds,
     ...(binaryScanBypassed ? { binary_scan_bypassed: true } : {}),

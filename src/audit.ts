@@ -41,6 +41,7 @@ export interface ServiceRequestAuditEvent {
   request_duration_ms: number;
   tls_verify: boolean;
   secret_tokenization_count: number;
+  credential_use_count?: number;
   secret_rule_ids?: string[];
   response_internal_reference_ids?: string[];
   binary_scan_bypassed?: boolean;

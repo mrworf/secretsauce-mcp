@@ -443,6 +443,165 @@ button:disabled {
   margin-top: 1.25rem;
 }
 
+.api-key-layout {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+  margin-top: 1.25rem;
+}
+
+.api-key-list,
+.api-key-detail,
+.api-key-form,
+.api-key-actions {
+  display: grid;
+  min-width: 0;
+  gap: 0.85rem;
+}
+
+.api-key-list {
+  align-content: start;
+}
+
+.api-key-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  text-align: left;
+}
+
+.api-key-card > span:first-child {
+  display: grid;
+  min-width: 0;
+  gap: 0.25rem;
+}
+
+.api-key-card small {
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.api-key-card.selected {
+  border-color: var(--accent);
+  box-shadow: inset 0.25rem 0 var(--accent);
+}
+
+.api-key-detail {
+  padding: 1rem;
+  background: var(--surface-subtle);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+}
+
+.api-key-detail h3,
+.api-key-activity h4 {
+  margin: 0;
+}
+
+.api-key-form {
+  margin-top: 1rem;
+}
+
+.api-key-form label,
+.api-key-actions label,
+.api-key-warning label {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.api-key-form > button {
+  justify-self: start;
+  color: white;
+  background: var(--accent-strong);
+}
+
+.scope-note {
+  margin: 0;
+  color: var(--muted);
+}
+
+.api-key-warning {
+  padding: 1rem;
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+  border-radius: 0.75rem;
+}
+
+.api-key-warning p {
+  line-height: 1.5;
+}
+
+.api-key-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.api-key-facts div {
+  min-width: 0;
+  padding: 0.65rem;
+  background: var(--surface);
+  border-radius: 0.5rem;
+}
+
+.api-key-facts dt {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+.api-key-facts dd {
+  margin: 0.2rem 0 0;
+  overflow-wrap: anywhere;
+}
+
+.api-key-activity {
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.api-key-activity ol {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0;
+  list-style: none;
+}
+
+.api-key-activity li {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.65rem;
+  background: var(--surface);
+  border-radius: 0.5rem;
+}
+
+.api-key-activity span,
+.api-key-activity time {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.one-time-key {
+  border-color: var(--success);
+}
+
+.one-time-key code {
+  display: block;
+  padding: 1rem;
+  overflow-wrap: anywhere;
+  color: var(--text);
+  background: var(--surface-subtle);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+}
+
 .service-list,
 .destination-stack,
 .service-workspace,
@@ -1126,6 +1285,10 @@ button:disabled {
 
   .service-layout {
     grid-template-columns: minmax(15rem, 0.55fr) minmax(34rem, 1.45fr);
+  }
+
+  .api-key-layout {
+    grid-template-columns: minmax(17rem, 0.55fr) minmax(30rem, 1.45fr);
   }
 
   .group-layout {

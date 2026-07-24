@@ -27,6 +27,49 @@ export interface ControlSession {
   expires_at: number;
 }
 
+export type ApiKeyRole = "service" | "all_services" | "system";
+export type ApiKeyStatus = "active" | "expired" | "revoked";
+
+export interface ControlApiKey {
+  id: string;
+  key_prefix: string;
+  nickname: string;
+  last_four: string;
+  api_role: ApiKeyRole;
+  service_id?: string;
+  expiration_policy: "forever" | "timestamp";
+  expires_at?: number;
+  status: ApiKeyStatus;
+  creator_id: string;
+  version: number;
+  created_at: number;
+  updated_at: number;
+  last_used_at?: number;
+  revoked_at?: number;
+}
+
+export interface OneTimeApiKey {
+  api_key: ControlApiKey;
+  one_time_key: string;
+  one_time_value_displayed: true;
+}
+
+export interface ApiKeyActivity {
+  id: string;
+  api_key_id: string;
+  nickname: string;
+  last_four: string;
+  api_role: ApiKeyRole;
+  service_id?: string;
+  action: string;
+  outcome: "allow" | "deny" | "error";
+  target_type: string;
+  target_id?: string;
+  request_id: string;
+  failure_code?: string;
+  occurred_at: number;
+}
+
 export type ServiceLifecycle = "draft" | "published" | "archived";
 
 export interface ControlService {
@@ -625,6 +668,41 @@ export interface ServiceControlApi {
   ): Promise<{ service_id: string; deleted: true }>;
 }
 
+export interface ApiKeyControlApi
+  extends Pick<ServiceControlApi, "listServices"> {
+  listApiKeys(input?: {
+    q?: string;
+    role?: ApiKeyRole;
+    status?: ApiKeyStatus;
+    service_id?: string;
+    cursor?: string;
+  }): Promise<{ api_keys: ControlApiKey[]; next_cursor?: string }>;
+  apiKey(apiKeyId: string): Promise<ControlApiKey>;
+  createApiKey(input: {
+    nickname: string;
+    api_role: ApiKeyRole;
+    service_id?: string;
+    expiration: { policy: "forever" } | { policy: "days"; days: number };
+    all_services_confirmation?: string;
+  }): Promise<OneTimeApiKey>;
+  updateApiKey(
+    apiKey: ControlApiKey,
+    input: { nickname?: string; expires_at?: number },
+  ): Promise<ControlApiKey>;
+  revokeApiKey(
+    apiKey: ControlApiKey,
+    justification: string,
+  ): Promise<{ api_key: ControlApiKey; changed: boolean }>;
+  rotateApiKey(
+    apiKey: ControlApiKey,
+    justification: string,
+  ): Promise<OneTimeApiKey>;
+  apiKeyActivity(
+    apiKeyId: string,
+    cursor?: string,
+  ): Promise<{ activity: ApiKeyActivity[]; next_cursor?: string }>;
+}
+
 export interface GroupControlApi
   extends Pick<ServiceControlApi, "listServices">,
     Pick<ControlApi, "listUsers"> {
@@ -714,7 +792,8 @@ export type UserAction =
 
 export const browserControlApi:
   ControlApi & OidcControlApi & OidcManagementApi & ServiceControlApi &
-    GroupControlApi & CredentialControlApi & PolicyControlApi & AccessControlApi = {
+    GroupControlApi & CredentialControlApi & PolicyControlApi & AccessControlApi &
+    ApiKeyControlApi = {
   session: () => get<ControlSession>("/api/v2/auth/session"),
   oidcProviders: () => get<{ providers: OidcProviderLabel[] }>("/api/v2/auth/oidc/providers"),
   beginOidc: (providerId) => {
@@ -801,6 +880,47 @@ export const browserControlApi:
     if (input.lifecycle !== undefined) query.set("lifecycle", input.lifecycle);
     if (input.cursor !== undefined) query.set("cursor", input.cursor);
     return get(`/api/v2/services?${query.toString()}`);
+  },
+  listApiKeys: (input = {}) => {
+    const query = new URLSearchParams({ limit: "50" });
+    if (input.q !== undefined && input.q.trim() !== "") query.set("q", input.q.trim());
+    if (input.role !== undefined) query.set("role", input.role);
+    if (input.status !== undefined) query.set("status", input.status);
+    if (input.service_id !== undefined) query.set("service_id", input.service_id);
+    if (input.cursor !== undefined) query.set("cursor", input.cursor);
+    return get(`/api/v2/api-keys?${query.toString()}`);
+  },
+  apiKey: (apiKeyId) =>
+    get(`/api/v2/api-keys/${encodeURIComponent(apiKeyId)}`),
+  createApiKey: (input) =>
+    mutation("/api/v2/api-keys", "POST", input),
+  updateApiKey: (apiKey, input) =>
+    mutation(
+      `/api/v2/api-keys/${encodeURIComponent(apiKey.id)}`,
+      "PATCH",
+      input,
+      apiKey.version,
+    ),
+  revokeApiKey: (apiKey, justification) =>
+    mutation(
+      `/api/v2/api-keys/${encodeURIComponent(apiKey.id)}/revoke`,
+      "POST",
+      { justification },
+      apiKey.version,
+    ),
+  rotateApiKey: (apiKey, justification) =>
+    mutation(
+      `/api/v2/api-keys/${encodeURIComponent(apiKey.id)}/rotate`,
+      "POST",
+      { justification },
+      apiKey.version,
+    ),
+  apiKeyActivity: (apiKeyId, cursor) => {
+    const query = new URLSearchParams({ limit: "50" });
+    if (cursor !== undefined) query.set("cursor", cursor);
+    return get(
+      `/api/v2/api-keys/${encodeURIComponent(apiKeyId)}/activity?${query.toString()}`,
+    );
   },
   service: (serviceId) => get(`/api/v2/services/${encodeURIComponent(serviceId)}`),
   createService: (input) => mutation("/api/v2/services", "POST", input, undefined, true),

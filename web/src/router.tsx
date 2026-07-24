@@ -11,6 +11,7 @@ import { GroupsPage } from "./GroupPages";
 import { CredentialsPage } from "./CredentialPages";
 import { PoliciesPage } from "./PolicyPages";
 import { AccessPage } from "./AccessPages";
+import { ApiKeysPage } from "./ApiKeyPages";
 
 function routes(role: HumanControlRole): RouteObject[] {
   return [{
@@ -33,6 +34,8 @@ function routes(role: HumanControlRole): RouteObject[] {
             ? <PoliciesPage />
           : item.path === "/access"
             ? <AccessPage role={role} />
+          : item.path === "/api-keys"
+            ? <ApiKeysPage role={role} />
           : item.path === "/profile"
             ? <ProfilePage />
             : <PlaceholderPage />,

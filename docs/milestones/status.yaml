@@ -100,10 +100,10 @@ milestones:
   - id: "14"
     title: "Multi-User MCP OAuth"
     file: "docs/milestones/14-multiuser-mcp-oauth.md"
-    status: "pending"
+    status: "in_progress"
     completed_at: null
     commit_hash: null
-    notes: ""
+    notes: "Decision-complete multi-user OAuth plan under docs/plans/milestone-14-multiuser-mcp-oauth.md."
   - id: "15"
     title: "Access, Session, And Grant Management"
     file: "docs/milestones/15-access-session-grant-management.md"

@@ -164,6 +164,7 @@ import { GlobalSecurityEvents } from "../globalSecurityEvents.js";
 import { AuditSearchService } from "../auditSearch.js";
 import { AuditRetentionService } from "../auditRetention.js";
 import { registerAuditRoutes } from "./auditRoutes.js";
+import { ActivityAggregationService } from "../activityAggregation.js";
 
 export interface ControlApplicationOptions {
   authenticator?: ControlAuthenticator;
@@ -196,6 +197,7 @@ export interface ControlApplicationOptions {
   inactivityJob?: InactivityJob;
   auditSearch?: AuditSearchService;
   auditRetention?: AuditRetentionService;
+  activityAggregation?: ActivityAggregationService;
 }
 
 export function createControlApplication(
@@ -431,9 +433,12 @@ export async function startControlServer(
   let auditSearch: AuditSearchService | undefined;
   let auditRetention: AuditRetentionService | undefined;
   let auditMaintenanceTimer: NodeJS.Timeout | undefined;
+  let activityAggregation: ActivityAggregationService | undefined;
+  let activityAggregationTimer: NodeJS.Timeout | undefined;
   const apiKeyVerifier = new ApiKeyVerifierPool();
   let selfApiKeyDetector: ActiveSelfApiKeyDetector | undefined;
   try {
+    activityAggregation = new ActivityAggregationService(persistence);
     apiKeyRepository = new ApiKeyRepository(persistence);
     selfApiKeyDetector = await ActiveSelfApiKeyDetector.create(
       apiKeyRepository,
@@ -754,6 +759,7 @@ export async function startControlServer(
       ...(inactivityJob === undefined ? {} : { inactivityJob }),
       ...(auditSearch === undefined ? {} : { auditSearch }),
       ...(auditRetention === undefined ? {} : { auditRetention }),
+      activityAggregation,
     });
     await server.listen({
       host: config.control.host,
@@ -771,10 +777,15 @@ export async function startControlServer(
       }, 3_600_000);
       auditMaintenanceTimer.unref();
     }
+    activityAggregationTimer = setInterval(() => {
+      void activityAggregation!.run().catch(() => undefined);
+    }, 3_600_000);
+    activityAggregationTimer.unref();
   } catch (error) {
     await server?.close().catch(() => undefined);
     if (inactivityTimer !== undefined) clearInterval(inactivityTimer);
     if (auditMaintenanceTimer !== undefined) clearInterval(auditMaintenanceTimer);
+    if (activityAggregationTimer !== undefined) clearInterval(activityAggregationTimer);
     browserSessions?.close();
     stepUpAuthorization?.close();
     stepUp?.close();
@@ -806,6 +817,7 @@ export async function startControlServer(
         await startedServer.close();
         if (inactivityTimer !== undefined) clearInterval(inactivityTimer);
         if (auditMaintenanceTimer !== undefined) clearInterval(auditMaintenanceTimer);
+        if (activityAggregationTimer !== undefined) clearInterval(activityAggregationTimer);
         browserSessions?.close();
         stepUpAuthorization?.close();
         stepUp?.close();

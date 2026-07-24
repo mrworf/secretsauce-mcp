@@ -173,6 +173,60 @@ describe("credential HTTP contracts", () => {
     expect(documented.json().paths).toHaveProperty(
       "/api/v2/services/{service_id}/credentials/{credential_id}/value",
     );
+    expect(documented.json().paths).toHaveProperty(
+      "/api/v2/services/{service_id}/credentials/{credential_id}/self-api-key",
+    );
+    expect(documented.json().paths[
+      "/api/v2/services/{service_id}/credentials/{credential_id}/self-api-key"
+    ].put).toMatchObject({
+      "x-step-up": "always",
+      "x-permission": "self_api_key_approval",
+      "x-idempotency": "required",
+      "x-concurrency": "if-match",
+    });
+
+    const missingStepUp = await fixture.application.inject({
+      method: "PUT",
+      url:
+        `/api/v2/services/${service.id}/credentials/${credentialId}/self-api-key`,
+      headers: mutationHeaders({
+        "if-match": configured.headers.etag!,
+        "idempotency-key": "approve-self-key",
+      }),
+      payload: {
+        value: "ssk_v1_AQEBAQEBAQEBAQEB_AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI",
+        justification: "Explicit recursive integration.",
+        risk_acknowledgement:
+          "I ACCEPT RECURSIVE SECRETSAUCE MANAGEMENT AUTHORITY",
+      },
+    });
+    expect(missingStepUp.statusCode).toBe(403);
+    expect(missingStepUp.json().error.code).toBe("step_up_required");
+
+    fixture.actor.value = {
+      method: "api_key",
+      principalId: "018f1f2e-7b3c-7a10-8000-000000000099",
+      role: "system",
+      apiKey: { nickname: "System", lastFour: "1234" },
+    };
+    const apiKeyDenied = await fixture.application.inject({
+      method: "PUT",
+      url:
+        `/api/v2/services/${service.id}/credentials/${credentialId}/self-api-key`,
+      headers: {
+        host: "control.example.org",
+        "if-match": configured.headers.etag!,
+        "idempotency-key": "api-key-self-approval",
+      },
+      payload: {
+        value: "ssk_v1_AQEBAQEBAQEBAQEB_AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI",
+        justification: "Must remain browser only.",
+        risk_acknowledgement:
+          "I ACCEPT RECURSIVE SECRETSAUCE MANAGEMENT AUTHORITY",
+      },
+    });
+    expect(apiKeyDenied.statusCode).toBe(403);
+    expect(fixture.vault.createCalls).toBe(1);
   });
 });
 

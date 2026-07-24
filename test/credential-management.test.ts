@@ -20,6 +20,7 @@ import {
 } from "../src/credentialVaultCoordinator.js";
 import { GroupAssignmentRepository } from "../src/groupAssignments.js";
 import { IdentityRepository, type IdentityAuditContext } from "../src/identity/repository.js";
+import { AlwaysStepUpHandle } from "../src/identity/stepUp.js";
 import { PersistenceWorker } from "../src/persistence/worker.js";
 import { ActiveSelfApiKeyDetector } from "../src/selfApiKeyProtection.js";
 import { UuidV7Generator } from "../src/persistence/uuidV7.js";
@@ -277,6 +278,17 @@ describe("service credential metadata and selectors", () => {
       () => "22345678-1234-4234-8234-123456789abc",
       undefined,
       detector,
+      {
+        withConsumedProof: async (_handle, auditInput, mutation) =>
+          fixture.worker.execute({
+            run: (database) => database.withGeneratedAdministrativeAudit(
+              (transaction) => ({
+                value: mutation(transaction),
+                auditInput,
+              }),
+            ),
+          }),
+      },
     );
 
     await expect(coordinator.setValue({
@@ -299,6 +311,11 @@ describe("service credential metadata and selectors", () => {
       justification: "A wrapped value must not inherit explicit approval.",
       correlationId: CORRELATION,
       source: "127.0.0.2",
+      stepUpProof: new AlwaysStepUpHandle(
+        "018f1f2e-7b3c-7a10-8000-000000000097",
+        "018f1f2e-7b3c-7a10-8000-000000000096",
+        fixture.superadmin.principalId,
+      ),
     })).rejects.toEqual(new CredentialManagementError("invalid_request"));
     expect(vault.records.size).toBe(0);
 
@@ -312,10 +329,23 @@ describe("service credential metadata and selectors", () => {
       justification: "Required recursive deployment integration.",
       correlationId: CORRELATION,
       source: "127.0.0.3",
+      stepUpProof: new AlwaysStepUpHandle(
+        "018f1f2e-7b3c-7a10-8000-000000000095",
+        "018f1f2e-7b3c-7a10-8000-000000000094",
+        fixture.superadmin.principalId,
+      ),
     });
     expect(approved).toMatchObject({
-      status: "configured",
-      lastFour: active.oneTimeKey.slice(-4),
+      credential: {
+        status: "configured",
+        lastFour: active.oneTimeKey.slice(-4),
+      },
+      approval: {
+        apiKeyId: active.apiKey.id,
+        nickname: "Recursive deploy key",
+        lastFour: active.oneTimeKey.slice(-4),
+        vaultGeneration: 1,
+      },
     });
     await expect(selfApproval(fixture.worker, created.credential.id)).resolves
       .toMatchObject({
@@ -334,7 +364,7 @@ describe("service credential metadata and selectors", () => {
       actor: fixture.superadmin,
       serviceId: service.id,
       credentialId: created.credential.id,
-      expectedVersion: approved.version,
+      expectedVersion: approved.credential.version,
       value: Buffer.from("ordinary-downstream-value"),
       correlationId: CORRELATION,
       source: "127.0.0.4",

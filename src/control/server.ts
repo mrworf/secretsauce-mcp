@@ -341,6 +341,7 @@ export async function startControlServer(
   let localAuthentication: LocalAuthenticationService | undefined;
   let browserSessions: BrowserSessionAuthenticator | undefined;
   let stepUp: StepUpService | undefined;
+  let stepUpRepository: StepUpRepository | undefined;
   let stepUpAuthorization: BrowserStepUpAuthorization | undefined;
   let enrollment: LocalEnrollmentService | undefined;
   let restrictedSessions: RestrictedSessionAuthenticator | undefined;
@@ -394,7 +395,7 @@ export async function startControlServer(
           config.identity.sessions,
           sessionKey,
         );
-        const stepUpRepository = new StepUpRepository(persistence);
+        stepUpRepository = new StepUpRepository(persistence);
         stepUp = new StepUpService({
           authenticationRepository,
           repository: stepUpRepository,
@@ -474,6 +475,7 @@ export async function startControlServer(
             randomUUID,
             idempotencyHasher,
             selfApiKeyDetector,
+            stepUpRepository,
           );
           await credentialVault.reconcilePending();
         }

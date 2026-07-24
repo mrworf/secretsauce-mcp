@@ -24,6 +24,9 @@ import {
   SelfApiKeyProtectionError,
 } from "./selfApiKeyProtection.js";
 import { createHash } from "node:crypto";
+import {
+  type AlwaysStepUpHandle,
+} from "./identity/stepUp.js";
 
 export interface CredentialControlVault {
   create(input: {
@@ -76,6 +79,22 @@ interface PendingSelfApiKeyApproval {
   justificationDigest: string;
 }
 
+export interface SelfApiKeyApprovalView {
+  apiKeyId: string;
+  nickname: string;
+  lastFour: string;
+  vaultGeneration: number;
+  approvedAt: number;
+}
+
+export interface CredentialStepUpConsumer {
+  withConsumedProof<T>(
+    handle: AlwaysStepUpHandle,
+    auditInput: AdministrativeAuditEventInput,
+    mutation: (transaction: PersistenceTransaction) => T,
+  ): Promise<T>;
+}
+
 interface CredentialState {
   id: string;
   service_id: string;
@@ -110,6 +129,7 @@ export class CredentialVaultCoordinator {
     private readonly locatorUuid: () => string = randomUUID,
     private readonly idempotency?: ControlIdempotencyHasher,
     private readonly selfApiKeys?: ActiveSelfApiKeyDetector,
+    private readonly stepUps?: CredentialStepUpConsumer,
   ) {
     const generator = new UuidV7Generator({ now });
     this.#eventUuid = () => generator.next();
@@ -141,7 +161,11 @@ export class CredentialVaultCoordinator {
     correlationId: string;
     source: string;
     justification: string;
-  }): Promise<CredentialView> {
+    stepUpProof?: AlwaysStepUpHandle;
+  }): Promise<{
+    credential: CredentialView;
+    approval: SelfApiKeyApprovalView;
+  }> {
     validateOperationInput(input);
     if (
       input.actor.method !== "browser_session" ||
@@ -151,7 +175,8 @@ export class CredentialVaultCoordinator {
       input.justification.length < 1 ||
       input.justification.length > 512 ||
       /[\0\r\n]/.test(input.justification) ||
-      this.selfApiKeys === undefined
+      this.selfApiKeys === undefined ||
+      input.stepUpProof === undefined
     ) throw new CredentialManagementError("invalid_request");
     const raw = Buffer.from(input.value).toString("utf8");
     const matches = await this.inspectSelfApiKeys(
@@ -174,7 +199,13 @@ export class CredentialVaultCoordinator {
         .update(input.justification, "utf8")
         .digest("hex"),
     };
-    return this.setValueInternal(input, approval);
+    const credential = await this.setValueInternal(input, approval);
+    const approved = await this.approvalView(
+      input.serviceId,
+      input.credentialId,
+    );
+    if (approved === undefined) throw new CredentialManagementError("unavailable");
+    return { credential, approval: approved };
   }
 
   private async setValueInternal(input: {
@@ -186,6 +217,7 @@ export class CredentialVaultCoordinator {
     captureLastFour?: boolean;
     idempotencyKey?: string;
     correlationId: string;
+    stepUpProof?: AlwaysStepUpHandle;
   }, approval?: PendingSelfApiKeyApproval): Promise<CredentialView> {
     validateOperationInput(input);
     if (
@@ -234,10 +266,10 @@ export class CredentialVaultCoordinator {
             : { captureLastFour: input.captureLastFour }),
         });
       }
-      await this.finalizeSet(intent, metadata);
+      await this.finalizeSet(intent, metadata, input.stepUpProof);
     } catch (error) {
       if (intent! !== undefined && !(error instanceof CredentialManagementError)) {
-        const reconciled = await this.tryReconcile(intent);
+        const reconciled = await this.tryReconcile(intent, input.stepUpProof);
         if (reconciled) {
           const view = await this.credentials.credential(
             input.actor,
@@ -261,6 +293,39 @@ export class CredentialVaultCoordinator {
       input.serviceId,
       input.credentialId,
     );
+  }
+
+  private async approvalView(
+    serviceId: string,
+    credentialId: string,
+  ): Promise<SelfApiKeyApprovalView | undefined> {
+    try {
+      return await this.owner.execute({
+        run: (database) => database.read((query) => {
+          const row = query.get<{
+            api_key_id: string;
+            nickname_snapshot: string;
+            last_four_snapshot: string;
+            vault_generation: number;
+            approved_at: number;
+          }>(`
+            SELECT api_key_id, nickname_snapshot, last_four_snapshot,
+              vault_generation, approved_at
+            FROM credential_self_api_key_approvals
+            WHERE service_id = ? AND credential_id = ?
+          `, [serviceId, credentialId]);
+          return row === undefined ? undefined : {
+            apiKeyId: row.api_key_id,
+            nickname: row.nickname_snapshot,
+            lastFour: row.last_four_snapshot,
+            vaultGeneration: row.vault_generation,
+            approvedAt: row.approved_at,
+          };
+        }),
+      });
+    } catch {
+      throw new CredentialManagementError("unavailable");
+    }
   }
 
   private async rejectActiveSelfApiKey(input: {
@@ -445,7 +510,9 @@ export class CredentialVaultCoordinator {
   }, approval?: PendingSelfApiKeyApproval): Promise<PreparedVaultOperation> {
     const idempotency = this.valueIdempotency(
       input,
-      "credentials.value.replace",
+      approval === undefined
+        ? "credentials.value.replace"
+        : "credentials.self_api_key.approve",
       {
         serviceId: input.serviceId,
         credentialId: input.credentialId,
@@ -740,13 +807,13 @@ export class CredentialVaultCoordinator {
   private async finalizeSet(
     intent: VaultIntent,
     metadata: VaultRecordMetadata,
+    stepUpProof?: AlwaysStepUpHandle,
   ): Promise<void> {
     if (metadata.generation !== intent.target_generation) {
       await this.markReconcile(intent, "generation_mismatch");
       throw new CredentialManagementError("unavailable");
     }
-    await this.owner.execute({
-      run: (database) => database.withGeneratedAdministrativeAudit((transaction) => {
+    const mutation = (transaction: PersistenceTransaction) => {
         const now = transaction.timestamp();
         const status = intent.prior_status === "disabled" ? "disabled" : "configured";
         const changed = transaction.run(`
@@ -772,11 +839,11 @@ export class CredentialVaultCoordinator {
         if (intent.approval_api_key_id !== null) {
           const approved = transaction.get(`
             SELECT 1
-            FROM api_keys key
+            FROM api_keys api
             JOIN users approver ON approver.id = ?
-            WHERE key.id = ?
-              AND key.status = 'active'
-              AND (key.expires_at IS NULL OR key.expires_at > ?)
+            WHERE api.id = ?
+              AND api.status = 'active'
+              AND (api.expires_at IS NULL OR api.expires_at > ?)
               AND approver.role = 'superadmin'
               AND approver.status = 'active'
           `, [
@@ -809,15 +876,28 @@ export class CredentialVaultCoordinator {
           "DELETE FROM credential_vault_operations WHERE credential_id = ?",
           [intent.credential_id],
         );
-        return {
-          value: undefined,
-          auditInput: vaultSystemAudit(
-            intent,
-            "credential.value.finalize",
-            "applied",
-          ),
-        };
-      }),
+        return undefined;
+    };
+    if (intent.approval_api_key_id !== null) {
+      if (this.stepUps === undefined || stepUpProof === undefined) {
+        throw new PersistenceError("authentication_failed");
+      }
+      await this.stepUps.withConsumedProof(
+        stepUpProof,
+        approvalAudit(intent),
+        mutation,
+      );
+      return;
+    }
+    await this.owner.execute({
+      run: (database) => database.withGeneratedAdministrativeAudit((transaction) => ({
+        value: mutation(transaction),
+        auditInput: vaultSystemAudit(
+          intent,
+          "credential.value.finalize",
+          "applied",
+        ),
+      })),
     });
   }
 
@@ -922,12 +1002,15 @@ export class CredentialVaultCoordinator {
     }).catch(() => undefined);
   }
 
-  private async tryReconcile(intent: VaultIntent): Promise<boolean> {
+  private async tryReconcile(
+    intent: VaultIntent,
+    stepUpProof?: AlwaysStepUpHandle,
+  ): Promise<boolean> {
     try {
       const metadata = await this.vault.metadata(intent.locator, serviceBinding(intent));
       if (intent.operation === "create" || intent.operation === "replace") {
         if (metadata.generation === intent.target_generation) {
-          await this.finalizeSet(intent, metadata);
+          await this.finalizeSet(intent, metadata, stepUpProof);
           return true;
         }
         if (
@@ -1172,6 +1255,34 @@ function vaultSystemAudit(
     ],
     correlationId: `req_${randomUUID()}`,
     source: { category: "credential_management" },
+  };
+}
+
+function approvalAudit(intent: VaultIntent): AdministrativeAuditEventInput {
+  return {
+    actor: {
+      type: "browser_session",
+      id: intent.approval_user_id!,
+      label: `user:${intent.approval_user_id}`,
+      role: "superadmin",
+      authenticationMethod: "browser_session",
+    },
+    action: "credential.self_api_key.approve",
+    result: "allow",
+    target: {
+      type: "service_credential",
+      id: intent.credential_id,
+      label: `credential:${intent.credential_id}`,
+    },
+    serviceId: intent.service_id,
+    changes: [
+      { field: "management_identity_id", after: intent.approval_api_key_id },
+      { field: "nickname_snapshot", after: intent.approval_nickname },
+      { field: "last_four_snapshot", after: intent.approval_last_four },
+      { field: "vault_generation", after: intent.target_generation },
+    ],
+    correlationId: `req_${randomUUID()}`,
+    source: { category: "credential_self_api_key_approval" },
   };
 }
 

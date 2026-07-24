@@ -3,7 +3,10 @@ import {
   type CredentialManagementService,
   type CredentialView,
 } from "../credentialManagement.js";
-import type { CredentialVaultCoordinator } from "../credentialVaultCoordinator.js";
+import type {
+  CredentialVaultCoordinator,
+  SelfApiKeyApprovalView,
+} from "../credentialVaultCoordinator.js";
 import { ControlContractError } from "./contracts.js";
 import { defineControlRoute, type ControlRouteRegistry } from "./routeRegistry.js";
 import { z } from "./zod.js";
@@ -88,6 +91,24 @@ const valueBody = z.object({
   value: z.string().min(1).max(65_536),
   capture_last_four: z.boolean().optional(),
 }).strict();
+export const SELF_API_KEY_RISK_ACKNOWLEDGEMENT =
+  "I ACCEPT RECURSIVE SECRETSAUCE MANAGEMENT AUTHORITY";
+const selfApiKeyApprovalBody = valueBody.extend({
+  justification: z.string().min(1).max(512)
+    .refine((value) =>
+      value === value.trim() && !/[\0\r\n]/.test(value)),
+  risk_acknowledgement: z.literal(SELF_API_KEY_RISK_ACKNOWLEDGEMENT),
+}).strict();
+const selfApiKeyApprovalSchema = z.object({
+  credential: credentialSchema,
+  approval: z.object({
+    api_key_id: uuid,
+    nickname: z.string().min(1).max(512),
+    last_four: z.string().regex(/^[A-Za-z0-9_-]{4}$/),
+    vault_generation: z.number().int().positive(),
+    approved_at: z.number().int().nonnegative(),
+  }).strict(),
+}).strict();
 const copyPlacement = placementView;
 const copySelector = z.union([
   z.object({ kind: z.literal("all") }).strict(),
@@ -144,6 +165,61 @@ export function registerCredentialRoutes(
         )).map(wireCredential),
       },
     })),
+  }));
+
+  registry.register(defineControlRoute({
+    id: "credentials.self_api_key.approve",
+    method: "PUT",
+    path:
+      "/api/v2/services/{service_id}/credentials/{credential_id}/self-api-key",
+    summary: "Approve one active SecretSauce API key as a credential value",
+    tags: ["Credentials"],
+    authentication: ["browser_session"],
+    permission: "self_api_key_approval",
+    stepUp: "always",
+    schemas: {
+      params: credentialParams,
+      body: selfApiKeyApprovalBody,
+      response: selfApiKeyApprovalSchema,
+    },
+    rateLimit: "management",
+    auditAction: "credential.self_api_key.approve",
+    secretFields: ["/value"],
+    cache: "no-store",
+    concurrency: "if-match",
+    idempotency: "required",
+    handler: async (context) => run(async () => {
+      const value = Buffer.from(context.body.value, "utf8");
+      try {
+        const result = await requireVault(vault)
+          .setApprovedSelfApiKeyValue({
+            actor: context.authentication!,
+            serviceId: context.params.service_id,
+            credentialId: context.params.credential_id,
+            expectedVersion: context.expectedVersion!,
+            value,
+            ...(context.body.capture_last_four === undefined
+              ? {}
+              : { captureLastFour: context.body.capture_last_four }),
+            idempotencyKey: context.idempotencyKey!,
+            correlationId: context.requestId,
+            source: context.request.ip,
+            justification: context.body.justification,
+            ...(context.stepUpProof === undefined
+              ? {}
+              : { stepUpProof: context.stepUpProof }),
+          });
+        return {
+          data: {
+            credential: wireCredential(result.credential),
+            approval: wireSelfApiKeyApproval(result.approval),
+          },
+          version: result.credential.version,
+        };
+      } finally {
+        value.fill(0);
+      }
+    }),
   }));
 
   registry.register(defineControlRoute({
@@ -303,6 +379,16 @@ export function registerCredentialRoutes(
   registerLifecycleRoutes(registry, credentials, vault);
   registerTransferRoutes(registry, credentials);
   registerValueRoutes(registry, vault);
+}
+
+function wireSelfApiKeyApproval(approval: SelfApiKeyApprovalView) {
+  return {
+    api_key_id: approval.apiKeyId,
+    nickname: approval.nickname,
+    last_four: approval.lastFour,
+    vault_generation: approval.vaultGeneration,
+    approved_at: approval.approvedAt,
+  };
 }
 
 function registerLifecycleRoutes(

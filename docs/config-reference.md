@@ -204,7 +204,58 @@ auth:
       - gateway.request
 ```
 
-`builtin_oauth` is intended for a private single-admin deployment. It publishes authorization server discovery from this gateway, accepts ChatGPT's CIMD public-client flow with PKCE, and issues JWT access tokens plus rotating opaque refresh tokens for the MCP resource. Refresh tokens are bound to the authorized client, resource, subject, and scope ceiling. Reusing a rotated token revokes its active family. Store `SECRETSAUCE_ADMIN_PASSWORD_HASH` as `pbkdf2-sha256$iterations$saltBase64url$hashBase64url`, not as a raw password. The signing key file must contain an RSA private key PEM and must be mounted from stable storage. If the signing key is regenerated inside an ephemeral container, existing ChatGPT OAuth access tokens become invalid after every restart.
+`builtin_oauth` defaults to `identity_source: static`, the private
+single-admin compatibility mode. It publishes authorization-server discovery
+from this gateway, accepts CIMD public clients with PKCE, and issues JWT access
+tokens plus rotating opaque refresh tokens for the MCP resource. Store
+`SECRETSAUCE_ADMIN_PASSWORD_HASH` as
+`pbkdf2-sha256$iterations$saltBase64url$hashBase64url`, not as a raw password.
+The signing key must be stable across restarts.
+
+For activated v2 deployments, `identity_source: database` replaces the static
+administrator with eligible ordinary users:
+
+```yaml
+auth:
+  mode: builtin_oauth
+  builtin_oauth:
+    identity_source: database
+    issuer: https://mcp.example.org
+    token_hmac_key_file: /run/oauth/token-hmac.key
+    access_token_ttl: 5m
+    authorization_code_ttl: 5m
+    refresh_token_idle_ttl: 30d
+    refresh_token_max_ttl: 90d
+    allowed_clients:
+      - https://chatgpt.com
+      - https://client.example.org
+    required_scopes:
+      - gateway.read
+      - gateway.references
+      - gateway.request
+```
+
+Database identity requires `persistence`, `identity`, empty YAML `services`,
+and `runtime.authority: database`. It prohibits static admin credentials,
+signing keys, and `refresh_token_store_file`. `token_hmac_key_file` contains one
+canonical 32-byte base64url key, must be an absolute regular file with mode
+`0400`, and must remain stable. The database stores only domain-separated keyed
+hashes of authorization codes and opaque access/refresh tokens. Refresh
+rotation, replay-family revocation, account/security epochs, resource, scopes,
+and current service eligibility are checked from durable state.
+
+Local MCP authorization requires an active ordinary user with a permanent
+password, configured TOTP, and at least one effective assignment to an
+activated published service. Configured OIDC providers can authorize an
+explicitly linked ordinary user only after their required MFA assurance.
+Admins, superadmins, inactive or incomplete accounts, unlinked assertions, and
+users with no effective service share the same public failure. Service,
+credential, destination, and policy authority is never frozen into an OAuth
+grant; it is re-evaluated for every stateless MCP POST.
+
+Keep `server.resource` and `auth.builtin_oauth.issuer` as the same HTTPS origin,
+for example `https://mcp.example.org`. ChatGPT's Server URL and Codex MCP URL
+must include the MCP path: `https://mcp.example.org/mcp`.
 
 The consent page verifies the allowlisted HTTPS client metadata document, its exact `client_id`, and the requested redirect URI before displaying credential fields. When verified metadata contains a non-empty `client_name` of at most 120 characters, the page uses it to identify the requesting client; otherwise it displays the neutral name “MCP client.” Technical OAuth values remain available under “Connection details.”
 
@@ -216,7 +267,12 @@ Password verification uses asynchronous PBKDF2 so expensive login checks do not 
 
 Built-in login failures are limited over a 15-minute window to 10 per direct source, 10 per account, and 100 globally. Lockouts start at 15 minutes and double on repetition up to one hour. Override these values under `auth.builtin_oauth.login_rate_limit`; forwarding headers are ignored and failures never log submitted usernames or passwords.
 Built-in authorization codes are isolated per gateway configuration and capped by `limits.max_authorization_codes` (default `1000`). Expired codes are reaped before allocation and during state maintenance; capacity rejects new authorization with `429` without disturbing live codes.
-Built-in refresh-token hashes and grant metadata are capped by `limits.max_refresh_token_records` (default `10000`). Expired grants are reaped during token operations and state maintenance. Set `refresh_token_store_file` to a stable writable path to preserve refresh grants, rotations, and replay detection across restarts. The versioned state file contains hashes and grant metadata, never raw tokens, and is replaced atomically with mode `0600`. A malformed or unreadable configured file prevents startup, and a failed token-operation write returns `temporarily_unavailable` without returning new credentials. The file supports one gateway process at a time.
+In static mode, refresh-token hashes and grant metadata are capped by
+`limits.max_refresh_token_records` (default `10000`). Expired grants are reaped
+during token operations and state maintenance. Set `refresh_token_store_file`
+to a stable writable path to preserve refresh grants, rotations, and replay
+detection across restarts. The versioned state file contains hashes and grant
+metadata, never raw tokens, and is replaced atomically with mode `0600`.
 
 If `refresh_token_store_file` is omitted, refresh state remains in memory and the server emits `oauth.refresh_state_ephemeral` at startup. Access tokens signed by a stable key remain valid across restarts, but clients must reauthorize when they next need to refresh.
 

@@ -303,8 +303,7 @@ function registerOidcLoginRoutes(
   registry: ControlRouteRegistry,
   oidc: NonNullable<LocalIdentityControl["oidc"]>,
 ): void {
-  if (oidc.mcpOAuth !== undefined) {
-    registry.register(defineControlRoute({
+  registry.register(defineControlRoute({
       id: "identity.oidc_mcp_begin",
       method: "GET",
       path: "/api/v2/auth/oidc/{provider_id}/mcp-begin",
@@ -331,7 +330,8 @@ function registerOidcLoginRoutes(
       successStatuses: [302],
       handler: async ({ params, query, reply }) => {
         try {
-          const intent = await oidc.mcpOAuth!.repository.resolveExternalIntent(
+          if (oidc.mcpOAuth === undefined) throw new Error("MCP OAuth unavailable");
+          const intent = await oidc.mcpOAuth.repository.resolveExternalIntent(
             query.intent,
             params.provider_id,
           );
@@ -360,7 +360,6 @@ function registerOidcLoginRoutes(
         }
       },
     }));
-  }
 
   registry.register(defineControlRoute({
     id: "identity.oidc_providers",

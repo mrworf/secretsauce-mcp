@@ -393,6 +393,19 @@ export class DatabaseOAuthRepository {
               || current === undefined
               || !eligibleForGrant(current, "oidc")
             ) throw new PersistenceError("oauth_invalid_authorization");
+            const liveCodes = transaction.get<{ count: number }>(`
+              SELECT count(*) AS count FROM oauth_authorization_codes
+              WHERE consumed_at IS NULL AND expires_at > ?
+            `, [now])?.count ?? 0;
+            const liveGrants = transaction.get<{ count: number }>(`
+              SELECT count(*) AS count FROM oauth_grants
+              WHERE status = 'active'
+                AND absolute_expires_at > ? AND idle_expires_at > ?
+            `, [now, now])?.count ?? 0;
+            if (
+              liveCodes >= this.settings.maxAuthorizationCodes
+              || liveGrants >= this.settings.maxTokenRecords
+            ) throw new PersistenceError("oauth_capacity_exceeded");
             const consumed = transaction.run(`
               UPDATE oauth_authorization_intents SET consumed_at = ?
               WHERE id = ? AND consumed_at IS NULL AND expires_at > ?
@@ -532,7 +545,8 @@ export class DatabaseOAuthRepository {
             const liveGrants = transaction.get<{ count: number }>(`
               SELECT count(*) AS count FROM oauth_grants
               WHERE status = 'active'
-            `)?.count ?? 0;
+                AND absolute_expires_at > ? AND idle_expires_at > ?
+            `, [now, now])?.count ?? 0;
             if (
               liveCodes >= this.settings.maxAuthorizationCodes
               || liveGrants >= this.settings.maxTokenRecords
@@ -1180,6 +1194,58 @@ export class DatabaseOAuthRepository {
       });
     } catch (error) {
       throw mapDatabaseOAuthError(error);
+    }
+  }
+
+  async sweepExpired(limit = 100): Promise<number> {
+    if (!Number.isSafeInteger(limit) || limit < 1 || limit > 1_000) {
+      throw new DatabaseOAuthError("unavailable");
+    }
+    const now = safeNow(this.#now);
+    try {
+      return await this.owner.execute({
+        run: (database) => database.withOperationalTransaction((transaction) => {
+          const codes = transaction.run(`
+            DELETE FROM oauth_authorization_codes
+            WHERE id IN (
+              SELECT id FROM oauth_authorization_codes
+              WHERE consumed_at IS NOT NULL OR expires_at <= ?
+              ORDER BY expires_at, id LIMIT ?
+            )
+          `, [now, limit]).changes;
+          const intents = transaction.run(`
+            DELETE FROM oauth_authorization_intents
+            WHERE id IN (
+              SELECT id FROM oauth_authorization_intents
+              WHERE consumed_at IS NOT NULL OR expires_at <= ?
+              ORDER BY expires_at, id LIMIT ?
+            )
+          `, [now, limit]).changes;
+          const access = transaction.run(`
+            DELETE FROM oauth_access_tokens
+            WHERE id IN (
+              SELECT id FROM oauth_access_tokens
+              WHERE status = 'revoked' OR expires_at <= ?
+              ORDER BY expires_at, id LIMIT ?
+            )
+          `, [now, limit]).changes;
+          const refresh = transaction.run(`
+            DELETE FROM oauth_refresh_tokens
+            WHERE id IN (
+              SELECT token.id
+              FROM oauth_refresh_tokens token
+              JOIN oauth_refresh_families family ON family.id = token.family_id
+              WHERE family.status <> 'active'
+                OR family.absolute_expires_at <= ?
+                OR family.idle_expires_at <= ?
+              ORDER BY token.issued_at, token.id LIMIT ?
+            )
+          `, [now, now, limit]).changes;
+          return codes + intents + access + refresh;
+        }),
+      });
+    } catch {
+      throw new DatabaseOAuthError("unavailable");
     }
   }
 

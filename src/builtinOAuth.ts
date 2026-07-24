@@ -157,6 +157,9 @@ export class BuiltinOAuthRuntime {
   sweep(now = Date.now()): void {
     sweepAuthorizationCodes(this.state, now);
     if (sweepRefreshGrants(this.state, now)) persistRefreshStateSafely(this.config, this.state);
+    void this.database
+      ?.then((services) => services.repository.sweepExpired())
+      .catch(() => undefined);
   }
 
   async databaseServices(): Promise<DatabaseBuiltinOAuthServices> {

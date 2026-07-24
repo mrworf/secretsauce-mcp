@@ -332,6 +332,26 @@ describe("database OAuth foundation", () => {
       active_refresh: 0,
       replay_audits: 1,
     });
+    await expect(repository.sweepExpired(1)).resolves.toBe(3);
+    expect(await fixture.worker.execute({
+      run: (database) => database.read((query) => query.get<{
+        codes: number;
+        access_records: number;
+        grants: number;
+        families: number;
+      }>(`
+        SELECT
+          (SELECT count(*) FROM oauth_authorization_codes) AS codes,
+          (SELECT count(*) FROM oauth_access_tokens) AS access_records,
+          (SELECT count(*) FROM oauth_grants) AS grants,
+          (SELECT count(*) FROM oauth_refresh_families) AS families
+      `)),
+    })).toEqual({
+      codes: 0,
+      access_records: 1,
+      grants: 1,
+      families: 1,
+    });
 
     await expect(repository.exchangeAuthorizationCode({
       code: authorization.code,
@@ -571,7 +591,7 @@ describe("database OAuth foundation", () => {
       "workforce",
     )).resolves.toEqual({ id: intent.id });
     await expect(repository.resolveExternalIntent(
-      `${intent.handle.slice(0, -1)}A`,
+      `${intent.handle.slice(0, -1)}${intent.handle.endsWith("A") ? "B" : "A"}`,
       "workforce",
     )).rejects.toEqual(new DatabaseOAuthError("invalid_authorization"));
     await expect(repository.authorizeExternalIntent(intent.id, {

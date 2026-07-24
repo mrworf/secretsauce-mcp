@@ -129,7 +129,15 @@ auth:
       - gateway.request
 ```
 
-For built-in OAuth, set `auth.builtin_oauth.issuer` to the same public HTTPS origin as `server.resource`. The origin values do not include the MCP path; ChatGPT and other remote clients use the full MCP Server URL `https://mcp.example.org/mcp`.
+For built-in OAuth, set `auth.builtin_oauth.issuer` to the same public HTTPS
+origin as `server.resource`. The origin values do not include the MCP path;
+ChatGPT and Codex use the full MCP Server URL `https://mcp.example.org/mcp`.
+Activated v2 deployments can select
+`auth.builtin_oauth.identity_source: database` for ordinary-user
+password-plus-TOTP and linked-OIDC authorization with durable hash-only opaque
+tokens. This mode requires a stable mode-`0400` `token_hmac_key_file` and
+prohibits the static administrator, signing key, and refresh-state file. See
+[the configuration reference](docs/config-reference.md#auth).
 
 SecretSauce rejects non-loopback HTTP resource, issuer, and JWKS URLs by default. Exact loopback HTTP URLs remain supported for local development. A trusted development network can explicitly accept cleartext OAuth trust with `server.allow_insecure_oauth_http: true`; this emits one sanitized startup warning. Missing `server.resource` in OAuth mode also remains a startup warning.
 
@@ -176,7 +184,7 @@ services:
       SECRETSAUCE_VAULT_RESOLVE_KEY_FILE: /run/vault-caller/resolve-capability.key
 ```
 
-Use the writable audit mount for `audit.file`, for example `/var/lib/secretsauce/audit/audit.jsonl`. Monitor `/health` and disk capacity: an audit open or write failure keeps privileged operations fail-open but changes readiness to `503` with a sanitized audit-degraded check until restart. The open descriptor supports `copytruncate`-style rotation; rename-based rotation requires a restart. When using `auth.mode: builtin_oauth`, keep `auth.builtin_oauth.signing_key_file` on stable mounted storage such as `/run/oauth/oauth_signing_key.pem`; changing that key forces clients to reauthenticate. Set `auth.builtin_oauth.refresh_token_store_file` to a stable writable path such as `/var/lib/secretsauce/oauth/refresh-state.json` to preserve hash-only refresh state across restarts. Omitting it keeps refresh grants in memory and requires reauthorization after restart.
+Use the writable audit mount for `audit.file`, for example `/var/lib/secretsauce/audit/audit.jsonl`. Monitor `/health` and disk capacity: an audit open or write failure keeps privileged operations fail-open but changes readiness to `503` with a sanitized audit-degraded check until restart. The open descriptor supports `copytruncate`-style rotation; rename-based rotation requires a restart. Static built-in OAuth keeps `signing_key_file` on stable read-only storage and can use a writable `refresh_token_store_file` for hash-only refresh continuity. Database built-in OAuth instead keeps `token_hmac_key_file` on stable mode-`0400` storage; its hash-only token and grant state is already in the durable SQLite database.
 
 The vault broker is a separate process with no TCP listener. Start from
 [`examples/vault.yaml`](examples/vault.yaml), create each listed key with

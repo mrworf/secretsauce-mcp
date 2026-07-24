@@ -124,6 +124,12 @@ forwarding headers are not trusted. Login, password work, and TOTP work have
 separate windows and concurrency budgets, and public failures do not reveal
 whether an account exists.
 
+In database identity mode, the validated YAML values above seed the durable
+security settings only on first initialization. Supported password, lifetime,
+step-up, abuse-control, and inactivity values are then database-owned. See
+[Security Settings And Automation](security-settings-automation.md) for the
+ownership boundary and runtime effects.
+
 ## Enrollment, recovery, and self-service
 
 Bootstrap and future invitation/reset operations generate random temporary

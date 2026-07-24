@@ -20,6 +20,7 @@ import {
   type RuntimeActivationIo,
 } from "../src/runtime/activateCli.js";
 import type { GatewayConfig } from "../src/types.js";
+import { PersistedRuntimeAuthority } from "../src/runtimeAuthority.js";
 
 const NOW = 1_785_000_000_000;
 const CORRELATION = "req_12345678-1234-4234-8234-123456789abc";
@@ -246,6 +247,72 @@ describe("runtime activation CLI boundary", () => {
   });
 });
 
+describe("persisted runtime discovery", () => {
+  it("discovers and describes only services assigned to an active ordinary user", async () => {
+    const fixture = await runtimeFixture("discovery");
+    await fixture.publish("visible-api", fixture.user.id);
+    await fixture.publish("hidden-api");
+    await new RuntimeActivationRepository(fixture.worker, () => NOW).activate({
+      correlationId: CORRELATION,
+      osActor: "test-operator",
+    });
+    const authority = new PersistedRuntimeAuthority(fixture.worker);
+    const userAuth = {
+      subject: fixture.user.id,
+      scopes: ["gateway.read"],
+      mode: "oauth" as const,
+    };
+
+    await expect(authority.listServices(userAuth)).resolves.toEqual([
+      expect.objectContaining({
+        id: "visible-api",
+        name: "visible-api",
+        destinations: [{
+          id: "primary",
+          base_url_hint: "https://api.example.org/",
+          tls_verify: true,
+        }],
+        access_methods: [{
+          id: "gateway_access",
+          usage_hint: "Pass reference as service_reference",
+        }],
+        policy_summary: "mode=deny",
+      }),
+    ]);
+    await expect(authority.describeServicePolicy(
+      userAuth,
+      "visible-api",
+    )).resolves.toMatchObject({
+      id: "visible-api",
+      policy: { mode: "deny", rules: [] },
+    });
+    await expect(authority.serviceView(userAuth, "hidden-api"))
+      .rejects.toMatchObject({ code: "unauthorized_service" });
+  });
+
+  it("fails closed for non-UUID, inactive, and privileged subjects", async () => {
+    const fixture = await runtimeFixture("subjects");
+    await fixture.publish("subject-api", fixture.user.id);
+    await new RuntimeActivationRepository(fixture.worker, () => NOW).activate({
+      correlationId: CORRELATION,
+      osActor: "test-operator",
+    });
+    const authority = new PersistedRuntimeAuthority(fixture.worker);
+    const invalidSubjects = [
+      "legacy@example.org",
+      fixture.superadmin.principalId,
+      fixture.suspendedUser.id,
+    ];
+    for (const subject of invalidSubjects) {
+      await expect(authority.listServices({
+        subject,
+        scopes: ["gateway.read"],
+        mode: "oauth",
+      })).rejects.toMatchObject({ code: "unauthenticated" });
+    }
+  });
+});
+
 async function runtimeFixture(label: string) {
   const worker = PersistenceWorker.open({
     databaseFile: join(
@@ -275,6 +342,24 @@ async function runtimeFixture(label: string) {
     role: "admin",
     status: "active",
   }, audit());
+  const user = await identities.createLocalIdentity({
+    profile: {
+      email: `${label}-user@example.org`,
+      givenName: "Runtime",
+      familyName: "User",
+    },
+    role: "user",
+    status: "active",
+  }, audit());
+  const suspendedUser = await identities.createLocalIdentity({
+    profile: {
+      email: `${label}-suspended@example.org`,
+      givenName: "Suspended",
+      familyName: "User",
+    },
+    role: "user",
+    status: "suspended",
+  }, audit());
   const stepUps = {
     withConsumedProof: async (
       _handle: unknown,
@@ -299,13 +384,33 @@ async function runtimeFixture(label: string) {
     worker,
     service,
     superadmin,
-    publish: async (slug: string) => {
+    user,
+    suspendedUser,
+    publish: async (slug: string, assignedUserId?: string) => {
       let view = (await service.create(
         superadmin,
         { slug, name: slug },
         `create-${slug}-0001`,
         CORRELATION,
       )).service;
+      if (assignedUserId !== undefined) {
+        await worker.execute({
+          run: (database) => database.withOperationalTransaction((transaction) => {
+            transaction.run(`
+              INSERT INTO service_principal_assignments (
+                id, service_id, selector_kind, group_id, user_id,
+                assigned_by_user_id, created_at
+              ) VALUES (?, ?, 'user', NULL, ?, ?, ?)
+            `, [
+              nextFixtureUuid(slug),
+              view.id,
+              assignedUserId,
+              superadmin.principalId,
+              NOW,
+            ]);
+          }),
+        });
+      }
       view = await service.assign(
         superadmin,
         view.id,
@@ -336,6 +441,14 @@ async function runtimeFixture(label: string) {
       );
     },
   };
+}
+
+function nextFixtureUuid(value: string): string {
+  let suffix = 0;
+  for (const character of value) {
+    suffix = (suffix * 31 + character.charCodeAt(0)) >>> 0;
+  }
+  return `018f1f2e-7b3c-7a10-8000-${suffix.toString(16).padStart(12, "0")}`;
 }
 
 function runtimeRows(worker: PersistenceWorker, serviceId: string): Promise<{

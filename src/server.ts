@@ -96,6 +96,9 @@ export function createGatewayServer(
           auditSink: runtime.auditSink,
           capabilities: runtime.capabilities,
           secretRuntime: runtime.secretRuntime,
+          ...(runtime.runtimeAuthority === undefined
+            ? {}
+            : { runtimeAuthority: runtime.runtimeAuthority }),
         });
       } catch (error) {
         if (error instanceof RequestBodyError) {

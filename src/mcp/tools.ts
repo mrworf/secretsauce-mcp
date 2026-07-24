@@ -230,7 +230,9 @@ async function handleListServices(
   args: Record<string, unknown> | undefined, config: GatewayConfig, auth: AuthContext, dependencies: RequestDependencies,
 ): Promise<ToolResult> {
   parseEmptyInput(args);
-  const services = listVisibleServices(config, auth);
+  const services = dependencies.runtimeAuthority === undefined
+    ? listVisibleServices(config, auth)
+    : await dependencies.runtimeAuthority.listServices(auth);
   auditTool(auth, "list_services", "allow", {}, dependencies.auditSink);
   return toolSuccess({ services }, `Found ${services.length} configured service(s).`);
 }
@@ -257,7 +259,9 @@ async function handleDescribeServicePolicy(
   args: Record<string, unknown> | undefined, config: GatewayConfig, auth: AuthContext, dependencies: RequestDependencies,
 ): Promise<ToolResult> {
   const service = parseSingleStringInput(args, "service");
-  const description = describeServicePolicy(config, auth, service);
+  const description = dependencies.runtimeAuthority === undefined
+    ? describeServicePolicy(config, auth, service)
+    : await dependencies.runtimeAuthority.describeServicePolicy(auth, service);
   auditTool(auth, "describe_service_policy", "allow", { service }, dependencies.auditSink);
   return toolSuccess(description as unknown as Record<string, unknown>, `Policy for ${service} described.`);
 }

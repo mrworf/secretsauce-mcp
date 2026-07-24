@@ -2,11 +2,13 @@ import { AuditSink } from "./audit.js";
 import { createCapabilityDependencies, type CapabilityDependencies } from "./capabilities.js";
 import { createSecretRuntime, type SecretRuntime } from "./secretRuntime.js";
 import type { GatewayConfig } from "./types.js";
+import type { RuntimeAuthority } from "./runtimeAuthority.js";
 
 export interface RequestDependencies {
   auditSink: AuditSink;
   capabilities: CapabilityDependencies;
   secretRuntime: SecretRuntime;
+  runtimeAuthority?: RuntimeAuthority;
 }
 
 export function createRequestDependencies(config: GatewayConfig): RequestDependencies {

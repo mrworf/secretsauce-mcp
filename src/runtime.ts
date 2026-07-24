@@ -7,6 +7,7 @@ import { BuiltinOAuthRuntime } from "./builtinOAuth.js";
 import { PersistenceWorker, type PersistenceOwner } from "./persistence/worker.js";
 import { PACKAGE_VERSION } from "./version.js";
 import { sanitizeAuditText } from "./auditSanitizer.js";
+import { PersistedRuntimeAuthority, type RuntimeAuthority } from "./runtimeAuthority.js";
 
 export interface GatewayRuntimeOptions {
   auditSink?: AuditSink;
@@ -16,6 +17,7 @@ export interface GatewayRuntimeOptions {
   builtinOAuth?: BuiltinOAuthRuntime;
   maintenance?: MaintenanceRegistry;
   persistence?: PersistenceOwner;
+  runtimeAuthority?: RuntimeAuthority;
 }
 
 export class GatewayRuntime {
@@ -25,6 +27,7 @@ export class GatewayRuntime {
   readonly builtinOAuth: BuiltinOAuthRuntime;
   readonly maintenance: MaintenanceRegistry;
   readonly persistence: PersistenceOwner | undefined;
+  readonly runtimeAuthority: RuntimeAuthority | undefined;
   readonly #stopMaintenance: () => void;
   #closePromise: Promise<void> | undefined;
 
@@ -56,6 +59,11 @@ export class GatewayRuntime {
       this.builtinOAuth = builtinOAuth;
       this.maintenance = maintenance;
       this.persistence = persistence;
+      this.runtimeAuthority = options.runtimeAuthority ?? (
+        config.runtime?.authority === "database" && persistence !== undefined
+          ? new PersistedRuntimeAuthority(persistence)
+          : undefined
+      );
       this.#stopMaintenance = stopMaintenance;
     } catch (error) {
       auditSink.close();

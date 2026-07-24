@@ -128,6 +128,14 @@ import {
   PolicyManagementService,
 } from "../policyManagement.js";
 import { registerPolicyRoutes } from "./policyRoutes.js";
+import {
+  AccessCursorCodec,
+  AccessManagementRepository,
+} from "../accessManagement.js";
+import {
+  registerAccessManagementRoutes,
+  type AccessRouteDependencies,
+} from "./accessRoutes.js";
 
 export interface ControlApplicationOptions {
   authenticator?: ControlAuthenticator;
@@ -146,6 +154,7 @@ export interface ControlApplicationOptions {
   credentialManagement?: CredentialManagementService;
   credentialVault?: CredentialVaultCoordinator;
   policyManagement?: PolicyManagementService;
+  accessManagement?: AccessRouteDependencies;
 }
 
 export function createControlApplication(
@@ -221,6 +230,9 @@ export function createControlApplication(
   }
   if (options.policyManagement !== undefined) {
     registerPolicyRoutes(routeRegistry, options.policyManagement);
+  }
+  if (options.accessManagement !== undefined) {
+    registerAccessManagementRoutes(routeRegistry, options.accessManagement);
   }
   options.registerControlRoutes?.(routeRegistry);
   installControlRoutes(
@@ -313,6 +325,8 @@ export async function startControlServer(
   let credentialManagement: CredentialManagementService | undefined;
   let credentialVault: CredentialVaultCoordinator | undefined;
   let policyManagement: PolicyManagementService | undefined;
+  let accessManagement: AccessRouteDependencies | undefined;
+  let accessCursor: AccessCursorCodec | undefined;
   let identityKeyRing: IdentityKeyRing | undefined;
   let databaseOAuthHasher: DatabaseOAuthTokenHasher | undefined;
   let oauthIntentState: OAuthIntentStateCodec | undefined;
@@ -351,6 +365,31 @@ export async function startControlServer(
           config.identity.stepUpMode,
           sessionKey,
         );
+        if (
+          config.auth.mode === "builtin_oauth"
+          && config.auth.builtinOAuth.identitySource === "database"
+        ) {
+          accessCursor = new AccessCursorCodec(sessionKey);
+          accessManagement = {
+            repository: new AccessManagementRepository(
+              persistence,
+              config.identity.sessions,
+              {
+                accessTokenTtlMs:
+                  config.auth.builtinOAuth.accessTokenTtlMs,
+                refreshTokenIdleTtlMs:
+                  config.auth.builtinOAuth.refreshTokenIdleTtlMs,
+                refreshTokenMaxTtlMs:
+                  config.auth.builtinOAuth.refreshTokenMaxTtlMs,
+              },
+              accessCursor,
+              Date.now,
+              stepUpRepository,
+            ),
+            browserSessions,
+            idempotency: idempotencyHasher,
+          };
+        }
         const enrollmentRepository = new LocalEnrollmentRepository(persistence);
         enrollment = await LocalEnrollmentService.create({
           repository: enrollmentRepository,
@@ -514,6 +553,7 @@ export async function startControlServer(
       ...(credentialManagement === undefined ? {} : { credentialManagement }),
       ...(credentialVault === undefined ? {} : { credentialVault }),
       ...(policyManagement === undefined ? {} : { policyManagement }),
+      ...(accessManagement === undefined ? {} : { accessManagement }),
     });
     await server.listen({
       host: config.control.host,
@@ -532,6 +572,7 @@ export async function startControlServer(
     oidcLink?.close();
     databaseOAuthHasher?.close();
     oauthIntentState?.close();
+    accessCursor?.close();
     serviceManagement?.close();
     localAuthentication?.close();
     identityKeyRing?.destroy();
@@ -558,6 +599,7 @@ export async function startControlServer(
         oidcLink?.close();
         databaseOAuthHasher?.close();
         oauthIntentState?.close();
+        accessCursor?.close();
         serviceManagement?.close();
         localAuthentication?.close();
         identityKeyRing?.destroy();

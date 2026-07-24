@@ -248,10 +248,13 @@ export class AccessManagementRepository {
     scope: "own" | "global";
     currentSessionId?: string;
     status?: AccessRecordStatus;
+    userId?: string;
+    query?: string;
     cursor?: string;
     pageSize?: number;
   }): Promise<AccessPage<SessionAccessItem>> {
     validateViewerScope(input.viewer, input.scope);
+    validateListFilters(input.userId, undefined, input.query);
     const pageSize = pageSizeValue(input.pageSize);
     const cursor = input.cursor === undefined
       ? undefined
@@ -308,6 +311,13 @@ export class AccessManagementRepository {
             JOIN users user ON user.id = session.user_id
             JOIN identity_security_state security ON security.singleton = 1
             WHERE (? = 'global' OR session.user_id = ?)
+              AND (? IS NULL OR session.user_id = ?)
+              AND (
+                ? IS NULL
+                OR lower(user.email || ' ' || user.given_name || ' '
+                  || user.family_name || ' ' || session.id)
+                  LIKE '%' || lower(?) || '%'
+              )
           )
           SELECT * FROM projected
           WHERE (? IS NULL OR effective_status = ?)
@@ -330,6 +340,10 @@ export class AccessManagementRepository {
           now,
           input.scope,
           input.viewer.userId,
+          input.userId ?? null,
+          input.userId ?? null,
+          input.query ?? null,
+          input.query ?? null,
           input.status ?? null,
           input.status ?? null,
           cursor?.timestamp ?? null,
@@ -372,10 +386,14 @@ export class AccessManagementRepository {
     viewer: AccessViewer;
     scope: "own" | "global";
     status?: AccessRecordStatus;
+    userId?: string;
+    clientId?: string;
+    query?: string;
     cursor?: string;
     pageSize?: number;
   }): Promise<AccessPage<GrantAccessItem>> {
     validateViewerScope(input.viewer, input.scope);
+    validateListFilters(input.userId, input.clientId, input.query);
     const pageSize = pageSizeValue(input.pageSize);
     const cursor = input.cursor === undefined
       ? undefined
@@ -427,6 +445,15 @@ export class AccessManagementRepository {
               ON family.grant_id = grant.id
             JOIN identity_security_state security ON security.singleton = 1
             WHERE (? = 'global' OR grant.user_id = ?)
+              AND (? IS NULL OR grant.user_id = ?)
+              AND (? IS NULL OR grant.client_id = ?)
+              AND (
+                ? IS NULL
+                OR lower(user.email || ' ' || user.given_name || ' '
+                  || user.family_name || ' ' || client.display_name || ' '
+                  || client.client_identifier || ' ' || grant.id)
+                  LIKE '%' || lower(?) || '%'
+              )
           )
           SELECT * FROM projected
           WHERE (? IS NULL OR effective_status = ?)
@@ -445,6 +472,12 @@ export class AccessManagementRepository {
           now,
           input.scope,
           input.viewer.userId,
+          input.userId ?? null,
+          input.userId ?? null,
+          input.clientId ?? null,
+          input.clientId ?? null,
+          input.query ?? null,
+          input.query ?? null,
           input.status ?? null,
           input.status ?? null,
           cursor?.timestamp ?? null,
@@ -505,8 +538,10 @@ export class AccessManagementRepository {
       !isUuidV7(input.viewer.userId)
       || !isUuidV7(input.serviceId)
       || input.viewer.role === "user"
-      || this.referenceAggregates === undefined
     ) throw new AccessManagementError("forbidden");
+    if (this.referenceAggregates === undefined) {
+      throw new AccessManagementError("unavailable");
+    }
     const pageSize = pageSizeValue(input.pageSize);
     const cursor = input.cursor === undefined
       ? undefined
@@ -683,8 +718,10 @@ export class AccessManagementRepository {
             ? input.target.userId
             : input.target.id,
         )
-      || this.referenceAggregates === undefined
     ) throw new AccessManagementError("invalid_request");
+    if (this.referenceAggregates === undefined) {
+      throw new AccessManagementError("unavailable");
+    }
     const targetId = input.target.kind === "service"
       ? input.serviceId
       : input.target.kind === "assignment"
@@ -1265,6 +1302,24 @@ function validateViewerScope(
   if (scope === "global" && viewer.role !== "superadmin") {
     throw new AccessManagementError("forbidden");
   }
+}
+
+function validateListFilters(
+  userId: string | undefined,
+  clientId: string | undefined,
+  query: string | undefined,
+): void {
+  if (
+    userId !== undefined && !isUuidV7(userId)
+    || clientId !== undefined && !isUuidV7(clientId)
+    || query !== undefined
+      && (
+        query.length < 1
+        || query.length > 128
+        || query.trim() !== query
+        || /[%_\u0000-\u001f\u007f]/.test(query)
+      )
+  ) throw new AccessManagementError("invalid_request");
 }
 
 function pageSizeValue(value: number | undefined): number {

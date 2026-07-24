@@ -114,10 +114,10 @@ milestones:
   - id: "16"
     title: "System-Owned API Keys"
     file: "docs/milestones/16-system-api-keys.md"
-    status: "pending"
+    status: "in_progress"
     completed_at: null
     commit_hash: null
-    notes: ""
+    notes: "Decision-complete implementation plan committed; implementation and validation in progress."
   - id: "17"
     title: "Self-API-Key Protection"
     file: "docs/milestones/17-self-api-key-protection.md"

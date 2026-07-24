@@ -8,6 +8,7 @@ import {
   type VaultBackupAccess,
   type VaultReadinessHandle,
 } from "../vault/readiness.js";
+import { RestoreRecoveryManager } from "../restoreRecovery.js";
 
 const configPath = process.env.CONFIG_PATH;
 if (!configPath) {
@@ -27,6 +28,33 @@ try {
   const config = loadConfig(configPath);
   vaultReadiness = createControlVaultReadiness();
   backupVault = createBackupVaultAccess();
+  const restoreDirectory = process.env.SECRETSAUCE_RESTORE_DIRECTORY;
+  const recoveryKeyFile =
+    process.env.SECRETSAUCE_RESTORE_RECOVERY_KEY_FILE;
+  if ((restoreDirectory === undefined) !== (recoveryKeyFile === undefined)) {
+    throw new Error("Restore deployment configuration is incomplete.");
+  }
+  if (
+    restoreDirectory !== undefined
+    && recoveryKeyFile !== undefined
+  ) {
+    if (backupVault === undefined || config.persistence === undefined) {
+      throw new Error("Restore recovery dependencies are unavailable.");
+    }
+    const recovery = new RestoreRecoveryManager(
+      restoreDirectory,
+      recoveryKeyFile,
+      backupVault.client,
+      backupVault.issuer,
+    );
+    try {
+      await recovery.resume({
+        databaseFile: config.persistence.databaseFile,
+      });
+    } finally {
+      recovery.close();
+    }
+  }
   const application = await startControlServer(config, {
     ...(vaultReadiness === undefined ? {} : { vaultReadiness: vaultReadiness.readiness }),
     ...(vaultReadiness?.controlClient === undefined

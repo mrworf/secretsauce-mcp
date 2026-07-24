@@ -170,7 +170,7 @@ milestones:
   - id: "24"
     title: "Release Hardening And Documentation"
     file: "docs/milestones/24-release-hardening-documentation.md"
-    status: "pending"
+    status: "in_progress"
     completed_at: null
     commit_hash: null
-    notes: ""
+    notes: "Decision-complete release plan and blocking release-matrix skeleton written before implementation."

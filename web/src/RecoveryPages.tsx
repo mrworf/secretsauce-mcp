@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   browserControlApi,
@@ -13,26 +13,30 @@ export function RecoveryPage({
   api?: RecoveryControlApi;
 }) {
   const [snapshot, setSnapshot] = useState<RecoverySnapshot>();
-  const [error, setError] = useState("");
+  const [initialError, setInitialError] = useState("");
+  const [paginationError, setPaginationError] = useState("");
   const [loadingMore, setLoadingMore] = useState(false);
 
-  useEffect(() => {
-    let active = true;
-    api.recoveryRemediations().then((value) => {
-      if (active) setSnapshot(value);
-    }).catch(() => {
-      if (active) setError("Recovery tasks are unavailable.");
-    });
-    return () => {
-      active = false;
-    };
+  const loadInitial = useCallback(async () => {
+    setInitialError("");
+    setSnapshot(undefined);
+    try {
+      setSnapshot(await api.recoveryRemediations());
+    } catch {
+      setInitialError("Recovery tasks are unavailable.");
+    }
   }, [api]);
 
-  if (error !== "") {
+  useEffect(() => {
+    void loadInitial();
+  }, [loadInitial]);
+
+  if (initialError !== "") {
     return (
       <section className="content-panel error-panel" role="alert">
         <h2>Recovery tasks could not be loaded</h2>
-        <p>{error} No local path, source content, or credential value was displayed.</p>
+        <p>{initialError} No local path, source content, or credential value was displayed.</p>
+        <button type="button" onClick={() => void loadInitial()}>Retry recovery tasks</button>
       </section>
     );
   }
@@ -43,7 +47,7 @@ export function RecoveryPage({
   async function loadMore() {
     if (snapshot?.next_cursor === undefined) return;
     setLoadingMore(true);
-    setError("");
+    setPaginationError("");
     try {
       const next = await api.recoveryRemediations(snapshot.next_cursor);
       setSnapshot({
@@ -51,7 +55,7 @@ export function RecoveryPage({
         tasks: [...snapshot.tasks, ...next.tasks],
       });
     } catch {
-      setError("Additional recovery tasks could not be loaded.");
+      setPaginationError("Additional recovery tasks could not be loaded. Existing tasks remain available.");
     } finally {
       setLoadingMore(false);
     }
@@ -108,7 +112,7 @@ export function RecoveryPage({
             {loadingMore ? "Loading…" : "Load more tasks"}
           </button>
         )}
-        {error !== "" && <p role="alert">{error}</p>}
+        {paginationError !== "" && <p role="alert">{paginationError}</p>}
       </section>
     </div>
   );

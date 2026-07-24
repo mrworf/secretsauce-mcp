@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import {
   browserControlApi,
@@ -582,10 +582,14 @@ function ConfirmationPanel({
   const [justification, setJustification] = useState("");
   const [nextRole, setNextRole] = useState<UserRole>(user.role);
   const [busy, setBusy] = useState(false);
+  const heading = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    heading.current?.focus();
+  }, []);
   return (
     <section className="confirmation-panel" role="dialog" aria-modal="true"
       aria-labelledby="confirmation-heading">
-      <h4 id="confirmation-heading">Confirm {label(action)}</h4>
+      <h4 id="confirmation-heading" ref={heading} tabIndex={-1}>Confirm {label(action)}</h4>
       <p>This action applies to {user.email}. Server authorization and concurrency checks remain authoritative.</p>
       {action === "role" && (
         <label>New role<select value={nextRole}

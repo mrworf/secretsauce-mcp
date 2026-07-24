@@ -79,6 +79,10 @@ describe("service management workspace", () => {
 
     await user.click(screen.getByRole("button", { name: "Roll back to revision 1" }));
     const dialog = screen.getByRole("dialog", { name: "Publish revision 1 again?" });
+    expect(within(dialog).getByRole("heading", { name: "Publish revision 1 again?" }))
+      .toHaveFocus();
+    expect(within(dialog).getAllByRole("button").map(({ textContent }) => textContent))
+      .toEqual(["Cancel", "Confirm action"]);
     await user.type(within(dialog).getByLabelText("Justification"), "Restore known good state.");
     await user.click(within(dialog).getByRole("button", { name: "Confirm action" }));
     await waitFor(() => expect(api.rollbackService).toHaveBeenCalledWith(
@@ -121,6 +125,8 @@ describe("service management workspace", () => {
     render(<ServicesPage role="superadmin" api={api} />);
     expect(await screen.findByRole("heading", { name: "Managed API" })).toBeInTheDocument();
     const submit = screen.getByRole("button", { name: "Permanently delete managed-api" });
+    expect(screen.getByRole("dialog", { name: "Permanently delete managed-api" }))
+      .toContainElement(submit);
     expect(submit).toBeDisabled();
     await user.type(screen.getByLabelText("Type managed-api to confirm"), "managed-api");
     await user.type(screen.getByLabelText("Deletion justification"), "Retired and unowned.");

@@ -208,6 +208,7 @@ a {
 .main-workspace {
   grid-area: main;
   width: 100%;
+  min-width: 0;
   max-width: 1680px;
   margin: 0 auto;
   padding: clamp(1.25rem, 3vw, 3rem);
@@ -907,6 +908,24 @@ button:disabled {
   background: var(--surface);
   border: 2px solid var(--accent);
   border-radius: 0.75rem;
+}
+
+.content-panel,
+.dashboard-stack,
+.page-stack,
+.service-layout,
+.user-layout,
+.group-layout,
+.credential-layout,
+.policy-layout,
+.api-key-layout {
+  min-width: 0;
+}
+
+pre,
+table {
+  max-width: 100%;
+  overflow: auto;
 }
 
 .danger-button {

@@ -3,6 +3,7 @@ import {
   createMemoryRouter,
   type RouteObject,
 } from "react-router-dom";
+import type { ReactElement } from "react";
 import { AppShell, RouteErrorPage } from "./App";
 import { navigationForRole, type HumanControlRole } from "./navigation";
 import { ProfilePage, UsersPage } from "./UserPages";
@@ -23,6 +24,35 @@ import {
 import { BackupPage } from "./BackupPage";
 import { OpenApiHelpPage, RecoveryPage } from "./RecoveryPages";
 
+const ROUTE_COMPONENTS: Readonly<Record<string, (role: HumanControlRole) => ReactElement>> = {
+  "/": (role) => <OverviewPage role={role} />,
+  "/services": (role) => <ServicesPage role={role} />,
+  "/credentials": (role) => <CredentialsPage role={role} />,
+  "/policies": () => <PoliciesPage />,
+  "/users": (role) => <UsersPage role={role} />,
+  "/groups": () => <GroupsPage />,
+  "/access": (role) => <AccessPage role={role} />,
+  "/api-keys": (role) => <ApiKeysPage role={role} />,
+  "/activity": () => <ActivityPage />,
+  "/status": () => <StatusPage />,
+  "/mcp-audit": (role) => <AuditPage domain="runtime" role={role} />,
+  "/administrative-audit": (role) => <AuditPage domain="administrative" role={role} />,
+  "/security": (role) => (
+    <div className="dashboard-stack">
+      <SecurityDashboardPanel role={role} />
+      <SecurityPage role={role} />
+    </div>
+  ),
+  "/backup": (role) => <BackupPage role={role} />,
+  "/migration": () => <RecoveryPage />,
+  "/profile": () => <ProfilePage />,
+  "/openapi": () => <OpenApiHelpPage />,
+};
+
+export function implementedControlPaths(): readonly string[] {
+  return Object.keys(ROUTE_COMPONENTS);
+}
+
 function routes(role: HumanControlRole): RouteObject[] {
   return [{
     path: "/",
@@ -32,44 +62,7 @@ function routes(role: HumanControlRole): RouteObject[] {
       ...navigationForRole(role).map((item) => ({
         index: item.path === "/" ? true as const : undefined,
         path: item.path === "/" ? undefined : item.path.slice(1),
-        element: item.path === "/users"
-          ? <UsersPage role={role} />
-          : item.path === "/services"
-            ? <ServicesPage role={role} />
-          : item.path === "/groups"
-            ? <GroupsPage />
-          : item.path === "/credentials"
-            ? <CredentialsPage role={role} />
-          : item.path === "/policies"
-            ? <PoliciesPage />
-          : item.path === "/access"
-            ? <AccessPage role={role} />
-          : item.path === "/api-keys"
-            ? <ApiKeysPage role={role} />
-          : item.path === "/security"
-            ? <div className="dashboard-stack">
-                <SecurityDashboardPanel role={role} />
-                <SecurityPage role={role} />
-              </div>
-          : item.path === "/activity"
-            ? <ActivityPage />
-          : item.path === "/status"
-            ? <StatusPage />
-          : item.path === "/"
-            ? <OverviewPage role={role} />
-          : item.path === "/mcp-audit"
-            ? <AuditPage domain="runtime" role={role} />
-          : item.path === "/administrative-audit"
-            ? <AuditPage domain="administrative" role={role} />
-          : item.path === "/backup"
-            ? <BackupPage role={role} />
-          : item.path === "/profile"
-            ? <ProfilePage />
-          : item.path === "/migration"
-            ? <RecoveryPage />
-          : item.path === "/openapi"
-            ? <OpenApiHelpPage />
-            : <RouteErrorPage />,
+        element: ROUTE_COMPONENTS[item.path]?.(role) ?? <RouteErrorPage />,
       })),
       { path: "*", element: <RouteErrorPage /> },
     ],

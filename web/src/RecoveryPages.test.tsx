@@ -47,6 +47,7 @@ describe("recovery and OpenAPI workspaces", () => {
   });
 
   it("renders bounded loading and safe error states without exception details", async () => {
+    const user = userEvent.setup();
     let reject!: (error: Error) => void;
     const pending = new Promise<RecoverySnapshot>((_resolve, rejected) => {
       reject = rejected;
@@ -54,13 +55,33 @@ describe("recovery and OpenAPI workspaces", () => {
     const api: RecoveryControlApi = {
       recoveryRemediations: vi.fn(() => pending),
     };
-    const view = render(<RecoveryPage api={api} />);
+    const view = render(<MemoryRouter><RecoveryPage api={api} /></MemoryRouter>);
     expect(screen.getByRole("status")).toHaveTextContent("Loading recovery tasks");
     reject(new Error("credential-value /private/source.yaml"));
     expect(await screen.findByRole("alert"))
       .toHaveTextContent("Recovery tasks could not be loaded");
     expect(view.container.textContent).not.toContain("credential-value");
     expect(view.container.textContent).not.toContain("/private/source.yaml");
+
+    vi.mocked(api.recoveryRemediations).mockResolvedValueOnce(FIRST);
+    await user.click(screen.getByRole("button", { name: "Retry recovery tasks" }));
+    expect(await screen.findByRole("heading", { name: "Migration and restore status" }))
+      .toBeInTheDocument();
+  });
+
+  it("preserves rendered tasks when pagination fails and offers the same retry action", async () => {
+    const user = userEvent.setup();
+    const api: RecoveryControlApi = {
+      recoveryRemediations: vi.fn()
+        .mockResolvedValueOnce(FIRST)
+        .mockRejectedValueOnce(new Error("private diagnostic")),
+    };
+    render(<MemoryRouter><RecoveryPage api={api} /></MemoryRouter>);
+    expect(await screen.findByText("Supply an unavailable credential")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Load more tasks" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Existing tasks remain available");
+    expect(screen.getByText("Supply an unavailable credential")).toBeInTheDocument();
+    expect(screen.queryByText("private diagnostic")).not.toBeInTheDocument();
   });
 
   it("provides real OpenAPI authentication and mutation guidance", () => {

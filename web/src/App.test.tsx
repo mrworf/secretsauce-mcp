@@ -2,8 +2,14 @@
 import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { RouterProvider } from "react-router-dom";
+import {
+  MemoryRouter,
+  Route,
+  Routes,
+  RouterProvider,
+} from "react-router-dom";
 import { afterEach, describe, expect, it } from "vitest";
+import { AppShell } from "./App";
 import { createTestControlRouter } from "./router";
 
 afterEach(cleanup);
@@ -24,6 +30,23 @@ describe("control application shell", () => {
 
     await user.tab();
     expect(screen.getByRole("link", { name: "Skip to main content" })).toHaveFocus();
+
+  });
+
+  it("moves focus to the page heading after client-side route changes", async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <Routes>
+          <Route path="/" element={<AppShell role="user" />}>
+            <Route index element={<p>Overview body</p>} />
+            <Route path="services" element={<p>Services body</p>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+    await user.click(screen.getAllByRole("link", { name: "Services" })[0]!);
+    expect(screen.getByRole("heading", { level: 1, name: "Services" })).toHaveFocus();
   });
 
   it("filters implemented workspaces through the central role matrix", () => {

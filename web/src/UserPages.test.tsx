@@ -72,7 +72,10 @@ describe("user and profile views", () => {
     render(<MemoryRouter><UsersPage role="superadmin" api={api} /></MemoryRouter>);
     await screen.findAllByText("target@example.org");
     await user.click(screen.getByRole("button", { name: "Deactivate" }));
-    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    const dialog = screen.getByRole("dialog", { name: /Confirm deactivate/i });
+    expect(screen.getByRole("heading", { name: /Confirm deactivate/i })).toHaveFocus();
+    expect(Array.from(dialog.querySelectorAll("button")).map(({ textContent }) => textContent))
+      .toEqual(["Cancel", "Confirm action"]);
     await user.type(screen.getByLabelText("Justification"), "Approved deactivation.");
     await user.click(screen.getByRole("button", { name: "Confirm action" }));
     await waitFor(() => expect(api.userAction).toHaveBeenCalledWith(

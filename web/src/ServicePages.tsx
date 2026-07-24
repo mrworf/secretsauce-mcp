@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import {
   browserControlApi,
   ControlApiError,
@@ -965,6 +965,7 @@ function LifecycleEditor({
   const [password, setPassword] = useState("");
   const [totp, setTotp] = useState("");
   const [error, setError] = useState("");
+  const deleteHeadingId = useId();
   return (
     <>
       <h4>Lifecycle and deletion</h4>
@@ -979,7 +980,8 @@ function LifecycleEditor({
           )}
         />
       ) : (
-        <form className="confirmation-panel" onSubmit={(event) => {
+        <form className="confirmation-panel" role="dialog" aria-modal="true"
+          aria-labelledby={deleteHeadingId} onSubmit={(event) => {
           event.preventDefault();
           setError("");
           void api.deleteService(service, justification, password, totp).then(() => {
@@ -992,7 +994,7 @@ function LifecycleEditor({
             setError(messageFor(caught));
           });
         }}>
-          <h5>Permanently delete {service.slug}</h5>
+          <h5 id={deleteHeadingId}>Permanently delete {service.slug}</h5>
           <p>
             This permanently removes the archived service, destinations, and retained
             revisions. The audit and final invalidation evidence remain.
@@ -1066,15 +1068,21 @@ function JustifiedAction({
 }) {
   const [open, setOpen] = useState(false);
   const [justification, setJustification] = useState("");
+  const headingId = useId();
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    if (open) headingRef.current?.focus();
+  }, [open]);
   if (!open) {
     return <button type="button" onClick={() => setOpen(true)}>{buttonLabel}</button>;
   }
   return (
-    <form className="confirmation-panel" role="dialog" aria-label={heading} onSubmit={(event) => {
+    <form className="confirmation-panel" role="dialog" aria-modal="true"
+      aria-labelledby={headingId} onSubmit={(event) => {
       event.preventDefault();
       void onConfirm(justification).then(() => setOpen(false), () => undefined);
     }}>
-      <h5>{heading}</h5>
+      <h5 id={headingId} ref={headingRef} tabIndex={-1}>{heading}</h5>
       <p>{consequence}</p>
       <label>
         Justification
@@ -1086,8 +1094,8 @@ function JustifiedAction({
         />
       </label>
       <div className="button-row">
-        <button type="submit">Confirm action</button>
         <button type="button" onClick={() => setOpen(false)}>Cancel</button>
+        <button type="submit">Confirm action</button>
       </div>
     </form>
   );

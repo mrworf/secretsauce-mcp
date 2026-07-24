@@ -19,6 +19,9 @@ describe("responsive control shell styles", () => {
     expect(styles).toMatch(/max-width: 80ch/);
     expect(styles).toMatch(/max-width: 1680px/);
     expect(styles).toMatch(/272px minmax\(0, 1fr\)/);
+    expect(styles).toMatch(/\.main-workspace \{[\s\S]*min-width: 0/);
+    expect(styles).toMatch(/\.content-panel,[\s\S]*\.api-key-layout \{[\s\S]*min-width: 0/);
+    expect(styles).toMatch(/pre,[\s\S]*table \{[\s\S]*overflow: auto/);
   });
 
   it("keeps the service workspace ordered on narrow screens and split only when wide", () => {

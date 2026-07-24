@@ -2148,6 +2148,43 @@ button:disabled {
   border-bottom: 1px solid var(--border);
 }
 
+.recovery-outcomes,
+.recovery-task-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.recovery-outcomes {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  margin-top: 1rem;
+}
+
+.recovery-outcomes article,
+.recovery-task-list li {
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.8rem;
+  background: var(--surface-subtle);
+}
+
+.recovery-task-list {
+  padding: 0;
+  list-style: none;
+}
+
+.recovery-task-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.recovery-task-list strong {
+  display: block;
+  margin-top: 0.45rem;
+}
+
 @media (min-width: 800px) {
   .dashboard-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));

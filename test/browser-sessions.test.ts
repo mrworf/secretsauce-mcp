@@ -94,6 +94,7 @@ describe("durable browser sessions", () => {
           "security.inactivity_job.get",
           "security.inactivity_job.run",
           "backups.create_interactive",
+          "recovery.remediations.get",
         ].includes(String(operation.operationId));
         const expectedApiKey = !explicitlyBrowserOnly &&
           typeof permission === "string" &&

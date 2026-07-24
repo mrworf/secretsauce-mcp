@@ -3,7 +3,7 @@ import {
   createMemoryRouter,
   type RouteObject,
 } from "react-router-dom";
-import { AppShell, PlaceholderPage, RouteErrorPage } from "./App";
+import { AppShell, RouteErrorPage } from "./App";
 import { navigationForRole, type HumanControlRole } from "./navigation";
 import { ProfilePage, UsersPage } from "./UserPages";
 import { ServicesPage } from "./ServicePages";
@@ -21,6 +21,7 @@ import {
   StatusPage,
 } from "./DashboardPages";
 import { BackupPage } from "./BackupPage";
+import { OpenApiHelpPage, RecoveryPage } from "./RecoveryPages";
 
 function routes(role: HumanControlRole): RouteObject[] {
   return [{
@@ -64,7 +65,11 @@ function routes(role: HumanControlRole): RouteObject[] {
             ? <BackupPage role={role} />
           : item.path === "/profile"
             ? <ProfilePage />
-            : <PlaceholderPage />,
+          : item.path === "/migration"
+            ? <RecoveryPage />
+          : item.path === "/openapi"
+            ? <OpenApiHelpPage />
+            : <RouteErrorPage />,
       })),
       { path: "*", element: <RouteErrorPage /> },
     ],

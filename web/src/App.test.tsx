@@ -26,7 +26,7 @@ describe("control application shell", () => {
     expect(screen.getByRole("link", { name: "Skip to main content" })).toHaveFocus();
   });
 
-  it("filters placeholders through the central role matrix", () => {
+  it("filters implemented workspaces through the central role matrix", () => {
     const userView = render(
       <RouterProvider router={createTestControlRouter("user")} />,
     );
@@ -38,7 +38,7 @@ describe("control application shell", () => {
     render(<RouterProvider router={createTestControlRouter("superadmin")} />);
     expect(screen.getAllByRole("link", { name: "API keys" })).toHaveLength(2);
     expect(screen.getAllByRole("link", { name: "Backup and restore" })).toHaveLength(2);
-    expect(screen.getAllByRole("link", { name: "Migration status" })).toHaveLength(2);
+    expect(screen.getAllByRole("link", { name: "Recovery tasks" })).toHaveLength(2);
   });
 
   it("renders a deep route semantically without credentials, references, or diagnostics", async () => {

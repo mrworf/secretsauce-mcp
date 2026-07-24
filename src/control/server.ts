@@ -182,6 +182,8 @@ import {
 import { RestoreStateRepository } from "../restoreState.js";
 import { RestorePreviewCoordinator } from "../restorePreview.js";
 import { RestoreMaintenanceGate } from "../restoreMaintenance.js";
+import { RecoveryRemediationService } from "../recoveryRemediations.js";
+import { registerRecoveryRoutes } from "./recoveryRoutes.js";
 
 export interface ControlApplicationOptions {
   authenticator?: ControlAuthenticator;
@@ -371,6 +373,12 @@ export function createControlApplication(
       status: options.statusDashboard,
       security: options.securityDashboard,
     });
+  }
+  if (options.persistence !== undefined) {
+    registerRecoveryRoutes(
+      routeRegistry,
+      new RecoveryRemediationService(options.persistence),
+    );
   }
   options.registerControlRoutes?.(routeRegistry);
   installControlRoutes(

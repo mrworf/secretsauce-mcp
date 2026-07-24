@@ -126,39 +126,6 @@ function StatusPill() {
   );
 }
 
-export function PlaceholderPage() {
-  const location = useLocation();
-  const item = navigationItem(location.pathname);
-  return (
-    <section className="content-panel" aria-labelledby="section-heading">
-      <div className="content-copy">
-        <h2 id="section-heading">{item?.description ?? "This route is unavailable"}</h2>
-        <p>
-          This foundation reserves a safe, role-filtered workspace. Domain data and
-          administrative actions arrive in their dedicated milestones.
-        </p>
-      </div>
-      <div className="foundation-grid" aria-label="Foundation capabilities">
-        <article>
-          <p className="card-kicker">Boundary</p>
-          <h3>Separate control listener</h3>
-          <p>Browser and management traffic stay distinct from stateless MCP traffic.</p>
-        </article>
-        <article>
-          <p className="card-kicker">Access</p>
-          <h3>Permission-aware navigation</h3>
-          <p>Visibility follows the central role matrix; server authorization remains authoritative.</p>
-        </article>
-        <article>
-          <p className="card-kicker">Safety</p>
-          <h3>Protected by default</h3>
-          <p>Strict origin, request, caching, and response controls form the browser baseline.</p>
-        </article>
-      </div>
-    </section>
-  );
-}
-
 export function RouteErrorPage() {
   useRouteError();
   return (

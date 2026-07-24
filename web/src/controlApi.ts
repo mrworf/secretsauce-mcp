@@ -172,6 +172,62 @@ export interface DashboardControlApi {
   }): Promise<unknown>;
 }
 
+export interface RecoveryTask {
+  kind: "migration" | "restore";
+  operation_id: string;
+  id: string;
+  service_id: string;
+  service_slug: string;
+  target_id?: string;
+  task_kind:
+    | "assign_service_admin"
+    | "assign_service_access"
+    | "supply_credential"
+    | "review_enable_policy"
+    | "assign_enable_policy"
+    | "validate_publish_service"
+    | "missing_archive_secret";
+  state: "open" | "completed" | "dismissed";
+  derived_from_current_state: boolean;
+  created_at: number;
+  updated_at: number;
+}
+
+export interface RecoverySnapshot {
+  migration: {
+    state: "pending" | "completed";
+    migration_id?: string;
+    resolution_mode?: "definitions_only" | "resolved_credentials";
+    services: number;
+    credentials: number;
+    configured_credentials: number;
+    discarded_acl_entries: number;
+    completed_at?: number;
+  };
+  latest_restore?: {
+    restore_id: string;
+    state: "completed" | "failed";
+    outcome_code: string;
+    services: number;
+    credentials: number;
+    available_secrets: number;
+    unavailable_secrets: number;
+    completed_at: number;
+  };
+  counts: {
+    total: number;
+    open: number;
+    completed: number;
+    dismissed: number;
+  };
+  tasks: RecoveryTask[];
+  next_cursor?: string;
+}
+
+export interface RecoveryControlApi {
+  recoveryRemediations(cursor?: string): Promise<RecoverySnapshot>;
+}
+
 export interface BackupControlApi {
   createPortableBackup(input: {
     include_secrets: boolean;
@@ -1262,7 +1318,7 @@ export const browserControlApi:
   ControlApi & OidcControlApi & OidcManagementApi & ServiceControlApi &
     GroupControlApi & CredentialControlApi & PolicyControlApi & AccessControlApi &
     ApiKeyControlApi & SecurityControlApi & AuditControlApi & DashboardControlApi &
-    BackupControlApi & RestoreControlApi = {
+    BackupControlApi & RestoreControlApi & RecoveryControlApi = {
   session: () => get<ControlSession>("/api/v2/auth/session"),
   activityDashboard: (input = {}) => {
     const query = new URLSearchParams();
@@ -1272,6 +1328,11 @@ export const browserControlApi:
     return interactiveGet(`/api/v2/dashboard/activity${suffix}`);
   },
   statusDashboard: () => interactiveGet("/api/v2/dashboard/status"),
+  recoveryRemediations: (cursor) => {
+    const query = new URLSearchParams({ limit: "100" });
+    if (cursor !== undefined) query.set("cursor", cursor);
+    return interactiveGet(`/api/v2/recovery/remediations?${query.toString()}`);
+  },
   securityDashboard: () => interactiveGet("/api/v2/dashboard/security"),
   updateDashboardRemediation: (remediation, input) =>
     updateDashboardRemediationWithStepUp(remediation, input),

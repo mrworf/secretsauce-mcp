@@ -443,6 +443,7 @@ export interface ControlServerApplication {
 export async function startControlServer(
   config: GatewayConfig,
   options: Pick<ControlApplicationOptions, "vaultReadiness"> & {
+    persistence?: PersistenceOwner;
     credentialVaultClient?: CredentialControlVault;
     backupVaultClient?: BackupVaultClient;
     backupCapabilityIssuer?: VaultBackupCapabilityIssuer;
@@ -459,7 +460,8 @@ export async function startControlServer(
   const idempotencyHasher = new ControlIdempotencyHasher(
     loadControlIdempotencyKey(config.control.idempotencyHmacKeyFile),
   );
-  const persistence = PersistenceWorker.open({
+  const ownsPersistence = options.persistence === undefined;
+  const persistence = options.persistence ?? PersistenceWorker.open({
     databaseFile: config.persistence.databaseFile,
     productVersion: PACKAGE_VERSION,
     sanitizeAuditText: configuredAuditTextSanitizer(config),
@@ -981,7 +983,7 @@ export async function startControlServer(
     localAuthentication?.close();
     identityKeyRing?.destroy();
     restoreRecovery?.close();
-    await persistence.close();
+    if (ownsPersistence) await persistence.close();
     throw error;
   }
   const startedServer = server;
@@ -1014,7 +1016,7 @@ export async function startControlServer(
         localAuthentication?.close();
         identityKeyRing?.destroy();
         restoreRecovery?.close();
-        await persistence.close();
+        if (ownsPersistence) await persistence.close();
       })();
       return closePromise;
     },

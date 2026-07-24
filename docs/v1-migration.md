@@ -30,7 +30,7 @@ least one V2 superadmin. The migration refuses a missing or non-active
 superadmin, a populated service database, an already-active runtime, or a
 previously completed migration.
 
-Stop the gateway and control processes before dry-run or commit. Exactly one
+Stop the SecretSauce application process before dry-run or commit. Exactly one
 process may own the target SQLite database, migration files, and recovery
 directory. Keep the vault broker running only when importing credential values.
 
@@ -56,7 +56,7 @@ credential source names, ACL values, administrator fields, and secret material.
 
 ## Commit definitions without values
 
-Review the dry-run report, keep all gateway/control processes stopped, and run
+Review the dry-run report, keep the application process stopped, and run
 the terminal-only commit:
 
 ```bash

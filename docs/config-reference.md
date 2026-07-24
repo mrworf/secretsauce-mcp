@@ -4,7 +4,18 @@ The gateway uses a primary YAML file, a Secretlint rules YAML, and a sensitive-n
 
 ## Supported Deployment Topology
 
-The supported replica count is exactly one gateway instance per configuration and public MCP endpoint. MCP HTTP is stateless at the transport layer, but gateway references, response-secret references, denial records, limiters, and other capability state are held by the owning process. Horizontal load balancing can route a follow-up call to a replica that does not own its reference and cause intermittent `reference_invalid` failures.
+The supported replica count is exactly one SecretSauce application instance per
+configuration. That process owns the MCP/OAuth and control listeners plus the
+single SQLite writer; the vault broker remains a separate process. Start it
+with `npm start` or the image default command. The `start:gateway` and
+`start:control` scripts are diagnostic single-surface entrypoints and must not
+be run concurrently against one database.
+
+MCP HTTP is stateless at the transport layer, but gateway references,
+response-secret references, denial records, limiters, and other capability
+state are held by the owning process. Horizontal load balancing can route a
+follow-up call to a replica that does not own its reference and cause
+intermittent `reference_invalid` failures.
 
 Sticky sessions do not provide the missing shared atomic capability store: there is no MCP transport session to pin, affinity can be lost during restart or rebalance, and per-subject/service capacities must be coordinated atomically. Do not deploy multiple replicas until a shared capability store is implemented.
 
@@ -30,7 +41,7 @@ and key/socket/store paths reject links, unsafe ownership, or writable modes.
 Start the broker with `SECRETSAUCE_VAULT_CONFIG=/config/vault.yaml
 node dist/vault/main.js`. The authenticated health command uses
 `SECRETSAUCE_VAULT_SOCKET` plus `SECRETSAUCE_VAULT_DATA_KEY_FILE` and returns
-only `ready` or `unavailable`. A separately started control process can use
+only `ready` or `unavailable`. The application control module can use
 `SECRETSAUCE_VAULT_SOCKET` plus
 `SECRETSAUCE_VAULT_CONTROL_KEY_FILE`; `/api/v2/health` then includes only
 `checks.vault: ready|unavailable`. Supplying just one variable fails startup
@@ -95,9 +106,9 @@ persistence:
   database_file: /var/lib/secretsauce/control.sqlite
 ```
 
-The parent directory must be writable by the gateway process. The database file
-is created with mode `0600`, migrations complete before listeners start, and a
-second application writer is rejected.
+The parent directory must be writable by the application process. The database
+file is created with mode `0600`, migrations complete before either listener
+starts, and a second application writer is rejected.
 
 ### Persisted MCP runtime authority
 

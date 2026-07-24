@@ -23,8 +23,9 @@ services:
       start_period: 10s
 
   secretsauce:
-    # Supported topology: exactly one replica. Runtime references are instance-local;
-    # sticky sessions do not replace the unimplemented shared atomic capability store.
+    # One application process owns both listeners and the single SQLite writer.
+    # Runtime references are instance-local; sticky sessions do not replace the
+    # unimplemented shared atomic capability store.
     deploy:
       replicas: 1
     build: .
@@ -34,6 +35,7 @@ services:
         condition: service_healthy
     ports:
       - "8080:8080"
+      - "8081:8081"
     volumes:
       - ./examples/config.yaml:/config/config.yaml:ro
       # Replace this mount source with a custom extend/replace rules file as needed.
@@ -52,6 +54,7 @@ services:
       # gref_/sec_ capability state is intentionally ephemeral and is not mounted.
       # Runtime and backup coordination receive separate least-privilege key pairs.
       - ./vault-keys/data-plane.key:/run/vault-caller/data-plane.key:ro
+      - ./vault-keys/control-plane.key:/run/vault-caller/control-plane.key:ro
       - ./vault-keys/resolve-capability.key:/run/vault-caller/resolve-capability.key:ro
       - ./vault-keys/backup.key:/run/vault-caller/backup.key:ro
       - ./vault-keys/backup-capability.key:/run/vault-caller/backup-capability.key:ro
@@ -67,6 +70,7 @@ services:
       SECRETSAUCE_MCP_TOKEN: ${SECRETSAUCE_MCP_TOKEN:?set an ephemeral gateway token}
       SECRETSAUCE_VAULT_SOCKET: /run/secretsauce-vault/vault.sock
       SECRETSAUCE_VAULT_DATA_KEY_FILE: /run/vault-caller/data-plane.key
+      SECRETSAUCE_VAULT_CONTROL_KEY_FILE: /run/vault-caller/control-plane.key
       SECRETSAUCE_VAULT_RESOLVE_KEY_FILE: /run/vault-caller/resolve-capability.key
       SECRETSAUCE_VAULT_BACKUP_KEY_FILE: /run/vault-caller/backup.key
       SECRETSAUCE_VAULT_BACKUP_CAPABILITY_KEY_FILE: /run/vault-caller/backup-capability.key

@@ -18,13 +18,20 @@ flowchart LR
   DP -->|allowed downstream HTTPS| Service[Configured service]
 ```
 
-Deployment runs one stack with separate OS identities:
+Deployment runs one small-instance stack:
 
-- `secretsauce-data`: owns the MCP/OAuth listener and runtime capability state.
-- `secretsauce-control`: owns the web listener, persistence worker, and jobs.
-- `secretsauce-vault`: owns the private socket, vault store, and vault root keys.
-- `secretsauce-backup`: an on-demand identity allowed only during authorized
-  backup/restore.
+- one `secretsauce` application process owns the MCP/OAuth and web/control
+  listeners, runtime capability state, the persistence worker, and jobs;
+- `secretsauce-vault` remains a separate process and container boundary owning
+  the private socket, encrypted store, and vault root keys;
+- backup/restore uses separate least-privilege vault caller and capability keys
+  only during an authorized operation.
+
+The application keeps data-plane and control-plane authorization and route
+boundaries separate in code and on distinct private listeners, but they
+deliberately share one process because SQLite permits exactly one application
+writer. The vault is the required OS/process isolation boundary for downstream
+credential plaintext.
 
 The data and control listeners may bind loopback behind separate reverse proxies,
 but have distinct configured public origins. OAuth issuer and MCP resource are
@@ -41,15 +48,17 @@ flowchart TB
     A[Agent]
     B[Browser]
   end
-  subgraph DataPlane["Data-plane OS identity"]
-    M[MCP + OAuth]
-    R[Runtime authorization]
-    X[Substitution + response protection]
-  end
-  subgraph ControlPlane["Control-plane OS identity"]
-    C[Management API]
-    I[Identity + policy services]
-    P[Persistence worker]
+  subgraph Application["SecretSauce application process"]
+    subgraph DataPlane["Data-plane module"]
+      M[MCP + OAuth]
+      R[Runtime authorization]
+      X[Substitution + response protection]
+    end
+    subgraph ControlPlane["Control-plane module"]
+      C[Management API]
+      I[Identity + policy services]
+      P[Persistence worker]
+    end
   end
   subgraph VaultBoundary["Vault OS identity"]
     V[Capability verifier]

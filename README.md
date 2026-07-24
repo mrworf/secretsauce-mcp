@@ -178,6 +178,7 @@ services:
     image: ghcr.io/example-org/secretsauce-mcp:latest
     ports:
       - "8080:8080"
+      - "8081:8081"
     volumes:
       - ./config.yaml:/config/config.yaml:ro
       - ./secretlint.yaml:/config/secretlint.yaml:ro
@@ -185,8 +186,10 @@ services:
       - ./secrets:/run/secrets:ro
       - ./oauth:/run/oauth:ro
       - ./audit:/var/lib/secretsauce/audit
+      - ./database:/var/lib/secretsauce/database
       - ./oauth-state:/var/lib/secretsauce/oauth
       - ./vault-keys/data-plane.key:/run/vault-caller/data-plane.key:ro
+      - ./vault-keys/control-plane.key:/run/vault-caller/control-plane.key:ro
       - ./vault-keys/resolve-capability.key:/run/vault-caller/resolve-capability.key:ro
       - ./vault-keys/backup.key:/run/vault-caller/backup.key:ro
       - ./vault-keys/backup-capability.key:/run/vault-caller/backup-capability.key:ro
@@ -199,6 +202,7 @@ services:
       SENSITIVE_NAMES_CONFIG_PATH: /config/sensitive-names.yaml
       SECRETSAUCE_VAULT_SOCKET: /run/secretsauce-vault/vault.sock
       SECRETSAUCE_VAULT_DATA_KEY_FILE: /run/vault-caller/data-plane.key
+      SECRETSAUCE_VAULT_CONTROL_KEY_FILE: /run/vault-caller/control-plane.key
       SECRETSAUCE_VAULT_RESOLVE_KEY_FILE: /run/vault-caller/resolve-capability.key
       SECRETSAUCE_VAULT_BACKUP_KEY_FILE: /run/vault-caller/backup.key
       SECRETSAUCE_VAULT_BACKUP_CAPABILITY_KEY_FILE: /run/vault-caller/backup-capability.key
@@ -218,6 +222,11 @@ its own caller key and the socket directory. Root keys and the encrypted store
 must never be mounted into a caller container. Keep the root-key mount stable
 across restart; the passphrase-encrypted backup flow is the recovery path when a
 root key is unavailable.
+
+The image default command (and `npm start`) starts one application process that
+owns both configured listeners and the single SQLite writer. The
+`start:gateway` and `start:control` scripts are diagnostic single-surface
+entrypoints and are not a supported concurrent database-mode deployment.
 
 `node dist/vault/healthCli.js` performs an authenticated, sanitized readiness
 check and prints only `ready` or `unavailable`. The optional control-process

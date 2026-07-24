@@ -1,8 +1,9 @@
 # SecretSauce V2 operator guide
 
-This is the release operations index for the supported topology: one gateway,
-one control process, and one isolated vault broker. Read the linked focused
-guides before the corresponding destructive or recovery operation.
+This is the release operations index for the supported topology: one
+SecretSauce application process owning the gateway and control listeners plus
+their single SQLite writer, and one isolated vault broker. Read the linked
+focused guides before the corresponding destructive or recovery operation.
 
 ## Install and bootstrap
 
@@ -16,8 +17,12 @@ guides before the corresponding destructive or recovery operation.
    [MCP/OAuth proxy](../examples/proxy-mcp-oauth.haproxy.cfg) and
    [control proxy](../examples/proxy-control.haproxy.cfg) examples when the
    surfaces use separate public origins.
-4. Start the vault, then the control and gateway processes. Require sanitized
-   readiness before exposing either public origin.
+4. Start the vault, then `npm start` (or the image default command). The one
+   application process starts the configured control listener before the
+   gateway listener and shares one persistence owner between them. Require
+   sanitized readiness before exposing either public origin. `npm run
+   start:gateway` and `npm run start:control` are diagnostic single-surface
+   entrypoints, not a supported concurrent database-mode topology.
 5. Complete [local bootstrap and enrollment](local-authentication.md). A
    pending or recovery identity is not MCP-eligible.
 6. Configure services, groups, credential definitions, policies, and
@@ -75,7 +80,7 @@ Back up key material separately from application archives.
 
 1. Create and verify a credential-less backup; use encrypted credential export
    only when required and approved.
-2. Stop the single gateway/control writers cleanly.
+2. Stop the single application writer cleanly.
 3. Preserve all durable mounts and stable key files. Never copy an active
    SQLite database independently of its WAL state.
 4. Deploy the new image and require gateway `/health` plus control

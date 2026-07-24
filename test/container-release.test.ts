@@ -8,6 +8,8 @@ describe("release container deployment", () => {
     const runtime = dockerfile.slice(dockerfile.lastIndexOf("FROM node:22-alpine"));
     expect(runtime).toContain("USER node");
     expect(runtime).toContain("HEALTHCHECK");
+    expect(runtime).toContain('CMD ["node", "dist/application.js"]');
+    expect(runtime).toContain("EXPOSE 8080 8081");
     expect(runtime).not.toMatch(/\bUSER\s+(?:0|root)\b/);
   });
 
@@ -16,12 +18,16 @@ describe("release container deployment", () => {
     const compose = parse(source) as any;
     const gateway = compose.services.secretsauce;
     expect(gateway.deploy.replicas).toBe(1);
+    expect(gateway.ports).toEqual(["8080:8080", "8081:8081"]);
     expect(gateway.volumes).toEqual(expect.arrayContaining([
       "./database:/var/lib/secretsauce/database",
       "./audit:/var/lib/secretsauce/audit",
       "./oauth-state:/var/lib/secretsauce/oauth",
       "./restore:/var/lib/secretsauce/restore",
+      "./vault-keys/control-plane.key:/run/vault-caller/control-plane.key:ro",
     ]));
+    expect(gateway.environment.SECRETSAUCE_VAULT_CONTROL_KEY_FILE)
+      .toBe("/run/vault-caller/control-plane.key");
     expect(compose.services["secretsauce-vault"].volumes).toContain(
       "./vault-store:/var/lib/secretsauce/vault",
     );

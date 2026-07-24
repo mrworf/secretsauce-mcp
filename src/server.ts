@@ -308,8 +308,16 @@ export interface GatewayApplication {
   close(): Promise<void>;
 }
 
-export async function startServer(config: GatewayConfig): Promise<GatewayApplication> {
-  const runtime = new GatewayRuntime(config);
+export async function startServer(
+  config: GatewayConfig,
+  options: {
+    runtime?: GatewayRuntime;
+    closeRuntimeOnClose?: boolean;
+  } = {},
+): Promise<GatewayApplication> {
+  const runtime = options.runtime ?? new GatewayRuntime(config);
+  const closeRuntimeOnClose =
+    options.closeRuntimeOnClose ?? options.runtime === undefined;
   let server: ReturnType<typeof createGatewayServer>;
   const logger = createLogger(config.logging);
   try {
@@ -322,7 +330,7 @@ export async function startServer(config: GatewayConfig): Promise<GatewayApplica
       });
     });
   } catch (error) {
-    await runtime.close();
+    if (closeRuntimeOnClose) await runtime.close();
     throw error;
   }
   logger.info("server.started", {
@@ -336,7 +344,7 @@ export async function startServer(config: GatewayConfig): Promise<GatewayApplica
     close: () => {
       closePromise ??= (async () => {
         await closeHttpServer(server);
-        await runtime.close();
+        if (closeRuntimeOnClose) await runtime.close();
       })();
       return closePromise;
     },

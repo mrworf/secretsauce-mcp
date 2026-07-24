@@ -6,6 +6,8 @@ import {
 import {
   ControlRouteRegistry,
 } from "./routeRegistry.js";
+import type { PortableBackupCoordinator } from "../backupCoordinator.js";
+import { registerBackupRoutes } from "./backupRoutes.js";
 
 const readinessValueSchema = z.enum(["ready", "unavailable", "unsupported"]);
 const healthDataSchema = z.object({
@@ -32,6 +34,7 @@ export function createDefaultControlRouteRegistry(
   publicOrigin: string,
   vaultReadiness?: () => Promise<"ready" | "unavailable" | "unsupported">,
   identityReadiness?: () => Promise<"ready" | "unavailable" | "unsupported">,
+  backupCoordinator?: PortableBackupCoordinator,
 ): ControlRouteRegistry {
   const registry = new ControlRouteRegistry();
   registry.register({
@@ -112,5 +115,6 @@ export function createDefaultControlRouteRegistry(
       data: generateControlOpenApi(registry, publicOrigin),
     }),
   });
+  registerBackupRoutes(registry, backupCoordinator);
   return registry;
 }

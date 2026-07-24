@@ -193,6 +193,15 @@ describe("control route registry", () => {
         id: "read.idempotency",
         idempotency: "required",
       },
+      {
+        ...publicGet(),
+        id: "public.binary",
+        binaryResponse: {
+          contentType: "application/gzip",
+          filename: "unsafe.tar.gz",
+          maxBytes: 1024,
+        },
+      },
     ];
     for (const definition of invalid) {
       expect(() => new ControlRouteRegistry().register(definition)).toThrow(/Invalid control/);

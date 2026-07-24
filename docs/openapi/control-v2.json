@@ -209,6 +209,351 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v2/backups/interactive": {
+      "post": {
+        "operationId": "backups.create_interactive",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "acknowledgement": {
+                    "enum": [
+                      "I understand this backup permanently excludes identities, access grants, audit history, runtime state, and deployment configuration."
+                    ],
+                    "type": "string"
+                  },
+                  "include_secrets": {
+                    "type": "boolean"
+                  },
+                  "passphrase": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "include_secrets",
+                  "acknowledgement"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/gzip": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Portable backup archive.",
+            "headers": {
+              "content-disposition": {
+                "description": "Fixed safe attachment filename.",
+                "schema": {
+                  "const": "attachment; filename=\"secretsauce-portable-backup.tar.gz\"",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "Invalid request. Validation details contain only a JSON Pointer and rule."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "Authentication is required."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "The operation is forbidden or requires human step-up."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "The route or an authorized resource was not found."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "The resource version or idempotency digest conflicts."
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "The request body exceeds its bounded limit."
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "A required expected resource version is missing."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "A bounded request rate was exceeded."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "The request failed without exposing internal details."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "A required local subsystem is unavailable."
+          }
+        },
+        "security": [
+          {
+            "browserSession": []
+          }
+        ],
+        "summary": "Create a stepped-up portable backup",
+        "tags": [
+          "Backups"
+        ],
+        "x-audit-action": "backup.export",
+        "x-authentication-methods": [
+          "browser_session"
+        ],
+        "x-binary-response-max-bytes": 268435456,
+        "x-cache-class": "no-store",
+        "x-permission": "create_portable_backup",
+        "x-rate-limit-class": "management",
+        "x-secret-fields": [
+          "/passphrase"
+        ],
+        "x-step-up": "always"
+      }
+    },
+    "/api/v2/backups/programmatic": {
+      "post": {
+        "operationId": "backups.create_programmatic",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "acknowledgement": {
+                    "enum": [
+                      "I understand this backup permanently excludes identities, access grants, audit history, runtime state, and deployment configuration."
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "acknowledgement"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/gzip": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Portable backup archive.",
+            "headers": {
+              "content-disposition": {
+                "description": "Fixed safe attachment filename.",
+                "schema": {
+                  "const": "attachment; filename=\"secretsauce-portable-backup.tar.gz\"",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "Invalid request. Validation details contain only a JSON Pointer and rule."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "Authentication is required."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "The operation is forbidden or requires human step-up."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "The route or an authorized resource was not found."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "The resource version or idempotency digest conflicts."
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "The request body exceeds its bounded limit."
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "A required expected resource version is missing."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "A bounded request rate was exceeded."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "The request failed without exposing internal details."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "A required local subsystem is unavailable."
+          }
+        },
+        "security": [
+          {
+            "managementApiKey": []
+          }
+        ],
+        "summary": "Create a credential-less automation backup",
+        "tags": [
+          "Backups"
+        ],
+        "x-audit-action": "backup.export",
+        "x-authentication-methods": [
+          "api_key"
+        ],
+        "x-binary-response-max-bytes": 268435456,
+        "x-cache-class": "no-store",
+        "x-permission": "create_portable_backup",
+        "x-rate-limit-class": "management",
+        "x-secret-fields": [],
+        "x-step-up": "none"
+      }
+    },
     "/api/v2/health": {
       "get": {
         "operationId": "control.health",
@@ -347,41 +692,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": false,
-                  "properties": {
-                    "data": {
-                      "$ref": "#/components/schemas/ControlHealth"
-                    },
-                    "meta": {
-                      "additionalProperties": false,
-                      "properties": {
-                        "api_version": {
-                          "enum": [
-                            "v2"
-                          ],
-                          "type": "string"
-                        },
-                        "request_id": {
-                          "pattern": "^req_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "request_id",
-                        "api_version"
-                      ],
-                      "type": "object"
-                    }
-                  },
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
-                  "type": "object"
+                  "$ref": "#/components/schemas/ControlError"
                 }
               }
             },
-            "description": "Control plane is not ready."
+            "description": "A required local subsystem is unavailable."
           }
         },
         "security": [],
@@ -503,6 +818,16 @@
               }
             },
             "description": "The request failed without exposing internal details."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlError"
+                }
+              }
+            },
+            "description": "A required local subsystem is unavailable."
           }
         },
         "security": [],

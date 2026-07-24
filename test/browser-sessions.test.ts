@@ -93,6 +93,7 @@ describe("durable browser sessions", () => {
         const explicitlyBrowserOnly = [
           "security.inactivity_job.get",
           "security.inactivity_job.run",
+          "backups.create_interactive",
         ].includes(String(operation.operationId));
         const expectedApiKey = !explicitlyBrowserOnly &&
           typeof permission === "string" &&

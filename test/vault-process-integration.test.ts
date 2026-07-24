@@ -19,7 +19,10 @@ import { VaultCapabilityAuthority } from "../src/vault/capabilities.js";
 import { BackupVaultClient, ControlVaultClient, DataVaultClient } from "../src/vault/client.js";
 import { encodeVaultKey } from "../src/vault/keyFile.js";
 import { runVaultHealthCli } from "../src/vault/healthCli.js";
-import { createControlVaultReadiness } from "../src/vault/readiness.js";
+import {
+  createBackupVaultAccess,
+  createControlVaultReadiness,
+} from "../src/vault/readiness.js";
 import type { VaultCredentialBinding } from "../src/vault/recordStore.js";
 
 const children = new Set<ChildProcessWithoutNullStreams>();
@@ -155,6 +158,40 @@ describe("standalone vault broker process", () => {
       expect(serialized).not.toContain("relative.sock");
     }
     expect(createControlVaultReadiness({})).toBeUndefined();
+  });
+
+  it("mounts backup-only caller and capability keys only as a complete set", () => {
+    const fixture = processFixture();
+    const access = createBackupVaultAccess({
+      SECRETSAUCE_VAULT_SOCKET: fixture.socketPath,
+      SECRETSAUCE_VAULT_BACKUP_KEY_FILE:
+        fixture.raw.caller_keys.backup,
+      SECRETSAUCE_VAULT_BACKUP_CAPABILITY_KEY_FILE:
+        fixture.raw.capability_keys.backup,
+    });
+    expect(access).toBeDefined();
+    expect(access).not.toHaveProperty("controlClient");
+    expect(access).not.toHaveProperty("dataClient");
+    access!.close();
+
+    for (const environment of [
+      {
+        SECRETSAUCE_VAULT_SOCKET: fixture.socketPath,
+        SECRETSAUCE_VAULT_BACKUP_KEY_FILE:
+          fixture.raw.caller_keys.backup,
+      },
+      {
+        SECRETSAUCE_VAULT_SOCKET: "relative.sock",
+        SECRETSAUCE_VAULT_BACKUP_KEY_FILE:
+          fixture.raw.caller_keys.backup,
+        SECRETSAUCE_VAULT_BACKUP_CAPABILITY_KEY_FILE:
+          fixture.raw.capability_keys.backup,
+      },
+    ]) {
+      expect(() => createBackupVaultAccess(environment))
+        .toThrowError(expect.objectContaining({ code: "vault_config_invalid" }));
+    }
+    expect(createBackupVaultAccess({})).toBeUndefined();
   });
 });
 

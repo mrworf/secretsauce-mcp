@@ -169,6 +169,9 @@ import { ActivityReportService } from "../activityReports.js";
 import { StatusDashboardService } from "../statusDashboard.js";
 import { SecurityDashboardService } from "../securityDashboard.js";
 import { registerDashboardRoutes } from "./dashboardRoutes.js";
+import { PortableBackupCoordinator } from "../backupCoordinator.js";
+import type { BackupVaultClient } from "../vault/client.js";
+import type { VaultBackupCapabilityIssuer } from "../vault/capabilities.js";
 
 export interface ControlApplicationOptions {
   authenticator?: ControlAuthenticator;
@@ -205,6 +208,7 @@ export interface ControlApplicationOptions {
   activityReports?: ActivityReportService;
   statusDashboard?: StatusDashboardService;
   securityDashboard?: SecurityDashboardService;
+  backupCoordinator?: PortableBackupCoordinator;
 }
 
 export function createControlApplication(
@@ -283,6 +287,7 @@ export function createControlApplication(
     control.publicOrigin,
     options.vaultReadiness,
     options.identityReadiness,
+    options.backupCoordinator,
   );
   if (options.localIdentity !== undefined) {
     registerLocalIdentityRoutes(routeRegistry, options.localIdentity);
@@ -408,6 +413,8 @@ export async function startControlServer(
   config: GatewayConfig,
   options: Pick<ControlApplicationOptions, "vaultReadiness"> & {
     credentialVaultClient?: CredentialControlVault;
+    backupVaultClient?: BackupVaultClient;
+    backupCapabilityIssuer?: VaultBackupCapabilityIssuer;
     referenceAggregates?: ReferenceAggregateSource;
   } = {},
 ): Promise<ControlServerApplication> {
@@ -457,6 +464,7 @@ export async function startControlServer(
   let activityReports: ActivityReportService | undefined;
   let statusDashboard: StatusDashboardService | undefined;
   let securityDashboard: SecurityDashboardService | undefined;
+  let backupCoordinator: PortableBackupCoordinator | undefined;
   let activityAggregationTimer: NodeJS.Timeout | undefined;
   const apiKeyVerifier = new ApiKeyVerifierPool();
   let selfApiKeyDetector: ActiveSelfApiKeyDetector | undefined;
@@ -786,6 +794,13 @@ export async function startControlServer(
       localIdentity?.authenticator ?? denyControlAuthentication,
       apiKeyVerifier,
     );
+    backupCoordinator = new PortableBackupCoordinator(
+      persistence,
+      PACKAGE_VERSION,
+      options.backupVaultClient,
+      options.backupCapabilityIssuer,
+      stepUpRepository,
+    );
     server = createControlApplication(config, {
       persistence,
       ...options,
@@ -809,6 +824,7 @@ export async function startControlServer(
       ...(activityReports === undefined ? {} : { activityReports }),
       ...(statusDashboard === undefined ? {} : { statusDashboard }),
       ...(securityDashboard === undefined ? {} : { securityDashboard }),
+      backupCoordinator,
     });
     await server.listen({
       host: config.control.host,

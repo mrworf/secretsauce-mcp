@@ -90,7 +90,25 @@ function registerRoute(
             },
           },
         }
-      : {
+      : route.binaryResponse !== undefined
+        ? {
+            description: "Portable backup archive.",
+            headers: {
+              "content-disposition": {
+                description: "Fixed safe attachment filename.",
+                schema: {
+                  type: "string",
+                  const: `attachment; filename="${route.binaryResponse.filename}"`,
+                },
+              },
+            },
+            content: {
+              [route.binaryResponse.contentType]: {
+                schema: { type: "string", format: "binary" },
+              },
+            },
+          }
+        : {
           description: status === 503 ? "Control plane is not ready." : "Successful response.",
           content: {
             "application/json": { schema: responseSchema },
@@ -140,6 +158,12 @@ function registerRoute(
     "x-secret-fields": [...route.secretFields],
     "x-cache-class": route.cache,
     "x-audit-action": route.auditAction ?? "none",
+    ...(route.binaryResponse === undefined
+      ? {}
+      : {
+          "x-binary-response-max-bytes":
+            route.binaryResponse.maxBytes,
+        }),
   } as unknown as RouteConfig);
 }
 
@@ -165,6 +189,7 @@ const commonErrors = [
   [428, "A required expected resource version is missing."],
   [429, "A bounded request rate was exceeded."],
   [500, "The request failed without exposing internal details."],
+  [503, "A required local subsystem is unavailable."],
 ] as const;
 
 function sortValue(value: unknown): unknown {

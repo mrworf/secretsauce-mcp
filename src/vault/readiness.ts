@@ -1,5 +1,10 @@
 import { isAbsolute } from "node:path";
-import { ControlVaultClient, DataVaultClient } from "./client.js";
+import {
+  BackupVaultClient,
+  ControlVaultClient,
+  DataVaultClient,
+} from "./client.js";
+import { VaultBackupCapabilityIssuer } from "./capabilities.js";
 import { vaultError } from "./errors.js";
 import { readVaultKeyFile } from "./keyFile.js";
 
@@ -7,6 +12,12 @@ export interface VaultReadinessHandle {
   readiness(): Promise<"ready" | "unavailable">;
   controlClient?: ControlVaultClient;
   dataClient?: DataVaultClient;
+  close(): void;
+}
+
+export interface VaultBackupAccess {
+  client: BackupVaultClient;
+  issuer: VaultBackupCapabilityIssuer;
   close(): void;
 }
 
@@ -28,6 +39,44 @@ export function createDataVaultReadiness(
     environment.SECRETSAUCE_VAULT_SOCKET,
     environment.SECRETSAUCE_VAULT_DATA_KEY_FILE,
   );
+}
+
+export function createBackupVaultAccess(
+  environment: NodeJS.ProcessEnv = process.env,
+): VaultBackupAccess | undefined {
+  const socketPath = environment.SECRETSAUCE_VAULT_SOCKET;
+  const callerKeyFile = environment.SECRETSAUCE_VAULT_BACKUP_KEY_FILE;
+  const capabilityKeyFile =
+    environment.SECRETSAUCE_VAULT_BACKUP_CAPABILITY_KEY_FILE;
+  if (
+    socketPath === undefined
+    && callerKeyFile === undefined
+    && capabilityKeyFile === undefined
+  ) return undefined;
+  if (
+    socketPath === undefined
+    || callerKeyFile === undefined
+    || capabilityKeyFile === undefined
+    || !isAbsolute(socketPath)
+    || socketPath.includes("\0")
+  ) throw vaultError("vault_config_invalid");
+  const callerKey = readVaultKeyFile(callerKeyFile);
+  const capabilityKey = readVaultKeyFile(capabilityKeyFile);
+  try {
+    const client = new BackupVaultClient({
+      socketPath,
+      key: callerKey,
+    });
+    const issuer = new VaultBackupCapabilityIssuer(capabilityKey);
+    return {
+      client,
+      issuer,
+      close: () => client.close(),
+    };
+  } finally {
+    callerKey.fill(0);
+    capabilityKey.fill(0);
+  }
 }
 
 function createReadiness(

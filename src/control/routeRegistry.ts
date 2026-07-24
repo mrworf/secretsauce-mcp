@@ -89,6 +89,11 @@ export interface ControlRouteDefinition {
   concurrency: "none" | "if-match";
   idempotency: "none" | "required";
   rawResponse?: boolean;
+  binaryResponse?: {
+    contentType: "application/gzip";
+    filename: string;
+    maxBytes: number;
+  };
   redirectResponse?: boolean;
   successStatuses?: readonly number[];
   handler(context: ControlHandlerContext): Promise<ControlHandlerResult> | ControlHandlerResult;
@@ -296,6 +301,22 @@ export function installControlRoutes(
           }
           if (result.version !== undefined) {
             reply.header("etag", formatVersionEtag(result.version));
+          }
+          if (definition.binaryResponse !== undefined) {
+            if (
+              !Buffer.isBuffer(parsedData.data)
+              || parsedData.data.byteLength < 1
+              || parsedData.data.byteLength > definition.binaryResponse.maxBytes
+              || result.version !== undefined
+            ) throw new Error("Control binary response contract violation.");
+            return reply
+              .code(statusCode)
+              .header(
+                "content-disposition",
+                `attachment; filename="${definition.binaryResponse.filename}"`,
+              )
+              .type(definition.binaryResponse.contentType)
+              .send(parsedData.data);
           }
           const payload = definition.rawResponse
             ? parsedData.data
@@ -563,6 +584,23 @@ function validateDefinition(definition: ControlRouteDefinition): void {
     throw new Error("Invalid control raw response metadata.");
   }
   if (
+    definition.binaryResponse !== undefined
+    && (
+      isPublic
+      || definition.rawResponse === true
+      || definition.redirectResponse === true
+      || definition.cache !== "no-store"
+      || definition.binaryResponse.contentType !== "application/gzip"
+      || !/^[a-z0-9][a-z0-9_.-]{0,127}\.tar\.gz$/
+        .test(definition.binaryResponse.filename)
+      || !Number.isSafeInteger(definition.binaryResponse.maxBytes)
+      || definition.binaryResponse.maxBytes < 1
+      || definition.binaryResponse.maxBytes > 256 * 1024 * 1024
+    )
+  ) {
+    throw new Error("Invalid control binary response metadata.");
+  }
+  if (
     definition.redirectResponse &&
     (
       !isPublic ||
@@ -570,6 +608,7 @@ function validateDefinition(definition: ControlRouteDefinition): void {
       successStatuses.length !== 1 ||
       successStatuses[0] !== 302 ||
       definition.rawResponse === true ||
+      definition.binaryResponse !== undefined ||
       definition.secretFields.length > 0
     )
   ) {

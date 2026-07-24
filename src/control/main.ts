@@ -2,8 +2,12 @@ import { loadConfig } from "../config.js";
 import { createLogger } from "../logger.js";
 import { startupErrorPayload } from "../server.js";
 import { startControlServer } from "./server.js";
-import { createControlVaultReadiness } from "../vault/readiness.js";
-import type { VaultReadinessHandle } from "../vault/readiness.js";
+import {
+  createBackupVaultAccess,
+  createControlVaultReadiness,
+  type VaultBackupAccess,
+  type VaultReadinessHandle,
+} from "../vault/readiness.js";
 
 const configPath = process.env.CONFIG_PATH;
 if (!configPath) {
@@ -18,14 +22,22 @@ if (!configPath) {
 }
 
 let vaultReadiness: VaultReadinessHandle | undefined;
+let backupVault: VaultBackupAccess | undefined;
 try {
   const config = loadConfig(configPath);
   vaultReadiness = createControlVaultReadiness();
+  backupVault = createBackupVaultAccess();
   const application = await startControlServer(config, {
     ...(vaultReadiness === undefined ? {} : { vaultReadiness: vaultReadiness.readiness }),
     ...(vaultReadiness?.controlClient === undefined
       ? {}
       : { credentialVaultClient: vaultReadiness.controlClient }),
+    ...(backupVault === undefined
+      ? {}
+      : {
+          backupVaultClient: backupVault.client,
+          backupCapabilityIssuer: backupVault.issuer,
+        }),
   });
   const logger = createLogger(config.logging);
   logger.info("control.server_started", {
@@ -43,12 +55,14 @@ try {
       process.exitCode = 1;
     } finally {
       vaultReadiness?.close();
+      backupVault?.close();
     }
   };
   process.once("SIGTERM", () => void close("SIGTERM"));
   process.once("SIGINT", () => void close("SIGINT"));
 } catch (error) {
   vaultReadiness?.close();
+  backupVault?.close();
   console.error(JSON.stringify(startupErrorPayload(error)));
   process.exit(1);
 }

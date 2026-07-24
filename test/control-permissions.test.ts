@@ -37,6 +37,7 @@ const expected: Record<string, readonly PermissionOutcome[]> = {
   manage_global_settings: ["deny", "deny", "allow", "deny", "deny", "permitted_settings"],
   global_authenticator_event: ["deny", "deny", "step_up", "deny", "deny", "deny"],
   manage_api_keys: ["deny", "assigned_services_step_up", "all_services_step_up", "deny", "deny", "deny"],
+  create_portable_backup: ["deny", "deny", "step_up", "deny", "deny", "allow"],
   backup_with_credentials: ["deny", "deny", "step_up", "deny", "deny", "deny"],
   backup_without_credentials: ["deny", "deny", "allow", "deny", "deny", "allow"],
   restore: ["deny", "deny", "step_up", "deny", "deny", "deny"],

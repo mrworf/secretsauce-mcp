@@ -4,6 +4,10 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import type { ControlAuthenticationContext } from "../src/control/authentication.js";
 import { ControlIdempotencyHasher } from "../src/control/idempotency.js";
+import {
+  CredentialManagementRepository,
+  CredentialManagementService,
+} from "../src/credentialManagement.js";
 import { GroupAssignmentRepository } from "../src/groupAssignments.js";
 import { IdentityRepository, type IdentityAuditContext } from "../src/identity/repository.js";
 import { PersistenceWorker } from "../src/persistence/worker.js";
@@ -271,6 +275,114 @@ describe("durable policy management", () => {
       CORRELATION,
     )).resolves.toBeUndefined();
   });
+
+  it("snapshots live access and uses the shared evaluator for complete explanations", async () => {
+    const fixture = await policyFixture("simulation");
+    const service = await fixture.service("simulation-policy-api");
+    const destination = await fixture.destination(service.id, service.version);
+    const ordinary = await fixture.identity("simulated@example.org", "user");
+    const group = await fixture.group(service.id, "Simulators", [ordinary.id]);
+    await fixture.assignService(service.id, group.id);
+    const credential = (await fixture.credentials.create(
+      fixture.superadmin,
+      service.id,
+      {
+        name: "Simulation token",
+        placement: { kind: "header", name: "X-API-Key" },
+        selector: { kind: "all" },
+      },
+      "simulation-credential",
+      CORRELATION,
+    )).credential;
+    const servicePolicy = (await fixture.policies.createPolicy(
+      fixture.superadmin,
+      service.id,
+      {
+        boundary: { kind: "service" },
+        name: "Service simulation policy",
+        operating_mode: "deny",
+      },
+      "simulation-service-policy",
+      CORRELATION,
+    )).policy;
+    await fixture.policies.createRule(
+      fixture.superadmin,
+      service.id,
+      servicePolicy.id,
+      ruleBody({
+        name: "Service allow",
+        selector: { kind: "groups", group_ids: [group.id] },
+      }),
+      "simulation-service-rule",
+      CORRELATION,
+    );
+    const credentialPolicy = (await fixture.policies.createPolicy(
+      fixture.superadmin,
+      service.id,
+      {
+        boundary: { kind: "credential", credential_id: credential.id },
+        name: "Credential simulation policy",
+        operating_mode: "deny",
+      },
+      "simulation-credential-policy",
+      CORRELATION,
+    )).policy;
+    await fixture.policies.createRule(
+      fixture.superadmin,
+      service.id,
+      credentialPolicy.id,
+      ruleBody({ name: "Credential allow", selector: { kind: "all" } }),
+      "simulation-credential-rule",
+      CORRELATION,
+    );
+
+    const allowed = await fixture.policies.simulate(
+      fixture.superadmin,
+      service.id,
+      {
+        user_id: ordinary.id,
+        destination_id: destination.id,
+        method: "get",
+        path: "/v1/items",
+        credential_ids: [credential.id],
+      },
+      CORRELATION,
+    );
+    expect(allowed).toMatchObject({
+      allowed: true,
+      reasonCode: "all_boundaries_allow",
+      canonicalTarget: {
+        method: "GET",
+        host: "api.example.org",
+        pathname: "/v1/items",
+      },
+    });
+    expect(allowed.boundaries.map((boundary) => boundary.allowed)).toEqual([
+      true,
+      true,
+    ]);
+    expect(allowed.links).toEqual(expect.arrayContaining([
+      expect.objectContaining({ kind: "service", id: service.id }),
+      expect.objectContaining({ kind: "credential", id: credential.id }),
+      expect.objectContaining({ kind: "group", id: group.id }),
+      expect.objectContaining({ kind: "user", id: ordinary.id }),
+      expect.objectContaining({ kind: "policy", id: servicePolicy.id }),
+      expect.objectContaining({ kind: "policy", id: credentialPolicy.id }),
+    ]));
+
+    await expect(fixture.policies.simulate(
+      fixture.superadmin,
+      service.id,
+      {
+        user_id: ordinary.id,
+        destination_id: destination.id,
+        method: "GET",
+        path: "/v1/%2Fadmin",
+        credential_ids: [],
+      },
+      CORRELATION,
+    )).rejects.toEqual(new PolicyManagementError("invalid_request"));
+  });
 });
 
 async function policyFixture(label: string) {
@@ -308,6 +420,11 @@ async function policyFixture(label: string) {
     new ControlIdempotencyHasher(Buffer.alloc(32, 93)),
     () => NOW,
   );
+  const credentials = new CredentialManagementService(
+    new CredentialManagementRepository(worker, () => NOW),
+    new ControlIdempotencyHasher(Buffer.alloc(32, 95)),
+    () => NOW,
+  );
   const groups = new GroupAssignmentRepository(worker, () => NOW);
   const uuid = new UuidV7Generator({ now: () => NOW });
   const superadmin = browser(root.id, "superadmin");
@@ -315,6 +432,7 @@ async function policyFixture(label: string) {
     worker,
     identities,
     policies,
+    credentials,
     superadmin,
     identity: (email: string, role: "user" | "admin") =>
       identities.createLocalIdentity({
@@ -328,6 +446,23 @@ async function policyFixture(label: string) {
       `create-${slug}-01`,
       CORRELATION,
     )).service,
+    destination: async (serviceId: string, version: number) => {
+      const detail = await serviceManager.createDestination(
+        superadmin,
+        serviceId,
+        version,
+        {
+          slug: "primary",
+          baseUrl: "https://api.example.org/",
+          schemes: ["https"],
+          hosts: [{ type: "exact", value: "api.example.org" }],
+          ports: [443],
+          tlsVerify: true,
+        },
+        CORRELATION,
+      );
+      return detail.destinations[0]!;
+    },
     group: async (serviceId: string, name: string, userIds: string[]) => {
       const id = uuid.next();
       await groups.createGroup({
@@ -359,6 +494,21 @@ async function policyFixture(label: string) {
         ),
       });
       return groups.group(superadmin, serviceId, id);
+    },
+    assignService: async (serviceId: string, groupId: string) => {
+      await groups.replaceAssignments({
+        actor: superadmin,
+        serviceId,
+        expectedVersion: 1,
+        selector: { kind: "explicit", groupIds: [groupId], userIds: [] },
+        correlationId: CORRELATION,
+        idempotency: idempotency(
+          new ControlIdempotencyHasher(Buffer.alloc(32, 94)),
+          superadmin.principalId,
+          "services.assignments.replace",
+          `assign-${serviceId}-${groupId}`,
+        ),
+      });
     },
     invalidationCount: (policyId: string) => worker.execute({
       run: (database) => database.read((query) =>

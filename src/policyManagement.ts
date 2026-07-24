@@ -22,6 +22,14 @@ import {
   PolicyMatcherError,
   type ManagedPolicyMatchers,
 } from "./policyMatchers.js";
+import {
+  evaluatePolicySnapshot,
+  type PolicyBoundarySnapshot,
+  type PolicyEvaluationExplanation,
+  type PolicyPrincipalSelector,
+} from "./policy.js";
+import type { DestinationConfig, ServiceConfig } from "./types.js";
+import { resolveDestinationTarget } from "./urlValidation.js";
 
 const MAX_POLICIES_PER_SERVICE = 1_001;
 const MAX_RULES_TOTAL = 20_000;
@@ -111,6 +119,14 @@ export interface PolicyCopyDocument {
       };
     }>;
   };
+}
+
+export interface PolicySimulationView extends PolicyEvaluationExplanation {
+  links: Array<{
+    kind: "service" | "credential" | "group" | "user" | "policy";
+    id: string;
+    href: string;
+  }>;
 }
 
 interface PolicyRow {
@@ -619,6 +635,111 @@ export class PolicyManagementRepository {
     });
   }
 
+  async simulate(input: {
+    actor: ControlAuthenticationContext;
+    serviceId: string;
+    userId: string;
+    destinationId: string;
+    method: string;
+    target: { path?: string; url?: string };
+    credentialIds: readonly string[];
+    correlationId: string;
+  }): Promise<PolicySimulationView> {
+    return this.audited((transaction) => {
+      requireScopedService(transaction, input.actor, input.serviceId, false);
+      const user = transaction.get<{ role: string; status: string }>(
+        "SELECT role, status FROM users WHERE id = ?",
+        [input.userId],
+      );
+      if (user?.role !== "user" || user.status !== "active") {
+        throw new PersistenceError("identity_not_found");
+      }
+      const destination = simulationDestination(
+        transaction,
+        input.serviceId,
+        input.destinationId,
+      );
+      let target;
+      try {
+        target = resolveDestinationTarget(
+          simulationService(input.serviceId, destination),
+          destination.id,
+          input.target,
+        );
+      } catch {
+        throw new PolicyManagementError("invalid_request");
+      }
+      const groupIds = activeMemberships(transaction, input.serviceId, input.userId);
+      const serviceAllowed = serviceAuthorizes(
+        transaction,
+        input.serviceId,
+        input.userId,
+      );
+      const serviceBoundary = policyBoundarySnapshot(
+        transaction,
+        input.serviceId,
+        null,
+        serviceAllowed,
+      );
+      const credentialIds = [...new Set(input.credentialIds)].sort();
+      const credentials = credentialIds.map((credentialId) => {
+        const credential = transaction.get<{ status: string }>(`
+          SELECT status FROM service_credentials
+          WHERE service_id = ? AND id = ?
+        `, [input.serviceId, credentialId]);
+        if (credential === undefined || credential.status === "archived") {
+          throw new PersistenceError("identity_not_found");
+        }
+        return policyBoundarySnapshot(
+          transaction,
+          input.serviceId,
+          credentialId,
+          serviceAllowed && credentialAuthorizes(
+            transaction,
+            input.serviceId,
+            credentialId,
+            input.userId,
+          ),
+        );
+      });
+      const explanation = evaluatePolicySnapshot({
+        subjectId: input.userId,
+        groupIds,
+        method: input.method,
+        host: target.url.hostname,
+        pathname: target.methodPath,
+        service: serviceBoundary,
+        credentials,
+      });
+      const links = simulationLinks(
+        input.actor,
+        input.serviceId,
+        input.userId,
+        credentialIds,
+        groupIds,
+        [serviceBoundary, ...credentials],
+        serviceAllowed,
+      );
+      return {
+        value: { ...explanation, links },
+        auditInput: policyAudit(
+          input.actor,
+          "policy.simulate",
+          input.serviceId,
+          input.serviceId,
+          input.correlationId,
+          [
+            { field: "method", after: input.method },
+            { field: "credential_count", after: credentialIds.length },
+            { field: "boundary_count", after: explanation.boundaries.length },
+            { field: "outcome", after: explanation.allowed ? "allow" : "deny" },
+            { field: "reason_code", after: explanation.reasonCode },
+          ],
+        ),
+      };
+    });
+  }
+
   async copy(
     actor: ControlAuthenticationContext,
     serviceId: string,
@@ -853,6 +974,25 @@ export class PolicyManagementService {
     });
   }
 
+  async simulate(
+    actor: ControlAuthenticationContext,
+    serviceId: string,
+    body: unknown,
+    correlationId: string,
+  ) {
+    const input = simulationBody(body);
+    return await this.repository.simulate({
+      actor,
+      serviceId: requiredUuid(serviceId),
+      userId: input.userId,
+      destinationId: input.destinationId,
+      method: input.method,
+      target: input.target,
+      credentialIds: input.credentialIds,
+      correlationId: requiredCorrelation(correlationId),
+    });
+  }
+
   copy(
     actor: ControlAuthenticationContext,
     serviceId: string,
@@ -1013,6 +1153,252 @@ function validateBoundary(
   if (credential === undefined || credential.status === "archived") {
     throw new PersistenceError("identity_not_found");
   }
+}
+
+function simulationDestination(
+  query: Pick<PersistenceQuery, "get">,
+  serviceId: string,
+  destinationId: string,
+): DestinationConfig {
+  const row = query.get<{
+    id: string;
+    base_url: string;
+    schemes_json: string;
+    hosts_json: string;
+    ports_json: string;
+    tls_verify: 0 | 1;
+  }>(`
+    SELECT id, base_url, schemes_json, hosts_json, ports_json, tls_verify
+    FROM service_destinations
+    WHERE service_id = ? AND id = ?
+  `, [serviceId, destinationId]);
+  if (row === undefined) throw new PersistenceError("identity_not_found");
+  try {
+    const hosts = parseJson<Array<
+      | { type: "exact"; value: string }
+      | { type: "suffix"; value: string }
+      | { type: "regex"; value: string }
+    >>(row.hosts_json).map((matcher) =>
+      matcher.type === "regex"
+        ? { ...matcher, regex: new RegExp(matcher.value) }
+        : matcher);
+    return {
+      id: row.id,
+      baseUrl: row.base_url,
+      schemes: parseJson(row.schemes_json),
+      hosts,
+      ports: parseJson(row.ports_json),
+      tls: { verify: row.tls_verify === 1 },
+    };
+  } catch {
+    throw new PersistenceError("database_unavailable");
+  }
+}
+
+function simulationService(
+  serviceId: string,
+  destination: DestinationConfig,
+): ServiceConfig {
+  return {
+    id: serviceId,
+    type: "http",
+    name: "managed service",
+    destinations: [destination],
+    tls: destination.tls,
+    credentials: [],
+    access: { users: [] },
+    policy: { mode: "deny", rules: [] },
+  };
+}
+
+function activeMemberships(
+  query: Pick<PersistenceQuery, "all">,
+  serviceId: string,
+  userId: string,
+): string[] {
+  return query.all<{ id: string }>(`
+    SELECT g.id
+    FROM service_groups g
+    JOIN service_group_members gm
+      ON gm.service_id = g.service_id AND gm.group_id = g.id
+    WHERE g.service_id = ? AND g.lifecycle = 'active' AND gm.user_id = ?
+    ORDER BY g.id
+  `, [serviceId, userId]).map(({ id }) => id);
+}
+
+function serviceAuthorizes(
+  query: Pick<PersistenceQuery, "get">,
+  serviceId: string,
+  userId: string,
+): boolean {
+  return query.get(`
+    SELECT 1 FROM users u
+    WHERE u.id = ? AND u.role = 'user' AND u.status = 'active'
+      AND (
+        EXISTS (
+          SELECT 1 FROM service_principal_assignments a
+          WHERE a.service_id = ? AND a.selector_kind = 'all'
+        )
+        OR EXISTS (
+          SELECT 1 FROM service_principal_assignments d
+          WHERE d.service_id = ? AND d.selector_kind = 'user'
+            AND d.user_id = u.id
+        )
+        OR EXISTS (
+          SELECT 1 FROM service_principal_assignments s
+          JOIN service_groups g
+            ON g.service_id = s.service_id AND g.id = s.group_id
+          JOIN service_group_members gm
+            ON gm.service_id = g.service_id AND gm.group_id = g.id
+          WHERE s.service_id = ? AND s.selector_kind = 'group'
+            AND g.lifecycle = 'active' AND gm.user_id = u.id
+        )
+      )
+  `, [userId, serviceId, serviceId, serviceId]) !== undefined;
+}
+
+function credentialAuthorizes(
+  query: Pick<PersistenceQuery, "get">,
+  serviceId: string,
+  credentialId: string,
+  userId: string,
+): boolean {
+  return query.get(`
+    SELECT 1 WHERE
+      EXISTS (
+        SELECT 1 FROM credential_principal_assignments a
+        WHERE a.service_id = ? AND a.credential_id = ?
+          AND a.selector_kind = 'all'
+      )
+      OR EXISTS (
+        SELECT 1 FROM credential_principal_assignments d
+        WHERE d.service_id = ? AND d.credential_id = ?
+          AND d.selector_kind = 'user' AND d.user_id = ?
+      )
+      OR EXISTS (
+        SELECT 1 FROM credential_principal_assignments s
+        JOIN service_groups g
+          ON g.service_id = s.service_id AND g.id = s.group_id
+        JOIN service_group_members gm
+          ON gm.service_id = g.service_id AND gm.group_id = g.id
+        WHERE s.service_id = ? AND s.credential_id = ?
+          AND s.selector_kind = 'group' AND g.lifecycle = 'active'
+          AND gm.user_id = ?
+      )
+  `, [
+    serviceId,
+    credentialId,
+    serviceId,
+    credentialId,
+    userId,
+    serviceId,
+    credentialId,
+    userId,
+  ]) !== undefined;
+}
+
+function policyBoundarySnapshot(
+  query: Pick<PersistenceQuery, "get" | "all">,
+  serviceId: string,
+  credentialId: string | null,
+  assignmentAllowed: boolean,
+): PolicyBoundarySnapshot {
+  const policy = credentialId === null
+    ? query.get<PolicyRow>(`
+        SELECT * FROM policies
+        WHERE service_id = ? AND credential_id IS NULL AND lifecycle = 'active'
+      `, [serviceId])
+    : query.get<PolicyRow>(`
+        SELECT * FROM policies
+        WHERE service_id = ? AND credential_id = ? AND lifecycle = 'active'
+      `, [serviceId, credentialId]);
+  if (policy === undefined) {
+    return {
+      id: credentialId ?? serviceId,
+      kind: credentialId === null ? "service" : "credential",
+      mode: "deny",
+      assignmentAllowed,
+      rules: [],
+    };
+  }
+  return {
+    id: policy.id,
+    kind: credentialId === null ? "service" : "credential",
+    mode: policy.operating_mode,
+    assignmentAllowed,
+    rules: ruleRows(query, serviceId, policy.id).map((row) => ({
+      id: row.id,
+      effect: row.effect,
+      priority: row.priority,
+      enabled: row.enabled === 1,
+      methods: parseJson(row.methods_json),
+      hosts: parseJson(row.hosts_json),
+      paths: parseJson(row.paths_json),
+      selector: evaluatorSelector(selectorView(query, row.id)),
+      ...(row.reason === null ? {} : { reason: row.reason }),
+    })),
+  };
+}
+
+function evaluatorSelector(
+  selector: NormalizedPrincipalSelector | undefined,
+): PolicyPrincipalSelector {
+  if (selector === undefined) return { kind: "principals", groupIds: [], userIds: [] };
+  if (selector.kind === "all") return { kind: "all" };
+  if (selector.groupIds.length > 0 && selector.userIds.length > 0) {
+    return {
+      kind: "principals",
+      groupIds: selector.groupIds,
+      userIds: selector.userIds,
+    };
+  }
+  if (selector.groupIds.length > 0) {
+    return { kind: "groups", groupIds: selector.groupIds };
+  }
+  return { kind: "users", userIds: selector.userIds };
+}
+
+function simulationLinks(
+  actor: ControlAuthenticationContext,
+  serviceId: string,
+  userId: string,
+  credentialIds: readonly string[],
+  groupIds: readonly string[],
+  boundaries: readonly PolicyBoundarySnapshot[],
+  serviceAllowed: boolean,
+): PolicySimulationView["links"] {
+  const links: PolicySimulationView["links"] = [{
+    kind: "service",
+    id: serviceId,
+    href: `/control/services/${serviceId}`,
+  }];
+  for (const credentialId of credentialIds) {
+    links.push({
+      kind: "credential",
+      id: credentialId,
+      href: `/control/credentials/${credentialId}`,
+    });
+  }
+  for (const groupId of groupIds) {
+    links.push({
+      kind: "group",
+      id: groupId,
+      href: `/control/groups/${groupId}`,
+    });
+  }
+  if (actor.role === "superadmin" || serviceAllowed) {
+    links.push({ kind: "user", id: userId, href: `/control/users/${userId}` });
+  }
+  for (const boundary of boundaries) {
+    if (isUuidV7(boundary.id)) {
+      links.push({
+        kind: "policy",
+        id: boundary.id,
+        href: `/control/policies/${boundary.id}`,
+      });
+    }
+  }
+  return links;
 }
 
 function requireRuleCapacity(
@@ -1392,6 +1778,86 @@ function ruleBody(value: unknown): RuleProfile {
     safeguards: normalizeSafeguards(value.response_safeguards),
     ...(selector === undefined ? {} : { selector }),
   };
+}
+
+function simulationBody(value: unknown): {
+  userId: string;
+  destinationId: string;
+  method: string;
+  target: { path?: string; url?: string };
+  credentialIds: string[];
+} {
+  if (!plainObject(value)) invalid();
+  requireKeys(value, [
+    "user_id",
+    "destination_id",
+    "method",
+    "path",
+    "url",
+    "credential_ids",
+  ], ["path", "url"]);
+  if (
+    typeof value.method !== "string"
+    || !/^[!#$%&'*+.^_`|~0-9A-Za-z-]{1,32}$/.test(value.method)
+    || !Array.isArray(value.credential_ids)
+    || value.credential_ids.length > 128
+  ) invalid();
+  const credentialIds = value.credential_ids.map((id) => {
+    if (typeof id !== "string") invalid();
+    return requiredUuid(id);
+  });
+  if (new Set(credentialIds).size !== credentialIds.length) invalid();
+  const hasPath = typeof value.path === "string";
+  const hasUrl = typeof value.url === "string";
+  if (hasPath === hasUrl) invalid();
+  const target = hasPath
+    ? { path: value.path as string }
+    : { url: value.url as string };
+  validateSimulationTarget(target);
+  return {
+    userId: typeof value.user_id === "string"
+      ? requiredUuid(value.user_id)
+      : invalid(),
+    destinationId: typeof value.destination_id === "string"
+      ? requiredUuid(value.destination_id)
+      : invalid(),
+    method: value.method.toUpperCase(),
+    target,
+    credentialIds: credentialIds.sort(),
+  };
+}
+
+function validateSimulationTarget(target: { path?: string; url?: string }): void {
+  let pathname: string;
+  if (target.path !== undefined) {
+    if (
+      target.path.length < 1
+      || target.path.length > 4_096
+      || !target.path.startsWith("/")
+    ) invalid();
+    pathname = target.path.split(/[?#]/, 1)[0] ?? "/";
+  } else {
+    const url = target.url!;
+    if (url.length < 1 || url.length > 8_192) invalid();
+    const match = /^[A-Za-z][A-Za-z0-9+.-]*:\/\/[^/?#]*(\/[^?#]*)?/.exec(url);
+    if (match === null) invalid();
+    pathname = match[1] ?? "/";
+  }
+  for (let index = 0; index < pathname.length; index += 1) {
+    if (pathname[index] !== "%") continue;
+    const escape = pathname.slice(index + 1, index + 3);
+    if (!/^[0-9a-f]{2}$/i.test(escape)) invalid();
+    const byte = Number.parseInt(escape, 16);
+    const character = String.fromCharCode(byte);
+    if (
+      /^[A-Za-z0-9._~-]$/.test(character)
+      || byte === 0x2f
+      || byte === 0x5c
+      || byte === 0x00
+      || byte === 0x25
+    ) invalid();
+    index += 2;
+  }
 }
 
 function normalizeSafeguards(value: unknown): PolicyResponseSafeguards {

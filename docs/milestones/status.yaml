@@ -135,10 +135,10 @@ milestones:
   - id: "19"
     title: "Audit Search And Retention"
     file: "docs/milestones/19-audit-search-retention.md"
-    status: "in_progress"
-    completed_at: null
-    commit_hash: null
-    notes: "Decision-complete implementation plan committed before code changes."
+    status: "completed"
+    completed_at: "2026-07-24T06:55:00.000Z"
+    commit_hash: "82ddeda"
+    notes: "Implemented separate immutable audit domains, canonical FTS and bounded durable runtime persistence, scope-first search/self-history/export, independent retention and index maintenance, responsive timezone-aware workspaces, and operator guidance; OpenAPI current, 10k-row performance fixture passes, and full 105-file/777-test regression passes."
   - id: "20"
     title: "Activity, Status, And Security Dashboards"
     file: "docs/milestones/20-activity-status-security-dashboards.md"

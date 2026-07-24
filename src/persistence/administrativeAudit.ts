@@ -1,6 +1,11 @@
 import { z } from "zod";
 import { PersistenceError } from "./errors.js";
 import { isUuidV7 } from "./uuidV7.js";
+import {
+  AUDIT_CATEGORIES,
+  canonicalAdministrativeAuditDocument,
+  type AuditCategory,
+} from "./auditDocuments.js";
 
 const sensitiveFieldName = /(^|[_-])(authorization|cookie|set-cookie|secret|password|api[-_]?key|access[-_]?token|refresh[-_]?token|bearer[-_]?token|opaque[-_]?(?:token|reference)|raw[-_]?(?:token|reference)|(?:token|reference)[-_]?value|credential[-_]?value|body)(s|[_-]|$)/i;
 const safeCode = z.string().min(1).max(128).regex(/^[a-z][a-z0-9_.-]*$/);
@@ -24,6 +29,7 @@ const auditSchema = z.object({
     authenticationMethod: safeCode.max(64),
   }).strict(),
   action: safeCode,
+  category: z.enum(AUDIT_CATEGORIES).default("other"),
   result: z.enum(["allow", "deny", "error"]),
   target: z.object({
     type: z.string().min(1).max(64).regex(/^[a-z][a-z0-9_.-]*$/),
@@ -31,6 +37,7 @@ const auditSchema = z.object({
     label: z.string().min(1).max(256),
   }).strict(),
   serviceId: uuidV7.optional(),
+  serviceLabel: z.string().min(1).max(256).optional(),
   justification: z.string().min(1).max(1024).optional(),
   changes: z.array(z.object({
     field: z.string().min(1).max(128).regex(/^[a-z][a-z0-9_.-]*$/)
@@ -72,9 +79,11 @@ export interface AdministrativeAuditEvent {
   occurredAt: number;
   actor: z.output<typeof auditSchema>["actor"];
   action: string;
+  category: AuditCategory;
   result: "allow" | "deny" | "error";
   target: z.output<typeof auditSchema>["target"];
   serviceId?: string;
+  serviceLabel?: string;
   justification?: string;
   changes: z.output<typeof auditSchema>["changes"];
   correlationId: string;
@@ -113,12 +122,16 @@ export function buildAdministrativeAuditEvent(
       label: options.sanitizeText(parsed.data.actor.label),
     },
     action: parsed.data.action,
+    category: parsed.data.category,
     result: parsed.data.result,
     target: {
       ...parsed.data.target,
       label: options.sanitizeText(parsed.data.target.label),
     },
     ...(parsed.data.serviceId === undefined ? {} : { serviceId: parsed.data.serviceId }),
+    ...(parsed.data.serviceLabel === undefined
+      ? {}
+      : { serviceLabel: options.sanitizeText(parsed.data.serviceLabel) }),
     ...(parsed.data.justification === undefined
       ? {}
       : { justification: options.sanitizeText(parsed.data.justification) }),
@@ -146,5 +159,6 @@ export function buildAdministrativeAuditEvent(
   ) {
     throw new PersistenceError("invalid_audit_event");
   }
+  canonicalAdministrativeAuditDocument(event);
   return event;
 }

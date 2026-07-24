@@ -2214,6 +2214,183 @@ CREATE TABLE security_job_state (
 ) STRICT;
 `;
 
+const migration0019 = `
+ALTER TABLE administrative_audit_events ADD COLUMN sequence INTEGER;
+ALTER TABLE administrative_audit_events ADD COLUMN category TEXT NOT NULL DEFAULT 'other'
+  CHECK (category IN (
+    'authentication', 'authorization', 'identity', 'service', 'credential',
+    'policy', 'security', 'system', 'audit', 'other'
+  ));
+ALTER TABLE administrative_audit_events ADD COLUMN service_label_snapshot TEXT
+  CHECK (
+    service_label_snapshot IS NULL
+    OR length(service_label_snapshot) BETWEEN 1 AND 256
+  );
+
+UPDATE administrative_audit_events SET sequence = rowid;
+CREATE UNIQUE INDEX administrative_audit_events_sequence_idx
+  ON administrative_audit_events (sequence);
+CREATE INDEX administrative_audit_events_timeline_idx
+  ON administrative_audit_events (occurred_at DESC, sequence DESC);
+CREATE INDEX administrative_audit_events_category_time_idx
+  ON administrative_audit_events (category, occurred_at DESC, sequence DESC);
+
+CREATE VIRTUAL TABLE administrative_audit_fts USING fts5(
+  event_id UNINDEXED,
+  document,
+  content='',
+  contentless_delete=1,
+  tokenize='unicode61 remove_diacritics 2'
+);
+
+INSERT INTO administrative_audit_fts (rowid, event_id, document)
+SELECT
+  sequence,
+  event_id,
+  lower(
+    category || ' ' || actor_type || ' ' || coalesce(actor_id_snapshot, '') || ' ' ||
+    actor_label_snapshot || ' ' || coalesce(actor_role_snapshot, '') || ' ' ||
+    authentication_method || ' ' || action || ' ' || result || ' ' ||
+    target_type || ' ' || coalesce(target_id_snapshot, '') || ' ' ||
+    target_label_snapshot || ' ' || coalesce(service_id_snapshot, '') || ' ' ||
+    coalesce(service_label_snapshot, '') || ' ' || coalesce(justification, '') || ' ' ||
+    changes_json || ' ' || correlation_id || ' ' || source_json || ' ' ||
+    coalesce(failure_code, '')
+  )
+FROM administrative_audit_events;
+
+CREATE TRIGGER administrative_audit_events_immutable
+BEFORE UPDATE ON administrative_audit_events
+BEGIN
+  SELECT RAISE(ABORT, 'administrative audit events are immutable');
+END;
+
+CREATE TABLE runtime_audit_events (
+  sequence INTEGER PRIMARY KEY AUTOINCREMENT,
+  event_id TEXT NOT NULL UNIQUE CHECK (
+    length(event_id) = 36
+    AND event_id = lower(event_id)
+    AND substr(event_id, 15, 1) = '7'
+    AND substr(event_id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND event_id NOT GLOB '*[^0-9a-f-]*'
+  ),
+  occurred_at INTEGER NOT NULL CHECK (occurred_at >= 0),
+  event_type TEXT NOT NULL CHECK (length(event_type) BETWEEN 1 AND 128),
+  outcome TEXT NOT NULL CHECK (outcome IN ('allow', 'deny', 'error', 'warning')),
+  category TEXT NOT NULL CHECK (category IN (
+    'authentication', 'authorization', 'identity', 'service', 'credential',
+    'policy', 'security', 'system', 'audit', 'other'
+  )),
+  actor_type TEXT NOT NULL CHECK (
+    actor_type IN ('oauth_user', 'api_key', 'anonymous', 'system')
+  ),
+  subject_id_snapshot TEXT,
+  subject_label_snapshot TEXT NOT NULL CHECK (
+    length(subject_label_snapshot) BETWEEN 1 AND 256
+  ),
+  service_id_snapshot TEXT,
+  service_label_snapshot TEXT CHECK (
+    service_label_snapshot IS NULL
+    OR length(service_label_snapshot) BETWEEN 1 AND 256
+  ),
+  destination TEXT,
+  action TEXT,
+  method TEXT,
+  target_host TEXT,
+  target_path TEXT,
+  downstream_status INTEGER CHECK (
+    downstream_status IS NULL OR downstream_status BETWEEN 100 AND 599
+  ),
+  policy_rule TEXT,
+  reason TEXT,
+  failure_code TEXT,
+  correlation_id TEXT,
+  source_json TEXT NOT NULL CHECK (
+    length(source_json) <= 4096 AND json_valid(source_json)
+  ),
+  duration_ms INTEGER CHECK (
+    duration_ms IS NULL OR duration_ms BETWEEN 0 AND 86400000
+  ),
+  tls_verify INTEGER CHECK (tls_verify IS NULL OR tls_verify IN (0, 1)),
+  tokenization_count INTEGER CHECK (
+    tokenization_count IS NULL OR tokenization_count BETWEEN 0 AND 100000
+  ),
+  details_json TEXT NOT NULL CHECK (
+    length(details_json) <= 16384 AND json_valid(details_json)
+  )
+) STRICT;
+
+CREATE INDEX runtime_audit_events_timeline_idx
+  ON runtime_audit_events (occurred_at DESC, sequence DESC);
+CREATE INDEX runtime_audit_events_service_time_idx
+  ON runtime_audit_events (service_id_snapshot, occurred_at DESC, sequence DESC);
+CREATE INDEX runtime_audit_events_subject_time_idx
+  ON runtime_audit_events (subject_id_snapshot, occurred_at DESC, sequence DESC);
+CREATE INDEX runtime_audit_events_category_time_idx
+  ON runtime_audit_events (category, occurred_at DESC, sequence DESC);
+
+CREATE VIRTUAL TABLE runtime_audit_fts USING fts5(
+  event_id UNINDEXED,
+  document,
+  content='',
+  contentless_delete=1,
+  tokenize='unicode61 remove_diacritics 2'
+);
+
+CREATE TRIGGER runtime_audit_events_immutable
+BEFORE UPDATE ON runtime_audit_events
+BEGIN
+  SELECT RAISE(ABORT, 'runtime audit events are immutable');
+END;
+
+CREATE TABLE audit_retention_settings (
+  singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
+  administrative_days INTEGER CHECK (
+    administrative_days IS NULL OR administrative_days BETWEEN 1 AND 3650
+  ),
+  runtime_days INTEGER CHECK (
+    runtime_days IS NULL OR runtime_days BETWEEN 1 AND 3650
+  ),
+  version INTEGER NOT NULL CHECK (version > 0),
+  created_at INTEGER NOT NULL CHECK (created_at >= 0),
+  updated_at INTEGER NOT NULL CHECK (updated_at >= created_at)
+) STRICT;
+
+INSERT INTO audit_retention_settings (
+  singleton, administrative_days, runtime_days, version, created_at, updated_at
+) VALUES (1, 400, 400, 1, 0, 0);
+
+CREATE TABLE audit_maintenance_state (
+  singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
+  next_run_at INTEGER NOT NULL CHECK (next_run_at >= 0),
+  lease_owner TEXT,
+  lease_expires_at INTEGER,
+  last_started_at INTEGER,
+  last_completed_at INTEGER,
+  last_outcome TEXT CHECK (
+    last_outcome IS NULL OR last_outcome IN ('completed', 'partial', 'skipped', 'error')
+  ),
+  last_code TEXT,
+  retained_administrative_count INTEGER NOT NULL DEFAULT 0 CHECK (
+    retained_administrative_count >= 0
+  ),
+  retained_runtime_count INTEGER NOT NULL DEFAULT 0 CHECK (
+    retained_runtime_count >= 0
+  ),
+  repaired_index_count INTEGER NOT NULL DEFAULT 0 CHECK (
+    repaired_index_count >= 0
+  ),
+  version INTEGER NOT NULL DEFAULT 1 CHECK (version > 0),
+  created_at INTEGER NOT NULL CHECK (created_at >= 0),
+  updated_at INTEGER NOT NULL CHECK (updated_at >= created_at),
+  CHECK ((lease_owner IS NULL) = (lease_expires_at IS NULL))
+) STRICT;
+
+INSERT INTO audit_maintenance_state (
+  singleton, next_run_at, version, created_at, updated_at
+) VALUES (1, 0, 1, 0, 0);
+`;
+
 export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [
   {
     version: 1,
@@ -2304,6 +2481,11 @@ export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [
     version: 18,
     name: "security_settings_automation",
     sql: migration0018,
+  },
+  {
+    version: 19,
+    name: "audit_search_retention",
+    sql: migration0019,
   },
 ];
 

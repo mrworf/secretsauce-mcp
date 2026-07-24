@@ -15,7 +15,7 @@ describe("persistence migrations", () => {
     const file = databasePath("fresh");
     const persistence = open(file);
     try {
-      expect(persistence.schemaVersion).toBe(18);
+      expect(persistence.schemaVersion).toBe(19);
       expect(persistence.migrationHistory()).toEqual([
         {
           version: 1,
@@ -107,6 +107,11 @@ describe("persistence migrations", () => {
           name: "security_settings_automation",
           checksum: expect.stringMatching(/^[a-f0-9]{64}$/),
         },
+        {
+          version: 19,
+          name: "audit_search_retention",
+          checksum: expect.stringMatching(/^[a-f0-9]{64}$/),
+        },
       ]);
       expect(statSync(file).mode & 0o777).toBe(0o600);
 
@@ -118,6 +123,13 @@ describe("persistence migrations", () => {
           WHERE type = 'table' ORDER BY name
         `).pluck().all()).toEqual([
           "administrative_audit_events",
+          "administrative_audit_fts",
+          "administrative_audit_fts_config",
+          "administrative_audit_fts_data",
+          "administrative_audit_fts_docsize",
+          "administrative_audit_fts_idx",
+          "audit_maintenance_state",
+          "audit_retention_settings",
           "control_idempotency_records",
           "external_identities",
           "identity_bootstrap",
@@ -158,10 +170,17 @@ describe("persistence migrations", () => {
           "policy_rules",
           "runtime_activation",
           "runtime_active_services",
+          "runtime_audit_events",
+          "runtime_audit_fts",
+          "runtime_audit_fts_config",
+          "runtime_audit_fts_data",
+          "runtime_audit_fts_docsize",
+          "runtime_audit_fts_idx",
           "runtime_invalidation_checkpoints",
           "runtime_service_snapshots",
           "service_credentials",
           "services",
+          "sqlite_sequence",
           "users",
           "accepted_totp_steps",
           "api_key_activity",
@@ -236,17 +255,17 @@ describe("persistence migrations", () => {
     const file = databasePath("ordered");
     const migrations = [
       ...PERSISTENCE_MIGRATIONS,
-      testMigration(19, "nineteenth", "CREATE TABLE nineteenth_fixture (id INTEGER PRIMARY KEY) STRICT;"),
       testMigration(20, "twentieth", "CREATE TABLE twentieth_fixture (id INTEGER PRIMARY KEY) STRICT;"),
+      testMigration(21, "twenty_first", "CREATE TABLE twenty_first_fixture (id INTEGER PRIMARY KEY) STRICT;"),
     ];
     const first = open(file, migrations);
-    expect(first.schemaVersion).toBe(20);
-    expect(first.migrationHistory().map(({ version }) => version)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]);
+    expect(first.schemaVersion).toBe(21);
+    expect(first.migrationHistory().map(({ version }) => version)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]);
     first.close();
 
     const restarted = open(file, migrations);
     try {
-      expect(restarted.schemaVersion).toBe(20);
+      expect(restarted.schemaVersion).toBe(21);
       expect(restarted.migrationHistory().map(({ name }) => name)).toEqual([
         "persistence_and_administrative_audit_foundation",
         "control_idempotency_foundation",
@@ -266,8 +285,9 @@ describe("persistence migrations", () => {
         "api_key_service_revision_actors",
         "self_api_key_protection",
         "security_settings_automation",
-        "nineteenth",
+        "audit_search_retention",
         "twentieth",
+        "twenty_first",
       ]);
     } finally {
       restarted.close();
@@ -276,7 +296,7 @@ describe("persistence migrations", () => {
 
   it("rejects unknown future, partial, and checksum-drifted schemas safely", () => {
     const futureFile = initializedPath("future");
-    edit(futureFile, (database) => database.pragma("user_version = 19"));
+    edit(futureFile, (database) => database.pragma("user_version = 20"));
     expectPersistenceError(() => open(futureFile), "schema_unsupported", futureFile);
 
     const partialFile = databasePath("partial");
@@ -301,7 +321,7 @@ describe("persistence migrations", () => {
     const file = initializedPath("rollback");
     const migrations = [
       ...PERSISTENCE_MIGRATIONS,
-      testMigration(19, "broken", `
+      testMigration(20, "broken", `
         CREATE TABLE should_rollback (id INTEGER PRIMARY KEY) STRICT;
         INSERT INTO table_that_does_not_exist (id) VALUES (1);
       `),
@@ -311,12 +331,12 @@ describe("persistence migrations", () => {
 
     const inspection = new Database(file);
     try {
-      expect(inspection.pragma("user_version", { simple: true })).toBe(18);
+      expect(inspection.pragma("user_version", { simple: true })).toBe(19);
       expect(inspection.prepare(
         "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'should_rollback'",
       ).get()).toBeUndefined();
       expect(inspection.prepare("SELECT count(*) AS count FROM schema_migrations").get())
-        .toEqual({ count: 18 });
+        .toEqual({ count: 19 });
     } finally {
       inspection.close();
     }

@@ -7,6 +7,12 @@ import {
   type AdministrativeAuditEvent,
 } from "./administrativeAudit.js";
 import {
+  canonicalAdministrativeAuditDocument,
+  canonicalRuntimeAuditDocument,
+  validateRuntimeAuditProjection,
+  type RuntimeAuditProjection,
+} from "./auditDocuments.js";
+import {
   migrationChecksum,
   PERSISTENCE_MIGRATIONS,
   type PersistenceMigration,
@@ -286,6 +292,47 @@ export class PersistenceDatabase {
     }
   }
 
+  appendRuntimeAudit(input: unknown): RuntimeAuditProjection {
+    this.assertOpen();
+    const event = validateRuntimeAuditProjection(input);
+    const append = this.#database.transaction(() => {
+      const result = this.#database.prepare(`
+        INSERT INTO runtime_audit_events (
+          event_id, occurred_at, event_type, outcome, category, actor_type,
+          subject_id_snapshot, subject_label_snapshot, service_id_snapshot,
+          service_label_snapshot, destination, action, method, target_host,
+          target_path, downstream_status, policy_rule, reason, failure_code,
+          correlation_id, source_json, duration_ms, tls_verify,
+          tokenization_count, details_json
+        ) VALUES (
+          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+        )
+      `).run(
+        event.eventId, event.occurredAt, event.eventType, event.outcome,
+        event.category, event.actorType, event.subjectId ?? null,
+        event.subjectLabel, event.serviceId ?? null, event.serviceLabel ?? null,
+        event.destination ?? null, event.action ?? null, event.method ?? null,
+        event.targetHost ?? null, event.targetPath ?? null,
+        event.downstreamStatus ?? null, event.policyRule ?? null,
+        event.reason ?? null, event.failureCode ?? null,
+        event.correlationId ?? null, JSON.stringify(event.source),
+        event.durationMs ?? null, event.tlsVerify === undefined ? null : Number(event.tlsVerify),
+        event.tokenizationCount ?? null, JSON.stringify(event.details),
+      );
+      const sequence = Number(result.lastInsertRowid);
+      this.#database.prepare(`
+        INSERT INTO runtime_audit_fts (rowid, event_id, document)
+        VALUES (?, ?, ?)
+      `).run(sequence, event.eventId, canonicalRuntimeAuditDocument(event));
+    });
+    try {
+      append.immediate();
+      return event;
+    } catch {
+      throw new PersistenceError("audit_persistence_failed");
+    }
+  }
+
   administrativeAuditEvent(eventId: string): Record<string, unknown> | undefined {
     this.assertOpen();
     try {
@@ -347,14 +394,19 @@ export class PersistenceDatabase {
 
   private insertAdministrativeAudit(event: AdministrativeAuditEvent): void {
     try {
+      const next = this.#database.prepare(`
+        SELECT coalesce(max(sequence), 0) + 1 AS sequence
+        FROM administrative_audit_events
+      `).get() as { sequence: number };
       this.#database.prepare(`
         INSERT INTO administrative_audit_events (
           event_id, occurred_at, actor_type, actor_id_snapshot, actor_label_snapshot,
           actor_role_snapshot, authentication_method, action, result, target_type,
           target_id_snapshot, target_label_snapshot, service_id_snapshot,
-          justification, changes_json, correlation_id, source_json, failure_code
+          justification, changes_json, correlation_id, source_json, failure_code,
+          sequence, category, service_label_snapshot
         ) VALUES (
-          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
         )
       `).run(
         event.eventId,
@@ -375,6 +427,17 @@ export class PersistenceDatabase {
         event.correlationId,
         JSON.stringify(event.source),
         event.failureCode ?? null,
+        next.sequence,
+        event.category,
+        event.serviceLabel ?? null,
+      );
+      this.#database.prepare(`
+        INSERT INTO administrative_audit_fts (rowid, event_id, document)
+        VALUES (?, ?, ?)
+      `).run(
+        next.sequence,
+        event.eventId,
+        canonicalAdministrativeAuditDocument(event),
       );
     } catch {
       this.#administrativeAuditDegraded = true;

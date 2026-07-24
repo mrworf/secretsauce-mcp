@@ -18,7 +18,7 @@ const SERVICE_ID = "018f1f2e-7b3c-7a10-8000-000000000003";
 const CORRELATION_ID = "req_8ca2d86c-541c-4484-bcc0-feebb54f6311";
 
 const fixtureMigration: PersistenceMigration = {
-  version: 19,
+  version: 20,
   name: "test_repository_fixtures",
   sql: `
     CREATE TABLE test_parent (
@@ -39,6 +39,123 @@ const fixtureMigration: PersistenceMigration = {
 };
 
 describe("transactional administrative audit", () => {
+  it("indexes sanitized administrative fields in the same transaction without indexing time", async () => {
+    const worker = open(databasePath("administrative-fts"));
+    try {
+      const event = await worker.execute({
+        run: (database) => database.appendAdministrativeAudit(auditEvent({
+          category: "security",
+          serviceLabel: "Payments Gateway",
+          justification: "Quarterly access review",
+        })),
+      });
+      const matches = await worker.execute({
+        run: (database) => database.read((query) => ({
+          label: query.all(`
+            SELECT events.event_id
+            FROM administrative_audit_fts AS search
+            JOIN administrative_audit_events AS events ON events.sequence = search.rowid
+            WHERE administrative_audit_fts MATCH ?
+          `, ['"payments" AND "quarterly"']),
+          timestamp: query.all(`
+            SELECT events.event_id
+            FROM administrative_audit_fts AS search
+            JOIN administrative_audit_events AS events ON events.sequence = search.rowid
+            WHERE administrative_audit_fts MATCH ?
+          `, ['"1785000000000"']),
+        })),
+      });
+      expect(matches.label).toEqual([{ event_id: event.eventId }]);
+      expect(matches.timestamp).toEqual([]);
+    } finally {
+      await worker.close();
+    }
+  });
+
+  it("persists a strict runtime projection and its FTS document atomically", async () => {
+    const worker = open(databasePath("runtime-fts"));
+    const runtimeId = "018f1f2e-7b3c-7a10-8000-000000000004";
+    try {
+      await expect(worker.execute({
+        run: (database) => database.appendRuntimeAudit({
+          eventId: runtimeId,
+          occurredAt: 1_785_000_000_000,
+          eventType: "service_request",
+          outcome: "allow",
+          category: "authorization",
+          actorType: "oauth_user",
+          subjectId: ACTOR_ID,
+          subjectLabel: "Ada User",
+          serviceId: SERVICE_ID,
+          serviceLabel: "Payments Gateway",
+          destination: "primary",
+          action: "service_request",
+          method: "POST",
+          targetHost: "api.example.org",
+          targetPath: "/v1/widgets",
+          correlationId: CORRELATION_ID,
+          source: { category: "mcp", client: "ChatGPT" },
+          details: { policy_decision: "allow" },
+        }),
+      })).resolves.toMatchObject({ eventId: runtimeId });
+
+      const state = await worker.execute({
+        run: (database) => database.read((query) => ({
+          events: query.all("SELECT event_id FROM runtime_audit_events"),
+          matches: query.all(`
+            SELECT events.event_id
+            FROM runtime_audit_fts AS search
+            JOIN runtime_audit_events AS events ON events.sequence = search.rowid
+            WHERE runtime_audit_fts MATCH ?
+          `, ['"payments" AND "widgets"']),
+        })),
+      });
+      expect(state).toEqual({
+        events: [{ event_id: runtimeId }],
+        matches: [{ event_id: runtimeId }],
+      });
+    } finally {
+      await worker.close();
+    }
+  });
+
+  it("rejects secret-bearing runtime fields and values before event or index insertion", async () => {
+    const worker = open(databasePath("runtime-rejection"));
+    const base = {
+      eventId: "018f1f2e-7b3c-7a10-8000-000000000004",
+      occurredAt: 1_785_000_000_000,
+      eventType: "service_request",
+      outcome: "deny",
+      category: "authorization",
+      actorType: "oauth_user",
+      subjectLabel: "Ada User",
+      source: {},
+      details: {},
+    };
+    try {
+      const invalid = [
+        { ...base, requestBody: "not stored" },
+        { ...base, details: { authorization_header: "redacted" } },
+        { ...base, reason: "Bearer abcdefghijklmnopqrstuvwxyz" },
+        { ...base, reason: "gref_do-not-store" },
+      ];
+      for (const input of invalid) {
+        await expect(worker.execute({
+          run: (database) => database.appendRuntimeAudit(input),
+        })).rejects.toMatchObject({ code: "invalid_audit_event" });
+      }
+      const counts = await worker.execute({
+        run: (database) => database.read((query) => ({
+          events: query.get("SELECT count(*) AS count FROM runtime_audit_events"),
+          index: query.get("SELECT count(*) AS count FROM runtime_audit_fts"),
+        })),
+      });
+      expect(counts).toEqual({ events: { count: 0 }, index: { count: 0 } });
+    } finally {
+      await worker.close();
+    }
+  });
+
   it("commits a repository mutation and sanitized denormalized audit atomically", async () => {
     const worker = open(databasePath("commit"));
     try {
@@ -121,7 +238,7 @@ describe("transactional administrative audit", () => {
 
   it("rolls a mutation back and degrades readiness when audit insertion fails", async () => {
     const failureMigration: PersistenceMigration = {
-      version: 20,
+      version: 21,
       name: "test_audit_failure",
       sql: `
         CREATE TRIGGER reject_test_audit

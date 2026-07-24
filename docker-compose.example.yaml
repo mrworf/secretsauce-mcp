@@ -45,6 +45,8 @@ services:
       - ./oauth:/run/oauth:ro
       # Audit and hash-only OAuth refresh state need writable persistent storage.
       - ./audit:/var/lib/secretsauce/audit
+      # Mount the configured SQLite parent directory when persistence is enabled.
+      - ./database:/var/lib/secretsauce/database
       # This refresh-state mount has a single-process writer contract.
       - ./oauth-state:/var/lib/secretsauce/oauth
       # gref_/sec_ capability state is intentionally ephemeral and is not mounted.

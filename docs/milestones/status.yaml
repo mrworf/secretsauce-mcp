@@ -135,10 +135,10 @@ milestones:
   - id: "19"
     title: "Audit Search And Retention"
     file: "docs/milestones/19-audit-search-retention.md"
-    status: "pending"
+    status: "in_progress"
     completed_at: null
     commit_hash: null
-    notes: ""
+    notes: "Decision-complete implementation plan committed before code changes."
   - id: "20"
     title: "Activity, Status, And Security Dashboards"
     file: "docs/milestones/20-activity-status-security-dashboards.md"

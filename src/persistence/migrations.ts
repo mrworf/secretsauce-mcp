@@ -2583,6 +2583,271 @@ CREATE INDEX backup_export_authorizations_subject_idx
   ON backup_export_authorizations (subject_user_id, created_at DESC, id);
 `;
 
+const migration0022 = `
+CREATE TABLE restore_stages (
+  id TEXT PRIMARY KEY CHECK (
+    length(id) = 36 AND id = lower(id)
+    AND substr(id, 15, 1) = '7'
+    AND substr(id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND id NOT GLOB '*[^0-9a-f-]*'
+  ),
+  subject_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  archive_id TEXT NOT NULL CHECK (
+    length(archive_id) = 36 AND archive_id = lower(archive_id)
+    AND substr(archive_id, 15, 1) = '7'
+    AND substr(archive_id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND archive_id NOT GLOB '*[^0-9a-f-]*'
+  ),
+  archive_type TEXT NOT NULL CHECK (
+    archive_type = 'secretsauce-portable-configuration'
+  ),
+  schema_version INTEGER NOT NULL CHECK (schema_version = 1),
+  storage_key TEXT NOT NULL UNIQUE CHECK (
+    length(storage_key) = 36 AND storage_key = lower(storage_key)
+    AND substr(storage_key, 15, 1) = '7'
+    AND substr(storage_key, 20, 1) IN ('8', '9', 'a', 'b')
+    AND storage_key NOT GLOB '*[^0-9a-f-]*'
+  ),
+  archive_sha256 TEXT NOT NULL CHECK (
+    length(archive_sha256) = 64
+    AND archive_sha256 = lower(archive_sha256)
+    AND archive_sha256 NOT GLOB '*[^0-9a-f]*'
+  ),
+  archive_bytes INTEGER NOT NULL CHECK (
+    archive_bytes BETWEEN 1 AND 268435456
+  ),
+  state TEXT NOT NULL CHECK (
+    state IN (
+      'validated', 'previewed', 'committing', 'completed', 'failed', 'expired'
+    )
+  ),
+  expires_at INTEGER NOT NULL CHECK (expires_at > created_at),
+  completed_at INTEGER CHECK (
+    completed_at IS NULL OR completed_at >= created_at
+  ),
+  failure_code TEXT CHECK (
+    failure_code IS NULL OR (
+      length(failure_code) BETWEEN 1 AND 64
+      AND failure_code NOT GLOB '*[^a-z0-9_.-]*'
+    )
+  ),
+  version INTEGER NOT NULL DEFAULT 1 CHECK (version > 0),
+  created_at INTEGER NOT NULL CHECK (created_at >= 0),
+  updated_at INTEGER NOT NULL CHECK (updated_at >= created_at),
+  CHECK (
+    (state IN ('validated', 'previewed', 'committing', 'expired')
+      AND completed_at IS NULL)
+    OR (state IN ('completed', 'failed') AND completed_at IS NOT NULL)
+  ),
+  CHECK (
+    (state = 'failed' AND failure_code IS NOT NULL)
+    OR (state <> 'failed' AND failure_code IS NULL)
+  )
+) STRICT;
+
+CREATE INDEX restore_stages_subject_state_idx
+  ON restore_stages (subject_user_id, state, expires_at, id);
+CREATE INDEX restore_stages_expiry_idx
+  ON restore_stages (state, expires_at, id);
+
+CREATE TABLE restore_previews (
+  id TEXT PRIMARY KEY CHECK (
+    length(id) = 36 AND id = lower(id)
+    AND substr(id, 15, 1) = '7'
+    AND substr(id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND id NOT GLOB '*[^0-9a-f-]*'
+  ),
+  stage_id TEXT NOT NULL REFERENCES restore_stages(id) ON DELETE CASCADE,
+  subject_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  archive_sha256 TEXT NOT NULL CHECK (
+    length(archive_sha256) = 64
+    AND archive_sha256 = lower(archive_sha256)
+    AND archive_sha256 NOT GLOB '*[^0-9a-f]*'
+  ),
+  plan_digest TEXT NOT NULL CHECK (
+    length(plan_digest) = 64
+    AND plan_digest = lower(plan_digest)
+    AND plan_digest NOT GLOB '*[^0-9a-f]*'
+  ),
+  secret_disposition TEXT NOT NULL CHECK (
+    secret_disposition IN ('configuration_only', 'encrypted_secrets')
+  ),
+  service_count INTEGER NOT NULL CHECK (service_count BETWEEN 0 AND 10000),
+  destination_count INTEGER NOT NULL CHECK (
+    destination_count BETWEEN 0 AND 10000
+  ),
+  credential_count INTEGER NOT NULL CHECK (
+    credential_count BETWEEN 0 AND 10000
+  ),
+  policy_count INTEGER NOT NULL CHECK (policy_count BETWEEN 0 AND 10000),
+  rule_count INTEGER NOT NULL CHECK (rule_count BETWEEN 0 AND 10000),
+  available_secret_count INTEGER NOT NULL CHECK (
+    available_secret_count BETWEEN 0 AND credential_count
+  ),
+  unavailable_secret_count INTEGER NOT NULL CHECK (
+    unavailable_secret_count BETWEEN 0 AND credential_count
+  ),
+  replacement_count INTEGER NOT NULL CHECK (
+    replacement_count BETWEEN 0 AND 50000
+  ),
+  removal_count INTEGER NOT NULL CHECK (removal_count BETWEEN 0 AND 50000),
+  revoked_api_key_count INTEGER NOT NULL CHECK (
+    revoked_api_key_count BETWEEN 0 AND 100000
+  ),
+  revoked_session_count INTEGER NOT NULL CHECK (
+    revoked_session_count BETWEEN 0 AND 100000
+  ),
+  revoked_oauth_grant_count INTEGER NOT NULL CHECK (
+    revoked_oauth_grant_count BETWEEN 0 AND 100000
+  ),
+  remediation_count INTEGER NOT NULL CHECK (
+    remediation_count BETWEEN 0 AND 50000
+  ),
+  confirmation_phrase TEXT NOT NULL CHECK (
+    length(confirmation_phrase) BETWEEN 44 AND 64
+    AND confirmation_phrase GLOB 'RESTORE *'
+  ),
+  state TEXT NOT NULL CHECK (
+    state IN ('ready', 'claimed', 'completed', 'failed', 'expired')
+  ),
+  expires_at INTEGER NOT NULL CHECK (expires_at > created_at),
+  claimed_at INTEGER CHECK (
+    claimed_at IS NULL OR claimed_at BETWEEN created_at AND expires_at
+  ),
+  completed_at INTEGER CHECK (
+    completed_at IS NULL OR (
+      claimed_at IS NOT NULL AND completed_at >= claimed_at
+    )
+  ),
+  outcome_code TEXT CHECK (
+    outcome_code IS NULL OR (
+      length(outcome_code) BETWEEN 1 AND 64
+      AND outcome_code NOT GLOB '*[^a-z0-9_.-]*'
+    )
+  ),
+  version INTEGER NOT NULL DEFAULT 1 CHECK (version > 0),
+  created_at INTEGER NOT NULL CHECK (created_at >= 0),
+  updated_at INTEGER NOT NULL CHECK (updated_at >= created_at),
+  CHECK (
+    (state = 'ready' AND claimed_at IS NULL AND completed_at IS NULL)
+    OR (state = 'claimed' AND claimed_at IS NOT NULL AND completed_at IS NULL)
+    OR (
+      state IN ('completed', 'failed')
+      AND claimed_at IS NOT NULL AND completed_at IS NOT NULL
+    )
+    OR (state = 'expired' AND completed_at IS NULL)
+  ),
+  CHECK (
+    (state IN ('completed', 'failed') AND outcome_code IS NOT NULL)
+    OR (state NOT IN ('completed', 'failed') AND outcome_code IS NULL)
+  ),
+  CHECK (
+    (secret_disposition = 'configuration_only' AND available_secret_count = 0)
+    OR secret_disposition = 'encrypted_secrets'
+  )
+) STRICT;
+
+CREATE INDEX restore_previews_stage_state_idx
+  ON restore_previews (stage_id, state, expires_at, id);
+CREATE INDEX restore_previews_subject_state_idx
+  ON restore_previews (subject_user_id, state, expires_at, id);
+
+CREATE TABLE restore_remediations (
+  id TEXT PRIMARY KEY CHECK (
+    length(id) = 36 AND id = lower(id)
+    AND substr(id, 15, 1) = '7'
+    AND substr(id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND id NOT GLOB '*[^0-9a-f-]*'
+  ),
+  restore_id TEXT NOT NULL REFERENCES restore_previews(id) ON DELETE CASCADE,
+  service_id TEXT NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+  target_id TEXT,
+  task_kind TEXT NOT NULL CHECK (
+    task_kind IN (
+      'assign_service_admin', 'assign_service_access', 'supply_credential',
+      'assign_enable_policy', 'validate_publish_service', 'missing_archive_secret'
+    )
+  ),
+  state TEXT NOT NULL CHECK (
+    state IN ('open', 'completed', 'dismissed')
+  ),
+  completed_by_user_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+  completed_at INTEGER,
+  dismissed_by_user_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+  dismissed_at INTEGER,
+  justification TEXT CHECK (
+    justification IS NULL OR length(justification) BETWEEN 10 AND 1024
+  ),
+  version INTEGER NOT NULL DEFAULT 1 CHECK (version > 0),
+  created_at INTEGER NOT NULL CHECK (created_at >= 0),
+  updated_at INTEGER NOT NULL CHECK (updated_at >= created_at),
+  CHECK (target_id IS NULL OR (
+    length(target_id) = 36 AND target_id = lower(target_id)
+    AND substr(target_id, 15, 1) = '7'
+    AND substr(target_id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND target_id NOT GLOB '*[^0-9a-f-]*'
+  )),
+  CHECK (
+    (state = 'open' AND completed_by_user_id IS NULL AND completed_at IS NULL
+      AND dismissed_by_user_id IS NULL AND dismissed_at IS NULL
+      AND justification IS NULL)
+    OR (state = 'completed' AND completed_by_user_id IS NOT NULL
+      AND completed_at IS NOT NULL AND dismissed_by_user_id IS NULL
+      AND dismissed_at IS NULL)
+    OR (state = 'dismissed' AND dismissed_by_user_id IS NOT NULL
+      AND dismissed_at IS NOT NULL AND completed_by_user_id IS NULL
+      AND completed_at IS NULL AND justification IS NOT NULL)
+  ),
+  UNIQUE (restore_id, service_id, task_kind, target_id)
+) STRICT;
+
+CREATE INDEX restore_remediations_state_service_idx
+  ON restore_remediations (state, service_id, task_kind, id);
+CREATE INDEX restore_remediations_restore_idx
+  ON restore_remediations (restore_id, state, task_kind, id);
+CREATE UNIQUE INDEX restore_remediations_target_idx
+  ON restore_remediations (restore_id, service_id, task_kind, target_id)
+  WHERE target_id IS NOT NULL;
+CREATE UNIQUE INDEX restore_remediations_service_idx
+  ON restore_remediations (restore_id, service_id, task_kind)
+  WHERE target_id IS NULL;
+
+CREATE TABLE restore_state (
+  singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
+  phase TEXT NOT NULL CHECK (
+    phase IN (
+      'inactive', 'maintenance', 'snapshot_ready', 'vault_applied',
+      'database_committed', 'health_passed', 'rolled_back'
+    )
+  ),
+  operation_id TEXT,
+  started_at INTEGER,
+  recovery_expires_at INTEGER,
+  version INTEGER NOT NULL DEFAULT 1 CHECK (version > 0),
+  created_at INTEGER NOT NULL CHECK (created_at >= 0),
+  updated_at INTEGER NOT NULL CHECK (updated_at >= created_at),
+  CHECK (operation_id IS NULL OR (
+    length(operation_id) = 36 AND operation_id = lower(operation_id)
+    AND substr(operation_id, 15, 1) = '7'
+    AND substr(operation_id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND operation_id NOT GLOB '*[^0-9a-f-]*'
+  )),
+  CHECK (
+    (phase = 'inactive' AND operation_id IS NULL AND started_at IS NULL
+      AND recovery_expires_at IS NULL)
+    OR (phase = 'maintenance' AND operation_id IS NOT NULL
+      AND started_at IS NOT NULL AND recovery_expires_at IS NULL)
+    OR (phase NOT IN ('inactive', 'maintenance') AND operation_id IS NOT NULL
+      AND started_at IS NOT NULL AND recovery_expires_at > started_at)
+  )
+) STRICT;
+
+INSERT INTO restore_state (
+  singleton, phase, operation_id, started_at, recovery_expires_at,
+  version, created_at, updated_at
+) VALUES (1, 'inactive', NULL, NULL, NULL, 1, 0, 0);
+`;
+
 export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [
   {
     version: 1,
@@ -2688,6 +2953,11 @@ export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [
     version: 21,
     name: "portable_backup_export",
     sql: migration0021,
+  },
+  {
+    version: 22,
+    name: "portable_restore_foundation",
+    sql: migration0022,
   },
 ];
 

@@ -26,6 +26,10 @@ export type PersistenceErrorCode =
   | "audit_retention_stale"
   | "dashboard_not_found"
   | "dashboard_stale"
+  | "restore_invalid"
+  | "restore_not_found"
+  | "restore_conflict"
+  | "restore_expired"
   | "persistence_closed";
 
 const messages: Record<PersistenceErrorCode, string> = {
@@ -56,6 +60,10 @@ const messages: Record<PersistenceErrorCode, string> = {
   audit_retention_stale: "Audit retention settings version is stale.",
   dashboard_not_found: "Dashboard record was not found.",
   dashboard_stale: "Dashboard record version is stale.",
+  restore_invalid: "Restore state is invalid.",
+  restore_not_found: "Restore state was not found.",
+  restore_conflict: "Restore state conflicts with the current operation.",
+  restore_expired: "Restore state has expired.",
   persistence_closed: "Persistence owner is closed.",
 };
 

@@ -1,7 +1,10 @@
 import { createHmac } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { UuidV7Generator } from "../src/persistence/uuidV7.js";
-import { VaultCapabilityAuthority } from "../src/vault/capabilities.js";
+import {
+  VaultCapabilityAuthority,
+  VaultResolveCapabilityIssuer,
+} from "../src/vault/capabilities.js";
 
 const now = 1_800_000_000_000;
 const uuid = new UuidV7Generator({ now: () => now, random: () => Buffer.alloc(10, 7) });
@@ -56,6 +59,20 @@ describe("vault single-use capabilities", () => {
     });
     expect(() => createAuthority().consumeResolve(token))
       .toThrowError(expect.objectContaining({ code: "vault_capability_invalid" }));
+  });
+
+  it("lets the gateway mount resolve authority without backup authority", () => {
+    const issuer = new VaultResolveCapabilityIssuer(
+      Buffer.alloc(32, 1),
+      () => now,
+    );
+    const token = issuer.issueResolve(resolveInput);
+
+    expect(createAuthority().consumeResolve(token)).toMatchObject({
+      kind: "resolve",
+      ...resolveInput,
+    });
+    expect("issueBackup" in issuer).toBe(false);
   });
 
   it("rejects wrong signatures, kind changes, non-canonical payloads, excessive TTLs, and expiry", () => {

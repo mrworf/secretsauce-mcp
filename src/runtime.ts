@@ -11,7 +11,7 @@ import { PersistedRuntimeAuthority, type RuntimeAuthority } from "./runtimeAutho
 import { RuntimeInvalidationConsumer } from "./runtimeInvalidation.js";
 import { createDataVaultReadiness } from "./vault/readiness.js";
 import { readVaultKeyFile } from "./vault/keyFile.js";
-import { VaultCapabilityAuthority } from "./vault/capabilities.js";
+import { VaultResolveCapabilityIssuer } from "./vault/capabilities.js";
 import { CapabilityRuntimeVault, type RuntimeVault } from "./runtimeVault.js";
 
 export interface GatewayRuntimeOptions {
@@ -139,10 +139,7 @@ function createDefaultRuntimeVault(
     resolveKey = readVaultKeyFile(resolveKeyFile);
     return new CapabilityRuntimeVault(
       readiness.dataClient,
-      new VaultCapabilityAuthority({
-        resolveKey,
-        backupKey: resolveKey,
-      }),
+      new VaultResolveCapabilityIssuer(resolveKey),
     );
   } catch {
     readiness.close();

@@ -1,6 +1,8 @@
 import { createHash } from "node:crypto";
 import type { DataVaultClient } from "./vault/client.js";
-import type { VaultCapabilityAuthority } from "./vault/capabilities.js";
+import type {
+  ResolveCapabilityInput,
+} from "./vault/capabilities.js";
 import type { VaultCredentialBinding } from "./vault/recordStore.js";
 
 export interface RuntimeVaultResolveInput {
@@ -27,10 +29,14 @@ export interface RuntimeVault {
   close(): void;
 }
 
+export interface RuntimeResolveCapabilityIssuer {
+  issueResolve(input: ResolveCapabilityInput, ttlMs?: number): string;
+}
+
 export class CapabilityRuntimeVault implements RuntimeVault {
   constructor(
     private readonly client: DataVaultClient,
-    private readonly authority: VaultCapabilityAuthority,
+    private readonly authority: RuntimeResolveCapabilityIssuer,
   ) {}
 
   async readiness(): Promise<"ready" | "unavailable"> {

@@ -136,6 +136,30 @@ export class VaultCapabilityAuthority {
   }
 }
 
+export class VaultResolveCapabilityIssuer {
+  readonly #resolveKey: Buffer;
+  readonly #now: () => number;
+
+  constructor(resolveKey: Uint8Array, now: () => number = Date.now) {
+    this.#resolveKey = validatedKey(resolveKey);
+    this.#now = now;
+  }
+
+  issueResolve(input: ResolveCapabilityInput, ttlMs = RESOLVE_TTL_MS): string {
+    const issuedAt = this.#now();
+    validateTtl(ttlMs, RESOLVE_TTL_MS);
+    return sign({
+      version: 1,
+      kind: "resolve",
+      capabilityId: randomUUID(),
+      issuedAt,
+      expiresAt: issuedAt + ttlMs,
+      caller: "data_plane",
+      ...input,
+    }, this.#resolveKey, resolveSchema);
+  }
+}
+
 function sign<T>(payload: T, key: Buffer, schema: z.ZodType<T>): string {
   const parsed = schema.safeParse(payload);
   if (!parsed.success) throw vaultError("vault_capability_invalid");

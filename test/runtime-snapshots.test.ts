@@ -14,7 +14,10 @@ import {
   ServiceManagementService,
   ServiceRelationshipRepository,
 } from "../src/serviceManagement.js";
-import { RuntimeActivationRepository } from "../src/runtimeSnapshots.js";
+import {
+  RuntimeActivationRepository,
+  type RuntimeServiceSnapshot,
+} from "../src/runtimeSnapshots.js";
 import {
   runRuntimeActivationCli,
   type RuntimeActivationIo,
@@ -483,6 +486,72 @@ describe("persisted runtime discovery", () => {
     })).resolves.toMatchObject({
       event: { dispatched_at: expect.any(Number), attempts: 1 },
       checkpoint: { last_event_id: invalidationId },
+    });
+  });
+
+  it("refreshes active snapshots before the next authorization read", async () => {
+    const fixture = await runtimeFixture("next-read");
+    const published = await fixture.publish("next-read-api", fixture.user.id);
+    await new RuntimeActivationRepository(fixture.worker, () => NOW).activate({
+      correlationId: CORRELATION,
+      osActor: "test-operator",
+    });
+    const broker = new TokenBroker(referenceConfig(), () => NOW);
+    const invalidations = new RuntimeInvalidationConsumer(
+      fixture.worker,
+      broker,
+      () => NOW,
+    );
+    const authority = new PersistedRuntimeAuthority(
+      fixture.worker,
+      () => invalidations.poll(),
+    );
+    const auth = {
+      subject: fixture.user.id,
+      scopes: ["gateway.read"],
+      mode: "oauth" as const,
+    };
+    await expect(authority.listServices(auth)).resolves.toHaveLength(1);
+    await fixture.worker.execute({
+      run: (database) => database.withOperationalTransaction((transaction) => {
+        transaction.run(
+          "DELETE FROM service_principal_assignments WHERE service_id = ?",
+          [published.id],
+        );
+        transaction.run(`
+          UPDATE service_assignment_states
+          SET authorization_generation = 1, version = version + 1,
+            updated_at = ?
+          WHERE service_id = ?
+        `, [NOW, published.id]);
+        transaction.run(`
+          INSERT INTO assignment_invalidation_events (
+            id, service_id, affected_user_id, authorization_generation,
+            reason, created_at, dispatched_at, attempts
+          ) VALUES (?, ?, ?, 1, 'service_selector', ?, NULL, 0)
+        `, [
+          "018f1f2e-7b3c-7a10-8000-000000000098",
+          published.id,
+          fixture.user.id,
+          NOW,
+        ]);
+      }),
+    });
+
+    await expect(authority.listServices(auth)).resolves.toEqual([]);
+    await expect(fixture.worker.execute({
+      run: (database) => database.read((query) => {
+        const row = query.get<{ document_json: string }>(`
+          SELECT snapshots.document_json
+          FROM runtime_active_services active
+          JOIN runtime_service_snapshots snapshots
+            ON snapshots.id = active.snapshot_id
+          WHERE active.service_id = ?
+        `, [published.id])!;
+        return JSON.parse(row.document_json) as RuntimeServiceSnapshot;
+      }),
+    })).resolves.toMatchObject({
+      serviceAuthorizationGeneration: 1,
     });
   });
 });

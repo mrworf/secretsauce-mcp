@@ -37,23 +37,41 @@ export function createGatewayServer(
     if (request.method === "GET" && request.url === "/health") {
       logger.debug("http.health", { method: request.method, path: "/health", service_count: Object.keys(config.services).length });
       const persistenceReadiness = runtime.persistence?.readiness;
+      const persistedRuntimeReadiness = config.runtime?.authority === "database"
+        ? await runtime.runtimeAuthority?.readiness()
+          ?? { activation: "unavailable" as const, serviceCount: 0 }
+        : undefined;
+      const vaultReadiness = config.runtime?.authority === "database"
+        ? await runtime.runtimeVault?.readiness() ?? "unavailable"
+        : undefined;
       const persistenceDegraded = persistenceReadiness !== undefined && (
         persistenceReadiness.database !== "ready" ||
         persistenceReadiness.schema !== "ready" ||
         persistenceReadiness.administrativeAudit !== "ready"
       );
-      const degraded = auditSink.degraded || persistenceDegraded;
+      const degraded = auditSink.degraded
+        || persistenceDegraded
+        || persistedRuntimeReadiness?.activation !== undefined
+          && persistedRuntimeReadiness.activation !== "ready"
+        || vaultReadiness !== undefined && vaultReadiness !== "ready";
       const checks = {
         ...(auditSink.degraded ? { audit: "degraded" as const } : {}),
         ...(persistenceReadiness === undefined ? {} : {
           database: persistenceReadiness.database,
           schema: persistenceReadiness.schema,
-          administrative_audit: persistenceReadiness.administrativeAudit,
+          ...(config.runtime?.authority === "database"
+            ? {}
+            : { administrative_audit: persistenceReadiness.administrativeAudit }),
         }),
+        ...(persistedRuntimeReadiness === undefined
+          ? {}
+          : { runtime_activation: persistedRuntimeReadiness.activation }),
+        ...(vaultReadiness === undefined ? {} : { vault: vaultReadiness }),
       };
       writeJson(response, degraded ? 503 : 200, {
         status: degraded ? "not_ready" : "ready",
-        service_count: Object.keys(config.services).length,
+        service_count: persistedRuntimeReadiness?.serviceCount
+          ?? Object.keys(config.services).length,
         ...(Object.keys(checks).length === 0 ? {} : { checks }),
       });
       return;
@@ -99,6 +117,9 @@ export function createGatewayServer(
           ...(runtime.runtimeAuthority === undefined
             ? {}
             : { runtimeAuthority: runtime.runtimeAuthority }),
+          ...(runtime.runtimeVault === undefined
+            ? {}
+            : { runtimeVault: runtime.runtimeVault }),
         });
       } catch (error) {
         if (error instanceof RequestBodyError) {

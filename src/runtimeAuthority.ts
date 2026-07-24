@@ -49,6 +49,10 @@ export interface RuntimeReferenceGrant {
 }
 
 export interface RuntimeAuthority {
+  readiness(): Promise<{
+    activation: "ready" | "inactive" | "unavailable";
+    serviceCount: number;
+  }>;
   listServices(auth: AuthContext): Promise<ServiceSummary[]>;
   describeServicePolicy(
     auth: AuthContext,
@@ -71,9 +75,39 @@ export interface RuntimeAuthority {
 }
 
 export class PersistedRuntimeAuthority implements RuntimeAuthority {
-  constructor(private readonly owner: PersistenceOwner) {}
+  constructor(
+    private readonly owner: PersistenceOwner,
+    private readonly beforeRead?: () => Promise<unknown>,
+  ) {}
+
+  async readiness(): Promise<{
+    activation: "ready" | "inactive" | "unavailable";
+    serviceCount: number;
+  }> {
+    try {
+      return await this.owner.execute({
+        run: (database) => database.read((query) => {
+          const activation = query.get<{ state: string }>(
+            "SELECT state FROM runtime_activation WHERE singleton = 1",
+          );
+          const serviceCount = query.get<{ count: number }>(
+            "SELECT count(*) AS count FROM runtime_active_services",
+          )?.count ?? 0;
+          return {
+            activation: activation?.state === "active" && serviceCount > 0
+              ? "ready" as const
+              : "inactive" as const,
+            serviceCount,
+          };
+        }),
+      });
+    } catch {
+      return { activation: "unavailable", serviceCount: 0 };
+    }
+  }
 
   async listServices(auth: AuthContext): Promise<ServiceSummary[]> {
+    await this.beforeRead?.();
     const result = await this.owner.execute({
       run: (database) => database.read((query) => {
         if (!activationReady(query.get<{ state: string }>(
@@ -121,6 +155,7 @@ export class PersistedRuntimeAuthority implements RuntimeAuthority {
     auth: AuthContext,
     service: string,
   ): Promise<PersistedRuntimeServiceView> {
+    await this.beforeRead?.();
     const result = await this.owner.execute({
       run: (database) => database.read((query) => {
         if (!activationReady(query.get<{ state: string }>(

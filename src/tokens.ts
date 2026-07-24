@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from "node:async_hooks";
 import { createHash, createHmac, randomBytes, randomUUID } from "node:crypto";
 import { GatewayError } from "./errors.js";
 import { GATEWAY_ACCESS_ID, GATEWAY_ACCESS_USAGE_HINT, getCredential, getService } from "./registry.js";
@@ -86,6 +87,11 @@ export class TokenBroker {
   private readonly responseSecretsById = new Map<string, ResponseSecretTokenRecord>();
   private readonly tokenValuesById = new Map<string, string>();
   private readonly secretIndexKey = randomBytes(32);
+  private readonly runtimeSecrets = new AsyncLocalStorage<{
+    subject: string;
+    service: string;
+    secrets: ReadonlyMap<string, string>;
+  }>();
 
   constructor(
     private readonly config: GatewayConfig,
@@ -325,10 +331,49 @@ export class TokenBroker {
   }
 
   findConfiguredTokenForSecret(auth: AuthContext, service: string, secret: string): ConfiguredTokenMatch | undefined {
+    const runtime = this.runtimeSecrets.getStore();
+    if (
+      runtime !== undefined
+      && runtime.subject === auth.subject
+      && runtime.service === service
+    ) {
+      const credentialIds = new Set(
+        [...runtime.secrets.entries()]
+          .filter(([, candidate]) => candidate === secret)
+          .map(([credentialId]) => credentialId),
+      );
+      const match = this.latestConfiguredToken(
+        auth.subject,
+        service,
+        credentialIds,
+      );
+      if (match !== undefined) return match;
+    }
     const configured = this.config.services[service];
     if (!configured) return undefined;
     const credentialIds = new Set(configured.credentials.filter((credential) => credential.secret === secret).map((credential) => credential.id));
     if (credentialIds.size === 0) return undefined;
+    return this.latestConfiguredToken(auth.subject, service, credentialIds);
+  }
+
+  withRuntimeSecrets<T>(
+    auth: AuthContext,
+    service: string,
+    secrets: ReadonlyMap<string, string>,
+    callback: () => T | Promise<T>,
+  ): T | Promise<T> {
+    return this.runtimeSecrets.run({
+      subject: auth.subject,
+      service,
+      secrets,
+    }, callback);
+  }
+
+  private latestConfiguredToken(
+    subject: string,
+    service: string,
+    credentialIds: ReadonlySet<string>,
+  ): ConfiguredTokenMatch | undefined {
     const matches: TokenRecord[] = [];
     for (const [hash, record] of this.recordsByHash) {
       if (this.isExpired(record)) {
@@ -336,7 +381,7 @@ export class TokenBroker {
         this.tokenValuesById.delete(record.id);
         continue;
       }
-      if (record.subject === auth.subject && record.service === service
+      if (record.subject === subject && record.service === service
         && record.kind === "credential" && record.credentialId !== undefined && credentialIds.has(record.credentialId)) matches.push(record);
     }
     matches.sort((left, right) => right.lastUsedAt - left.lastUsedAt || right.issuedAt - left.issuedAt);

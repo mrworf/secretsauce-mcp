@@ -1,5 +1,7 @@
 import type { PersistenceOwner } from "./persistence/worker.js";
 import type { TokenBroker } from "./tokens.js";
+import { UuidV7Generator } from "./persistence/uuidV7.js";
+import { persistRuntimeSnapshot } from "./runtimeSnapshots.js";
 
 const INVALIDATION_BATCH = 200;
 
@@ -20,11 +22,17 @@ interface InvalidationEvent {
 
 export class RuntimeInvalidationConsumer {
   #polling: Promise<number> | undefined;
+  readonly #nextUuid: () => string;
 
   constructor(
     private readonly owner: PersistenceOwner,
     private readonly broker: TokenBroker,
-  ) {}
+    now: () => number = Date.now,
+    uuid?: () => string,
+  ) {
+    const generator = new UuidV7Generator({ now });
+    this.#nextUuid = uuid ?? (() => generator.next());
+  }
 
   poll(): Promise<number> {
     this.#polling ??= this.pollOnce().finally(() => {
@@ -152,6 +160,30 @@ export class RuntimeInvalidationConsumer {
     );
     await this.owner.execute({
       run: (database) => database.withOperationalTransaction((transaction) => {
+        const active = transaction.get<{ state: string }>(
+          "SELECT state FROM runtime_activation WHERE singleton = 1",
+        )?.state === "active";
+        const refreshServices = new Set(events.flatMap((event) =>
+          event.stream === "credential"
+          || event.stream === "policy"
+          || event.table === "assignment_invalidation_events"
+            ? event.serviceId === undefined ? [] : [event.serviceId]
+            : []));
+        if (active) {
+          for (const serviceId of refreshServices) {
+            const service = transaction.get<{ lifecycle: string }>(
+              "SELECT lifecycle FROM services WHERE id = ?",
+              [serviceId],
+            );
+            if (service?.lifecycle === "published") {
+              persistRuntimeSnapshot(
+                transaction,
+                serviceId,
+                this.#nextUuid(),
+              );
+            }
+          }
+        }
         for (const event of events) {
           transaction.run(`
             UPDATE ${event.table}

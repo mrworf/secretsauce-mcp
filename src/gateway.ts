@@ -23,6 +23,20 @@ import { enforceCredentialHeaderUsage } from "./headerEnforcement.js";
 import { acquireServiceRequest } from "./serviceRequestLimiter.js";
 import { createRequestId } from "./requestId.js";
 import { createRequestDependencies, type RequestDependencies } from "./requestDependencies.js";
+import { evaluatePolicySnapshot } from "./policy.js";
+import { resolveDestinationTarget } from "./urlValidation.js";
+import type {
+  CredentialConfig,
+  HostMatcherConfig,
+  PolicyRuleConfig,
+  ServiceConfig,
+} from "./types.js";
+import type {
+  RuntimeSelector,
+  RuntimeServiceSnapshot,
+} from "./runtimeSnapshots.js";
+import { ServiceRequestLimiter } from "./serviceRequestLimiter.js";
+import { canonicalJson } from "./vault/canonicalJson.js";
 
 export interface ServiceRequestInput {
   service: string;
@@ -69,6 +83,14 @@ export async function executeServiceRequest(
   input: ServiceRequestInput,
   dependencies: RequestDependencies = createRequestDependencies(config),
 ): Promise<ServiceResponse> {
+  if (dependencies.runtimeAuthority !== undefined) {
+    return executePersistedServiceRequest(
+      config,
+      auth,
+      input,
+      dependencies,
+    );
+  }
   const logger = createLogger(config.logging);
   validateRequestInput(input);
   const service = getService(config, input.service, auth);
@@ -366,6 +388,379 @@ export async function executeServiceRequest(
   } finally {
     releaseCapacity();
   }
+}
+
+async function executePersistedServiceRequest(
+  config: GatewayConfig,
+  auth: AuthContext,
+  input: ServiceRequestInput,
+  dependencies: RequestDependencies,
+): Promise<ServiceResponse> {
+  validateRequestInput(input);
+  const authority = dependencies.runtimeAuthority!;
+  const view = await authority.serviceView(auth, input.service);
+  const unresolvedService = runtimeServiceConfig(view.snapshot, auth.subject);
+  const target = resolveDestinationTarget(
+    unresolvedService,
+    input.destination,
+    {
+      ...(input.path === undefined ? {} : { path: input.path }),
+      ...(input.url === undefined ? {} : { url: input.url }),
+    },
+  );
+  const tokenTarget = {
+    service: view.snapshot.service.slug,
+    destination: target.destination.id,
+  };
+  const broker = dependencies.capabilities.tokenBroker;
+  const records: TokenRecord[] = [];
+  if (view.snapshot.credentials.length === 0) {
+    if (
+      typeof input.service_reference !== "string"
+      || input.service_reference.length === 0
+    ) {
+      throw new GatewayError(
+        "reference_invalid",
+        "service_reference is required for this service.",
+      );
+    }
+    const record = broker.preflightTokenUse(
+      auth,
+      tokenTarget,
+      input.service_reference,
+    );
+    if (record.kind !== "service") {
+      throw new GatewayError(
+        "reference_invalid",
+        "Gateway reference is not a service reference.",
+      );
+    }
+    records.push(record);
+  } else if (input.service_reference !== undefined) {
+    throw new GatewayError(
+      "reference_invalid",
+      "service_reference is only valid for gateway access references.",
+    );
+  }
+  for (const token of configuredReferences([
+    input.headers,
+    input.query,
+    input.body,
+  ])) {
+    const record = broker.preflightTokenUse(auth, tokenTarget, token);
+    if (record.kind !== "credential" || record.credentialId === undefined) {
+      throw new GatewayError(
+        "reference_invalid",
+        "Service references cannot be substituted into downstream requests.",
+      );
+    }
+    records.push(record);
+  }
+  const uniqueRecords = [...new Map(records.map((record) => [record.id, record])).values()];
+  const consistentView = await authority.validateReferences(
+    auth,
+    view.snapshot.service.slug,
+    target.destination.id,
+    uniqueRecords,
+  );
+  const credentialIds = [...new Set(uniqueRecords.flatMap((record) =>
+    record.credentialId === undefined ? [] : [record.credentialId]))];
+  const explanation = evaluateRuntimePolicy(
+    consistentView.snapshot,
+    consistentView.subject.id,
+    consistentView.subject.groupIds,
+    input.method,
+    target.url.hostname,
+    target.methodPath,
+    credentialIds,
+  );
+  if (!explanation.allowed) {
+    const decisive = explanation.boundaries.find(({ allowed }) => !allowed);
+    const denial = dependencies.capabilities.denialStore.record({
+      subject: auth.subject,
+      reason: "Denied by persisted service or credential policy.",
+      ...(decisive?.decisiveRuleId === undefined
+        ? {}
+        : { matched_rule: decisive.decisiveRuleId }),
+      policy_mode: decisive?.mode ?? "deny",
+      suggestion: "Use an allowed request or ask the user to update service policy.",
+    });
+    throw new GatewayError(
+      "policy_denied",
+      "Denied by persisted service or credential policy.",
+      denial.request_id,
+    );
+  }
+  const release = acquireServiceRequest(
+    dependencies.capabilities.serviceRequestLimiter,
+    auth.subject,
+    consistentView.snapshot.service.id,
+  );
+  try {
+    for (const record of uniqueRecords) {
+      broker.consumePreflightedToken(record);
+    }
+    const credentials = credentialIds.map((credentialId) => {
+      const credential = consistentView.snapshot.credentials.find(
+        ({ id }) => id === credentialId,
+      );
+      if (
+        credential === undefined
+        || credential.locator === undefined
+        || credential.generation === undefined
+      ) {
+        throw new GatewayError(
+          "reference_invalid",
+          "Gateway credential reference is unavailable.",
+        );
+      }
+      return credential;
+    });
+    if (credentials.length > 0 && dependencies.runtimeVault === undefined) {
+      throw new GatewayError("config_error", "Runtime vault is unavailable.");
+    }
+    const requestId = createRequestId();
+    const operationDigest = createHash("sha256")
+      .update(canonicalJson({
+        subjectId: auth.subject,
+        serviceId: consistentView.snapshot.service.id,
+        destinationId: target.destination.id,
+        method: input.method.toUpperCase(),
+        pathname: target.methodPath,
+        credentialIds,
+      }), "utf8")
+      .digest("hex");
+    const resolved = new Map<string, string>();
+    const execute = async (index: number): Promise<ServiceResponse> => {
+      const credential = credentials[index];
+      if (credential === undefined) {
+        const service = runtimeServiceConfig(
+          consistentView.snapshot,
+          auth.subject,
+          resolved,
+        );
+        const nestedConfig: GatewayConfig = {
+          ...config,
+          runtime: { authority: "yaml" },
+          services: { [service.id]: service },
+        };
+        const nestedDependencies: RequestDependencies = {
+          auditSink: dependencies.auditSink,
+          secretRuntime: dependencies.secretRuntime,
+          capabilities: {
+            ...dependencies.capabilities,
+            serviceRequestLimiter: new ServiceRequestLimiter(
+              Number.MAX_SAFE_INTEGER,
+              Number.MAX_SAFE_INTEGER,
+              Number.MAX_SAFE_INTEGER,
+            ),
+          },
+        };
+        return await broker.withRuntimeSecrets(
+          auth,
+          service.id,
+          resolved,
+          () => executeServiceRequest(
+            nestedConfig,
+            auth,
+            { ...input, service: service.id, destination: target.destination.id },
+            nestedDependencies,
+          ),
+        );
+      }
+      return dependencies.runtimeVault!.resolve({
+        subjectId: consistentView.subject.id,
+        grantEpoch: uniqueRecords[0]?.globalReferenceEpoch ?? 0,
+        securityEpoch: consistentView.subject.securityEpoch,
+        serviceId: consistentView.snapshot.service.id,
+        destinationId: runtimeDestinationId(
+          consistentView.snapshot,
+          target.destination.id,
+        ),
+        credentialId: credential.id,
+        locator: credential.locator!,
+        generation: credential.generation!,
+        method: input.method.toUpperCase() as
+          "DELETE" | "GET" | "HEAD" | "OPTIONS" | "PATCH" | "POST" | "PUT",
+        canonicalPath: target.methodPath,
+        requestId,
+        operationDigest,
+      }, async (secret) => {
+        resolved.set(credential.id, secret.toString("utf8"));
+        try {
+          return await execute(index + 1);
+        } finally {
+          resolved.delete(credential.id);
+        }
+      });
+    };
+    try {
+      return await execute(0);
+    } catch (error) {
+      if (error instanceof GatewayError) throw error;
+      throw new GatewayError("downstream_error", "Runtime vault operation failed.");
+    }
+  } finally {
+    release();
+  }
+}
+
+function configuredReferences(values: unknown[]): string[] {
+  const references = new Set<string>();
+  const visit = (value: unknown): void => {
+    if (typeof value === "string") {
+      for (const match of value.matchAll(/gref_[A-Za-z0-9_-]+/g)) {
+        references.add(match[0]);
+      }
+      return;
+    }
+    if (Array.isArray(value)) {
+      for (const item of value) visit(item);
+      return;
+    }
+    if (value && typeof value === "object") {
+      for (const [key, item] of Object.entries(value)) {
+        visit(key);
+        visit(item);
+      }
+    }
+  };
+  for (const value of values) visit(value);
+  return [...references];
+}
+
+function evaluateRuntimePolicy(
+  snapshot: RuntimeServiceSnapshot,
+  subjectId: string,
+  groupIds: string[],
+  method: string,
+  host: string,
+  pathname: string,
+  credentialIds: string[],
+) {
+  const servicePolicy = snapshot.policies.find(
+    ({ credentialId }) => credentialId === undefined,
+  );
+  const boundary = (
+    policy: RuntimeServiceSnapshot["policies"][number] | undefined,
+    kind: "service" | "credential",
+    id: string,
+  ) => ({
+    id: policy?.id ?? id,
+    kind,
+    mode: policy?.mode ?? "deny" as const,
+    assignmentAllowed: true,
+    rules: (policy?.rules ?? []).map((rule) => ({
+      id: rule.id,
+      effect: rule.effect,
+      priority: rule.priority,
+      enabled: rule.enabled,
+      methods: rule.methods,
+      hosts: rule.hosts as import("./policyMatchers.js").PolicyHostMatcher[],
+      paths: rule.paths as import("./policyMatchers.js").PolicyPathMatcher[],
+      selector: policySelector(rule.selector),
+      ...(rule.reason === undefined ? {} : { reason: rule.reason }),
+    })),
+  });
+  return evaluatePolicySnapshot({
+    subjectId,
+    groupIds,
+    method,
+    host,
+    pathname,
+    service: boundary(servicePolicy, "service", snapshot.service.id),
+    credentials: credentialIds.map((credentialId) => boundary(
+      snapshot.policies.find((policy) => policy.credentialId === credentialId),
+      "credential",
+      credentialId,
+    )),
+  });
+}
+
+function policySelector(selector: RuntimeSelector | undefined) {
+  if (selector?.kind === "all") return { kind: "all" as const };
+  return {
+    kind: "principals" as const,
+    groupIds: selector?.groupIds ?? [],
+    userIds: selector?.userIds ?? [],
+  };
+}
+
+function runtimeServiceConfig(
+  snapshot: RuntimeServiceSnapshot,
+  subject: string,
+  secrets: ReadonlyMap<string, string> = new Map(),
+): ServiceConfig {
+  return {
+    id: snapshot.service.slug,
+    type: "http",
+    name: snapshot.service.name,
+    ...(snapshot.service.description === undefined
+      ? {}
+      : { description: snapshot.service.description }),
+    ...(snapshot.service.documentationUrl === undefined
+      ? {}
+      : { apiDocsUrl: snapshot.service.documentationUrl }),
+    destinations: snapshot.destinations.map((destination) => ({
+      id: destination.slug,
+      baseUrl: destination.baseUrl,
+      schemes: [...destination.schemes],
+      hosts: destination.hosts.map(runtimeHostMatcher),
+      ports: [...destination.ports],
+      tls: { verify: destination.tlsVerify },
+    })),
+    credentials: snapshot.credentials.map((credential): CredentialConfig => ({
+      id: credential.id,
+      usage: {
+        kind: credential.usage.kind,
+        name: credential.usage.name,
+        ...(credential.usage.prefix === undefined
+          ? {}
+          : { prefix: credential.usage.prefix }),
+        ...(credential.usage.suffix === undefined
+          ? {}
+          : { suffix: credential.usage.suffix }),
+        enforce: credential.usage.enforceHeaderOwnership,
+      },
+      source: { kind: "env", name: "RUNTIME_VAULT" },
+      secret: secrets.get(credential.id) ?? "",
+    })),
+    tls: { verify: true },
+    access: { users: [subject] },
+    policy: { mode: "allow", rules: [] },
+  };
+}
+
+function runtimeHostMatcher(value: unknown): HostMatcherConfig {
+  if (!value || typeof value !== "object") {
+    throw new GatewayError("config_error", "Runtime destination matcher is invalid.");
+  }
+  const matcher = value as { type?: unknown; value?: unknown };
+  if (
+    (matcher.type !== "exact"
+      && matcher.type !== "suffix"
+      && matcher.type !== "regex")
+    || typeof matcher.value !== "string"
+  ) {
+    throw new GatewayError("config_error", "Runtime destination matcher is invalid.");
+  }
+  if (matcher.type === "regex") {
+    return { type: "regex", value: matcher.value, regex: new RegExp(matcher.value) };
+  }
+  return { type: matcher.type, value: matcher.value };
+}
+
+function runtimeDestinationId(
+  snapshot: RuntimeServiceSnapshot,
+  slug: string,
+): string {
+  const destination = snapshot.destinations.find(
+    (candidate) => candidate.slug === slug,
+  );
+  if (destination === undefined) {
+    throw new GatewayError("config_error", "Runtime destination is unavailable.");
+  }
+  return destination.id;
 }
 
 function validateRequestInput(input: ServiceRequestInput): void {

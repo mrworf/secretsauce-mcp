@@ -37,6 +37,7 @@ export class ApiKeyError extends Error {
       | "invalid_request"
       | "forbidden"
       | "not_found"
+      | "stale"
       | "conflict"
       | "rate_limited"
       | "unavailable",
@@ -72,6 +73,38 @@ export interface ApiKeyView {
   updatedAt: number;
   lastUsedAt?: number;
   revokedAt?: number;
+}
+
+export interface ApiKeyActivityView {
+  id: string;
+  apiKeyId: string;
+  nickname: string;
+  lastFour: string;
+  apiRole: ApiKeyRole;
+  serviceId?: string;
+  action: string;
+  outcome: "allow" | "deny" | "error";
+  targetType: string;
+  targetId?: string;
+  requestId: string;
+  failureCode?: string;
+  occurredAt: number;
+}
+
+interface ApiKeyActivityRow {
+  id: string;
+  api_key_id: string;
+  nickname_snapshot: string;
+  last_four_snapshot: string;
+  api_role_snapshot: ApiKeyRole;
+  service_id_snapshot: string | null;
+  action: string;
+  outcome: "allow" | "deny" | "error";
+  target_type: string;
+  target_id: string | null;
+  request_id: string;
+  failure_code: string | null;
+  occurred_at: number;
 }
 
 interface ApiKeyRow {
@@ -212,10 +245,16 @@ export class ApiKeyVerifierPool {
 }
 
 export class ApiKeyRepository {
+  readonly #uuid: () => string;
+
   constructor(
     private readonly owner: PersistenceOwner,
     private readonly now: () => number = Date.now,
-  ) {}
+    uuid?: () => string,
+  ) {
+    const generator = new UuidV7Generator({ now });
+    this.#uuid = uuid ?? (() => generator.next());
+  }
 
   async create(input: {
     actor: ControlAuthenticationContext;
@@ -257,6 +296,14 @@ export class ApiKeyRepository {
             now,
           ]);
           const row = requiredRow(transaction, input.id);
+          insertActivity(transaction, row, {
+            id: this.#uuid(),
+            action: "api_keys.create",
+            outcome: "allow",
+            targetType: "api_key_metadata",
+            targetId: input.id,
+            requestId: input.correlationId,
+          });
           return {
             value: projectApiKey(row, now),
             auditInput: keyAudit(input, expiresAt),
@@ -278,6 +325,388 @@ export class ApiKeyRepository {
             throw new PersistenceError("identity_not_found");
           }
           return projectApiKey(row, safeNow(this.now));
+        }),
+      });
+    } catch (error) {
+      throw mapApiKeyError(error);
+    }
+  }
+
+  async list(input: {
+    actor: ControlAuthenticationContext;
+    limit: number;
+    role?: ApiKeyRole;
+    status?: ApiKeyStatus;
+    serviceId?: string;
+    q?: string;
+    lastCreatedAt?: number;
+    lastId?: string;
+  }): Promise<{ apiKeys: ApiKeyView[]; last?: { createdAt: number; id: string } }> {
+    validateListInput(input);
+    try {
+      return await this.owner.execute({
+        run: (database) => database.read((query) => {
+          const scope = browserMetadataScope(query, input.actor);
+          const clauses: string[] = [];
+          const parameters: Array<string | number> = [];
+          if (scope.role === "admin") {
+            clauses.push(`k.api_role = 'service' AND EXISTS (
+              SELECT 1 FROM service_admins sa
+              WHERE sa.user_id = ? AND sa.service_id = k.service_id
+            )`);
+            parameters.push(input.actor.principalId);
+          }
+          if (input.role !== undefined) {
+            clauses.push("k.api_role = ?");
+            parameters.push(input.role);
+          }
+          if (input.status !== undefined) {
+            if (input.status === "expired") {
+              clauses.push("k.status <> 'revoked' AND k.expires_at IS NOT NULL AND k.expires_at <= ?");
+              parameters.push(safeNow(this.now));
+            } else if (input.status === "active") {
+              clauses.push("k.status = 'active' AND (k.expires_at IS NULL OR k.expires_at > ?)");
+              parameters.push(safeNow(this.now));
+            } else {
+              clauses.push("k.status = 'revoked'");
+            }
+          }
+          if (input.serviceId !== undefined) {
+            clauses.push("k.service_id = ?");
+            parameters.push(input.serviceId);
+          }
+          if (input.q !== undefined) {
+            clauses.push("lower(k.nickname) LIKE ? ESCAPE '\\'");
+            parameters.push(`%${escapeLike(input.q.toLocaleLowerCase("und"))}%`);
+          }
+          if (input.lastCreatedAt !== undefined && input.lastId !== undefined) {
+            clauses.push("(k.created_at < ? OR (k.created_at = ? AND k.id < ?))");
+            parameters.push(input.lastCreatedAt, input.lastCreatedAt, input.lastId);
+          }
+          parameters.push(input.limit + 1);
+          const rows = query.all<ApiKeyRow>(`
+            SELECT k.* FROM api_keys k
+            ${clauses.length === 0 ? "" : `WHERE ${clauses.join(" AND ")}`}
+            ORDER BY k.created_at DESC, k.id DESC
+            LIMIT ?
+          `, parameters);
+          const page = rows.slice(0, input.limit);
+          const last = rows.length > input.limit ? page.at(-1) : undefined;
+          const now = safeNow(this.now);
+          return {
+            apiKeys: page.map((row) => projectApiKey(row, now)),
+            ...(last === undefined
+              ? {}
+              : { last: { createdAt: last.created_at, id: last.id } }),
+          };
+        }),
+      });
+    } catch (error) {
+      throw mapApiKeyError(error);
+    }
+  }
+
+  async update(input: {
+    actor: ControlAuthenticationContext;
+    id: string;
+    expectedVersion: number;
+    nickname?: string;
+    expiresAt?: number;
+    correlationId: string;
+  }): Promise<ApiKeyView> {
+    if (
+      !isUuidV7(input.id) ||
+      !Number.isSafeInteger(input.expectedVersion) ||
+      input.expectedVersion < 1 ||
+      (input.nickname === undefined && input.expiresAt === undefined) ||
+      (input.nickname !== undefined && normalizeNickname(input.nickname) !== input.nickname) ||
+      (input.expiresAt !== undefined &&
+        (!Number.isSafeInteger(input.expiresAt) || input.expiresAt < 0))
+    ) throw new ApiKeyError("invalid_request");
+    try {
+      return await this.owner.execute({
+        run: (database) => database.withGeneratedAdministrativeAudit((transaction) => {
+          const row = requiredManagedRow(transaction, input.id, input.actor);
+          const now = transaction.timestamp();
+          if (row.version !== input.expectedVersion) throw new PersistenceError("identity_stale");
+          if (row.status !== "active" || (row.expires_at !== null && row.expires_at <= now)) {
+            throw new PersistenceError("identity_conflict");
+          }
+          if (
+            input.expiresAt !== undefined &&
+            (
+              row.expiration_policy !== "timestamp" ||
+              row.expires_at === null ||
+              input.expiresAt <= now ||
+              input.expiresAt >= row.expires_at
+            )
+          ) {
+            throw new PersistenceError("identity_conflict");
+          }
+          const changes: Record<string, string | number | null> = {};
+          if (input.nickname !== undefined && input.nickname !== row.nickname) {
+            changes.nickname = input.nickname;
+          }
+          if (input.expiresAt !== undefined) changes.expires_at = input.expiresAt;
+          if (Object.keys(changes).length === 0) throw new PersistenceError("identity_conflict");
+          const result = transaction.optimisticUpdate(
+            "api_keys",
+            row.id,
+            input.expectedVersion,
+            changes,
+          );
+          if (result.status !== "updated") throw new PersistenceError("identity_stale");
+          const updated = requiredRow(transaction, row.id);
+          insertActivity(transaction, updated, {
+            id: this.#uuid(),
+            action: "api_keys.update",
+            outcome: "allow",
+            targetType: "api_key_metadata",
+            targetId: row.id,
+            requestId: input.correlationId,
+          });
+          return {
+            value: projectApiKey(updated, now),
+            auditInput: mutationAudit(
+              input.actor,
+              updated,
+              "api_keys.update",
+              input.correlationId,
+              [
+                ...(input.nickname === undefined
+                  ? []
+                  : [{ field: "nickname", before: row.nickname, after: input.nickname }]),
+                ...(input.expiresAt === undefined
+                  ? []
+                  : [{ field: "expiration", before: row.expires_at, after: input.expiresAt }]),
+              ],
+            ),
+          };
+        }),
+      });
+    } catch (error) {
+      throw mapApiKeyError(error);
+    }
+  }
+
+  async revoke(input: {
+    actor: ControlAuthenticationContext;
+    id: string;
+    expectedVersion: number;
+    justification: string;
+    correlationId: string;
+  }): Promise<{ apiKey: ApiKeyView; changed: boolean }> {
+    validateMutationInput(input);
+    try {
+      return await this.owner.execute({
+        run: (database) => database.withGeneratedAdministrativeAudit((transaction) => {
+          const row = requiredManagedRow(transaction, input.id, input.actor);
+          const now = transaction.timestamp();
+          if (row.status === "revoked") {
+            return {
+              value: { apiKey: projectApiKey(row, now), changed: false as boolean },
+              auditInput: mutationAudit(
+                input.actor,
+                row,
+                "api_keys.revoke",
+                input.correlationId,
+                [{ field: "status", before: "revoked", after: "revoked" }],
+                input.justification,
+              ),
+            };
+          }
+          if (row.version !== input.expectedVersion) throw new PersistenceError("identity_stale");
+          const result = transaction.optimisticUpdate(
+            "api_keys",
+            row.id,
+            input.expectedVersion,
+            { status: "revoked", revoked_at: now },
+          );
+          if (result.status !== "updated") throw new PersistenceError("identity_stale");
+          const updated = requiredRow(transaction, row.id);
+          insertActivity(transaction, updated, {
+            id: this.#uuid(),
+            action: "api_keys.revoke",
+            outcome: "allow",
+            targetType: "api_key_metadata",
+            targetId: row.id,
+            requestId: input.correlationId,
+          });
+          return {
+            value: { apiKey: projectApiKey(updated, now), changed: true as boolean },
+            auditInput: mutationAudit(
+              input.actor,
+              updated,
+              "api_keys.revoke",
+              input.correlationId,
+              [{ field: "status", before: row.status, after: "revoked" }],
+              input.justification,
+            ),
+          };
+        }),
+      });
+    } catch (error) {
+      throw mapApiKeyError(error);
+    }
+  }
+
+  async rotate(input: {
+    actor: ControlAuthenticationContext;
+    oldId: string;
+    replacementId: string;
+    identifier: string;
+    verifierHash: string;
+    lastFour: string;
+    expectedVersion: number;
+    justification: string;
+    correlationId: string;
+  }): Promise<ApiKeyView> {
+    if (
+      !isUuidV7(input.oldId) ||
+      !isUuidV7(input.replacementId) ||
+      input.oldId === input.replacementId ||
+      !canonicalBase64url(input.identifier, IDENTIFIER_BYTES) ||
+      !isSupportedApiKeyHash(input.verifierHash) ||
+      !/^[A-Za-z0-9_-]{4}$/.test(input.lastFour)
+    ) throw new ApiKeyError("invalid_request");
+    validateMutationInput({
+      actor: input.actor,
+      id: input.oldId,
+      expectedVersion: input.expectedVersion,
+      justification: input.justification,
+      correlationId: input.correlationId,
+    });
+    try {
+      return await this.owner.execute({
+        run: (database) => database.withGeneratedAdministrativeAudit((transaction) => {
+          const old = requiredManagedRow(transaction, input.oldId, input.actor);
+          const now = transaction.timestamp();
+          if (
+            old.version !== input.expectedVersion ||
+            old.status !== "active" ||
+            (old.expires_at !== null && old.expires_at <= now)
+          ) {
+            throw new PersistenceError(
+              old.version !== input.expectedVersion ? "identity_stale" : "identity_conflict",
+            );
+          }
+          transaction.run(`
+            INSERT INTO api_keys (
+              id, identifier, verifier_hash, nickname, last_four, api_role,
+              service_id, expiration_policy, expires_at, status, creator_id,
+              version, created_at, updated_at, last_used_at, revoked_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, 1, ?, ?, NULL, NULL)
+          `, [
+            input.replacementId,
+            input.identifier,
+            input.verifierHash,
+            old.nickname,
+            input.lastFour,
+            old.api_role,
+            old.service_id,
+            old.expiration_policy,
+            old.expires_at,
+            input.actor.principalId,
+            now,
+            now,
+          ]);
+          const update = transaction.optimisticUpdate(
+            "api_keys",
+            old.id,
+            input.expectedVersion,
+            { status: "revoked", revoked_at: now },
+          );
+          if (update.status !== "updated") throw new PersistenceError("identity_stale");
+          const replacement = requiredRow(transaction, input.replacementId);
+          const revoked = requiredRow(transaction, old.id);
+          insertActivity(transaction, revoked, {
+            id: this.#uuid(),
+            action: "api_keys.rotate",
+            outcome: "allow",
+            targetType: "api_key_metadata",
+            targetId: replacement.id,
+            requestId: input.correlationId,
+          });
+          insertActivity(transaction, replacement, {
+            id: this.#uuid(),
+            action: "api_keys.create",
+            outcome: "allow",
+            targetType: "api_key_metadata",
+            targetId: replacement.id,
+            requestId: input.correlationId,
+          });
+          return {
+            value: projectApiKey(replacement, now),
+            auditInput: mutationAudit(
+              input.actor,
+              old,
+              "api_keys.rotate",
+              input.correlationId,
+              [
+                { field: "status", before: old.status, after: "revoked" },
+                { field: "replacement_id", after: replacement.id },
+              ],
+              input.justification,
+            ),
+          };
+        }),
+      });
+    } catch (error) {
+      throw mapApiKeyError(error);
+    }
+  }
+
+  async activity(input: {
+    actor: ControlAuthenticationContext;
+    id: string;
+    limit: number;
+    beforeOccurredAt?: number;
+    beforeId?: string;
+  }): Promise<{
+    activity: ApiKeyActivityView[];
+    last?: { occurredAt: number; id: string };
+  }> {
+    if (
+      !isUuidV7(input.id) ||
+      !Number.isInteger(input.limit) ||
+      input.limit < 1 ||
+      input.limit > 100 ||
+      ((input.beforeOccurredAt === undefined) !== (input.beforeId === undefined)) ||
+      (input.beforeOccurredAt !== undefined &&
+        (!Number.isSafeInteger(input.beforeOccurredAt) || !isUuidV7(input.beforeId!)))
+    ) throw new ApiKeyError("invalid_request");
+    try {
+      return await this.owner.execute({
+        run: (database) => database.read((query) => {
+          const key = query.get<ApiKeyRow>("SELECT * FROM api_keys WHERE id = ?", [input.id]);
+          if (key === undefined || !metadataVisible(query, key, input.actor)) {
+            throw new PersistenceError("identity_not_found");
+          }
+          const rows = query.all<ApiKeyActivityRow>(`
+            SELECT * FROM api_key_activity
+            WHERE api_key_id = ?
+              ${input.beforeOccurredAt === undefined
+                ? ""
+                : "AND (occurred_at < ? OR (occurred_at = ? AND id < ?))"}
+            ORDER BY occurred_at DESC, id DESC
+            LIMIT ?
+          `, input.beforeOccurredAt === undefined
+            ? [input.id, input.limit + 1]
+            : [
+                input.id,
+                input.beforeOccurredAt,
+                input.beforeOccurredAt,
+                input.beforeId!,
+                input.limit + 1,
+              ]);
+          const page = rows.slice(0, input.limit);
+          const last = rows.length > input.limit ? page.at(-1) : undefined;
+          return {
+            activity: page.map(projectActivity),
+            ...(last === undefined
+              ? {}
+              : { last: { occurredAt: last.occurred_at, id: last.id } }),
+          };
         }),
       });
     } catch (error) {
@@ -346,6 +775,31 @@ export class ApiKeyService {
       throw error;
     }
   }
+
+  async rotate(
+    actor: ControlAuthenticationContext,
+    input: {
+      id: string;
+      expectedVersion: number;
+      justification: string;
+    },
+    correlationId: string,
+  ): Promise<{ apiKey: ApiKeyView; oneTimeKey: string }> {
+    const generated = generateApiKey(this.random);
+    const verifierHash = await hashApiKey(generated.raw);
+    const apiKey = await this.repository.rotate({
+      actor,
+      oldId: input.id,
+      replacementId: this.#uuid(),
+      identifier: generated.identifier,
+      verifierHash,
+      lastFour: generated.lastFour,
+      expectedVersion: input.expectedVersion,
+      justification: normalizeJustification(input.justification),
+      correlationId,
+    });
+    return { apiKey, oneTimeKey: generated.value };
+  }
 }
 
 export function normalizeNickname(value: unknown): string {
@@ -380,6 +834,18 @@ export function parseExpiration(value: unknown): ApiKeyExpiration {
     return { policy: "days", days: Number(input.days) };
   }
   throw new ApiKeyError("invalid_request");
+}
+
+export function normalizeJustification(value: unknown): string {
+  if (typeof value !== "string") throw new ApiKeyError("invalid_request");
+  const normalized = value.normalize("NFKC").trim();
+  if (
+    [...normalized].length < 1 ||
+    [...normalized].length > 512 ||
+    Buffer.byteLength(normalized, "utf8") > 1_024 ||
+    /[\0\r\n]/.test(normalized)
+  ) throw new ApiKeyError("invalid_request");
+  return normalized;
 }
 
 function parseRole(value: unknown): ApiKeyRole {
@@ -434,6 +900,56 @@ function validateCreateInput(input: {
   parseExpiration(input.expiration);
 }
 
+function validateListInput(input: {
+  actor: ControlAuthenticationContext;
+  limit: number;
+  role?: ApiKeyRole;
+  status?: ApiKeyStatus;
+  serviceId?: string;
+  q?: string;
+  lastCreatedAt?: number;
+  lastId?: string;
+}): void {
+  if (
+    !Number.isInteger(input.limit) ||
+    input.limit < 1 ||
+    input.limit > 100 ||
+    (input.role !== undefined && !API_KEY_ROLES.includes(input.role)) ||
+    (input.status !== undefined &&
+      !["active", "expired", "revoked"].includes(input.status)) ||
+    (input.serviceId !== undefined && !isUuidV7(input.serviceId)) ||
+    ((input.lastCreatedAt === undefined) !== (input.lastId === undefined)) ||
+    (input.lastCreatedAt !== undefined &&
+      (!Number.isSafeInteger(input.lastCreatedAt) || !isUuidV7(input.lastId!)))
+  ) throw new ApiKeyError("invalid_request");
+  if (input.q !== undefined) {
+    const normalized = input.q.normalize("NFKC").trim();
+    if (
+      normalized !== input.q ||
+      [...normalized].length < 1 ||
+      [...normalized].length > 128 ||
+      Buffer.byteLength(normalized, "utf8") > 512 ||
+      /[\0\r\n]/.test(normalized)
+    ) throw new ApiKeyError("invalid_request");
+  }
+}
+
+function validateMutationInput(input: {
+  actor: ControlAuthenticationContext;
+  id: string;
+  expectedVersion: number;
+  justification: string;
+  correlationId: string;
+}): void {
+  if (
+    !isUuidV7(input.id) ||
+    !Number.isSafeInteger(input.expectedVersion) ||
+    input.expectedVersion < 1 ||
+    normalizeJustification(input.justification) !== input.justification ||
+    !/^req_[0-9a-f-]{36}$/.test(input.correlationId)
+  ) throw new ApiKeyError("invalid_request");
+}
+
 function expirationTimestamp(expiration: ApiKeyExpiration, now: number): number | null {
   if (expiration.policy === "forever") return null;
   const expiresAt = now + expiration.days * DAY_MS;
@@ -484,25 +1000,117 @@ function requiredRow(
   return row;
 }
 
+function requiredManagedRow(
+  transaction: Pick<PersistenceTransaction, "get">,
+  id: string,
+  actor: ControlAuthenticationContext,
+): ApiKeyRow {
+  const row = requiredRow(transaction, id);
+  if (!metadataVisible(transaction, row, actor)) {
+    throw new PersistenceError("identity_not_found");
+  }
+  return row;
+}
+
+function browserMetadataScope(
+  query: {
+    get<T>(
+      sql: string,
+      parameters?: readonly (string | number | bigint | Buffer | null)[],
+    ): T | undefined;
+  },
+  actor: ControlAuthenticationContext,
+): { role: "admin" | "superadmin" } {
+  if (
+    actor.method !== "browser_session" ||
+    !["admin", "superadmin"].includes(actor.role)
+  ) throw new PersistenceError("authentication_failed");
+  const current = query.get<{ role: string; status: string }>(
+    "SELECT role, status FROM users WHERE id = ?",
+    [actor.principalId],
+  );
+  if (current?.role !== actor.role || current.status !== "active") {
+    throw new PersistenceError("authentication_failed");
+  }
+  return { role: actor.role as "admin" | "superadmin" };
+}
+
 function metadataVisible(
   query: { get<T>(sql: string, parameters?: readonly (string | number | bigint | Buffer | null)[]): T | undefined },
   row: ApiKeyRow,
   actor: ControlAuthenticationContext,
 ): boolean {
-  if (actor.method !== "browser_session") return false;
-  const current = query.get<{ role: string; status: string }>(
-    "SELECT role, status FROM users WHERE id = ?",
-    [actor.principalId],
-  );
-  if (current?.role !== actor.role || current.status !== "active") return false;
-  if (actor.role === "superadmin") return true;
-  return actor.role === "admin" &&
+  let scope: { role: "admin" | "superadmin" };
+  try {
+    scope = browserMetadataScope(query, actor);
+  } catch {
+    return false;
+  }
+  if (scope.role === "superadmin") return true;
+  return scope.role === "admin" &&
     row.api_role === "service" &&
     row.service_id !== null &&
     query.get(
       "SELECT 1 FROM service_admins WHERE user_id = ? AND service_id = ?",
       [actor.principalId, row.service_id],
     ) !== undefined;
+}
+
+function insertActivity(
+  transaction: Pick<PersistenceTransaction, "run" | "timestamp">,
+  row: ApiKeyRow,
+  input: {
+    id: string;
+    action: string;
+    outcome: "allow" | "deny" | "error";
+    targetType: string;
+    targetId?: string;
+    requestId: string;
+    sourceDigest?: string;
+    failureCode?: string;
+  },
+): void {
+  if (!isUuidV7(input.id)) throw new PersistenceError("database_unavailable");
+  transaction.run(`
+    INSERT INTO api_key_activity (
+      id, api_key_id, nickname_snapshot, last_four_snapshot,
+      api_role_snapshot, service_id_snapshot, action, outcome, target_type,
+      target_id, request_id, source_digest, failure_code, occurred_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `, [
+    input.id,
+    row.id,
+    row.nickname,
+    row.last_four,
+    row.api_role,
+    row.service_id,
+    input.action,
+    input.outcome,
+    input.targetType,
+    input.targetId ?? null,
+    input.requestId,
+    input.sourceDigest ?? null,
+    input.failureCode ?? null,
+    transaction.timestamp(),
+  ]);
+}
+
+function projectActivity(row: ApiKeyActivityRow): ApiKeyActivityView {
+  return {
+    id: row.id,
+    apiKeyId: row.api_key_id,
+    nickname: row.nickname_snapshot,
+    lastFour: row.last_four_snapshot,
+    apiRole: row.api_role_snapshot,
+    ...(row.service_id_snapshot === null ? {} : { serviceId: row.service_id_snapshot }),
+    action: row.action,
+    outcome: row.outcome,
+    targetType: row.target_type,
+    ...(row.target_id === null ? {} : { targetId: row.target_id }),
+    requestId: row.request_id,
+    ...(row.failure_code === null ? {} : { failureCode: row.failure_code }),
+    occurredAt: row.occurred_at,
+  };
 }
 
 function projectApiKey(row: ApiKeyRow, now: number): ApiKeyView {
@@ -561,6 +1169,37 @@ function keyAudit(
   };
 }
 
+function mutationAudit(
+  actor: ControlAuthenticationContext,
+  row: ApiKeyRow,
+  action: string,
+  correlationId: string,
+  changes: NonNullable<AdministrativeAuditEventInput["changes"]>,
+  justification?: string,
+): AdministrativeAuditEventInput {
+  return {
+    actor: {
+      type: "browser_session",
+      id: actor.principalId,
+      label: `user:${actor.principalId}`,
+      role: actor.role,
+      authenticationMethod: actor.method,
+    },
+    action,
+    result: "allow",
+    target: { type: "api_key_metadata", id: row.id, label: row.nickname },
+    ...(row.service_id === null ? {} : { serviceId: row.service_id }),
+    ...(justification === undefined ? {} : { justification }),
+    changes,
+    correlationId,
+    source: { category: "api_key_management" },
+  };
+}
+
+function escapeLike(value: string): string {
+  return value.replaceAll("\\", "\\\\").replaceAll("%", "\\%").replaceAll("_", "\\_");
+}
+
 function safeNow(now: () => number): number {
   const value = Math.trunc(now());
   if (!Number.isSafeInteger(value) || value < 0) throw new ApiKeyError("unavailable");
@@ -572,6 +1211,7 @@ function mapApiKeyError(error: unknown): ApiKeyError {
   if (error instanceof PersistenceError) {
     if (error.code === "identity_not_found") return new ApiKeyError("not_found");
     if (error.code === "authentication_failed") return new ApiKeyError("forbidden");
+    if (error.code === "identity_stale") return new ApiKeyError("stale");
     if (error.code === "identity_conflict") return new ApiKeyError("conflict");
   }
   return new ApiKeyError("unavailable");

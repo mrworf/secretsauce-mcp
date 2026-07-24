@@ -26,6 +26,7 @@ const SERVICE_ID = "018f1f2e-7b3c-7a10-8000-000000000003";
 const OTHER_SERVICE_ID = "018f1f2e-7b3c-7a10-8000-000000000004";
 const KEY_ID = "018f1f2e-7b3c-7a10-8000-000000000005";
 const OTHER_KEY_ID = "018f1f2e-7b3c-7a10-8000-000000000006";
+const THIRD_KEY_ID = "018f1f2e-7b3c-7a10-8000-000000000007";
 const workers = new Set<PersistenceWorker>();
 
 afterEach(async () => {
@@ -158,6 +159,191 @@ describe("system API key creation and metadata", () => {
     expect(result.oneTimeKey).toContain(stored?.identifier ?? "missing");
   });
 
+  it("lists only browser-visible metadata before filtering and pagination", async () => {
+    const fixture = await apiKeyFixture("list");
+    const serviceKey = await fixture.service.create(fixture.admin, {
+      nickname: "Scoped deployment",
+      apiRole: "service",
+      serviceId: SERVICE_ID,
+      expiration: { policy: "forever" },
+    }, CORRELATION);
+    const systemKey = await fixture.service.create(fixture.superadmin, {
+      nickname: "System automation",
+      apiRole: "system",
+      expiration: { policy: "forever" },
+    }, CORRELATION);
+
+    expect(await fixture.repository.list({
+      actor: fixture.admin,
+      limit: 1,
+    })).toEqual({ apiKeys: [serviceKey.apiKey] });
+    const global = await fixture.repository.list({
+      actor: fixture.superadmin,
+      limit: 1,
+    });
+    expect(global.apiKeys).toEqual([systemKey.apiKey]);
+    expect(global.last).toEqual({
+      createdAt: systemKey.apiKey.createdAt,
+      id: systemKey.apiKey.id,
+    });
+    expect(await fixture.repository.list({
+      actor: fixture.superadmin,
+      limit: 10,
+      role: "service",
+      serviceId: SERVICE_ID,
+      q: "deployment",
+    })).toEqual({ apiKeys: [serviceKey.apiKey] });
+    await expect(fixture.repository.list({
+      actor: { ...fixture.admin, role: "user" },
+      limit: 10,
+    })).rejects.toMatchObject({ code: "forbidden" });
+    await expect(fixture.repository.list({
+      actor: fixture.superadmin,
+      limit: 0,
+    })).rejects.toMatchObject({ code: "invalid_request" });
+  });
+
+  it("updates nickname and only shortens finite expiry with strong concurrency", async () => {
+    const fixture = await apiKeyFixture("update");
+    const created = await fixture.service.create(fixture.admin, {
+      nickname: "Original name",
+      apiRole: "service",
+      serviceId: SERVICE_ID,
+      expiration: { policy: "days", days: 10 },
+    }, CORRELATION);
+    const shortened = await fixture.repository.update({
+      actor: fixture.admin,
+      id: created.apiKey.id,
+      expectedVersion: 1,
+      nickname: "Renamed automation",
+      expiresAt: NOW + 5 * 86_400_000,
+      correlationId: CORRELATION,
+    });
+    expect(shortened).toMatchObject({
+      nickname: "Renamed automation",
+      expiresAt: NOW + 5 * 86_400_000,
+      version: 2,
+    });
+    await expect(fixture.repository.update({
+      actor: fixture.admin,
+      id: created.apiKey.id,
+      expectedVersion: 1,
+      nickname: "Stale",
+      correlationId: CORRELATION,
+    })).rejects.toMatchObject({ code: "stale" });
+    await expect(fixture.repository.update({
+      actor: fixture.admin,
+      id: created.apiKey.id,
+      expectedVersion: 2,
+      expiresAt: NOW + 6 * 86_400_000,
+      correlationId: CORRELATION,
+    })).rejects.toMatchObject({ code: "conflict" });
+
+    const forever = await fixture.service.create(fixture.superadmin, {
+      nickname: "Forever key",
+      apiRole: "system",
+      expiration: { policy: "forever" },
+    }, CORRELATION);
+    await expect(fixture.repository.update({
+      actor: fixture.superadmin,
+      id: forever.apiKey.id,
+      expectedVersion: 1,
+      expiresAt: NOW + 86_400_000,
+      correlationId: CORRELATION,
+    })).rejects.toMatchObject({ code: "conflict" });
+  });
+
+  it("revokes idempotently and rotates as an atomic replacement without extending expiry", async () => {
+    const fixture = await apiKeyFixture("lifecycle");
+    const created = await fixture.service.create(fixture.admin, {
+      nickname: "Rotate me",
+      apiRole: "service",
+      serviceId: SERVICE_ID,
+      expiration: { policy: "days", days: 10 },
+    }, CORRELATION);
+    const rotated = await fixture.service.rotate(fixture.admin, {
+      id: created.apiKey.id,
+      expectedVersion: 1,
+      justification: "Scheduled credential replacement",
+    }, CORRELATION);
+    expect(rotated.oneTimeKey).toMatch(/^ssk_v1_/);
+    expect(rotated.apiKey).toMatchObject({
+      id: OTHER_KEY_ID,
+      nickname: "Rotate me",
+      apiRole: "service",
+      serviceId: SERVICE_ID,
+      expirationPolicy: "timestamp",
+      expiresAt: created.apiKey.expiresAt,
+      version: 1,
+    });
+    expect(await fixture.repository.metadata(created.apiKey.id, fixture.admin))
+      .toMatchObject({ status: "revoked", version: 2 });
+    const stored = await fixture.worker.execute({
+      run: (database) => database.read((query) => query.all<{
+        id: string;
+        verifier_hash: string;
+      }>("SELECT id, verifier_hash FROM api_keys ORDER BY id")),
+    });
+    expect(stored).toHaveLength(2);
+    expect(JSON.stringify(stored)).not.toContain(rotated.oneTimeKey);
+
+    const revoked = await fixture.repository.revoke({
+      actor: fixture.admin,
+      id: rotated.apiKey.id,
+      expectedVersion: 1,
+      justification: "Automation retired",
+      correlationId: CORRELATION,
+    });
+    expect(revoked).toMatchObject({ changed: true, apiKey: { status: "revoked", version: 2 } });
+    const repeated = await fixture.repository.revoke({
+      actor: fixture.admin,
+      id: rotated.apiKey.id,
+      expectedVersion: 1,
+      justification: "Automation retired",
+      correlationId: CORRELATION,
+    });
+    expect(repeated).toMatchObject({ changed: false, apiKey: { status: "revoked", version: 2 } });
+    await expect(fixture.service.rotate(fixture.admin, {
+      id: rotated.apiKey.id,
+      expectedVersion: 2,
+      justification: "Cannot revive",
+    }, CORRELATION)).rejects.toMatchObject({ code: "conflict" });
+  });
+
+  it("retains safe activity snapshots across nickname changes without raw material", async () => {
+    const fixture = await apiKeyFixture("activity");
+    const created = await fixture.service.create(fixture.admin, {
+      nickname: "Historical name",
+      apiRole: "service",
+      serviceId: SERVICE_ID,
+      expiration: { policy: "days", days: 10 },
+    }, CORRELATION);
+    await fixture.repository.update({
+      actor: fixture.admin,
+      id: created.apiKey.id,
+      expectedVersion: 1,
+      nickname: "Current name",
+      correlationId: CORRELATION,
+    });
+    const activity = await fixture.repository.activity({
+      actor: fixture.admin,
+      id: created.apiKey.id,
+      limit: 10,
+    });
+    expect(activity.activity.map(({ action, nickname }) => ({ action, nickname })))
+      .toEqual([
+        { action: "api_keys.update", nickname: "Current name" },
+        { action: "api_keys.create", nickname: "Historical name" },
+      ]);
+    expect(JSON.stringify(activity)).not.toContain(created.oneTimeKey);
+    expect(JSON.stringify(activity)).not.toContain("$argon2id");
+    await expect(fixture.repository.activity({
+      actor: fixture.superadmin,
+      id: created.apiKey.id,
+      limit: 101,
+    })).rejects.toMatchObject({ code: "invalid_request" });
+  });
+
   it("allows superadmin global roles with exact warning and enforces browser/service scope", async () => {
     const fixture = await apiKeyFixture("roles");
     const global = await fixture.service.create(fixture.superadmin, {
@@ -278,15 +464,23 @@ async function apiKeyFixture(
     }),
   });
   const repository = new ApiKeyRepository(worker, now);
-  let nextId = KEY_ID;
+  const ids = [KEY_ID, OTHER_KEY_ID, THIRD_KEY_ID];
+  let idIndex = 0;
+  let randomCall = 0;
   const service = new ApiKeyService(repository, {
     now,
     uuid: () => {
-      const id = nextId;
-      nextId = OTHER_KEY_ID;
+      const id = ids[idIndex];
+      idIndex += 1;
+      if (id === undefined) throw new Error("API key test UUIDs exhausted.");
       return id;
     },
-    random: (size) => Buffer.alloc(size, size === 12 ? 3 : 4),
+    random: (size) => {
+      const keySequence = Math.floor(randomCall / 2);
+      const value = 3 + keySequence * 2 + (size === 12 ? 0 : 1);
+      randomCall += 1;
+      return Buffer.alloc(size, value);
+    },
   });
   return {
     worker,

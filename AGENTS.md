@@ -6,6 +6,7 @@
 - Do not include real personal, internal, or deployment hostnames in MCP documentation or examples; use `example.org` stand-ins instead.
 - ChatGPT web setup docs must distinguish OAuth origin values from the MCP Server URL: `server.resource` and OAuth issuer use the origin, while ChatGPT's Server URL must include the MCP path such as `https://mcp.example.org/mcp`.
 - When `npm test` fails with `listen EPERM` on `127.0.0.1`, rerun the same full-suite command with loopback/network permission rather than weakening listener-based tests.
+- When the shared `/tmp` quota causes broad `write` error `-122` test failures, use an isolated temp directory outside the repository on a filesystem with capacity; never place `TMPDIR` inside the repository because documentation source scans will inspect volatile fixtures.
 - In this sandbox, `.git` may be read-only; if staging or committing fails on `.git/index.lock`, request narrow Git escalation for the same `git add`/`git commit` command.
 - Update AGENTS.md when findings are important to remember beyond current session
 - Service must work from both ChatGPT and Codex

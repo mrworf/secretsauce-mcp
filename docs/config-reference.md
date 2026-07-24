@@ -36,6 +36,15 @@ only `ready` or `unavailable`. A separately started control process can use
 `checks.vault: ready|unavailable`. Supplying just one variable fails startup
 without echoing either path.
 
+Portable encrypted-backup coordination uses `SECRETSAUCE_VAULT_SOCKET`,
+`SECRETSAUCE_VAULT_BACKUP_KEY_FILE`, and
+`SECRETSAUCE_VAULT_BACKUP_CAPABILITY_KEY_FILE` as one complete set. The caller
+mounts only those two backup keys and the socket; neither key permits ordinary
+credential writes or runtime resolution. Omitting the set leaves
+credential-less backup available. Supplying a partial set fails startup, and an
+unavailable broker produces only a generic encrypted-backup failure. See
+[Portable Backup Export](backup-export.md).
+
 Vault archives use Argon2id with 64 MiB memory, three iterations, and parallelism
 one, then independently authenticated 64 KiB AES-256-GCM chunks and a final
 manifest. Imports reject parameter changes, excess sizes/counts, reordering,

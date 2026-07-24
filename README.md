@@ -180,6 +180,8 @@ services:
       - ./oauth-state:/var/lib/secretsauce/oauth
       - ./vault-keys/data-plane.key:/run/vault-caller/data-plane.key:ro
       - ./vault-keys/resolve-capability.key:/run/vault-caller/resolve-capability.key:ro
+      - ./vault-keys/backup.key:/run/vault-caller/backup.key:ro
+      - ./vault-keys/backup-capability.key:/run/vault-caller/backup-capability.key:ro
       - ./vault-runtime:/run/secretsauce-vault:ro
     environment:
       CONFIG_PATH: /config/config.yaml
@@ -188,6 +190,8 @@ services:
       SECRETSAUCE_VAULT_SOCKET: /run/secretsauce-vault/vault.sock
       SECRETSAUCE_VAULT_DATA_KEY_FILE: /run/vault-caller/data-plane.key
       SECRETSAUCE_VAULT_RESOLVE_KEY_FILE: /run/vault-caller/resolve-capability.key
+      SECRETSAUCE_VAULT_BACKUP_KEY_FILE: /run/vault-caller/backup.key
+      SECRETSAUCE_VAULT_BACKUP_CAPABILITY_KEY_FILE: /run/vault-caller/backup-capability.key
 ```
 
 Use the writable audit mount for `audit.file`, for example `/var/lib/secretsauce/audit/audit.jsonl`. Monitor `/health` and disk capacity: an audit open or write failure keeps privileged operations fail-open but changes readiness to `503` with a sanitized audit-degraded check until restart. The open descriptor supports `copytruncate`-style rotation; rename-based rotation requires a restart. Static built-in OAuth keeps `signing_key_file` on stable read-only storage and can use a writable `refresh_token_store_file` for hash-only refresh continuity. Database built-in OAuth instead keeps `token_hmac_key_file` on stable mode-`0400` storage; its hash-only token and grant state is already in the durable SQLite database.
@@ -211,6 +215,13 @@ variables `SECRETSAUCE_VAULT_SOCKET` and
 resolution are connected through the isolated broker. To make published v2
 configuration the sole MCP authority, follow
 [Persisted runtime authorization](docs/runtime-authorization.md).
+
+Encrypted portable backup additionally requires the backup caller and
+backup-capability keys as a complete read-only pair. Credential-less backup
+continues to work when that pair is absent. The gateway never mounts the
+control-plane caller key, root keys, or encrypted vault store. See
+[Portable Backup Export](docs/backup-export.md) for archive contents,
+permanent exclusions, system-key automation, and operator custody.
 
 ### Initial v2 identity bootstrap
 

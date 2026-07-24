@@ -5,6 +5,9 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   ActivityAggregationService,
 } from "../src/activityAggregation.js";
+import type { ControlAuthenticationContext } from "../src/control/authentication.js";
+import { AlwaysStepUpHandle } from "../src/identity/stepUp.js";
+import { PersistenceError } from "../src/persistence/errors.js";
 import { UuidV7Generator } from "../src/persistence/uuidV7.js";
 import { PersistenceWorker } from "../src/persistence/worker.js";
 
@@ -157,6 +160,61 @@ describe("activity aggregation maintenance", () => {
     });
     expect(await activityCount(worker)).toBe(1_001);
   });
+
+  it("requires a superadmin proof and audits a manual rebuild atomically", async () => {
+    const { worker } = open();
+    const stepUps = {
+      withConsumedProofGenerated: async <T>(
+        _proof: AlwaysStepUpHandle,
+        mutation: unknown,
+      ): Promise<T> => worker.execute({
+        run: (database) => database.withGeneratedAdministrativeAudit(
+          mutation as never,
+        ) as T,
+      }),
+    };
+    const service = new ActivityAggregationService(
+      worker,
+      () => NOW,
+      () => "activity-worker",
+      stepUps as never,
+    );
+    const actor = superadmin();
+    const state = await service.run({
+      actor,
+      justification: "Repair delayed activity aggregates.",
+      correlationId: "req_12345678-1234-4234-8234-123456789abc",
+      proof: new AlwaysStepUpHandle(
+        "018f1f2e-7b3c-7a10-8000-000000000090",
+        "018f1f2e-7b3c-7a10-8000-000000000091",
+        actor.principalId,
+      ),
+    });
+    expect(state.lastOutcome).toBe("completed");
+    const audit = await worker.execute({
+      run: (database) => database.read((query) => query.get<{
+        action: string;
+        justification: string;
+      }>(`
+        SELECT action, justification FROM administrative_audit_events
+        WHERE action = 'activity.projection.run'
+      `)),
+    });
+    expect(audit).toEqual({
+      action: "activity.projection.run",
+      justification: "Repair delayed activity aggregates.",
+    });
+    await expect(service.run({
+      actor: { ...actor, role: "admin" },
+      justification: "Unauthorized.",
+      correlationId: "req_22345678-1234-4234-8234-123456789abc",
+      proof: new AlwaysStepUpHandle(
+        "018f1f2e-7b3c-7a10-8000-000000000092",
+        "018f1f2e-7b3c-7a10-8000-000000000093",
+        actor.principalId,
+      ),
+    })).rejects.toEqual(new PersistenceError("authentication_failed"));
+  });
 });
 
 function open(databaseFile = databasePath()) {
@@ -216,4 +274,12 @@ async function activityCount(worker: PersistenceWorker): Promise<number> {
         "SELECT sum(request_count) AS count FROM activity_hourly",
       )?.count ?? 0),
   });
+}
+
+function superadmin(): ControlAuthenticationContext {
+  return {
+    method: "browser_session",
+    principalId: ACTOR_ID,
+    role: "superadmin",
+  };
 }

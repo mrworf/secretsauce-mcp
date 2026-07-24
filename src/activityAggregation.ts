@@ -1,5 +1,11 @@
 import { randomUUID } from "node:crypto";
 import { projectHourlyActivity } from "./activityProjection.js";
+import type { ControlAuthenticationContext } from "./control/authentication.js";
+import type {
+  AlwaysStepUpHandle,
+  StepUpRepository,
+} from "./identity/stepUp.js";
+import { administrativeActorSnapshot } from "./apiKeyAuthority.js";
 import type { AdministrativeAuditEventInput } from "./persistence/administrativeAudit.js";
 import type {
   AuditCategory,
@@ -55,6 +61,7 @@ export class ActivityAggregationService {
     private readonly owner: PersistenceOwner,
     private readonly now: () => number = Date.now,
     private readonly uuid: () => string = randomUUID,
+    private readonly stepUps?: Pick<StepUpRepository, "withConsumedProofGenerated">,
   ) {}
 
   async state(): Promise<ActivityProjectionState> {
@@ -63,91 +70,111 @@ export class ActivityAggregationService {
     });
   }
 
-  async run(): Promise<ActivityProjectionState> {
+  async run(input?: {
+    actor: ControlAuthenticationContext;
+    justification: string;
+    correlationId: string;
+    proof: AlwaysStepUpHandle;
+  }): Promise<ActivityProjectionState> {
+    if (input !== undefined) {
+      if (
+        input.actor.method !== "browser_session"
+        || input.actor.role !== "superadmin"
+      ) throw new PersistenceError("authentication_failed");
+      if (this.stepUps === undefined) {
+        throw new PersistenceError("database_unavailable");
+      }
+    }
     const now = safeNow(this.now);
     const leaseOwner = this.uuid();
-    try {
-      return await this.owner.execute({
-        run: (database) => database.withGeneratedAdministrativeAudit(
-          (transaction) => {
-            const current = readState(transaction);
-            if (
-              current.leaseExpiresAt !== null
-              && current.leaseExpiresAt > now
-            ) {
-              transaction.run(`
-                UPDATE activity_projection_state
-                SET last_outcome = 'skipped', last_code = 'lease_active',
-                    version = version + 1, updated_at = ?
-                WHERE singleton = 1
-              `, [now]);
-              return {
-                value: readState(transaction),
-                auditInput: maintenanceAudit("skipped", 0, 0),
-              };
-            }
-            transaction.run(`
-              UPDATE activity_projection_state
-              SET lease_owner = ?, lease_expires_at = ?, last_started_at = ?,
-                  last_outcome = NULL, last_code = NULL,
-                  version = version + 1, updated_at = ?
-              WHERE singleton = 1
-            `, [leaseOwner, now + LEASE_MS, now, now]);
+    const mutate = (transaction: PersistenceTransaction) => {
+      const current = readState(transaction);
+      if (
+        current.leaseExpiresAt !== null
+        && current.leaseExpiresAt > now
+      ) {
+        transaction.run(`
+          UPDATE activity_projection_state
+          SET last_outcome = 'skipped', last_code = 'lease_active',
+              version = version + 1, updated_at = ?
+          WHERE singleton = 1
+        `, [now]);
+        return {
+          value: readState(transaction),
+          auditInput: maintenanceAudit(input, "skipped", 0, 0),
+        };
+      }
+      transaction.run(`
+        UPDATE activity_projection_state
+        SET lease_owner = ?, lease_expires_at = ?, last_started_at = ?,
+            last_outcome = NULL, last_code = NULL,
+            version = version + 1, updated_at = ?
+        WHERE singleton = 1
+      `, [leaseOwner, now + LEASE_MS, now, now]);
 
-            const rows = transaction.all<RuntimeRow>(`
-              SELECT *
-              FROM runtime_audit_events
-              WHERE sequence > ?
-              ORDER BY sequence
-              LIMIT ?
-            `, [current.cursorSequence, BATCH_LIMIT]);
-            let projectedCount = 0;
-            for (const row of rows) {
-              if (
-                projectHourlyActivity(
-                  transaction,
-                  Number(row.sequence),
-                  runtimeProjection(row),
-                  now,
-                )
-              ) projectedCount += 1;
-            }
-            const cursor = rows.at(-1)?.sequence ?? current.cursorSequence;
-            const deletedBucketCount = deleteExpiredBuckets(transaction, now);
-            const deletedLedgerCount = deleteExpiredLedger(transaction, now);
-            const partial =
-              rows.length === BATCH_LIMIT
-              || deletedBucketCount === BATCH_LIMIT
-              || deletedLedgerCount === BATCH_LIMIT;
-            transaction.run(`
-              UPDATE activity_projection_state
-              SET next_run_at = ?, lease_owner = NULL, lease_expires_at = NULL,
-                  cursor_sequence = ?, last_completed_at = ?,
-                  last_outcome = ?, last_code = ?, projected_count = ?,
-                  deleted_bucket_count = ?, version = version + 1,
-                  updated_at = ?
-              WHERE singleton = 1 AND lease_owner = ?
-            `, [
-              now + HOUR_MS,
-              cursor,
-              now,
-              partial ? "partial" : "completed",
-              partial ? "batch_limit" : "ok",
-              projectedCount,
-              deletedBucketCount,
-              now,
-              leaseOwner,
-            ]);
-            return {
-              value: readState(transaction),
-              auditInput: maintenanceAudit(
-                partial ? "partial" : "completed",
-                projectedCount,
-                deletedBucketCount,
-              ),
-            };
-          },
+      const rows = transaction.all<RuntimeRow>(`
+        SELECT *
+        FROM runtime_audit_events
+        WHERE sequence > ?
+        ORDER BY sequence
+        LIMIT ?
+      `, [current.cursorSequence, BATCH_LIMIT]);
+      let projectedCount = 0;
+      for (const row of rows) {
+        if (
+          projectHourlyActivity(
+            transaction,
+            Number(row.sequence),
+            runtimeProjection(row),
+            now,
+          )
+        ) projectedCount += 1;
+      }
+      const cursor = rows.at(-1)?.sequence ?? current.cursorSequence;
+      const deletedBucketCount = deleteExpiredBuckets(transaction, now);
+      const deletedLedgerCount = deleteExpiredLedger(transaction, now);
+      const partial =
+        rows.length === BATCH_LIMIT
+        || deletedBucketCount === BATCH_LIMIT
+        || deletedLedgerCount === BATCH_LIMIT;
+      transaction.run(`
+        UPDATE activity_projection_state
+        SET next_run_at = ?, lease_owner = NULL, lease_expires_at = NULL,
+            cursor_sequence = ?, last_completed_at = ?,
+            last_outcome = ?, last_code = ?, projected_count = ?,
+            deleted_bucket_count = ?, version = version + 1,
+            updated_at = ?
+        WHERE singleton = 1 AND lease_owner = ?
+      `, [
+        now + HOUR_MS,
+        cursor,
+        now,
+        partial ? "partial" : "completed",
+        partial ? "batch_limit" : "ok",
+        projectedCount,
+        deletedBucketCount,
+        now,
+        leaseOwner,
+      ]);
+      return {
+        value: readState(transaction),
+        auditInput: maintenanceAudit(
+          input,
+          partial ? "partial" : "completed",
+          projectedCount,
+          deletedBucketCount,
         ),
+      };
+    };
+    try {
+      if (input !== undefined) {
+        return await this.stepUps!.withConsumedProofGenerated(
+          input.proof,
+          mutate,
+        );
+      }
+      return await this.owner.execute({
+        run: (database) => database.withGeneratedAdministrativeAudit(mutate),
       });
     } catch {
       throw new PersistenceError("database_unavailable");
@@ -274,28 +301,36 @@ function runtimeProjection(row: RuntimeRow): RuntimeAuditProjection {
 }
 
 function maintenanceAudit(
+  input: {
+    actor: ControlAuthenticationContext;
+    justification: string;
+    correlationId: string;
+  } | undefined,
   outcome: "completed" | "partial" | "skipped",
   projected: number,
   deletedBuckets: number,
 ): AdministrativeAuditEventInput {
   return {
-    actor: {
-      type: "job",
-      label: "job:activity-projection",
-      role: "system",
-      authenticationMethod: "job",
-    },
+    actor: input === undefined
+      ? {
+          type: "job",
+          label: "job:activity-projection",
+          role: "system",
+          authenticationMethod: "job",
+        }
+      : administrativeActorSnapshot(input.actor),
     action: "activity.projection.run",
     category: "audit",
     result: "allow",
     target: { type: "activity_projection", label: "activity-projection" },
+    ...(input === undefined ? {} : { justification: input.justification }),
     changes: [
       { field: "outcome", after: outcome },
       { field: "projected_count", after: projected },
       { field: "deleted_bucket_count", after: deletedBuckets },
     ],
-    correlationId: randomUUID(),
-    source: { category: "job" },
+    correlationId: input?.correlationId ?? randomUUID(),
+    source: { category: input === undefined ? "job" : "control" },
   };
 }
 

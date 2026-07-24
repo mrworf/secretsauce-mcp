@@ -13,7 +13,7 @@ export type ActivityWindow = "24h" | "7d" | "30d" | "90d";
 export interface ActivityCount {
   value: number | null;
   suppressed: boolean;
-  threshold: number;
+  threshold: 3;
 }
 
 export interface ActivityReport {

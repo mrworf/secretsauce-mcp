@@ -46,6 +46,11 @@ const expected: Record<string, readonly PermissionOutcome[]> = {
   view_runtime_audit: ["deny", "allow", "allow", "deny", "deny", "deny"],
   export_audit: ["deny", "allow", "allow", "deny", "deny", "deny"],
   manage_audit_retention: ["deny", "deny", "step_up", "deny", "deny", "deny"],
+  view_activity_dashboard: ["deny", "assigned_services", "all_services", "deny", "deny", "deny"],
+  view_status_dashboard: ["deny", "assigned_services", "all_services", "deny", "deny", "deny"],
+  view_security_dashboard: ["deny", "assigned_services", "all_services", "deny", "deny", "deny"],
+  manage_dashboard_remediations: ["deny", "assigned_services_step_up", "all_services_step_up", "deny", "deny", "deny"],
+  rebuild_activity_dashboard: ["deny", "deny", "step_up", "deny", "deny", "deny"],
 };
 
 describe("control permission matrix", () => {

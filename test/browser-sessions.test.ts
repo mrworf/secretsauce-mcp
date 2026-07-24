@@ -73,6 +73,16 @@ describe("durable browser sessions", () => {
     expect(documented.json().paths).toHaveProperty(
       "/api/v2/api-keys/{api_key_id}/activity",
     );
+    for (const path of [
+      "/api/v2/dashboard/activity",
+      "/api/v2/dashboard/status",
+      "/api/v2/dashboard/security",
+      "/api/v2/dashboard/remediations",
+      "/api/v2/dashboard/remediations/{remediation_id}",
+      "/api/v2/dashboard/activity/rebuild",
+    ]) {
+      expect(documented.json().paths).toHaveProperty(path);
+    }
     expect(documented.json().paths["/api/v2/api-keys"].post.security)
       .toEqual([{ browserSession: [] }]);
     for (const path of Object.values(documented.json().paths) as Array<

@@ -165,6 +165,10 @@ import { AuditSearchService } from "../auditSearch.js";
 import { AuditRetentionService } from "../auditRetention.js";
 import { registerAuditRoutes } from "./auditRoutes.js";
 import { ActivityAggregationService } from "../activityAggregation.js";
+import { ActivityReportService } from "../activityReports.js";
+import { StatusDashboardService } from "../statusDashboard.js";
+import { SecurityDashboardService } from "../securityDashboard.js";
+import { registerDashboardRoutes } from "./dashboardRoutes.js";
 
 export interface ControlApplicationOptions {
   authenticator?: ControlAuthenticator;
@@ -198,6 +202,9 @@ export interface ControlApplicationOptions {
   auditSearch?: AuditSearchService;
   auditRetention?: AuditRetentionService;
   activityAggregation?: ActivityAggregationService;
+  activityReports?: ActivityReportService;
+  statusDashboard?: StatusDashboardService;
+  securityDashboard?: SecurityDashboardService;
 }
 
 export function createControlApplication(
@@ -325,6 +332,19 @@ export function createControlApplication(
       options.auditRetention,
     );
   }
+  if (
+    options.activityAggregation !== undefined
+    && options.activityReports !== undefined
+    && options.statusDashboard !== undefined
+    && options.securityDashboard !== undefined
+  ) {
+    registerDashboardRoutes(routeRegistry, {
+      aggregation: options.activityAggregation,
+      activity: options.activityReports,
+      status: options.statusDashboard,
+      security: options.securityDashboard,
+    });
+  }
   options.registerControlRoutes?.(routeRegistry);
   installControlRoutes(
     application,
@@ -434,11 +454,13 @@ export async function startControlServer(
   let auditRetention: AuditRetentionService | undefined;
   let auditMaintenanceTimer: NodeJS.Timeout | undefined;
   let activityAggregation: ActivityAggregationService | undefined;
+  let activityReports: ActivityReportService | undefined;
+  let statusDashboard: StatusDashboardService | undefined;
+  let securityDashboard: SecurityDashboardService | undefined;
   let activityAggregationTimer: NodeJS.Timeout | undefined;
   const apiKeyVerifier = new ApiKeyVerifierPool();
   let selfApiKeyDetector: ActiveSelfApiKeyDetector | undefined;
   try {
-    activityAggregation = new ActivityAggregationService(persistence);
     apiKeyRepository = new ApiKeyRepository(persistence);
     selfApiKeyDetector = await ActiveSelfApiKeyDetector.create(
       apiKeyRepository,
@@ -497,6 +519,26 @@ export async function startControlServer(
           sessionKey,
         );
         stepUpRepository = new StepUpRepository(persistence);
+        activityAggregation = new ActivityAggregationService(
+          persistence,
+          Date.now,
+          randomUUID,
+          stepUpRepository,
+        );
+        activityReports = new ActivityReportService(persistence);
+        statusDashboard = new StatusDashboardService(persistence, {
+          identityReadiness: async () => "ready",
+          ...(options.vaultReadiness === undefined
+            ? {}
+            : { vaultReadiness: options.vaultReadiness }),
+          ...(options.referenceAggregates === undefined
+            ? {}
+            : { referenceAggregates: options.referenceAggregates }),
+        });
+        securityDashboard = new SecurityDashboardService(persistence, {
+          findingKey: sessionKey,
+          stepUps: stepUpRepository,
+        });
         auditRetention = new AuditRetentionService(
           persistence,
           Date.now,
@@ -759,7 +801,10 @@ export async function startControlServer(
       ...(inactivityJob === undefined ? {} : { inactivityJob }),
       ...(auditSearch === undefined ? {} : { auditSearch }),
       ...(auditRetention === undefined ? {} : { auditRetention }),
-      activityAggregation,
+      ...(activityAggregation === undefined ? {} : { activityAggregation }),
+      ...(activityReports === undefined ? {} : { activityReports }),
+      ...(statusDashboard === undefined ? {} : { statusDashboard }),
+      ...(securityDashboard === undefined ? {} : { securityDashboard }),
     });
     await server.listen({
       host: config.control.host,
@@ -777,10 +822,12 @@ export async function startControlServer(
       }, 3_600_000);
       auditMaintenanceTimer.unref();
     }
-    activityAggregationTimer = setInterval(() => {
-      void activityAggregation!.run().catch(() => undefined);
-    }, 3_600_000);
-    activityAggregationTimer.unref();
+    if (activityAggregation !== undefined) {
+      activityAggregationTimer = setInterval(() => {
+        void activityAggregation!.run().catch(() => undefined);
+      }, 3_600_000);
+      activityAggregationTimer.unref();
+    }
   } catch (error) {
     await server?.close().catch(() => undefined);
     if (inactivityTimer !== undefined) clearInterval(inactivityTimer);

@@ -54,7 +54,7 @@ export interface StatusDashboardSnapshot {
       administrativeRows: number;
       runtimeRows: number;
       estimatedBytes: number;
-      warnings: string[];
+      warnings: Array<"capacity_planning_required">;
     };
     apiKeys: {
       active: number;
@@ -361,6 +361,10 @@ function readSystem(query: PersistenceQuery, now: number) {
     FROM users
   `)!;
   const estimatedBytes = capacity.estimated_bytes ?? 0;
+  const capacityWarnings: Array<"capacity_planning_required"> =
+    estimatedBytes >= 1_073_741_824
+      ? ["capacity_planning_required"]
+      : [];
   return {
     jobs: {
       audit,
@@ -371,9 +375,7 @@ function readSystem(query: PersistenceQuery, now: number) {
       administrativeRows: capacity.administrative_rows,
       runtimeRows: capacity.runtime_rows,
       estimatedBytes,
-      warnings: [
-        ...(estimatedBytes >= 1_073_741_824 ? ["capacity_planning_required"] : []),
-      ],
+      warnings: capacityWarnings,
     },
     apiKeys: {
       active: keys.active,

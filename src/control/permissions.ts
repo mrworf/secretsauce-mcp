@@ -45,6 +45,11 @@ export const CONTROL_CAPABILITIES = [
   "view_runtime_audit",
   "export_audit",
   "manage_audit_retention",
+  "view_activity_dashboard",
+  "view_status_dashboard",
+  "view_security_dashboard",
+  "manage_dashboard_remediations",
+  "rebuild_activity_dashboard",
 ] as const;
 
 export type ControlCapability = (typeof CONTROL_CAPABILITIES)[number];
@@ -113,6 +118,11 @@ export const CONTROL_PERMISSION_MATRIX: Readonly<Record<ControlCapability, Permi
   view_runtime_audit: row(D, A, A, D, D, D),
   export_audit: row(D, A, A, D, D, D),
   manage_audit_retention: row(D, D, "step_up", D, D, D),
+  view_activity_dashboard: row(D, "assigned_services", "all_services", D, D, D),
+  view_status_dashboard: row(D, "assigned_services", "all_services", D, D, D),
+  view_security_dashboard: row(D, "assigned_services", "all_services", D, D, D),
+  manage_dashboard_remediations: row(D, "assigned_services_step_up", "all_services_step_up", D, D, D),
+  rebuild_activity_dashboard: row(D, D, "step_up", D, D, D),
 };
 
 export function permissionOutcome(

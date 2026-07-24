@@ -5,6 +5,7 @@ import type { PersistenceTransaction } from "../persistence/transaction.js";
 import { UuidV7Generator, isUuidV7 } from "../persistence/uuidV7.js";
 import type { PersistenceOwner } from "../persistence/worker.js";
 import type { IdentityConfig, OidcProviderConfig } from "../types.js";
+import { recordQualifyingActivity } from "../humanActivity.js";
 import type {
   BrowserSessionMaterial,
   LoginResult,
@@ -114,6 +115,7 @@ export class OidcLoginRepository {
             SET last_login_at = ?, last_authenticated_at = ?, updated_at = ?
             WHERE id = ?
           `, [now, now, now, current.userId]);
+          recordQualifyingActivity(transaction, current.userId, now);
           return {
             value: undefined,
             auditInput: {

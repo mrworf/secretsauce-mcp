@@ -2019,6 +2019,13 @@ ALTER TABLE users ADD COLUMN suspension_origin TEXT
 ALTER TABLE users ADD COLUMN suspension_rule_version INTEGER
   CHECK (suspension_rule_version IS NULL OR suspension_rule_version > 0);
 
+UPDATE users
+SET last_qualifying_activity_at = max(
+  created_at,
+  coalesce(last_login_at, created_at),
+  coalesce(last_authenticated_at, created_at)
+);
+
 CREATE TRIGGER users_suspension_metadata_insert_guard
 BEFORE INSERT ON users
 WHEN

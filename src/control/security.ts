@@ -2,6 +2,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import type { ControlConfig } from "../types.js";
 import {
   bindControlAuthentication,
+  controlAuthentication,
   type ControlApiKeyActivityRecorder,
   type ControlAuthenticationMethod,
   type ControlAuthenticator,
@@ -10,6 +11,10 @@ import {
   ControlRateLimiter,
   type ControlRateLimitClass,
 } from "./rateLimiter.js";
+import type { HumanActivityRepository } from "../humanActivity.js";
+
+export const CONTROL_INTERACTIVE_ACTIVITY_HEADER =
+  "x-secretsauce-user-activity";
 
 export const CONTROL_API_PREFIX = "/api/v2";
 export const CONTROL_BROWSER_PREFIX = "/control";
@@ -31,9 +36,11 @@ export function controlSecurityHooks(
   authenticator: ControlAuthenticator,
   rateLimiter: ControlRateLimiter,
   apiKeyActivity?: ControlApiKeyActivityRecorder,
+  humanActivity?: Pick<HumanActivityRepository, "record">,
 ): {
   onRequest(request: FastifyRequest, reply: FastifyReply): Promise<void>;
   onSend(request: FastifyRequest, reply: FastifyReply): Promise<void>;
+  onResponse(request: FastifyRequest, reply: FastifyReply): Promise<void>;
 } {
   return {
     async onRequest(request, reply) {
@@ -48,7 +55,32 @@ export function controlSecurityHooks(
         return;
       }
       const security = routeSecurity(request);
+      const activityMarker =
+        request.headers[CONTROL_INTERACTIVE_ACTIVITY_HEADER];
+      if (
+        activityMarker !== undefined
+        && activityMarker !== "interactive"
+      ) {
+        sendControlError(
+          reply,
+          request.id,
+          400,
+          "invalid_request",
+          "Invalid activity marker.",
+        );
+        return;
+      }
       if (security.public) {
+        if (activityMarker !== undefined) {
+          sendControlError(
+            reply,
+            request.id,
+            403,
+            "forbidden",
+            "Activity marker requires browser authentication.",
+          );
+          return;
+        }
         if (!applyRateLimit(request, reply, rateLimiter, security.rateLimit ?? "none")) return;
         return;
       }
@@ -70,6 +102,19 @@ export function controlSecurityHooks(
           "authentication_method_not_permitted",
         );
         sendControlError(reply, request.id, 403, "forbidden", "Authentication method not permitted.");
+        return;
+      }
+      if (
+        activityMarker !== undefined
+        && authentication.method !== "browser_session"
+      ) {
+        sendControlError(
+          reply,
+          request.id,
+          403,
+          "forbidden",
+          "Activity marker requires browser authentication.",
+        );
         return;
       }
       if (!applyRateLimit(
@@ -126,6 +171,22 @@ export function controlSecurityHooks(
       }
       reply.removeHeader("access-control-allow-origin");
       reply.removeHeader("access-control-allow-credentials");
+    },
+    async onResponse(request, reply) {
+      if (
+        humanActivity === undefined
+        || reply.statusCode >= 400
+      ) return;
+      const authentication = controlAuthentication(request);
+      if (
+        authentication?.method !== "browser_session"
+        || request.url.startsWith("/api/v2/auth/session")
+      ) return;
+      const qualifies = isSafeMethod(request.method)
+        ? request.headers[CONTROL_INTERACTIVE_ACTIVITY_HEADER] === "interactive"
+        : routeSecurity(request).activityAction !== undefined;
+      if (!qualifies) return;
+      await humanActivity.record(authentication.principalId).catch(() => undefined);
     },
   };
 }

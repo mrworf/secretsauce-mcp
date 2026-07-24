@@ -165,6 +165,59 @@ describe("control listener security boundary", () => {
     expect(authenticator.verifyCsrf).toHaveBeenCalledTimes(2);
   });
 
+  it("accepts only the fixed browser activity marker and records successful interaction", async () => {
+    const record = vi.fn(async () => true);
+    const application = createControlApplication(controlConfig(), {
+      authenticator: browserAuthenticator(),
+      humanActivity: { record },
+      registerRoutes: (scope) => {
+        scope.get("/api/v2/test-read", async () => ({ data: {} }));
+        scope.post("/api/v2/test-activity", {
+          config: {
+            controlSecurity: {
+              public: false,
+              activityAction: "test.activity",
+            },
+          },
+        }, async () => ({ data: {} }));
+      },
+    });
+    openApplications.push(application);
+    expect((await application.inject({
+      method: "GET",
+      url: "/api/v2/test-read",
+      headers: {
+        host: "control.example.org",
+        "x-secretsauce-user-activity": "background",
+      },
+    })).statusCode).toBe(400);
+    expect((await application.inject({
+      method: "GET",
+      url: "/api/v2/test-read",
+      headers: { host: "control.example.org" },
+    })).statusCode).toBe(200);
+    expect(record).not.toHaveBeenCalled();
+    expect((await application.inject({
+      method: "GET",
+      url: "/api/v2/test-read",
+      headers: {
+        host: "control.example.org",
+        "x-secretsauce-user-activity": "interactive",
+      },
+    })).statusCode).toBe(200);
+    expect(record).toHaveBeenCalledTimes(1);
+    expect((await application.inject({
+      method: "POST",
+      url: "/api/v2/test-activity",
+      headers: {
+        host: "control.example.org",
+        origin: "https://control.example.org",
+        "x-csrf-token": "valid-csrf-proof",
+      },
+    })).statusCode).toBe(200);
+    expect(record).toHaveBeenCalledTimes(2);
+  });
+
   it("enforces the hard body boundary and maps malformed JSON without echoing it", async () => {
     const handler = vi.fn(async () => ({ data: { accepted: true } }));
     const application = createControlApplication(controlConfig(), {

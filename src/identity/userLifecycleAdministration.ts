@@ -158,8 +158,9 @@ export class UserLifecycleAdministrationRepository {
             transaction.run(`
               INSERT INTO users (
                 id, email, normalized_email, given_name, family_name, role, status,
-                security_epoch, password_policy_version, version, created_at, updated_at
-              ) VALUES (?, ?, ?, ?, ?, ?, 'invited', 1, 1, 1, ?, ?)
+                security_epoch, password_policy_version,
+                last_qualifying_activity_at, version, created_at, updated_at
+              ) VALUES (?, ?, ?, ?, ?, ?, 'invited', 1, 1, ?, 1, ?, ?)
             `, [
               input.userId,
               input.profile.email,
@@ -167,6 +168,7 @@ export class UserLifecycleAdministrationRepository {
               input.profile.givenName,
               input.profile.familyName,
               input.role,
+              now,
               now,
               now,
             ]);

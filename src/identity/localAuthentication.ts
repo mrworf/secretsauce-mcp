@@ -23,6 +23,7 @@ import {
   verifyTotpCode,
 } from "./totp.js";
 import { normalizeEmail } from "./validation.js";
+import { recordQualifyingActivity } from "../humanActivity.js";
 
 const SESSION_VALUE_BYTES = 32;
 const HASH_PATTERN = /^[a-f0-9]{64}$/;
@@ -348,6 +349,11 @@ export class LocalAuthenticationRepository {
             input.session.issuedAt,
             input.candidate.userId,
           ]);
+          recordQualifyingActivity(
+            transaction,
+            input.candidate.userId,
+            input.session.issuedAt,
+          );
           return {
             value: undefined,
             auditInput: {
@@ -430,6 +436,11 @@ export class LocalAuthenticationRepository {
             input.session.issuedAt,
             input.candidate.userId,
           ]);
+          recordQualifyingActivity(
+            transaction,
+            input.candidate.userId,
+            input.session.issuedAt,
+          );
           return {
             value: undefined,
             auditInput: {

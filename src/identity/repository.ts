@@ -110,8 +110,9 @@ export class IdentityRepository {
           transaction.run(`
             INSERT INTO users (
               id, email, normalized_email, given_name, family_name, role, status,
-              security_epoch, password_policy_version, version, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, 1, 1, 1, ?, ?)
+              security_epoch, password_policy_version,
+              last_qualifying_activity_at, version, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, 1, 1, ?, 1, ?, ?)
           `, [
             id,
             profile.email,
@@ -120,6 +121,7 @@ export class IdentityRepository {
             profile.familyName,
             role,
             status,
+            now,
             now,
             now,
           ]);
@@ -184,9 +186,10 @@ export class IdentityRepository {
           transaction.run(`
             INSERT INTO users (
               id, email, normalized_email, given_name, family_name, role, status,
-              security_epoch, password_policy_version, version, created_at, updated_at
+              security_epoch, password_policy_version,
+              last_qualifying_activity_at, version, created_at, updated_at
             ) VALUES (
-              ?, ?, ?, ?, ?, 'superadmin', 'enrollment_required', 1, 1, 1, ?, ?
+              ?, ?, ?, ?, ?, 'superadmin', 'enrollment_required', 1, 1, ?, 1, ?, ?
             )
           `, [
             id,
@@ -194,6 +197,7 @@ export class IdentityRepository {
             profile.normalizedEmail,
             profile.givenName,
             profile.familyName,
+            now,
             now,
             now,
           ]);

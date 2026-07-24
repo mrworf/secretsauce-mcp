@@ -157,6 +157,7 @@ import {
   SecuritySettingsStore,
   securitySettingsSeed,
 } from "../securitySettings.js";
+import { HumanActivityRepository } from "../humanActivity.js";
 
 export interface ControlApplicationOptions {
   authenticator?: ControlAuthenticator;
@@ -182,6 +183,7 @@ export interface ControlApplicationOptions {
     repository: SecuritySettingsRepository;
     store: SecuritySettingsStore;
   };
+  humanActivity?: Pick<HumanActivityRepository, "record">;
 }
 
 export function createControlApplication(
@@ -231,10 +233,16 @@ export function createControlApplication(
     authenticator,
     rateLimiter,
     options.apiKeyActivity ?? options.apiKeys?.repository,
+    options.humanActivity ?? (
+      options.persistence === undefined
+        ? undefined
+        : new HumanActivityRepository(options.persistence)
+    ),
   );
   application.addHook("onRequest", security.onRequest);
   application.addHook("onSend", security.onSend);
   application.addHook("onResponse", async (request, reply) => {
+    await security.onResponse(request, reply);
     const authentication = controlAuthentication(request);
     logger.info("control.request_completed", {
       request_id: request.id,

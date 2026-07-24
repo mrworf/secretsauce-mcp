@@ -10,6 +10,7 @@ import type {
 import { canonicalJson } from "../vault/canonicalJson.js";
 import { PersistenceError } from "../persistence/errors.js";
 import type { ProviderAssertion } from "../identity/provider.js";
+import { recordQualifyingActivity } from "../humanActivity.js";
 
 const OPAQUE_VALUE_PATTERN = /^[A-Za-z0-9_-]{43}$/;
 
@@ -1191,6 +1192,7 @@ export class DatabaseOAuthRepository {
             SET last_used_at = ?, idle_expires_at = ?, version = version + 1
             WHERE id = ? AND status = 'active'
           `, [now, refreshedIdle, record.grant_id]);
+          recordQualifyingActivity(transaction, record.user_id, now);
           return {
             subject: record.user_id,
             scopes,

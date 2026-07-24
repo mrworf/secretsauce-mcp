@@ -2848,6 +2848,158 @@ INSERT INTO restore_state (
 ) VALUES (1, 'inactive', NULL, NULL, NULL, 1, 0, 0);
 `;
 
+const migration0023 = `
+CREATE TABLE v1_migration_state (
+  singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
+  state TEXT NOT NULL CHECK (state IN ('pending', 'completed')),
+  migration_id TEXT UNIQUE,
+  source_sha256 TEXT,
+  plan_digest TEXT,
+  source_schema_version INTEGER,
+  resolution_mode TEXT CHECK (
+    resolution_mode IS NULL
+    OR resolution_mode IN ('definitions_only', 'resolved_credentials')
+  ),
+  service_count INTEGER NOT NULL DEFAULT 0
+    CHECK (service_count BETWEEN 0 AND 10000),
+  destination_count INTEGER NOT NULL DEFAULT 0
+    CHECK (destination_count BETWEEN 0 AND 10000),
+  credential_count INTEGER NOT NULL DEFAULT 0
+    CHECK (credential_count BETWEEN 0 AND 10000),
+  configured_credential_count INTEGER NOT NULL DEFAULT 0 CHECK (
+    configured_credential_count BETWEEN 0 AND credential_count
+  ),
+  policy_count INTEGER NOT NULL DEFAULT 0
+    CHECK (policy_count BETWEEN 0 AND 10000),
+  rule_count INTEGER NOT NULL DEFAULT 0
+    CHECK (rule_count BETWEEN 0 AND 10000),
+  discarded_acl_count INTEGER NOT NULL DEFAULT 0
+    CHECK (discarded_acl_count BETWEEN 0 AND 1000000),
+  retained_slug_count INTEGER NOT NULL DEFAULT 0 CHECK (
+    retained_slug_count BETWEEN 0 AND service_count
+  ),
+  generated_slug_count INTEGER NOT NULL DEFAULT 0 CHECK (
+    generated_slug_count BETWEEN 0 AND service_count
+  ),
+  activation_generation INTEGER,
+  completed_at INTEGER,
+  version INTEGER NOT NULL DEFAULT 1 CHECK (version > 0),
+  created_at INTEGER NOT NULL CHECK (created_at >= 0),
+  updated_at INTEGER NOT NULL CHECK (updated_at >= created_at),
+  CHECK (migration_id IS NULL OR (
+    length(migration_id) = 36 AND migration_id = lower(migration_id)
+    AND substr(migration_id, 15, 1) = '7'
+    AND substr(migration_id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND migration_id NOT GLOB '*[^0-9a-f-]*'
+  )),
+  CHECK (source_sha256 IS NULL OR (
+    length(source_sha256) = 64 AND source_sha256 = lower(source_sha256)
+    AND source_sha256 NOT GLOB '*[^0-9a-f]*'
+  )),
+  CHECK (plan_digest IS NULL OR (
+    length(plan_digest) = 64 AND plan_digest = lower(plan_digest)
+    AND plan_digest NOT GLOB '*[^0-9a-f]*'
+  )),
+  CHECK (
+    retained_slug_count + generated_slug_count = service_count
+  ),
+  CHECK (
+    (state = 'pending'
+      AND migration_id IS NULL
+      AND source_sha256 IS NULL
+      AND plan_digest IS NULL
+      AND source_schema_version IS NULL
+      AND resolution_mode IS NULL
+      AND service_count = 0
+      AND destination_count = 0
+      AND credential_count = 0
+      AND configured_credential_count = 0
+      AND policy_count = 0
+      AND rule_count = 0
+      AND discarded_acl_count = 0
+      AND retained_slug_count = 0
+      AND generated_slug_count = 0
+      AND activation_generation IS NULL
+      AND completed_at IS NULL)
+    OR
+    (state = 'completed'
+      AND migration_id IS NOT NULL
+      AND source_sha256 IS NOT NULL
+      AND plan_digest IS NOT NULL
+      AND source_schema_version = 1
+      AND resolution_mode IS NOT NULL
+      AND activation_generation IS NOT NULL
+      AND activation_generation > 0
+      AND completed_at IS NOT NULL
+      AND completed_at >= created_at)
+  )
+) STRICT;
+
+INSERT INTO v1_migration_state (
+  singleton, state, version, created_at, updated_at
+) VALUES (1, 'pending', 1, 0, 0);
+
+CREATE TABLE migration_remediations (
+  id TEXT PRIMARY KEY CHECK (
+    length(id) = 36 AND id = lower(id)
+    AND substr(id, 15, 1) = '7'
+    AND substr(id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND id NOT GLOB '*[^0-9a-f-]*'
+  ),
+  migration_id TEXT NOT NULL REFERENCES v1_migration_state(migration_id),
+  service_id TEXT NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+  target_id TEXT,
+  task_kind TEXT NOT NULL CHECK (
+    task_kind IN (
+      'assign_service_admin', 'assign_service_access', 'supply_credential',
+      'review_enable_policy', 'validate_publish_service'
+    )
+  ),
+  state TEXT NOT NULL CHECK (
+    state IN ('open', 'completed', 'dismissed')
+  ),
+  completed_by_user_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+  completed_at INTEGER,
+  dismissed_by_user_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+  dismissed_at INTEGER,
+  justification TEXT CHECK (
+    justification IS NULL OR length(justification) BETWEEN 10 AND 1024
+  ),
+  version INTEGER NOT NULL DEFAULT 1 CHECK (version > 0),
+  created_at INTEGER NOT NULL CHECK (created_at >= 0),
+  updated_at INTEGER NOT NULL CHECK (updated_at >= created_at),
+  CHECK (target_id IS NULL OR (
+    length(target_id) = 36 AND target_id = lower(target_id)
+    AND substr(target_id, 15, 1) = '7'
+    AND substr(target_id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND target_id NOT GLOB '*[^0-9a-f-]*'
+  )),
+  CHECK (
+    (state = 'open' AND completed_by_user_id IS NULL AND completed_at IS NULL
+      AND dismissed_by_user_id IS NULL AND dismissed_at IS NULL
+      AND justification IS NULL)
+    OR (state = 'completed' AND completed_by_user_id IS NOT NULL
+      AND completed_at IS NOT NULL AND dismissed_by_user_id IS NULL
+      AND dismissed_at IS NULL AND justification IS NULL)
+    OR (state = 'dismissed' AND dismissed_by_user_id IS NOT NULL
+      AND dismissed_at IS NOT NULL AND completed_by_user_id IS NULL
+      AND completed_at IS NULL AND justification IS NOT NULL)
+  ),
+  UNIQUE (migration_id, service_id, task_kind, target_id)
+) STRICT;
+
+CREATE INDEX migration_remediations_state_service_idx
+  ON migration_remediations (state, service_id, task_kind, id);
+CREATE INDEX migration_remediations_migration_idx
+  ON migration_remediations (migration_id, state, task_kind, id);
+CREATE UNIQUE INDEX migration_remediations_target_idx
+  ON migration_remediations (migration_id, service_id, task_kind, target_id)
+  WHERE target_id IS NOT NULL;
+CREATE UNIQUE INDEX migration_remediations_service_idx
+  ON migration_remediations (migration_id, service_id, task_kind)
+  WHERE target_id IS NULL;
+`;
+
 export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [
   {
     version: 1,
@@ -2958,6 +3110,11 @@ export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [
     version: 22,
     name: "portable_restore_foundation",
     sql: migration0022,
+  },
+  {
+    version: 23,
+    name: "v1_migration_foundation",
+    sql: migration0023,
   },
 ];
 

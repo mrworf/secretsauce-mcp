@@ -18,7 +18,7 @@ const SERVICE_ID = "018f1f2e-7b3c-7a10-8000-000000000003";
 const CORRELATION_ID = "req_8ca2d86c-541c-4484-bcc0-feebb54f6311";
 
 const fixtureMigration: PersistenceMigration = {
-  version: 23,
+  version: 24,
   name: "test_repository_fixtures",
   sql: `
     CREATE TABLE test_parent (
@@ -427,7 +427,7 @@ describe("transactional administrative audit", () => {
 
   it("rolls a mutation back and degrades readiness when audit insertion fails", async () => {
     const failureMigration: PersistenceMigration = {
-      version: 24,
+      version: 25,
       name: "test_audit_failure",
       sql: `
         CREATE TRIGGER reject_test_audit

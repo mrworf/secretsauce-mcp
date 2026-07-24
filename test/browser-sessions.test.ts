@@ -110,7 +110,7 @@ describe("durable browser sessions", () => {
     closeables.add(restarted);
     expect(await restarted.persistence.execute({
       run: (database) => database.schemaVersion,
-    })).toBe(16);
+    })).toBe(17);
   });
 
   it("serves no-store login/session/logout with strict cookies and CSRF rotation", async () => {

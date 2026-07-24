@@ -248,6 +248,15 @@ export interface ApiKeyAuthenticationCandidate {
   verifierHash: string;
 }
 
+export interface ActiveApiKeyCandidate {
+  id: string;
+  identifier: string;
+  nickname: string;
+  lastFour: string;
+  apiRole: ApiKeyRole;
+  serviceId?: string;
+}
+
 export function generateApiKey(
   random: (size: number) => Buffer = randomBytes,
 ): GeneratedApiKey {
@@ -857,6 +866,47 @@ export class ApiKeyRepository {
         }),
       });
     } catch {
+      throw new ApiKeyError("unavailable");
+    }
+  }
+
+  async activeVerifiedCandidate(input: {
+    candidate: ApiKeyAuthenticationCandidate;
+    verified: boolean;
+  }): Promise<ActiveApiKeyCandidate | undefined> {
+    if (
+      !isUuidV7(input.candidate.id) ||
+      !canonicalBase64url(input.candidate.identifier, IDENTIFIER_BYTES) ||
+      !isSupportedApiKeyHash(input.candidate.verifierHash) ||
+      typeof input.verified !== "boolean"
+    ) throw new ApiKeyError("invalid_request");
+    try {
+      return await this.owner.execute({
+        run: (database) => database.read((query) => {
+          const row = query.get<ApiKeyRow>(
+            "SELECT * FROM api_keys WHERE id = ? AND identifier = ?",
+            [input.candidate.id, input.candidate.identifier],
+          );
+          const now = safeNow(this.now);
+          if (
+            !input.verified ||
+            row === undefined ||
+            row.verifier_hash !== input.candidate.verifierHash ||
+            row.status !== "active" ||
+            (row.expires_at !== null && row.expires_at <= now)
+          ) return undefined;
+          return {
+            id: row.id,
+            identifier: row.identifier,
+            nickname: row.nickname,
+            lastFour: row.last_four,
+            apiRole: row.api_role,
+            ...(row.service_id === null ? {} : { serviceId: row.service_id }),
+          };
+        }),
+      });
+    } catch (error) {
+      if (error instanceof ApiKeyError) throw error;
       throw new ApiKeyError("unavailable");
     }
   }

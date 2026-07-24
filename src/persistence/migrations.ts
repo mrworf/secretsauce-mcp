@@ -1903,6 +1903,36 @@ CREATE INDEX service_config_versions_retention_idx
   ON service_config_versions (service_id, published_at, id);
 `;
 
+const migration0017 = `
+CREATE TABLE credential_self_api_key_approvals (
+  credential_id TEXT PRIMARY KEY,
+  service_id TEXT NOT NULL,
+  api_key_id TEXT NOT NULL REFERENCES api_keys(id) ON DELETE RESTRICT,
+  vault_generation INTEGER NOT NULL CHECK (vault_generation > 0),
+  approved_by_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  nickname_snapshot TEXT NOT NULL CHECK (
+    length(nickname_snapshot) BETWEEN 1 AND 512
+  ),
+  last_four_snapshot TEXT NOT NULL CHECK (
+    length(last_four_snapshot) = 4
+    AND last_four_snapshot NOT GLOB '*[^A-Za-z0-9_-]*'
+  ),
+  justification_digest TEXT NOT NULL CHECK (
+    length(justification_digest) = 64
+    AND justification_digest = lower(justification_digest)
+    AND justification_digest NOT GLOB '*[^0-9a-f]*'
+  ),
+  approved_at INTEGER NOT NULL CHECK (approved_at >= 0),
+  FOREIGN KEY (service_id, credential_id)
+    REFERENCES service_credentials(service_id, id) ON DELETE CASCADE
+) STRICT;
+
+CREATE INDEX credential_self_api_key_approvals_key_idx
+  ON credential_self_api_key_approvals (api_key_id, credential_id);
+CREATE INDEX credential_self_api_key_approvals_service_idx
+  ON credential_self_api_key_approvals (service_id, credential_id);
+`;
+
 export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [
   {
     version: 1,
@@ -1983,6 +2013,11 @@ export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [
     version: 16,
     name: "api_key_service_revision_actors",
     sql: migration0016,
+  },
+  {
+    version: 17,
+    name: "self_api_key_protection",
+    sql: migration0017,
   },
 ];
 

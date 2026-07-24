@@ -156,10 +156,10 @@ milestones:
   - id: "22"
     title: "Restore"
     file: "docs/milestones/22-restore.md"
-    status: "pending"
+    status: "in_progress"
     completed_at: null
     commit_hash: null
-    notes: ""
+    notes: "Decision-complete implementation plan written before code changes."
   - id: "23"
     title: "V1 Migration"
     file: "docs/milestones/23-v1-migration.md"

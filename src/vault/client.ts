@@ -4,6 +4,8 @@ import type { z } from "zod";
 import {
   createResultSchema,
   deleteResultSchema,
+  replaceEmptyResultSchema,
+  restoreTransferFinishResultSchema,
   transferFinishResultSchema,
   transferReadResultSchema,
   transferStartResultSchema,
@@ -205,12 +207,27 @@ export class BackupVaultClient extends VaultClient {
     passphraseValue: Uint8Array,
     selection: readonly VaultBackupSelection[],
   ): Promise<Buffer> {
+    return this.exportArchive(capability, passphraseValue, selection);
+  }
+
+  exportRecovery(
+    capability: string,
+    passphraseValue: Uint8Array,
+  ): Promise<Buffer> {
+    return this.exportArchive(capability, passphraseValue);
+  }
+
+  private async exportArchive(
+    capability: string,
+    passphraseValue: Uint8Array,
+    selection?: readonly VaultBackupSelection[],
+  ): Promise<Buffer> {
     const passphrase = asBufferView(passphraseValue).toString("base64url");
     const start = await this.request("export_encrypted", {
       action: "start",
       capability,
       passphrase,
-      selection,
+      ...(selection === undefined ? {} : { selection }),
     }, transferStartResultSchema);
     const chunks: Buffer[] = [];
     let total = 0;
@@ -238,12 +255,85 @@ export class BackupVaultClient extends VaultClient {
   }
 
   async importEncrypted(capability: string, passphraseValue: Uint8Array, archiveValue: Uint8Array): Promise<void> {
+    await this.importArchive(
+      capability,
+      passphraseValue,
+      archiveValue,
+      transferFinishResultSchema,
+    );
+  }
+
+  async validateRestore(
+    capability: string,
+    passphraseValue: Uint8Array,
+    archiveValue: Uint8Array,
+    selection: readonly VaultBackupSelection[],
+  ): Promise<{ validated: true; recordCount: number }> {
+    const result = await this.importArchive(
+      capability,
+      passphraseValue,
+      archiveValue,
+      restoreTransferFinishResultSchema,
+      selection,
+    );
+    if (!("validated" in result)) throw vaultError("vault_protocol_error");
+    return result;
+  }
+
+  async replaceRestore(
+    capability: string,
+    passphraseValue: Uint8Array,
+    archiveValue: Uint8Array,
+    selection: readonly VaultBackupSelection[],
+  ): Promise<{ replaced: true; recordCount: number }> {
+    const result = await this.importArchive(
+      capability,
+      passphraseValue,
+      archiveValue,
+      restoreTransferFinishResultSchema,
+      selection,
+    );
+    if (!("replaced" in result)) throw vaultError("vault_protocol_error");
+    return result;
+  }
+
+  async importRecovery(
+    capability: string,
+    passphraseValue: Uint8Array,
+    archiveValue: Uint8Array,
+  ): Promise<void> {
+    await this.importArchive(
+      capability,
+      passphraseValue,
+      archiveValue,
+      transferFinishResultSchema,
+    );
+  }
+
+  replaceEmpty(
+    capability: string,
+  ): Promise<{ replaced: true; recordCount: 0 }> {
+    return this.request(
+      "replace_empty",
+      { capability },
+      replaceEmptyResultSchema,
+    );
+  }
+
+  private async importArchive<T>(
+    capability: string,
+    passphraseValue: Uint8Array,
+    archiveValue: Uint8Array,
+    resultSchema: z.ZodType<T>,
+    selection?: readonly VaultBackupSelection[],
+  ): Promise<T> {
     if (archiveValue.byteLength < 1 || archiveValue.byteLength > 1024 * 1024 * 1024) {
       throw vaultError("vault_archive_invalid");
     }
     const start = await this.request("import_encrypted", {
       action: "start",
       capability,
+      ...(selection === undefined ? {} : { selection }),
     }, transferStartResultSchema);
     let sequence = 0;
     for (let offset = 0; offset < archiveValue.byteLength; offset += start.chunkBytes) {
@@ -259,13 +349,13 @@ export class BackupVaultClient extends VaultClient {
       if (result.nextSequence !== sequence + 1) throw vaultError("vault_protocol_error");
       sequence += 1;
     }
-    await this.request("import_encrypted", {
+    return this.request("import_encrypted", {
       action: "finish",
       transferId: start.transferId,
       transferToken: capability,
       sequence,
       passphrase: asBufferView(passphraseValue).toString("base64url"),
-    }, transferFinishResultSchema);
+    }, resultSchema);
   }
 }
 

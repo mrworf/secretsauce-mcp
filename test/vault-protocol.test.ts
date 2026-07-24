@@ -62,9 +62,19 @@ describe("vault authenticated binary protocol", () => {
     const allowed: Record<VaultCaller, VaultOperation[]> = {
       data_plane: ["readiness", "resolve_for_request"],
       control_plane: ["readiness", "create", "replace", "delete", "metadata"],
-      backup: ["readiness", "export_encrypted", "import_encrypted"],
+      backup: ["readiness", "export_encrypted", "import_encrypted", "replace_empty"],
     };
-    const operations = ["readiness", "resolve_for_request", "create", "replace", "delete", "metadata", "export_encrypted", "import_encrypted"] as const;
+    const operations = [
+      "readiness",
+      "resolve_for_request",
+      "create",
+      "replace",
+      "delete",
+      "metadata",
+      "export_encrypted",
+      "import_encrypted",
+      "replace_empty",
+    ] as const;
     for (const caller of Object.keys(allowed) as VaultCaller[]) {
       for (const operation of operations) {
         expect(isOperationAllowed(caller, operation)).toBe(allowed[caller].includes(operation));

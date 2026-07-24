@@ -62,6 +62,36 @@ describe("vault single-use capabilities", () => {
       .toThrowError(expect.objectContaining({ code: "vault_capability_invalid" }));
   });
 
+  it("requires exact restore bindings and forbids them on legacy backup operations", () => {
+    const authority = createAuthority();
+    const restore = {
+      operation: "validate_restore" as const,
+      authorizationId: uuid.next(),
+      subjectId: ids.subjectId,
+      operationDigest: "c".repeat(64),
+      restorePlanId: uuid.next(),
+      archiveSha256: "d".repeat(64),
+      planDigest: "e".repeat(64),
+    };
+    expect(authority.consumeBackup(authority.issueBackup(restore))).toMatchObject(restore);
+
+    expect(() => authority.issueBackup({
+      operation: "replace_restore",
+      authorizationId: uuid.next(),
+      subjectId: ids.subjectId,
+      operationDigest: "c".repeat(64),
+    } as never)).toThrowError(expect.objectContaining({ code: "vault_capability_invalid" }));
+    expect(() => authority.issueBackup({
+      operation: "export_encrypted",
+      authorizationId: uuid.next(),
+      subjectId: ids.subjectId,
+      operationDigest: "c".repeat(64),
+      restorePlanId: uuid.next(),
+      archiveSha256: "d".repeat(64),
+      planDigest: "e".repeat(64),
+    })).toThrowError(expect.objectContaining({ code: "vault_capability_invalid" }));
+  });
+
   it("lets the gateway mount resolve authority without backup authority", () => {
     const issuer = new VaultResolveCapabilityIssuer(
       Buffer.alloc(32, 1),

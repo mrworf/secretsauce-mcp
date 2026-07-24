@@ -71,7 +71,7 @@ export const exportRequestSchema = z.discriminatedUnion("action", [
     action: z.literal("start"),
     capability: z.string().min(1).max(8192),
     passphrase: passphraseSchema,
-    selection: backupSelectionSchema,
+    selection: backupSelectionSchema.optional(),
   }).strict(),
   z.object({
     action: z.literal("read"),
@@ -84,6 +84,7 @@ export const importRequestSchema = z.discriminatedUnion("action", [
   z.object({
     action: z.literal("start"),
     capability: z.string().min(1).max(8192),
+    selection: backupSelectionSchema.optional(),
   }).strict(),
   z.object({
     action: z.literal("write"),
@@ -100,6 +101,9 @@ export const importRequestSchema = z.discriminatedUnion("action", [
     passphrase: passphraseSchema,
   }).strict(),
 ]);
+export const replaceEmptyRequestSchema = z.object({
+  capability: z.string().min(1).max(8192),
+}).strict();
 
 export const metadataSchema = z.object({
   status: z.literal("configured"),
@@ -143,6 +147,20 @@ export const transferWriteResultSchema = z.object({
 }).strict();
 export const transferFinishResultSchema = z.object({
   imported: z.literal(true),
+}).strict();
+export const restoreTransferFinishResultSchema = z.union([
+  z.object({
+    validated: z.literal(true),
+    recordCount: z.number().int().nonnegative().max(10_000),
+  }).strict(),
+  z.object({
+    replaced: z.literal(true),
+    recordCount: z.number().int().nonnegative().max(10_000),
+  }).strict(),
+]);
+export const replaceEmptyResultSchema = z.object({
+  replaced: z.literal(true),
+  recordCount: z.literal(0),
 }).strict();
 
 export const successResponseSchema = z.object({

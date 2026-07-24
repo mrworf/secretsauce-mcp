@@ -9,6 +9,7 @@ import {
 } from "./recordStore.js";
 import {
   canonicalizeVaultBackupSelection,
+  digestVaultBackupSelection,
   type VaultBackupSelection,
 } from "./backupSelection.js";
 
@@ -133,6 +134,64 @@ export async function importEncryptedVaultArchive(
   passphraseValue: Uint8Array,
   archiveValue: Uint8Array,
 ): Promise<void> {
+  await restoreEncryptedVaultArchive(
+    store,
+    passphraseValue,
+    archiveValue,
+    "replace",
+  );
+}
+
+export async function validateEncryptedVaultArchive(
+  store: VaultRecordStore,
+  passphraseValue: Uint8Array,
+  archiveValue: Uint8Array,
+  expectedSelection: readonly VaultBackupSelection[],
+): Promise<number> {
+  return restoreEncryptedVaultArchive(
+    store,
+    passphraseValue,
+    archiveValue,
+    "validate",
+    expectedSelection,
+  );
+}
+
+export async function replaceEncryptedVaultArchive(
+  store: VaultRecordStore,
+  passphraseValue: Uint8Array,
+  archiveValue: Uint8Array,
+  expectedSelection: readonly VaultBackupSelection[],
+): Promise<number> {
+  return restoreEncryptedVaultArchive(
+    store,
+    passphraseValue,
+    archiveValue,
+    "replace",
+    expectedSelection,
+  );
+}
+
+export function replaceVaultWithEmpty(store: VaultRecordStore): void {
+  const transaction = store.beginRestore();
+  try {
+    transaction.commit();
+  } catch (error) {
+    transaction.abort();
+    throw error;
+  }
+}
+
+async function restoreEncryptedVaultArchive(
+  store: VaultRecordStore,
+  passphraseValue: Uint8Array,
+  archiveValue: Uint8Array,
+  mode: "validate" | "replace",
+  expectedSelection?: readonly VaultBackupSelection[],
+): Promise<number> {
+  const expected = expectedSelection === undefined
+    ? undefined
+    : canonicalizeVaultBackupSelection(expectedSelection);
   const passphrase = validatePassphrase(passphraseValue);
   const archive = Buffer.from(archiveValue.buffer, archiveValue.byteOffset, archiveValue.byteLength);
   if (archive.byteLength < HEADER_BYTES + CHUNK_HEADER_BYTES + TAG_BYTES || archive.byteLength > MAX_ARCHIVE_BYTES) {
@@ -155,6 +214,7 @@ export async function importEncryptedVaultArchive(
     let totalPlaintext = 0;
     let pending: Buffer = Buffer.alloc(0);
     let finalSeen = false;
+    const actualSelection: VaultBackupSelection[] = [];
 
     while (offset < archive.byteLength) {
       if (archive.byteLength - offset < CHUNK_HEADER_BYTES + TAG_BYTES) throw authenticationFailure();
@@ -203,7 +263,12 @@ export async function importEncryptedVaultArchive(
           if (!Number.isSafeInteger(totalPlaintext) || totalPlaintext > MAX_ARCHIVE_BYTES) throw authenticationFailure();
           const combined = Buffer.concat([pending, plaintext]);
           pending.fill(0);
-          pending = parseRecords(combined, transaction, (count) => { recordCount += count; });
+          pending = parseRecords(
+            combined,
+            transaction,
+            (count) => { recordCount += count; },
+            actualSelection,
+          );
           combined.fill(0);
           if (recordCount > parsedHeader.recordCount || recordCount > MAX_RECORDS) throw authenticationFailure();
         }
@@ -214,8 +279,15 @@ export async function importEncryptedVaultArchive(
       sequence += 1;
     }
     if (!finalSeen) throw authenticationFailure();
-    transaction.commit();
+    if (
+      expected !== undefined
+      && digestVaultBackupSelection(actualSelection)
+        !== digestVaultBackupSelection(expected)
+    ) throw authenticationFailure();
+    if (mode === "replace") transaction.commit();
+    else transaction.abort();
     transaction = undefined;
+    return recordCount;
   } catch (error) {
     transaction?.abort();
     if (error instanceof Error && error.name === "VaultError" && "code" in error) {
@@ -362,6 +434,7 @@ function parseRecords(
   plaintext: Buffer,
   transaction: VaultRestoreTransaction,
   increment: (count: number) => void,
+  selection: VaultBackupSelection[],
 ): Buffer {
   let offset = 0;
   let count = 0;
@@ -384,18 +457,29 @@ function parseRecords(
     ) {
       throw authenticationFailure();
     }
+    const locator = bytesToUuid(entry.subarray(0, 16));
+    const serviceId = bytesToUuid(entry.subarray(44, 60));
+    const destinationId = bytesToUuid(entry.subarray(60, 76));
+    const credentialId = bytesToUuid(entry.subarray(76, 92));
     const secret = Buffer.from(entry.subarray(96, 96 + secretLength));
     try {
       transaction.append({
-        locator: bytesToUuid(entry.subarray(0, 16)),
+        locator,
         generation,
         createdAt,
         updatedAt,
         captureLastFour: capture === 1,
-        serviceId: bytesToUuid(entry.subarray(44, 60)),
-        destinationId: bytesToUuid(entry.subarray(60, 76)),
-        credentialId: bytesToUuid(entry.subarray(76, 92)),
+        serviceId,
+        destinationId,
+        credentialId,
         secret,
+      });
+      selection.push({
+        locator,
+        generation,
+        serviceId,
+        destinationId,
+        credentialId,
       });
     } catch {
       throw authenticationFailure();

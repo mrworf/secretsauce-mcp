@@ -12,12 +12,22 @@ import {
 import { createServer, type Server, type Socket } from "node:net";
 import { dirname } from "node:path";
 import type { z } from "zod";
-import { VaultCapabilityAuthority } from "./capabilities.js";
+import {
+  VaultCapabilityAuthority,
+  type BackupCapability,
+} from "./capabilities.js";
 import {
   canonicalizeVaultBackupSelection,
   digestVaultBackupSelection,
+  type VaultBackupSelection,
 } from "./backupSelection.js";
-import { exportEncryptedVaultArchive, importEncryptedVaultArchive } from "./archive.js";
+import {
+  exportEncryptedVaultArchive,
+  importEncryptedVaultArchive,
+  replaceEncryptedVaultArchive,
+  replaceVaultWithEmpty,
+  validateEncryptedVaultArchive,
+} from "./archive.js";
 import {
   createRequestSchema,
   deleteRequestSchema,
@@ -26,6 +36,7 @@ import {
   metadataRequestSchema,
   readinessRequestSchema,
   replaceRequestSchema,
+  replaceEmptyRequestSchema,
   resolveRequestSchema,
 } from "./contracts.js";
 import { VaultError, vaultError } from "./errors.js";
@@ -64,6 +75,8 @@ interface ImportTransfer {
   totalBytes: number;
   sequence: number;
   expiresAt: number;
+  operation: BackupCapability["operation"];
+  selection?: VaultBackupSelection[];
 }
 
 type ArchiveTransfer = ExportTransfer | ImportTransfer;
@@ -309,17 +322,25 @@ export class VaultBrokerServer {
       if (payload.action === "start") {
         if (this.#transfers.size >= MAX_TRANSFERS) throw vaultError("vault_capacity_exceeded");
         const capability = this.#capabilities.consumeBackup(payload.capability);
-        if (capability.operation !== "export_encrypted") throw vaultError("vault_capability_invalid");
-        const selection = canonicalizeVaultBackupSelection(payload.selection);
-        const expectedDigest = Buffer.from(
-          digestVaultBackupSelection(selection),
-          "hex",
-        );
-        const capabilityDigest = Buffer.from(capability.operationDigest, "hex");
-        const digestMatches = timingSafeEqual(expectedDigest, capabilityDigest);
-        expectedDigest.fill(0);
-        capabilityDigest.fill(0);
-        if (!digestMatches) throw vaultError("vault_capability_invalid");
+        if (
+          capability.operation !== "export_encrypted"
+          && capability.operation !== "export_recovery"
+        ) throw vaultError("vault_capability_invalid");
+        const selection = payload.selection === undefined
+          ? undefined
+          : canonicalizeVaultBackupSelection(payload.selection);
+        if (
+          (capability.operation === "export_encrypted"
+            && (
+              selection === undefined
+              || !selectionDigestMatches(
+                selection,
+                capability.operationDigest,
+              )
+            ))
+          || (capability.operation === "export_recovery"
+            && selection !== undefined)
+        ) throw vaultError("vault_capability_invalid");
         const passphrase = decodePassphrase(payload.passphrase);
         let archive: Buffer | undefined;
         try {
@@ -367,7 +388,30 @@ export class VaultBrokerServer {
       if (payload.action === "start") {
         if (this.#transfers.size >= MAX_TRANSFERS) throw vaultError("vault_capacity_exceeded");
         const capability = this.#capabilities.consumeBackup(payload.capability);
-        if (capability.operation !== "import_encrypted") throw vaultError("vault_capability_invalid");
+        if (![
+          "import_encrypted",
+          "validate_restore",
+          "replace_restore",
+          "import_recovery",
+        ].includes(capability.operation)) {
+          throw vaultError("vault_capability_invalid");
+        }
+        const selection = payload.selection === undefined
+          ? undefined
+          : canonicalizeVaultBackupSelection(payload.selection);
+        const needsSelection =
+          capability.operation === "validate_restore"
+          || capability.operation === "replace_restore";
+        if (
+          needsSelection !== (selection !== undefined)
+          || (
+            needsSelection
+            && !selectionDigestMatches(
+              selection!,
+              capability.operationDigest,
+            )
+          )
+        ) throw vaultError("vault_capability_invalid");
         const transferId = randomUUID();
         this.#transfers.set(transferId, {
           kind: "import",
@@ -376,6 +420,8 @@ export class VaultBrokerServer {
           totalBytes: 0,
           sequence: 0,
           expiresAt: Date.now() + TRANSFER_TTL_MS,
+          operation: capability.operation,
+          ...(selection === undefined ? {} : { selection }),
         });
         return { transferId, chunkBytes: TRANSFER_CHUNK_BYTES };
       }
@@ -398,12 +444,40 @@ export class VaultBrokerServer {
       this.#transfers.delete(payload.transferId);
       clearTransfer(transfer);
       try {
+        if (transfer.operation === "validate_restore") {
+          const recordCount = await validateEncryptedVaultArchive(
+            this.#store,
+            passphrase,
+            archive,
+            transfer.selection!,
+          );
+          return { validated: true, recordCount };
+        }
+        if (transfer.operation === "replace_restore") {
+          const recordCount = await replaceEncryptedVaultArchive(
+            this.#store,
+            passphrase,
+            archive,
+            transfer.selection!,
+          );
+          return { replaced: true, recordCount };
+        }
         await importEncryptedVaultArchive(this.#store, passphrase, archive);
         return { imported: true };
       } finally {
         passphrase.fill(0);
         archive.fill(0);
       }
+    }
+    if (request.caller === "backup" && request.operation === "replace_empty") {
+      const payload = parse(replaceEmptyRequestSchema, request.payload);
+      const capability = this.#capabilities.consumeBackup(payload.capability);
+      if (
+        capability.operation !== "replace_empty"
+        || !selectionDigestMatches([], capability.operationDigest)
+      ) throw vaultError("vault_capability_invalid");
+      replaceVaultWithEmpty(this.#store);
+      return { replaced: true, recordCount: 0 };
     }
     throw vaultError("vault_operation_denied");
   }
@@ -508,6 +582,21 @@ function decodeTransferChunk(value: string): Buffer {
 
 function transferTokenDigest(value: string): Buffer {
   return createHash("sha256").update("secretsauce:vault-transfer:v1:").update(value).digest();
+}
+
+function selectionDigestMatches(
+  selection: readonly VaultBackupSelection[],
+  capabilityDigestValue: string,
+): boolean {
+  const expectedDigest = Buffer.from(
+    digestVaultBackupSelection(selection),
+    "hex",
+  );
+  const capabilityDigest = Buffer.from(capabilityDigestValue, "hex");
+  const matches = timingSafeEqual(expectedDigest, capabilityDigest);
+  expectedDigest.fill(0);
+  capabilityDigest.fill(0);
+  return matches;
 }
 
 function clearTransfer(transfer: ArchiveTransfer): void {

@@ -84,7 +84,20 @@ describe("standalone vault broker process", () => {
         binding: fixture.binding,
         secret: Buffer.from("temporary-replacement"),
       });
-      await backup.importEncrypted(issueBackup(fixture, "import_encrypted"), passphrase, archive);
+      await expect(backup.validateRestore(
+        issueRestore(fixture, "validate_restore", selection),
+        passphrase,
+        archive,
+        selection,
+      )).resolves.toEqual({ validated: true, recordCount: 1 });
+      await expect(control.metadata(created.locator, fixture.binding))
+        .resolves.toMatchObject({ generation: 2 });
+      await expect(backup.replaceRestore(
+        issueRestore(fixture, "replace_restore", selection),
+        passphrase,
+        archive,
+        selection,
+      )).resolves.toEqual({ replaced: true, recordCount: 1 });
       archive.fill(0);
       passphrase.fill(0);
       control.close();
@@ -117,7 +130,7 @@ describe("standalone vault broker process", () => {
     } finally {
       secret.fill(0);
     }
-  });
+  }, 15_000);
 
   it("fails startup safely when a required key is missing", async () => {
     const fixture = processFixture();
@@ -296,6 +309,22 @@ function issueBackup(
     operationDigest: operation === "export_encrypted"
       ? digestVaultBackupSelection(selection!)
       : "f".repeat(64),
+  });
+}
+
+function issueRestore(
+  fixture: ProcessFixture,
+  operation: "validate_restore" | "replace_restore",
+  selection: readonly VaultBackupSelection[],
+): string {
+  return fixture.authority.issueBackup({
+    operation,
+    authorizationId: new UuidV7Generator().next(),
+    subjectId: new UuidV7Generator().next(),
+    operationDigest: digestVaultBackupSelection(selection),
+    restorePlanId: new UuidV7Generator().next(),
+    archiveSha256: "a".repeat(64),
+    planDigest: "b".repeat(64),
   });
 }
 

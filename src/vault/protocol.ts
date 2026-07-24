@@ -28,13 +28,19 @@ export const VAULT_OPERATIONS = {
   metadata: 6,
   export_encrypted: 7,
   import_encrypted: 8,
+  replace_empty: 9,
 } as const;
 export type VaultOperation = keyof typeof VAULT_OPERATIONS;
 
 const allowedOperations: Record<VaultCaller, ReadonlySet<VaultOperation>> = {
   data_plane: new Set(["readiness", "resolve_for_request"]),
   control_plane: new Set(["readiness", "create", "replace", "delete", "metadata"]),
-  backup: new Set(["readiness", "export_encrypted", "import_encrypted"]),
+  backup: new Set([
+    "readiness",
+    "export_encrypted",
+    "import_encrypted",
+    "replace_empty",
+  ]),
 };
 const callersByCode = reverse(VAULT_CALLERS);
 const operationsByCode = reverse(VAULT_OPERATIONS);

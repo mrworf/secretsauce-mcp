@@ -40,11 +40,40 @@ const backupSchema = z.object({
   issuedAt: timestamp,
   expiresAt: timestamp,
   caller: z.literal("backup"),
-  operation: z.enum(["export_encrypted", "import_encrypted"]),
+  operation: z.enum([
+    "export_encrypted",
+    "import_encrypted",
+    "validate_restore",
+    "replace_restore",
+    "replace_empty",
+    "export_recovery",
+    "import_recovery",
+  ]),
   authorizationId: uuidV7,
   subjectId: uuidV7,
   operationDigest: digest,
-}).strict();
+  restorePlanId: uuidV7.optional(),
+  archiveSha256: digest.optional(),
+  planDigest: digest.optional(),
+}).strict().superRefine((value, context) => {
+  const restoreOperation = ![
+    "export_encrypted",
+    "import_encrypted",
+  ].includes(value.operation);
+  for (const field of [
+    "restorePlanId",
+    "archiveSha256",
+    "planDigest",
+  ] as const) {
+    if (restoreOperation !== (value[field] !== undefined)) {
+      context.addIssue({
+        code: "custom",
+        path: [field],
+        message: "Restore capability binding is invalid.",
+      });
+    }
+  }
+});
 
 export type ResolveCapability = z.infer<typeof resolveSchema>;
 export type BackupCapability = z.infer<typeof backupSchema>;

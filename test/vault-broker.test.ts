@@ -241,11 +241,11 @@ describe("isolated vault broker and typed clients", () => {
       }, (value) => value.toString())).resolves.toBe(original.toString());
 
       await expect(fixture.backup.exportEncrypted(
-        exportCapability,
+        issueBackup(fixture, "export_encrypted", selection),
         passphrase,
         undefined as never,
       ))
-        .rejects.toMatchObject({ code: "vault_frame_invalid" });
+        .rejects.toMatchObject({ code: "vault_capability_invalid" });
       await expect(fixture.backup.exportEncrypted(
         exportCapability,
         passphrase,
@@ -361,6 +361,106 @@ describe("isolated vault broker and typed clients", () => {
       await fixture.close();
     }
   });
+
+  it("validates and exactly replaces restore and recovery archives through one-use capabilities", async () => {
+    const fixture = await brokerFixture();
+    const passphrase = Buffer.from("restore broker passphrase");
+    try {
+      const original = await fixture.control.create({
+        binding: fixture.binding,
+        secret: Buffer.from("original-restored-value"),
+      });
+      const extra = await fixture.control.create({
+        binding: fixture.binding,
+        secret: Buffer.from("target-only-value"),
+      });
+      const selection = selected(fixture, original.locator, 1);
+      const archive = await fixture.backup.exportEncrypted(
+        issueBackup(fixture, "export_encrypted", selection),
+        passphrase,
+        selection,
+      );
+      await fixture.control.replace({
+        locator: original.locator,
+        generation: 1,
+        binding: fixture.binding,
+        secret: Buffer.from("target-newer-value"),
+      });
+
+      await expect(fixture.backup.validateRestore(
+        issueRestore(fixture, "validate_restore", selection),
+        passphrase,
+        archive,
+        selection,
+      )).resolves.toEqual({ validated: true, recordCount: 1 });
+      await expect(fixture.data.resolveForRequest({
+        capability: issueResolve(fixture, original.locator, 2),
+        locator: original.locator,
+        generation: 2,
+        binding: fixture.binding,
+      }, (value) => value.toString())).resolves.toBe("target-newer-value");
+
+      const wrongPassphrase = Buffer.from("wrong restore passphrase");
+      await expect(fixture.backup.validateRestore(
+        issueRestore(fixture, "validate_restore", selection),
+        wrongPassphrase,
+        archive,
+        selection,
+      )).rejects.toMatchObject({
+        code: "vault_archive_authentication_failed",
+      });
+      wrongPassphrase.fill(0);
+
+      const missing = selected(fixture, extra.locator, 1);
+      await expect(fixture.backup.validateRestore(
+        issueRestore(fixture, "validate_restore", missing),
+        passphrase,
+        archive,
+        missing,
+      )).rejects.toMatchObject({
+        code: "vault_archive_authentication_failed",
+      });
+
+      await expect(fixture.backup.replaceRestore(
+        issueRestore(fixture, "replace_restore", selection),
+        passphrase,
+        archive,
+        selection,
+      )).resolves.toEqual({ replaced: true, recordCount: 1 });
+      await expect(fixture.data.resolveForRequest({
+        capability: issueResolve(fixture, original.locator, 1),
+        locator: original.locator,
+        generation: 1,
+        binding: fixture.binding,
+      }, (value) => value.toString())).resolves.toBe(
+        "original-restored-value",
+      );
+      await expect(fixture.control.metadata(extra.locator, fixture.binding))
+        .rejects.toMatchObject({ code: "vault_record_not_found" });
+
+      const recovery = await fixture.backup.exportRecovery(
+        issueRestore(fixture, "export_recovery"),
+        passphrase,
+      );
+      await expect(fixture.backup.replaceEmpty(
+        issueRestore(fixture, "replace_empty", []),
+      )).resolves.toEqual({ replaced: true, recordCount: 0 });
+      await expect(fixture.control.metadata(original.locator, fixture.binding))
+        .rejects.toMatchObject({ code: "vault_record_not_found" });
+      await fixture.backup.importRecovery(
+        issueRestore(fixture, "import_recovery"),
+        passphrase,
+        recovery,
+      );
+      await expect(fixture.control.metadata(original.locator, fixture.binding))
+        .resolves.toMatchObject({ generation: 1 });
+      archive.fill(0);
+      recovery.fill(0);
+    } finally {
+      passphrase.fill(0);
+      await fixture.close();
+    }
+  }, 15_000);
 
   it("enforces connection, active-work, and five-second incomplete-frame limits", async () => {
     const fixture = await brokerFixture();
@@ -478,6 +578,29 @@ function issueBackup(
     operationDigest: operation === "export_encrypted"
       ? digestVaultBackupSelection(selection!)
       : "f".repeat(64),
+  });
+}
+
+function issueRestore(
+  fixture: BrokerFixture,
+  operation:
+    | "validate_restore"
+    | "replace_restore"
+    | "replace_empty"
+    | "export_recovery"
+    | "import_recovery",
+  selection?: readonly VaultBackupSelection[],
+): string {
+  return fixture.authority.issueBackup({
+    operation,
+    authorizationId: new UuidV7Generator().next(),
+    subjectId: new UuidV7Generator().next(),
+    operationDigest: selection === undefined
+      ? "f".repeat(64)
+      : digestVaultBackupSelection(selection),
+    restorePlanId: new UuidV7Generator().next(),
+    archiveSha256: "a".repeat(64),
+    planDigest: "b".repeat(64),
   });
 }
 

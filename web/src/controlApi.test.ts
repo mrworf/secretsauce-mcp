@@ -150,11 +150,15 @@ describe("service browser API", () => {
       passphrase: "separate-passphrase",
     };
 
-    await expect(browserControlApi.createPortableBackup({
+    const archive = await browserControlApi.createPortableBackup({
       ...body,
       password: "current-password",
       totp: "123456",
-    })).resolves.toEqual(expect.any(Blob));
+    });
+    expect(archive).toMatchObject({
+      size: 7,
+      type: "application/gzip",
+    });
 
     expect(JSON.parse(String(requests[1]!.init.body))).toEqual({
       password: "current-password",

@@ -10,6 +10,10 @@ import type { PersistenceOwner } from "./persistence/worker.js";
 import { isUuidV7 } from "./persistence/uuidV7.js";
 import type { IdentityConfig } from "./types.js";
 import type { AlwaysStepUpHandle, StepUpRepository } from "./identity/stepUp.js";
+import type {
+  ReferenceAggregateCounts,
+  ReferenceAggregateSource,
+} from "./tokens.js";
 
 export type AccessViewer = {
   userId: string;
@@ -53,6 +57,25 @@ export interface GrantAccessItem {
   services: string[];
 }
 
+export interface ServiceAccessItem {
+  grantId: string;
+  userId: string;
+  userLabel: string;
+  clientId: string;
+  clientIdentifier: string;
+  clientName: string;
+  serviceId: string;
+  serviceName: string;
+  issuedAt: number;
+  lastUsedAt: number;
+  expiresAt: number;
+  oauthGrantStatus: AccessRecordStatus;
+  capabilityStatus: "active" | "invalid";
+  credentialCount: number;
+  policyCount: number;
+  references: ReferenceAggregateCounts;
+}
+
 export interface AccessRevocationResult {
   targetId: string;
   revoked: boolean;
@@ -64,6 +87,17 @@ export type GrantBulkTarget =
   | { kind: "user"; id: string }
   | { kind: "client"; id: string }
   | { kind: "all" };
+
+export type CapabilityInvalidationTarget =
+  | { kind: "service" }
+  | { kind: "credential"; id: string }
+  | { kind: "policy"; id: string }
+  | { kind: "assignment"; userId: string };
+
+export interface CapabilityInvalidationResult {
+  capabilityStatus: "invalidated";
+  invalidatedReferences: number;
+}
 
 export class AccessManagementError extends Error {
   constructor(readonly code: "invalid_request" | "forbidden" | "unavailable") {
@@ -105,7 +139,26 @@ interface GrantRow {
   service_names_json: string;
 }
 
-type CursorKind = "grant" | "session";
+interface ServiceAccessRow {
+  grant_id: string;
+  user_id: string;
+  email: string;
+  given_name: string;
+  family_name: string;
+  client_id: string;
+  client_identifier: string;
+  display_name: string;
+  service_id: string;
+  service_name: string;
+  issued_at: number;
+  last_used_at: number;
+  effective_expires_at: number;
+  effective_status: AccessRecordStatus;
+  credential_count: number;
+  policy_count: number;
+}
+
+type CursorKind = "grant" | "session" | "service_access";
 
 export class AccessCursorCodec {
   readonly #key: Buffer;
@@ -187,6 +240,7 @@ export class AccessManagementRepository {
     private readonly cursors: AccessCursorCodec,
     private readonly now: () => number = Date.now,
     private readonly stepUps?: StepUpRepository,
+    private readonly referenceAggregates?: ReferenceAggregateSource,
   ) {}
 
   async sessionsPage(input: {
@@ -440,6 +494,341 @@ export class AccessManagementRepository {
     }
   }
 
+  async serviceAccessPage(input: {
+    viewer: AccessViewer;
+    serviceId: string;
+    status?: AccessRecordStatus;
+    cursor?: string;
+    pageSize?: number;
+  }): Promise<AccessPage<ServiceAccessItem>> {
+    if (
+      !isUuidV7(input.viewer.userId)
+      || !isUuidV7(input.serviceId)
+      || input.viewer.role === "user"
+      || this.referenceAggregates === undefined
+    ) throw new AccessManagementError("forbidden");
+    const pageSize = pageSizeValue(input.pageSize);
+    const cursor = input.cursor === undefined
+      ? undefined
+      : this.cursors.decode(input.cursor, "service_access");
+    const now = nowValue(this.now);
+    try {
+      const queryResult = await this.owner.execute({
+        run: (database) => database.read((query) => {
+          const authorized = query.get<{ id: string }>(`
+            SELECT service.id
+            FROM services service
+            WHERE service.id = ?
+              AND (
+                ? = 'superadmin'
+                OR EXISTS (
+                  SELECT 1 FROM service_admins administrator
+                  WHERE administrator.service_id = service.id
+                    AND administrator.user_id = ?
+                )
+              )
+          `, [input.serviceId, input.viewer.role, input.viewer.userId]);
+          if (authorized === undefined) {
+            return { authorized: false as const, rows: [] };
+          }
+          return {
+            authorized: true as const,
+            rows: query.all<ServiceAccessRow>(`
+            WITH projected AS (
+              SELECT
+                grant.id AS grant_id, grant.user_id,
+                user.email, user.given_name, user.family_name,
+                client.id AS client_id, client.client_identifier,
+                client.display_name,
+                service.id AS service_id, service.name AS service_name,
+                grant.issued_at, grant.last_used_at,
+                min(
+                  grant.absolute_expires_at,
+                  grant.issued_at + ?,
+                  coalesce(family.absolute_expires_at, grant.absolute_expires_at),
+                  grant.idle_expires_at,
+                  coalesce(family.idle_expires_at, grant.idle_expires_at),
+                  grant.last_used_at + ?
+                ) AS effective_expires_at,
+                CASE
+                  WHEN grant.status = 'revoked'
+                    OR family.status = 'revoked' THEN 'revoked'
+                  WHEN user.status <> 'active' OR user.role <> 'user'
+                    OR user.security_epoch <> grant.issued_security_epoch
+                    OR security.global_security_epoch <> grant.issued_global_epoch
+                  THEN 'invalid'
+                  WHEN min(
+                    grant.absolute_expires_at,
+                    grant.issued_at + ?,
+                    coalesce(family.absolute_expires_at, grant.absolute_expires_at),
+                    grant.idle_expires_at,
+                    coalesce(family.idle_expires_at, grant.idle_expires_at),
+                    grant.last_used_at + ?
+                  ) <= ? THEN 'expired'
+                  ELSE 'active'
+                END AS effective_status,
+                (
+                  SELECT count(*) FROM service_credentials credential
+                  WHERE credential.service_id = service.id
+                    AND credential.status = 'configured'
+                ) AS credential_count,
+                (
+                  SELECT count(*) FROM policies policy
+                  WHERE policy.service_id = service.id
+                    AND policy.lifecycle = 'active'
+                ) AS policy_count
+              FROM oauth_grants grant
+              JOIN users user ON user.id = grant.user_id
+              JOIN oauth_clients client ON client.id = grant.client_id
+              LEFT JOIN oauth_refresh_families family
+                ON family.grant_id = grant.id
+              JOIN identity_security_state security ON security.singleton = 1
+              JOIN services service ON service.id = ?
+                AND service.lifecycle = 'published'
+              JOIN runtime_active_services active
+                ON active.service_id = service.id
+              JOIN runtime_activation activation
+                ON activation.singleton = 1 AND activation.state = 'active'
+              WHERE ${SERVICE_ASSIGNMENT_PREDICATE}
+            )
+            SELECT * FROM projected
+            WHERE (? IS NULL OR effective_status = ?)
+              AND (
+                ? IS NULL
+                OR last_used_at < ?
+                OR (last_used_at = ? AND grant_id > ?)
+              )
+            ORDER BY last_used_at DESC, grant_id
+            LIMIT ?
+            `, [
+            this.oauth.refreshTokenMaxTtlMs,
+            this.oauth.refreshTokenIdleTtlMs,
+            this.oauth.refreshTokenMaxTtlMs,
+            this.oauth.refreshTokenIdleTtlMs,
+            now,
+            input.serviceId,
+            input.status ?? null,
+            input.status ?? null,
+            cursor?.timestamp ?? null,
+            cursor?.timestamp ?? null,
+            cursor?.timestamp ?? null,
+            cursor?.id ?? null,
+              pageSize + 1,
+            ]),
+          };
+        }),
+      });
+      if (!queryResult.authorized) throw new AccessManagementError("forbidden");
+      const rows = queryResult.rows;
+      const pageRows = rows.slice(0, pageSize);
+      const items = await Promise.all(pageRows.map(async (row) => ({
+        grantId: row.grant_id,
+        userId: row.user_id,
+        userLabel: userLabel(row),
+        clientId: row.client_id,
+        clientIdentifier: row.client_identifier,
+        clientName: row.display_name,
+        serviceId: row.service_id,
+        serviceName: row.service_name,
+        issuedAt: row.issued_at,
+        lastUsedAt: row.last_used_at,
+        expiresAt: row.effective_expires_at,
+        oauthGrantStatus: row.effective_status,
+        capabilityStatus: row.effective_status === "active"
+          ? "active" as const
+          : "invalid" as const,
+        credentialCount: row.credential_count,
+        policyCount: row.policy_count,
+        references: await this.referenceAggregates!.referenceAggregates({
+          subject: row.user_id,
+          serviceId: row.service_id,
+        }),
+      })));
+      return {
+        items,
+        ...(rows.length <= pageSize
+          ? {}
+          : {
+              nextCursor: this.cursors.encode(
+                "service_access",
+                pageRows.at(-1)!.last_used_at,
+                pageRows.at(-1)!.grant_id,
+              ),
+            }),
+      };
+    } catch (error) {
+      throw mapAccessError(error);
+    }
+  }
+
+  async invalidateCapabilities(input: {
+    viewer: AccessViewer;
+    serviceId: string;
+    target: CapabilityInvalidationTarget;
+    eventId: string;
+    justification: string;
+    correlationId: string;
+  }): Promise<CapabilityInvalidationResult> {
+    if (
+      input.viewer.role === "user"
+      || !isUuidV7(input.viewer.userId)
+      || !isUuidV7(input.serviceId)
+      || !isUuidV7(input.eventId)
+      || !CORRELATION_ID.test(input.correlationId)
+      || input.justification.trim().length < 1
+      || input.justification.length > 1024
+      || input.target.kind !== "service"
+        && !isUuidV7(
+          input.target.kind === "assignment"
+            ? input.target.userId
+            : input.target.id,
+        )
+      || this.referenceAggregates === undefined
+    ) throw new AccessManagementError("invalid_request");
+    const targetId = input.target.kind === "service"
+      ? input.serviceId
+      : input.target.kind === "assignment"
+        ? input.target.userId
+        : input.target.id;
+    const audit = revocationAudit({
+      viewer: input.viewer,
+      action: "access.capability_invalidate",
+      targetType: `capability_${input.target.kind}`,
+      targetId,
+      correlationId: input.correlationId,
+      justification: input.justification,
+    });
+    try {
+      const filter = await this.owner.execute({
+        run: (database) => database.withGeneratedAdministrativeAudit((transaction) => {
+          requireServiceAdministrator(
+            transaction,
+            input.viewer,
+            input.serviceId,
+          );
+          const now = transaction.timestamp();
+          let filter: {
+            subject?: string;
+            serviceId: string;
+            credentialId?: string;
+          } = { serviceId: input.serviceId };
+          if (input.target.kind === "credential") {
+            const credential = transaction.get<{
+              authorization_generation: number;
+            }>(`
+              SELECT authorization_generation FROM service_credentials
+              WHERE id = ? AND service_id = ? AND status <> 'archived'
+            `, [input.target.id, input.serviceId]);
+            if (credential === undefined) {
+              throw new PersistenceError("authentication_failed");
+            }
+            transaction.run(`
+              INSERT INTO credential_invalidation_events (
+                id, service_id, credential_id, affected_user_id,
+                authorization_generation, reason, created_at,
+                dispatched_at, attempts
+              ) VALUES (?, ?, ?, NULL, ?, 'selector', ?, NULL, 0)
+            `, [
+              input.eventId,
+              input.serviceId,
+              input.target.id,
+              Math.max(1, credential.authorization_generation),
+              now,
+            ]);
+            filter = {
+              serviceId: input.serviceId,
+              credentialId: input.target.id,
+            };
+          } else if (input.target.kind === "policy") {
+            const policy = transaction.get<{ evaluation_generation: number }>(`
+              SELECT evaluation_generation FROM policies
+              WHERE id = ? AND service_id = ? AND lifecycle = 'active'
+            `, [input.target.id, input.serviceId]);
+            if (policy === undefined) {
+              throw new PersistenceError("authentication_failed");
+            }
+            transaction.run(`
+              INSERT INTO policy_invalidation_events (
+                id, service_id, policy_id, rule_id, affected_user_id,
+                evaluation_generation, reason, created_at,
+                dispatched_at, attempts
+              ) VALUES (?, ?, ?, NULL, NULL, ?, 'policy', ?, NULL, 0)
+            `, [
+              input.eventId,
+              input.serviceId,
+              input.target.id,
+              Math.max(1, policy.evaluation_generation),
+              now,
+            ]);
+          } else {
+            const state = transaction.get<{ authorization_generation: number }>(`
+              SELECT authorization_generation FROM service_assignment_states
+              WHERE service_id = ?
+            `, [input.serviceId]);
+            if (state === undefined) {
+              throw new PersistenceError("authentication_failed");
+            }
+            const subject = input.target.kind === "assignment"
+              ? input.target.userId
+              : null;
+            if (
+              subject !== null
+              && transaction.get<{ id: string }>(`
+                SELECT grant.id
+                FROM oauth_grants grant
+                JOIN users user ON user.id = grant.user_id
+                JOIN services service ON service.id = ?
+                WHERE grant.user_id = ? AND user.role = 'user'
+                  AND user.status = 'active'
+                  AND ${SERVICE_ASSIGNMENT_PREDICATE}
+                LIMIT 1
+              `, [input.serviceId, subject]) === undefined
+            ) throw new PersistenceError("authentication_failed");
+            transaction.run(`
+              INSERT INTO assignment_invalidation_events (
+                id, service_id, affected_user_id,
+                authorization_generation, reason, created_at,
+                dispatched_at, attempts
+              ) VALUES (?, ?, ?, ?, 'service_selector', ?, NULL, 0)
+            `, [
+              input.eventId,
+              input.serviceId,
+              subject,
+              Math.max(1, state.authorization_generation),
+              now,
+            ]);
+            if (subject !== null) {
+              filter = { subject, serviceId: input.serviceId };
+            }
+          }
+          return {
+            value: filter,
+            auditInput: {
+              ...audit,
+              changes: [{
+                field: "capability_status",
+                before: "active",
+                after: "invalidated",
+              }],
+            },
+          };
+        }),
+      });
+      const invalidatedReferences =
+        await this.referenceAggregates.invalidate(filter);
+      if (
+        !Number.isSafeInteger(invalidatedReferences)
+        || invalidatedReferences < 0
+      ) throw new AccessManagementError("unavailable");
+      return {
+        capabilityStatus: "invalidated",
+        invalidatedReferences,
+      };
+    } catch (error) {
+      throw mapAccessError(error);
+    }
+  }
+
   async revokeSession(input: {
     viewer: AccessViewer;
     sessionId: string;
@@ -673,6 +1062,35 @@ const SERVICE_NAMES_SQL = `
   ), '[]')
 `;
 
+const SERVICE_ASSIGNMENT_PREDICATE = `
+  EXISTS (
+    SELECT 1
+    FROM service_principal_assignments assignment
+    WHERE assignment.service_id = service.id
+      AND (
+        assignment.selector_kind = 'all'
+        OR (
+          assignment.selector_kind = 'user'
+          AND assignment.user_id = grant.user_id
+        )
+        OR (
+          assignment.selector_kind = 'group'
+          AND EXISTS (
+            SELECT 1
+            FROM service_group_members member
+            JOIN service_groups service_group
+              ON service_group.id = member.group_id
+              AND service_group.service_id = member.service_id
+            WHERE member.service_id = assignment.service_id
+              AND member.group_id = assignment.group_id
+              AND member.user_id = grant.user_id
+              AND service_group.lifecycle = 'active'
+          )
+        )
+      )
+  )
+`;
+
 function revokeGrantSet(
   transaction: PersistenceTransaction,
   predicate: string,
@@ -729,6 +1147,29 @@ function revokeGrantSet(
     refreshTokensRevoked,
     accessTokensRevoked,
   };
+}
+
+function requireServiceAdministrator(
+  transaction: PersistenceTransaction,
+  viewer: AccessViewer,
+  serviceId: string,
+): void {
+  const authorized = transaction.get<{ id: string }>(`
+    SELECT service.id
+    FROM services service
+    WHERE service.id = ?
+      AND (
+        ? = 'superadmin'
+        OR EXISTS (
+          SELECT 1 FROM service_admins administrator
+          WHERE administrator.service_id = service.id
+            AND administrator.user_id = ?
+        )
+      )
+  `, [serviceId, viewer.role, viewer.userId]);
+  if (authorized === undefined) {
+    throw new PersistenceError("authentication_failed");
+  }
 }
 
 function validateMutationInput(

@@ -5,6 +5,62 @@ import { TokenBroker } from "../src/tokens.js";
 import type { AuthContext, GatewayConfig } from "../src/types.js";
 
 describe("reference broker", () => {
+  it("returns aggregate-only reference state and invalidates only the requested boundary", () => {
+    const broker = new TokenBroker(tokenConfig());
+    const issued = broker.issueTokens(auth("henric@example.com"), {
+      service: "portainer-prod",
+      destination: "primary",
+      access_ids: ["api_key", "password"],
+      reason: "Inspect aggregate state.",
+    });
+    const secret = broker.issueOrReuseResponseSecret(
+      auth("henric@example.com"),
+      "portainer-prod",
+      "returned-secret",
+    );
+    const unrelatedSecret = broker.issueOrReuseResponseSecret(
+      auth("ada@example.com"),
+      "portainer-prod",
+      "unrelated-secret",
+    );
+
+    expect(broker.referenceAggregates({
+      subject: "henric@example.com",
+    })).toEqual({
+      gref: { active: 2, expired: 0, invalid: 0 },
+      sec: { active: 1, expired: 0, invalid: 0 },
+    });
+    expect(broker.invalidate({
+      subject: "henric@example.com",
+      credentialId: "api_key",
+    })).toBe(1);
+    expect(broker.referenceAggregates({
+      subject: "henric@example.com",
+    })).toMatchObject({
+      gref: { active: 1 },
+      sec: { active: 1 },
+    });
+    expect(broker.invalidate({ subject: "henric@example.com" })).toBe(2);
+    expect(broker.stats()).toMatchObject({
+      configured: 0,
+      responseSecrets: 1,
+    });
+    expect(() => broker.validateTokenUse(auth("henric@example.com"), {
+      service: "portainer-prod",
+      destination: "primary",
+    }, issued.tokens[0]!.token)).toThrow(GatewayError);
+    expect(() => broker.validateResponseSecretUse(
+      auth("henric@example.com"),
+      "portainer-prod",
+      secret.token,
+    )).toThrow(GatewayError);
+    expect(broker.validateResponseSecretUse(
+      auth("ada@example.com"),
+      "portainer-prod",
+      unrelatedSecret.token,
+    ).secret).toBe("unrelated-secret");
+  });
+
   it("issues opaque references for authorized access and omits protected values from audit", () => {
     let now = 1_000;
     const broker = new TokenBroker(tokenConfig(), () => now);

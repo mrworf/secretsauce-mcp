@@ -99,6 +99,24 @@ export interface RuntimeReferenceBindings {
 export type TokenInspectionReason = "unknown" | "expired" | "wrong_subject" | "wrong_service";
 export type TokenInspection = { valid: true } | { valid: false; reason: TokenInspectionReason };
 
+export interface ReferenceAggregateFilter {
+  subject?: string;
+  serviceId?: string;
+  credentialId?: string;
+}
+
+export interface ReferenceAggregateCounts {
+  gref: { active: number; expired: number; invalid: number };
+  sec: { active: number; expired: number; invalid: number };
+}
+
+export interface ReferenceAggregateSource {
+  referenceAggregates(
+    input: ReferenceAggregateFilter,
+  ): ReferenceAggregateCounts | Promise<ReferenceAggregateCounts>;
+  invalidate(input: ReferenceAggregateFilter): number | Promise<number>;
+}
+
 export class TokenBroker {
   private readonly recordsByHash = new Map<string, TokenRecord>();
   private readonly responseSecretsByHash = new Map<string, ResponseSecretTokenRecord>();
@@ -489,11 +507,29 @@ export class TokenBroker {
     };
   }
 
-  invalidate(input: {
-    subject?: string;
-    serviceId?: string;
-    credentialId?: string;
-  }): number {
+  referenceAggregates(
+    input: ReferenceAggregateFilter,
+  ): ReferenceAggregateCounts {
+    this.sweepExpired();
+    let gref = 0;
+    let sec = 0;
+    for (const record of this.recordsByHash.values()) {
+      if (referenceMatches(record, input)) gref += 1;
+    }
+    for (const record of this.responseSecretsById.values()) {
+      if (
+        input.credentialId === undefined
+        && referenceMatches(record, input)
+      ) sec += 1;
+    }
+    return {
+      gref: { active: gref, expired: 0, invalid: 0 },
+      sec: { active: sec, expired: 0, invalid: 0 },
+    };
+  }
+
+  invalidate(input: ReferenceAggregateFilter): number {
+    this.sweepExpired();
     let removed = 0;
     for (const [hash, record] of this.recordsByHash) {
       if (
@@ -510,9 +546,8 @@ export class TokenBroker {
     }
     for (const record of [...this.responseSecretsById.values()]) {
       if (
-        (input.subject === undefined || record.subject === input.subject)
-        && input.credentialId === undefined
-        && input.serviceId === undefined
+        input.credentialId === undefined
+        && referenceMatches(record, input)
       ) {
         this.deleteResponseSecret(
           record.id,
@@ -576,6 +611,22 @@ export class TokenBroker {
       throw new GatewayError("capacity_exceeded", "Opaque reference capacity is exhausted.");
     }
   }
+}
+
+function referenceMatches(
+  record: {
+    subject: string;
+    serviceId?: string;
+    credentialId?: string;
+  },
+  input: ReferenceAggregateFilter,
+): boolean {
+  return (input.subject === undefined || record.subject === input.subject)
+    && (input.serviceId === undefined || record.serviceId === input.serviceId)
+    && (
+      input.credentialId === undefined
+      || record.credentialId === input.credentialId
+    );
 }
 
 function resolveTokenDestination(destinationIds: string[], requested: string | undefined): string {

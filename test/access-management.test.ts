@@ -10,6 +10,7 @@ import {
 import { IdentityRepository } from "../src/identity/repository.js";
 import type { AlwaysStepUpHandle, StepUpRepository } from "../src/identity/stepUp.js";
 import { PersistenceWorker } from "../src/persistence/worker.js";
+import type { ReferenceAggregateSource } from "../src/tokens.js";
 
 const NOW = 1_785_200_000_000;
 const SESSION_ONE = "018f1f2e-7b3c-7a10-8000-000000000301";
@@ -23,6 +24,7 @@ const SNAPSHOT_ID = "018f1f2e-7b3c-7a10-8000-000000000308";
 const ASSIGNMENT_ID = "018f1f2e-7b3c-7a10-8000-000000000309";
 const REFRESH_ID = "018f1f2e-7b3c-7a10-8000-000000000311";
 const ACCESS_ID = "018f1f2e-7b3c-7a10-8000-000000000312";
+const INVALIDATION_ID = "018f1f2e-7b3c-7a10-8000-000000000313";
 const workers = new Set<PersistenceWorker>();
 const codecs = new Set<AccessCursorCodec>();
 
@@ -258,6 +260,85 @@ describe("access management projections", () => {
     });
     expect(replay).toMatchObject({ kind: "replayed" });
   });
+
+  it("projects only a currently administered service with aggregate-only reference state", async () => {
+    const fixture = await setup();
+    const page = await fixture.repository.serviceAccessPage({
+      viewer: { userId: fixture.admin, role: "admin" },
+      serviceId: SERVICE_ID,
+    });
+    expect(page.items).toEqual([
+      expect.objectContaining({
+        grantId: GRANT_ONE,
+        userId: fixture.userOne,
+        serviceId: SERVICE_ID,
+        serviceName: "Payments API",
+        oauthGrantStatus: "active",
+        capabilityStatus: "active",
+        references: {
+          gref: { active: 2, expired: 0, invalid: 0 },
+          sec: { active: 1, expired: 0, invalid: 0 },
+        },
+      }),
+    ]);
+    expect(JSON.stringify(page)).not.toMatch(/token|hash|secret/i);
+    await expect(fixture.repository.serviceAccessPage({
+      viewer: { userId: fixture.userOne, role: "user" },
+      serviceId: SERVICE_ID,
+    })).rejects.toEqual(new AccessManagementError("forbidden"));
+    await fixture.worker.execute({
+      run: (database) => database.withOperationalTransaction((transaction) => {
+        transaction.run(
+          "DELETE FROM service_admins WHERE service_id = ? AND user_id = ?",
+          [SERVICE_ID, fixture.admin],
+        );
+      }),
+    });
+    await expect(fixture.repository.serviceAccessPage({
+      viewer: { userId: fixture.admin, role: "admin" },
+      serviceId: SERVICE_ID,
+    })).rejects.toEqual(new AccessManagementError("forbidden"));
+  });
+
+  it("invalidates an administered capability boundary without revoking its OAuth grant", async () => {
+    const fixture = await setup();
+    const result = await fixture.repository.invalidateCapabilities({
+      viewer: { userId: fixture.admin, role: "admin" },
+      serviceId: SERVICE_ID,
+      target: { kind: "assignment", userId: fixture.userOne },
+      eventId: INVALIDATION_ID,
+      justification: "End the current dynamic service capability.",
+      correlationId: correlationId("6"),
+    });
+    expect(result).toEqual({
+      capabilityStatus: "invalidated",
+      invalidatedReferences: 3,
+    });
+    expect(fixture.invalidations).toEqual([{
+      subject: fixture.userOne,
+      serviceId: SERVICE_ID,
+    }]);
+    const state = await fixture.worker.execute({
+      run: (database) => database.read((query) => query.get<{
+        events: number;
+        grant_status: string;
+      }>(`
+        SELECT
+          (SELECT count(*) FROM assignment_invalidation_events
+            WHERE id = ?) AS events,
+          (SELECT status FROM oauth_grants WHERE id = ?) AS grant_status
+      `, [INVALIDATION_ID, GRANT_ONE])),
+    });
+    expect(state).toEqual({ events: 1, grant_status: "active" });
+    await expect(fixture.repository.invalidateCapabilities({
+      viewer: { userId: fixture.userTwo, role: "admin" },
+      serviceId: SERVICE_ID,
+      target: { kind: "service" },
+      eventId: "018f1f2e-7b3c-7a10-8000-000000000314",
+      justification: "Should be rejected.",
+      correlationId: correlationId("7"),
+    })).rejects.toEqual(new AccessManagementError("forbidden"));
+  });
 });
 
 async function setup(withStepUp = false): Promise<{
@@ -267,6 +348,12 @@ async function setup(withStepUp = false): Promise<{
   userOne: string;
   userTwo: string;
   superadmin: string;
+  admin: string;
+  invalidations: Array<{
+    subject?: string;
+    serviceId?: string;
+    credentialId?: string;
+  }>;
 }> {
   const worker = PersistenceWorker.open({
     databaseFile: join(
@@ -303,6 +390,15 @@ async function setup(withStepUp = false): Promise<{
       familyName: "User",
     },
     role: "user",
+    status: "active",
+  }, audit());
+  const admin = await identities.createLocalIdentity({
+    profile: {
+      email: "admin@example.org",
+      givenName: "Service",
+      familyName: "Admin",
+    },
+    role: "admin",
     status: "active",
   }, audit());
   await worker.execute({
@@ -352,10 +448,20 @@ async function setup(withStepUp = false): Promise<{
         NOW - 1_000,
       ]);
       insertService(transaction, first.id);
+      transaction.run(`
+        INSERT INTO service_admins (
+          service_id, user_id, assigned_by_user_id, created_at
+        ) VALUES (?, ?, ?, ?)
+      `, [SERVICE_ID, admin.id, superadmin.id, NOW]);
     }),
   });
   const codec = new AccessCursorCodec(Buffer.alloc(32, 81));
   codecs.add(codec);
+  const invalidations: Array<{
+    subject?: string;
+    serviceId?: string;
+    credentialId?: string;
+  }> = [];
   const stepUps = withStepUp
     ? fakeStepUps(worker)
     : undefined;
@@ -375,6 +481,7 @@ async function setup(withStepUp = false): Promise<{
     codec,
     () => NOW,
     stepUps,
+    fakeReferenceAggregates(invalidations),
   );
   return {
     worker,
@@ -383,6 +490,8 @@ async function setup(withStepUp = false): Promise<{
     userOne: first.id,
     userTwo: second.id,
     superadmin: superadmin.id,
+    admin: admin.id,
+    invalidations,
   };
 }
 
@@ -466,6 +575,11 @@ function insertService(
     ) VALUES (?, ?, 1, '{}', ?, ?)
   `, [SNAPSHOT_ID, SERVICE_ID, "2".repeat(64), NOW]);
   transaction.run(`
+    INSERT INTO service_assignment_states (
+      service_id, version, authorization_generation, created_at, updated_at
+    ) VALUES (?, 1, 1, ?, ?)
+  `, [SERVICE_ID, NOW, NOW]);
+  transaction.run(`
     UPDATE runtime_activation
     SET state = 'active', activation_generation = 1,
       global_reference_epoch = 1, version = 2,
@@ -522,4 +636,23 @@ function fakeStepUps(worker: PersistenceWorker): StepUpRepository {
         ),
       }),
   } as StepUpRepository;
+}
+
+function fakeReferenceAggregates(
+  invalidations: Array<{
+    subject?: string;
+    serviceId?: string;
+    credentialId?: string;
+  }>,
+): ReferenceAggregateSource {
+  return {
+    referenceAggregates: () => ({
+      gref: { active: 2, expired: 0, invalid: 0 },
+      sec: { active: 1, expired: 0, invalid: 0 },
+    }),
+    invalidate: (input) => {
+      invalidations.push(input);
+      return 3;
+    },
+  };
 }

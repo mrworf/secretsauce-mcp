@@ -9,6 +9,7 @@ import { ProfilePage, UsersPage } from "./UserPages";
 import { ServicesPage } from "./ServicePages";
 import { GroupsPage } from "./GroupPages";
 import { CredentialsPage } from "./CredentialPages";
+import { PoliciesPage } from "./PolicyPages";
 
 function routes(role: HumanControlRole): RouteObject[] {
   return [{
@@ -27,6 +28,8 @@ function routes(role: HumanControlRole): RouteObject[] {
             ? <GroupsPage />
           : item.path === "/credentials"
             ? <CredentialsPage />
+          : item.path === "/policies"
+            ? <PoliciesPage />
           : item.path === "/profile"
             ? <ProfilePage />
             : <PlaceholderPage />,

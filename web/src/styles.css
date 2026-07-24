@@ -1136,6 +1136,10 @@ button:disabled {
     grid-template-columns: minmax(15rem, 0.55fr) minmax(28rem, 1.45fr);
   }
 
+  .policy-layout {
+    grid-template-columns: minmax(15rem, 0.48fr) minmax(36rem, 1.52fr);
+  }
+
   .credential-facts {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1166,6 +1170,68 @@ button:disabled {
     padding-right: 3rem;
     padding-left: 3rem;
   }
+}
+
+.policy-layout,
+.policy-editor,
+.policy-list,
+.policy-rule-list,
+.rule-create-form,
+.simulation-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.policy-list {
+  align-content: start;
+}
+
+.policy-editor > section {
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--surface-subtle);
+}
+
+.policy-rule {
+  padding: 0.9rem;
+  border: 1px solid var(--border);
+  border-left: 0.35rem solid var(--success);
+  border-radius: 0.65rem;
+  background: var(--surface);
+}
+
+.policy-rule-deny {
+  border-left-color: #b42318;
+}
+
+.policy-rule p {
+  margin: 0.35rem 0;
+}
+
+.policy-rule details {
+  margin-top: 0.75rem;
+}
+
+.simulation-result {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.7rem;
+}
+
+.simulation-allow {
+  border-left: 0.4rem solid var(--success);
+}
+
+.simulation-deny {
+  border-left: 0.4rem solid #b42318;
+}
+
+.simulation-result nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
 }
 
 @media (prefers-color-scheme: dark) {

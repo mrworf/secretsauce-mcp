@@ -197,6 +197,175 @@ export interface ControlCredential {
   updated_at: number;
 }
 
+export type PolicyBoundary =
+  | { kind: "service" }
+  | { kind: "credential"; credential_id: string };
+
+export type PolicySelectorInput =
+  | { kind: "all" }
+  | { kind: "groups"; group_ids: string[] }
+  | {
+      kind: "users";
+      user_ids: string[];
+      direct_assignment_confirmed: true;
+    }
+  | {
+      kind: "principals";
+      group_ids: string[];
+      user_ids: string[];
+      direct_assignment_confirmed: boolean;
+    };
+
+export interface ControlPolicy {
+  id: string;
+  service_id: string;
+  boundary: PolicyBoundary;
+  name: string;
+  description?: string;
+  operating_mode: "allow" | "deny";
+  lifecycle: "active" | "archived";
+  evaluation_generation: number;
+  rule_count: number;
+  version: number;
+  created_at: number;
+  updated_at: number;
+}
+
+export interface PolicyRuleInput {
+  name: string;
+  reason?: string;
+  effect: "allow" | "deny";
+  priority: number;
+  enabled: boolean;
+  methods: string[];
+  hosts: Array<{ kind: "exact" | "suffix" | "regex"; value: string }>;
+  paths: Array<{ kind: "exact" | "prefix" | "regex"; value: string }>;
+  response_safeguards: {
+    secretlint: { enabled: boolean; disabled_rule_ids: string[] };
+    binary_response: { scan: boolean; max_bytes: number | null };
+  };
+  selector?: PolicySelectorInput;
+}
+
+export interface ControlPolicyRule extends Omit<PolicyRuleInput, "selector"> {
+  id: string;
+  service_id: string;
+  policy_id: string;
+  selector?: {
+    kind: "all" | "explicit";
+    group_ids: string[];
+    user_ids: string[];
+  };
+  version: number;
+  created_at: number;
+  updated_at: number;
+}
+
+export interface ControlPolicyDetail extends ControlPolicy {
+  rules: ControlPolicyRule[];
+}
+
+export interface PolicyCopyDocument {
+  format_version: 1;
+  policy: {
+    name: string;
+    description?: string;
+    operating_mode: "allow" | "deny";
+    rules: PolicyRuleInput[];
+  };
+}
+
+export interface PolicySimulation {
+  allowed: boolean;
+  subject_id: string;
+  group_ids: string[];
+  canonical_target: { method: string; host: string; pathname: string };
+  boundaries: Array<{
+    boundary_id: string;
+    kind: "service" | "credential";
+    assignment_allowed: boolean;
+    allowed: boolean;
+    mode: "allow" | "deny";
+    selected_priority?: number;
+    selected_rule_ids: string[];
+    decisive_rule_id?: string;
+    reason_code:
+      | "assignment_denied"
+      | "default_allow"
+      | "default_deny"
+      | "selected_allow"
+      | "selected_deny"
+      | "deny_tie";
+    rules: Array<{
+      rule_id: string;
+      applicable: boolean;
+      request_matched: boolean;
+      selected: boolean;
+      reason_code: string;
+      priority: number;
+      effect: "allow" | "deny";
+    }>;
+  }>;
+  reason_code: "all_boundaries_allow" | "boundary_denied";
+  links: Array<{
+    kind: "service" | "credential" | "group" | "user" | "policy";
+    id: string;
+    href: string;
+  }>;
+}
+
+export interface PolicyControlApi
+  extends Pick<ServiceControlApi, "listServices" | "service">,
+    Pick<ControlApi, "listUsers">,
+    Pick<GroupControlApi, "listGroups">,
+    Pick<CredentialControlApi, "listCredentials"> {
+  listPolicies(serviceId: string): Promise<{ policies: ControlPolicy[] }>;
+  policy(serviceId: string, policyId: string): Promise<ControlPolicyDetail>;
+  createPolicy(serviceId: string, input: {
+    name: string;
+    description?: string;
+    operating_mode: "allow" | "deny";
+    boundary: PolicyBoundary;
+  }): Promise<ControlPolicyDetail>;
+  updatePolicy(policy: ControlPolicyDetail, input: {
+    name: string;
+    description?: string;
+    operating_mode: "allow" | "deny";
+  }): Promise<ControlPolicyDetail>;
+  createPolicyRule(
+    policy: ControlPolicyDetail,
+    input: PolicyRuleInput,
+  ): Promise<ControlPolicyRule>;
+  updatePolicyRule(
+    rule: ControlPolicyRule,
+    input: PolicyRuleInput,
+  ): Promise<ControlPolicyRule>;
+  replacePolicyRuleAssignments(
+    rule: ControlPolicyRule,
+    selector: PolicySelectorInput,
+  ): Promise<ControlPolicyRule>;
+  archivePolicy(policy: ControlPolicyDetail): Promise<ControlPolicyDetail>;
+  deletePolicy(policy: ControlPolicyDetail): Promise<{ policy_id: string; deleted: true }>;
+  deletePolicyRule(rule: ControlPolicyRule): Promise<{ rule_id: string; deleted: true }>;
+  copyPolicy(serviceId: string, policyId: string): Promise<PolicyCopyDocument>;
+  clonePolicy(
+    serviceId: string,
+    policyId: string,
+    input: { target_service_id: string; boundary: PolicyBoundary; name?: string },
+  ): Promise<ControlPolicyDetail>;
+  importPolicy(
+    serviceId: string,
+    input: { boundary: PolicyBoundary; document: PolicyCopyDocument },
+  ): Promise<ControlPolicyDetail>;
+  simulatePolicy(serviceId: string, input: {
+    user_id: string;
+    destination_id: string;
+    method: string;
+    path?: string;
+    credential_ids: string[];
+  }): Promise<PolicySimulation>;
+}
+
 export type CredentialSelectorInput =
   | { kind: "all" }
   | {
@@ -455,7 +624,7 @@ export type UserAction =
 
 export const browserControlApi:
   ControlApi & OidcControlApi & OidcManagementApi & ServiceControlApi &
-    GroupControlApi & CredentialControlApi = {
+    GroupControlApi & CredentialControlApi & PolicyControlApi = {
   session: () => get<ControlSession>("/api/v2/auth/session"),
   oidcProviders: () => get<{ providers: OidcProviderLabel[] }>("/api/v2/auth/oidc/providers"),
   beginOidc: (providerId) => {
@@ -713,6 +882,92 @@ export const browserControlApi:
       action === "enable" ? {} : { justification },
       credential.version,
       action !== "enable",
+    ),
+  listPolicies: (serviceId) =>
+    get(`/api/v2/services/${encodeURIComponent(serviceId)}/policies`),
+  policy: (serviceId, policyId) =>
+    get(`/api/v2/services/${encodeURIComponent(serviceId)}/policies/${encodeURIComponent(policyId)}`),
+  createPolicy: (serviceId, input) =>
+    mutation(
+      `/api/v2/services/${encodeURIComponent(serviceId)}/policies`,
+      "POST",
+      input,
+      undefined,
+      true,
+    ),
+  updatePolicy: (policy, input) =>
+    mutation(
+      `/api/v2/services/${policy.service_id}/policies/${policy.id}`,
+      "PATCH",
+      input,
+      policy.version,
+    ),
+  createPolicyRule: (policy, input) =>
+    mutation(
+      `/api/v2/services/${policy.service_id}/policies/${policy.id}/rules`,
+      "POST",
+      input,
+      undefined,
+      true,
+    ),
+  updatePolicyRule: (rule, input) =>
+    mutation(
+      `/api/v2/services/${rule.service_id}/policies/${rule.policy_id}/rules/${rule.id}`,
+      "PATCH",
+      input,
+      rule.version,
+    ),
+  replacePolicyRuleAssignments: (rule, selector) =>
+    mutation(
+      `/api/v2/services/${rule.service_id}/policies/${rule.policy_id}/rules/${rule.id}/assignments`,
+      "PUT",
+      selector,
+      rule.version,
+    ),
+  archivePolicy: (policy) =>
+    mutation(
+      `/api/v2/services/${policy.service_id}/policies/${policy.id}/archive`,
+      "POST",
+      {},
+      policy.version,
+    ),
+  deletePolicy: (policy) =>
+    mutation(
+      `/api/v2/services/${policy.service_id}/policies/${policy.id}`,
+      "DELETE",
+      {},
+      policy.version,
+    ),
+  deletePolicyRule: (rule) =>
+    mutation(
+      `/api/v2/services/${rule.service_id}/policies/${rule.policy_id}/rules/${rule.id}`,
+      "DELETE",
+      {},
+      rule.version,
+    ),
+  copyPolicy: (serviceId, policyId) =>
+    get(`/api/v2/services/${encodeURIComponent(serviceId)}/policies/${encodeURIComponent(policyId)}/copy`),
+  clonePolicy: (serviceId, policyId, input) =>
+    mutation(
+      `/api/v2/services/${encodeURIComponent(serviceId)}/policies/${encodeURIComponent(policyId)}/clone`,
+      "POST",
+      input,
+      undefined,
+      true,
+    ),
+  importPolicy: (serviceId, input) =>
+    mutation(
+      `/api/v2/services/${encodeURIComponent(serviceId)}/policies/import`,
+      "POST",
+      input,
+      undefined,
+      true,
+    ),
+  simulatePolicy: (serviceId, input) =>
+    mutation(
+      `/api/v2/services/${encodeURIComponent(serviceId)}/policy-simulations`,
+      "POST",
+      input,
     ),
 };
 

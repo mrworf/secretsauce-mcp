@@ -927,7 +927,7 @@ async function activeSelfApiKeyMatches(
     const detector = await dependencies.selfApiKeyDetector;
     return await detector.inspect(values, {
       principal: subject,
-      source: `mcp:${subject}`,
+      source: "mcp:runtime",
     });
   } catch (error) {
     if (error instanceof SelfApiKeyProtectionError) {

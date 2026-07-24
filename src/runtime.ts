@@ -13,6 +13,8 @@ import { createDataVaultReadiness } from "./vault/readiness.js";
 import { readVaultKeyFile } from "./vault/keyFile.js";
 import { VaultResolveCapabilityIssuer } from "./vault/capabilities.js";
 import { CapabilityRuntimeVault, type RuntimeVault } from "./runtimeVault.js";
+import { ApiKeyRepository, ApiKeyVerifierPool } from "./apiKeys.js";
+import { ActiveSelfApiKeyDetector } from "./selfApiKeyProtection.js";
 
 export interface GatewayRuntimeOptions {
   auditSink?: AuditSink;
@@ -36,6 +38,7 @@ export class GatewayRuntime {
   readonly persistence: PersistenceOwner | undefined;
   readonly runtimeAuthority: RuntimeAuthority | undefined;
   readonly runtimeVault: RuntimeVault | undefined;
+  readonly selfApiKeyDetector: Promise<ActiveSelfApiKeyDetector> | undefined;
   readonly #stopMaintenance: () => void;
   #closePromise: Promise<void> | undefined;
 
@@ -95,6 +98,12 @@ export class GatewayRuntime {
           : undefined
       );
       this.runtimeVault = runtimeVault;
+      this.selfApiKeyDetector = persistence === undefined
+        ? undefined
+        : ActiveSelfApiKeyDetector.create(
+          new ApiKeyRepository(persistence),
+          new ApiKeyVerifierPool(),
+        );
       this.#stopMaintenance = stopMaintenance;
     } catch (error) {
       auditSink.close();

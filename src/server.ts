@@ -125,6 +125,9 @@ export function createGatewayServer(
           ...(runtime.runtimeVault === undefined
             ? {}
             : { runtimeVault: runtime.runtimeVault }),
+          ...(runtime.selfApiKeyDetector === undefined
+            ? {}
+            : { selfApiKeyDetector: runtime.selfApiKeyDetector }),
         });
       } catch (error) {
         if (error instanceof RequestBodyError) {

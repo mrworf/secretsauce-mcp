@@ -176,14 +176,25 @@ describe("credential HTTP contracts", () => {
     expect(documented.json().paths).toHaveProperty(
       "/api/v2/services/{service_id}/credentials/{credential_id}/self-api-key",
     );
-    expect(documented.json().paths[
+    const approvalOperation = documented.json().paths[
       "/api/v2/services/{service_id}/credentials/{credential_id}/self-api-key"
-    ].put).toMatchObject({
+    ].put;
+    expect(approvalOperation).toMatchObject({
       "x-step-up": "always",
       "x-permission": "self_api_key_approval",
-      "x-idempotency": "required",
-      "x-concurrency": "if-match",
     });
+    expect(approvalOperation.parameters).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        in: "header",
+        name: "if-match",
+        required: true,
+      }),
+      expect.objectContaining({
+        in: "header",
+        name: "idempotency-key",
+        required: true,
+      }),
+    ]));
 
     const missingStepUp = await fixture.application.inject({
       method: "PUT",

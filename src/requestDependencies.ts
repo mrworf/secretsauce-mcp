@@ -4,6 +4,7 @@ import { createSecretRuntime, type SecretRuntime } from "./secretRuntime.js";
 import type { GatewayConfig } from "./types.js";
 import type { RuntimeAuthority } from "./runtimeAuthority.js";
 import type { RuntimeVault } from "./runtimeVault.js";
+import type { ActiveSelfApiKeyDetector } from "./selfApiKeyProtection.js";
 
 export interface RequestDependencies {
   auditSink: AuditSink;
@@ -11,6 +12,8 @@ export interface RequestDependencies {
   secretRuntime: SecretRuntime;
   runtimeAuthority?: RuntimeAuthority;
   runtimeVault?: RuntimeVault;
+  selfApiKeyDetector?: Promise<ActiveSelfApiKeyDetector>;
+  selfApiKeyProtectionPrechecked?: boolean;
 }
 
 export function createRequestDependencies(config: GatewayConfig): RequestDependencies {

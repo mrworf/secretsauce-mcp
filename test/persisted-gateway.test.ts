@@ -1,7 +1,14 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { validateConfig } from "../src/config.js";
 import { GatewayError } from "../src/errors.js";
-import { executeServiceRequest } from "../src/gateway.js";
+import {
+  executeServiceRequest,
+  isConfiguredSelfTarget,
+} from "../src/gateway.js";
+import {
+  ApiKeyVerifierPool,
+  type ApiKeyAuthenticationCandidate,
+} from "../src/apiKeys.js";
 import { createRequestDependencies, type RequestDependencies } from "../src/requestDependencies.js";
 import type {
   PersistedRuntimeServiceView,
@@ -14,6 +21,7 @@ import type {
   RuntimeVaultResolveInput,
 } from "../src/runtimeVault.js";
 import type { AuthContext, GatewayConfig } from "../src/types.js";
+import { ActiveSelfApiKeyDetector } from "../src/selfApiKeyProtection.js";
 
 const SUBJECT = "018f1f2e-7b3c-7a10-8000-000000000001";
 const SERVICE_ID = "018f1f2e-7b3c-7a10-8000-000000000010";
@@ -23,6 +31,11 @@ const SNAPSHOT_ID = "018f1f2e-7b3c-7a10-8000-000000000013";
 const POLICY_ID = "018f1f2e-7b3c-7a10-8000-000000000014";
 const SECOND_CREDENTIAL_ID = "018f1f2e-7b3c-7a10-8000-000000000017";
 const LOCATOR = "12345678-1234-4234-8234-123456789abc";
+const ACTIVE_SELF_KEY =
+  "ssk_v1_AQEBAQEBAQEBAQEB_AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI";
+const ACTIVE_SELF_KEY_ID = "018f1f2e-7b3c-7a10-8000-000000000099";
+const SUPPORTED_HASH =
+  "$argon2id$v=19$m=65536,p=1,t=3$AAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
 const resources: RequestDependencies[] = [];
 
 afterEach(async () => {
@@ -220,6 +233,143 @@ describe("persisted gateway privileged ordering", () => {
     }
   });
 
+  it("blocks raw active self keys in structural header, query, and body values before vault or downstream", async () => {
+    for (const rawPlacement of [
+      { headers: { "X-API-Key": "REFERENCE", "X-Raw": `Bearer ${ACTIVE_SELF_KEY}` } },
+      { query: { nested: [ACTIVE_SELF_KEY] } },
+      {
+        method: "POST",
+        headers: { "X-API-Key": "REFERENCE" },
+        body: { nested: { value: ACTIVE_SELF_KEY } },
+      },
+    ]) {
+      const fixture = runtimeRequestFixture("allow", undefined, {
+        selfKey: { approved: false },
+        destination: {
+          baseUrl: "https://control.example.org/",
+          schemes: ["https"],
+          hosts: [{ type: "exact", value: "control.example.org" }],
+          ports: [443],
+          tlsVerify: true,
+        },
+      });
+      fixture.config.server.resource = "https://control.example.org";
+      const input = JSON.parse(JSON.stringify({
+        ...request(fixture.reference),
+        ...rawPlacement,
+      }).replaceAll("REFERENCE", fixture.reference));
+      await expect(executeServiceRequest(
+        fixture.config,
+        fixture.auth,
+        input,
+        fixture.dependencies,
+      )).rejects.toMatchObject({ code: "self_api_key_denied" });
+      expect(fixture.vault.resolveCalls).toBe(0);
+      expect(fixture.dependencies.auditSink.events).toContainEqual(
+        expect.objectContaining({
+          type: "self_api_key_blocked",
+          management_identity_id: ACTIVE_SELF_KEY_ID,
+          last_four_snapshot: ACTIVE_SELF_KEY.slice(-4),
+        }),
+      );
+      expect(JSON.stringify(fixture.dependencies.auditSink.events))
+        .not.toContain(ACTIVE_SELF_KEY);
+    }
+  });
+
+  it("blocks an unapproved vault key and permits an exact approved generation through the ordinary pipeline", async () => {
+    const blocked = runtimeRequestFixture("allow", undefined, {
+      vault: new SuccessfulRuntimeVault(ACTIVE_SELF_KEY),
+      selfKey: { approved: false },
+      destination: {
+        baseUrl: "https://control.example.org/",
+        schemes: ["https"],
+        hosts: [{ type: "exact", value: "control.example.org" }],
+        ports: [443],
+        tlsVerify: true,
+      },
+    });
+    blocked.config.server.resource = "https://control.example.org";
+    await expect(executeServiceRequest(
+      blocked.config,
+      blocked.auth,
+      request(blocked.reference),
+      blocked.dependencies,
+    )).rejects.toMatchObject({ code: "self_api_key_denied" });
+    expect(blocked.vault.resolveCalls).toBe(1);
+    expect(blocked.approvalChecks).toBe(1);
+    expect(blocked.dependencies.auditSink.events).toContainEqual(
+      expect.objectContaining({
+        type: "self_api_key_blocked",
+        credential_id: CREDENTIAL_ID,
+      }),
+    );
+
+    const received: string[] = [];
+    const server = createServer((request, response) => {
+      received.push(String(request.headers["x-api-key"] ?? ""));
+      response.end("ok");
+    });
+    server.listen(0, "127.0.0.1");
+    await once(server, "listening");
+    const address = server.address();
+    if (address === null || typeof address === "string") {
+      throw new Error("listener unavailable");
+    }
+    const allowed = runtimeRequestFixture("allow", undefined, {
+      vault: new SuccessfulRuntimeVault(ACTIVE_SELF_KEY),
+      selfKey: { approved: true },
+      destination: {
+        baseUrl: `http://127.0.0.1:${address.port}/`,
+        schemes: ["http"],
+        hosts: [{ type: "exact", value: "127.0.0.1" }],
+        ports: [address.port],
+        tlsVerify: false,
+      },
+    });
+    allowed.config.server.resource = `http://127.0.0.1:${address.port}`;
+    try {
+      await expect(executeServiceRequest(
+        allowed.config,
+        allowed.auth,
+        request(allowed.reference),
+        allowed.dependencies,
+      )).resolves.toMatchObject({ status_code: 200 });
+      expect(received).toEqual([ACTIVE_SELF_KEY]);
+      expect(allowed.approvalChecks).toBe(1);
+      expect(allowed.dependencies.auditSink.events).toContainEqual(
+        expect.objectContaining({
+          type: "self_api_key_approved_use",
+          credential_id: CREDENTIAL_ID,
+        }),
+      );
+    } finally {
+      server.close();
+      await once(server, "close");
+    }
+  });
+
+  it("matches configured self origins canonically without broadening to near hosts", () => {
+    const config = runtimeConfig({
+      maxServiceRequestsInflight: 4,
+      maxServiceRequestsInflightPerSubject: 2,
+      maxServiceRequestsInflightPerService: 2,
+    });
+    config.server.resource = "https://CONTROL.example.org";
+    expect(isConfiguredSelfTarget(
+      config,
+      new URL("https://control.example.org:443/path"),
+    )).toBe(true);
+    expect(isConfiguredSelfTarget(
+      config,
+      new URL("https://control.example.org.evil.test/path"),
+    )).toBe(false);
+    expect(isConfiguredSelfTarget(
+      config,
+      new URL("http://control.example.org/path"),
+    )).toBe(false);
+  });
+
   it("requires every requested credential policy and resolves multiple credentials", async () => {
     const received: Array<[string, string]> = [];
     const server = createServer((request, response) => {
@@ -342,6 +492,7 @@ function runtimeRequestFixture(
     vault?: FailingRuntimeVault | SuccessfulRuntimeVault;
     destination?: Partial<RuntimeServiceSnapshot["destinations"][number]>;
     multiCredential?: boolean;
+    selfKey?: { approved: boolean };
   } = {},
 ) {
   capacity ??= {
@@ -391,11 +542,51 @@ function runtimeRequestFixture(
     serviceView: async () => view,
     authorizeReferences: async () => grant,
     validateReferences: async () => view,
+    validateSelfApiKeyApproval: async (input) => {
+      approvalChecks += 1;
+      return options.selfKey?.approved === true &&
+          input.serviceId === SERVICE_ID &&
+          input.credentialId === CREDENTIAL_ID &&
+          input.vaultGeneration === 5 &&
+          input.apiKeyId === ACTIVE_SELF_KEY_ID
+        ? {
+            apiKeyId: ACTIVE_SELF_KEY_ID,
+            nickname: "Approved self key",
+            lastFour: ACTIVE_SELF_KEY.slice(-4),
+          }
+        : undefined;
+    },
   };
+  let approvalChecks = 0;
   const vault = options.vault ?? new FailingRuntimeVault();
   const dependencies = createRequestDependencies(config);
   dependencies.runtimeAuthority = authority;
   dependencies.runtimeVault = vault;
+  if (options.selfKey !== undefined) {
+    const candidate: ApiKeyAuthenticationCandidate = {
+      id: ACTIVE_SELF_KEY_ID,
+      identifier: ACTIVE_SELF_KEY.split("_")[2]!,
+      verifierHash: SUPPORTED_HASH,
+    };
+    dependencies.selfApiKeyDetector = ActiveSelfApiKeyDetector.create(
+      {
+        authenticationCandidate: async (identifier) =>
+          identifier === candidate.identifier ? candidate : undefined,
+        activeVerifiedCandidate: async ({ candidate: current, verified }) =>
+          verified
+            ? {
+                id: current.id,
+                identifier: current.identifier,
+                nickname: "Active self key",
+                lastFour: ACTIVE_SELF_KEY.slice(-4),
+                apiRole: "system",
+              }
+            : undefined,
+      },
+      new ApiKeyVerifierPool(1, async (_encoded, raw) =>
+        raw.toString("utf8") === ACTIVE_SELF_KEY),
+    );
+  }
   resources.push(dependencies);
   const issued = dependencies.capabilities.tokenBroker.issueRuntimeTokens(
     auth,
@@ -415,6 +606,9 @@ function runtimeRequestFixture(
     snapshot,
     reference: issued.tokens[0]!.token,
     references: issued.tokens.map(({ token }) => token),
+    get approvalChecks() {
+      return approvalChecks;
+    },
   };
 }
 

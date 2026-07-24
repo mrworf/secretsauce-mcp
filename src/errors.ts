@@ -20,6 +20,7 @@ export type GatewayErrorCode =
   | "cookie_not_allowed"
   | "secret_scan_busy"
   | "secret_scan_failed"
+  | "self_api_key_denied"
   | "capacity_exceeded"
   | "config_error";
 

@@ -61,7 +61,29 @@ export interface ToolInvocationAuditEvent {
   timestamp: string;
 }
 
-export type AuditEvent = ReferenceIssuedAuditEvent | ServiceRequestAuditEvent | ToolInvocationAuditEvent | InvalidOpaqueResponseReferencesAuditEvent;
+export interface SelfApiKeyProtectionAuditEvent {
+  type: "self_api_key_blocked" | "self_api_key_approved_use";
+  request_id: string;
+  subject: string;
+  service: string;
+  destination: string;
+  method: string;
+  target_host: string;
+  target_path: string;
+  location: "header" | "query" | "body" | "credential";
+  management_identity_id?: string;
+  nickname_snapshot?: string;
+  last_four_snapshot?: string;
+  credential_id?: string;
+  timestamp: string;
+}
+
+export type AuditEvent =
+  | ReferenceIssuedAuditEvent
+  | ServiceRequestAuditEvent
+  | ToolInvocationAuditEvent
+  | InvalidOpaqueResponseReferencesAuditEvent
+  | SelfApiKeyProtectionAuditEvent;
 
 export interface AuditFileOperations {
   ensureDirectory(path: string): void;

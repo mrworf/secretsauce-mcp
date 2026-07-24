@@ -6,6 +6,7 @@ import { validateConfig } from "../src/config.js";
 import { getAuditEvents as getAuditEventsFromSink, type AuditSink } from "../src/audit.js";
 import { GatewayError } from "../src/errors.js";
 import { executeServiceRequest as executeServiceRequestWithDependencies, type ServiceRequestInput } from "../src/gateway.js";
+import { generateApiKey } from "../src/apiKeys.js";
 import { TokenBroker } from "../src/tokens.js";
 import type { AuthContext, GatewayConfig } from "../src/types.js";
 import { installTokenBroker, requestDependenciesFor } from "./capabilityHelpers.js";
@@ -19,6 +20,54 @@ function getAuditEvents(config: GatewayConfig) {
 }
 
 describe("HTTP gateway", () => {
+  it("fails closed for recognizable self API keys in YAML requests and configured credentials", async () => {
+    const downstream = await startDownstream();
+    const generated = generateApiKey();
+    try {
+      const rawRequestConfig = gatewayConfig(downstream.baseUrl);
+      rawRequestConfig.server.resource = downstream.baseUrl;
+      await expectGatewayError(() => executeServiceRequest(
+        rawRequestConfig,
+        actor(),
+        {
+          service: "demo-service",
+          destination: "primary",
+          method: "POST",
+          path: "/api/echo",
+          body: { token: generated.value },
+          reason: "Exercise YAML self protection.",
+        },
+      ), "self_api_key_denied");
+
+      const credentialConfig = gatewayConfig(downstream.baseUrl);
+      credentialConfig.server.resource = downstream.baseUrl;
+      credentialConfig.services["demo-service"]!.credentials[0]!.secret =
+        generated.value;
+      await expectGatewayError(() => executeServiceRequest(
+        credentialConfig,
+        actor(),
+        {
+          service: "demo-service",
+          destination: "primary",
+          method: "GET",
+          path: "/api/echo",
+          reason: "Exercise YAML credential protection.",
+        },
+      ), "self_api_key_denied");
+
+      expect(downstream.requests).toHaveLength(0);
+      const serializedAudit = JSON.stringify([
+        ...getAuditEvents(rawRequestConfig),
+        ...getAuditEvents(credentialConfig),
+      ]);
+      expect(serializedAudit).toContain(generated.identifier);
+      expect(serializedAudit).not.toContain(generated.value);
+    } finally {
+      generated.raw.fill(0);
+      await downstream.close();
+    }
+  });
+
   it("requires and consumes a bound gateway access reference for credential-free services", async () => {
     const downstream = await startDownstream();
     try {

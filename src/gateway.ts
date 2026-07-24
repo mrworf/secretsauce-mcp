@@ -46,6 +46,12 @@ import type {
 import { ServiceRequestLimiter } from "./serviceRequestLimiter.js";
 import { canonicalJson } from "./vault/canonicalJson.js";
 import type { PolicyEvaluationExplanation } from "./policy.js";
+import {
+  SelfApiKeyProtectionError,
+  scanStructuralApiKeyCandidates,
+  type ActiveSelfApiKeyMatch,
+  type SelfApiKeyLocation,
+} from "./selfApiKeyProtection.js";
 
 export interface ServiceRequestInput {
   service: string;
@@ -194,6 +200,7 @@ export async function executeServiceRequest(
   }
   try {
   const broker = dependencies.capabilities.tokenBroker;
+  const selfTarget = isConfiguredSelfTarget(config, target.url);
   const tokenTarget = { service: service.id, destination: target.destination.id };
   let serviceReferenceRecord: TokenRecord | undefined;
   if (service.credentials.length === 0) {
@@ -214,6 +221,68 @@ export async function executeServiceRequest(
     throw new GatewayError("cookie_not_allowed", "Cookie headers are not allowed in service requests.");
   }
   const query = input.query ?? {};
+  if (selfTarget && dependencies.selfApiKeyProtectionPrechecked !== true) {
+    const inspectionValues = [
+      { value: callerHeaders, location: "header" as const },
+      { value: query, location: "query" as const },
+      { value: input.body, location: "body" as const },
+      ...service.credentials.map(({ secret }) => ({
+        value: secret,
+        location: "credential" as const,
+      })),
+    ];
+    let matches: ActiveSelfApiKeyMatch[];
+    try {
+      matches = await activeSelfApiKeyMatches(
+        dependencies,
+        inspectionValues,
+        auth.subject,
+      );
+    } catch (error) {
+      if (
+        !(error instanceof GatewayError)
+        || error.code !== "self_api_key_denied"
+      ) throw error;
+      const candidate = scanStructuralApiKeyCandidates(inspectionValues)[0];
+      if (candidate !== undefined) {
+        recordSelfApiKeyEvent({
+          dependencies,
+          logger,
+          type: "self_api_key_blocked",
+          requestId,
+          auth,
+          serviceId: service.id,
+          destinationId: target.destination.id,
+          method: input.method,
+          target,
+          match: {
+            location: candidate.location,
+            id: candidate.identifier,
+          },
+        });
+      }
+      throw new GatewayError(error.code, error.message, requestId);
+    }
+    if (matches.length > 0) {
+      recordSelfApiKeyEvent({
+        dependencies,
+        logger,
+        type: "self_api_key_blocked",
+        requestId,
+        auth,
+        serviceId: service.id,
+        destinationId: target.destination.id,
+        method: input.method,
+        target,
+        match: matches[0]!,
+      });
+      throw new GatewayError(
+        "self_api_key_denied",
+        "Active SecretSauce API keys require database-backed approval.",
+        requestId,
+      );
+    }
+  }
   const headers = enforceCredentialHeaderUsage(
     { headers: callerHeaders, query, body: input.body }, broker, auth, tokenTarget, service, logger,
   );
@@ -405,6 +474,7 @@ async function executePersistedServiceRequest(
   input: ServiceRequestInput,
   dependencies: RequestDependencies,
 ): Promise<ServiceResponse> {
+  const logger = createLogger(config.logging);
   validateRequestInput(input);
   const authority = dependencies.runtimeAuthority!;
   const view = await authority.serviceView(auth, input.service);
@@ -567,6 +637,7 @@ async function executePersistedServiceRequest(
     consistentView.snapshot,
     explanation,
   );
+  const selfTarget = isConfiguredSelfTarget(config, target.url);
   let release: () => void;
   try {
     release = acquireServiceRequest(
@@ -603,6 +674,39 @@ async function executePersistedServiceRequest(
     throw error;
   }
   try {
+    if (selfTarget) {
+      const matches = await activeSelfApiKeyMatches(
+        dependencies,
+        [
+          { value: callerHeaders, location: "header" },
+          { value: input.query ?? {}, location: "query" },
+          { value: input.body, location: "body" },
+        ],
+        auth.subject,
+      );
+      if (matches.length > 0) {
+        recordSelfApiKeyEvent({
+          dependencies,
+          logger,
+          type: "self_api_key_blocked",
+          requestId,
+          auth,
+          serviceId: consistentView.snapshot.service.id,
+          destinationId: runtimeDestinationId(
+            consistentView.snapshot,
+            target.destination.id,
+          ),
+          method: input.method,
+          target,
+          match: matches[0]!,
+        });
+        throw new GatewayError(
+          "self_api_key_denied",
+          "Active SecretSauce API keys require an approved credential reference.",
+          requestId,
+        );
+      }
+    }
     for (const record of uniqueRecords) {
       if ("kind" in record) {
         broker.consumePreflightedToken(record);
@@ -657,6 +761,7 @@ async function executePersistedServiceRequest(
         const nestedDependencies: RequestDependencies = {
           auditSink: dependencies.auditSink,
           secretRuntime: dependencies.secretRuntime,
+          selfApiKeyProtectionPrechecked: true,
           capabilities: {
             ...dependencies.capabilities,
             serviceRequestLimiter: new ServiceRequestLimiter(
@@ -717,6 +822,64 @@ async function executePersistedServiceRequest(
         requestId,
         operationDigest,
       }, async (secret) => {
+        if (selfTarget) {
+          const matches = await activeSelfApiKeyMatches(
+            dependencies,
+            [{ value: secret.toString("utf8"), location: "credential" }],
+            auth.subject,
+          );
+          for (const match of matches) {
+            const approval = await authority.validateSelfApiKeyApproval({
+              serviceId: consistentView.snapshot.service.id,
+              credentialId: credential.id,
+              vaultGeneration: credential.generation!,
+              apiKeyId: match.id,
+            });
+            if (approval === undefined) {
+              recordSelfApiKeyEvent({
+                dependencies,
+                logger,
+                type: "self_api_key_blocked",
+                requestId,
+                auth,
+                serviceId: consistentView.snapshot.service.id,
+                destinationId: runtimeDestinationId(
+                  consistentView.snapshot,
+                  target.destination.id,
+                ),
+                method: input.method,
+                target,
+                match,
+                credentialId: credential.id,
+              });
+              throw new GatewayError(
+                "self_api_key_denied",
+                "Active SecretSauce API keys require an approved credential reference.",
+                requestId,
+              );
+            }
+            recordSelfApiKeyEvent({
+              dependencies,
+              logger,
+              type: "self_api_key_approved_use",
+              requestId,
+              auth,
+              serviceId: consistentView.snapshot.service.id,
+              destinationId: runtimeDestinationId(
+                consistentView.snapshot,
+                target.destination.id,
+              ),
+              method: input.method,
+              target,
+              match: {
+                ...match,
+                nickname: approval.nickname,
+                lastFour: approval.lastFour,
+              },
+              credentialId: credential.id,
+            });
+          }
+        }
         resolved.set(credential.id, secret.toString("utf8"));
         try {
           return await execute(index + 1);
@@ -734,6 +897,139 @@ async function executePersistedServiceRequest(
   } finally {
     release();
   }
+}
+
+async function activeSelfApiKeyMatches(
+  dependencies: RequestDependencies,
+  values: readonly { value: unknown; location: SelfApiKeyLocation }[],
+  subject: string,
+): Promise<ActiveSelfApiKeyMatch[]> {
+  let recognizable: ReturnType<typeof scanStructuralApiKeyCandidates>;
+  try {
+    recognizable = scanStructuralApiKeyCandidates(values);
+  } catch (error) {
+    if (error instanceof SelfApiKeyProtectionError) {
+      throw new GatewayError(
+        "self_api_key_denied",
+        "Self API key inspection could not complete.",
+      );
+    }
+    throw error;
+  }
+  if (recognizable.length === 0) return [];
+  if (dependencies.selfApiKeyDetector === undefined) {
+    throw new GatewayError(
+      "self_api_key_denied",
+      "Self API key inspection is unavailable.",
+    );
+  }
+  try {
+    const detector = await dependencies.selfApiKeyDetector;
+    return await detector.inspect(values, {
+      principal: subject,
+      source: `mcp:${subject}`,
+    });
+  } catch (error) {
+    if (error instanceof SelfApiKeyProtectionError) {
+      throw new GatewayError(
+        "self_api_key_denied",
+        "Self API key inspection could not complete.",
+      );
+    }
+    throw error;
+  }
+}
+
+function recordSelfApiKeyEvent(input: {
+  dependencies: RequestDependencies;
+  logger: ReturnType<typeof createLogger>;
+  type: "self_api_key_blocked" | "self_api_key_approved_use";
+  requestId: string;
+  auth: AuthContext;
+  serviceId: string;
+  destinationId: string;
+  method: string;
+  target: ReturnType<typeof resolveDestinationTarget>;
+  match: {
+    location: SelfApiKeyLocation;
+    id?: string;
+    nickname?: string;
+    lastFour?: string;
+  };
+  credentialId?: string;
+}): void {
+  const event = {
+    type: input.type,
+    request_id: input.requestId,
+    subject: input.auth.subject,
+    service: input.serviceId,
+    destination: input.destinationId,
+    method: input.method.toUpperCase(),
+    target_host: input.target.url.hostname,
+    target_path: input.target.methodPath,
+    location: input.match.location,
+    ...(input.match.id === undefined
+      ? {}
+      : { management_identity_id: input.match.id }),
+    ...(input.match.nickname === undefined
+      ? {}
+      : { nickname_snapshot: input.match.nickname }),
+    ...(input.match.lastFour === undefined
+      ? {}
+      : { last_four_snapshot: input.match.lastFour }),
+    ...(input.credentialId === undefined
+      ? {}
+      : { credential_id: input.credentialId }),
+    timestamp: new Date().toISOString(),
+  } as const;
+  audit(event, input.dependencies.auditSink);
+  input.logger.warn(input.type, {
+    request_id: input.requestId,
+    subject: input.auth.subject,
+    service: input.serviceId,
+    destination: input.destinationId,
+    method: input.method.toUpperCase(),
+    target_host: input.target.url.hostname,
+    target_path: input.target.methodPath,
+    location: input.match.location,
+    ...(input.match.id === undefined
+      ? {}
+      : { management_identity_id: input.match.id }),
+    ...(input.match.nickname === undefined
+      ? {}
+      : { nickname_snapshot: input.match.nickname }),
+    ...(input.match.lastFour === undefined
+      ? {}
+      : { last_four_snapshot: input.match.lastFour }),
+    ...(input.credentialId === undefined
+      ? {}
+      : { credential_id: input.credentialId }),
+  });
+}
+
+export function configuredSelfOrigins(config: GatewayConfig): ReadonlySet<string> {
+  const values = [
+    config.control?.publicOrigin,
+    config.server.resource,
+    ...(config.auth.mode === "builtin_oauth"
+      ? [config.auth.builtinOAuth.issuer]
+      : []),
+  ];
+  return new Set(values.flatMap((value) => {
+    if (value === undefined) return [];
+    try {
+      return [new URL(value).origin];
+    } catch {
+      return [];
+    }
+  }));
+}
+
+export function isConfiguredSelfTarget(
+  config: GatewayConfig,
+  target: URL,
+): boolean {
+  return configuredSelfOrigins(config).has(target.origin);
 }
 
 function assertRawRequestBound(

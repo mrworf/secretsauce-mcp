@@ -23,6 +23,7 @@ import { IdentityRepository, type IdentityAuditContext } from "../src/identity/r
 import { AlwaysStepUpHandle } from "../src/identity/stepUp.js";
 import { PersistenceWorker } from "../src/persistence/worker.js";
 import { ActiveSelfApiKeyDetector } from "../src/selfApiKeyProtection.js";
+import { PersistedRuntimeAuthority } from "../src/runtimeAuthority.js";
 import { UuidV7Generator } from "../src/persistence/uuidV7.js";
 import {
   ServiceManagementRepository,
@@ -359,6 +360,37 @@ describe("service credential metadata and selectors", () => {
       fixture.worker,
       created.credential.id,
     ))).not.toContain(active.oneTimeKey);
+    const runtimeAuthority = new PersistedRuntimeAuthority(fixture.worker);
+    await expect(runtimeAuthority.validateSelfApiKeyApproval({
+      serviceId: service.id,
+      credentialId: created.credential.id,
+      vaultGeneration: 1,
+      apiKeyId: active.apiKey.id,
+    })).resolves.toEqual({
+      apiKeyId: active.apiKey.id,
+      nickname: "Recursive deploy key",
+      lastFour: active.oneTimeKey.slice(-4),
+    });
+    await expect(runtimeAuthority.validateSelfApiKeyApproval({
+      serviceId: service.id,
+      credentialId: created.credential.id,
+      vaultGeneration: 2,
+      apiKeyId: active.apiKey.id,
+    })).resolves.toBeUndefined();
+
+    await keyRepository.revoke({
+      actor: fixture.superadmin,
+      id: active.apiKey.id,
+      expectedVersion: active.apiKey.version,
+      justification: "End recursive authority before replacement.",
+      correlationId: CORRELATION,
+    });
+    await expect(runtimeAuthority.validateSelfApiKeyApproval({
+      serviceId: service.id,
+      credentialId: created.credential.id,
+      vaultGeneration: 1,
+      apiKeyId: active.apiKey.id,
+    })).resolves.toBeUndefined();
 
     const replaced = await coordinator.setValue({
       actor: fixture.superadmin,

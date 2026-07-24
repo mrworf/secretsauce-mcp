@@ -72,6 +72,16 @@ export interface RuntimeAuthority {
     destination: string,
     records: readonly (TokenRecord | ResponseSecretTokenRecord)[],
   ): Promise<PersistedRuntimeServiceView>;
+  validateSelfApiKeyApproval(input: {
+    serviceId: string;
+    credentialId: string;
+    vaultGeneration: number;
+    apiKeyId: string;
+  }): Promise<{
+    apiKeyId: string;
+    nickname: string;
+    lastFour: string;
+  } | undefined>;
 }
 
 export class PersistedRuntimeAuthority implements RuntimeAuthority {
@@ -309,6 +319,67 @@ export class PersistedRuntimeAuthority implements RuntimeAuthority {
       }
     }
     return view;
+  }
+
+  async validateSelfApiKeyApproval(input: {
+    serviceId: string;
+    credentialId: string;
+    vaultGeneration: number;
+    apiKeyId: string;
+  }): Promise<{
+    apiKeyId: string;
+    nickname: string;
+    lastFour: string;
+  } | undefined> {
+    if (
+      !isUuidV7(input.serviceId) ||
+      !isUuidV7(input.credentialId) ||
+      !isUuidV7(input.apiKeyId) ||
+      !Number.isSafeInteger(input.vaultGeneration) ||
+      input.vaultGeneration < 1
+    ) throw new GatewayError("config_error", "Self API key approval input is invalid.");
+    try {
+      return await this.owner.execute({
+        run: (database) => database.read((query) => {
+          const row = query.get<{
+            api_key_id: string;
+            nickname_snapshot: string;
+            last_four_snapshot: string;
+          }>(`
+            SELECT approval.api_key_id, approval.nickname_snapshot,
+              approval.last_four_snapshot
+            FROM credential_self_api_key_approvals approval
+            JOIN service_credentials credential
+              ON credential.id = approval.credential_id
+              AND credential.service_id = approval.service_id
+            JOIN api_keys api ON api.id = approval.api_key_id
+            WHERE approval.service_id = ?
+              AND approval.credential_id = ?
+              AND approval.vault_generation = ?
+              AND approval.api_key_id = ?
+              AND credential.status = 'configured'
+              AND credential.vault_state = 'idle'
+              AND credential.vault_generation = approval.vault_generation
+              AND api.status = 'active'
+              AND (api.expires_at IS NULL OR api.expires_at > ?)
+          `, [
+            input.serviceId,
+            input.credentialId,
+            input.vaultGeneration,
+            input.apiKeyId,
+            Date.now(),
+          ]);
+          return row === undefined ? undefined : {
+            apiKeyId: row.api_key_id,
+            nickname: row.nickname_snapshot,
+            lastFour: row.last_four_snapshot,
+          };
+        }),
+      });
+    } catch (error) {
+      if (error instanceof GatewayError) throw error;
+      throw new GatewayError("config_error", "Self API key approval is unavailable.");
+    }
   }
 }
 

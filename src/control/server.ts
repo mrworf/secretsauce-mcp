@@ -158,6 +158,8 @@ import {
   securitySettingsSeed,
 } from "../securitySettings.js";
 import { HumanActivityRepository } from "../humanActivity.js";
+import { InactivityJob } from "../inactivityJob.js";
+import { registerSecurityRoutes } from "./securityRoutes.js";
 
 export interface ControlApplicationOptions {
   authenticator?: ControlAuthenticator;
@@ -184,6 +186,7 @@ export interface ControlApplicationOptions {
     store: SecuritySettingsStore;
   };
   humanActivity?: Pick<HumanActivityRepository, "record">;
+  inactivityJob?: InactivityJob;
 }
 
 export function createControlApplication(
@@ -295,6 +298,15 @@ export function createControlApplication(
   if (options.apiKeys !== undefined) {
     registerApiKeyRoutes(routeRegistry, options.apiKeys);
   }
+  if (
+    options.securitySettings !== undefined
+    && options.inactivityJob !== undefined
+  ) {
+    registerSecurityRoutes(routeRegistry, {
+      ...options.securitySettings,
+      inactivityJob: options.inactivityJob,
+    });
+  }
   options.registerControlRoutes?.(routeRegistry);
   installControlRoutes(
     application,
@@ -398,6 +410,8 @@ export async function startControlServer(
   let apiKeyAuthenticator: SystemApiKeyAuthenticator | undefined;
   let apiKeyManagement: ApiKeyRouteDependencies | undefined;
   let securitySettings: ControlApplicationOptions["securitySettings"];
+  let inactivityJob: InactivityJob | undefined;
+  let inactivityTimer: NodeJS.Timeout | undefined;
   const apiKeyVerifier = new ApiKeyVerifierPool();
   let selfApiKeyDetector: ActiveSelfApiKeyDetector | undefined;
   try {
@@ -417,6 +431,10 @@ export async function startControlServer(
         repository: securitySettingsRepository,
         store: new SecuritySettingsStore(initialSecuritySettings),
       };
+      inactivityJob = new InactivityJob(
+        persistence,
+        () => securitySettings!.store.current(),
+      );
       identityKeyRing = IdentityKeyRing.fromFiles(
         config.identity.activeRootKeyId,
         config.identity.rootKeyFiles,
@@ -701,13 +719,21 @@ export async function startControlServer(
       ...(accessManagement === undefined ? {} : { accessManagement }),
       ...(apiKeyManagement === undefined ? {} : { apiKeys: apiKeyManagement }),
       ...(securitySettings === undefined ? {} : { securitySettings }),
+      ...(inactivityJob === undefined ? {} : { inactivityJob }),
     });
     await server.listen({
       host: config.control.host,
       port: config.control.port,
     });
+    if (inactivityJob !== undefined) {
+      inactivityTimer = setInterval(() => {
+        void inactivityJob!.run(false).catch(() => undefined);
+      }, 60_000);
+      inactivityTimer.unref();
+    }
   } catch (error) {
     await server?.close().catch(() => undefined);
+    if (inactivityTimer !== undefined) clearInterval(inactivityTimer);
     browserSessions?.close();
     stepUpAuthorization?.close();
     stepUp?.close();
@@ -736,6 +762,7 @@ export async function startControlServer(
     close: () => {
       closePromise ??= (async () => {
         await startedServer.close();
+        if (inactivityTimer !== undefined) clearInterval(inactivityTimer);
         browserSessions?.close();
         stepUpAuthorization?.close();
         stepUp?.close();

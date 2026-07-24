@@ -1236,10 +1236,33 @@ function updateUserSecurity(
 ): void {
   const updated = transaction.run(`
     UPDATE users
-    SET status = ?, role = ?, security_epoch = security_epoch + 1,
+    SET status = ?, role = ?,
+        suspended_at = CASE
+          WHEN ? = 'suspended' THEN coalesce(suspended_at, ?)
+          ELSE NULL
+        END,
+        suspension_origin = CASE
+          WHEN ? = 'suspended' THEN coalesce(suspension_origin, 'manual')
+          ELSE NULL
+        END,
+        suspension_rule_version = CASE
+          WHEN ? = 'suspended' THEN suspension_rule_version
+          ELSE NULL
+        END,
+        security_epoch = security_epoch + 1,
         version = version + 1, updated_at = ?
     WHERE id = ? AND version = ?
-  `, [status, role, now, target.id, target.version]);
+  `, [
+    status,
+    role,
+    status,
+    now,
+    status,
+    status,
+    now,
+    target.id,
+    target.version,
+  ]);
   if (updated.changes !== 1) throw new PersistenceError("identity_stale");
 }
 

@@ -1,5 +1,9 @@
 import type { InactivityJob } from "../inactivityJob.js";
 import {
+  GlobalSecurityEventError,
+  type GlobalSecurityEvents,
+} from "../globalSecurityEvents.js";
+import {
   SecuritySettingsError,
   type SecuritySettingsPatch,
   type SecuritySettingsRepository,
@@ -8,6 +12,7 @@ import {
 import { ControlContractError } from "./contracts.js";
 import { defineControlRoute, type ControlRouteRegistry } from "./routeRegistry.js";
 import { z } from "./zod.js";
+import type { ControlIdempotencyHasher } from "./idempotency.js";
 
 const ACKNOWLEDGEMENT = "I ACCEPT SYSTEM-WIDE SECURITY POLICY CHANGES";
 const integer = z.number().int();
@@ -88,11 +93,24 @@ const jobSchema = z.object({
   protected_count: integer.nonnegative(),
   version: integer.positive(),
 }).strict();
+const eventSchema = z.object({
+  id: z.string().uuid(),
+  kind: z.enum(["password_change", "totp_reset"]),
+  actor_user_id: z.string().uuid(),
+  actor_role: z.literal("superadmin"),
+  justification: z.string().min(1).max(1_024),
+  affected_users: integer.nonnegative(),
+  resulting_global_epoch: integer.positive(),
+  resulting_password_policy_version: integer.positive(),
+  created_at: integer.nonnegative(),
+}).strict();
 
 export interface SecurityRouteDependencies {
   repository: SecuritySettingsRepository;
   store: SecuritySettingsStore;
   inactivityJob: InactivityJob;
+  globalEvents?: GlobalSecurityEvents;
+  idempotency?: ControlIdempotencyHasher;
 }
 
 export function registerSecurityRoutes(
@@ -215,6 +233,139 @@ export function registerSecurityRoutes(
       return { data: wireJob(state), version: state.version };
     },
   }));
+
+  if (
+    dependencies.globalEvents !== undefined
+    && dependencies.idempotency !== undefined
+  ) registerGlobalEventRoutes(registry, dependencies);
+}
+
+function registerGlobalEventRoutes(
+  registry: ControlRouteRegistry,
+  dependencies: SecurityRouteDependencies & {
+    globalEvents?: GlobalSecurityEvents;
+    idempotency?: ControlIdempotencyHasher;
+  },
+): void {
+  const events = dependencies.globalEvents!;
+  const idempotency = dependencies.idempotency!;
+  registry.register(defineControlRoute({
+    id: "security.events.list",
+    method: "GET",
+    path: "/api/v2/security/events",
+    summary: "List system-wide security events",
+    tags: ["Security"],
+    authentication: ["browser_session"],
+    permission: "manage_global_settings",
+    stepUp: "none",
+    schemas: {
+      query: z.object({
+        limit: z.string().regex(/^(?:[1-9]|[1-9]\d|100)$/).optional(),
+      }).strict(),
+      response: z.object({ items: z.array(eventSchema).max(100) }).strict(),
+    },
+    rateLimit: "search",
+    secretFields: [],
+    cache: "no-store",
+    concurrency: "none",
+    idempotency: "none",
+    handler: async ({ query }) => ({
+      data: {
+        items: (await events.list(
+          query.limit === undefined ? 100 : Number(query.limit),
+        )).map(wireEvent),
+      },
+    }),
+  }));
+  registerGlobalEvent(
+    registry,
+    events,
+    idempotency,
+    "password_change",
+    "REQUIRE ALL LOCAL USERS TO CHANGE PASSWORDS",
+  );
+  registerGlobalEvent(
+    registry,
+    events,
+    idempotency,
+    "totp_reset",
+    "ERASE ALL LOCAL TOTP AUTHENTICATORS",
+  );
+}
+
+function registerGlobalEvent(
+  registry: ControlRouteRegistry,
+  events: GlobalSecurityEvents,
+  idempotency: ControlIdempotencyHasher,
+  kind: "password_change" | "totp_reset",
+  acknowledgement: string,
+): void {
+  const routeId = `security.events.${kind}`;
+  registry.register(defineControlRoute({
+    id: routeId,
+    method: "POST",
+    path: `/api/v2/security/events/${kind === "password_change"
+      ? "password-change"
+      : "totp-reset"}`,
+    summary: kind === "password_change"
+      ? "Require every local user to change password"
+      : "Erase every local TOTP authenticator",
+    tags: ["Security"],
+    authentication: ["browser_session"],
+    permission: "global_authenticator_event",
+    stepUp: "always",
+    schemas: {
+      body: z.object({
+        justification: z.string().min(1).max(1_024),
+        acknowledgement: z.literal(acknowledgement),
+      }).strict(),
+      response: eventSchema.extend({ replayed: z.boolean() }).strict(),
+    },
+    rateLimit: "management",
+    auditAction: `security.global_${kind}`,
+    secretFields: [],
+    cache: "no-store",
+    concurrency: "if-match",
+    idempotency: "required",
+    handler: async ({
+      authentication,
+      body,
+      expectedVersion,
+      idempotencyKey,
+      requestId,
+      stepUpProof,
+    }) => {
+      if (stepUpProof === undefined) {
+        throw new ControlContractError(403, "step_up_required", "Fresh step-up is required.");
+      }
+      try {
+        const result = await events.execute({
+          kind,
+          actor: authentication!,
+          expectedVersion: expectedVersion!,
+          justification: body.justification,
+          correlationId: requestId,
+          proof: stepUpProof,
+          idempotency: {
+            keyHash: idempotency.keyHash({
+              key: idempotencyKey!,
+              principalId: authentication!.principalId,
+              routeId,
+            }),
+            principalId: authentication!.principalId,
+            routeId,
+            requestDigest: idempotency.requestDigest(body),
+          },
+        });
+        return {
+          data: { ...wireEvent(result.event), replayed: result.replayed },
+          version: await events.stateVersion(),
+        };
+      } catch (error) {
+        throw globalEventContractError(error);
+      }
+    },
+  }));
 }
 
 function patchFromWire(
@@ -317,6 +468,37 @@ function wireJob(value: Awaited<ReturnType<InactivityJob["state"]>>) {
     protected_count: value.protectedCount,
     version: value.version,
   };
+}
+
+function wireEvent(
+  value: Awaited<ReturnType<GlobalSecurityEvents["list"]>>[number],
+) {
+  return {
+    id: value.id,
+    kind: value.kind,
+    actor_user_id: value.actorUserId,
+    actor_role: value.actorRole,
+    justification: value.justification,
+    affected_users: value.affectedUsers,
+    resulting_global_epoch: value.resultingGlobalEpoch,
+    resulting_password_policy_version: value.resultingPasswordPolicyVersion,
+    created_at: value.createdAt,
+  };
+}
+
+function globalEventContractError(error: unknown): ControlContractError {
+  if (error instanceof GlobalSecurityEventError) {
+    if (error.code === "invalid") {
+      return new ControlContractError(400, "invalid_request", "Global security event is invalid.");
+    }
+    if (error.code === "forbidden") {
+      return new ControlContractError(403, "forbidden", "Global security event denied.");
+    }
+    if (error.code === "stale") {
+      return new ControlContractError(409, "stale_version", "Global security state changed.");
+    }
+  }
+  return new ControlContractError(503, "maintenance", "Global security event is unavailable.");
 }
 
 async function run<T>(operation: () => Promise<T>): Promise<T> {

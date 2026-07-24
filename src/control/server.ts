@@ -160,6 +160,7 @@ import {
 import { HumanActivityRepository } from "../humanActivity.js";
 import { InactivityJob } from "../inactivityJob.js";
 import { registerSecurityRoutes } from "./securityRoutes.js";
+import { GlobalSecurityEvents } from "../globalSecurityEvents.js";
 
 export interface ControlApplicationOptions {
   authenticator?: ControlAuthenticator;
@@ -184,6 +185,8 @@ export interface ControlApplicationOptions {
   securitySettings?: {
     repository: SecuritySettingsRepository;
     store: SecuritySettingsStore;
+    globalEvents?: GlobalSecurityEvents;
+    idempotency?: ControlIdempotencyHasher;
   };
   humanActivity?: Pick<HumanActivityRepository, "record">;
   inactivityJob?: InactivityJob;
@@ -472,6 +475,11 @@ export async function startControlServer(
           sessionKey,
         );
         stepUpRepository = new StepUpRepository(persistence);
+        securitySettings.globalEvents = new GlobalSecurityEvents(
+          persistence,
+          stepUpRepository,
+        );
+        securitySettings.idempotency = idempotencyHasher;
         stepUp = new StepUpService({
           authenticationRepository,
           repository: stepUpRepository,

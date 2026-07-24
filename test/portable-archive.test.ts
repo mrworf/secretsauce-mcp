@@ -104,6 +104,18 @@ describe("portable tar/gzip archive", () => {
     });
   });
 
+  it("supports an encrypted zero-record vault payload", () => {
+    const result = createPortableArchive({
+      ...fixture(),
+      mode: "encrypted-secrets",
+      secrets: Buffer.from("empty encrypted vault archive"),
+    });
+    const parsed = parsePortableArchive(result.archive);
+    expect(parsed.manifest.encryption?.selected_count).toBe(0);
+    expect(parsed.entries.get("secrets.enc"))
+      .toEqual(Buffer.from("empty encrypted vault archive"));
+  });
+
   it("accepts empty portable collections and the exact YAML byte boundary", () => {
     const exact = Buffer.alloc(16 * 1024 * 1024, 0x61);
     const result = createPortableArchive({

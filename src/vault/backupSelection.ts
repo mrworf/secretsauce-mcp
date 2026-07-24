@@ -17,7 +17,7 @@ export interface VaultBackupSelection extends VaultCredentialBinding {
 export function canonicalizeVaultBackupSelection(
   value: readonly VaultBackupSelection[],
 ): VaultBackupSelection[] {
-  if (!Array.isArray(value) || value.length < 1 || value.length > MAX_SELECTION) {
+  if (!Array.isArray(value) || value.length > MAX_SELECTION) {
     throw vaultError("vault_archive_invalid");
   }
   const canonical = value.map((item) => {

@@ -314,7 +314,6 @@ function validateCreationInput(input: {
       ? input.secrets !== undefined || input.counts.secrets !== 0
       : !(input.secrets instanceof Uint8Array)
         || input.secrets.byteLength < 1
-        || input.counts.secrets < 1
   ) throw new PortableArchiveError("invalid");
   const total = documents.reduce(
     (sum, document) => sum + document.byteLength,
@@ -551,7 +550,7 @@ function validateEncryption(
     || encryption.nonce_bytes !== 12
     || encryption.selected_count !== (counts as PortableArchiveCounts).secrets
     || !Number.isSafeInteger(encryption.selected_count)
-    || (encryption.selected_count as number) < 1
+    || (encryption.selected_count as number) < 0
   ) throw new PortableArchiveError("corrupt");
 }
 

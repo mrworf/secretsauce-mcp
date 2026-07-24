@@ -57,7 +57,7 @@ export const backupSelectionSchema = z.array(z.object({
   ...bindingSchema.shape,
   locator: locatorSchema,
   generation: generationSchema,
-}).strict()).min(1).max(10_000);
+}).strict()).max(10_000);
 export const transferChunkSchema = z.string().max(87_382).refine((value) => {
   if (value.length === 0) return false;
   if (!/^[A-Za-z0-9_-]+$/.test(value)) return false;

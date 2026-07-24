@@ -25,7 +25,7 @@ describe("vault backup selection binding", () => {
     }
   });
 
-  it("accepts the exact count bound and rejects empty, duplicate, malformed, and limit plus one", () => {
+  it("accepts empty and the exact count bound while rejecting duplicate, malformed, and limit plus one", () => {
     const generator = new UuidV7Generator();
     const base = selection(generator, 1);
     const maximum = Array.from({ length: 10_000 }, (_, index) => ({
@@ -33,9 +33,10 @@ describe("vault backup selection binding", () => {
       credentialId: generator.next(),
       generation: index + 1,
     }));
+    expect(canonicalizeVaultBackupSelection([])).toEqual([]);
+    expect(digestVaultBackupSelection([])).toMatch(/^[a-f0-9]{64}$/);
     expect(canonicalizeVaultBackupSelection(maximum)).toHaveLength(10_000);
     for (const invalid of [
-      [],
       [base, base],
       [{ ...base, locator: "../record" }],
       [{ ...base, generation: 0 }],

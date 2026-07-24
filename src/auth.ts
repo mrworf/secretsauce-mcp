@@ -30,6 +30,12 @@ export async function authenticateRequest(
 
   if (config.auth.mode === "builtin_oauth") {
     const builtin = config.auth.builtinOAuth;
+    if (
+      builtin.identitySource !== "static"
+      || builtin.signingPublicKeyPem === undefined
+    ) {
+      throw new GatewayError("unauthenticated", "Invalid OAuth access token.");
+    }
     let payload: JWTPayload;
     try {
       const verified = await jwtVerify(bearer, await getPublicKey(builtin.signingPublicKeyPem), {

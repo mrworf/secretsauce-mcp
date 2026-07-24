@@ -195,11 +195,13 @@ const rawConfigSchema = z.object({
       mode: z.literal("builtin_oauth"),
       builtin_oauth: z.object({
         issuer: z.string().url(),
-        admin_username_env: z.string().min(1),
+        identity_source: z.enum(["static", "database"]).default("static"),
+        admin_username_env: z.string().min(1).optional(),
         admin_password_hash_env: z.string().min(1).optional(),
         admin_password_hash_file: z.string().min(1).optional(),
-        signing_key_file: z.string().min(1),
-        access_token_ttl: z.string().default("1h"),
+        signing_key_file: z.string().min(1).optional(),
+        token_hmac_key_file: z.string().min(1).optional(),
+        access_token_ttl: z.string().optional(),
         authorization_code_ttl: z.string().default("5m"),
         refresh_token_idle_ttl: z.string().default("30d"),
         refresh_token_max_ttl: z.string().default("90d"),
@@ -390,6 +392,20 @@ export function validateConfig(raw: unknown, env: NodeJS.ProcessEnv = process.en
     ? undefined
     : { databaseFile: parsed.persistence.database_file };
   const identity = normalizeIdentity(parsed.identity, parsed.control, parsed.persistence);
+  if (
+    auth.mode === "builtin_oauth"
+    && auth.builtinOAuth.identitySource === "database"
+    && (
+      persistence === undefined
+      || identity === undefined
+      || parsed.runtime.authority !== "database"
+    )
+  ) {
+    throw configValidationError(
+      "database auth.builtin_oauth requires persistence, identity, and runtime.authority database",
+      ["auth", "builtin_oauth", "identity_source"],
+    );
+  }
   appendPublicOAuthWarnings(server, auth, warnings);
   const services = normalizeServices(parsed.services, env, warnings, debugDiagnostics);
 
@@ -940,6 +956,32 @@ function validateRestrictedControlKeyFile(path: string): void {
   }
 }
 
+function validateRestrictedOAuthTokenKeyFile(path: string): void {
+  try {
+    const stats = statSync(path);
+    if (
+      !stats.isFile()
+      || (stats.mode & 0o400) === 0
+      || (stats.mode & 0o377) !== 0
+    ) {
+      throw new Error("unsafe OAuth token key file");
+    }
+    const encoded = readFileSync(path, "utf8").trim();
+    if (
+      !/^[A-Za-z0-9_-]{43}$/.test(encoded)
+      || Buffer.from(encoded, "base64url").byteLength !== 32
+      || Buffer.from(encoded, "base64url").toString("base64url") !== encoded
+    ) {
+      throw new Error("invalid OAuth token key");
+    }
+  } catch {
+    throw configValidationError(
+      "auth.builtin_oauth.token_hmac_key_file must be a readable mode-0400 file containing one canonical 32-byte base64url key",
+      ["auth", "builtin_oauth", "token_hmac_key_file"],
+    );
+  }
+}
+
 function normalizeAuth(raw: RawConfig["auth"], env: NodeJS.ProcessEnv): AuthConfig {
   if (raw.mode === "oauth") {
     if (!raw.oauth.audience && !raw.oauth.resource) {
@@ -959,40 +1001,84 @@ function normalizeAuth(raw: RawConfig["auth"], env: NodeJS.ProcessEnv): AuthConf
   }
 
   if (raw.mode === "builtin_oauth") {
-    const username = env[raw.builtin_oauth.admin_username_env];
-    if (!username) throw configValidationError(
-      `Missing built-in OAuth admin username environment variable: ${raw.builtin_oauth.admin_username_env}`,
-      ["auth", "builtin_oauth", "admin_username_env"],
-    );
-
+    const identitySource = raw.builtin_oauth.identity_source;
+    const usernameEnv = raw.builtin_oauth.admin_username_env;
     const hashEnv = raw.builtin_oauth.admin_password_hash_env;
     const hashFile = raw.builtin_oauth.admin_password_hash_file;
-    if ((hashEnv === undefined && hashFile === undefined) || (hashEnv !== undefined && hashFile !== undefined)) {
+    const signingKeyFile = raw.builtin_oauth.signing_key_file;
+    const tokenHmacKeyFile = raw.builtin_oauth.token_hmac_key_file;
+    if (
+      identitySource === "static"
+      && (
+        usernameEnv === undefined
+        || signingKeyFile === undefined
+        || (hashEnv === undefined && hashFile === undefined)
+        || (hashEnv !== undefined && hashFile !== undefined)
+        || tokenHmacKeyFile !== undefined
+      )
+    ) {
       throw configValidationError(
-        "auth.builtin_oauth must include exactly one of admin_password_hash_env or admin_password_hash_file",
+        "static auth.builtin_oauth requires admin_username_env, signing_key_file, and exactly one password hash source",
         ["auth", "builtin_oauth"],
       );
     }
-    const adminPasswordHash = hashEnv === undefined
-      ? readSecretFile(hashFile, ["auth", "builtin_oauth", "admin_password_hash_file"])
-      : env[hashEnv];
-    if (!adminPasswordHash) throw configValidationError(
-      `Missing built-in OAuth admin password hash environment variable: ${hashEnv}`,
-      ["auth", "builtin_oauth", "admin_password_hash_env"],
-    );
-
-    const signingPrivateKeyPem = readSecretFile(raw.builtin_oauth.signing_key_file, ["auth", "builtin_oauth", "signing_key_file"]);
-    let signingPublicKeyPem: string;
-    try {
-      signingPublicKeyPem = createPublicKey(signingPrivateKeyPem).export({ type: "spki", format: "pem" }).toString();
-    } catch {
+    if (
+      identitySource === "database"
+      && (
+        usernameEnv !== undefined
+        || hashEnv !== undefined
+        || hashFile !== undefined
+        || signingKeyFile !== undefined
+        || tokenHmacKeyFile === undefined
+        || raw.builtin_oauth.refresh_token_store_file !== undefined
+      )
+    ) {
       throw configValidationError(
-        "auth.builtin_oauth.signing_key_file must contain a valid private key",
-        ["auth", "builtin_oauth", "signing_key_file"],
+        "database auth.builtin_oauth requires token_hmac_key_file and prohibits static credentials, signing keys, and refresh_token_store_file",
+        ["auth", "builtin_oauth"],
+      );
+    }
+    if (tokenHmacKeyFile !== undefined) {
+      validateRestrictedOAuthTokenKeyFile(tokenHmacKeyFile);
+    }
+    const username = usernameEnv === undefined ? undefined : env[usernameEnv];
+    if (identitySource === "static" && !username) throw configValidationError(
+      `Missing built-in OAuth admin username environment variable: ${usernameEnv}`,
+      ["auth", "builtin_oauth", "admin_username_env"],
+    );
+    const adminPasswordHash = identitySource === "static"
+      ? hashEnv === undefined
+        ? readSecretFile(hashFile!, ["auth", "builtin_oauth", "admin_password_hash_file"])
+        : env[hashEnv]
+      : undefined;
+    if (identitySource === "static" && !adminPasswordHash) {
+      throw configValidationError(
+        `Missing built-in OAuth admin password hash environment variable: ${hashEnv}`,
+        ["auth", "builtin_oauth", "admin_password_hash_env"],
       );
     }
 
-    const accessTokenTtlMs = parseDuration(raw.builtin_oauth.access_token_ttl, "auth.builtin_oauth.access_token_ttl");
+    const signingPrivateKeyPem = identitySource === "static"
+      ? readSecretFile(signingKeyFile!, ["auth", "builtin_oauth", "signing_key_file"])
+      : undefined;
+    let signingPublicKeyPem: string | undefined;
+    if (signingPrivateKeyPem !== undefined) {
+      try {
+        signingPublicKeyPem = createPublicKey(signingPrivateKeyPem)
+          .export({ type: "spki", format: "pem" }).toString();
+      } catch {
+        throw configValidationError(
+          "auth.builtin_oauth.signing_key_file must contain a valid private key",
+          ["auth", "builtin_oauth", "signing_key_file"],
+        );
+      }
+    }
+
+    const accessTokenTtlMs = parseDuration(
+      raw.builtin_oauth.access_token_ttl
+        ?? (identitySource === "database" ? "5m" : "1h"),
+      "auth.builtin_oauth.access_token_ttl",
+    );
     const authorizationCodeTtlMs = parseDuration(raw.builtin_oauth.authorization_code_ttl, "auth.builtin_oauth.authorization_code_ttl");
     const refreshTokenIdleTtlMs = parseDuration(raw.builtin_oauth.refresh_token_idle_ttl, "auth.builtin_oauth.refresh_token_idle_ttl");
     const refreshTokenMaxTtlMs = parseDuration(raw.builtin_oauth.refresh_token_max_ttl, "auth.builtin_oauth.refresh_token_max_ttl");
@@ -1005,16 +1091,40 @@ function normalizeAuth(raw: RawConfig["auth"], env: NodeJS.ProcessEnv): AuthConf
         ["auth", "builtin_oauth", "refresh_token_idle_ttl"],
       );
     }
+    if (
+      identitySource === "database"
+      && (
+        accessTokenTtlMs < 60_000
+        || accessTokenTtlMs > 15 * 60_000
+        || refreshTokenIdleTtlMs < 24 * 60 * 60_000
+        || refreshTokenIdleTtlMs > 90 * 24 * 60 * 60_000
+        || refreshTokenMaxTtlMs < 7 * 24 * 60 * 60_000
+        || refreshTokenMaxTtlMs > 365 * 24 * 60 * 60_000
+      )
+    ) {
+      throw configValidationError(
+        "database auth.builtin_oauth token lifetimes are outside the supported safety ranges",
+        ["auth", "builtin_oauth", "access_token_ttl"],
+      );
+    }
 
     return {
       mode: "builtin_oauth",
       builtinOAuth: {
         issuer: raw.builtin_oauth.issuer.replace(/\/$/, ""),
-        adminUsername: username,
-        adminPasswordHash,
-        signingPrivateKeyPem,
-        signingPublicKeyPem,
-        signingKeyId: keyIdForPublicKey(signingPublicKeyPem),
+        identitySource,
+        ...(username === undefined ? {} : { adminUsername: username }),
+        ...(adminPasswordHash === undefined ? {} : { adminPasswordHash }),
+        ...(signingPrivateKeyPem === undefined
+          ? {}
+          : { signingPrivateKeyPem }),
+        ...(signingPublicKeyPem === undefined
+          ? {}
+          : {
+              signingPublicKeyPem,
+              signingKeyId: keyIdForPublicKey(signingPublicKeyPem),
+            }),
+        ...(tokenHmacKeyFile === undefined ? {} : { tokenHmacKeyFile }),
         accessTokenTtlMs,
         authorizationCodeTtlMs,
         refreshTokenIdleTtlMs,

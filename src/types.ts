@@ -66,11 +66,13 @@ export interface BuiltinOAuthAuthConfig {
   mode: "builtin_oauth";
   builtinOAuth: {
     issuer: string;
-    adminUsername: string;
-    adminPasswordHash: string;
-    signingPrivateKeyPem: string;
-    signingPublicKeyPem: string;
-    signingKeyId: string;
+    identitySource: "static" | "database";
+    adminUsername?: string;
+    adminPasswordHash?: string;
+    signingPrivateKeyPem?: string;
+    signingPublicKeyPem?: string;
+    signingKeyId?: string;
+    tokenHmacKeyFile?: string;
     accessTokenTtlMs: number;
     authorizationCodeTtlMs: number;
     refreshTokenIdleTtlMs: number;

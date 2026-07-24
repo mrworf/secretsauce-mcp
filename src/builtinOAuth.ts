@@ -191,6 +191,11 @@ function authorizationServerMetadata(config: GatewayConfig): Record<string, unkn
 }
 
 async function jwks(auth: BuiltinOAuthAuthConfig["builtinOAuth"]): Promise<Record<string, unknown>> {
+  if (
+    auth.identitySource !== "static"
+    || auth.signingPublicKeyPem === undefined
+    || auth.signingKeyId === undefined
+  ) return { keys: [] };
   const publicKey = await getPublicKey(auth.signingPublicKeyPem);
   const jwk = await exportJWK(publicKey);
   return {
@@ -560,6 +565,14 @@ function permissionDescription(scope: string): string {
 async function handleAuthorizePost(config: GatewayConfig, request: IncomingMessage, response: ServerResponse, runtime: BuiltinOAuthRuntime): Promise<void> {
   const auth = config.auth.mode === "builtin_oauth" ? config.auth.builtinOAuth : undefined;
   if (auth === undefined) throw new Error("Expected built-in OAuth config");
+  if (
+    auth.identitySource !== "static"
+    || auth.adminUsername === undefined
+    || auth.adminPasswordHash === undefined
+  ) {
+    writeOAuthError(response, 503, "temporarily_unavailable");
+    return;
+  }
   const logger = createLogger(config.logging);
 
   let body: URLSearchParams;
@@ -1037,6 +1050,13 @@ async function signAccessToken(
   scopes: string[],
   nowMs: number,
 ): Promise<string> {
+  if (
+    auth.identitySource !== "static"
+    || auth.signingKeyId === undefined
+    || auth.signingPrivateKeyPem === undefined
+  ) {
+    throw new Error("Static OAuth signing authority is unavailable.");
+  }
   const now = Math.floor(nowMs / 1000);
   return new SignJWT({ scope: scopes.join(" ") })
     .setProtectedHeader({ alg: "RS256", kid: auth.signingKeyId })

@@ -776,6 +776,89 @@ describe("config validation", () => {
     expectConfigError(() => validateConfig(raw, env), "max_lockout");
   });
 
+  it("accepts only a complete database-backed built-in OAuth authority", () => {
+    const configured = (): any => {
+      const raw = validRaw();
+      raw.server.resource = "https://mcp.example.org";
+      raw.runtime = { authority: "database" };
+      raw.services = {};
+      raw.persistence = {
+        database_file: "/var/lib/secretsauce/control.sqlite",
+      };
+      raw.control = {
+        listen: "127.0.0.1:8081",
+        public_origin: "https://control.example.org",
+        idempotency_hmac_key_file: controlKeyFile("database-oauth"),
+      };
+      raw.identity = {
+        active_root_key_id: "current",
+        root_key_files: {
+          current: identityKeyFile("database-oauth-root", 81),
+        },
+        session_hmac_key_file:
+          identityKeyFile("database-oauth-session", 82),
+      };
+      raw.auth = {
+        mode: "builtin_oauth",
+        builtin_oauth: {
+          issuer: "https://mcp.example.org",
+          identity_source: "database",
+          token_hmac_key_file:
+            identityKeyFile("database-oauth-token", 83),
+          allowed_clients: ["https://chatgpt.com"],
+        },
+      };
+      return raw;
+    };
+
+    const config = validateConfig(configured(), validEnv);
+    expect(config.auth).toMatchObject({
+      mode: "builtin_oauth",
+      builtinOAuth: {
+        identitySource: "database",
+        accessTokenTtlMs: 5 * 60_000,
+        refreshTokenIdleTtlMs: 30 * 86_400_000,
+        refreshTokenMaxTtlMs: 90 * 86_400_000,
+      },
+    });
+    if (config.auth.mode !== "builtin_oauth") {
+      throw new Error("Expected built-in OAuth.");
+    }
+    expect(config.auth.builtinOAuth.adminUsername).toBeUndefined();
+    expect(config.auth.builtinOAuth.signingPrivateKeyPem).toBeUndefined();
+
+    const mixed = configured();
+    mixed.auth.builtin_oauth.admin_username_env = "ADMIN_USERNAME";
+    expectConfigError(
+      () => validateConfig(mixed, {
+        ...validEnv,
+        ADMIN_USERNAME: "admin@example.org",
+      }),
+      "prohibits static credentials",
+    );
+
+    const missingIdentity = configured();
+    delete missingIdentity.identity;
+    expectConfigError(
+      () => validateConfig(missingIdentity, validEnv),
+      "requires persistence, identity",
+    );
+
+    const unsafeLifetime = configured();
+    unsafeLifetime.auth.builtin_oauth.access_token_ttl = "16m";
+    expectConfigError(
+      () => validateConfig(unsafeLifetime, validEnv),
+      "outside the supported safety ranges",
+    );
+
+    const writableKey = configured();
+    chmodSync(writableKey.auth.builtin_oauth.token_hmac_key_file, 0o600);
+    expectConfigError(
+      () => validateConfig(writableKey, validEnv),
+      "mode-0400",
+    );
+  });
+
   it("accepts hour and day duration units and rejects unsupported durations", () => {
     const raw = validRaw();
     raw.tokens = { idle_ttl: "24h", max_ttl: "1d" };

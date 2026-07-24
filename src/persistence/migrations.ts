@@ -1323,6 +1323,307 @@ INSERT INTO runtime_invalidation_checkpoints (
   ('policy', 0, NULL, 0);
 `;
 
+const migration0014 = `
+CREATE TABLE oauth_clients (
+  id TEXT PRIMARY KEY CHECK (
+    length(id) = 36 AND id = lower(id)
+    AND substr(id, 15, 1) = '7'
+    AND substr(id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND id NOT GLOB '*[^0-9a-f-]*'
+  ),
+  client_identifier TEXT NOT NULL UNIQUE CHECK (
+    length(client_identifier) BETWEEN 1 AND 2048
+  ),
+  display_name TEXT NOT NULL CHECK (length(display_name) BETWEEN 1 AND 256),
+  metadata_json TEXT NOT NULL CHECK (length(metadata_json) BETWEEN 2 AND 16384),
+  metadata_digest TEXT NOT NULL CHECK (
+    length(metadata_digest) = 64
+    AND metadata_digest = lower(metadata_digest)
+    AND metadata_digest NOT GLOB '*[^0-9a-f]*'
+  ),
+  lifecycle TEXT NOT NULL CHECK (lifecycle IN ('active', 'archived')),
+  first_seen_at INTEGER NOT NULL CHECK (first_seen_at >= 0),
+  last_seen_at INTEGER NOT NULL CHECK (last_seen_at >= first_seen_at),
+  version INTEGER NOT NULL CHECK (version > 0)
+) STRICT;
+
+CREATE INDEX oauth_clients_lifecycle_idx
+  ON oauth_clients (lifecycle, last_seen_at DESC, id);
+
+CREATE TABLE oauth_grants (
+  id TEXT PRIMARY KEY CHECK (
+    length(id) = 36 AND id = lower(id)
+    AND substr(id, 15, 1) = '7'
+    AND substr(id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND id NOT GLOB '*[^0-9a-f-]*'
+  ),
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  client_id TEXT NOT NULL REFERENCES oauth_clients(id),
+  resource TEXT NOT NULL CHECK (length(resource) BETWEEN 1 AND 2048),
+  scopes_json TEXT NOT NULL CHECK (length(scopes_json) BETWEEN 2 AND 4096),
+  authentication_method TEXT NOT NULL CHECK (
+    authentication_method IN ('local_password_totp', 'oidc')
+  ),
+  issued_security_epoch INTEGER NOT NULL CHECK (issued_security_epoch >= 0),
+  issued_global_epoch INTEGER NOT NULL CHECK (issued_global_epoch >= 0),
+  issued_access_ttl_ms INTEGER NOT NULL CHECK (
+    issued_access_ttl_ms BETWEEN 60000 AND 900000
+  ),
+  issued_refresh_idle_ms INTEGER NOT NULL CHECK (
+    issued_refresh_idle_ms BETWEEN 86400000 AND 7776000000
+  ),
+  issued_refresh_absolute_ms INTEGER NOT NULL CHECK (
+    issued_refresh_absolute_ms BETWEEN 604800000 AND 31536000000
+    AND issued_refresh_absolute_ms >= issued_refresh_idle_ms
+  ),
+  status TEXT NOT NULL CHECK (status IN ('active', 'revoked', 'expired')),
+  issued_at INTEGER NOT NULL CHECK (issued_at >= 0),
+  last_used_at INTEGER NOT NULL CHECK (last_used_at >= issued_at),
+  absolute_expires_at INTEGER NOT NULL CHECK (absolute_expires_at > issued_at),
+  idle_expires_at INTEGER NOT NULL CHECK (
+    idle_expires_at > issued_at AND idle_expires_at <= absolute_expires_at
+  ),
+  revoked_at INTEGER CHECK (revoked_at IS NULL OR revoked_at >= issued_at),
+  revocation_reason TEXT CHECK (
+    revocation_reason IS NULL OR revocation_reason IN (
+      'user_security', 'global_security', 'role_status', 'manual',
+      'refresh_replay', 'expired'
+    )
+  ),
+  version INTEGER NOT NULL CHECK (version > 0),
+  CHECK (
+    (status = 'active' AND revoked_at IS NULL AND revocation_reason IS NULL)
+    OR (status <> 'active' AND revoked_at IS NOT NULL
+      AND revocation_reason IS NOT NULL)
+  )
+) STRICT;
+
+CREATE INDEX oauth_grants_user_status_idx
+  ON oauth_grants (user_id, status, absolute_expires_at, id);
+CREATE INDEX oauth_grants_client_status_idx
+  ON oauth_grants (client_id, status, absolute_expires_at, id);
+
+CREATE TABLE oauth_authorization_intents (
+  id TEXT PRIMARY KEY CHECK (
+    length(id) = 36 AND id = lower(id)
+    AND substr(id, 15, 1) = '7'
+    AND substr(id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND id NOT GLOB '*[^0-9a-f-]*'
+  ),
+  handle_hash TEXT NOT NULL UNIQUE CHECK (
+    length(handle_hash) = 64
+    AND handle_hash = lower(handle_hash)
+    AND handle_hash NOT GLOB '*[^0-9a-f]*'
+  ),
+  client_id TEXT NOT NULL REFERENCES oauth_clients(id),
+  redirect_uri TEXT NOT NULL CHECK (length(redirect_uri) BETWEEN 1 AND 2048),
+  resource TEXT NOT NULL CHECK (length(resource) BETWEEN 1 AND 2048),
+  scopes_json TEXT NOT NULL CHECK (length(scopes_json) BETWEEN 2 AND 4096),
+  code_challenge TEXT NOT NULL CHECK (
+    length(code_challenge) = 43
+    AND code_challenge NOT GLOB '*[^A-Za-z0-9_-]*'
+  ),
+  state_envelope_json TEXT CHECK (
+    state_envelope_json IS NULL
+    OR length(state_envelope_json) BETWEEN 2 AND 8192
+  ),
+  provider_id TEXT CHECK (
+    provider_id IS NULL OR length(provider_id) BETWEEN 1 AND 64
+  ),
+  created_at INTEGER NOT NULL CHECK (created_at >= 0),
+  expires_at INTEGER NOT NULL CHECK (expires_at > created_at),
+  consumed_at INTEGER CHECK (consumed_at IS NULL OR consumed_at >= created_at)
+) STRICT;
+
+CREATE INDEX oauth_authorization_intents_expiry_idx
+  ON oauth_authorization_intents (consumed_at, expires_at, id);
+
+CREATE TABLE oauth_authorization_codes (
+  id TEXT PRIMARY KEY CHECK (
+    length(id) = 36 AND id = lower(id)
+    AND substr(id, 15, 1) = '7'
+    AND substr(id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND id NOT GLOB '*[^0-9a-f-]*'
+  ),
+  code_hash TEXT NOT NULL UNIQUE CHECK (
+    length(code_hash) = 64
+    AND code_hash = lower(code_hash)
+    AND code_hash NOT GLOB '*[^0-9a-f]*'
+  ),
+  grant_id TEXT NOT NULL REFERENCES oauth_grants(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  client_id TEXT NOT NULL REFERENCES oauth_clients(id),
+  redirect_uri TEXT NOT NULL CHECK (length(redirect_uri) BETWEEN 1 AND 2048),
+  resource TEXT NOT NULL CHECK (length(resource) BETWEEN 1 AND 2048),
+  scopes_json TEXT NOT NULL CHECK (length(scopes_json) BETWEEN 2 AND 4096),
+  code_challenge TEXT NOT NULL CHECK (
+    length(code_challenge) = 43
+    AND code_challenge NOT GLOB '*[^A-Za-z0-9_-]*'
+  ),
+  issued_security_epoch INTEGER NOT NULL CHECK (issued_security_epoch >= 0),
+  issued_global_epoch INTEGER NOT NULL CHECK (issued_global_epoch >= 0),
+  issued_at INTEGER NOT NULL CHECK (issued_at >= 0),
+  expires_at INTEGER NOT NULL CHECK (expires_at > issued_at),
+  consumed_at INTEGER CHECK (consumed_at IS NULL OR consumed_at >= issued_at)
+) STRICT;
+
+CREATE INDEX oauth_authorization_codes_expiry_idx
+  ON oauth_authorization_codes (consumed_at, expires_at, id);
+
+CREATE TABLE oauth_refresh_families (
+  id TEXT PRIMARY KEY CHECK (
+    length(id) = 36 AND id = lower(id)
+    AND substr(id, 15, 1) = '7'
+    AND substr(id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND id NOT GLOB '*[^0-9a-f-]*'
+  ),
+  grant_id TEXT NOT NULL UNIQUE REFERENCES oauth_grants(id) ON DELETE CASCADE,
+  current_sequence INTEGER NOT NULL CHECK (current_sequence >= 0),
+  status TEXT NOT NULL CHECK (status IN ('active', 'revoked', 'expired')),
+  issued_at INTEGER NOT NULL CHECK (issued_at >= 0),
+  last_used_at INTEGER NOT NULL CHECK (last_used_at >= issued_at),
+  absolute_expires_at INTEGER NOT NULL CHECK (absolute_expires_at > issued_at),
+  idle_expires_at INTEGER NOT NULL CHECK (
+    idle_expires_at > issued_at AND idle_expires_at <= absolute_expires_at
+  ),
+  revoked_at INTEGER CHECK (revoked_at IS NULL OR revoked_at >= issued_at),
+  revocation_reason TEXT CHECK (
+    revocation_reason IS NULL OR revocation_reason IN (
+      'user_security', 'global_security', 'role_status', 'manual',
+      'refresh_replay', 'expired'
+    )
+  ),
+  version INTEGER NOT NULL CHECK (version > 0),
+  CHECK (
+    (status = 'active' AND revoked_at IS NULL AND revocation_reason IS NULL)
+    OR (status <> 'active' AND revoked_at IS NOT NULL
+      AND revocation_reason IS NOT NULL)
+  )
+) STRICT;
+
+CREATE INDEX oauth_refresh_families_expiry_idx
+  ON oauth_refresh_families (status, idle_expires_at, absolute_expires_at, id);
+
+CREATE TABLE oauth_refresh_tokens (
+  id TEXT PRIMARY KEY CHECK (
+    length(id) = 36 AND id = lower(id)
+    AND substr(id, 15, 1) = '7'
+    AND substr(id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND id NOT GLOB '*[^0-9a-f-]*'
+  ),
+  token_hash TEXT NOT NULL UNIQUE CHECK (
+    length(token_hash) = 64
+    AND token_hash = lower(token_hash)
+    AND token_hash NOT GLOB '*[^0-9a-f]*'
+  ),
+  family_id TEXT NOT NULL REFERENCES oauth_refresh_families(id)
+    ON DELETE CASCADE,
+  sequence INTEGER NOT NULL CHECK (sequence >= 0),
+  status TEXT NOT NULL CHECK (status IN ('active', 'used', 'revoked')),
+  issued_at INTEGER NOT NULL CHECK (issued_at >= 0),
+  used_at INTEGER CHECK (used_at IS NULL OR used_at >= issued_at),
+  UNIQUE (family_id, sequence),
+  CHECK (
+    (status = 'active' AND used_at IS NULL)
+    OR (status <> 'active' AND used_at IS NOT NULL)
+  )
+) STRICT;
+
+CREATE UNIQUE INDEX oauth_refresh_tokens_one_active_idx
+  ON oauth_refresh_tokens (family_id) WHERE status = 'active';
+
+CREATE TABLE oauth_access_tokens (
+  id TEXT PRIMARY KEY CHECK (
+    length(id) = 36 AND id = lower(id)
+    AND substr(id, 15, 1) = '7'
+    AND substr(id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND id NOT GLOB '*[^0-9a-f-]*'
+  ),
+  token_hash TEXT NOT NULL UNIQUE CHECK (
+    length(token_hash) = 64
+    AND token_hash = lower(token_hash)
+    AND token_hash NOT GLOB '*[^0-9a-f]*'
+  ),
+  grant_id TEXT NOT NULL REFERENCES oauth_grants(id) ON DELETE CASCADE,
+  family_id TEXT REFERENCES oauth_refresh_families(id) ON DELETE CASCADE,
+  scopes_json TEXT NOT NULL CHECK (length(scopes_json) BETWEEN 2 AND 4096),
+  issued_at INTEGER NOT NULL CHECK (issued_at >= 0),
+  expires_at INTEGER NOT NULL CHECK (expires_at > issued_at),
+  last_used_at INTEGER NOT NULL CHECK (last_used_at >= issued_at),
+  status TEXT NOT NULL CHECK (status IN ('active', 'revoked'))
+) STRICT;
+
+CREATE INDEX oauth_access_tokens_grant_idx
+  ON oauth_access_tokens (grant_id, status, expires_at, id);
+CREATE INDEX oauth_access_tokens_expiry_idx
+  ON oauth_access_tokens (status, expires_at, id);
+
+CREATE TRIGGER oauth_user_security_revoke
+AFTER UPDATE OF security_epoch, role, status ON users
+WHEN OLD.security_epoch <> NEW.security_epoch
+  OR OLD.role <> NEW.role
+  OR OLD.status <> NEW.status
+BEGIN
+  UPDATE oauth_grants
+  SET status = 'revoked',
+      revoked_at = max(NEW.updated_at, issued_at),
+      revocation_reason = CASE
+        WHEN OLD.role <> NEW.role OR OLD.status <> NEW.status
+          THEN 'role_status'
+        ELSE 'user_security'
+      END,
+      version = version + 1
+  WHERE user_id = NEW.id AND status = 'active';
+  UPDATE oauth_refresh_families
+  SET status = 'revoked',
+      revoked_at = max(NEW.updated_at, issued_at),
+      revocation_reason = CASE
+        WHEN OLD.role <> NEW.role OR OLD.status <> NEW.status
+          THEN 'role_status'
+        ELSE 'user_security'
+      END,
+      version = version + 1
+  WHERE grant_id IN (
+    SELECT id FROM oauth_grants WHERE user_id = NEW.id
+  ) AND status = 'active';
+  UPDATE oauth_refresh_tokens
+  SET status = 'revoked', used_at = max(NEW.updated_at, issued_at)
+  WHERE family_id IN (
+    SELECT families.id
+    FROM oauth_refresh_families families
+    JOIN oauth_grants grants ON grants.id = families.grant_id
+    WHERE grants.user_id = NEW.id
+  ) AND status = 'active';
+  UPDATE oauth_access_tokens
+  SET status = 'revoked'
+  WHERE grant_id IN (
+    SELECT id FROM oauth_grants WHERE user_id = NEW.id
+  ) AND status = 'active';
+END;
+
+CREATE TRIGGER oauth_global_security_revoke
+AFTER UPDATE OF global_security_epoch ON identity_security_state
+WHEN OLD.global_security_epoch <> NEW.global_security_epoch
+BEGIN
+  UPDATE oauth_grants
+  SET status = 'revoked',
+      revoked_at = max(NEW.updated_at, issued_at),
+      revocation_reason = 'global_security',
+      version = version + 1
+  WHERE status = 'active';
+  UPDATE oauth_refresh_families
+  SET status = 'revoked',
+      revoked_at = max(NEW.updated_at, issued_at),
+      revocation_reason = 'global_security',
+      version = version + 1
+  WHERE status = 'active';
+  UPDATE oauth_refresh_tokens
+  SET status = 'revoked', used_at = max(NEW.updated_at, issued_at)
+  WHERE status = 'active';
+  UPDATE oauth_access_tokens SET status = 'revoked' WHERE status = 'active';
+END;
+`;
+
 export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [
   {
     version: 1,
@@ -1388,6 +1689,11 @@ export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [
     version: 13,
     name: "persisted_runtime_authorization",
     sql: migration0013,
+  },
+  {
+    version: 14,
+    name: "multiuser_mcp_oauth",
+    sql: migration0014,
   },
 ];
 

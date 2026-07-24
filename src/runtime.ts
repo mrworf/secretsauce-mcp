@@ -20,6 +20,7 @@ import {
   SecuritySettingsStore,
   securitySettingsSeed,
 } from "./securitySettings.js";
+import { RestoreMaintenanceGate } from "./restoreMaintenance.js";
 
 export interface GatewayRuntimeOptions {
   auditSink?: AuditSink;
@@ -32,6 +33,7 @@ export interface GatewayRuntimeOptions {
   runtimeAuthority?: RuntimeAuthority;
   runtimeVault?: RuntimeVault;
   environment?: NodeJS.ProcessEnv;
+  restoreMaintenance?: RestoreMaintenanceGate;
 }
 
 export class GatewayRuntime {
@@ -44,6 +46,7 @@ export class GatewayRuntime {
   readonly runtimeAuthority: RuntimeAuthority | undefined;
   readonly runtimeVault: RuntimeVault | undefined;
   readonly selfApiKeyDetector: Promise<ActiveSelfApiKeyDetector> | undefined;
+  readonly restoreMaintenance: RestoreMaintenanceGate;
   readonly #stopMaintenance: () => void;
   #closePromise: Promise<void> | undefined;
 
@@ -90,18 +93,29 @@ export class GatewayRuntime {
         ...(securitySettingsStore === undefined ? {} : { securitySettingsStore }),
       });
       const maintenance = options.maintenance ?? new MaintenanceRegistry(config.limits.stateSweepIntervalMs);
-      maintenance.register((now) => capabilities.tokenBroker.sweepExpired(now));
-      maintenance.register((now) => capabilities.denialStore.sweep(now));
-      maintenance.register((now) => builtinOAuth.sweep(now));
+      const restoreMaintenance =
+        options.restoreMaintenance ?? new RestoreMaintenanceGate();
+      maintenance.register((now) => runMaintenanceJob(
+        restoreMaintenance,
+        () => capabilities.tokenBroker.sweepExpired(now),
+      ));
+      maintenance.register((now) => runMaintenanceJob(
+        restoreMaintenance,
+        () => capabilities.denialStore.sweep(now),
+      ));
+      maintenance.register((now) => runMaintenanceJob(
+        restoreMaintenance,
+        () => builtinOAuth.sweep(now),
+      ));
       if (
         securitySettingsRepository !== undefined
         && securitySettingsStore !== undefined
       ) {
         let refreshInFlight = false;
-        maintenance.register(() => {
+        maintenance.register(() => runMaintenanceJob(restoreMaintenance, () => {
           if (refreshInFlight) return;
           refreshInFlight = true;
-          void Promise.all([
+          return Promise.all([
             securitySettingsRepository.read(),
             securitySettingsStore,
           ]).then(([next, store]) => {
@@ -109,7 +123,7 @@ export class GatewayRuntime {
           }).catch(() => undefined).finally(() => {
             refreshInFlight = false;
           });
-        });
+        }));
       }
       if (config.runtime?.authority === "database" && persistence !== undefined) {
         const consumer = new RuntimeInvalidationConsumer(
@@ -117,9 +131,9 @@ export class GatewayRuntime {
           capabilities.tokenBroker,
         );
         invalidations = consumer;
-        maintenance.register(() => {
-          void consumer.poll();
-        });
+        maintenance.register(() => runMaintenanceJob(restoreMaintenance, () => {
+          return consumer.poll();
+        }));
       }
       runtimeVault = options.runtimeVault ?? (
         config.runtime?.authority === "database"
@@ -148,6 +162,7 @@ export class GatewayRuntime {
           new ApiKeyRepository(persistence),
           new ApiKeyVerifierPool(),
         );
+      this.restoreMaintenance = restoreMaintenance;
       this.#stopMaintenance = stopMaintenance;
     } catch (error) {
       auditSink.close();
@@ -175,6 +190,32 @@ export class GatewayRuntime {
     try { this.runtimeVault?.close(); } catch (error) { errors.push(error); }
     try { await this.secretRuntime.pool.close(); } catch (error) { errors.push(error); }
     if (errors.length > 0) throw new AggregateError(errors, "Gateway runtime close failed.");
+  }
+}
+
+function runMaintenanceJob(
+  gate: RestoreMaintenanceGate,
+  work: () => unknown,
+): void {
+  let lease;
+  try {
+    lease = gate.acquireOrdinary();
+    const result = work();
+    if (
+      typeof result === "object"
+      && result !== null
+      && "then" in result
+    ) {
+      const pendingLease = lease;
+      lease = undefined;
+      void Promise.resolve(result).catch(() => undefined).finally(() => {
+        pendingLease.release();
+      });
+    }
+  } catch {
+    return;
+  } finally {
+    lease?.release();
   }
 }
 

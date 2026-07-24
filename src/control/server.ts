@@ -178,6 +178,7 @@ import {
 } from "../restoreStaging.js";
 import { RestoreStateRepository } from "../restoreState.js";
 import { RestorePreviewCoordinator } from "../restorePreview.js";
+import { RestoreMaintenanceGate } from "../restoreMaintenance.js";
 
 export interface ControlApplicationOptions {
   authenticator?: ControlAuthenticator;
@@ -217,6 +218,7 @@ export interface ControlApplicationOptions {
   backupCoordinator?: PortableBackupCoordinator;
   restoreStages?: RestoreStageCoordinator;
   restorePreviews?: RestorePreviewCoordinator;
+  restoreMaintenance?: RestoreMaintenanceGate;
 }
 
 export function createControlApplication(
@@ -374,6 +376,7 @@ export function createControlApplication(
       ? undefined
       : sensitiveFailureAudit(options.persistence),
     options.apiKeyActivity ?? options.apiKeys?.repository,
+    options.restoreMaintenance,
   );
 
   installControlWebRoutes(application, options.webAssets ?? loadControlWebAssets());
@@ -433,6 +436,7 @@ export async function startControlServer(
     referenceAggregates?: ReferenceAggregateSource;
     restoreStages?: RestoreStageCoordinator;
     restorePreviews?: RestorePreviewCoordinator;
+    restoreMaintenance?: RestoreMaintenanceGate;
   } = {},
 ): Promise<ControlServerApplication> {
   if (config.control === undefined || config.persistence === undefined) {
@@ -484,6 +488,8 @@ export async function startControlServer(
   let backupCoordinator: PortableBackupCoordinator | undefined;
   let restoreStages = options.restoreStages;
   let restorePreviews = options.restorePreviews;
+  const restoreMaintenance =
+    options.restoreMaintenance ?? new RestoreMaintenanceGate();
   let activityAggregationTimer: NodeJS.Timeout | undefined;
   const apiKeyVerifier = new ApiKeyVerifierPool();
   let selfApiKeyDetector: ActiveSelfApiKeyDetector | undefined;
@@ -859,6 +865,7 @@ export async function startControlServer(
       backupCoordinator,
       ...(restoreStages === undefined ? {} : { restoreStages }),
       ...(restorePreviews === undefined ? {} : { restorePreviews }),
+      restoreMaintenance,
     });
     await server.listen({
       host: config.control.host,
@@ -866,19 +873,25 @@ export async function startControlServer(
     });
     if (inactivityJob !== undefined) {
       inactivityTimer = setInterval(() => {
-        void inactivityJob!.run(false).catch(() => undefined);
+        void restoreMaintenance.runOrdinary(
+          () => inactivityJob!.run(false),
+        ).catch(() => undefined);
       }, 60_000);
       inactivityTimer.unref();
     }
     if (auditRetention !== undefined) {
       auditMaintenanceTimer = setInterval(() => {
-        void auditRetention!.run().catch(() => undefined);
+        void restoreMaintenance.runOrdinary(
+          () => auditRetention!.run(),
+        ).catch(() => undefined);
       }, 3_600_000);
       auditMaintenanceTimer.unref();
     }
     if (activityAggregation !== undefined) {
       activityAggregationTimer = setInterval(() => {
-        void activityAggregation!.run().catch(() => undefined);
+        void restoreMaintenance.runOrdinary(
+          () => activityAggregation!.run(),
+        ).catch(() => undefined);
       }, 3_600_000);
       activityAggregationTimer.unref();
     }

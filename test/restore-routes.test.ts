@@ -9,6 +9,7 @@ import { createControlApplication } from "../src/control/server.js";
 import type { RestoreStageCoordinator } from "../src/restoreStaging.js";
 import type { RestorePreviewCoordinator } from "../src/restorePreview.js";
 import type { GatewayConfig } from "../src/types.js";
+import { RestoreMaintenanceGate } from "../src/restoreMaintenance.js";
 
 const USER_ID = "018f1f2e-7b3c-7a10-8000-000000000001";
 const STAGE_ID = "018f1f2e-7b3c-7a10-8000-000000000010";
@@ -169,6 +170,46 @@ describe("restore staging HTTP contracts", () => {
     await application.close();
   });
 
+  it("blocks ordinary restore upload but exempts preview during exclusive maintenance", async () => {
+    const gate = new RestoreMaintenanceGate();
+    const exclusive = await gate.acquireExclusive();
+    const stage = vi.fn(async () => stageResult());
+    const preview = vi.fn(async () => previewResult());
+    const application = app(
+      browserActor(),
+      { stage },
+      true,
+      { preview },
+      gate,
+    );
+    const upload = await application.inject({
+      method: "POST",
+      url: "/api/v2/restores/stages",
+      headers: {
+        ...browserHeaders(),
+        "content-type": "application/gzip",
+      },
+      payload: ARCHIVE,
+    });
+    expect(upload.statusCode).toBe(503);
+    expect(upload.json().error.code).toBe("maintenance_mode");
+    expect(stage).not.toHaveBeenCalled();
+
+    const allowed = await application.inject({
+      method: "POST",
+      url: `/api/v2/restores/${STAGE_ID}/preview`,
+      headers: {
+        ...browserHeaders(),
+        "content-type": "application/json",
+      },
+      payload: {},
+    });
+    expect(allowed.statusCode).toBe(200);
+    expect(preview).toHaveBeenCalledOnce();
+    exclusive.release();
+    await application.close();
+  });
+
   it("publishes the binary request bound and browser-only security contract", async () => {
     const application = app(browserActor(), {});
     const response = await application.inject({
@@ -211,6 +252,7 @@ function app(
   previews?: {
     preview?: ReturnType<typeof vi.fn>;
   },
+  maintenance?: RestoreMaintenanceGate,
 ) {
   const authenticator: ControlAuthenticator = {
     authenticate: async () => actor,
@@ -237,6 +279,9 @@ function app(
           restorePreviews:
             previews as unknown as RestorePreviewCoordinator,
         }),
+    ...(maintenance === undefined
+      ? {}
+      : { restoreMaintenance: maintenance }),
   });
 }
 

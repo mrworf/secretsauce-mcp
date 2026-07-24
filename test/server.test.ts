@@ -14,6 +14,7 @@ import { TokenBroker } from "../src/tokens.js";
 import { explainDenial } from "../src/denials.js";
 import { GatewayError } from "../src/errors.js";
 import { createLogger } from "../src/logger.js";
+import { RestoreMaintenanceGate } from "../src/restoreMaintenance.js";
 
 describe("health server", () => {
   it("returns ready health status", async () => {
@@ -72,6 +73,44 @@ describe("health server", () => {
       });
       expect(JSON.stringify(unavailable.body)).not.toContain(databaseFile);
     } finally {
+      server.close();
+    }
+  });
+
+  it("rejects authenticated MCP work during restore maintenance while health remains available", async () => {
+    const config = serverConfig();
+    const gate = new RestoreMaintenanceGate();
+    const exclusive = await gate.acquireExclusive();
+    const server = createGatewayServer(config, { restoreMaintenance: gate });
+    server.listen(0, "127.0.0.1");
+    await once(server, "listening");
+    const address = server.address();
+    if (!address || typeof address === "string") {
+      throw new Error("Expected TCP address");
+    }
+    try {
+      const response = await fetch(`http://127.0.0.1:${address.port}/mcp`, {
+        method: "POST",
+        headers: {
+          authorization: "Bearer dev-token",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          id: 1,
+          method: "tools/list",
+        }),
+      });
+      expect(response.status).toBe(503);
+      expect(await response.json()).toEqual({
+        error: {
+          code: "maintenance_mode",
+          message: "The service is temporarily in restore maintenance.",
+        },
+      });
+      expect((await fetchHealth(server)).response.status).toBe(200);
+    } finally {
+      exclusive.release();
       server.close();
     }
   });

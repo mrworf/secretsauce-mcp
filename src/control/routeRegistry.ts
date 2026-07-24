@@ -31,6 +31,12 @@ import {
   AlwaysStepUpHandle,
   controlStepUpBodyDigest,
 } from "../identity/stepUp.js";
+import {
+  RESTORE_MAINTENANCE_EXEMPT_ROUTE_IDS,
+  RestoreMaintenanceError,
+  type RestoreMaintenanceGate,
+  type RestoreOrdinaryLease,
+} from "../restoreMaintenance.js";
 
 export type ControlHttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 export type ControlStepUpRule = "none" | "five_minutes" | "always";
@@ -211,6 +217,7 @@ export function installControlRoutes(
   authorization: ControlAuthorizationSeam = denyControlAuthorization,
   failureAudit?: ControlSensitiveFailureAudit,
   apiKeyActivity?: ControlApiKeyActivityRecorder,
+  maintenance?: RestoreMaintenanceGate,
 ): void {
   for (const definition of registry.definitions()) {
     application.route({
@@ -231,6 +238,7 @@ export function installControlRoutes(
         },
       },
       handler: async (request, reply) => {
+        let maintenanceLease: RestoreOrdinaryLease | undefined;
         let parsedBody: unknown;
         let parsedParams: unknown;
         let activityAttempted = false;
@@ -257,6 +265,24 @@ export function installControlRoutes(
           );
           safeTargets = operation.targets;
           await authorizeRoute(definition, authentication, request, authorization, operation);
+          if (
+            authentication !== undefined
+            && maintenance !== undefined
+            && !RESTORE_MAINTENANCE_EXEMPT_ROUTE_IDS.has(definition.id)
+          ) {
+            try {
+              maintenanceLease = maintenance.acquireOrdinary();
+            } catch (error) {
+              if (error instanceof RestoreMaintenanceError) {
+                throw new ControlContractError(
+                  503,
+                  "maintenance_mode",
+                  "The service is temporarily in restore maintenance.",
+                );
+              }
+              throw error;
+            }
+          }
           if (authentication?.method === "api_key" && apiKeyActivity !== undefined) {
             activityAttempted = true;
             await apiKeyActivity.recordControlActivity({
@@ -378,6 +404,8 @@ export function installControlRoutes(
             return;
           }
           throw error;
+        } finally {
+          maintenanceLease?.release();
         }
       },
     });

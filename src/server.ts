@@ -13,12 +13,22 @@ import { GatewayError, type ConfigDiagnostic } from "./errors.js";
 import type { AuditSink } from "./audit.js";
 import { GatewayRuntime } from "./runtime.js";
 import { requiredScopeForTool } from "./mcp/tools.js";
+import {
+  RestoreMaintenanceError,
+  type RestoreMaintenanceGate,
+  type RestoreOrdinaryLease,
+} from "./restoreMaintenance.js";
 
 type AuthenticatedRequest = IncomingMessage & { auth?: AuthContext };
 
 export function createGatewayServer(
   config: GatewayConfig,
-  options: { auditSink?: AuditSink; runtime?: GatewayRuntime; closeRuntimeOnServerClose?: boolean } = {},
+  options: {
+    auditSink?: AuditSink;
+    runtime?: GatewayRuntime;
+    closeRuntimeOnServerClose?: boolean;
+    restoreMaintenance?: RestoreMaintenanceGate;
+  } = {},
 ) {
   const logger = createLogger(config.logging);
   for (const message of config.warnings) {
@@ -33,6 +43,8 @@ export function createGatewayServer(
   }
   const runtime = options.runtime ?? new GatewayRuntime(config, { ...(options.auditSink === undefined ? {} : { auditSink: options.auditSink }) });
   const auditSink = runtime.auditSink;
+  const restoreMaintenance =
+    options.restoreMaintenance ?? runtime.restoreMaintenance;
   const server = createServer(async (request, response) => {
     if (request.method === "GET" && request.url === "/health") {
       logger.debug("http.health", { method: request.method, path: "/health", service_count: Object.keys(config.services).length });
@@ -105,6 +117,7 @@ export function createGatewayServer(
         return;
       }
       let requiredScopes = configuredMcpScopes(config);
+      let maintenanceLease: RestoreOrdinaryLease | undefined;
       try {
         const auth = await authenticateRequest(
           request,
@@ -112,6 +125,7 @@ export function createGatewayServer(
           [],
           runtime.builtinOAuth,
         );
+        maintenanceLease = restoreMaintenance.acquireOrdinary();
         const body = await readJsonBody(request, config.limits.maxInboundBodyBytes, config.limits.inboundBodyTimeoutMs);
         requiredScopes = requiredScopesForMcpBody(body);
         requireScopes(auth, requiredScopes);
@@ -145,6 +159,15 @@ export function createGatewayServer(
           writeJson(response, error.statusCode, { error: { code: error.code, message: error.message } });
           return;
         }
+        if (error instanceof RestoreMaintenanceError) {
+          writeJson(response, 503, {
+            error: {
+              code: "maintenance_mode",
+              message: "The service is temporarily in restore maintenance.",
+            },
+          });
+          return;
+        }
         if (error instanceof Error && error.name === "GatewayError") {
           logger.debug("mcp.request_rejected", {
             method: request.method,
@@ -162,11 +185,14 @@ export function createGatewayServer(
             message: "Invalid MCP request.",
           },
         });
+      } finally {
+        maintenanceLease?.release();
       }
       return;
     }
 
     if (isMcpGet(request, config.server.mcpPath) || isMcpDelete(request, config.server.mcpPath)) {
+      let maintenanceLease: RestoreOrdinaryLease | undefined;
       try {
         const auth = await authenticateRequest(
           request,
@@ -174,6 +200,7 @@ export function createGatewayServer(
           [],
           runtime.builtinOAuth,
         );
+        maintenanceLease = restoreMaintenance.acquireOrdinary();
         (request as AuthenticatedRequest).auth = auth;
         logger.debug("mcp.request_authenticated", {
           method: request.method,
@@ -183,6 +210,15 @@ export function createGatewayServer(
           auth_mode: auth.mode,
         });
       } catch (error) {
+        if (error instanceof RestoreMaintenanceError) {
+          writeJson(response, 503, {
+            error: {
+              code: "maintenance_mode",
+              message: "The service is temporarily in restore maintenance.",
+            },
+          });
+          return;
+        }
         if (error instanceof Error && error.name === "GatewayError") {
           logger.debug("mcp.request_rejected", {
             method: request.method,
@@ -201,6 +237,8 @@ export function createGatewayServer(
           },
         });
         return;
+      } finally {
+        maintenanceLease?.release();
       }
       writeJson(response, 405, {
         error: {

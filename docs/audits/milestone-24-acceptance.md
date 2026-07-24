@@ -2,7 +2,7 @@
 
 ## Candidate And Scope
 
-- **Implementation/review baseline:** `3ca2158`
+- **Implementation/review baseline:** `acf8b67`
 - **Review time:** 2026-07-24 UTC
 - **Milestones reviewed:** 00 through 24
 - **Decision rule:** no Critical/High security finding, possible credential
@@ -26,8 +26,9 @@
   test/release-compatibility.test.ts`
 - Recovery journeys: focused backup, restore, V1 migration, vault process,
   degraded health, invalidation, and combined application suites
-- Container: `npm run smoke:container` — **not run; no Docker, Podman,
-  nerdctl, or Buildah executable was available**
+- Container: `npm run smoke:container` — passed on rootless Docker 29.6.2,
+  linux/amd64, using image
+  `sha256:9873a2a682c626eec2b8c347b94a818ea3b9de0987bffa7d19f2b27b97bf2845`
 
 ## Review Artifacts
 
@@ -44,12 +45,14 @@ The final review found and remediated:
 2. incompatible separate gateway/control ownership of the exclusive SQLite
    writer (`82d69ea`);
 3. missing control-to-runtime aggregate/invalidation wiring and missing
-   production advisory CI enforcement (`3ca2158`).
+   production advisory CI enforcement (`3ca2158`);
+4. missing native-module compilation prerequisites in both image build stages
+   and a rootless-host audit-size assumption in the smoke harness (`acf8b67`).
 
-The full suite passed after each remediation. No open Critical/High source
-finding remains. The accepted Medium response-transformation limitation and
-the contained unused Windows/Hono Moderate advisory are recorded in the
-security review.
+The full suite passed after each remediation; the final run passed 146 files
+and 973 tests. No open Critical/High source finding remains. The accepted
+Medium response-transformation limitation and the contained unused
+Windows/Hono Moderate advisory are recorded in the security review.
 
 ## Acceptance Status
 
@@ -64,13 +67,14 @@ security review.
 | Codex/ChatGPT protocol fixtures | pass | independent OAuth/MCP/restart/refresh/revocation journey |
 | Backup/restore/migration/degraded paths | pass | repository, HTTP, CLI, broker-process, restart/fault suites |
 | Documentation/proxies/API | pass | link/example/runtime contract suites |
-| Production container execution | **pending** | smoke script/CI contract exists; no local container runtime |
+| Production container execution | pass | real amd64 build, non-root/read-only start, health/MCP, restart, and durable-audit smoke |
 | Live hosted-client deployment | deployment-specific | exact blocking checklist exists; no deployment was supplied |
 
 ## Limitations And Residual Risk
 
-- Static Dockerfile/Compose tests and a CI workflow are not evidence that the
-  candidate image actually built and restarted on this machine.
+- The local smoke used rootless Docker with `overlay2`; CI repeats the same
+  repository command on its rootful amd64 runner before multi-architecture
+  publication.
 - Synthetic named clients do not execute inside hosted Codex or ChatGPT.
 - A single application process is the supported fault/compromise domain; the
   vault remains separate, but data/control are logical rather than OS-isolated.
@@ -79,7 +83,8 @@ security review.
 
 ## Verdict
 
-**Source implementation and review pass, but Milestone 24 remains incomplete
-until the real amd64 container smoke passes for the exact candidate.** The
-live-client checklist additionally blocks any deployment on which either
-hosted client fails. No pending gate is waived.
+**Milestone 24 acceptance criteria are satisfied for executable candidate
+`acf8b67`.** Build, full regression, OpenAPI, authorization, privacy, scale,
+compatibility, recovery, documentation, and real amd64 container gates pass.
+The live-client checklist additionally blocks any deployment on which either
+hosted client fails. No gate was waived.

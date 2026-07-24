@@ -3,7 +3,7 @@
 ## Metadata
 
 - **Project/repository:** SecretSauce (MCP)
-- **Review baseline:** `3ca2158`
+- **Review baseline:** `acf8b67`
 - **Review date/time:** 2026-07-24 UTC
 - **Reviewer role:** senior application security reviewer
 - **Scope reviewed:** public gateway and control routes, authentication and
@@ -11,9 +11,9 @@
   ordering, vault capabilities, response protection, audit/logging,
   backup/restore/migration, dependency lockfile, container/CI, documentation,
   and release tests
-- **Limitations:** white-box and synthetic local validation only. No production
-  proxy, DNS, identity provider, downstream, hosted Codex/ChatGPT client, or
-  container runtime was available.
+- **Limitations:** white-box, synthetic local, and rootless amd64 container
+  validation only. No production proxy, DNS, identity provider, downstream,
+  or hosted Codex/ChatGPT client was available.
 
 ## Executive Summary
 
@@ -58,6 +58,7 @@ non-exfiltration.
   test/release-compatibility.test.ts`
 - `npm test -- --run test/release-artifact-scanner.test.ts`
 - `node scripts/scan-release-artifacts.mjs`
+- `npm run smoke:container`
 - `npm test`
 
 The authorization audit checks all 246 human/API role-capability cells, every
@@ -147,6 +148,7 @@ would not create a universal containment boundary.
 
 ## Verdict
 
-**Pass for source security invariants with one documented accepted Medium risk
-and one contained unreachable Moderate dependency advisory.** Real container
-and deployment/client gates remain outside this source-only verdict.
+**Pass for source and container security invariants with one documented
+accepted Medium risk and one contained unreachable Moderate dependency
+advisory.** Deployment-specific proxy, identity-provider, downstream, and
+hosted-client validation remains an operator responsibility.

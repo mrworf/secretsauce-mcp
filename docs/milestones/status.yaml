@@ -170,7 +170,7 @@ milestones:
   - id: "24"
     title: "Release Hardening And Documentation"
     file: "docs/milestones/24-release-hardening-documentation.md"
-    status: "in_progress"
-    completed_at: null
-    commit_hash: null
-    notes: "Implementation, final reviews, production build, OpenAPI, advisory threshold, 146-file/972-test regression, and 562-file artifact scan pass at baseline 8a2b06d. Required amd64 container smoke remains unwaived and cannot run because this environment has no Docker-compatible engine."
+    status: "completed"
+    completed_at: "2026-07-24T13:44:02.617Z"
+    commit_hash: "acf8b67"
+    notes: "Release candidate acf8b67 passes production build, current OpenAPI, prior unchanged-lockfile High/Critical advisory gate, 146-file/973-test full regression, 562-file artifact scan, final UX/security/architecture/operations reviews, and real rootless Docker 29.6.2 amd64 build/start/health/stateless-MCP/restart/durable-audit smoke; no release gate was waived."

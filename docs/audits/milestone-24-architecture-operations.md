@@ -2,7 +2,7 @@
 
 ## Scope
 
-- **Review baseline:** `3ca2158`
+- **Review baseline:** `acf8b67`
 - **Review time:** 2026-07-24 UTC
 - **Scope:** composition roots, gateway/control/vault boundaries, persistence,
   runtime state, startup/shutdown, jobs, deployment/CI, scale, recovery, proxy
@@ -11,8 +11,8 @@
   check:control-openapi`; `npm run audit:production`; `node
   scripts/scan-release-artifacts.mjs`; focused application, container, scale,
   compatibility, backup, restore, and migration suites.
-- **Limitations:** no Docker-compatible runtime or deployed reverse
-  proxy/client environment was available.
+- **Limitations:** container validation used rootless Docker 29.6.2 on amd64;
+  no deployed reverse-proxy or hosted-client environment was available.
 
 ## Executive Summary
 
@@ -25,9 +25,9 @@ shares only bounded runtime seams, and closes partial/full startup
 idempotently. The vault remains the separate process/container isolation
 boundary.
 
-No further source-level architecture blocker remains. Actual image execution
-is still an unrun environment gate and therefore cannot be inferred from
-Dockerfile/static tests.
+No further source-level architecture blocker remains. The exact executable
+candidate built and passed non-root/read-only startup, health, stateless MCP,
+restart, and durable-audit checks in a real amd64 container.
 
 ## What Is Good
 
@@ -75,16 +75,16 @@ and ownership, but slow storage can affect latency. Readiness and scale tests
 contain the current risk; a queue or multi-writer database is not justified
 without measurement.
 
-**Risky: container behavior is only statically/CI specified here.** The image
-is unprivileged and the smoke script covers read-only start, health, stateless
-MCP, restart, durable audit, and ephemeral references, but no local container
-engine was available to execute it.
+**Risky: one local engine cannot represent every deployment host.** The
+rootless amd64 smoke proves the image builds and exercises read-only start,
+health, stateless MCP, restart, durable audit, and ephemeral references. CI
+must continue repeating the command on its rootful runner before publication.
 
 ## What Should Change
 
-**Change: run `npm run smoke:container` on an amd64 Docker host before declaring
-the release candidate complete.** Record the exact commit/image digest and
-sanitized result in the release matrix.
+**Change: preserve `npm run smoke:container` as a blocking pre-publication
+gate.** Record the exact commit/image digest and sanitized result for every
+release candidate.
 
 **Change: execute the documented Codex and ChatGPT checklist for each real
 deployment.** Synthetic fixtures prove protocol behavior, not hosted UI or
@@ -114,6 +114,6 @@ in depth.
 
 The implementation is a coherent, testable single-instance architecture with
 strong security ordering and unusually complete recovery contracts. The
-release-blocking composition contradiction is fixed. Source architecture and
-operator documentation pass review; actual container execution remains the one
-unclosed source-release environment gate.
+release-blocking composition contradiction is fixed. Source architecture,
+operator documentation, and actual container execution pass review; no
+source-release environment gate remains open.

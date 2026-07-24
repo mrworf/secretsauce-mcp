@@ -93,7 +93,7 @@ describe("release operations documentation", () => {
     expect(api).not.toMatch(/Cookie:\s+\S+/);
   });
 
-  it("keeps the final release reviews decision-complete without waiving pending gates", () => {
+  it("keeps the final release reviews decision-complete without waived gates", () => {
     const ux = readFileSync(
       "docs/audits/milestone-24-ux-accessibility.md",
       "utf8",
@@ -135,30 +135,33 @@ describe("release operations documentation", () => {
       "docs/audits/milestone-24-acceptance.md",
       "utf8",
     );
-    expect(acceptance).toContain("Production container execution | **pending**");
-    expect(acceptance).toContain("No pending gate is waived");
-    expect(acceptance).not.toContain("Release approved");
+    expect(acceptance).toContain("Production container execution | pass");
+    expect(acceptance).toContain(
+      "Milestone 24 acceptance criteria are satisfied",
+    );
+    expect(acceptance).toContain("No gate was waived");
+    expect(acceptance).not.toContain("remains incomplete");
   });
 
-  it("records every verified gate while leaving unavailable container execution pending", () => {
+  it("records every verified release gate and completed milestone status", () => {
     const matrix = readFileSync("docs/release-matrix.md", "utf8");
     const pendingRows = matrix
       .split("\n")
       .filter((line) => line.startsWith("|") && line.includes("pending"));
-    expect(pendingRows).toEqual([
-      expect.stringContaining(
-        "Image build, unprivileged start, health, MCP, restart",
-      ),
-    ]);
-    expect(matrix).toContain("146 files / 972 tests passed");
+    expect(pendingRows).toEqual([]);
+    expect(matrix).toContain(
+      "Image build, unprivileged start, health, MCP, restart",
+    );
+    expect(matrix).toContain("rootless Docker 29.6.2/amd64");
+    expect(matrix).toContain("146 files / 973 tests passed");
     expect(matrix).toContain("562 tracked, staged, built, generated");
 
     const status = readFileSync("docs/milestones/status.yaml", "utf8");
     expect(status).toMatch(
-      /id: "24"[\s\S]*status: "in_progress"[\s\S]*container smoke remains unwaived/,
+      /id: "24"[\s\S]*status: "completed"[\s\S]*commit_hash: "acf8b67"/,
     );
     expect(status).not.toMatch(
-      /id: "24"[\s\S]*status: "completed"/,
+      /id: "24"[\s\S]*status: "in_progress"/,
     );
   });
 });

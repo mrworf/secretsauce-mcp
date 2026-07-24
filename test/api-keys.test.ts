@@ -17,8 +17,11 @@ import {
   parseApiKey,
   parseExpiration,
 } from "../src/apiKeys.js";
-import type { ControlAuthenticationContext } from "../src/control/authentication.js";
-import type { ControlAuthenticator } from "../src/control/authentication.js";
+import type {
+  ControlApiKeyActivityRecorder,
+  ControlAuthenticationContext,
+  ControlAuthenticator,
+} from "../src/control/authentication.js";
 import { defineControlRoute } from "../src/control/routeRegistry.js";
 import { createControlApplication } from "../src/control/server.js";
 import { z } from "../src/control/zod.js";
@@ -368,6 +371,12 @@ describe("system API key creation and metadata", () => {
       ]);
     expect(JSON.stringify(activity)).not.toContain(created.oneTimeKey);
     expect(JSON.stringify(activity)).not.toContain("$argon2id");
+    await expect(fixture.repository.recordControlActivity({
+      apiKeyId: created.apiKey.id,
+      action: "Invalid route",
+      outcome: "allow",
+      requestId: CORRELATION,
+    })).rejects.toMatchObject({ code: "invalid_request" });
     await expect(fixture.repository.activity({
       actor: fixture.superadmin,
       id: created.apiKey.id,
@@ -466,7 +475,7 @@ describe("system API key control authentication", () => {
       fixture.repository,
       browserDelegate(),
     );
-    const application = apiKeyApplication(authenticator);
+    const application = apiKeyApplication(authenticator, ["api_key"], fixture.repository);
     const response = await application.inject({
       method: "GET",
       url: "/api/v2/test/api-principal",
@@ -507,11 +516,18 @@ describe("system API key control authentication", () => {
         ORDER BY occurred_at DESC, id DESC
       `, [created.apiKey.id])),
     });
-    expect(safeRows[0]).toEqual({
-      action: "api_keys.authenticate",
-      outcome: "allow",
-      source_digest: expect.stringMatching(/^[a-f0-9]{64}$/),
-    });
+    expect(safeRows).toEqual(expect.arrayContaining([
+      {
+        action: "api_keys.authenticate",
+        outcome: "allow",
+        source_digest: expect.stringMatching(/^[a-f0-9]{64}$/),
+      },
+      {
+        action: "test.api_key_principal",
+        outcome: "allow",
+        source_digest: null,
+      },
+    ]));
     expect(JSON.stringify(safeRows)).not.toContain(created.oneTimeKey);
     await application.close();
   });
@@ -583,13 +599,22 @@ describe("system API key control authentication", () => {
     await revokedApplication.close();
   });
 
-  it("delegates requests without Authorization while API keys never satisfy CSRF", async () => {
+  it("delegates requests without Authorization and audits browser-only API-key denial", async () => {
     const fixture = await apiKeyFixture("auth-delegate");
+    const created = await fixture.service.create(fixture.superadmin, {
+      nickname: "Denied client",
+      apiRole: "system",
+      expiration: { policy: "forever" },
+    }, CORRELATION);
     const authenticator = await SystemApiKeyAuthenticator.create(
       fixture.repository,
       browserDelegate(),
     );
-    const application = apiKeyApplication(authenticator, ["browser_session"]);
+    const application = apiKeyApplication(
+      authenticator,
+      ["browser_session"],
+      fixture.repository,
+    );
     const response = await application.inject({
       method: "GET",
       url: "/api/v2/test/api-principal",
@@ -599,6 +624,29 @@ describe("system API key control authentication", () => {
     expect(response.json()).toMatchObject({
       data: { method: "browser_session", role: "superadmin" },
     });
+    const denied = await application.inject({
+      method: "GET",
+      url: "/api/v2/test/api-principal",
+      headers: {
+        host: "control.example.org",
+        authorization: `Bearer ${created.oneTimeKey}`,
+      },
+    });
+    expect(denied.statusCode).toBe(403);
+    const activity = await fixture.repository.activity({
+      actor: fixture.superadmin,
+      id: created.apiKey.id,
+      limit: 10,
+    });
+    expect(activity.activity).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        action: "test.api_key_principal",
+        outcome: "deny",
+        targetType: "management_route",
+        failureCode: "authentication_method_not_permitted",
+      }),
+    ]));
+    expect(JSON.stringify(activity)).not.toContain(created.oneTimeKey);
     await application.close();
   });
 });
@@ -887,9 +935,11 @@ function mutationHeaders(extra: Record<string, string> = {}) {
 function apiKeyApplication(
   authenticator: ControlAuthenticator,
   authentication: Array<"api_key" | "browser_session"> = ["api_key"],
+  apiKeyActivity?: ControlApiKeyActivityRecorder,
 ) {
   return createControlApplication(controlConfig(), {
     authenticator,
+    apiKeyActivity,
     registerControlRoutes: (registry) => {
       registry.register(defineControlRoute({
         id: "test.api_key_principal",

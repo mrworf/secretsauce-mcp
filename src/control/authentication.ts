@@ -27,6 +27,17 @@ export interface ControlAuthenticator {
   ): Promise<boolean>;
 }
 
+export interface ControlApiKeyActivityRecorder {
+  recordControlActivity(input: {
+    apiKeyId: string;
+    action: string;
+    outcome: "allow" | "deny" | "error";
+    targetId?: string;
+    requestId: string;
+    failureCode?: string;
+  }): Promise<void>;
+}
+
 export const denyControlAuthentication: ControlAuthenticator = {
   authenticate: async () => undefined,
   verifyCsrf: async () => false,

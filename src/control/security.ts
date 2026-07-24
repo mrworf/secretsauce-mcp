@@ -2,6 +2,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import type { ControlConfig } from "../types.js";
 import {
   bindControlAuthentication,
+  type ControlApiKeyActivityRecorder,
   type ControlAuthenticationMethod,
   type ControlAuthenticator,
 } from "./authentication.js";
@@ -22,12 +23,14 @@ export interface ControlRouteSecurity {
   cache?: "no-store" | "immutable";
   authenticationMethods?: readonly ControlAuthenticationMethod[];
   rateLimit?: ControlRateLimitClass;
+  activityAction?: string;
 }
 
 export function controlSecurityHooks(
   config: ControlConfig,
   authenticator: ControlAuthenticator,
   rateLimiter: ControlRateLimiter,
+  apiKeyActivity?: ControlApiKeyActivityRecorder,
 ): {
   onRequest(request: FastifyRequest, reply: FastifyReply): Promise<void>;
   onSend(request: FastifyRequest, reply: FastifyReply): Promise<void>;
@@ -59,6 +62,13 @@ export function controlSecurityHooks(
         security.authenticationMethods !== undefined &&
         !security.authenticationMethods.includes(authentication.method)
       ) {
+        await recordApiKeySecurityDenial(
+          apiKeyActivity,
+          authentication,
+          security.activityAction,
+          request,
+          "authentication_method_not_permitted",
+        );
         sendControlError(reply, request.id, 403, "forbidden", "Authentication method not permitted.");
         return;
       }
@@ -68,7 +78,16 @@ export function controlSecurityHooks(
         rateLimiter,
         security.rateLimit ?? "management",
         authentication.principalId,
-      )) return;
+      )) {
+        await recordApiKeySecurityDenial(
+          apiKeyActivity,
+          authentication,
+          security.activityAction,
+          request,
+          "rate_limited",
+        );
+        return;
+      }
       bindControlAuthentication(request, authentication);
       if (
         !["browser_session", "restricted_session"].includes(authentication.method) ||
@@ -109,6 +128,40 @@ export function controlSecurityHooks(
       reply.removeHeader("access-control-allow-credentials");
     },
   };
+}
+
+async function recordApiKeySecurityDenial(
+  recorder: ControlApiKeyActivityRecorder | undefined,
+  authentication: Awaited<ReturnType<ControlAuthenticator["authenticate"]>>,
+  action: string | undefined,
+  request: FastifyRequest,
+  failureCode: string,
+): Promise<void> {
+  if (
+    recorder === undefined ||
+    authentication?.method !== "api_key" ||
+    action === undefined
+  ) return;
+  const targetId = firstUuidParam(request.params);
+  await recorder.recordControlActivity({
+    apiKeyId: authentication.principalId,
+    action,
+    outcome: "deny",
+    ...(targetId === undefined ? {} : { targetId }),
+    requestId: request.id,
+    failureCode,
+  });
+}
+
+function firstUuidParam(params: unknown): string | undefined {
+  if (params === null || typeof params !== "object") return undefined;
+  return Object.entries(params as Record<string, unknown>)
+    .filter(([key, value]) =>
+      key.endsWith("_id") &&
+      typeof value === "string" &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(value))
+    .map(([, value]) => value as string)
+    .sort()[0];
 }
 
 export function publicControlRoute(

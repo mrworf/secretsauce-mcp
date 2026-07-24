@@ -946,6 +946,50 @@ export class ApiKeyRepository {
       throw new ApiKeyError("unavailable");
     }
   }
+
+  async recordControlActivity(input: {
+    apiKeyId: string;
+    action: string;
+    outcome: "allow" | "deny" | "error";
+    targetId?: string;
+    requestId: string;
+    failureCode?: string;
+  }): Promise<void> {
+    if (
+      !isUuidV7(input.apiKeyId) ||
+      !/^[a-z][a-z0-9_.-]{0,127}$/.test(input.action) ||
+      !["allow", "deny", "error"].includes(input.outcome) ||
+      (input.targetId !== undefined && !isUuidV7(input.targetId)) ||
+      !/^req_[0-9a-f-]{36}$/.test(input.requestId) ||
+      (input.failureCode !== undefined &&
+        !/^[a-z][a-z0-9_.-]{0,127}$/.test(input.failureCode))
+    ) throw new ApiKeyError("invalid_request");
+    try {
+      await this.owner.execute({
+        run: (database) => database.withOperationalTransaction((transaction) => {
+          const row = transaction.get<ApiKeyRow>(
+            "SELECT * FROM api_keys WHERE id = ?",
+            [input.apiKeyId],
+          );
+          if (row === undefined) throw new PersistenceError("database_unavailable");
+          insertActivity(transaction, row, {
+            id: this.#uuid(),
+            action: input.action,
+            outcome: input.outcome,
+            targetType: "management_route",
+            ...(input.targetId === undefined ? {} : { targetId: input.targetId }),
+            requestId: input.requestId,
+            ...(input.failureCode === undefined
+              ? {}
+              : { failureCode: input.failureCode }),
+          });
+        }),
+      });
+    } catch (error) {
+      if (error instanceof ApiKeyError) throw error;
+      throw new ApiKeyError("unavailable");
+    }
+  }
 }
 
 export class ApiKeyService {

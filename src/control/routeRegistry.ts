@@ -6,6 +6,7 @@ import type {
 import { z } from "zod";
 import {
   controlAuthentication,
+  type ControlApiKeyActivityRecorder,
   type ControlAuthenticationContext,
   type ControlAuthenticationMethod,
 } from "./authentication.js";
@@ -198,6 +199,7 @@ export function installControlRoutes(
   registry: ControlRouteRegistry,
   authorization: ControlAuthorizationSeam = denyControlAuthorization,
   failureAudit?: ControlSensitiveFailureAudit,
+  apiKeyActivity?: ControlApiKeyActivityRecorder,
 ): void {
   for (const definition of registry.definitions()) {
     application.route({
@@ -211,11 +213,14 @@ export function installControlRoutes(
             ? undefined
             : definition.authentication,
           rateLimit: definition.rateLimit,
+          activityAction: definition.id,
         },
       },
       handler: async (request, reply) => {
         let parsedBody: unknown;
         let parsedParams: unknown;
+        let activityAttempted = false;
+        let safeTargets: string[] = [];
         try {
           const authentication = controlAuthentication(request);
           const body = parsePart(definition.schemas.body, request.body, "body");
@@ -236,7 +241,18 @@ export function installControlRoutes(
             expectedVersion,
             idempotencyKey,
           );
+          safeTargets = operation.targets;
           await authorizeRoute(definition, authentication, request, authorization, operation);
+          if (authentication?.method === "api_key" && apiKeyActivity !== undefined) {
+            activityAttempted = true;
+            await apiKeyActivity.recordControlActivity({
+              apiKeyId: authentication.principalId,
+              action: definition.id,
+              outcome: "allow",
+              ...(safeTargets[0] === undefined ? {} : { targetId: safeTargets[0] }),
+              requestId: request.id,
+            });
+          }
           const stepUpProof = authorization.stepUpProof?.(request);
           const result = await definition.handler({
             body,
@@ -287,9 +303,31 @@ export function installControlRoutes(
               });
           return reply.code(statusCode).type("application/json; charset=utf-8").send(payload);
         } catch (error) {
+          const authentication = controlAuthentication(request);
+          if (
+            authentication?.method === "api_key" &&
+            apiKeyActivity !== undefined &&
+            !activityAttempted
+          ) {
+            activityAttempted = true;
+            const contractError = error instanceof ControlContractError ? error : undefined;
+            const targets = safeTargets.length > 0
+              ? safeTargets
+              : targetIds(parsedParams, parsedBody);
+            await apiKeyActivity.recordControlActivity({
+              apiKeyId: authentication.principalId,
+              action: definition.id,
+              outcome: contractError !== undefined &&
+                  [401, 403, 404].includes(contractError.statusCode)
+                ? "deny"
+                : "error",
+              ...(targets[0] === undefined ? {} : { targetId: targets[0] }),
+              requestId: request.id,
+              failureCode: contractError?.code ?? "internal_error",
+            });
+          }
           if (error instanceof ControlContractError) {
             if (definition.auditAction !== undefined && failureAudit !== undefined) {
-              const authentication = controlAuthentication(request);
               await failureAudit.record({
                 route: definition,
                 ...(authentication === undefined ? {} : { authentication }),

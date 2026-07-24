@@ -69,6 +69,7 @@ import { readVaultKeyFile } from "../vault/keyFile.js";
 import {
   denyControlAuthentication,
   controlAuthentication,
+  type ControlApiKeyActivityRecorder,
   type ControlAuthenticator,
 } from "./authentication.js";
 import { createDefaultControlRouteRegistry } from "./defaultRoutes.js";
@@ -167,6 +168,7 @@ export interface ControlApplicationOptions {
   policyManagement?: PolicyManagementService;
   accessManagement?: AccessRouteDependencies;
   apiKeys?: ApiKeyRouteDependencies;
+  apiKeyActivity?: ControlApiKeyActivityRecorder;
 }
 
 export function createControlApplication(
@@ -193,7 +195,12 @@ export function createControlApplication(
     logController: new LogController({ disableRequestLogging: true }),
   });
   void application.register(cookie);
-  const security = controlSecurityHooks(control, authenticator, rateLimiter);
+  const security = controlSecurityHooks(
+    control,
+    authenticator,
+    rateLimiter,
+    options.apiKeyActivity ?? options.apiKeys?.repository,
+  );
   application.addHook("onRequest", security.onRequest);
   application.addHook("onSend", security.onSend);
   application.addHook("onResponse", async (request, reply) => {
@@ -257,6 +264,7 @@ export function createControlApplication(
     options.persistence === undefined
       ? undefined
       : sensitiveFailureAudit(options.persistence),
+    options.apiKeyActivity ?? options.apiKeys?.repository,
   );
 
   installControlWebRoutes(application, options.webAssets ?? loadControlWebAssets());

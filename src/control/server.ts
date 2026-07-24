@@ -142,8 +142,12 @@ import {
   ApiKeyCursorCodec,
   ApiKeyRepository,
   ApiKeyService,
+  ApiKeyVerifierPool,
   SystemApiKeyAuthenticator,
 } from "../apiKeys.js";
+import {
+  ActiveSelfApiKeyDetector,
+} from "../selfApiKeyProtection.js";
 import {
   registerApiKeyRoutes,
   type ApiKeyRouteDependencies,
@@ -357,8 +361,14 @@ export async function startControlServer(
   let apiKeyRepository: ApiKeyRepository | undefined;
   let apiKeyAuthenticator: SystemApiKeyAuthenticator | undefined;
   let apiKeyManagement: ApiKeyRouteDependencies | undefined;
+  const apiKeyVerifier = new ApiKeyVerifierPool();
+  let selfApiKeyDetector: ActiveSelfApiKeyDetector | undefined;
   try {
     apiKeyRepository = new ApiKeyRepository(persistence);
+    selfApiKeyDetector = await ActiveSelfApiKeyDetector.create(
+      apiKeyRepository,
+      apiKeyVerifier,
+    );
     let localIdentity: LocalIdentityControl | undefined;
     if (config.identity !== undefined) {
       identityKeyRing = IdentityKeyRing.fromFiles(
@@ -463,6 +473,7 @@ export async function startControlServer(
             Date.now,
             randomUUID,
             idempotencyHasher,
+            selfApiKeyDetector,
           );
           await credentialVault.reconcilePending();
         }
@@ -578,6 +589,7 @@ export async function startControlServer(
     apiKeyAuthenticator = await SystemApiKeyAuthenticator.create(
       apiKeyRepository,
       localIdentity?.authenticator ?? denyControlAuthentication,
+      apiKeyVerifier,
     );
     server = createControlApplication(config, {
       persistence,

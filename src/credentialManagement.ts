@@ -118,6 +118,8 @@ export class CredentialManagementError extends Error {
     | "stale"
     | "conflict"
     | "idempotency_conflict"
+    | "active_self_api_key"
+    | "rate_limited"
     | "unavailable") {
     super("Credential management could not be completed.");
     this.name = "CredentialManagementError";

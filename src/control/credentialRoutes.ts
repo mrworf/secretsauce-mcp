@@ -589,6 +589,7 @@ function registerValueRoutes(
             : { captureLastFour: context.body.capture_last_four }),
           idempotencyKey: context.idempotencyKey!,
           correlationId: context.requestId,
+          source: context.request.ip,
         });
         return { data: wireCredential(credential), version: credential.version };
       } finally {
@@ -710,6 +711,20 @@ function contractError(error: unknown): ControlContractError {
       409,
       "idempotency_conflict",
       "The idempotency key was already used for different inputs.",
+    );
+  }
+  if (error.code === "active_self_api_key") {
+    return new ControlContractError(
+      409,
+      "active_self_api_key",
+      "Active SecretSauce API keys require the dedicated approval workflow.",
+    );
+  }
+  if (error.code === "rate_limited") {
+    return new ControlContractError(
+      429,
+      "rate_limited",
+      "Request rate limit exceeded.",
     );
   }
   if (error.code === "conflict") {

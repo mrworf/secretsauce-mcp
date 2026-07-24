@@ -18,6 +18,12 @@ import { isUuidV7, UuidV7Generator } from "./persistence/uuidV7.js";
 import type { PersistenceOwner } from "./persistence/worker.js";
 import type { VaultCredentialBinding, VaultRecordMetadata } from "./vault/recordStore.js";
 import { VaultError } from "./vault/errors.js";
+import {
+  type ActiveSelfApiKeyMatch,
+  ActiveSelfApiKeyDetector,
+  SelfApiKeyProtectionError,
+} from "./selfApiKeyProtection.js";
+import { createHash } from "node:crypto";
 
 export interface CredentialControlVault {
   create(input: {
@@ -55,6 +61,19 @@ interface VaultIntent {
   target_generation: number | null;
   prior_status: Exclude<CredentialStatus, "archived">;
   phase: "prepared" | "vault_applied" | "reconcile";
+  approval_api_key_id: string | null;
+  approval_user_id: string | null;
+  approval_nickname: string | null;
+  approval_last_four: string | null;
+  approval_justification_digest: string | null;
+}
+
+interface PendingSelfApiKeyApproval {
+  apiKeyId: string;
+  userId: string;
+  nickname: string;
+  lastFour: string;
+  justificationDigest: string;
 }
 
 interface CredentialState {
@@ -90,6 +109,7 @@ export class CredentialVaultCoordinator {
     now: () => number = Date.now,
     private readonly locatorUuid: () => string = randomUUID,
     private readonly idempotency?: ControlIdempotencyHasher,
+    private readonly selfApiKeys?: ActiveSelfApiKeyDetector,
   ) {
     const generator = new UuidV7Generator({ now });
     this.#eventUuid = () => generator.next();
@@ -104,7 +124,69 @@ export class CredentialVaultCoordinator {
     captureLastFour?: boolean;
     idempotencyKey?: string;
     correlationId: string;
+    source?: string;
   }): Promise<CredentialView> {
+    await this.rejectActiveSelfApiKey(input);
+    return this.setValueInternal(input);
+  }
+
+  async setApprovedSelfApiKeyValue(input: {
+    actor: ControlAuthenticationContext;
+    serviceId: string;
+    credentialId: string;
+    expectedVersion: number;
+    value: Uint8Array;
+    captureLastFour?: boolean;
+    idempotencyKey?: string;
+    correlationId: string;
+    source: string;
+    justification: string;
+  }): Promise<CredentialView> {
+    validateOperationInput(input);
+    if (
+      input.actor.method !== "browser_session" ||
+      input.actor.role !== "superadmin" ||
+      typeof input.justification !== "string" ||
+      input.justification.trim() !== input.justification ||
+      input.justification.length < 1 ||
+      input.justification.length > 512 ||
+      /[\0\r\n]/.test(input.justification) ||
+      this.selfApiKeys === undefined
+    ) throw new CredentialManagementError("invalid_request");
+    const raw = Buffer.from(input.value).toString("utf8");
+    const matches = await this.inspectSelfApiKeys(
+      raw,
+      input.actor,
+      input.source,
+    );
+    if (
+      matches.length !== 1 ||
+      raw !== `ssk_v1_${matches[0]!.identifier}_${raw.split("_").at(-1) ?? ""}`
+    ) throw new CredentialManagementError("invalid_request");
+    const match = matches[0]!;
+    const approval: PendingSelfApiKeyApproval = {
+      apiKeyId: match.id,
+      userId: input.actor.principalId,
+      nickname: match.nickname,
+      lastFour: match.lastFour,
+      justificationDigest: createHash("sha256")
+        .update("secretsauce.self-api-key-justification.v1\0", "utf8")
+        .update(input.justification, "utf8")
+        .digest("hex"),
+    };
+    return this.setValueInternal(input, approval);
+  }
+
+  private async setValueInternal(input: {
+    actor: ControlAuthenticationContext;
+    serviceId: string;
+    credentialId: string;
+    expectedVersion: number;
+    value: Uint8Array;
+    captureLastFour?: boolean;
+    idempotencyKey?: string;
+    correlationId: string;
+  }, approval?: PendingSelfApiKeyApproval): Promise<CredentialView> {
     validateOperationInput(input);
     if (
       input.value.byteLength < 1 ||
@@ -116,7 +198,7 @@ export class CredentialVaultCoordinator {
     let prepared: PreparedVaultOperation | undefined;
     let intent: VaultIntent;
     try {
-      prepared = await this.prepareSet(input);
+      prepared = await this.prepareSet(input, approval);
       if (prepared.intent === undefined) {
         return this.credentials.credential(
           input.actor,
@@ -179,6 +261,44 @@ export class CredentialVaultCoordinator {
       input.serviceId,
       input.credentialId,
     );
+  }
+
+  private async rejectActiveSelfApiKey(input: {
+    actor: ControlAuthenticationContext;
+    value: Uint8Array;
+    source?: string;
+  }): Promise<void> {
+    if (this.selfApiKeys === undefined) return;
+    const matches = await this.inspectSelfApiKeys(
+      Buffer.from(input.value).toString("utf8"),
+      input.actor,
+      input.source ?? "control",
+    );
+    if (matches.length > 0) {
+      throw new CredentialManagementError("active_self_api_key");
+    }
+  }
+
+  private async inspectSelfApiKeys(
+    value: string,
+    actor: ControlAuthenticationContext,
+    source: string,
+  ): Promise<ActiveSelfApiKeyMatch[]> {
+    try {
+      return await this.selfApiKeys!.inspect(
+        [{ value, location: "credential" }],
+        { principal: actor.principalId, source },
+      );
+    } catch (error) {
+      if (
+        error instanceof SelfApiKeyProtectionError &&
+        error.code === "rate_limited"
+      ) throw new CredentialManagementError("rate_limited");
+      if (error instanceof SelfApiKeyProtectionError) {
+        throw new CredentialManagementError("unavailable");
+      }
+      throw error;
+    }
   }
 
   async deleteValue(input: {
@@ -322,7 +442,7 @@ export class CredentialVaultCoordinator {
     captureLastFour?: boolean;
     idempotencyKey?: string;
     correlationId: string;
-  }): Promise<PreparedVaultOperation> {
+  }, approval?: PendingSelfApiKeyApproval): Promise<PreparedVaultOperation> {
     const idempotency = this.valueIdempotency(
       input,
       "credentials.value.replace",
@@ -331,6 +451,7 @@ export class CredentialVaultCoordinator {
         credentialId: input.credentialId,
         expectedVersion: input.expectedVersion,
         captureLastFour: input.captureLastFour ?? false,
+        approvalApiKeyId: approval?.apiKeyId ?? null,
         value: Buffer.from(input.value).toString("base64url"),
       },
     );
@@ -340,13 +461,13 @@ export class CredentialVaultCoordinator {
         let prepared: PreparedVaultOperation;
         if (idempotency === undefined) {
           prepared = {
-            intent: this.prepareSetMutation(transaction, input),
+            intent: this.prepareSetMutation(transaction, input, approval),
             replayed: false,
           };
         } else {
           let executedIntent: VaultIntent | undefined;
           const result = transaction.idempotent(idempotency, () => {
-            executedIntent = this.prepareSetMutation(transaction, input);
+            executedIntent = this.prepareSetMutation(transaction, input, approval);
             return {
               value: executedIntent.credential_id,
               resultReference: executedIntent.credential_id,
@@ -454,6 +575,7 @@ export class CredentialVaultCoordinator {
       credentialId: string;
       expectedVersion: number;
     },
+    approval?: PendingSelfApiKeyApproval,
   ): VaultIntent {
     const current = requiredState(transaction, input.serviceId, input.credentialId);
     if (current.version !== input.expectedVersion) {
@@ -481,6 +603,11 @@ export class CredentialVaultCoordinator {
       target_generation: target,
       prior_status: current.status as Exclude<CredentialStatus, "archived">,
       phase: "prepared",
+      approval_api_key_id: approval?.apiKeyId ?? null,
+      approval_user_id: approval?.userId ?? null,
+      approval_nickname: approval?.nickname ?? null,
+      approval_last_four: approval?.lastFour ?? null,
+      approval_justification_digest: approval?.justificationDigest ?? null,
     };
     const now = transaction.timestamp();
     insertIntent(transaction, intent, now);
@@ -537,6 +664,11 @@ export class CredentialVaultCoordinator {
       target_generation: null,
       prior_status: current.status as "configured" | "disabled",
       phase: "prepared",
+      approval_api_key_id: null,
+      approval_user_id: null,
+      approval_nickname: null,
+      approval_last_four: null,
+      approval_justification_digest: null,
     };
     const now = transaction.timestamp();
     insertIntent(transaction, intent, now);
@@ -634,6 +766,46 @@ export class CredentialVaultCoordinator {
         ]);
         if (changed.changes !== 1) throw new PersistenceError("identity_stale");
         transaction.run(
+          "DELETE FROM credential_self_api_key_approvals WHERE credential_id = ?",
+          [intent.credential_id],
+        );
+        if (intent.approval_api_key_id !== null) {
+          const approved = transaction.get(`
+            SELECT 1
+            FROM api_keys key
+            JOIN users approver ON approver.id = ?
+            WHERE key.id = ?
+              AND key.status = 'active'
+              AND (key.expires_at IS NULL OR key.expires_at > ?)
+              AND approver.role = 'superadmin'
+              AND approver.status = 'active'
+          `, [
+            intent.approval_user_id,
+            intent.approval_api_key_id,
+            now,
+          ]);
+          if (approved === undefined) {
+            throw new PersistenceError("identity_conflict");
+          }
+          transaction.run(`
+            INSERT INTO credential_self_api_key_approvals (
+              credential_id, service_id, api_key_id, vault_generation,
+              approved_by_user_id, nickname_snapshot, last_four_snapshot,
+              justification_digest, approved_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `, [
+            intent.credential_id,
+            intent.service_id,
+            intent.approval_api_key_id,
+            metadata.generation,
+            intent.approval_user_id,
+            intent.approval_nickname,
+            intent.approval_last_four,
+            intent.approval_justification_digest,
+            now,
+          ]);
+        }
+        transaction.run(
           "DELETE FROM credential_vault_operations WHERE credential_id = ?",
           [intent.credential_id],
         );
@@ -659,6 +831,10 @@ export class CredentialVaultCoordinator {
             [intent.credential_id],
           );
         }
+        transaction.run(
+          "DELETE FROM credential_self_api_key_approvals WHERE credential_id = ?",
+          [intent.credential_id],
+        );
         const changed = transaction.run(`
           UPDATE service_credentials
           SET status = ?, vault_state = 'idle', vault_locator = NULL,
@@ -887,8 +1063,10 @@ function insertIntent(
     INSERT INTO credential_vault_operations (
       credential_id, service_id, operation, locator,
       expected_generation, target_generation, prior_status,
-      phase, result_category, started_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, 'prepared', NULL, ?, ?)
+      phase, result_category, started_at, updated_at,
+      approval_api_key_id, approval_user_id, approval_nickname,
+      approval_last_four, approval_justification_digest
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, 'prepared', NULL, ?, ?, ?, ?, ?, ?, ?)
   `, [
     intent.credential_id,
     intent.service_id,
@@ -899,6 +1077,11 @@ function insertIntent(
     intent.prior_status,
     now,
     now,
+    intent.approval_api_key_id,
+    intent.approval_user_id,
+    intent.approval_nickname,
+    intent.approval_last_four,
+    intent.approval_justification_digest,
   ]);
 }
 

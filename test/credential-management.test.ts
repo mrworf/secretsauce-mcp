@@ -2,6 +2,11 @@ import { chmodSync, mkdirSync, mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
+import {
+  ApiKeyRepository,
+  ApiKeyService,
+  ApiKeyVerifierPool,
+} from "../src/apiKeys.js";
 import type { ControlAuthenticationContext } from "../src/control/authentication.js";
 import { ControlIdempotencyHasher } from "../src/control/idempotency.js";
 import {
@@ -16,6 +21,7 @@ import {
 import { GroupAssignmentRepository } from "../src/groupAssignments.js";
 import { IdentityRepository, type IdentityAuditContext } from "../src/identity/repository.js";
 import { PersistenceWorker } from "../src/persistence/worker.js";
+import { ActiveSelfApiKeyDetector } from "../src/selfApiKeyProtection.js";
 import { UuidV7Generator } from "../src/persistence/uuidV7.js";
 import {
   ServiceManagementRepository,
@@ -227,6 +233,115 @@ describe("service credential metadata and selectors", () => {
     });
     expect(archived).toMatchObject({ status: "archived" });
     expect(archived.selector).toBeUndefined();
+  });
+
+  it("rejects active management keys generally and binds explicit approval to one vault generation", async () => {
+    const fixture = await credentialFixture("self-key");
+    const service = await fixture.service("self-key-api");
+    const created = await fixture.credentials.create(
+      fixture.superadmin,
+      service.id,
+      {
+        name: "Recursive authority",
+        placement: {
+          kind: "header",
+          name: "Authorization",
+          prefix: "Bearer ",
+        },
+        selector: { kind: "all" },
+      },
+      "create-self-key-credential",
+      CORRELATION,
+    );
+    const keyRepository = new ApiKeyRepository(fixture.worker, () => NOW);
+    const apiKeys = new ApiKeyService(keyRepository, {
+      now: () => NOW,
+      uuid: () => "018f1f2e-7b3c-7a10-8000-000000000099",
+      random: (size) => Buffer.alloc(size, size === 12 ? 91 : 92),
+    });
+    const active = await apiKeys.create(fixture.superadmin, {
+      nickname: "Recursive deploy key",
+      apiRole: "system",
+      expiration: { policy: "forever" },
+    }, CORRELATION);
+    const detector = await ActiveSelfApiKeyDetector.create(
+      keyRepository,
+      new ApiKeyVerifierPool(),
+    );
+    const vault = new FakeCredentialVault();
+    const coordinator = new CredentialVaultCoordinator(
+      fixture.worker,
+      fixture.repository,
+      vault,
+      () => NOW,
+      () => "22345678-1234-4234-8234-123456789abc",
+      undefined,
+      detector,
+    );
+
+    await expect(coordinator.setValue({
+      actor: fixture.superadmin,
+      serviceId: service.id,
+      credentialId: created.credential.id,
+      expectedVersion: created.credential.version,
+      value: Buffer.from(active.oneTimeKey),
+      correlationId: CORRELATION,
+      source: "127.0.0.1",
+    })).rejects.toEqual(new CredentialManagementError("active_self_api_key"));
+    expect(vault.records.size).toBe(0);
+
+    await expect(coordinator.setApprovedSelfApiKeyValue({
+      actor: fixture.superadmin,
+      serviceId: service.id,
+      credentialId: created.credential.id,
+      expectedVersion: created.credential.version,
+      value: Buffer.from(`Bearer ${active.oneTimeKey}`),
+      justification: "A wrapped value must not inherit explicit approval.",
+      correlationId: CORRELATION,
+      source: "127.0.0.2",
+    })).rejects.toEqual(new CredentialManagementError("invalid_request"));
+    expect(vault.records.size).toBe(0);
+
+    const approved = await coordinator.setApprovedSelfApiKeyValue({
+      actor: fixture.superadmin,
+      serviceId: service.id,
+      credentialId: created.credential.id,
+      expectedVersion: created.credential.version,
+      value: Buffer.from(active.oneTimeKey),
+      captureLastFour: true,
+      justification: "Required recursive deployment integration.",
+      correlationId: CORRELATION,
+      source: "127.0.0.3",
+    });
+    expect(approved).toMatchObject({
+      status: "configured",
+      lastFour: active.oneTimeKey.slice(-4),
+    });
+    await expect(selfApproval(fixture.worker, created.credential.id)).resolves
+      .toMatchObject({
+        api_key_id: active.apiKey.id,
+        vault_generation: 1,
+        approved_by_user_id: fixture.superadmin.principalId,
+        nickname_snapshot: "Recursive deploy key",
+        last_four_snapshot: active.oneTimeKey.slice(-4),
+      });
+    expect(JSON.stringify(await selfApproval(
+      fixture.worker,
+      created.credential.id,
+    ))).not.toContain(active.oneTimeKey);
+
+    const replaced = await coordinator.setValue({
+      actor: fixture.superadmin,
+      serviceId: service.id,
+      credentialId: created.credential.id,
+      expectedVersion: approved.version,
+      value: Buffer.from("ordinary-downstream-value"),
+      correlationId: CORRELATION,
+      source: "127.0.0.4",
+    });
+    expect(replaced.status).toBe("configured");
+    await expect(selfApproval(fixture.worker, created.credential.id)).resolves
+      .toBeUndefined();
   });
 
   it("rolls back definite create failure and leaves ambiguous vault work non-usable", async () => {
@@ -898,6 +1013,22 @@ function idempotency(
     routeId,
     requestDigest: hasher.requestDigest(body),
   };
+}
+
+function selfApproval(worker: PersistenceWorker, credentialId: string) {
+  return worker.execute({
+    run: (database) => database.read((query) => query.get<{
+      api_key_id: string;
+      vault_generation: number;
+      approved_by_user_id: string;
+      nickname_snapshot: string;
+      last_four_snapshot: string;
+      justification_digest: string;
+    }>(
+      "SELECT * FROM credential_self_api_key_approvals WHERE credential_id = ?",
+      [credentialId],
+    )),
+  });
 }
 
 function browser(

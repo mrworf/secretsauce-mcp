@@ -1904,6 +1904,79 @@ CREATE INDEX service_config_versions_retention_idx
 `;
 
 const migration0017 = `
+ALTER TABLE credential_vault_operations
+  ADD COLUMN approval_api_key_id TEXT
+    REFERENCES api_keys(id) ON DELETE RESTRICT
+    CHECK (
+      approval_api_key_id IS NULL OR (
+        length(approval_api_key_id) = 36
+        AND approval_api_key_id = lower(approval_api_key_id)
+        AND substr(approval_api_key_id, 15, 1) = '7'
+        AND substr(approval_api_key_id, 20, 1) IN ('8', '9', 'a', 'b')
+        AND approval_api_key_id NOT GLOB '*[^0-9a-f-]*'
+      )
+    );
+ALTER TABLE credential_vault_operations
+  ADD COLUMN approval_user_id TEXT
+    REFERENCES users(id) ON DELETE RESTRICT
+    CHECK (
+      approval_user_id IS NULL OR (
+        length(approval_user_id) = 36
+        AND approval_user_id = lower(approval_user_id)
+        AND substr(approval_user_id, 15, 1) = '7'
+        AND substr(approval_user_id, 20, 1) IN ('8', '9', 'a', 'b')
+        AND approval_user_id NOT GLOB '*[^0-9a-f-]*'
+      )
+    );
+ALTER TABLE credential_vault_operations
+  ADD COLUMN approval_nickname TEXT CHECK (
+    approval_nickname IS NULL OR length(approval_nickname) BETWEEN 1 AND 512
+  );
+ALTER TABLE credential_vault_operations
+  ADD COLUMN approval_last_four TEXT CHECK (
+    approval_last_four IS NULL OR (
+      length(approval_last_four) = 4
+      AND approval_last_four NOT GLOB '*[^A-Za-z0-9_-]*'
+    )
+  );
+ALTER TABLE credential_vault_operations
+  ADD COLUMN approval_justification_digest TEXT CHECK (
+    approval_justification_digest IS NULL OR (
+      length(approval_justification_digest) = 64
+      AND approval_justification_digest = lower(approval_justification_digest)
+      AND approval_justification_digest NOT GLOB '*[^0-9a-f]*'
+    )
+  );
+
+CREATE TRIGGER credential_vault_approval_insert_shape
+BEFORE INSERT ON credential_vault_operations
+WHEN (
+  (NEW.approval_api_key_id IS NULL) +
+  (NEW.approval_user_id IS NULL) +
+  (NEW.approval_nickname IS NULL) +
+  (NEW.approval_last_four IS NULL) +
+  (NEW.approval_justification_digest IS NULL)
+) NOT IN (0, 5)
+BEGIN
+  SELECT RAISE(ABORT, 'invalid pending self API key approval');
+END;
+
+CREATE TRIGGER credential_vault_approval_update_shape
+BEFORE UPDATE OF
+  approval_api_key_id, approval_user_id, approval_nickname,
+  approval_last_four, approval_justification_digest
+ON credential_vault_operations
+WHEN (
+  (NEW.approval_api_key_id IS NULL) +
+  (NEW.approval_user_id IS NULL) +
+  (NEW.approval_nickname IS NULL) +
+  (NEW.approval_last_four IS NULL) +
+  (NEW.approval_justification_digest IS NULL)
+) NOT IN (0, 5)
+BEGIN
+  SELECT RAISE(ABORT, 'invalid pending self API key approval');
+END;
+
 CREATE TABLE credential_self_api_key_approvals (
   credential_id TEXT PRIMARY KEY,
   service_id TEXT NOT NULL,

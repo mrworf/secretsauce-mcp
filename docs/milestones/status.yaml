@@ -93,10 +93,10 @@ milestones:
   - id: "13"
     title: "Persisted Runtime Authorization"
     file: "docs/milestones/13-persisted-runtime-authorization.md"
-    status: "in_progress"
-    completed_at: null
-    commit_hash: null
-    notes: "Decision-complete runtime cutover and security plan under docs/plans/milestone-13-persisted-runtime-authorization.md."
+    status: "completed"
+    completed_at: "2026-07-24T01:24:53.000Z"
+    commit_hash: "7fa41fd"
+    notes: "Activated immutable database snapshots now exclusively authorize MCP in database mode, with UUID/group discovery, precise invalidation, fully bound ephemeral references, least-privilege vault resolution, response safeguards, readiness, audits, and operator guidance; production build and full 90-file/680-test suite pass."
   - id: "14"
     title: "Multi-User MCP OAuth"
     file: "docs/milestones/14-multiuser-mcp-oauth.md"

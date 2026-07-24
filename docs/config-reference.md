@@ -58,6 +58,29 @@ The parent directory must be writable by the gateway process. The database file
 is created with mode `0600`, migrations complete before listeners start, and a
 second application writer is rejected.
 
+### Persisted MCP runtime authority
+
+Set `runtime.authority: database`, keep `services: {}`, and configure
+`persistence.database_file` to make activated v2 snapshots the sole MCP
+authority. Database authority rejects YAML services; YAML authority still
+requires at least one YAML service. See
+[Persisted runtime authorization](runtime-authorization.md) for activation,
+vault mounts, invalidation, reference, readiness, and rollback constraints.
+
+The database runtime requires `SECRETSAUCE_VAULT_SOCKET`,
+`SECRETSAUCE_VAULT_DATA_KEY_FILE`, and
+`SECRETSAUCE_VAULT_RESOLVE_KEY_FILE`. Supplying an incomplete or invalid runtime
+vault setup stops startup. The gateway caller mounts only the data-plane and
+resolve-capability keys.
+
+After at least one service is published, stop the database-owning gateway and
+run `CONFIG_PATH=/absolute/path/to/config.yaml npm run runtime:activate-v2` from
+an interactive terminal. The command accepts no arguments and continues only
+after the exact input `ACTIVATE V2`. Activation is atomic, audited, and one-way;
+database mode never falls back to YAML. In this mode `/health` reports stable
+`database`, `schema`, `runtime_activation`, and `vault` checks and returns `503`
+when any required check is unavailable.
+
 On a fresh database, run `CONFIG_PATH=/absolute/path/to/config.yaml npm run
 identity:bootstrap` from an interactive terminal on the gateway host. In Docker,
 use an interactive exec such as `docker compose exec secretsauce npm run
@@ -90,14 +113,14 @@ When persistence, control, and identity are enabled, durable service
 administration is available at `/control/services`. See
 [Service management](service-management.md) for ownership, destination,
 publication, transfer, archive, deletion, and runtime-isolation semantics.
-Database-managed service records do not affect MCP routing before the persisted
-runtime authorization milestone.
+Database-managed service records affect MCP routing only after explicit v2
+activation and only when `runtime.authority: database`.
 
 Service-scoped group and assignment management is available at
 `/control/groups`. See [Groups and service assignments](group-assignments.md)
 for selector, membership, effective-access, invalidation, and account-continuity
-semantics. These assignments remain control-plane state until persisted runtime
-authorization becomes authoritative.
+semantics. In activated database runtime mode, committed assignment changes are
+reconciled before the next authorization read.
 
 `identity.temporary_password_ttl` defaults to `72h` and is bounded from `1h`
 through `7d`. `identity.restricted_session_ttl` defaults to `15m` and is bounded

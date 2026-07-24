@@ -165,6 +165,7 @@ services:
       - ./audit:/var/lib/secretsauce/audit
       - ./oauth-state:/var/lib/secretsauce/oauth
       - ./vault-keys/data-plane.key:/run/vault-caller/data-plane.key:ro
+      - ./vault-keys/resolve-capability.key:/run/vault-caller/resolve-capability.key:ro
       - ./vault-runtime:/run/secretsauce-vault:ro
     environment:
       CONFIG_PATH: /config/config.yaml
@@ -172,6 +173,7 @@ services:
       SENSITIVE_NAMES_CONFIG_PATH: /config/sensitive-names.yaml
       SECRETSAUCE_VAULT_SOCKET: /run/secretsauce-vault/vault.sock
       SECRETSAUCE_VAULT_DATA_KEY_FILE: /run/vault-caller/data-plane.key
+      SECRETSAUCE_VAULT_RESOLVE_KEY_FILE: /run/vault-caller/resolve-capability.key
 ```
 
 Use the writable audit mount for `audit.file`, for example `/var/lib/secretsauce/audit/audit.jsonl`. Monitor `/health` and disk capacity: an audit open or write failure keeps privileged operations fail-open but changes readiness to `503` with a sanitized audit-degraded check until restart. The open descriptor supports `copytruncate`-style rotation; rename-based rotation requires a restart. When using `auth.mode: builtin_oauth`, keep `auth.builtin_oauth.signing_key_file` on stable mounted storage such as `/run/oauth/oauth_signing_key.pem`; changing that key forces clients to reauthenticate. Set `auth.builtin_oauth.refresh_token_store_file` to a stable writable path such as `/var/lib/secretsauce/oauth/refresh-state.json` to preserve hash-only refresh state across restarts. Omitting it keeps refresh grants in memory and requires reauthorization after restart.
@@ -191,9 +193,10 @@ root key is unavailable.
 check and prints only `ready` or `unavailable`. The optional control-process
 variables `SECRETSAUCE_VAULT_SOCKET` and
 `SECRETSAUCE_VAULT_CONTROL_KEY_FILE` add the same safe `checks.vault` seam to
-`/api/v2/health`. The current milestone provides the broker and restricted
-clients only: write-only credential management and authorized data-plane
-resolution are connected in milestones 11 and 13, respectively.
+`/api/v2/health`. Write-only credential management and authorized data-plane
+resolution are connected through the isolated broker. To make published v2
+configuration the sole MCP authority, follow
+[Persisted runtime authorization](docs/runtime-authorization.md).
 
 ### Initial v2 identity bootstrap
 

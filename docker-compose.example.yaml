@@ -48,8 +48,9 @@ services:
       # This refresh-state mount has a single-process writer contract.
       - ./oauth-state:/var/lib/secretsauce/oauth
       # gref_/sec_ capability state is intentionally ephemeral and is not mounted.
-      # The data-plane caller sees only its caller key and the shared socket.
+      # The data plane sees only its caller and resolve-capability keys plus the socket.
       - ./vault-keys/data-plane.key:/run/vault-caller/data-plane.key:ro
+      - ./vault-keys/resolve-capability.key:/run/vault-caller/resolve-capability.key:ro
       - ./vault-runtime:/run/secretsauce-vault:ro
     environment:
       CONFIG_PATH: /config/config.yaml
@@ -58,6 +59,7 @@ services:
       SECRETSAUCE_MCP_TOKEN: ${SECRETSAUCE_MCP_TOKEN:?set an ephemeral gateway token}
       SECRETSAUCE_VAULT_SOCKET: /run/secretsauce-vault/vault.sock
       SECRETSAUCE_VAULT_DATA_KEY_FILE: /run/vault-caller/data-plane.key
+      SECRETSAUCE_VAULT_RESOLVE_KEY_FILE: /run/vault-caller/resolve-capability.key
       PORTAINER_API_KEY_FILE: /run/secrets/portainer_api_key
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/health"]

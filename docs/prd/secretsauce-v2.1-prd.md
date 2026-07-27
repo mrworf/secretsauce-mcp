@@ -155,7 +155,7 @@ Version 2.1 does not provide:
 - Automatic suspension based on OIDC-provider failures.
 - Automatic generation of TLS keys, external OIDC client secrets, database
   credentials, downstream credentials, or backup passphrases.
-- A configured-flag clearing operation, cryptographic factory reset, or remote
+- A configured-manifest clearing operation, cryptographic factory reset, or remote
   key-regeneration capability.
 - Migration or compatibility for pre-release development data.
 - Proof from inside a container that an arbitrary writable filesystem is
@@ -192,22 +192,28 @@ Trust boundaries include:
 An installation has:
 
 - A non-secret installation identifier.
-- A durable configured flag.
-- A non-secret manifest of required key identities and validation state.
+- A durable non-secret key manifest in `provisioning` or `configured` state.
+- Manifest entries for the required key identities, owning components,
+  formats/versions, `pending` or `verified` status, and verified key
+  fingerprints.
+- A configured commitment containing the canonical aggregate digest of every
+  required verified manifest entry.
 - An internal setup state.
 - Zero or more users.
 
-The manifest must not contain raw keys, credential values, tokens, or reversible
+Fingerprints must be collision-resistant, domain-separated digests of canonical
+key bytes computed by the owning component. The manifest and configured
+commitment must not contain raw keys, credential values, tokens, or reversible
 secret material.
 
 ### 8.2 Internal setup states
 
 | State | Meaning | Permitted public surface | Exit |
 | --- | --- | --- | --- |
-| `provisioning` | The configured flag is absent and required application keys are being generated or validated. A blocked/error substate may retry. | Liveness, readiness, sanitized setup status | All keys validate and the configured flag commits |
-| `enrollment_required` | All required keys validate and the configured flag exists, but no user exists. | Health, login, unified enrollment, safe static assets | Initial superadmin commits |
+| `provisioning` | A valid provisioning manifest exists and required application keys are being generated or validated. A blocked/error substate may retry. | Liveness, readiness, sanitized setup status | All keys validate and the manifest atomically commits to `configured` |
+| `enrollment_required` | A valid configured manifest exists, but no user exists. | Health, login, unified enrollment, safe static assets | Initial superadmin commits |
 | `operational` | Required keys validate and at least one user exists. | Normal role-authorized product behavior | Fatal key/configuration failure or process stop |
-| `configuration_error` | A configured installation has a missing or invalid required key. | No ordinary serving; process exits nonzero | Operator restores correct configuration and restarts |
+| `configuration_error` | Manifest/key state is ambiguous, missing, malformed, or mismatched under the startup matrix in section 18.2. | No ordinary serving; process exits nonzero | Operator restores correct configuration or completes an explicitly authorized adoption and restarts |
 
 `provisioning` and `enrollment_required` are not unhealthy states. They are not
 operationally ready.
@@ -299,9 +305,11 @@ process start
 ```
 
 If fresh provisioning cannot write or validate a required key, it remains in a
-blocked `provisioning` substate and retries. It does not set the configured flag.
+blocked `provisioning` substate and retries. It does not commit the manifest to
+`configured`.
 
-If the configured flag exists and any required key is missing or invalid:
+If a configured manifest exists and any required key is missing, invalid, or
+has a fingerprint different from its committed entry:
 
 ```text
 process start -> configuration_error -> nonzero process exit
@@ -352,17 +360,25 @@ Repeating a revocation is an audited no-change success.
 ### 11.1 Automatic key provisioning
 
 1. Startup reads enabled services and configured application key locations.
-2. Each owning service reports the SecretSauce-owned keys it requires.
-3. Existing keys are validated without exposing their values.
-4. Each missing SecretSauce-owned key is created atomically by its single
+2. Startup evaluates the manifest, key inventory, and explicit-adoption matrix
+   in section 18.2 before permitting any key creation.
+3. For a true fresh installation, the coordinator durably creates a
+   `provisioning` manifest containing every required key as `pending` before the
+   first key-generation attempt.
+4. Each owning service reports the SecretSauce-owned keys it requires and
+   computes fingerprints locally without exposing raw key values.
+5. Each missing `pending` SecretSauce-owned key is created atomically by its single
    designated owning component with restrictive permissions in its configured
    durable location.
-5. A retry validates and reuses every successfully created key, creates only
-   remaining missing keys, and converges idempotently.
-6. Every owning service validates its complete required key set.
-7. The coordinator atomically records the installation identifier, key manifest,
-   and configured flag.
-8. Browser status advances from preparing to the branded login/enrollment
+6. After a key validates, its owning component reports its fingerprint and the
+   manifest entry atomically advances from `pending` to `verified`.
+7. A retry validates and records any complete key file already present for a
+   `pending` entry, creates only absent `pending` keys, reuses every `verified`
+   key, and converges idempotently.
+8. Every owning service validates its complete required key set.
+9. The coordinator atomically records the canonical aggregate digest and
+   advances the manifest to `configured`.
+10. Browser status advances from preparing to the branded login/enrollment
    experience.
 
 ### 11.2 Initial superadmin enrollment
@@ -429,13 +445,15 @@ according to the permission matrix.
 
 ### 12.1 Provisioning failures
 
-- Before the configured flag exists, a write, permission, atomicity, or
-  validation failure keeps the process live in blocked provisioning.
+- While a valid provisioning manifest exists, a write, permission, atomicity, or
+  validation failure for a still-`pending` key keeps the process live in blocked
+  provisioning.
 - Blocked provisioning logs an actionable, secret-free diagnostic and retries
   with bounded exponential backoff.
 - The public page displays only a safe message and whether retry is pending.
-- After the configured flag exists, a missing or invalid required key is fatal.
-  The service must not regenerate it, clear the flag, or expose a recovery UI.
+- A missing or mismatched `verified` key and any missing or invalid key under a
+  configured manifest are fatal. The service must not regenerate the key, clear
+  the manifest, or expose a recovery UI.
 
 ### 12.2 Enrollment failures
 
@@ -501,17 +519,21 @@ limited without rolling back enrollment.
 - `SETUP-004` SecretSauce must not automatically generate TLS material, external
   OIDC client secrets, database credentials, downstream service credentials,
   backup passphrases, or other externally owned secrets.
-- `SETUP-005` The configured flag and non-secret key manifest must commit only
-  after every enabled owning service validates its complete required key set.
-- `SETUP-006` A fresh key-generation failure must leave the configured flag
-  absent, keep liveness healthy, block all ordinary interfaces, expose sanitized
-  status, log secret-free diagnostics, and retry with bounded backoff.
-- `SETUP-007` If the configured flag exists and any required key is missing or
-  invalid, the affected service must exit nonzero without regenerating the key.
+- `SETUP-005` The manifest must advance atomically from `provisioning` to
+  `configured` only after every enabled owning service validates its complete
+  required key set and the coordinator records the canonical aggregate digest
+  of every required verified entry.
+- `SETUP-006` A fresh key-generation failure for a `pending` entry must leave the
+  manifest in `provisioning`, keep liveness healthy, block all ordinary
+  interfaces, expose sanitized status, log secret-free diagnostics, and retry
+  with bounded backoff.
+- `SETUP-007` If a configured manifest exists and any required key is missing,
+  invalid, or fingerprint-mismatched, the affected service must exit nonzero
+  without regenerating the key.
 - `SETUP-008` No web, control API, login, OAuth, or MCP operation outside the
   explicit setup allowlist may execute before the required setup state permits
   it.
-- `SETUP-009` Version 2.1 must not expose a configured-flag clear, cryptographic
+- `SETUP-009` Version 2.1 must not expose a configured-manifest clear, cryptographic
   reset, or regenerate-all-keys operation through web, API, MCP, or CLI.
 - `SETUP-010` The official Compose deployment must place generated keys,
   database state, vault state, and durable audit state in declared persistent
@@ -522,14 +544,42 @@ limited without rolling back enrollment.
 - `SETUP-012` SecretSauce must not claim it can prove that an arbitrary
   container-visible filesystem is durable.
 - `SETUP-013` Every application-key identity must have exactly one component
-  with generation and replacement authority within the permitted setup
-  lifecycle. Other components may receive only the access required to use or
-  validate that key. Two running components must never race to generate the same
-  key.
+  with generation authority within the permitted setup lifecycle. Other
+  components may receive only the access required to use or validate that key.
+  Two running components must never race to generate the same key, and automatic
+  provisioning must never replace an existing key file.
 - `SETUP-014` The official Compose startup order must allow every provisioning
   owner to complete before a key-dependent service declares readiness or exposes
   an ordinary listener. A fresh supported deployment must require no manual
   key-generation command.
+- `SETUP-015` A true fresh installation must durably create the complete
+  `provisioning` manifest with every required entry in `pending` state before the
+  first key-generation attempt. Each entry must atomically record its owner-local
+  fingerprint when it advances to `verified`.
+- `SETUP-016` A provisioning retry may create only `pending` keys. A missing,
+  malformed, or mismatched `verified` key, or a malformed existing key file for
+  a `pending` entry, must cause `configuration_error` without creating or
+  replacing any key. A valid existing key for a `pending` entry must be
+  fingerprinted and advanced to `verified` without replacement.
+- `SETUP-017` When no manifest exists, fresh provisioning is permitted only when
+  no required key is present and `setup.adopt_existing_keys` is `false` or
+  absent. Setting adoption to `true` without a complete key set, or finding
+  some-but-not-all required keys with any adoption value, must cause
+  `configuration_error`. All required keys must cause `configuration_error`
+  unless the host-local `setup.adopt_existing_keys: true` startup setting is
+  present.
+- `SETUP-018` `setup.adopt_existing_keys` must be accepted only from deployment
+  configuration available before database-managed settings. It must not be
+  controllable through browser, control API, OAuth, MCP, or remotely invokable
+  CLI behavior. It is honored only when no manifest exists and every required
+  key is present, must never relax validation, becomes inert after a configured
+  manifest exists, and produces a sanitized operator warning until removed.
+- `SETUP-019` Complete pre-manifest adoption must not generate or replace keys.
+  Every owning component must validate key format, ownership, mode, canonical
+  fingerprint, and compatibility with all retained key-bound state before the
+  coordinator atomically writes a configured manifest. Any failed or
+  unavailable validation must cause `configuration_error` without modifying
+  keys or manifest state.
 
 ### 13.2 Bootstrap and enrollment
 
@@ -937,10 +987,26 @@ volume configuration.
 The official deployment and release tests, rather than an unsafe runtime
 heuristic, establish supported persistence behavior.
 
-If both database and key storage are discarded, the installation is
-indistinguishable from an intentional fresh installation. If retained database
-or installation state demonstrates missing or mismatched key state, startup
-must fail closed.
+Startup applies this authoritative matrix before key generation:
+
+| Manifest | Required keys | `setup.adopt_existing_keys` | Required behavior |
+| --- | --- | --- | --- |
+| Absent | None present | `false` or absent | Create the complete `provisioning` manifest before generating the first key |
+| Absent | None present | `true` | Enter `configuration_error`; create no key and require removal of the inapplicable adoption setting |
+| Absent | Some but not all present | Any value | Enter `configuration_error`; create or replace no key |
+| Absent | All present | `false` or absent | Enter `configuration_error` and direct the operator to the explicit adoption setting |
+| Absent | All present | `true` | Run complete owner-local adoption validation; atomically create a configured manifest only if every validation succeeds |
+| `provisioning` | All `verified` entries match; `pending` key files are valid or absent | Ignored | Validate and record present `pending` keys, then create only absent `pending` keys |
+| `provisioning` | Any `verified` entry is missing/mismatched or an existing `pending` key file is malformed | Ignored | Enter `configuration_error`; create or replace no key |
+| `configured` | Every required fingerprint and aggregate digest match | Ignored | Continue to `enrollment_required` or `operational` |
+| `configured` | Any required key, fingerprint, or aggregate digest missing or mismatched | Ignored | Enter `configuration_error`; create or replace no key |
+
+If all key and manifest storage is discarded, the installation is
+indistinguishable from an intentional fresh installation only when no required
+key remains. Retained application data does not authorize automatic key
+replacement. Complete pre-manifest key adoption is the sole exception and
+requires the explicit host-local setting plus successful compatibility
+validation by every owning component.
 
 ### 18.3 Observability
 
@@ -962,7 +1028,9 @@ this document.
 - V2.1 rollout targets fresh installations.
 - Pre-release development state may be cleared.
 - No automated adoption of an older configured flag, key manifest, user
-  database, or key layout is required.
+  database, or key layout is required. The only supported adoption path is a
+  complete current-layout required key set with no manifest, explicitly enabled
+  by `setup.adopt_existing_keys: true` and validated under `SETUP-019`.
 - Release qualification must use a clean deployment and container-recreation
   persistence test.
 - Codex and ChatGPT MCP/OAuth compatibility must be revalidated after setup
@@ -994,7 +1062,7 @@ this document.
 4. Liveness remains 200 and readiness remains 503 during provisioning and initial
    enrollment.
 5. A fresh unwritable key location remains live, exposes safe status, retries,
-   and never sets the configured flag.
+   and never advances the manifest to `configured`.
 6. After configuration, removing or corrupting one required key causes nonzero
    startup exit without key replacement.
 7. Recreating official Compose containers preserves keys, identities, vault
@@ -1006,6 +1074,23 @@ this document.
    key or cause two components to generate the same key identity.
 10. A clean official Compose start has no provisioning dependency cycle and
     requires no initialization CLI or manual key-generation command.
+11. A true fresh start persists the complete `provisioning` manifest before
+    attempting the first key creation.
+12. With no manifest, startup exits nonzero without creating or replacing a key
+    when adoption is `true` but no required key is present, or when only some
+    required keys are present with any adoption value.
+13. With no manifest and every required key present, startup exits nonzero
+    without the adoption setting and identifies only the sanitized operator
+    action required.
+14. With no manifest, every required key present, and
+    `setup.adopt_existing_keys: true`, successful owner-local compatibility
+    validation creates a configured manifest without changing any key.
+15. A malformed adoption setting or failed, unavailable, or incompatible
+    owner-local adoption validation exits nonzero without modifying keys or
+    manifest state.
+16. A missing or mismatched `verified` key under a provisioning manifest and any
+    mismatch under a configured manifest exit nonzero without creating,
+    replacing, or recommitting a key.
 
 ### 21.2 Initial enrollment
 
@@ -1077,16 +1162,19 @@ this document.
 ## 22. Testing requirements
 
 - Unit tests for setup state transitions, required-key inventory, manifest
+  entry transitions, canonical owner-local fingerprints, aggregate commitment,
   validation, bootstrap generation/comparison/erasure boundaries, suspension
   counters, rolling-window behavior, and scope predicates.
-- Persistence tests for atomic configured-flag commit, initial-superadmin commit,
-  counter/suspension/revocation commit, bulk revocation, audit coupling, and
-  concurrency races.
+- Persistence tests for atomic configured-manifest commit, initial-superadmin
+  commit, counter/suspension/revocation commit, bulk revocation, audit coupling,
+  and concurrency races.
 - Positive and negative contract tests for every new setup, enrollment, login,
   metadata, filter, confirmation, and revocation input.
 - Process tests for fresh provisioning, interruption and restart at every
-  per-key creation boundary, idempotent key reuse, blocked retry, restart secret
-  rotation, configured missing-key fatal exit, and multi-service key readiness.
+  per-key and manifest transition, idempotent key reuse, no-manifest
+  none/some/all key inventories with valid and invalid adoption settings,
+  incompatible retained-state adoption, blocked retry, restart secret rotation,
+  configured missing-key fatal exit, and multi-service key readiness.
 - Browser tests for branded login, unified enrollment, no setup-state disclosure,
   TOTP confirmation, redirect-to-login, logout, account settings, administrative
   scope, bulk confirmation, accessibility, and narrow screens.
@@ -1109,6 +1197,9 @@ this document.
 Operator documentation must cover:
 
 - Fresh Compose startup and browser enrollment.
+- The one-time complete-key adoption setting, its exact eligibility conditions,
+  its inert behavior after configuration, and the requirement to remove it after
+  successful adoption.
 - Where the one-time bootstrap secret appears.
 - The fact that Docker/platform logs may be retained or forwarded and require
   access control.
@@ -1145,15 +1236,17 @@ MCP path.
 
 These questions concern mechanisms and must not change the product contract:
 
-1. Where should the installation identifier, configured flag, and non-secret key
-   manifest live so multi-service validation can commit atomically?
+1. Where should the installation identifier, progressive key manifest, and
+   configured aggregate commitment live so per-entry progress and final
+   multi-service validation commit atomically?
 2. Which component coordinates the designated per-key owners, and how does the
    official Compose startup order avoid a cycle between provisioning owners and
    key-dependent consumers?
 3. How should provisional initial-enrollment state be represented without
    creating a user before final commit?
 4. Which internal key inventory API lets each designated owner generate and
-   validate only its keys without exposing raw key material?
+   validate only its keys, report canonical fingerprints and retained-state
+   compatibility, and avoid exposing raw key material?
 5. Which bounded retry scheduler and status propagation mechanism best serves
    blocked fresh provisioning?
 6. Which user-agent parser or internal derivation produces safe bounded
@@ -1173,9 +1266,16 @@ These questions concern mechanisms and must not change the product contract:
 - Each application-key identity has one designated owning component; each key is
   created atomically, interrupted fresh provisioning reuses valid created keys,
   and the complete key set converges idempotently without a manual setup command.
-- Fresh provisioning failures stay live and retry; configured missing keys are
-  fatal and never regenerated.
-- There is no configured-flag clearing or cryptographic-reset capability.
+- A progressive manifest exists before the first key creation, records
+  owner-local canonical fingerprints, and commits to `configured` only after
+  every required entry verifies.
+- Without a manifest, a partial required key set is always fatal and a complete
+  required key set is adopted only with the explicit host-local
+  `setup.adopt_existing_keys: true` setting and complete owner-local
+  compatibility validation.
+- Fresh `pending`-key provisioning failures stay live and retry; a missing or
+  mismatched `verified` or configured key is fatal and never regenerated.
+- There is no configured-manifest clearing or cryptographic-reset capability.
 - The official Compose deployment uses durable volumes, but the container does
   not claim it can prove arbitrary mount durability.
 - The process-lifetime bootstrap secret is printed once, kept only in memory,
@@ -1209,13 +1309,14 @@ These questions concern mechanisms and must not change the product contract:
   all-services-within-scope agent-connection authority.
 - Session/grant operational records may be deleted when immutable sanitized
   audit evidence remains.
-- There is no deployed-state migration requirement for v2.1.
+- There is no deployed-state migration requirement for v2.1 beyond the explicit
+  complete current-layout pre-manifest key adoption path.
 
 ## 26. Requirement traceability
 
 | Capability/risk | Requirements | Acceptance |
 | --- | --- | --- |
-| Automatic fail-closed key setup | `SETUP-001`–`SETUP-014` | 21.1 |
+| Automatic fail-closed key setup | `SETUP-001`–`SETUP-019` | 21.1 |
 | Atomic initial superadmin | `ENROLL-001`–`ENROLL-013` | 21.2 |
 | Branded uniform login/logout | `LOGIN-001`–`LOGIN-007`, `LOGOUT-001`–`LOGOUT-002` | 21.3, 21.6 |
 | Rate limits and durable suspension | `ABUSE-001`–`ABUSE-014` | 21.3 |
@@ -1224,7 +1325,7 @@ These questions concern mechanisms and must not change the product contract:
 | Scoped revocation and audit | `ACCESS-001`–`ACCESS-011` | 21.5 |
 | Health before setup | `HEALTH-001`–`HEALTH-007` | 21.1 |
 | Secret and personal-data minimization | Sections 14–16 | 21.2, 21.5, 21.6 |
-| Browser-first Compose deployment | `SETUP-010`–`SETUP-014`, sections 18–19 | 21.1 |
+| Browser-first Compose deployment | `SETUP-010`–`SETUP-019`, sections 18–19 | 21.1 |
 
 ## 27. Review readiness
 

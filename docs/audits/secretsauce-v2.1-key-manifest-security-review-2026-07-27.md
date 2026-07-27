@@ -5,6 +5,9 @@
 - **Project/repository:** SecretSauce (MCP)
 - **Git SHA:** `1ecd520bab973de46f54539efe330c5028e0358e`
 - **Review date/time:** 2026-07-27T23:08:16Z
+- **Decision update:** product owner selected unconditional failure for partial
+  pre-manifest key sets and explicit host-local authorization for complete-set
+  adoption
 - **Reviewer role:** senior application security reviewer
 - **Scope reviewed:** proposed progressive key-fingerprint manifest and configured
   commitment for v2.1 automatic key provisioning
@@ -28,16 +31,16 @@ Two distinctions are mandatory:
    attempt, separate from the final **configured commitment**. An absent final
    commitment plus a valid progress manifest can prove which keys were already
    created. An absent commitment by itself cannot.
-2. Automatically adopting a complete pre-manifest key set is safe only when
-   every owning component validates that its keys are compatible with any
-   retained key-bound state. Merely hashing the files proves which files are
-   present, not that they can decrypt or authenticate retained data.
+2. Adopting a complete pre-manifest key set requires the explicit host-local
+   `setup.adopt_existing_keys: true` startup setting and every owning component
+   validating that its keys are compatible with any retained key-bound state.
+   Merely hashing the files proves which files are present, not that they can
+   decrypt or authenticate retained data.
 
-The unsafe case is: no progress manifest, only some keys present, and retained
-application state may exist. Treating that state as an interrupted first boot
-could replace a lost key from a previously configured installation. That case
-must fail closed unless the owning components can prove the installation is an
-eligible pre-manifest adoption with no incompatible retained state.
+The unsafe case is: no progress manifest and only some keys present. Treating
+that state as an interrupted first boot could replace a lost key from a
+previously configured installation. The settled product decision is stricter:
+that case always fails closed without creating or replacing a key.
 
 This is a design review, not a finding in deployed code. CVSS v3.1 is therefore
 not applicable.
@@ -147,10 +150,11 @@ When the configured commitment exists:
 
 This portion of the proposed behavior is sound.
 
-### Required condition: pre-manifest adoption validates retained state
+### Required condition: pre-manifest adoption is explicit and validates retained state
 
 When every required key exists but no progress manifest or configured commitment
-exists, automatic adoption can be supported as a deliberate migration path.
+exists, adoption is supported only when the host-local
+`setup.adopt_existing_keys: true` startup setting explicitly authorizes it.
 Before writing the manifest and commitment, every owner must validate:
 
 1. key format, ownership, mode, and expected cryptographic type; and
@@ -161,15 +165,16 @@ vault envelope and validating a durable key-check value for HMAC-only keys.
 Validation must be exhaustive or rely on a purpose-built cryptographic key-check
 record; a format check or hash of the candidate file is insufficient.
 
-If no retained state exists, the complete pre-provisioned set can be adopted
-after structural validation. If retained state exists and any owner cannot prove
-compatibility, startup must fail closed without writing a commitment.
+If no retained state exists, the explicitly authorized complete pre-provisioned
+set can be adopted after structural validation. If retained state exists and any
+owner cannot prove compatibility, startup must fail closed without writing a
+commitment.
 
 This behavior changes the current product statement that automated adoption of
-older key state is not required. The PRD must explicitly identify complete
-pre-manifest key adoption as the one supported migration case.
+older key state is not required. The PRD identifies explicitly authorized
+complete pre-manifest key adoption as the one supported migration case.
 
-### Unsafe condition: partial keys without progress evidence
+### Required condition: partial keys without progress evidence always fail
 
 The following rule is not acceptable without another guard:
 
@@ -181,23 +186,24 @@ keys from a previously configured installation. For a vault or identity
 encryption key, generating a replacement can make retained ciphertext
 unrecoverable.
 
-Safe behavior is:
+The settled safe behavior is:
 
-- resume and generate only unrecorded keys when a valid progress manifest proves
-  the incomplete provisioning generation; or
-- allow partial pre-manifest adoption only when every component proves there is
-  no retained state bound to a missing key and all retained state bound to
-  present keys validates; otherwise fail closed.
+- resume and generate only `pending` keys when a valid progress manifest proves
+  the incomplete provisioning generation; and
+- when no manifest exists and only some keys are present, enter
+  `configuration_error` regardless of the adoption setting.
 
 ## Recommended Startup Matrix
 
 | Observed state | Required behavior |
 | --- | --- |
-| No progress manifest, no commitment, no keys | Create a provisioning generation and progress manifest, then generate keys |
-| Valid progress manifest, no commitment, only unrecorded/pending keys absent | Resume and generate only those keys |
-| Valid progress manifest, no commitment, a verified key missing or mismatched | `configuration_error`; do not replace it |
-| No manifest or commitment, every required key present | Run complete pre-manifest adoption validation; commit only if every owner proves compatibility |
-| No manifest or commitment, only some keys present | Adopt/generate only if owners prove no incompatible retained state; otherwise `configuration_error` |
+| No progress manifest, no commitment, no keys, adoption disabled | Create a provisioning generation and progress manifest, then generate keys |
+| No progress manifest, no commitment, no keys, adoption enabled | `configuration_error`; require removal of the inapplicable adoption setting |
+| Valid progress manifest, no commitment, verified keys match, and pending key files are valid or absent | Validate and record present pending keys, then generate only absent pending keys |
+| Valid progress manifest, no commitment, a verified key is missing/mismatched or an existing pending key file is malformed | `configuration_error`; do not generate or replace a key |
+| No manifest or commitment, every required key present, adoption disabled | `configuration_error`; require explicit adoption intent |
+| No manifest or commitment, every required key present, adoption enabled | Run complete pre-manifest adoption validation; commit only if every owner proves compatibility |
+| No manifest or commitment, only some keys present | `configuration_error` for every adoption value; create or replace no key |
 | Commitment present and every fingerprint matches | Continue to enrollment-required or operational state |
 | Commitment present and any key/fingerprint/final digest differs | `configuration_error`; do not generate or replace keys |
 
@@ -213,11 +219,13 @@ Use generated test keys and local temporary stores only.
    with no writes to any key file or manifest.
 4. Mix a key and manifest from two test installations and verify fail-closed
    behavior.
-5. Test complete pre-manifest adoption with empty state and with valid retained
-   encrypted state.
-6. Test complete and partial pre-manifest key sets against incompatible retained
-   state and verify no commitment or new key is written.
-7. Prove the coordinator receives fingerprints and statuses but never raw key
+5. Test complete pre-manifest key sets with adoption disabled and verify no
+   commitment or key write.
+6. Test explicitly authorized complete pre-manifest adoption with empty state
+   and with valid retained encrypted state.
+7. Test partial pre-manifest key sets with every adoption value and incompatible
+   complete sets; verify no commitment or new key is written.
+8. Prove the coordinator receives fingerprints and statuses but never raw key
    bytes.
 
 These tests are non-destructive because they use disposable generated fixtures
@@ -251,9 +259,10 @@ and do not expose or operate on deployment credentials.
 **Conditionally approved.** The fingerprint-manifest direction is sound and is
 more precise than inferring installation continuity from unrelated application
 records. Approval requires a progressive per-key manifest, an authoritative
-final commitment, owner-local fingerprinting, compatibility validation for
-pre-manifest adoption, and fail-closed handling for partial key sets that lack
-valid progress evidence.
+final commitment, owner-local fingerprinting, explicit host-local authorization
+plus compatibility validation for complete pre-manifest adoption, and
+unconditional fail-closed handling for partial key sets that lack valid progress
+evidence.
 
 No confirmed or likely vulnerability exists yet because the mechanism is not
 implemented. The conditions above are requirements intended to prevent a future

@@ -354,12 +354,15 @@ Repeating a revocation is an audited no-change success.
 1. Startup reads enabled services and configured application key locations.
 2. Each owning service reports the SecretSauce-owned keys it requires.
 3. Existing keys are validated without exposing their values.
-4. Missing SecretSauce-owned keys are generated atomically with restrictive
-   permissions in configured durable locations.
-5. Every owning service validates its complete required key set.
-6. The coordinator atomically records the installation identifier, key manifest,
+4. Each missing SecretSauce-owned key is created atomically by its single
+   designated owning component with restrictive permissions in its configured
+   durable location.
+5. A retry validates and reuses every successfully created key, creates only
+   remaining missing keys, and converges idempotently.
+6. Every owning service validates its complete required key set.
+7. The coordinator atomically records the installation identifier, key manifest,
    and configured flag.
-7. Browser status advances from preparing to the branded login/enrollment
+8. Browser status advances from preparing to the branded login/enrollment
    experience.
 
 ### 11.2 Initial superadmin enrollment
@@ -486,9 +489,11 @@ limited without rolling back enrollment.
 - `SETUP-001` On startup, SecretSauce must determine the complete
   SecretSauce-owned application key set required by every enabled service before
   permitting ordinary product use.
-- `SETUP-002` When the configured flag is absent, SecretSauce must atomically
-  generate every missing SecretSauce-owned key in its configured location and
-  validate every required key.
+- `SETUP-002` When fresh provisioning is permitted, every missing
+  SecretSauce-owned key must be created atomically by exactly one designated
+  owning component. Provisioning retries must validate and reuse successfully
+  created keys, generate only remaining missing keys, and converge
+  idempotently. Setup must not advance until every required key validates.
 - `SETUP-003` Automatically generated keys must include, when required by enabled
   features, identity/TOTP encryption keys, browser-session hashing keys, OAuth
   signing and token-hashing keys, vault root and authenticated-caller keys, and
@@ -516,6 +521,15 @@ limited without rolling back enrollment.
   installation continuity where retained state makes continuity observable.
 - `SETUP-012` SecretSauce must not claim it can prove that an arbitrary
   container-visible filesystem is durable.
+- `SETUP-013` Every application-key identity must have exactly one component
+  with generation and replacement authority within the permitted setup
+  lifecycle. Other components may receive only the access required to use or
+  validate that key. Two running components must never race to generate the same
+  key.
+- `SETUP-014` The official Compose startup order must allow every provisioning
+  owner to complete before a key-dependent service declares readiness or exposes
+  an ordinary listener. A fresh supported deployment must require no manual
+  key-generation command.
 
 ### 13.2 Bootstrap and enrollment
 
@@ -985,6 +999,13 @@ this document.
    startup exit without key replacement.
 7. Recreating official Compose containers preserves keys, identities, vault
    state, and durable audits.
+8. Restart after any individual fresh key creation validates and reuses that key,
+   creates only remaining missing keys, and reaches the same complete key
+   manifest.
+9. Repeating or interrupting fresh provisioning cannot rotate a valid generated
+   key or cause two components to generate the same key identity.
+10. A clean official Compose start has no provisioning dependency cycle and
+    requires no initialization CLI or manual key-generation command.
 
 ### 21.2 Initial enrollment
 
@@ -1063,8 +1084,9 @@ this document.
   concurrency races.
 - Positive and negative contract tests for every new setup, enrollment, login,
   metadata, filter, confirmation, and revocation input.
-- Process tests for fresh provisioning, blocked retry, restart secret rotation,
-  configured missing-key fatal exit, and multi-service key readiness.
+- Process tests for fresh provisioning, interruption and restart at every
+  per-key creation boundary, idempotent key reuse, blocked retry, restart secret
+  rotation, configured missing-key fatal exit, and multi-service key readiness.
 - Browser tests for branded login, unified enrollment, no setup-state disclosure,
   TOTP confirmation, redirect-to-login, logout, account settings, administrative
   scope, bulk confirmation, accessibility, and narrow screens.
@@ -1125,12 +1147,13 @@ These questions concern mechanisms and must not change the product contract:
 
 1. Where should the installation identifier, configured flag, and non-secret key
    manifest live so multi-service validation can commit atomically?
-2. Which component owns coordination when required keys belong to different
-   services?
+2. Which component coordinates the designated per-key owners, and how does the
+   official Compose startup order avoid a cycle between provisioning owners and
+   key-dependent consumers?
 3. How should provisional initial-enrollment state be represented without
    creating a user before final commit?
-4. Which internal key inventory API gives each service ownership of generation
-   and validation without exposing raw key material?
+4. Which internal key inventory API lets each designated owner generate and
+   validate only its keys without exposing raw key material?
 5. Which bounded retry scheduler and status propagation mechanism best serves
    blocked fresh provisioning?
 6. Which user-agent parser or internal derivation produces safe bounded
@@ -1147,6 +1170,9 @@ These questions concern mechanisms and must not change the product contract:
   operational, and configuration error.
 - Public setup responses do not announce that zero users exist.
 - Automatic provisioning is limited to SecretSauce-owned application keys.
+- Each application-key identity has one designated owning component; each key is
+  created atomically, interrupted fresh provisioning reuses valid created keys,
+  and the complete key set converges idempotently without a manual setup command.
 - Fresh provisioning failures stay live and retry; configured missing keys are
   fatal and never regenerated.
 - There is no configured-flag clearing or cryptographic-reset capability.
@@ -1189,7 +1215,7 @@ These questions concern mechanisms and must not change the product contract:
 
 | Capability/risk | Requirements | Acceptance |
 | --- | --- | --- |
-| Automatic fail-closed key setup | `SETUP-001`–`SETUP-012` | 21.1 |
+| Automatic fail-closed key setup | `SETUP-001`–`SETUP-014` | 21.1 |
 | Atomic initial superadmin | `ENROLL-001`–`ENROLL-013` | 21.2 |
 | Branded uniform login/logout | `LOGIN-001`–`LOGIN-007`, `LOGOUT-001`–`LOGOUT-002` | 21.3, 21.6 |
 | Rate limits and durable suspension | `ABUSE-001`–`ABUSE-014` | 21.3 |
@@ -1198,7 +1224,7 @@ These questions concern mechanisms and must not change the product contract:
 | Scoped revocation and audit | `ACCESS-001`–`ACCESS-011` | 21.5 |
 | Health before setup | `HEALTH-001`–`HEALTH-007` | 21.1 |
 | Secret and personal-data minimization | Sections 14–16 | 21.2, 21.5, 21.6 |
-| Browser-first Compose deployment | `SETUP-010`–`SETUP-012`, sections 18–19 | 21.1 |
+| Browser-first Compose deployment | `SETUP-010`–`SETUP-014`, sections 18–19 | 21.1 |
 
 ## 27. Review readiness
 

@@ -652,8 +652,16 @@ limited without rolling back enrollment.
 - `SESSION-004` Browser mutations must enforce same-origin and CSRF protections.
 - `SESSION-005` Sessions must enforce configured inactivity, absolute expiry,
   user/global security epochs, account state, and revocation on every request.
-- `SESSION-006` Session, CSRF, OAuth token, and refresh values must not appear in
-  URLs, browser storage, logs, audits, telemetry, or API response bodies.
+- `SESSION-006` Browser and restricted-session identifiers, CSRF proofs, OAuth
+  authorization codes, access tokens, and refresh tokens must appear only in
+  their designated delivery channels. Session identifiers may be delivered only
+  through `Secure`, `HttpOnly`, host-scoped cookies. Synchronizer CSRF proofs may
+  be returned only in `Cache-Control: no-store` responses that establish or
+  refresh an authenticated or restricted browser session and must remain in page
+  memory. OAuth authorization codes and tokens may appear only in
+  protocol-defined redirects or `Cache-Control: no-store` token responses. These
+  values must not appear in unrelated API responses, errors, durable browser
+  storage, logs, audits, or telemetry.
 - `SESSION-007` Device and network metadata must be informational only and must
   not rigidly bind a session to an IP address.
 - `SESSION-008` The security contract must claim resistance to fixation, theft,
@@ -1022,8 +1030,10 @@ this document.
 
 1. Fixation, CSRF, stolen restricted-session, expired-session, revoked-session,
    and epoch-invalidated-session tests fail closed.
-2. Session and token values are absent from URLs, web storage, logs, audits, and
-   API response bodies.
+2. Browser and restricted-session identifiers, CSRF proofs, OAuth authorization
+   codes, access tokens, and refresh tokens appear only in their designated
+   delivery channels and are absent from unrelated responses, errors, durable
+   browser storage, logs, audits, and telemetry.
 3. Users can view and revoke one/all of their sessions and agent connections.
 4. Superadmins can perform individual, per-user, and global actions.
 5. Regular admins cannot see browser sessions and cannot see any agent
@@ -1061,7 +1071,9 @@ this document.
 - Security tests for enumeration resistance, timing comparability, brute-force
   limits, session fixation, CSRF, session replay after revocation, restricted
   session privilege denial, open redirect, markup injection through metadata,
-  and log/audit secret absence.
+  log/audit secret absence, positive delivery through every designated session,
+  CSRF, and OAuth channel, and absence of those values from every prohibited
+  channel.
 - OAuth/MCP tests from both Codex and ChatGPT after operational setup, including
   pre-operational temporary unavailability and post-revocation denial.
 - Compose release tests that create a clean installation, enroll the first
@@ -1160,6 +1172,10 @@ These questions concern mechanisms and must not change the product contract:
 - Authenticated self-service password change retains TOTP.
 - Browser sessions follow the explicit fixation, CSRF, rotation, expiry,
   revocation, and secret-handling controls in this document.
+- Browser-session identifiers, CSRF proofs, OAuth authorization codes, access
+  tokens, and refresh tokens use only their explicit designated delivery
+  channels and remain absent from unrelated responses, errors, durable browser
+  storage, logs, audits, and telemetry.
 - Revocation is immediate for requests authenticated after commit; in-flight
   dispatched work may complete.
 - Users manage their own sessions and agent connections; superadmins have global

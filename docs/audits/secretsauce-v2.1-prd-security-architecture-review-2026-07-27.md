@@ -13,6 +13,9 @@
   topology, persistence ownership, and representative tests
 - **Review type:** design and requirements review; no v2.1 implementation exists
   to penetration-test
+- **Decision update:** On 2026-07-27, the product owner accepted `PRD-004` for
+  the supported single-operator deployment and required its trust assumption to
+  be stated explicitly in the PRD.
 
 ## Scope
 
@@ -49,11 +52,14 @@ It is not yet implementation-ready. Three issues block architecture approval:
    treat as fresh. A missing configured flag plus retained encrypted or identity
    state must never authorize replacement key generation.
 
-Five additional decisions should be made before milestone planning: precisely
-classify the bootstrap log sink as secret persistence and authority, require
-transaction-snapshot authorization for scoped grant revocation, define trusted
-proxy/source derivation, define logout behavior when durable revocation or audit
-fails, and correct the document's premature readiness declaration.
+The product owner accepts the bootstrap-log exposure for the supported
+single-operator deployment: readers of the current line are in the same trust
+domain as infrastructure administrators, and the secret is invalid after
+successful enrollment or restart. Four additional decisions should be made
+before milestone planning: require transaction-snapshot authorization for
+scoped grant revocation, define trusted proxy/source derivation, define logout
+behavior when durable revocation or audit fails, and correct the document's
+premature readiness declaration.
 
 No confirmed vulnerability exists merely because these requirements are
 unimplemented. Implementing the current text literally would, however, either
@@ -87,7 +93,7 @@ individual implementers.
 | PRD-001 | Blocker | Security / API | Bearer-value ban contradicts required OAuth and CSRF delivery | Amend PRD before API review |
 | PRD-002 | Blocker | Architecture / Operations | Current vault dependency graph cannot auto-provision keys | Select and document startup ownership |
 | PRD-003 | Blocker | Security / Data safety | Fresh-versus-retained-state decision is incomplete | Add authoritative state matrix and tests |
-| PRD-004 | Required | Security / Operations | Bootstrap log persistence and authority are understated | Tighten trust and deployment contract |
+| PRD-004 | Accepted risk | Security / Operations | Bootstrap log access delegates initial-enrollment authority | Accepted and documented |
 | PRD-005 | Required | Authorization | Scoped grant revocation lacks transaction-snapshot semantics | Add invariant and race tests |
 | PRD-006 | Required | Security / Operations | Source identity is undefined behind a reverse proxy | Define trusted-proxy contract |
 | PRD-007 | Required | Security / UX | Logout failure behavior is externally observable but unsettled | Make a product decision |
@@ -246,10 +252,10 @@ Process and Compose tests must cover loss of each volume independently, partial
 restore combinations, partial initial provisioning, and container restart at
 every provisioning phase.
 
-### PRD-004: Bootstrap logging is secret persistence and delegated authority
+### PRD-004: Bootstrap logging is accepted delegated authority
 
-- **Category:** explicit high-consequence accepted design risk
-- **Priority:** required before deployment design
+- **Category:** explicit accepted design risk
+- **Priority:** resolved by explicit acceptance and documentation
 - **CVSS v3.1:** not applicable; the PRD intentionally trusts the initial
   operator and no concrete unauthorized log-reader role is defined
 - **Affected requirements:** `ENROLL-001` through `ENROLL-004`, sections 14.1,
@@ -257,12 +263,11 @@ every provisioning phase.
 
 #### Evidence
 
-The PRD calls the bootstrap secret “held only in memory” while also requiring it
-to be printed to container logs (`docs/prd/secretsauce-v2.1-prd.md:227-237`).
-It says the secret must never appear in persistence except for the intentional
-log line (`docs/prd/secretsauce-v2.1-prd.md:522-530`), while correctly warning
-that Docker/platform logs may be retained or forwarded
-(`docs/prd/secretsauce-v2.1-prd.md:820-830`).
+At review time, the PRD called the bootstrap secret “held only in memory” while
+also requiring it to be printed to container logs. It prohibited other
+persistence while correctly warning that Docker/platform logs may be retained
+or forwarded. The PRD now distinguishes application retention from the
+intentional operator-controlled log copy.
 
 #### Risk
 
@@ -272,19 +277,18 @@ current line before enrollment/restart has first-superadmin enrollment authority
 and can win the enrollment race. Historical copies become invalid after
 restart, but retention extends the exposure window of the current copy.
 
-#### Required change
+#### Product-owner decision
 
-State this trust boundary directly:
+The behavior is accepted for the supported single-operator deployment because
+the operator controls both the system and its container logs. A party that can
+read the current line is intentionally treated as an infrastructure
+administrator; loss of that trust boundary is already loss of the deployment's
+security. Successful enrollment or process restart invalidates the secret.
 
-- “Application persistence” excludes the one deliberate log delivery, but the
-  operator log sink is secret-bearing persistence.
-- Read access to the current bootstrap line is equivalent to initial-enrollment
-  authority until successful enrollment or restart.
-- The official Compose configuration must not forward this log to a
-  broader-trust sink by default and must document retention/rotation and access
-  review.
-- Crash-loop output must identify the current process generation safely so an
-  operator can distinguish the one valid secret without replaying old ones.
+The PRD distinguishes application retention from the intentional log copy and
+states this trust assumption. No runtime redesign, special process-generation
+identifier, or additional log-forwarding restriction is required by this
+finding.
 
 Preserve the 128-bit secret, constant-time comparison, process lifetime,
 single successful consumption, rate limits, uniform failures, and atomic
@@ -505,8 +509,9 @@ only happy-path UI behavior.
    configured-state atomicity.
 3. **Change before data-model review:** define the installation identity and
    retained-state matrix across database, vault, key, and audit stores.
-4. **Change before security approval:** make bootstrap-log authority,
-   transaction-snapshot revocation, and trusted-proxy source derivation explicit.
+4. **Change before security approval:** record the accepted bootstrap-log trust
+   assumption, and make transaction-snapshot revocation and trusted-proxy source
+   derivation explicit.
 5. **Change before UX approval:** settle logout failure behavior and wording.
 6. **Change before milestone planning:** mark implementation readiness as
    conditional on all mandatory reviews and blocker closure.
@@ -567,10 +572,10 @@ already explicit. I would approve the PRD as a strong draft ready for focused
 revision, not as an implementation-ready contract.
 
 Resolve PRD-001 through PRD-003 before architecture or data/API approval.
-Resolve PRD-004 through PRD-008 before milestone planning. After those changes,
-the existing setup states, enrollment model, opaque sessions, revocation
-semantics, and single-instance deployment are suitable foundations; they do not
-need broad redesign.
+PRD-004 is accepted and documented. Resolve PRD-005 through PRD-008 before
+milestone planning. After those changes, the existing setup states, enrollment
+model, opaque sessions, revocation semantics, and single-instance deployment
+are suitable foundations; they do not need broad redesign.
 
 ## Assumptions and Limitations
 

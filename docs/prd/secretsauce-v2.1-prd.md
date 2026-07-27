@@ -104,8 +104,9 @@ compatibility guarantee.
 6. **Recovery assumes compromise.** Administrative password reset, suspended
    account recovery, and host-local break glass reset both password and TOTP.
 7. **Logs are not ordinary secret storage.** The initial bootstrap secret is a
-   narrow, explicitly documented exception and is never copied to other logs,
-   audits, APIs, or persistence.
+   narrow, explicitly accepted bearer-secret delivery through the
+   operator-controlled container log sink. It is never copied to other logs,
+   audits, APIs, or application persistence.
 8. **Health describes the right concern.** A live service waiting for setup or
    enrollment is not unhealthy, even though it is not operationally ready.
 
@@ -167,7 +168,7 @@ Version 2.1 does not provide:
 | Actor | Trust and authority |
 | --- | --- |
 | Unauthenticated browser visitor | May read liveness, readiness, sanitized setup status, login, and unified enrollment surfaces only when their state permits. |
-| Initial operator | Has container-log access and may possess the current in-memory bootstrap secret. This grants only initial enrollment authority. |
+| Initial operator | Has infrastructure-administrator authority and access to the operator-controlled container logs. Reading the current bootstrap-secret line grants initial enrollment authority until successful enrollment or process restart. |
 | User | May manage their profile, local authenticators, browser sessions, and OAuth agent connections. |
 | Admin | Retains existing service-scoped user authority and gains only the scoped agent-connection authority defined here. |
 | Superadmin | May manage global security settings and all browser sessions and OAuth agent connections, subject to step-up and audit. |
@@ -238,7 +239,8 @@ The bootstrap secret is:
 - Encoded for reliable manual copying.
 - Generated after key provisioning completes when zero users exist.
 - Valid only for the lifetime of the current process.
-- Held only in memory.
+- Retained by the application only in process memory and intentionally copied
+  once to the operator-controlled container log sink.
 - Printed once per process start.
 - Consumed only by a successful initial-superadmin commit.
 
@@ -586,12 +588,14 @@ limited without rolling back enrollment.
 - `ENROLL-001` After key setup, when zero users exist, each process start must
   generate a new bootstrap secret and print it once to container logs.
 - `ENROLL-002` The bootstrap secret must have at least 128 bits of
-  cryptographically secure randomness, exist only in memory, use constant-time
-  comparison, and remain valid only until process exit or successful initial
-  enrollment.
-- `ENROLL-003` The bootstrap secret must never appear in persistence, browser/API
-  responses, audits, telemetry, or any log other than its one intentional
-  startup display.
+  cryptographically secure randomness, be retained by the application only in
+  process memory, use constant-time comparison, and remain valid only until
+  process exit or successful initial enrollment.
+- `ENROLL-003` The bootstrap secret must never appear in application
+  persistence, browser/API responses, audits, telemetry, or any log other than
+  its one intentional startup display in the operator-controlled container log
+  sink. Access to the current line is trusted as infrastructure-administrator
+  access in the supported deployment.
 - `ENROLL-004` After process restart with zero users, the previous bootstrap
   secret must be invalid and a new secret must be displayed.
 - `ENROLL-005` Login must expose one neutral **Enroll account** link for initial
@@ -784,8 +788,9 @@ limited without rolling back enrollment.
 
 ### 14.1 Bootstrap and enrollment data
 
-- The raw bootstrap secret exists only in process memory and its one intentional
-  startup log line.
+- The application retains the raw bootstrap secret only in process memory. Its
+  one intentional startup line may persist in the operator-controlled container
+  log sink until that sink's retention policy removes it.
 - Provisional password and TOTP material must be held only as long as required
   for the restricted ceremony and erased where the runtime permits after commit,
   failure, expiry, or restart.
@@ -899,7 +904,10 @@ The one bootstrap-secret line must:
 - Never be repeated by periodic status logging.
 
 Documentation must warn that Docker and platform logs may be retained or
-forwarded and must be access-controlled.
+forwarded and must be access-controlled. The supported deployment treats
+readers of the current bootstrap-secret line as infrastructure administrators;
+that line grants initial enrollment authority until successful enrollment or
+process restart.
 
 ### 16.4 OIDC boundary
 
@@ -1278,8 +1286,11 @@ These questions concern mechanisms and must not change the product contract:
 - There is no configured-manifest clearing or cryptographic-reset capability.
 - The official Compose deployment uses durable volumes, but the container does
   not claim it can prove arbitrary mount durability.
-- The process-lifetime bootstrap secret is printed once, kept only in memory,
-  replaced on restart, and erased after successful enrollment.
+- The process-lifetime bootstrap secret is retained by the application only in
+  memory and intentionally copied once to the operator-controlled container log
+  sink. Readers of the current line are trusted as infrastructure
+  administrators. The secret is invalidated on restart or successful enrollment
+  and erased from application memory after successful enrollment.
 - Initial superadmin creation is atomic; provisional state is not a user.
 - Initial and ordinary enrollment share one neutral link and one password/TOTP
   ceremony.

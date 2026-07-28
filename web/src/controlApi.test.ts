@@ -420,6 +420,98 @@ describe("service browser API", () => {
     expect(String(requests[3]!.init.body)).not.toContain("current-password");
     expect(String(requests[3]!.init.body)).not.toContain("123456");
   });
+
+  it("binds administrative access revocation to exact targets without forwarding credentials", async () => {
+    const requests: Array<{ url: string; init: RequestInit }> = [];
+    const responses = [
+      envelope({
+        user_id: SERVICE.id,
+        role: "superadmin",
+        csrf_token: "x".repeat(43),
+        expires_at: 10,
+      }),
+      envelope({ mode: "always", expires_at: 10, proof: "p".repeat(43) }),
+      envelope({
+        target_id: SERVICE.id,
+        revoked: true,
+        sessions_revoked: 1,
+        grants_revoked: 0,
+        replayed: false,
+      }),
+      envelope({
+        user_id: SERVICE.id,
+        role: "superadmin",
+        csrf_token: "x".repeat(43),
+        expires_at: 10,
+      }),
+      envelope({ mode: "always", expires_at: 10, proof: "p".repeat(43) }),
+      envelope({
+        target_id: SERVICE.id,
+        revoked: true,
+        sessions_revoked: 0,
+        grants_revoked: 2,
+        replayed: false,
+      }),
+    ];
+    vi.stubGlobal("fetch", vi.fn(async (url: string, init: RequestInit) => {
+      requests.push({ url, init });
+      return responses.shift()!;
+    }));
+    vi.spyOn(crypto, "randomUUID").mockReturnValue(
+      "018f1f2e-7b3c-7a10-8000-000000000099",
+    );
+
+    await browserControlApi.revokeSession(SERVICE.id, true, {
+      password: "current-password",
+      totp: "123456",
+    });
+    expect(JSON.parse(String(requests[1]!.init.body))).toEqual({
+      password: "current-password",
+      totp: "123456",
+      operation: {
+        method: "DELETE",
+        route_id: "access.security_sessions.revoke",
+        target_ids: [SERVICE.id],
+        body: null,
+      },
+    });
+    expect(requests[2]).toMatchObject({
+      url: `/api/v2/security/sessions/${SERVICE.id}`,
+      init: {
+        method: "DELETE",
+        headers: { "x-step-up-proof": "p".repeat(43) },
+      },
+    });
+    expect(String(requests[2]!.init.body)).not.toContain("current-password");
+
+    const body = {
+      target: { kind: "user" as const, id: SERVICE.id },
+      confirmation: `REVOKE USER ${SERVICE.id}`,
+      justification: "End the exact visible user connection scope.",
+    };
+    await browserControlApi.revokeAdministrativeOAuthGrants({
+      ...body,
+      password: "bulk-password",
+      totp: "654321",
+    });
+    expect(JSON.parse(String(requests[4]!.init.body))).toEqual({
+      password: "bulk-password",
+      totp: "654321",
+      operation: {
+        method: "POST",
+        route_id: "access.security_grants.revoke",
+        target_ids: [SERVICE.id],
+        idempotency_key: "018f1f2e-7b3c-7a10-8000-000000000099",
+        body,
+      },
+    });
+    expect(requests[5]!.init.headers).toMatchObject({
+      "x-step-up-proof": "p".repeat(43),
+      "idempotency-key": "018f1f2e-7b3c-7a10-8000-000000000099",
+    });
+    expect(String(requests[5]!.init.body)).not.toContain("bulk-password");
+    expect(String(requests[5]!.init.body)).not.toContain("654321");
+  });
 });
 
 const SERVICE: ControlServiceDetail = {

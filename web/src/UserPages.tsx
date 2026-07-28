@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import {
   browserControlApi,
   ControlApiError,
+  type AccessControlApi,
   type ControlApi,
   type ControlUser,
   type GroupControlApi,
@@ -16,6 +17,7 @@ import {
   type UserRole,
   type UserStatus,
 } from "./controlApi";
+import { UserAccessPanel } from "./AccessPages";
 
 export function UsersPage({
   role,
@@ -308,6 +310,14 @@ function UserDetail({
           onVersion={(version) => onChange({ ...user, version })}
         />
       )}
+      {actorRole !== "user" && isAccessControlApi(api) && (
+        <UserAccessPanel
+          actorRole={actorRole}
+          userId={user.id}
+          userLabel={displayName(user)}
+          api={api}
+        />
+      )}
       {error !== "" && <p className="form-error" role="alert">{error}</p>}
       {action !== undefined && (
         <ConfirmationPanel
@@ -332,6 +342,14 @@ function UserDetail({
       )}
     </article>
   );
+}
+
+function isAccessControlApi(api: ControlApi): api is ControlApi & AccessControlApi {
+  const candidate = api as Partial<AccessControlApi>;
+  return typeof candidate.listSessions === "function"
+    && typeof candidate.listOAuthGrants === "function"
+    && typeof candidate.revokeAdministrativeSessions === "function"
+    && typeof candidate.revokeAdministrativeOAuthGrants === "function";
 }
 
 export function OidcLinksPanel({

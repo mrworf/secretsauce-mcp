@@ -4,7 +4,7 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router-dom";
-import { AccessPage } from "./AccessPages";
+import { AccessPage, UserAccessPanel } from "./AccessPages";
 import type { AccessControlApi } from "./controlApi";
 
 const USER = "018f1f2e-7b3c-7a10-8000-000000000501";
@@ -65,6 +65,48 @@ describe("access and sessions workspace", () => {
       "3 dynamic references invalidated; no OAuth grants were revoked.",
     )).toBeInTheDocument();
   });
+
+  it("requires visible operation-bound credentials for global administration", async () => {
+    const user = userEvent.setup();
+    const api = fakeApi();
+    render(
+      <MemoryRouter><AccessPage role="superadmin" api={api} /></MemoryRouter>,
+    );
+
+    expect(await screen.findByRole("heading", { name: "Global web sessions" }))
+      .toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Administrative confirmation" }))
+      .toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Revoke all web sessions globally" }))
+      .toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Revoke connection" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Enter your password and six-digit TOTP",
+    );
+  });
+
+  it("uses user-filtered administrative views and hides browser sessions from regular admins", async () => {
+    const api = fakeApi();
+    const listSessions = vi.spyOn(api, "listSessions");
+    const listGrants = vi.spyOn(api, "listOAuthGrants");
+    render(
+      <MemoryRouter>
+        <UserAccessPanel
+          actorRole="admin"
+          userId={USER}
+          userLabel="Example User"
+          api={api}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByRole("heading", { name: "User agent connections" }))
+      .toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "User web sessions" }))
+      .not.toBeInTheDocument();
+    expect(listSessions).not.toHaveBeenCalled();
+    expect(listGrants).toHaveBeenCalledWith(true, USER);
+  });
 });
 
 function fakeApi(): AccessControlApi & {
@@ -118,6 +160,16 @@ function fakeApi(): AccessControlApi & {
       sessions_revoked: 1,
     }),
     revokeAllOwnOAuthGrants: async () => ({
+      target_id: USER,
+      revoked: true,
+      grants_revoked: 1,
+    }),
+    revokeAdministrativeSessions: async () => ({
+      target_id: USER,
+      revoked: true,
+      sessions_revoked: 1,
+    }),
+    revokeAdministrativeOAuthGrants: async () => ({
       target_id: USER,
       revoked: true,
       grants_revoked: 1,

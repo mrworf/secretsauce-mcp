@@ -22,7 +22,7 @@ export const CONTROL_NAVIGATION: readonly NavigationItem[] = [
   { label: "Policies", path: "/policies", description: "Authorization policy workspace", capability: "manage_credentials_policies", group: "Workspace" },
   { label: "Users", path: "/users", description: "Permitted user administration", capability: "view_ordinary_users", group: "Workspace" },
   { label: "Service groups", path: "/groups", description: "Service-scoped groups", capability: "manage_service_groups", group: "Workspace" },
-  { label: "Access and sessions", path: "/access", description: "Sessions and grants", capability: "view_own_grants", group: "Operations" },
+  { label: "Sessions and connections", path: "/access", description: "Web sessions and agent connections", capability: "view_own_grants", group: "Operations" },
   { label: "API keys", path: "/api-keys", description: "System-owned API key metadata", capability: "manage_api_keys", group: "Operations" },
   { label: "Activity", path: "/activity", description: "Operational activity", capability: "view_activity_dashboard", group: "Operations" },
   { label: "Status", path: "/status", description: "Service and component health", capability: "view_status_dashboard", group: "Operations" },

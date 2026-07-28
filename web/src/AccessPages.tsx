@@ -24,6 +24,8 @@ export function AccessPage({
   const [services, setServices] = useState<Array<{ id: string; name: string }>>([]);
   const [serviceId, setServiceId] = useState("");
   const [justification, setJustification] = useState("");
+  const [accessPassword, setAccessPassword] = useState("");
+  const [accessTotp, setAccessTotp] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -67,22 +69,102 @@ export function AccessPage({
 
   async function revokeSession(session: AccessSession) {
     setError("");
-    const result = await api.revokeSession(session.id, global);
+    if (global && (accessPassword === "" || !/^\d{6}$/.test(accessTotp))) {
+      setError("Enter your password and six-digit TOTP before administrative revocation.");
+      return;
+    }
+    const result = global
+      ? await api.revokeSession(
+          session.id,
+          true,
+          { password: accessPassword, totp: accessTotp },
+        )
+      : await api.revokeSession(session.id);
     setSessions((current) => current.map((entry) =>
       entry.id === session.id && result.revoked
         ? { ...entry, status: "revoked" }
         : entry));
     setMessage(result.revoked ? "Session revoked." : "Session was already inactive.");
+    if (global && session.current && result.revoked) {
+      window.location.assign("/control/login");
+    }
   }
 
   async function revokeGrant(grant: OAuthGrantAccess) {
     setError("");
-    const result = await api.revokeOAuthGrant(grant.id);
+    if (global && (accessPassword === "" || !/^\d{6}$/.test(accessTotp))) {
+      setError("Enter your password and six-digit TOTP before administrative revocation.");
+      return;
+    }
+    const result = global
+      ? await api.revokeOAuthGrant(
+          grant.id,
+          true,
+          { password: accessPassword, totp: accessTotp },
+        )
+      : await api.revokeOAuthGrant(grant.id);
     setGrants((current) => current.map((entry) =>
       entry.id === grant.id && result.revoked
         ? { ...entry, oauth_grant_status: "revoked", usable: false }
         : entry));
     setMessage(result.revoked ? "OAuth connection revoked." : "Connection was already inactive.");
+  }
+
+  async function revokeAllAdministrativeSessions() {
+    if (
+      justification.trim() === ""
+      || accessPassword === ""
+      || !/^\d{6}$/.test(accessTotp)
+    ) {
+      setError("Enter justification, password, and a six-digit TOTP.");
+      return;
+    }
+    if (!window.confirm(
+      "Revoke every web session globally, including this current session?",
+    )) return;
+    setError("");
+    try {
+      await api.revokeAdministrativeSessions({
+        target: { kind: "all" },
+        confirmation: "REVOKE ALL WEB SESSIONS",
+        justification: justification.trim(),
+        password: accessPassword,
+        totp: accessTotp,
+      });
+      window.location.assign("/control/login");
+    } catch (caught) {
+      setError(messageFor(caught));
+    }
+  }
+
+  async function revokeAllAdministrativeGrants() {
+    if (
+      justification.trim() === ""
+      || accessPassword === ""
+      || !/^\d{6}$/.test(accessTotp)
+    ) {
+      setError("Enter justification, password, and a six-digit TOTP.");
+      return;
+    }
+    if (!window.confirm("Revoke every agent connection globally?")) return;
+    setError("");
+    try {
+      const result = await api.revokeAdministrativeOAuthGrants({
+        target: { kind: "all" },
+        confirmation: "REVOKE ALL OAUTH GRANTS",
+        justification: justification.trim(),
+        password: accessPassword,
+        totp: accessTotp,
+      });
+      setGrants((current) => current.map((entry) => ({
+        ...entry,
+        oauth_grant_status: "revoked",
+        usable: false,
+      })));
+      setMessage(`${result.grants_revoked} agent connections revoked globally.`);
+    } catch (caught) {
+      setError(messageFor(caught));
+    }
   }
 
   async function revokeAllSessions() {
@@ -161,6 +243,44 @@ export function AccessPage({
 
       {error !== "" && <p className="form-error" role="alert">{error}</p>}
       {message !== "" && <p className="success-copy" role="status">{message}</p>}
+      {global && (
+        <section className="content-panel" aria-labelledby="access-step-up-heading">
+          <h2 id="access-step-up-heading">Administrative confirmation</h2>
+          <p className="muted-copy">
+            Administrative revocation requires a fresh operation-bound security check.
+          </p>
+          <div className="profile-form">
+            <label>
+              Justification
+              <input
+                value={justification}
+                maxLength={1024}
+                onChange={(event) => setJustification(event.target.value)}
+              />
+            </label>
+            <label>
+              Password
+              <input
+                type="password"
+                autoComplete="current-password"
+                value={accessPassword}
+                onChange={(event) => setAccessPassword(event.target.value)}
+              />
+            </label>
+            <label>
+              TOTP
+              <input
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                pattern="[0-9]{6}"
+                maxLength={6}
+                value={accessTotp}
+                onChange={(event) => setAccessTotp(event.target.value)}
+              />
+            </label>
+          </div>
+        </section>
+      )}
       {loading
         ? <section className="content-panel"><p role="status">Loading access metadata…</p></section>
         : (
@@ -173,7 +293,12 @@ export function AccessPage({
                     label: "Revoke all my web sessions",
                     run: () => void revokeAllSessions(),
                   }
-                : undefined}
+                : global && sessions.some(({ status }) => status === "active")
+                  ? {
+                      label: "Revoke all web sessions globally",
+                      run: () => void revokeAllAdministrativeSessions(),
+                    }
+                  : undefined}
               rows={sessions.map((session) => ({
                 id: session.id,
                 heading: session.current
@@ -208,7 +333,13 @@ export function AccessPage({
                     label: "Revoke all my agent connections",
                     run: () => void revokeAllGrants(),
                   }
-                : undefined}
+                : global && grants.some(({ oauth_grant_status }) =>
+                  oauth_grant_status === "active")
+                  ? {
+                      label: "Revoke all agent connections globally",
+                      run: () => void revokeAllAdministrativeGrants(),
+                    }
+                  : undefined}
               rows={grants.map((grant) => ({
                 id: grant.id,
                 heading: grant.client_name,
@@ -222,7 +353,7 @@ export function AccessPage({
                   `Last used: ${date(grant.last_used_at)}`,
                   `Expires: ${date(grant.expires_at)}`,
                 ],
-                action: !global && grant.oauth_grant_status === "active"
+                action: grant.oauth_grant_status === "active"
                   ? {
                       label: "Revoke connection",
                       run: () => void revokeGrant(grant).catch((caught) =>
@@ -292,6 +423,230 @@ export function AccessPage({
         </section>
       )}
     </div>
+  );
+}
+
+export function UserAccessPanel({
+  actorRole,
+  userId,
+  userLabel,
+  api = browserControlApi,
+}: {
+  actorRole: "admin" | "superadmin";
+  userId: string;
+  userLabel: string;
+  api?: AccessControlApi;
+}) {
+  const [sessions, setSessions] = useState<AccessSession[]>([]);
+  const [grants, setGrants] = useState<OAuthGrantAccess[]>([]);
+  const [justification, setJustification] = useState("");
+  const [password, setPassword] = useState("");
+  const [totp, setTotp] = useState("");
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    setError("");
+    Promise.all([
+      actorRole === "superadmin"
+        ? api.listSessions(true, userId)
+        : Promise.resolve({ items: [] as AccessSession[] }),
+      api.listOAuthGrants(true, userId),
+    ]).then(([sessionPage, grantPage]) => {
+      setSessions(sessionPage.items);
+      setGrants(grantPage.items);
+    }).catch((caught) => setError(messageFor(caught)));
+  }, [actorRole, api, userId]);
+
+  function credentials(): { password: string; totp: string } | undefined {
+    if (password === "" || !/^\d{6}$/.test(totp)) {
+      setError("Enter your password and six-digit TOTP.");
+      return undefined;
+    }
+    return { password, totp };
+  }
+
+  async function revokeSession(session: AccessSession) {
+    const proof = credentials();
+    if (proof === undefined) return;
+    setError("");
+    try {
+      const result = await api.revokeSession(session.id, true, proof);
+      setSessions((current) => current.map((entry) =>
+        entry.id === session.id && result.revoked
+          ? { ...entry, status: "revoked" }
+          : entry));
+      setMessage(result.revoked ? "Web session revoked." : "Session was already inactive.");
+      if (session.current && result.revoked) window.location.assign("/control/login");
+    } catch (caught) {
+      setError(messageFor(caught));
+    }
+  }
+
+  async function revokeGrant(grant: OAuthGrantAccess) {
+    const proof = credentials();
+    if (proof === undefined) return;
+    setError("");
+    try {
+      const result = await api.revokeOAuthGrant(grant.id, true, proof);
+      setGrants((current) => current.map((entry) =>
+        entry.id === grant.id && result.revoked
+          ? { ...entry, oauth_grant_status: "revoked", usable: false }
+          : entry));
+      setMessage(result.revoked
+        ? "Agent connection revoked."
+        : "Connection was already inactive.");
+    } catch (caught) {
+      setError(messageFor(caught));
+    }
+  }
+
+  async function revokeUserSessions() {
+    const proof = credentials();
+    if (proof === undefined || justification.trim() === "") {
+      if (justification.trim() === "") setError("Enter a justification.");
+      return;
+    }
+    if (!window.confirm(`Revoke every web session for ${userLabel}?`)) return;
+    try {
+      const result = await api.revokeAdministrativeSessions({
+        target: { kind: "user", id: userId },
+        confirmation: `REVOKE USER SESSIONS ${userId}`,
+        justification: justification.trim(),
+        ...proof,
+      });
+      setSessions((current) => current.map((entry) => ({
+        ...entry,
+        status: entry.status === "active" ? "revoked" : entry.status,
+      })));
+      setMessage(`${result.sessions_revoked} web sessions revoked.`);
+      if (sessions.some(({ current }) => current) && result.revoked) {
+        window.location.assign("/control/login");
+      }
+    } catch (caught) {
+      setError(messageFor(caught));
+    }
+  }
+
+  async function revokeUserGrants() {
+    const proof = credentials();
+    if (proof === undefined || justification.trim() === "") {
+      if (justification.trim() === "") setError("Enter a justification.");
+      return;
+    }
+    if (!window.confirm(`Revoke every visible agent connection for ${userLabel}?`)) return;
+    try {
+      const result = await api.revokeAdministrativeOAuthGrants({
+        target: { kind: "user", id: userId },
+        confirmation: `REVOKE USER ${userId}`,
+        justification: justification.trim(),
+        ...proof,
+      });
+      setGrants((current) => current.map((entry) => ({
+        ...entry,
+        oauth_grant_status: "revoked",
+        usable: false,
+      })));
+      setMessage(`${result.grants_revoked} agent connections revoked.`);
+    } catch (caught) {
+      setError(messageFor(caught));
+    }
+  }
+
+  return (
+    <section className="content-panel" aria-labelledby={`user-access-${userId}`}>
+      <p className="card-kicker">Authorized access metadata</p>
+      <h3 id={`user-access-${userId}`}>Sessions and connections for {userLabel}</h3>
+      <p className="muted-copy">
+        Administrative actions are reauthorized when submitted. Device and source
+        labels are informational.
+      </p>
+      <div className="profile-form">
+        <label>
+          Access justification
+          <input
+            maxLength={1024}
+            value={justification}
+            onChange={(event) => setJustification(event.target.value)}
+          />
+        </label>
+        <label>
+          Access password
+          <input
+            type="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+          />
+        </label>
+        <label>
+          Access TOTP
+          <input
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            pattern="[0-9]{6}"
+            maxLength={6}
+            value={totp}
+            onChange={(event) => setTotp(event.target.value)}
+          />
+        </label>
+      </div>
+      {error !== "" && <p className="form-error" role="alert">{error}</p>}
+      {message !== "" && <p className="success-copy" role="status">{message}</p>}
+      {actorRole === "superadmin" && (
+        <AccessList
+          title="User web sessions"
+          empty="No browser sessions are visible."
+          footer={sessions.some(({ status }) => status === "active")
+            ? {
+                label: "Revoke all user web sessions",
+                run: () => void revokeUserSessions(),
+              }
+            : undefined}
+          rows={sessions.map((session) => ({
+            id: session.id,
+            heading: session.current ? "Current session" : "Web session",
+            facts: [
+              `Status: ${label(session.status)}`,
+              `Device: ${session.device_family ?? "Unknown"}`,
+              `Source network: ${session.coarse_source ?? "Unknown"}`,
+            ],
+            action: session.status === "active"
+              ? {
+                  label: "Revoke user session",
+                  run: () => void revokeSession(session),
+                }
+              : undefined,
+          }))}
+        />
+      )}
+      <AccessList
+        title="User agent connections"
+        empty="No authorized agent connections are visible."
+        footer={grants.some(({ oauth_grant_status }) =>
+          oauth_grant_status === "active")
+          ? {
+              label: "Revoke all visible user connections",
+              run: () => void revokeUserGrants(),
+            }
+          : undefined}
+        rows={grants.map((grant) => ({
+          id: grant.id,
+          heading: grant.client_name,
+          facts: [
+            `Status: ${label(grant.oauth_grant_status)}`,
+            `Services: ${grant.services.join(", ") || "None"}`,
+            `Scopes: ${grant.scopes.join(", ") || "None"}`,
+          ],
+          action: grant.oauth_grant_status === "active"
+            ? {
+                label: "Revoke user connection",
+                run: () => void revokeGrant(grant),
+              }
+            : undefined,
+        }))}
+      />
+    </section>
   );
 }
 

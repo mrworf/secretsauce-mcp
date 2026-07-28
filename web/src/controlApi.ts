@@ -861,13 +861,27 @@ export interface ServiceGrantAccess {
 
 export interface AccessControlApi
   extends Pick<ServiceControlApi, "listServices"> {
-  listSessions(global?: boolean): Promise<{ items: AccessSession[]; next_cursor?: string }>;
-  listOAuthGrants(global?: boolean): Promise<{ items: OAuthGrantAccess[]; next_cursor?: string }>;
-  revokeSession(sessionId: string, global?: boolean): Promise<{
+  listSessions(
+    global?: boolean,
+    userId?: string,
+  ): Promise<{ items: AccessSession[]; next_cursor?: string }>;
+  listOAuthGrants(
+    global?: boolean,
+    userId?: string,
+  ): Promise<{ items: OAuthGrantAccess[]; next_cursor?: string }>;
+  revokeSession(
+    sessionId: string,
+    global?: boolean,
+    credentials?: { password: string; totp: string },
+  ): Promise<{
     target_id: string;
     revoked: boolean;
   }>;
-  revokeOAuthGrant(grantId: string): Promise<{
+  revokeOAuthGrant(
+    grantId: string,
+    global?: boolean,
+    credentials?: { password: string; totp: string },
+  ): Promise<{
     target_id: string;
     revoked: boolean;
   }>;
@@ -877,6 +891,31 @@ export interface AccessControlApi
     sessions_revoked: number;
   }>;
   revokeAllOwnOAuthGrants(): Promise<{
+    target_id: string;
+    revoked: boolean;
+    grants_revoked: number;
+  }>;
+  revokeAdministrativeSessions(input: {
+    target: { kind: "user"; id: string } | { kind: "all" };
+    confirmation: string;
+    justification: string;
+    password: string;
+    totp: string;
+  }): Promise<{
+    target_id: string;
+    revoked: boolean;
+    sessions_revoked: number;
+  }>;
+  revokeAdministrativeOAuthGrants(input: {
+    target:
+      | { kind: "user"; id: string }
+      | { kind: "client"; id: string }
+      | { kind: "all" };
+    confirmation: string;
+    justification: string;
+    password: string;
+    totp: string;
+  }): Promise<{
     target_id: string;
     revoked: boolean;
     grants_revoked: number;
@@ -1720,24 +1759,42 @@ export const browserControlApi:
   serviceAccess: (serviceId) =>
     get(`/api/v2/services/${encodeURIComponent(serviceId)}/assignments/access`),
   ownServices: () => get("/api/v2/users/me/services"),
-  listSessions: (global = false) =>
-    get(global ? "/api/v2/security/sessions" : "/api/v2/access/sessions"),
-  listOAuthGrants: (global = false) =>
-    get(global ? "/api/v2/security/oauth-grants" : "/api/v2/access/grants"),
-  revokeSession: (sessionId, global = false) =>
-    mutation(
-      global
-        ? `/api/v2/security/sessions/${encodeURIComponent(sessionId)}`
-        : `/api/v2/access/sessions/${encodeURIComponent(sessionId)}`,
-      "DELETE",
-      undefined,
-    ),
-  revokeOAuthGrant: (grantId) =>
-    mutation(
-      `/api/v2/access/grants/${encodeURIComponent(grantId)}`,
-      "DELETE",
-      undefined,
-    ),
+  listSessions: (global = false, userId) => {
+    const query = userId === undefined
+      ? ""
+      : `?user_id=${encodeURIComponent(userId)}`;
+    return get(`${global ? "/api/v2/security/sessions" : "/api/v2/access/sessions"}${query}`);
+  },
+  listOAuthGrants: (global = false, userId) => {
+    const query = userId === undefined
+      ? ""
+      : `?user_id=${encodeURIComponent(userId)}`;
+    return get(`${global ? "/api/v2/security/oauth-grants" : "/api/v2/access/grants"}${query}`);
+  },
+  revokeSession: (sessionId, global = false, credentials) =>
+    global
+      ? revokeAdministrativeRecord(
+          "session",
+          sessionId,
+          credentials,
+        )
+      : mutation(
+          `/api/v2/access/sessions/${encodeURIComponent(sessionId)}`,
+          "DELETE",
+          undefined,
+        ),
+  revokeOAuthGrant: (grantId, global = false, credentials) =>
+    global
+      ? revokeAdministrativeRecord(
+          "grant",
+          grantId,
+          credentials,
+        )
+      : mutation(
+          `/api/v2/access/grants/${encodeURIComponent(grantId)}`,
+          "DELETE",
+          undefined,
+        ),
   revokeAllOwnSessions: () =>
     mutation(
       "/api/v2/access/sessions/revoke",
@@ -1754,6 +1811,10 @@ export const browserControlApi:
       undefined,
       true,
     ),
+  revokeAdministrativeSessions: (input) =>
+    revokeAdministrativeBulk("session", input),
+  revokeAdministrativeOAuthGrants: (input) =>
+    revokeAdministrativeBulk("grant", input),
   serviceGrantAccess: (serviceId) =>
     get(`/api/v2/services/${encodeURIComponent(serviceId)}/access`),
   invalidateCapabilities: (serviceId, target, justification) =>
@@ -2348,6 +2409,113 @@ async function performStepUp(
       totp,
       ...(operation === undefined ? {} : { operation }),
     }),
+  });
+}
+
+async function revokeAdministrativeRecord(
+  kind: "session" | "grant",
+  id: string,
+  credentials: { password: string; totp: string } | undefined,
+): Promise<{
+  target_id: string;
+  revoked: boolean;
+}> {
+  if (credentials === undefined) {
+    throw new ControlApiError(
+      "step_up_required",
+      "Password and TOTP are required for administrative revocation.",
+    );
+  }
+  const routeId = kind === "session"
+    ? "access.security_sessions.revoke"
+    : "access.security_grants.revoke_one";
+  const path = kind === "session"
+    ? `/api/v2/security/sessions/${encodeURIComponent(id)}`
+    : `/api/v2/security/oauth-grants/${encodeURIComponent(id)}`;
+  const session = await browserControlApi.session();
+  const proof = await performStepUp(
+    session,
+    credentials.password,
+    credentials.totp,
+    {
+      method: "DELETE",
+      route_id: routeId,
+      target_ids: [id],
+      body: null,
+    },
+  );
+  if (proof.proof === undefined) {
+    throw new ControlApiError(
+      "step_up_required",
+      "An exact administrative revocation proof is required.",
+    );
+  }
+  return request(path, {
+    method: "DELETE",
+    headers: {
+      "content-type": "application/json",
+      "x-csrf-token": session.csrf_token,
+      "x-step-up-proof": proof.proof,
+    },
+  });
+}
+
+async function revokeAdministrativeBulk(
+  kind: "session" | "grant",
+  input: {
+    target:
+      | { kind: "user"; id: string }
+      | { kind: "client"; id: string }
+      | { kind: "all" };
+    confirmation: string;
+    justification: string;
+    password: string;
+    totp: string;
+  },
+): Promise<{
+  target_id: string;
+  revoked: boolean;
+  sessions_revoked: number;
+  grants_revoked: number;
+}> {
+  if (kind === "session" && input.target.kind === "client") {
+    throw new ControlApiError("invalid_request", "The revocation scope is invalid.");
+  }
+  const body = {
+    target: input.target,
+    confirmation: input.confirmation,
+    justification: input.justification,
+  };
+  const idempotencyKey = crypto.randomUUID();
+  const routeId = kind === "session"
+    ? "access.security_sessions.revoke_bulk"
+    : "access.security_grants.revoke";
+  const path = kind === "session"
+    ? "/api/v2/security/sessions/revoke"
+    : "/api/v2/security/oauth-grants/revoke";
+  const session = await browserControlApi.session();
+  const proof = await performStepUp(session, input.password, input.totp, {
+    method: "POST",
+    route_id: routeId,
+    target_ids: input.target.kind === "all" ? [] : [input.target.id],
+    idempotency_key: idempotencyKey,
+    body,
+  });
+  if (proof.proof === undefined) {
+    throw new ControlApiError(
+      "step_up_required",
+      "An exact bulk revocation proof is required.",
+    );
+  }
+  return request(path, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-csrf-token": session.csrf_token,
+      "x-step-up-proof": proof.proof,
+      "idempotency-key": idempotencyKey,
+    },
+    body: JSON.stringify(body),
   });
 }
 

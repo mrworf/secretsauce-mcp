@@ -107,7 +107,7 @@ describe("identity contracts", () => {
       ["enrollment_required", "active"],
       ["active", "suspended"],
       ["active", "deactivated"],
-      ["suspended", "active"],
+      ["suspended", "enrollment_required"],
       ["suspended", "deactivated"],
       ["deactivated", "enrollment_required"],
     ] as const;

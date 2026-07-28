@@ -286,7 +286,7 @@ describe("restricted initial local enrollment", () => {
     seed.fill(0);
   });
 
-  it("completes a reset-required password change while preserving the current TOTP", async () => {
+  it("requires complete password and TOTP enrollment after an administrative reset", async () => {
     const fixture = await enrollmentFixture("password-change");
     const active = await activateInitial(fixture, "Original-Password-2026");
     fixture.clock.value += 30_000;
@@ -308,20 +308,15 @@ describe("restricted initial local enrollment", () => {
       reset.temporaryPassword,
       "password-change",
     ));
-    expect(login.purpose).toBe("password_change");
+    expect(login.purpose).toBe("initial_enrollment");
     const restricted = await bindRestricted(fixture, login.sessionToken);
     const replacement = "Replacement-Password-2026";
-    await expect(fixture.service.confirmPasswordChange(restricted, {
+    const begun = await fixture.service.beginInitial(restricted, replacement);
+    const replacementSeed = parseTotpEnrollmentUri(begun.uri).seed;
+    await fixture.service.confirmInitial(restricted, {
       newPassword: replacement,
-      totp: "000000",
+      totp: totpCode(replacementSeed, fixture.clock.value),
       correlationId: CORRELATION,
-      source: "wrong-code",
-    })).rejects.toEqual(new EnrollmentError("authentication_failed"));
-    await fixture.service.confirmPasswordChange(restricted, {
-      newPassword: replacement,
-      totp: totpCode(active.seed, fixture.clock.value),
-      correlationId: CORRELATION,
-      source: "correct-code",
     });
 
     fixture.clock.value += 30_000;
@@ -330,6 +325,13 @@ describe("restricted initial local enrollment", () => {
       email: fixture.email,
       password: replacement,
       totp: totpCode(active.seed, fixture.clock.value),
+      source: "old-totp",
+      correlationId: CORRELATION,
+    })).rejects.toEqual(expect.objectContaining({ code: "authentication_failed" }));
+    await expect(authentication.login({
+      email: fixture.email,
+      password: replacement,
+      totp: totpCode(replacementSeed, fixture.clock.value),
       source: "new-password",
       correlationId: CORRELATION,
     })).resolves.toMatchObject({ userId: fixture.userId });
@@ -338,8 +340,9 @@ describe("restricted initial local enrollment", () => {
       status: "active",
       password_state: "configured",
       totp_state: "configured",
-      invalidation_reason: "password_change",
+      invalidation_reason: "enrollment",
     });
+    replacementSeed.fill(0);
     active.seed.fill(0);
   });
 

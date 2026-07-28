@@ -72,7 +72,7 @@ describe("guarded user lifecycle administration", () => {
     )).rejects.toEqual(new UserLifecycleAdministrationError("idempotency_conflict"));
   });
 
-  it("resets password and TOTP with stale, replay, and material-preservation guards", async () => {
+  it("resets both factors to enrollment with stale and replay guards", async () => {
     const fixture = await lifecycleFixture("reset");
     const target = await fixture.create("reset-target@example.org", "user", "active");
     const password = await fixture.service.resetPassword(
@@ -87,6 +87,7 @@ describe("guarded user lifecycle administration", () => {
       oneTimeValueDisplayed: true,
       user: {
         id: target.id,
+        status: "enrollment_required",
         passwordState: "temporary",
         totpState: "not_configured",
         version: target.version + 1,
@@ -114,20 +115,14 @@ describe("guarded user lifecycle administration", () => {
       new UserLifecycleAdministrationError("idempotency_conflict"),
     );
 
-    const totp = await fixture.service.resetTotp(
+    await expect(fixture.service.resetTotp(
       fixture.actor,
       target.id,
       password.user.version,
       { justification: "Authenticator was lost." },
       "totp-reset-key-123",
       CORRELATION,
-    );
-    expect(totp).toMatchObject({
-      id: target.id,
-      passwordState: "temporary",
-      totpState: "not_configured",
-      version: target.version + 2,
-    });
+    )).rejects.toEqual(new UserLifecycleAdministrationError("forbidden"));
     await expect(fixture.service.resetTotp(
       fixture.actor,
       target.id,
@@ -150,20 +145,53 @@ describe("guarded user lifecycle administration", () => {
       CORRELATION,
     );
     expect(suspended.status).toBe("suspended");
-    const active = await fixture.service.transition(
+    await expect(fixture.service.transition(
       "reactivate",
       fixture.actor,
       target.id,
       suspended.version,
+      { justification: "Illegal direct activation." },
+      CORRELATION,
+    )).rejects.toEqual(new UserLifecycleAdministrationError("invalid_request"));
+    const reactivated = await fixture.service.reactivate(
+      fixture.actor,
+      target.id,
+      suspended.version,
       { justification: "Investigation completed." },
+      "reactivation-key",
       CORRELATION,
     );
-    expect(active.status).toBe("active");
+    expect(reactivated).toMatchObject({
+      oneTimeValueDisplayed: true,
+      user: {
+        status: "enrollment_required",
+        passwordState: "temporary",
+        totpState: "not_configured",
+      },
+    });
+    expect(reactivated.temporaryPassword).toMatch(/^[A-Za-z0-9_-]{24}$/);
+    const replay = await fixture.service.reactivate(
+      fixture.actor,
+      target.id,
+      suspended.version,
+      { justification: "Investigation completed." },
+      "reactivation-key",
+      CORRELATION,
+    );
+    expect(replay).toEqual({
+      user: reactivated.user,
+      oneTimeValueDisplayed: false,
+    });
+    const deactivationTarget = await fixture.create(
+      "deactivation-target@example.org",
+      "admin",
+      "active",
+    );
     const deactivated = await fixture.service.transition(
       "deactivate",
       fixture.actor,
-      target.id,
-      active.version,
+      deactivationTarget.id,
+      deactivationTarget.version,
       { justification: "Employment ended." },
       CORRELATION,
     );
@@ -172,7 +200,7 @@ describe("guarded user lifecycle administration", () => {
       passwordState: "disabled",
       totpState: "disabled",
     });
-    const disabled = await snapshot(fixture.worker, target.id);
+    const disabled = await snapshot(fixture.worker, deactivationTarget.id);
     expect(disabled).toMatchObject({
       password_count: 0,
       totp_count: 0,
@@ -182,7 +210,7 @@ describe("guarded user lifecycle administration", () => {
 
     const restored = await fixture.service.restoreEnrollment(
       fixture.actor,
-      target.id,
+      deactivationTarget.id,
       deactivated.version,
       { justification: "Approved identity restoration." },
       "restore-enrollment-key",
@@ -191,7 +219,7 @@ describe("guarded user lifecycle administration", () => {
     expect(restored).toMatchObject({
       oneTimeValueDisplayed: true,
       user: {
-        id: target.id,
+        id: deactivationTarget.id,
         role: "admin",
         status: "enrollment_required",
         passwordState: "temporary",
@@ -202,11 +230,11 @@ describe("guarded user lifecycle administration", () => {
     await expect(fixture.service.transition(
       "reactivate",
       fixture.actor,
-      target.id,
+      deactivationTarget.id,
       restored.user.version,
       { justification: "Illegal shortcut." },
       CORRELATION,
-    )).rejects.toEqual(new UserLifecycleAdministrationError("forbidden"));
+    )).rejects.toEqual(new UserLifecycleAdministrationError("invalid_request"));
   });
 
   it("changes roles with final-active-superadmin protection and fail-closed admin scope", async () => {

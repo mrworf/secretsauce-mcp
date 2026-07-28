@@ -314,6 +314,24 @@ export function registerUserAdministrationRoutes(
     ),
   );
 
+  registerOneTimeMutation(
+    registry,
+    lifecycle,
+    "users.reactivate",
+    "/api/v2/users/{user_id}/reactivate",
+    "Reactivate through restricted enrollment",
+    "suspend_reactivate_user",
+    (context) => lifecycle.reactivate(
+      context.authentication!,
+      context.params.user_id,
+      context.expectedVersion,
+      context.body,
+      context.idempotencyKey!,
+      context.requestId,
+      context.stepUpProof,
+    ),
+  );
+
   registry.register(defineControlRoute({
     id: "users.totp_reset",
     method: "POST",
@@ -360,7 +378,7 @@ export function registerUserAdministrationRoutes(
     },
   }));
 
-  for (const transition of ["suspend", "reactivate", "deactivate"] as const) {
+  for (const transition of ["suspend", "deactivate"] as const) {
     registry.register(defineControlRoute({
       id: `users.${transition}`,
       method: "POST",
@@ -556,10 +574,13 @@ type OneTimeContext = {
 function registerOneTimeMutation(
   registry: ControlRouteRegistry,
   lifecycle: UserLifecycleAdministrationService,
-  id: "users.password_reset" | "users.enrollment_restore",
+  id: "users.password_reset" | "users.reactivate" | "users.enrollment_restore",
   path: string,
   summary: string,
-  permission: "reset_ordinary_user_password" | "deactivate_user",
+  permission:
+    | "reset_ordinary_user_password"
+    | "suspend_reactivate_user"
+    | "deactivate_user",
   invoke: (context: OneTimeContext) => ReturnType<
     UserLifecycleAdministrationService["resetPassword"]
   >,
@@ -581,7 +602,9 @@ function registerOneTimeMutation(
     rateLimit: "management",
     auditAction: id === "users.password_reset"
       ? "identity.password_reset"
-      : "identity.enrollment_restore",
+      : id === "users.reactivate"
+        ? "identity.reactivate"
+        : "identity.enrollment_restore",
     secretFields: [],
     cache: "no-store",
     concurrency: "if-match",

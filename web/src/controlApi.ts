@@ -1527,7 +1527,7 @@ export const browserControlApi:
       "POST",
       { justification },
       user.version,
-      ["password-reset", "totp-reset", "restore-enrollment"].includes(action),
+      ["password-reset", "totp-reset", "reactivate", "restore-enrollment"].includes(action),
     );
   },
   listServices: (input = {}) => {

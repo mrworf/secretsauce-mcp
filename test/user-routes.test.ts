@@ -222,6 +222,15 @@ describe("user administration HTTP contracts", () => {
       role: "user",
       status: "active",
     }, audit());
+    const suspendedTarget = await identities.createLocalIdentity({
+      profile: {
+        email: "reactivate-over-http@example.org",
+        givenName: "Reactivate",
+        familyName: "Target",
+      },
+      role: "user",
+      status: "suspended",
+    }, audit());
     const users = new UserAdministrationService(
       new UserAdministrationRepository(worker, () => NOW),
       new UserCursorCodec(Buffer.alloc(32, 103), () => NOW),
@@ -287,6 +296,40 @@ describe("user administration HTTP contracts", () => {
     expect(replay.statusCode).toBe(201);
     expect(replay.json().data.one_time_value_displayed).toBe(false);
     expect(replay.json().data).not.toHaveProperty("temporary_password");
+
+    const reactivationHeaders = {
+      ...headers,
+      "idempotency-key": "http-reactivation-key",
+      "if-match": `"${suspendedTarget.version}"`,
+    };
+    const reactivated = await application.inject({
+      method: "POST",
+      url: `/api/v2/users/${suspendedTarget.id}/reactivate`,
+      headers: reactivationHeaders,
+      payload: { justification: "Account recovery was approved." },
+    });
+    expect(reactivated.statusCode).toBe(200);
+    expect(reactivated.json().data).toMatchObject({
+      one_time_value_displayed: true,
+      user: {
+        id: suspendedTarget.id,
+        status: "enrollment_required",
+        password_state: "temporary",
+        totp_state: "not_configured",
+      },
+    });
+    expect(reactivated.json().data.temporary_password)
+      .toMatch(/^[A-Za-z0-9_-]{24}$/);
+
+    const reactivationReplay = await application.inject({
+      method: "POST",
+      url: `/api/v2/users/${suspendedTarget.id}/reactivate`,
+      headers: reactivationHeaders,
+      payload: { justification: "Account recovery was approved." },
+    });
+    expect(reactivationReplay.statusCode).toBe(200);
+    expect(reactivationReplay.json().data.one_time_value_displayed).toBe(false);
+    expect(reactivationReplay.json().data).not.toHaveProperty("temporary_password");
 
     const invalid = await application.inject({
       method: "POST",

@@ -230,30 +230,64 @@ export class UserLifecycleAdministrationRepository {
         requireActiveTarget(target);
         const now = transaction.timestamp();
         if (input.expiresAt <= now) throw new PersistenceError("database_unavailable");
-        const counts = revokeSessions(transaction, target.id, now);
-        transaction.run(`
-          INSERT INTO identity_temporary_passwords (
-            user_id, encoded_hash, purpose, issued_at, expires_at,
-            consumed_at, revoked_at, version
-          ) VALUES (?, ?, 'password_reset', ?, ?, NULL, NULL, 1)
-          ON CONFLICT(user_id) DO UPDATE SET
-            encoded_hash = excluded.encoded_hash,
-            purpose = excluded.purpose,
-            issued_at = excluded.issued_at,
-            expires_at = excluded.expires_at,
-            consumed_at = NULL,
-            revoked_at = NULL,
-            version = identity_temporary_passwords.version + 1
-        `, [target.id, input.encodedHash, now, input.expiresAt]);
-        transaction.run(`
-          UPDATE local_authenticator_states
-          SET password_state = 'temporary', version = version + 1, updated_at = ?
-          WHERE user_id = ?
-        `, [now, target.id]);
-        updateUserSecurity(transaction, target, target.status, target.role, now);
-        insertInvalidation(transaction, input.eventId, target.id, "password_reset", counts, now);
-        return projectUser(requiredUser(transaction, target.id));
+        return resetToEnrollment(transaction, {
+          target,
+          encodedHash: input.encodedHash,
+          expiresAt: input.expiresAt,
+          eventId: input.eventId,
+          reason: "password_reset",
+          now,
+        });
       },
+      [
+        { field: "status", after: "enrollment_required" },
+        { field: "authentication_state", after: "initial_enrollment_required" },
+        { field: "security_epoch", after: "incremented" },
+      ],
+    );
+  }
+
+  async reactivate(input: MutationContext & {
+    encodedHash: string;
+    expiresAt: number;
+    eventId: string;
+    idempotency: IdempotencyExecutionInput;
+  }): Promise<IdempotencyExecutionResult<UserAdministrationView>> {
+    if (!isSupportedPasswordHash(input.encodedHash)) {
+      throw new UserLifecycleAdministrationError("invalid_request");
+    }
+    return this.idempotentMutation(
+      input,
+      "identity.reactivate",
+      input.idempotency,
+      (transaction, actor, target) => {
+        requireLifecycleAuthority(
+          transaction,
+          actor,
+          target,
+          input.affectedServiceIds,
+          false,
+          ["system"],
+        );
+        if (target.status !== "suspended") {
+          throw new PersistenceError("invalid_identity_transition");
+        }
+        const now = transaction.timestamp();
+        if (input.expiresAt <= now) throw new PersistenceError("database_unavailable");
+        return resetToEnrollment(transaction, {
+          target,
+          encodedHash: input.encodedHash,
+          expiresAt: input.expiresAt,
+          eventId: input.eventId,
+          reason: "reactivation",
+          now,
+        });
+      },
+      [
+        { field: "status", before: "suspended", after: "enrollment_required" },
+        { field: "authentication_state", after: "initial_enrollment_required" },
+        { field: "security_epoch", after: "incremented" },
+      ],
     );
   }
 
@@ -297,9 +331,10 @@ export class UserLifecycleAdministrationRepository {
       eventId: string;
     },
   ): Promise<UserAdministrationView> {
-    const nextStatus: IdentityStatus = input.transition === "reactivate"
-      ? "active"
-      : input.transition === "suspend"
+    if (input.transition === "reactivate") {
+      throw new UserLifecycleAdministrationError("invalid_request");
+    }
+    const nextStatus: IdentityStatus = input.transition === "suspend"
         ? "suspended"
         : "deactivated";
     return this.auditedMutation(
@@ -337,9 +372,7 @@ export class UserLifecycleAdministrationRepository {
           target.id,
           input.transition === "suspend"
             ? "suspension"
-            : input.transition === "reactivate"
-              ? "reactivation"
-              : "deactivation",
+            : "deactivation",
           counts,
           now,
         );
@@ -374,37 +407,14 @@ export class UserLifecycleAdministrationRepository {
         if (target.status !== "deactivated") throw new PersistenceError("invalid_identity_transition");
         const now = transaction.timestamp();
         if (input.expiresAt <= now) throw new PersistenceError("database_unavailable");
-        const counts = revokeSessions(transaction, target.id, now);
-        transaction.run(`
-          INSERT INTO identity_temporary_passwords (
-            user_id, encoded_hash, purpose, issued_at, expires_at,
-            consumed_at, revoked_at, version
-          ) VALUES (?, ?, 'initial_enrollment', ?, ?, NULL, NULL, 1)
-          ON CONFLICT(user_id) DO UPDATE SET
-            encoded_hash = excluded.encoded_hash,
-            purpose = excluded.purpose,
-            issued_at = excluded.issued_at,
-            expires_at = excluded.expires_at,
-            consumed_at = NULL,
-            revoked_at = NULL,
-            version = identity_temporary_passwords.version + 1
-        `, [target.id, input.encodedHash, now, input.expiresAt]);
-        transaction.run(`
-          UPDATE local_authenticator_states
-          SET password_state = 'temporary', totp_state = 'not_configured',
-              version = version + 1, updated_at = ?
-          WHERE user_id = ?
-        `, [now, target.id]);
-        updateUserSecurity(transaction, target, "enrollment_required", target.role, now);
-        insertInvalidation(
-          transaction,
-          input.eventId,
-          target.id,
-          "enrollment_restore",
-          counts,
+        return resetToEnrollment(transaction, {
+          target,
+          encodedHash: input.encodedHash,
+          expiresAt: input.expiresAt,
+          eventId: input.eventId,
+          reason: "enrollment_restore",
           now,
-        );
-        return projectUser(requiredUser(transaction, target.id));
+        });
       },
     );
   }
@@ -502,6 +512,9 @@ export class UserLifecycleAdministrationRepository {
       actor: UserLifecycleRow | ControlAuthenticationContext,
       target: UserLifecycleRow,
     ) => UserAdministrationView,
+    changes: NonNullable<AdministrativeAuditEventInput["changes"]> = [
+      { field: "security_epoch", after: "incremented" },
+    ],
   ): Promise<IdempotencyExecutionResult<UserAdministrationView>> {
     const audit = lifecycleAudit({
       actor: input.actor,
@@ -510,7 +523,7 @@ export class UserLifecycleAdministrationRepository {
       correlationId: input.correlationId,
       justification: input.justification,
       affectedServiceIds: input.affectedServiceIds,
-      changes: [{ field: "security_epoch", after: "incremented" }],
+      changes,
     });
     const execute = (transaction: PersistenceTransaction) =>
       transaction.idempotent(idempotency, () => {
@@ -687,6 +700,53 @@ export class UserLifecycleAdministrationService {
       expiresAt: material.expiresAt,
       eventId,
       idempotency,
+    });
+    const user = result.kind === "executed"
+      ? result.value
+      : await this.requiredUser(actor, result.resultReference);
+    return result.kind === "executed"
+      ? {
+          user,
+          oneTimeValueDisplayed: true,
+          temporaryPassword: material.temporaryPassword,
+          expiresAt: material.expiresAt,
+        }
+      : { user, oneTimeValueDisplayed: false };
+  }
+
+  async reactivate(
+    actor: ControlAuthenticationContext,
+    targetUserId: unknown,
+    expectedVersion: unknown,
+    body: unknown,
+    idempotencyKey: string,
+    correlationId: string,
+    stepUpProof?: AlwaysStepUpHandle,
+  ): Promise<OneTimeUserResult> {
+    const common = await this.commonMutation(
+      actor,
+      targetUserId,
+      expectedVersion,
+      body,
+      correlationId,
+      stepUpProof,
+    );
+    const material = await this.temporaryMaterial();
+    const result = await this.repository.reactivate({
+      ...common,
+      encodedHash: material.encodedHash,
+      expiresAt: material.expiresAt,
+      eventId: this.nextUuid(),
+      idempotency: this.idempotencyInput(
+        actor,
+        "users.reactivate",
+        idempotencyKey,
+        {
+          target_user_id: common.targetUserId,
+          expected_version: common.expectedVersion,
+          body,
+        },
+      ),
     });
     const user = result.kind === "executed"
       ? result.value
@@ -1187,7 +1247,7 @@ function requireActiveTarget(target: UserLifecycleRow): void {
 function requireStatusTransition(current: IdentityStatus, next: IdentityStatus): void {
   const allowed =
     (current === "active" && (next === "suspended" || next === "deactivated")) ||
-    (current === "suspended" && (next === "active" || next === "deactivated"));
+    (current === "suspended" && next === "deactivated");
   if (!allowed) throw new PersistenceError("invalid_identity_transition");
 }
 
@@ -1225,6 +1285,76 @@ function revokeSessions(
     WHERE user_id = ? AND revoked_at IS NULL
   `, [now, userId]).changes);
   return { browser, restricted };
+}
+
+function resetToEnrollment(
+  transaction: PersistenceTransaction,
+  input: {
+    target: UserLifecycleRow;
+    encodedHash: string;
+    expiresAt: number;
+    eventId: string;
+    reason: "password_reset" | "reactivation" | "enrollment_restore";
+    now: number;
+  },
+): UserAdministrationView {
+  const counts = revokeSessions(transaction, input.target.id, input.now);
+  transaction.run(
+    "DELETE FROM local_password_credentials WHERE user_id = ?",
+    [input.target.id],
+  );
+  transaction.run(
+    "DELETE FROM local_totp_authenticators WHERE user_id = ?",
+    [input.target.id],
+  );
+  transaction.run(
+    "DELETE FROM identity_pending_totp WHERE user_id = ?",
+    [input.target.id],
+  );
+  transaction.run(
+    "DELETE FROM accepted_totp_steps WHERE user_id = ?",
+    [input.target.id],
+  );
+  transaction.run(
+    "DELETE FROM identity_qualifying_authentication_failures WHERE user_id = ?",
+    [input.target.id],
+  );
+  transaction.run(`
+    INSERT INTO identity_temporary_passwords (
+      user_id, encoded_hash, purpose, issued_at, expires_at,
+      consumed_at, revoked_at, version
+    ) VALUES (?, ?, 'initial_enrollment', ?, ?, NULL, NULL, 1)
+    ON CONFLICT(user_id) DO UPDATE SET
+      encoded_hash = excluded.encoded_hash,
+      purpose = excluded.purpose,
+      issued_at = excluded.issued_at,
+      expires_at = excluded.expires_at,
+      consumed_at = NULL,
+      revoked_at = NULL,
+      version = identity_temporary_passwords.version + 1
+  `, [input.target.id, input.encodedHash, input.now, input.expiresAt]);
+  transaction.run(`
+    UPDATE local_authenticator_states
+    SET password_state = 'temporary', totp_state = 'not_configured',
+        version = version + 1, updated_at = ?
+    WHERE user_id = ?
+  `, [input.now, input.target.id]);
+  updateUserSecurity(
+    transaction,
+    input.target,
+    "enrollment_required",
+    input.target.role,
+    input.now,
+  );
+  insertInvalidation(
+    transaction,
+    input.eventId,
+    input.target.id,
+    input.reason,
+    counts,
+    input.now,
+  );
+  return projectUser(requiredUser(transaction, input.target.id));
 }
 
 function updateUserSecurity(

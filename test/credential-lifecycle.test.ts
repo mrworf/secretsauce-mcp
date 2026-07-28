@@ -54,10 +54,11 @@ describe("guarded local credential lifecycle", () => {
     );
   });
 
-  it("resets a password with one hash-only temporary value and atomic invalidation", async () => {
+  it("resets password and TOTP to full enrollment with one hash-only temporary value", async () => {
     const fixture = await configuredIdentity("password-reset");
     await login(fixture);
     await addRestrictedSession(fixture, "018f1f2e-7b3c-7a10-8000-000000000111");
+    await addOAuthAuthorityAndFailure(fixture);
     const notices: IdentityInvalidationNotice[] = [];
     const service = lifecycle(fixture, {
       invalidate: async (notice) => {
@@ -87,10 +88,13 @@ describe("guarded local credential lifecycle", () => {
 
     const stored = await snapshot(fixture);
     expect(stored).toMatchObject({
+      status: "enrollment_required",
       password_state: "temporary",
-      totp_state: "configured",
+      totp_state: "not_configured",
       security_epoch: 2,
-      totp_count: 1,
+      totp_count: 0,
+      failures: 0,
+      revoked_oauth_records: 4,
       browser_revoked: 1,
       restricted_revoked: 1,
       invalidation_reason: "password_reset",
@@ -320,6 +324,74 @@ async function addRestrictedSession(
   });
 }
 
+async function addOAuthAuthorityAndFailure(
+  fixture: Awaited<ReturnType<typeof configuredIdentity>>,
+): Promise<void> {
+  await fixture.worker.execute({
+    run: (database) => database.withOperationalTransaction((transaction) => {
+      transaction.run(`
+        INSERT INTO oauth_clients (
+          id, client_identifier, display_name, metadata_json, metadata_digest,
+          lifecycle, first_seen_at, last_seen_at, version
+        ) VALUES (
+          '018f1f2e-7b3c-7a10-8000-000000000080', 'recovery-test-client',
+          'Recovery test client', '{}', ?, 'active', ?, ?, 1
+        )
+      `, ["a".repeat(64), NOW, NOW]);
+      transaction.run(`
+        INSERT INTO oauth_grants (
+          id, user_id, client_id, resource, scopes_json,
+          authentication_method, issued_security_epoch, issued_global_epoch,
+          issued_access_ttl_ms, issued_refresh_idle_ms,
+          issued_refresh_absolute_ms, status, issued_at, last_used_at,
+          absolute_expires_at, idle_expires_at, revoked_at,
+          revocation_reason, version
+        ) VALUES (
+          '018f1f2e-7b3c-7a10-8000-000000000081', ?,
+          '018f1f2e-7b3c-7a10-8000-000000000080', 'https://mcp.example.org',
+          '["gateway.read"]', 'local_password_totp', 1, 1, 300000,
+          86400000, 604800000, 'active', ?, ?, ?, ?, NULL, NULL, 1
+        )
+      `, [fixture.userId, NOW, NOW, NOW + 604_800_000, NOW + 86_400_000]);
+      transaction.run(`
+        INSERT INTO oauth_refresh_families (
+          id, grant_id, current_sequence, status, issued_at, last_used_at,
+          absolute_expires_at, idle_expires_at, revoked_at,
+          revocation_reason, version
+        ) VALUES (
+          '018f1f2e-7b3c-7a10-8000-000000000082',
+          '018f1f2e-7b3c-7a10-8000-000000000081', 0, 'active', ?, ?, ?, ?,
+          NULL, NULL, 1
+        )
+      `, [NOW, NOW, NOW + 604_800_000, NOW + 86_400_000]);
+      transaction.run(`
+        INSERT INTO oauth_refresh_tokens (
+          id, token_hash, family_id, sequence, status, issued_at, used_at
+        ) VALUES (
+          '018f1f2e-7b3c-7a10-8000-000000000083', ?,
+          '018f1f2e-7b3c-7a10-8000-000000000082', 0, 'active', ?, NULL
+        )
+      `, ["b".repeat(64), NOW]);
+      transaction.run(`
+        INSERT INTO oauth_access_tokens (
+          id, token_hash, grant_id, family_id, scopes_json,
+          issued_at, expires_at, last_used_at, status
+        ) VALUES (
+          '018f1f2e-7b3c-7a10-8000-000000000084', ?,
+          '018f1f2e-7b3c-7a10-8000-000000000081',
+          '018f1f2e-7b3c-7a10-8000-000000000082', '["gateway.read"]',
+          ?, ?, ?, 'active'
+        )
+      `, ["c".repeat(64), NOW, NOW + 300_000, NOW]);
+      transaction.run(`
+        INSERT INTO identity_qualifying_authentication_failures (
+          correlation_id, user_id, occurred_at
+        ) VALUES (?, ?, ?)
+      `, ["req_00000000-0000-4000-8000-000000000099", fixture.userId, NOW]);
+    }),
+  });
+}
+
 function lifecycle(
   fixture: Awaited<ReturnType<typeof configuredIdentity>>,
   invalidationSink?: { invalidate(notice: IdentityInvalidationNotice): Promise<void> },
@@ -357,11 +429,14 @@ function authorization(
 async function snapshot(fixture: Awaited<ReturnType<typeof configuredIdentity>>) {
   return fixture.worker.execute({
     run: (database) => database.read((query) => query.get<{
+      status: string;
       password_state: string;
       totp_state: string;
       security_epoch: number;
       temporary_hash: string | null;
       totp_count: number;
+      failures: number;
+      revoked_oauth_records: number;
       browser_revoked: number;
       restricted_revoked: number;
       invalidation_count: number;
@@ -370,6 +445,7 @@ async function snapshot(fixture: Awaited<ReturnType<typeof configuredIdentity>>)
       justification: string | null;
     }>(`
       SELECT
+        u.status,
         a.password_state,
         a.totp_state,
         u.security_epoch,
@@ -377,6 +453,15 @@ async function snapshot(fixture: Awaited<ReturnType<typeof configuredIdentity>>)
           AS temporary_hash,
         (SELECT count(*) FROM local_totp_authenticators WHERE user_id = u.id)
           AS totp_count,
+        (SELECT count(*) FROM identity_qualifying_authentication_failures
+          WHERE user_id = u.id) AS failures,
+        (
+          (SELECT count(*) FROM oauth_grants
+            WHERE user_id = u.id AND status = 'revoked')
+          + (SELECT count(*) FROM oauth_refresh_families WHERE status = 'revoked')
+          + (SELECT count(*) FROM oauth_refresh_tokens WHERE status = 'revoked')
+          + (SELECT count(*) FROM oauth_access_tokens WHERE status = 'revoked')
+        ) AS revoked_oauth_records,
         (SELECT count(*) FROM browser_sessions
           WHERE user_id = u.id AND revoked_at IS NOT NULL) AS browser_revoked,
         (SELECT count(*) FROM identity_restricted_sessions

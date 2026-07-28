@@ -133,11 +133,31 @@ export class LocalCredentialLifecycleRepository {
         run: (database) => database.withGeneratedAdministrativeAudit((transaction) => {
           requireCurrentTarget(transaction, input.target);
           const counts = revokeUserSessions(transaction, input.target.id, now);
+          transaction.run(
+            "DELETE FROM local_password_credentials WHERE user_id = ?",
+            [input.target.id],
+          );
+          transaction.run(
+            "DELETE FROM local_totp_authenticators WHERE user_id = ?",
+            [input.target.id],
+          );
+          transaction.run(
+            "DELETE FROM identity_pending_totp WHERE user_id = ?",
+            [input.target.id],
+          );
+          transaction.run(
+            "DELETE FROM accepted_totp_steps WHERE user_id = ?",
+            [input.target.id],
+          );
+          transaction.run(
+            "DELETE FROM identity_qualifying_authentication_failures WHERE user_id = ?",
+            [input.target.id],
+          );
           transaction.run(`
             INSERT INTO identity_temporary_passwords (
               user_id, encoded_hash, purpose, issued_at, expires_at,
               consumed_at, revoked_at, version
-            ) VALUES (?, ?, 'password_reset', ?, ?, NULL, NULL, 1)
+            ) VALUES (?, ?, 'initial_enrollment', ?, ?, NULL, NULL, 1)
             ON CONFLICT(user_id) DO UPDATE SET
               encoded_hash = excluded.encoded_hash,
               purpose = excluded.purpose,
@@ -149,10 +169,20 @@ export class LocalCredentialLifecycleRepository {
           `, [input.target.id, input.encodedHash, now, input.expiresAt]);
           transaction.run(`
             UPDATE local_authenticator_states
-            SET password_state = 'temporary', version = version + 1, updated_at = ?
+            SET password_state = 'temporary', totp_state = 'not_configured',
+                version = version + 1, updated_at = ?
             WHERE user_id = ?
           `, [now, input.target.id]);
-          incrementUserEpoch(transaction, input.target.id, now);
+          const user = transaction.run(`
+            UPDATE users
+            SET status = 'enrollment_required',
+                suspended_at = NULL, suspension_origin = NULL,
+                suspension_rule_version = NULL,
+                security_epoch = security_epoch + 1,
+                version = version + 1, updated_at = ?
+            WHERE id = ?
+          `, [now, input.target.id]);
+          if (user.changes !== 1) throw new PersistenceError("identity_not_found");
           insertInvalidation(transaction, {
             eventId: input.eventId,
             userId: input.target.id,
@@ -168,7 +198,8 @@ export class LocalCredentialLifecycleRepository {
               ...counts,
             },
             auditInput: resetAudit(input.audit, input.target, "identity.password_reset", counts, [
-              { field: "authentication_state", after: "change_required" },
+              { field: "status", before: input.target.status, after: "enrollment_required" },
+              { field: "authentication_state", after: "initial_enrollment_required" },
               { field: "security_epoch", after: "incremented" },
             ]),
           };

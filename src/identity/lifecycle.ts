@@ -5,7 +5,7 @@ const transitions: Readonly<Record<IdentityStatus, readonly IdentityStatus[]>> =
   invited: ["enrollment_required"],
   enrollment_required: ["active"],
   active: ["suspended", "deactivated"],
-  suspended: ["active", "deactivated"],
+  suspended: ["enrollment_required", "deactivated"],
   deactivated: ["enrollment_required"],
 };
 

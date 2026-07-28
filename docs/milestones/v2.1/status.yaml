@@ -10,12 +10,12 @@ milestones:
   - id: "01"
     title: "Private Vault REST Boundary"
     file: "docs/milestones/v2.1/01-private-vault-rest-boundary.md"
-    status: "in_progress"
+    status: "completed"
     dependencies:
       - "00"
-    completed_at: null
-    commit_hash: null
-    notes: "Dependency-ready after Milestone 00; private REST boundary implementation planning is in progress."
+    completed_at: "2026-07-27T23:10:00-07:00"
+    commit_hash: "7f53670"
+    notes: "Replaced the binary vault transport with mutually authenticated HTTP/1.1 resources over separate protected Unix sockets; boot, capability, endpoint, process, deployment, and full-suite gates passed. See docs/audits/v2.1/milestone-01-acceptance.md."
   - id: "02"
     title: "Fail-Closed Key Provisioning"
     file: "docs/milestones/v2.1/02-fail-closed-key-provisioning.md"

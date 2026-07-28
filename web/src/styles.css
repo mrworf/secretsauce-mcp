@@ -140,6 +140,55 @@ body {
   align-items: center;
 }
 
+.enrollment-card {
+  width: min(100%, 36rem);
+}
+
+.enrollment-intro,
+.sensitive-note {
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.manual-key {
+  display: grid;
+  gap: 0.5rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--surface-subtle);
+}
+
+.authenticator-qr {
+  width: min(18rem, 100%);
+  margin: 1rem auto;
+  padding: 0.75rem;
+  color: #000;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+}
+
+.authenticator-qr svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.manual-key output {
+  overflow-wrap: anywhere;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  letter-spacing: 0.08em;
+}
+
+.otpauth-link,
+.enrollment-entry {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 1rem;
+  font-weight: 750;
+}
+
 .setup-footer {
   padding: 1rem;
   color: var(--muted);

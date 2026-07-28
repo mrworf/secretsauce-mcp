@@ -9,6 +9,7 @@ import {
 } from "./controlApi";
 import { OidcSignIn } from "./OidcSignIn";
 import { SetupPage } from "./SetupPage";
+import { EnrollmentPage } from "./EnrollmentPage";
 import "./styles.css";
 
 const root = document.getElementById("root");
@@ -19,6 +20,9 @@ createRoot(root).render(
     {window.location.pathname === "/control/setup"
       || window.location.pathname === "/control/setup/"
       ? <SetupPage />
+      : window.location.pathname === "/control/enroll"
+        || window.location.pathname === "/control/enroll/"
+        ? <EnrollmentPage />
       : <AuthenticatedControl />}
   </StrictMode>,
 );

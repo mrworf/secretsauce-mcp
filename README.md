@@ -298,32 +298,25 @@ restore-recovery deployment. Run migration only while the application is
 stopped. See
 [One-time V1 YAML migration](docs/v1-migration.md).
 
-### Initial v2 identity bootstrap
+### Initial v2.1 browser enrollment
 
-When `persistence.database_file` is configured, build the application and run the
-bootstrap command directly on the gateway host:
+After automatic key setup reaches enrollment, the application writes one line
+beginning `SECRETSAUCE INITIAL ENROLLMENT SECRET:` to its container or process
+log. The value is valid only for that process lifetime and is invalidated by a
+successful enrollment. A restart with zero users prints a new value and
+invalidates the old one.
 
-```bash
-CONFIG_PATH=/absolute/path/to/config.yaml npm run identity:bootstrap
-```
+Open the ordinary control login surface, choose **Enroll account**, and enter an
+email plus that value in **Enrollment code**. Complete the profile, permanent
+password, and authenticator steps. The browser does not sign in automatically:
+after enrollment, sign in with the new password and a fresh TOTP code.
 
-For a container deployment, run the same command with an interactive terminal in
-the gateway container, for example `docker compose exec secretsauce npm run
-identity:bootstrap`. Do not append an email, password, TOTP value, or other
-profile field as a command argument. The command refuses non-terminal execution
-and prompts for the email and optional names.
-
-Bootstrap succeeds only when the database contains no users and has no prior
-bootstrap marker. It atomically creates one UUID-backed local `superadmin` in
-`enrollment_required` state with a hash-only, expiring temporary password and a
-sanitized bootstrap audit event. Its output contains the UUID, role, state,
-expiry, and temporary password exactly once. Save that value directly in a
-password manager; it is not retrievable later. A second or racing attempt cannot
-create another initial superadmin.
-
-The temporary password is not MCP-eligible and cannot create an ordinary browser
-session. It enters only the restricted enrollment ceremony, where the user
-chooses a permanent password and confirms TOTP before activation.
+The application creates no user until the final confirmation transaction. That
+transaction creates exactly one active superadmin, both local authenticators,
+the bootstrap marker, and its audit event together. Restrict access to current
+container logs: the displayed line is temporary initial-enrollment authority,
+and platform log retention or forwarding can preserve it beyond the process
+lifetime even though the application does not.
 
 For host-local recovery of any existing account, run
 `CONFIG_PATH=/absolute/path/to/config.yaml npm run identity:break-glass` from an

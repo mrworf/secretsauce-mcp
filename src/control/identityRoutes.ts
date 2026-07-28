@@ -867,6 +867,10 @@ function registerEnrollmentRoutes(
     csrf_token: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
     expires_at: z.number().int().nonnegative(),
   }).strict();
+  const enrollmentRestrictedData = z.object({
+    csrf_token: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
+    expires_at: z.number().int().nonnegative(),
+  }).strict();
   registry.register(defineControlRoute({
     id: "identity.enrollment_login",
     method: "POST",
@@ -881,7 +885,7 @@ function registerEnrollmentRoutes(
         email: z.string().min(3).max(254),
         enrollment_code: z.string().max(4_096),
       }).strict(),
-      response: restrictedData,
+      response: enrollmentRestrictedData,
     },
     rateLimit: "authentication",
     secretFields: ["/enrollment_code"],
@@ -903,9 +907,6 @@ function registerEnrollmentRoutes(
         );
         return {
           data: {
-            user_id: result.userId,
-            role: result.role,
-            purpose: result.purpose,
             csrf_token: result.csrfToken,
             expires_at: result.expiresAt,
           },

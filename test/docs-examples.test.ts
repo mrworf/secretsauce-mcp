@@ -114,21 +114,20 @@ describe("documentation examples", () => {
     expect(setup).toContain('media="(prefers-color-scheme: dark)"');
   });
 
-  it("documents terminal-only pending identity bootstrap without argument secrets", () => {
+  it("documents process-lifetime browser enrollment without a partial identity", () => {
     const readme = readFileSync("README.md", "utf8");
     const configReference = readFileSync("docs/config-reference.md", "utf8");
-    const bootstrap = readme.slice(readme.indexOf("### Initial v2 identity bootstrap"));
+    const bootstrap = readme.slice(readme.indexOf("### Initial v2.1 browser enrollment"));
 
-    expect(bootstrap).toContain("npm run identity:bootstrap");
-    expect(bootstrap).toContain("refuses non-terminal execution");
-    expect(bootstrap).toContain("`enrollment_required`");
-    expect(bootstrap).toContain("not MCP-eligible");
-    expect(bootstrap).toContain("Do not append an email, password, TOTP value");
-    expect(configReference).toContain("persistence.database_file");
-    expect(configReference).toContain("accepts no arguments");
-    expect(configReference).toContain("hash-only temporary password");
-    expect(bootstrap).toContain("displays a new temporary password once");
-    expect(bootstrap).not.toMatch(/identity:bootstrap\s+--(?:email|password|totp)/);
+    expect(bootstrap).toContain("SECRETSAUCE INITIAL ENROLLMENT SECRET:");
+    expect(bootstrap).toContain("process lifetime");
+    expect(bootstrap).toContain("Enroll account");
+    expect(bootstrap).toContain("creates no user until the final confirmation transaction");
+    expect(bootstrap).toContain("does not sign in automatically");
+    expect(configReference).toContain("No provisional attempt creates a user");
+    expect(configReference).toContain("Container and platform logs");
+    expect(configReference).toContain("infrastructure-administrator authority");
+    expect(bootstrap).not.toContain("npm run identity:bootstrap");
   });
 
   it("documents local authentication key, session, origin, and step-up boundaries", () => {

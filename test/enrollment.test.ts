@@ -533,6 +533,10 @@ describe("restricted initial local enrollment", () => {
     });
     expect(login.statusCode).toBe(200);
     expect(login.headers["cache-control"]).toBe("no-store");
+    expect(Object.keys(login.json().data).sort()).toEqual([
+      "csrf_token",
+      "expires_at",
+    ]);
     const setCookie = String(login.headers["set-cookie"]);
     expect(setCookie).toContain(`${CONTROL_ENROLLMENT_COOKIE}=`);
     expect(setCookie).toContain("Path=/");
@@ -541,6 +545,17 @@ describe("restricted initial local enrollment", () => {
     expect(setCookie).toContain("SameSite=Strict");
     const cookie = setCookie.split(";")[0] ?? "";
     const csrf = login.json().data.csrf_token as string;
+
+    const legacyField = await application.inject({
+      method: "POST",
+      url: "/api/v2/auth/enrollment/login",
+      headers: { host: "control.example.org", "content-type": "application/json" },
+      payload: {
+        email: fixture.email,
+        temporary_password: "not-a-supported-public-field",
+      },
+    });
+    expect(legacyField.statusCode).toBe(400);
 
     const ordinary = await application.inject({
       method: "GET",

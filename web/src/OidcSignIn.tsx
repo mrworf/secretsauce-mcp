@@ -19,6 +19,8 @@ export function OidcSignIn({
   const [loading, setLoading] = useState(restricted === undefined);
   const [starting, setStarting] = useState<string>();
   const [failed, setFailed] = useState(false);
+  const enrollmentComplete = restricted === undefined
+    && new URLSearchParams(window.location.search).get("enrollment") === "complete";
 
   useEffect(() => {
     if (restricted !== undefined) return;
@@ -50,6 +52,11 @@ export function OidcSignIn({
           ? "Choose your configured identity provider to open the control workspace."
           : "Finish enrollment with an approved external identity provider."}
       </p>
+      {enrollmentComplete && (
+        <p className="success-message" role="status">
+          Enrollment complete. Sign in with your new credentials.
+        </p>
+      )}
       {loading && <p role="status">Loading sign-in options…</p>}
       {!loading && providers.length === 0 && (
         <p role={failed ? "alert" : "status"}>
@@ -74,6 +81,9 @@ export function OidcSignIn({
       )}
       {failed && providers.length > 0 && (
         <p className="form-error" role="alert">External sign-in could not be started. Try again.</p>
+      )}
+      {restricted === undefined && (
+        <a className="enrollment-entry" href="/control/enroll">Enroll account</a>
       )}
     </main>
   );

@@ -1266,6 +1266,29 @@ export interface OidcControlApi {
   beginOidc(providerId: string): Promise<{ authorization_url: string; expires_at: number }>;
 }
 
+export interface EnrollmentControlApi {
+  enrollmentLogin(input: {
+    email: string;
+    enrollment_code: string;
+  }): Promise<{ csrf_token: string; expires_at: number }>;
+  beginEnrollment(input: {
+    csrf_token: string;
+    new_password: string;
+    given_name: string;
+    family_name: string;
+  }): Promise<{
+    secret: string;
+    otpauth_uri: string;
+    csrf_token: string;
+    expires_at: number;
+  }>;
+  confirmEnrollment(input: {
+    csrf_token: string;
+    new_password: string;
+    totp: string;
+  }): Promise<{ enrolled: true }>;
+}
+
 export interface RestrictedOidcOptions {
   csrf_token: string;
   providers: OidcProviderLabel[];
@@ -1315,11 +1338,34 @@ export type UserAction =
   | "delete";
 
 export const browserControlApi:
-  ControlApi & OidcControlApi & OidcManagementApi & ServiceControlApi &
+  ControlApi & OidcControlApi & OidcManagementApi & EnrollmentControlApi & ServiceControlApi &
     GroupControlApi & CredentialControlApi & PolicyControlApi & AccessControlApi &
     ApiKeyControlApi & SecurityControlApi & AuditControlApi & DashboardControlApi &
     BackupControlApi & RestoreControlApi & RecoveryControlApi = {
   session: () => get<ControlSession>("/api/v2/auth/session"),
+  enrollmentLogin: (input) => request("/api/v2/auth/enrollment/login", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(input),
+  }),
+  beginEnrollment: ({ csrf_token, ...body }) =>
+    request("/api/v2/auth/enrollment/begin", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-csrf-token": csrf_token,
+      },
+      body: JSON.stringify(body),
+    }),
+  confirmEnrollment: ({ csrf_token, ...body }) =>
+    request("/api/v2/auth/enrollment/confirm", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-csrf-token": csrf_token,
+      },
+      body: JSON.stringify(body),
+    }),
   activityDashboard: (input = {}) => {
     const query = new URLSearchParams();
     if (input.window !== undefined) query.set("window", input.window);

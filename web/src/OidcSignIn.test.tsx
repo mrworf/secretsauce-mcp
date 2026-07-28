@@ -1,9 +1,11 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { OidcSignIn } from "./OidcSignIn";
 import type { OidcControlApi } from "./controlApi";
+
+afterEach(cleanup);
 
 describe("external sign-in view", () => {
   it("lists safe provider labels and starts one same-origin begin operation", async () => {
@@ -35,6 +37,8 @@ describe("external sign-in view", () => {
     expect(await screen.findByRole("alert"))
       .toHaveTextContent("Sign-in options are temporarily unavailable.");
     expect(screen.queryByText(/token and endpoint detail/)).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Enroll account" }))
+      .toHaveAttribute("href", "/control/enroll");
   });
 
   it("offers configured external linking inside a restricted enrollment state", async () => {

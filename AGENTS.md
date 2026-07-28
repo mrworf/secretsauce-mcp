@@ -29,4 +29,5 @@
 - Docker dependency/build stages must retain native compilation prerequisites while the runtime stage stays clean; prebuilt native-module downloads are an optimization and may be unavailable during release builds.
 - UI tests that edit asynchronously loaded controlled forms must wait for the loaded value before typing; finding the initially rendered input alone does not prove hydration has completed.
 - Multi-result idempotent operations must store a single opaque UUID result reference and resolve members through a durable scoped table; do not serialize result lists into the UUID-constrained idempotency record.
+- Initial browser enrollment must remain process-owned and provisional until one audited transaction creates the complete active superadmin; never create a pending user or persist the bootstrap secret to bridge the ceremony.
 - Envelope-root rotation must preserve stable logical key IDs, classify physical-root use by authenticated decryption, hold the application writer lock for identity rewrap, retain the old physical root through atomic manifest receipt commit, and resume every journal or no-replace switch boundary before ordinary startup.

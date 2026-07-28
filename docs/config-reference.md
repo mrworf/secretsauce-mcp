@@ -182,19 +182,20 @@ the application is stopped; it still cannot resolve or export credentials.
 See [One-time V1 YAML migration](v1-migration.md) for the exact dry-run,
 confirmation, recovery, sole-authority, and remediation workflow.
 
-On a fresh database, run `CONFIG_PATH=/absolute/path/to/config.yaml npm run
-identity:bootstrap` from an interactive terminal on the gateway host. In Docker,
-use an interactive exec such as `docker compose exec secretsauce npm run
-identity:bootstrap`. The command accepts no arguments: email and optional names
-are terminal prompts, and password/TOTP material is never accepted from the
-operator.
+On a fresh database, automatic setup starts the browser enrollment surface and
+prints one clearly labeled initial enrollment secret to the application log.
+Open **Enroll account** and use that value as the **Enrollment code**. The value
+is process-lifetime only: restart invalidates it and prints a replacement when
+the database still has zero users.
 
-The one-time transaction creates a UUIDv7 `superadmin` with status
-`enrollment_required`, a hash-only temporary password, `not_configured` TOTP
-state, a singleton bootstrap marker, and a sanitized `identity.bootstrap` audit
-event. Output displays the generated temporary password exactly once. It can
-enter only the restricted enrollment flow and cannot authenticate an ordinary
-control or MCP request.
+No provisional attempt creates a user. Final password and TOTP confirmation
+atomically creates one active UUIDv7 `superadmin`, both local authenticators,
+the singleton bootstrap marker, and a sanitized audit event. Enrollment then
+returns to ordinary login without creating a browser session.
+
+Treat access to the current log line as infrastructure-administrator authority.
+Container and platform logs can be retained or forwarded; apply access controls
+and retention appropriate for temporary root enrollment authority.
 
 ## Local browser authentication
 

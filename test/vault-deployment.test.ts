@@ -18,17 +18,24 @@ describe("vault deployment boundary", () => {
       "SECRETSAUCE_VAULT_DATA_KEY_FILE",
     );
     expect(vault.healthcheck.test).toEqual(["CMD", "node", "dist/vault/healthCli.js"]);
+    expect(vault.environment.SECRETSAUCE_VAULT_HEALTH_MODE).toBe("liveness");
     expect(vault.volumes).toContain(
       "vault-generated:/var/lib/secretsauce/generated",
     );
     expect(vault.volumes).toContain(
       "vault-setup-state:/var/lib/secretsauce/setup",
     );
-    expect(vault.volumes).toContain("./database:/inventory/database:ro");
-    expect(vault.volumes).toContain("./audit:/inventory/audit:ro");
-    expect(vault.volumes).toContain("./oauth-state:/inventory/oauth:ro");
-    expect(vault.volumes).toContain("./vault-store:/var/lib/secretsauce/vault");
-    expect(vault.volumes).toContain("./vault-runtime:/run/secretsauce-vault");
+    expect(vault.volumes).toContain(
+      "secretsauce-database:/inventory/database:ro",
+    );
+    expect(vault.volumes).toContain(
+      "secretsauce-audit:/inventory/audit:ro",
+    );
+    expect(vault.volumes).toContain(
+      "secretsauce-oauth:/inventory/oauth:ro",
+    );
+    expect(vault.volumes).toContain("vault-store:/var/lib/secretsauce/vault");
+    expect(vault.volumes).toContain("vault-runtime:/run/secretsauce-vault");
   });
 
   it("gives the combined application only role-limited caller keys and the socket", () => {
@@ -44,11 +51,13 @@ describe("vault deployment boundary", () => {
     expect(data.volumes).toContain(
       "vault-setup-state:/var/lib/secretsauce/setup:ro",
     );
-    expect(data.volumes).toContain("./vault-runtime:/run/secretsauce-vault:ro");
+    expect(data.volumes).toContain("vault-runtime:/run/secretsauce-vault:ro");
     expect(data.environment.SECRETSAUCE_VAULT_DATA_KEY_FILE)
       .toBe("/var/lib/secretsauce/generated/shared/data-plane.key");
     expect(data.environment.SECRETSAUCE_VAULT_CREDENTIAL_SOCKET)
       .toBe("/run/secretsauce-vault/credential.sock");
+    expect(data.environment.SECRETSAUCE_VAULT_STATUS_SOCKET)
+      .toBe("/run/secretsauce-vault/status.sock");
     expect(data.environment.SECRETSAUCE_VAULT_MANIFEST_FILE)
       .toBe("/var/lib/secretsauce/setup/manifest.json");
     expect(data.environment.SECRETSAUCE_VAULT_KEY_OWNER_UID).toBe("0");
@@ -65,6 +74,29 @@ describe("vault deployment boundary", () => {
     expect(serialized).not.toContain("/var/lib/secretsauce/vault");
     expect(serialized).not.toContain("./vault-keys");
     expect(data.environment.SECRETSAUCE_MCP_TOKEN).not.toContain("change-me");
+    expect(data.depends_on).toBeUndefined();
+    expect(data.healthcheck.test).toEqual([
+      "CMD",
+      "wget",
+      "-qO-",
+      "http://127.0.0.1:8081/api/v2/health/live",
+    ]);
+  });
+
+  it("declares the complete durable state graph without Docker-socket access", () => {
+    const source = readFileSync("docker-compose.example.yaml", "utf8");
+    const compose = parse(source) as any;
+    expect(Object.keys(compose.volumes).sort()).toEqual([
+      "secretsauce-audit",
+      "secretsauce-database",
+      "secretsauce-oauth",
+      "vault-generated",
+      "vault-runtime",
+      "vault-setup-state",
+      "vault-store",
+    ]);
+    expect(source).not.toContain("/var/run/docker.sock");
+    expect(source).not.toContain("depends_on:");
   });
 
   it("documents only path contracts and never embeds key material", () => {

@@ -184,6 +184,7 @@ import { RestorePreviewCoordinator } from "../restorePreview.js";
 import { RestoreMaintenanceGate } from "../restoreMaintenance.js";
 import { RecoveryRemediationService } from "../recoveryRemediations.js";
 import { registerRecoveryRoutes } from "./recoveryRoutes.js";
+import type { PublicSetupStatus } from "../setup/status.js";
 
 export interface ControlApplicationOptions {
   authenticator?: ControlAuthenticator;
@@ -225,6 +226,8 @@ export interface ControlApplicationOptions {
   restorePreviews?: RestorePreviewCoordinator;
   restoreCommits?: RestoreCommitCoordinator;
   restoreMaintenance?: RestoreMaintenanceGate;
+  operational?: () => boolean;
+  setupStatus?: () => PublicSetupStatus;
 }
 
 export function createControlApplication(
@@ -267,6 +270,36 @@ export function createControlApplication(
     requestIdHeader: false,
     genReqId: createRequestId,
     logController: new LogController({ disableRequestLogging: true }),
+  });
+  const operational = options.operational ?? (() => true);
+  application.addHook("onRequest", async (request, reply) => {
+    const setupPath = isSetupPath(request.url);
+    if (
+      setupPath
+      && (
+        request.method !== "GET"
+        || request.headers["content-length"] !== undefined
+        || request.headers["transfer-encoding"] !== undefined
+      )
+    ) {
+      return reply.code(400).type("application/json").send({
+        error: {
+          code: "invalid_request",
+          message: "The request is invalid.",
+        },
+      });
+    }
+    if (operational() || setupPath) return;
+    return reply
+      .header("retry-after", "3")
+      .code(503)
+      .type("application/json")
+      .send({
+        error: {
+          code: "temporarily_unavailable",
+          message: "SecretSauce is temporarily unavailable.",
+        },
+      });
   });
   application.addContentTypeParser(
     "application/gzip",
@@ -312,6 +345,8 @@ export function createControlApplication(
     options.restoreStages,
     options.restorePreviews,
     options.restoreCommits,
+    operational,
+    options.setupStatus,
   );
   if (options.localIdentity !== undefined) {
     registerLocalIdentityRoutes(routeRegistry, options.localIdentity);
@@ -452,6 +487,9 @@ export async function startControlServer(
     restorePreviews?: RestorePreviewCoordinator;
     restoreCommits?: RestoreCommitCoordinator;
     restoreMaintenance?: RestoreMaintenanceGate;
+    operational?: () => boolean;
+    setupStatus?: () => PublicSetupStatus;
+    startOrdinaryJobs?: boolean;
   } = {},
 ): Promise<ControlServerApplication> {
   if (config.control === undefined || config.persistence === undefined) {
@@ -936,7 +974,7 @@ export async function startControlServer(
       host: config.control.host,
       port: config.control.port,
     });
-    if (inactivityJob !== undefined) {
+    if (inactivityJob !== undefined && options.startOrdinaryJobs !== false) {
       inactivityTimer = setInterval(() => {
         void restoreMaintenance.runOrdinary(
           () => inactivityJob!.run(false),
@@ -944,7 +982,10 @@ export async function startControlServer(
       }, 60_000);
       inactivityTimer.unref();
     }
-    if (auditRetention !== undefined) {
+    if (
+      auditRetention !== undefined
+      && options.startOrdinaryJobs !== false
+    ) {
       auditMaintenanceTimer = setInterval(() => {
         void restoreMaintenance.runOrdinary(
           () => auditRetention!.run(),
@@ -952,7 +993,10 @@ export async function startControlServer(
       }, 3_600_000);
       auditMaintenanceTimer.unref();
     }
-    if (activityAggregation !== undefined) {
+    if (
+      activityAggregation !== undefined
+      && options.startOrdinaryJobs !== false
+    ) {
       activityAggregationTimer = setInterval(() => {
         void restoreMaintenance.runOrdinary(
           () => activityAggregation!.run(),
@@ -1021,6 +1065,13 @@ export async function startControlServer(
       return closePromise;
     },
   };
+}
+
+function isSetupPath(url: string): boolean {
+  const path = url.split("?", 1)[0];
+  return path === "/api/v2/health/live"
+    || path === "/api/v2/health/ready"
+    || path === "/api/v2/setup/status";
 }
 
 export function restoreStageCoordinatorFromEnvironment(

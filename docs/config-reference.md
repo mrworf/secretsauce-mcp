@@ -44,9 +44,16 @@ a shared deployment group. The store directory is `0700`, records are `0600`,
 and key/socket/store paths reject links, unsafe ownership, or writable modes.
 
 Start the broker with `SECRETSAUCE_VAULT_CONFIG=/config/vault.yaml
-node dist/vault/main.js`. The authenticated health command uses
-`SECRETSAUCE_VAULT_CREDENTIAL_SOCKET` plus `SECRETSAUCE_VAULT_DATA_KEY_FILE` and returns
-only `ready` or `unavailable`. The application control module can use
+node dist/vault/main.js`. The vault container health command reads the private
+status socket selected by `SECRETSAUCE_VAULT_STATUS_SOCKET`. Its default
+readiness mode returns success only for `ready`; the official Compose
+deployment sets `SECRETSAUCE_VAULT_HEALTH_MODE=liveness`, which returns success
+for any valid bounded vault status, including retry and fatal setup states.
+Unknown modes and unavailable or malformed status fail closed. The application
+uses the same status socket only during browser-first startup, with an optional
+`SECRETSAUCE_SETUP_STATUS_TIMEOUT_MS` from 100 through 5000 milliseconds.
+
+The application control module can use
 `SECRETSAUCE_VAULT_CREDENTIAL_SOCKET` plus
 `SECRETSAUCE_VAULT_CONTROL_KEY_FILE`; `/api/v2/health` then includes only
 `checks.vault: ready|unavailable`. Supplying just one variable fails startup

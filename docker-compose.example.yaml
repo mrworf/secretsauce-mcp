@@ -12,16 +12,17 @@ services:
       - vault-generated:/var/lib/secretsauce/generated
       - vault-setup-state:/var/lib/secretsauce/setup
       # The entrypoint assigns the runtime socket path to UID 1001/shared GID.
-      - ./vault-runtime:/run/secretsauce-vault
-      - ./vault-store:/var/lib/secretsauce/vault
+      - vault-runtime:/run/secretsauce-vault
+      - vault-store:/var/lib/secretsauce/vault
       # Retained-state adapters receive read-only inventory views.
-      - ./database:/inventory/database:ro
-      - ./audit:/inventory/audit:ro
-      - ./oauth-state:/inventory/oauth:ro
+      - secretsauce-database:/inventory/database:ro
+      - secretsauce-audit:/inventory/audit:ro
+      - secretsauce-oauth:/inventory/oauth:ro
     environment:
       SECRETSAUCE_VAULT_CONFIG: /config/vault.yaml
       SECRETSAUCE_VAULT_STATUS_SOCKET: /run/secretsauce-vault/status.sock
       SECRETSAUCE_VAULT_OWNER_UID: "1001"
+      SECRETSAUCE_VAULT_HEALTH_MODE: liveness
     healthcheck:
       test: ["CMD", "node", "dist/vault/healthCli.js"]
       interval: 30s
@@ -40,9 +41,6 @@ services:
       - "1002"
     build: .
     image: secretsauce-mcp:latest
-    depends_on:
-      secretsauce-vault:
-        condition: service_healthy
     ports:
       - "8080:8080"
       - "8081:8081"
@@ -56,18 +54,19 @@ services:
       # Stable read-only signing keys keep built-in OAuth access tokens valid after restart.
       - ./oauth:/run/oauth:ro
       # Audit and hash-only OAuth refresh state need writable persistent storage.
-      - ./audit:/var/lib/secretsauce/audit
+      # Fresh named volumes inherit the image's private UID-1000 directories.
+      - secretsauce-audit:/var/lib/secretsauce/audit
       # Mount the configured SQLite parent directory when persistence is enabled.
-      - ./database:/var/lib/secretsauce/database
+      - secretsauce-database:/var/lib/secretsauce/database
       # This refresh-state mount has a single-process writer contract.
-      - ./oauth-state:/var/lib/secretsauce/oauth
+      - secretsauce-oauth:/var/lib/secretsauce/oauth
       # gref_/sec_ capability state is intentionally ephemeral and is not mounted.
       # Runtime and backup coordination receive separate least-privilege key pairs.
       - vault-generated:/var/lib/secretsauce/generated:ro
       - vault-setup-state:/var/lib/secretsauce/setup:ro
       # Restore recovery uses a distinct stable wrapping key.
       - ./restore-keys/recovery.key:/run/restore-keys/recovery.key:ro
-      - ./vault-runtime:/run/secretsauce-vault:ro
+      - vault-runtime:/run/secretsauce-vault:ro
       # Staged archives and encrypted recovery artifacts require private durable storage.
       - ./restore:/var/lib/secretsauce/restore
     environment:
@@ -76,6 +75,8 @@ services:
       SENSITIVE_NAMES_CONFIG_PATH: /config/sensitive-names.yaml
       SECRETSAUCE_MCP_TOKEN: ${SECRETSAUCE_MCP_TOKEN:?set an ephemeral gateway token}
       SECRETSAUCE_VAULT_CREDENTIAL_SOCKET: /run/secretsauce-vault/credential.sock
+      SECRETSAUCE_VAULT_STATUS_SOCKET: /run/secretsauce-vault/status.sock
+      SECRETSAUCE_SETUP_STATUS_TIMEOUT_MS: "2000"
       SECRETSAUCE_VAULT_OWNER_UID: "1001"
       SECRETSAUCE_VAULT_MANIFEST_FILE: /var/lib/secretsauce/setup/manifest.json
       SECRETSAUCE_VAULT_KEY_OWNER_UID: "0"
@@ -89,7 +90,7 @@ services:
       SECRETSAUCE_RESTORE_RECOVERY_KEY_FILE: /run/restore-keys/recovery.key
       PORTAINER_API_KEY_FILE: /run/secrets/portainer_api_key
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8081/api/v2/health/live"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -98,3 +99,8 @@ services:
 volumes:
   vault-generated:
   vault-setup-state:
+  vault-runtime:
+  vault-store:
+  secretsauce-database:
+  secretsauce-audit:
+  secretsauce-oauth:

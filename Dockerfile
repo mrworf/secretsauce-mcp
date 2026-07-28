@@ -39,6 +39,10 @@ COPY config/secretlint.yaml /config/secretlint.yaml
 COPY config/sensitive-names.yaml /app/config/sensitive-names.yaml
 COPY config/sensitive-names.yaml /config/sensitive-names.yaml
 COPY package.json ./
+RUN install -d -o node -g node -m 0700 \
+      /var/lib/secretsauce/database \
+      /var/lib/secretsauce/audit \
+      /var/lib/secretsauce/oauth
 USER node
 EXPOSE 8080 8081
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 CMD wget -qO- http://127.0.0.1:8080/health >/dev/null || exit 1

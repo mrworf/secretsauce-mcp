@@ -143,6 +143,6 @@ readiness validation, and release scan.
 
 | Slice | Status | Commit | Evidence | Deviations |
 | --- | --- | --- | --- | --- |
-| 1 | completed | | 17/17 setup/private-status/process tests; server build; strict status states, timeout/owner inputs, capped one-in-flight polling, exact live/ready/status routes, maintenance-first ordinary-route rejection, and dependency-free setup composition | Production lifecycle handoff remains Slice 2 so this slice introduces no partially gated entrypoint. |
-| 2 | pending | | | |
+| 1 | completed | `10c2c8e` | 17/17 setup/private-status/process tests; server build; strict status states, timeout/owner inputs, capped one-in-flight polling, exact live/ready/status routes, maintenance-first ordinary-route rejection, and dependency-free setup composition | Production lifecycle handoff remains Slice 2 so this slice introduces no partially gated entrypoint. |
+| 2 | completed | this commit | 64/64 focused setup, handoff, gateway/control gate, Compose, container, and real vault-process tests; production build; current OpenAPI; 625-file release scan; zero-user enrollment and existing-user operational transitions; failed handoff rollback; concurrent liveness-driven Compose with named durable state and read-only application mounts | Docker runtime was unavailable, so static Compose contracts and real local process/socket continuity provide slice evidence; the full container recreation journey remains a Milestone 10 release gate. |
 | 3 | pending | | | |

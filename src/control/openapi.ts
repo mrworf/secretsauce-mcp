@@ -116,6 +116,7 @@ function registerRoute(
         };
   }
   for (const [status, description] of commonErrors) {
+    if (responses[status] !== undefined) continue;
     responses[status] = {
       description,
       content: {

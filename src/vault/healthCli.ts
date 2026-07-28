@@ -28,7 +28,15 @@ export async function runVaultHealthCli(
     ) {
       throw new Error("invalid owner");
     }
+    const mode = environment.SECRETSAUCE_VAULT_HEALTH_MODE ?? "readiness";
+    if (mode !== "readiness" && mode !== "liveness") {
+      throw new Error("invalid health mode");
+    }
     const state = await readVaultProvisioningStatus(socketPath, ownerUid);
+    if (mode === "liveness") {
+      write(`${JSON.stringify({ status: "live" })}\n`);
+      return 0;
+    }
     const status = state === "ready" ? "ready" : "unavailable";
     write(`${JSON.stringify({ status })}\n`);
     return status === "ready" ? 0 : 1;

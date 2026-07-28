@@ -36,6 +36,43 @@ describe("health server", () => {
     }
   });
 
+  it("fails every gateway surface closed before request processing during setup", async () => {
+    const server = createGatewayServer(serverConfig(), {
+      operational: () => false,
+    });
+    server.listen(0, "127.0.0.1");
+    await once(server, "listening");
+    const address = server.address();
+    if (!address || typeof address === "string") {
+      throw new Error("Expected TCP address");
+    }
+    const baseUrl = `http://127.0.0.1:${address.port}`;
+    try {
+      for (const request of [
+        fetch(`${baseUrl}/health`),
+        fetch(`${baseUrl}/.well-known/oauth-authorization-server`),
+        fetch(`${baseUrl}/mcp`, {
+          method: "POST",
+          headers: {
+            authorization: "Bearer reflected-private-value",
+            "content-type": "application/json",
+          },
+          body: '{"private":"must-not-reflect"}',
+        }),
+      ]) {
+        const response = await request;
+        expect(response.status).toBe(503);
+        expect(response.headers.get("retry-after")).toBe("3");
+        const body = await response.text();
+        expect(body).toContain("temporarily_unavailable");
+        expect(body).not.toContain("reflected-private-value");
+        expect(body).not.toContain("must-not-reflect");
+      }
+    } finally {
+      server.close();
+    }
+  });
+
   it("reports configured persistence readiness without exposing its path", async () => {
     const config = serverConfig();
     const databaseFile = join(mkdtempSync(join(tmpdir(), "gateway-server-db-")), "private-control.sqlite");

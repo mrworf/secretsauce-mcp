@@ -9,6 +9,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   readVaultProvisioningStatusDetails,
 } from "../src/vault/client.js";
+import { runVaultHealthCli } from "../src/vault/healthCli.js";
 
 const servers = new Set<Server>();
 
@@ -95,6 +96,39 @@ describe("private setup status client", () => {
         { timeoutMs },
       )).rejects.toThrow();
     }
+  });
+
+  it("treats a responsive preparing vault as live but not ready", async () => {
+    const socket = await server(() => ({
+      status: 200,
+      type: "application/json",
+      body: {
+        state: "preparing",
+        retry_pending: true,
+        error_category: "storage_unavailable",
+      },
+    }));
+    const liveOutput: string[] = [];
+    await expect(runVaultHealthCli({
+      SECRETSAUCE_VAULT_STATUS_SOCKET: socket,
+      SECRETSAUCE_VAULT_HEALTH_MODE: "liveness",
+    }, (value) => liveOutput.push(value))).resolves.toBe(0);
+    expect(liveOutput).toEqual(['{"status":"live"}\n']);
+
+    const readyOutput: string[] = [];
+    await expect(runVaultHealthCli({
+      SECRETSAUCE_VAULT_STATUS_SOCKET: socket,
+    }, (value) => readyOutput.push(value))).resolves.toBe(1);
+    expect(readyOutput).toEqual(['{"status":"unavailable"}\n']);
+  });
+
+  it("rejects unknown vault health modes without exposing configuration", async () => {
+    const output: string[] = [];
+    await expect(runVaultHealthCli({
+      SECRETSAUCE_VAULT_STATUS_SOCKET: "/private/status.sock",
+      SECRETSAUCE_VAULT_HEALTH_MODE: "unknown",
+    }, (value) => output.push(value))).resolves.toBe(1);
+    expect(output).toEqual(['{"status":"unavailable"}\n']);
   });
 });
 

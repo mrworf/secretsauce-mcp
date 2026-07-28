@@ -28,6 +28,7 @@ export function createGatewayServer(
     runtime?: GatewayRuntime;
     closeRuntimeOnServerClose?: boolean;
     restoreMaintenance?: RestoreMaintenanceGate;
+    operational?: () => boolean;
   } = {},
 ) {
   const logger = createLogger(config.logging);
@@ -46,6 +47,16 @@ export function createGatewayServer(
   const restoreMaintenance =
     options.restoreMaintenance ?? runtime.restoreMaintenance;
   const server = createServer(async (request, response) => {
+    if (options.operational !== undefined && !options.operational()) {
+      response.setHeader("retry-after", "3");
+      writeJson(response, 503, {
+        error: {
+          code: "temporarily_unavailable",
+          message: "SecretSauce is temporarily unavailable.",
+        },
+      });
+      return;
+    }
     if (request.method === "GET" && request.url === "/health") {
       logger.debug("http.health", { method: request.method, path: "/health", service_count: Object.keys(config.services).length });
       const persistenceReadiness = runtime.persistence?.readiness;
@@ -313,6 +324,7 @@ export async function startServer(
   options: {
     runtime?: GatewayRuntime;
     closeRuntimeOnClose?: boolean;
+    operational?: () => boolean;
   } = {},
 ): Promise<GatewayApplication> {
   const runtime = options.runtime ?? new GatewayRuntime(config);
@@ -321,7 +333,13 @@ export async function startServer(
   let server: ReturnType<typeof createGatewayServer>;
   const logger = createLogger(config.logging);
   try {
-    server = createGatewayServer(config, { runtime, closeRuntimeOnServerClose: false });
+    server = createGatewayServer(config, {
+      runtime,
+      closeRuntimeOnServerClose: false,
+      ...(options.operational === undefined
+        ? {}
+        : { operational: options.operational }),
+    });
     await new Promise<void>((resolve, reject) => {
       server.once("error", reject);
       server.listen(config.server.port, config.server.host, () => {

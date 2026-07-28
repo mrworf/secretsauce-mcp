@@ -162,6 +162,73 @@ describe("control wire primitives", () => {
   });
 });
 
+describe("control setup boundary", () => {
+  it("allows only exact public setup reads while ordinary work is gated", async () => {
+    const authenticate = vi.fn(async () => undefined);
+    const ordinary = vi.fn();
+    const application = createControlApplication(controlConfig(), {
+      operational: () => false,
+      setupStatus: () => ({
+        state: "preparing",
+        message: "SecretSauce is preparing this installation.",
+        retryPending: true,
+      }),
+      authenticator: { authenticate },
+      registerRoutes: (server) => {
+        server.get("/ordinary-test", ordinary);
+      },
+    });
+    const headers = { host: "control.example.org" };
+    try {
+      const live = await application.inject({
+        method: "GET",
+        url: "/api/v2/health/live",
+        headers,
+      });
+      expect(live.statusCode).toBe(200);
+      expect(live.json().data).toEqual({ state: "live" });
+
+      const ready = await application.inject({
+        method: "GET",
+        url: "/api/v2/health/ready",
+        headers,
+      });
+      expect(ready.statusCode).toBe(503);
+      expect(ready.json().data.state).toBe("not_ready");
+
+      const status = await application.inject({
+        method: "GET",
+        url: "/api/v2/setup/status",
+        headers,
+      });
+      expect(status.statusCode).toBe(200);
+      expect(status.json().data).toEqual({
+        state: "preparing",
+        message: "SecretSauce is preparing this installation.",
+        retry_pending: true,
+      });
+
+      for (const rejected of [
+        { method: "GET" as const, url: "/ordinary-test" },
+        { method: "GET" as const, url: "/api/v2/setup/status?extra=value" },
+        { method: "POST" as const, url: "/api/v2/setup/status" },
+      ]) {
+        const response = await application.inject({ ...rejected, headers });
+        expect(response.statusCode).toBe(
+          rejected.url === "/ordinary-test" ? 503 : 400,
+        );
+        if (response.statusCode === 503) {
+          expect(response.headers["retry-after"]).toBe("3");
+        }
+      }
+      expect(authenticate).not.toHaveBeenCalled();
+      expect(ordinary).not.toHaveBeenCalled();
+    } finally {
+      await application.close();
+    }
+  });
+});
+
 describe("control route registry", () => {
   it("rejects duplicate, incomplete, unsafe, or out-of-prefix route definitions", () => {
     const registry = new ControlRouteRegistry();

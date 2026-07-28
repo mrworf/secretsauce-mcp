@@ -12,6 +12,36 @@ import type { RestoreStageCoordinator } from "../restoreStaging.js";
 import type { RestorePreviewCoordinator } from "../restorePreview.js";
 import type { RestoreCommitCoordinator } from "../restoreCommit.js";
 import { registerRestoreRoutes } from "./restoreRoutes.js";
+import type { PublicSetupStatus } from "../setup/status.js";
+
+const setupStateSchema = z.enum([
+  "preparing",
+  "enrollment",
+  "available",
+  "not_ready",
+]);
+const liveDataSchema = z.object({
+  state: z.literal("live"),
+}).strict().meta({
+  id: "ApplicationLiveness",
+  description: "Bounded process liveness.",
+});
+const readyDataSchema = z.object({
+  state: z.enum(["operational", "not_ready"]),
+  message: z.string().max(160).optional(),
+}).strict().meta({
+  id: "ApplicationReadiness",
+  description: "Bounded operational readiness.",
+});
+const setupStatusDataSchema = z.object({
+  state: setupStateSchema,
+  message: z.string().min(1).max(160),
+  retry_pending: z.boolean(),
+}).strict().meta({
+  id: "ApplicationSetupStatus",
+  description: "Bounded public setup state without private prerequisite detail.",
+});
+const emptyInputSchema = z.object({}).strict();
 
 const readinessValueSchema = z.enum(["ready", "unavailable", "unsupported"]);
 const healthDataSchema = z.object({
@@ -42,8 +72,96 @@ export function createDefaultControlRouteRegistry(
   restoreStages?: RestoreStageCoordinator,
   restorePreviews?: RestorePreviewCoordinator,
   restoreCommits?: RestoreCommitCoordinator,
+  operational: () => boolean = () => true,
+  setupStatus?: () => PublicSetupStatus,
 ): ControlRouteRegistry {
   const registry = new ControlRouteRegistry();
+  registry.register({
+    id: "control.health.live",
+    method: "GET",
+    path: "/api/v2/health/live",
+    summary: "Read process liveness",
+    tags: ["System"],
+    authentication: "public",
+    permission: null,
+    stepUp: "none",
+    schemas: {
+      query: emptyInputSchema,
+      response: liveDataSchema,
+    },
+    rateLimit: "none",
+    secretFields: [],
+    cache: "no-store",
+    concurrency: "none",
+    idempotency: "none",
+    successStatuses: [200],
+    handler: () => ({ data: { state: "live" } }),
+  });
+  registry.register({
+    id: "control.health.ready",
+    method: "GET",
+    path: "/api/v2/health/ready",
+    summary: "Read operational readiness",
+    tags: ["System"],
+    authentication: "public",
+    permission: null,
+    stepUp: "none",
+    schemas: {
+      query: emptyInputSchema,
+      response: readyDataSchema,
+    },
+    rateLimit: "none",
+    secretFields: [],
+    cache: "no-store",
+    concurrency: "none",
+    idempotency: "none",
+    successStatuses: [200, 503],
+    handler: () => operational()
+      ? { data: { state: "operational" as const } }
+      : {
+          statusCode: 503,
+          data: {
+            state: "not_ready" as const,
+            message: "SecretSauce is not operational yet.",
+          },
+        },
+  });
+  registry.register({
+    id: "control.setup.status",
+    method: "GET",
+    path: "/api/v2/setup/status",
+    summary: "Read bounded setup status",
+    tags: ["System"],
+    authentication: "public",
+    permission: null,
+    stepUp: "none",
+    schemas: {
+      query: emptyInputSchema,
+      response: setupStatusDataSchema,
+    },
+    rateLimit: "none",
+    secretFields: [],
+    cache: "no-store",
+    concurrency: "none",
+    idempotency: "none",
+    successStatuses: [200],
+    handler: () => {
+      const status = setupStatus?.() ?? {
+        state: operational() ? "available" as const : "not_ready" as const,
+        message: operational()
+          ? "SecretSauce is available."
+          : "SecretSauce needs operator attention before setup can continue.",
+        retryPending: false,
+      };
+      return {
+        data: {
+          state: status.state,
+          message: status.message,
+          retry_pending: status.retryPending,
+        },
+      };
+    },
+  });
   registry.register({
     id: "control.health",
     method: "GET",

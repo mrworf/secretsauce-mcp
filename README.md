@@ -168,15 +168,16 @@ services:
       - ./vault.yaml:/config/vault.yaml:ro
       - vault-generated:/var/lib/secretsauce/generated
       - vault-setup-state:/var/lib/secretsauce/setup
-      - ./vault-runtime:/run/secretsauce-vault
-      - ./vault-store:/var/lib/secretsauce/vault
-      - ./database:/inventory/database:ro
-      - ./audit:/inventory/audit:ro
-      - ./oauth-state:/inventory/oauth:ro
+      - vault-runtime:/run/secretsauce-vault
+      - vault-store:/var/lib/secretsauce/vault
+      - secretsauce-database:/inventory/database:ro
+      - secretsauce-audit:/inventory/audit:ro
+      - secretsauce-oauth:/inventory/oauth:ro
     environment:
       SECRETSAUCE_VAULT_CONFIG: /config/vault.yaml
       SECRETSAUCE_VAULT_STATUS_SOCKET: /run/secretsauce-vault/status.sock
       SECRETSAUCE_VAULT_OWNER_UID: "1001"
+      SECRETSAUCE_VAULT_HEALTH_MODE: liveness
     healthcheck:
       test: ["CMD", "node", "dist/vault/healthCli.js"]
 
@@ -193,19 +194,21 @@ services:
       - ./sensitive-names.yaml:/config/sensitive-names.yaml:ro
       - ./secrets:/run/secrets:ro
       - ./oauth:/run/oauth:ro
-      - ./audit:/var/lib/secretsauce/audit
-      - ./database:/var/lib/secretsauce/database
-      - ./oauth-state:/var/lib/secretsauce/oauth
+      - secretsauce-audit:/var/lib/secretsauce/audit
+      - secretsauce-database:/var/lib/secretsauce/database
+      - secretsauce-oauth:/var/lib/secretsauce/oauth
       - vault-generated:/var/lib/secretsauce/generated:ro
       - vault-setup-state:/var/lib/secretsauce/setup:ro
       - ./restore-keys/recovery.key:/run/restore-keys/recovery.key:ro
-      - ./vault-runtime:/run/secretsauce-vault:ro
+      - vault-runtime:/run/secretsauce-vault:ro
       - ./restore:/var/lib/secretsauce/restore
     environment:
       CONFIG_PATH: /config/config.yaml
       SECRETLINT_CONFIG_PATH: /config/secretlint.yaml
       SENSITIVE_NAMES_CONFIG_PATH: /config/sensitive-names.yaml
       SECRETSAUCE_VAULT_CREDENTIAL_SOCKET: /run/secretsauce-vault/credential.sock
+      SECRETSAUCE_VAULT_STATUS_SOCKET: /run/secretsauce-vault/status.sock
+      SECRETSAUCE_SETUP_STATUS_TIMEOUT_MS: "2000"
       SECRETSAUCE_VAULT_OWNER_UID: "1001"
       SECRETSAUCE_VAULT_MANIFEST_FILE: /var/lib/secretsauce/setup/manifest.json
       SECRETSAUCE_VAULT_KEY_OWNER_UID: "0"
@@ -221,9 +224,21 @@ services:
 volumes:
   vault-generated:
   vault-setup-state:
+  vault-runtime:
+  vault-store:
+  secretsauce-database:
+  secretsauce-audit:
+  secretsauce-oauth:
 ```
 
-Use the writable audit mount for `audit.file`, for example `/var/lib/secretsauce/audit/audit.jsonl`. Monitor `/health` and disk capacity: an audit open or write failure keeps privileged operations fail-open but changes readiness to `503` with a sanitized audit-degraded check until restart. The open descriptor supports `copytruncate`-style rotation; rename-based rotation requires a restart. Static built-in OAuth keeps `signing_key_file` on stable read-only storage and can use a writable `refresh_token_store_file` for hash-only refresh continuity. Database built-in OAuth instead keeps `token_hmac_key_file` on stable mode-`0400` storage; its hash-only token and grant state is already in the durable SQLite database.
+The vault and application start concurrently; do not add a readiness-based
+`depends_on`. During provisioning the application serves bounded setup status
+without opening SQLite or ordinary OAuth, MCP, login, or control behavior.
+Compose health uses liveness at `GET /api/v2/health/live`; operational monitors
+should use `GET /api/v2/health/ready`, and setup clients may read
+`GET /api/v2/setup/status`.
+
+Use the writable audit mount for `audit.file`, for example `/var/lib/secretsauce/audit/audit.jsonl`. Monitor operational readiness and disk capacity: an audit open or write failure keeps privileged operations fail-open but changes readiness to `503` with a sanitized audit-degraded check until restart. The open descriptor supports `copytruncate`-style rotation; rename-based rotation requires a restart. Static built-in OAuth keeps `signing_key_file` on stable read-only storage and can use a writable `refresh_token_store_file` for hash-only refresh continuity. Database built-in OAuth instead keeps `token_hmac_key_file` on stable mode-`0400` storage; its hash-only token and grant state is already in the durable SQLite database.
 
 The vault broker is a separate process with no TCP listener. Start from
 [`examples/vault.yaml`](examples/vault.yaml). The production entrypoint

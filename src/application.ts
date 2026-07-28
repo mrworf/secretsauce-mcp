@@ -13,6 +13,8 @@ import {
   type GatewayApplication,
 } from "./server.js";
 import type { GatewayConfig } from "./types.js";
+import type { PersistenceOwner } from "./persistence/worker.js";
+import type { PublicSetupStatus } from "./setup/status.js";
 import {
   createBackupVaultAccess,
   createControlVaultReadiness,
@@ -26,11 +28,27 @@ export interface SecretSauceApplication {
   close(): Promise<void>;
 }
 
+export interface SecretSauceApplicationOptions {
+  persistence?: PersistenceOwner;
+  operational?: () => boolean;
+  setupStatus?: () => PublicSetupStatus;
+  startOrdinaryJobs?: boolean;
+}
+
 export async function startSecretSauceApplication(
   config: GatewayConfig,
   environment: NodeJS.ProcessEnv = process.env,
+  options: SecretSauceApplicationOptions = {},
 ): Promise<SecretSauceApplication> {
-  const runtime = new GatewayRuntime(config, { environment });
+  const runtime = new GatewayRuntime(config, {
+    environment,
+    ...(options.persistence === undefined
+      ? {}
+      : { persistence: options.persistence }),
+    ...(options.startOrdinaryJobs === false
+      ? { startMaintenance: () => () => undefined }
+      : {}),
+  });
   let control: ControlServerApplication | undefined;
   let gateway: GatewayApplication | undefined;
   let controlVault: VaultReadinessHandle | undefined;
@@ -42,6 +60,21 @@ export async function startSecretSauceApplication(
       }
       controlVault = createControlVaultReadiness(environment);
       backupVault = createBackupVaultAccess(environment);
+      if (
+        controlVault !== undefined
+        && await controlVault.readiness() !== "ready"
+      ) throw new Error("Vault readiness is unavailable.");
+      if (
+        runtime.runtimeVault !== undefined
+        && await runtime.runtimeVault.readiness() !== "ready"
+      ) throw new Error("Runtime vault readiness is unavailable.");
+      const readiness = runtime.persistence.readiness;
+      if (
+        readiness.database !== "ready"
+        || readiness.schema !== "ready"
+        || readiness.administrativeAudit !== "ready"
+        || runtime.auditSink.degraded
+      ) throw new Error("Operational prerequisites are unavailable.");
       await resumeRestoreIfConfigured(
         config,
         environment,
@@ -63,11 +96,23 @@ export async function startSecretSauceApplication(
               backupVaultClient: backupVault.client,
               backupCapabilityIssuer: backupVault.issuer,
             }),
+        ...(options.operational === undefined
+          ? {}
+          : { operational: options.operational }),
+        ...(options.setupStatus === undefined
+          ? {}
+          : { setupStatus: options.setupStatus }),
+        ...(options.startOrdinaryJobs === undefined
+          ? {}
+          : { startOrdinaryJobs: options.startOrdinaryJobs }),
       });
     }
     gateway = await startServer(config, {
       runtime,
       closeRuntimeOnClose: false,
+      ...(options.operational === undefined
+        ? {}
+        : { operational: options.operational }),
     });
   } catch (error) {
     await gateway?.close().catch(() => undefined);
@@ -145,7 +190,11 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   }
   try {
     const config = loadConfig(configPath);
-    const application = await startSecretSauceApplication(config);
+    const application = process.env.SECRETSAUCE_VAULT_STATUS_SOCKET === undefined
+      ? await startSecretSauceApplication(config)
+      : await (
+          await import("./setup/lifecycle.js")
+        ).startBrowserFirstApplication(config);
     installShutdownSignalHandlers(
       application,
       createLogger(config.logging),

@@ -16,6 +16,9 @@
 - **Decision update:** On 2026-07-27, the product owner accepted `PRD-004` for
   the supported single-operator deployment and required its trust assumption to
   be stated explicitly in the PRD.
+- **Decision update:** On 2026-07-27, the product owner resolved `PRD-005` with
+  a mechanism-neutral conditional-mutation invariant: current reachability and
+  authorization must still hold when revocation is decided.
 
 ## Scope
 
@@ -55,11 +58,12 @@ It is not yet implementation-ready. Three issues block architecture approval:
 The product owner accepts the bootstrap-log exposure for the supported
 single-operator deployment: readers of the current line are in the same trust
 domain as infrastructure administrators, and the secret is invalid after
-successful enrollment or restart. Four additional decisions should be made
-before milestone planning: require transaction-snapshot authorization for
-scoped grant revocation, define trusted proxy/source derivation, define logout
-behavior when durable revocation or audit fails, and correct the document's
-premature readiness declaration.
+successful enrollment or restart. Scoped grant revocation is also settled:
+authorization and reachability must hold at the mutation boundary, without
+mandating SQL or a particular persistence mechanism. Three additional decisions
+should be made before milestone planning: define trusted proxy/source
+derivation, define logout behavior when durable revocation or audit fails, and
+correct the document's premature readiness declaration.
 
 No confirmed vulnerability exists merely because these requirements are
 unimplemented. Implementing the current text literally would, however, either
@@ -94,7 +98,7 @@ individual implementers.
 | PRD-002 | Blocker | Architecture / Operations | Current vault dependency graph cannot auto-provision keys | Select and document startup ownership |
 | PRD-003 | Blocker | Security / Data safety | Fresh-versus-retained-state decision is incomplete | Add authoritative state matrix and tests |
 | PRD-004 | Accepted risk | Security / Operations | Bootstrap log access delegates initial-enrollment authority | Accepted and documented |
-| PRD-005 | Required | Authorization | Scoped grant revocation lacks transaction-snapshot semantics | Add invariant and race tests |
+| PRD-005 | Resolved | Authorization | Scoped grant revocation could use stale reachability or authorization | Require a mechanism-neutral conditional mutation and race tests |
 | PRD-006 | Required | Security / Operations | Source identity is undefined behind a reverse proxy | Define trusted-proxy contract |
 | PRD-007 | Required | Security / UX | Logout failure behavior is externally observable but unsettled | Make a product decision |
 | PRD-008 | Required | Governance | “Implementation-ready” conflicts with unresolved mandatory gates | Change readiness declaration |
@@ -294,14 +298,14 @@ Preserve the 128-bit secret, constant-time comparison, process lifetime,
 single successful consumption, rate limits, uniform failures, and atomic
 first-user commit.
 
-### PRD-005: Scoped grant revocation needs same-snapshot authorization
+### PRD-005: Scoped grant revocation requires current conditional authorization
 
 - **Category:** likely authorization vulnerability if implemented naively
-- **Priority:** required before API/data design
+- **Priority:** resolved by product contract
 - **CVSS v3.1:** not scored without implementation; the impact depends on
   whether stale authorization can revoke an out-of-scope grant
-- **Affected requirements:** `ACCESS-005`, `ACCESS-006`, `ACCESS-010`, security
-  requirements in section 15
+- **Affected requirements:** `ACCESS-005`, `ACCESS-006`, `ACCESS-010`,
+  `ACCESS-012`, and security requirements in section 15
 
 #### Evidence
 
@@ -321,18 +325,23 @@ an agent connection after it becomes partly or wholly out of scope. Physical
 deletion also makes authorized no-change behavior difficult unless ownership
 and scope evidence remain durably resolvable.
 
-#### Required change
+#### Product-owner decision
 
-Require the mutation transaction to resolve the target, compute every currently
-reachable service, evaluate actor role and current service scope, revoke, and
-append audit as one serialized snapshot. A cursor, cached projection, or prior
-list response must never serve as mutation authority. Keep a bounded durable
-tombstone or equivalent scoped result reference long enough to provide
-idempotent no-change results without leaking target existence.
+The revocation contract is mechanism-neutral. Current actor role, target-owner
+eligibility, and the grant's current nonempty all-services-managed scope must
+still authorize the mutation when it is decided. If they do not, no user, grant,
+token, or reference state changes, and the caller receives the uniform
+inaccessible-target result. A cursor, cached projection, prior list response, or
+earlier authorization result must not independently authorize the mutation.
+An inactive target receives the audited no-change success only while current
+authorization remains durably provable; an unknown or physically deleted
+target is inaccessible.
 
-Add a negative concurrency test that removes the admin's service scope between
-list and revoke; revocation must be denied and target existence must remain
-uniform.
+An implementation may use a conditional write, transaction, lock, serialized
+command, or another persistence strategy that enforces this invariant. A
+negative concurrency test must remove the admin's required service scope between
+list and revoke; revocation must change no protected state and target existence
+must remain undisclosed.
 
 ### PRD-006: Direct-source identity is undefined behind reverse proxies
 
@@ -509,9 +518,7 @@ only happy-path UI behavior.
    configured-state atomicity.
 3. **Change before data-model review:** define the installation identity and
    retained-state matrix across database, vault, key, and audit stores.
-4. **Change before security approval:** record the accepted bootstrap-log trust
-   assumption, and make transaction-snapshot revocation and trusted-proxy source
-   derivation explicit.
+4. **Change before security approval:** define trusted-proxy source derivation.
 5. **Change before UX approval:** settle logout failure behavior and wording.
 6. **Change before milestone planning:** mark implementation readiness as
    conditional on all mandatory reviews and blocker closure.
@@ -572,10 +579,11 @@ already explicit. I would approve the PRD as a strong draft ready for focused
 revision, not as an implementation-ready contract.
 
 Resolve PRD-001 through PRD-003 before architecture or data/API approval.
-PRD-004 is accepted and documented. Resolve PRD-005 through PRD-008 before
-milestone planning. After those changes, the existing setup states, enrollment
-model, opaque sessions, revocation semantics, and single-instance deployment
-are suitable foundations; they do not need broad redesign.
+PRD-004 is accepted and documented, and PRD-005 is resolved by the
+conditional-mutation contract. Resolve PRD-006 through PRD-008 before milestone
+planning. After those changes, the existing setup states, enrollment model,
+opaque sessions, revocation semantics, and single-instance deployment are
+suitable foundations; they do not need broad redesign.
 
 ## Assumptions and Limitations
 

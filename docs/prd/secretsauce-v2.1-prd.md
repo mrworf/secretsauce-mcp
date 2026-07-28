@@ -764,6 +764,18 @@ limited without rolling back enrollment.
 - `ACCESS-011` Operational session/grant records may be physically deleted after
   revocation when the immutable audit evidence required by this document
   commits atomically.
+- `ACCESS-012` An administrative agent-connection revocation must make the
+  actor's current role, the target owner's current eligibility, and the grant's
+  current nonempty all-services-managed scope part of the mutation's
+  authorization boundary. If any condition is false when the mutation is
+  decided, the operation must change no user, grant, token, or reference state
+  and must return the same non-disclosing result as any other inaccessible
+  target. A prior list result, cached projection, or earlier authorization check
+  must not independently authorize the mutation. The persistence mechanism that
+  enforces this invariant is an architecture decision. An inactive target
+  qualifies for the audited no-change success in `ACCESS-010` only while the
+  current authorization conditions remain durably provable; an unknown or
+  physically deleted target is inaccessible.
 
 ### 13.8 Health and interface gating
 
@@ -872,6 +884,10 @@ if the operational session/grant row is deleted.
   every request independently.
 - Session-management filters and identifiers must enforce actor and service
   scope before returning target existence.
+- Administrative agent-connection revocation must enforce current role,
+  target-owner eligibility, and complete reachable-service scope at the
+  mutation boundary; stale list or authorization results must not grant
+  authority.
 - Every new external setup, enrollment, login, session-metadata, and
   revocation input requires positive and negative tests.
 
@@ -1155,6 +1171,9 @@ this document.
 6. The first request authenticated after revocation commit is rejected.
 7. Bulk revocation is atomic and includes the initiating session when in scope.
 8. Removing operational records retains the required immutable audit evidence.
+9. If a regular admin loses any required service scope after listing an agent
+   connection but before revoking it, the revocation changes no user, grant,
+   token, or reference state and returns the uniform inaccessible-target result.
 
 ### 21.6 UX and privacy
 
@@ -1175,7 +1194,7 @@ this document.
   counters, rolling-window behavior, and scope predicates.
 - Persistence tests for atomic configured-manifest commit, initial-superadmin
   commit, counter/suspension/revocation commit, bulk revocation, audit coupling,
-  and concurrency races.
+  conditional administrative revocation, and concurrency races.
 - Positive and negative contract tests for every new setup, enrollment, login,
   metadata, filter, confirmation, and revocation input.
 - Process tests for fresh provisioning, interruption and restart at every
@@ -1284,6 +1303,10 @@ These questions concern mechanisms and must not change the product contract:
 - Fresh `pending`-key provisioning failures stay live and retry; a missing or
   mismatched `verified` or configured key is fatal and never regenerated.
 - There is no configured-manifest clearing or cryptographic-reset capability.
+- Administrative agent-connection revocation changes state only when current
+  actor role, target-owner eligibility, and complete reachable-service scope
+  authorize the mutation at its decision boundary. The persistence mechanism is
+  left to architecture.
 - The official Compose deployment uses durable volumes, but the container does
   not claim it can prove arbitrary mount durability.
 - The process-lifetime bootstrap secret is retained by the application only in
@@ -1333,7 +1356,7 @@ These questions concern mechanisms and must not change the product contract:
 | Rate limits and durable suspension | `ABUSE-001`–`ABUSE-014` | 21.3 |
 | Reset/reactivation consistency | `RECOVER-001`–`RECOVER-007` | 21.4 |
 | Session-hijacking resistance | `SESSION-001`–`SESSION-008` | 21.5 |
-| Scoped revocation and audit | `ACCESS-001`–`ACCESS-011` | 21.5 |
+| Scoped revocation and audit | `ACCESS-001`–`ACCESS-012` | 21.5 |
 | Health before setup | `HEALTH-001`–`HEALTH-007` | 21.1 |
 | Secret and personal-data minimization | Sections 14–16 | 21.2, 21.5, 21.6 |
 | Browser-first Compose deployment | `SETUP-010`–`SETUP-019`, sections 18–19 | 21.1 |

@@ -6,6 +6,7 @@ import {
   type CapabilityInvalidationTarget,
   type GrantAccessItem,
   type GrantBulkTarget,
+  type SessionBulkTarget,
   type ServiceAccessItem,
   type SessionAccessItem,
 } from "../accessManagement.js";
@@ -126,9 +127,11 @@ export function registerAccessManagementRoutes(
   registerSessionRevoke(registry, dependencies, false);
   registerSessionRevoke(registry, dependencies, true);
   registerOwnSessionBulkRevoke(registry, dependencies);
+  registerAdministrativeSessionBulkRevoke(registry, dependencies);
   registerGrantList(registry, dependencies, false);
   registerGrantList(registry, dependencies, true);
-  registerGrantRevoke(registry, dependencies);
+  registerGrantRevoke(registry, dependencies, false);
+  registerGrantRevoke(registry, dependencies, true);
   registerOwnGrantBulkRevoke(registry, dependencies);
   registerBulkGrantRevoke(registry, dependencies);
 
@@ -140,7 +143,7 @@ export function registerAccessManagementRoutes(
     tags: ["Access"],
     authentication: ["browser_session"],
     permission: "configure_service",
-    stepUp: "none",
+    stepUp: global ? "always" : "none",
     schemas: {
       params: serviceParams,
       query: listQuery.omit({ user_id: true, client_id: true, q: true }),
@@ -404,13 +407,27 @@ function registerSessionRevoke(
     cache: "no-store",
     concurrency: "none",
     idempotency: "none",
-    handler: async ({ authentication, params, request, reply, requestId }) =>
+    handler: async ({
+      authentication,
+      params,
+      request,
+      reply,
+      requestId,
+      stepUpProof,
+    }) =>
       run(async () => {
-        const result = await dependencies.repository.revokeSession({
-          viewer: viewer(authentication!),
-          sessionId: params.session_id,
-          correlationId: requestId,
-        });
+        const result = global
+          ? await dependencies.repository.revokeAdministrativeSession({
+              viewer: viewer(authentication!),
+              sessionId: params.session_id,
+              correlationId: requestId,
+              ...(stepUpProof === undefined ? {} : { stepUpProof }),
+            })
+          : await dependencies.repository.revokeSession({
+              viewer: viewer(authentication!),
+              sessionId: params.session_id,
+              correlationId: requestId,
+            });
         const current = dependencies.browserSessions.session(request);
         if (result.revoked && current?.sessionId === params.session_id) {
           clearControlSessionCookie(reply);
@@ -425,6 +442,73 @@ function registerSessionRevoke(
           },
         };
       }),
+  }));
+}
+
+function registerAdministrativeSessionBulkRevoke(
+  registry: ControlRouteRegistry,
+  dependencies: AccessRouteDependencies,
+): void {
+  const bodySchema = z.object({
+    target: z.discriminatedUnion("kind", [
+      z.object({ kind: z.literal("user"), id: uuid }).strict(),
+      z.object({ kind: z.literal("all") }).strict(),
+    ]),
+    confirmation: z.string().min(1).max(128),
+    justification: z.string().min(1).max(1024),
+  }).strict();
+  registry.register(defineControlRoute({
+    id: "access.security_sessions.revoke_bulk",
+    method: "POST",
+    path: "/api/v2/security/sessions/revoke",
+    summary: "Bulk revoke browser sessions",
+    tags: ["Access"],
+    authentication: ["browser_session"],
+    permission: "authenticated",
+    stepUp: "always",
+    schemas: { body: bodySchema, response: revokeSchema },
+    rateLimit: "management",
+    auditAction: "access.global_sessions_revoke",
+    secretFields: [],
+    cache: "no-store",
+    concurrency: "none",
+    idempotency: "required",
+    handler: async ({
+      authentication,
+      body,
+      idempotencyKey,
+      requestId,
+      stepUpProof,
+      reply,
+    }) => run(async () => {
+      const actor = authentication!;
+      const result = await dependencies.repository.revokeSessionBulk({
+        viewer: viewer(actor),
+        target: body.target as SessionBulkTarget,
+        confirmation: body.confirmation,
+        justification: body.justification,
+        correlationId: requestId,
+        idempotency: idempotencyInput(
+          dependencies,
+          actor.principalId,
+          "access.security_sessions.revoke_bulk",
+          idempotencyKey!,
+          body,
+        ),
+        ...(stepUpProof === undefined ? {} : { stepUpProof }),
+      });
+      if (
+        result.kind === "executed"
+        && result.value.sessionsRevoked > 0
+        && (
+          body.target.kind === "all"
+          || body.target.id === actor.principalId
+        )
+      ) {
+        clearControlSessionCookie(reply);
+      }
+      return { data: wireIdempotentRevocation(result) };
+    }),
   }));
 }
 
@@ -486,16 +570,19 @@ function registerGrantList(
 function registerGrantRevoke(
   registry: ControlRouteRegistry,
   dependencies: AccessRouteDependencies,
+  global: boolean,
 ): void {
   registry.register(defineControlRoute({
-    id: "access.grants.revoke",
+    id: global ? "access.security_grants.revoke_one" : "access.grants.revoke",
     method: "DELETE",
-    path: "/api/v2/access/grants/{grant_id}",
-    summary: "Revoke an own OAuth grant",
+    path: global
+      ? "/api/v2/security/oauth-grants/{grant_id}"
+      : "/api/v2/access/grants/{grant_id}",
+    summary: global ? "Administratively revoke an OAuth grant" : "Revoke an own OAuth grant",
     tags: ["Access"],
     authentication: ["browser_session"],
     permission: "authenticated",
-    stepUp: "none",
+    stepUp: global ? "always" : "none",
     schemas: { params: grantParams, response: revokeSchema },
     rateLimit: "management",
     auditAction: "oauth.grant_revoke",
@@ -503,12 +590,24 @@ function registerGrantRevoke(
     cache: "no-store",
     concurrency: "none",
     idempotency: "none",
-    handler: async ({ authentication, params, requestId }) => run(async () => {
-      const result = await dependencies.repository.revokeGrant({
-        viewer: viewer(authentication!),
-        grantId: params.grant_id,
-        correlationId: requestId,
-      });
+    handler: async ({
+      authentication,
+      params,
+      requestId,
+      stepUpProof,
+    }) => run(async () => {
+      const result = global
+        ? await dependencies.repository.revokeAdministrativeGrant({
+            viewer: viewer(authentication!),
+            grantId: params.grant_id,
+            correlationId: requestId,
+            ...(stepUpProof === undefined ? {} : { stepUpProof }),
+          })
+        : await dependencies.repository.revokeGrant({
+            viewer: viewer(authentication!),
+            grantId: params.grant_id,
+            correlationId: requestId,
+          });
       return {
         data: {
           target_id: result.targetId,

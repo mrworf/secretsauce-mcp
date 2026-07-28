@@ -76,7 +76,7 @@ privacy-safe.
 
 | Slice | Status | Commit | Evidence | Deviations |
 | --- | --- | --- | --- | --- |
-| 1 | completed | this commit | Migration 25 stores only derived authentication/device/coarse-network metadata; local and OIDC session creation share conservative derivation; access cursors bind actor/scope/filters; self individual/all session and agent revocation is atomic and current-session bulk clears the cookie; 42 focused tests and production build passed | Operational cleanup evidence is deferred to slice 4 as planned. |
-| 2 | pending | — | — | — |
+| 1 | completed | `5137db5` | Migration 25 stores only derived authentication/device/coarse-network metadata; local and OIDC session creation share conservative derivation; access cursors bind actor/scope/filters; self individual/all session and agent revocation is atomic and current-session bulk clears the cookie; 42 focused tests and production build passed | Operational cleanup evidence is deferred to slice 4 as planned. |
+| 2 | completed | this commit | Superadmin individual/per-user/global browser and connection revocation; regular-admin nonempty complete all-services-managed connection visibility/revocation; same-transaction actor-role, owner-role/status, and service-scope predicates; exact step-up/audit coupling and uniform no-change; 75 focused access/browser/OAuth tests plus production build | Listener-backed browser qualification required approved loopback/socket permission. |
 | 3 | pending | — | — | — |
 | 4 | pending | — | — | — |

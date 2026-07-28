@@ -171,6 +171,15 @@ describe("access management projections", () => {
 
   it("revokes only an own session or grant, tears down token records, and is idempotent", async () => {
     const fixture = await setup();
+    const privilegedOwnRoute = await fixture.repository.revokeSession({
+      viewer: { userId: fixture.superadmin, role: "superadmin" },
+      sessionId: SESSION_ONE,
+      correlationId: correlationId("0"),
+    });
+    expect(privilegedOwnRoute).toMatchObject({
+      revoked: false,
+      sessionsRevoked: 0,
+    });
     const denied = await fixture.repository.revokeGrant({
       viewer: { userId: fixture.userOne, role: "user" },
       grantId: GRANT_TWO,
@@ -311,6 +320,182 @@ describe("access management projections", () => {
         requestDigest: "2".repeat(64),
       },
     })).rejects.toEqual(new AccessManagementError("invalid_request"));
+  });
+
+  it("shows and revokes only complete all-services-managed ordinary-user grants for regular admins", async () => {
+    const fixture = await setup(true);
+    const visible = await fixture.repository.grantsPage({
+      viewer: { userId: fixture.admin, role: "admin" },
+      scope: "global",
+      userId: fixture.userOne,
+    });
+    expect(visible.items.map(({ id }) => id)).toEqual([GRANT_ONE]);
+    const empty = await fixture.repository.grantsPage({
+      viewer: { userId: fixture.admin, role: "admin" },
+      scope: "global",
+      userId: fixture.userTwo,
+    });
+    expect(empty.items).toEqual([]);
+    await expect(fixture.repository.sessionsPage({
+      viewer: { userId: fixture.admin, role: "admin" },
+      scope: "global",
+      userId: fixture.userOne,
+    })).rejects.toEqual(new AccessManagementError("forbidden"));
+    await expect(fixture.repository.grantsPage({
+      viewer: { userId: fixture.admin, role: "admin" },
+      scope: "global",
+    })).rejects.toEqual(new AccessManagementError("forbidden"));
+
+    const revoked = await fixture.repository.revokeAdministrativeGrant({
+      viewer: { userId: fixture.admin, role: "admin" },
+      grantId: GRANT_ONE,
+      correlationId: correlationId("1"),
+      stepUpProof: fakeProof(fixture.admin),
+    });
+    expect(revoked).toMatchObject({ revoked: true, grantsRevoked: 1 });
+    const inaccessible = await fixture.repository.revokeAdministrativeGrant({
+      viewer: { userId: fixture.admin, role: "admin" },
+      grantId: GRANT_TWO,
+      correlationId: correlationId("2"),
+      stepUpProof: fakeProof(fixture.admin),
+    });
+    expect(inaccessible).toMatchObject({ revoked: false, grantsRevoked: 0 });
+  });
+
+  it("reauthorizes regular-admin role, owner eligibility, and complete service scope in the mutation transaction", async () => {
+    const fixture = await setup(true);
+    await fixture.worker.execute({
+      run: (database) => database.withOperationalTransaction((transaction) => {
+        transaction.run(
+          "DELETE FROM service_admins WHERE service_id = ? AND user_id = ?",
+          [SERVICE_ID, fixture.admin],
+        );
+      }),
+    });
+    const lostScope = await fixture.repository.revokeAdministrativeGrant({
+      viewer: { userId: fixture.admin, role: "admin" },
+      grantId: GRANT_ONE,
+      correlationId: correlationId("3"),
+      stepUpProof: fakeProof(fixture.admin),
+    });
+    expect(lostScope).toMatchObject({ revoked: false, grantsRevoked: 0 });
+    const state = await fixture.worker.execute({
+      run: (database) => database.read((query) => query.get<{
+        grant_status: string;
+        access_status: string;
+      }>(`
+        SELECT
+          (SELECT status FROM oauth_grants WHERE id = ?) AS grant_status,
+          (SELECT status FROM oauth_access_tokens WHERE id = ?) AS access_status
+      `, [GRANT_ONE, ACCESS_ID])),
+    });
+    expect(state).toEqual({ grant_status: "active", access_status: "active" });
+
+    await fixture.worker.execute({
+      run: (database) => database.withOperationalTransaction((transaction) => {
+        transaction.run(`
+          INSERT INTO service_admins (
+            service_id, user_id, assigned_by_user_id, created_at
+          ) VALUES (?, ?, ?, ?)
+        `, [SERVICE_ID, fixture.admin, fixture.superadmin, NOW]);
+        transaction.run(
+          "UPDATE users SET role = 'admin', version = version + 1, updated_at = ? WHERE id = ?",
+          [NOW, fixture.userOne],
+        );
+      }),
+    });
+    const privilegedOwner = await fixture.repository.revokeAdministrativeGrant({
+      viewer: { userId: fixture.admin, role: "admin" },
+      grantId: GRANT_ONE,
+      correlationId: correlationId("4"),
+      stepUpProof: fakeProof(fixture.admin),
+    });
+    expect(privilegedOwner).toMatchObject({ revoked: false, grantsRevoked: 0 });
+
+    await fixture.worker.execute({
+      run: (database) => database.withOperationalTransaction((transaction) => {
+        transaction.run(
+          "UPDATE users SET role = 'user', version = version + 1, updated_at = ? WHERE id = ?",
+          [NOW, fixture.userOne],
+        );
+        transaction.run(
+          "UPDATE users SET role = 'user', version = version + 1, updated_at = ? WHERE id = ?",
+          [NOW, fixture.admin],
+        );
+      }),
+    });
+    const staleActorRole = await fixture.repository.revokeAdministrativeGrant({
+      viewer: { userId: fixture.admin, role: "admin" },
+      grantId: GRANT_ONE,
+      correlationId: correlationId("5"),
+      stepUpProof: fakeProof(fixture.admin),
+    });
+    expect(staleActorRole).toMatchObject({ revoked: false, grantsRevoked: 0 });
+  });
+
+  it("atomically revokes only a regular admin's qualifying per-user connection scope", async () => {
+    const fixture = await setup(true);
+    const result = await fixture.repository.revokeGrantBulk({
+      viewer: { userId: fixture.admin, role: "admin" },
+      target: { kind: "user", id: fixture.userOne },
+      confirmation: `REVOKE USER ${fixture.userOne}`,
+      justification: "End every connection in the managed user scope.",
+      correlationId: correlationId("8"),
+      idempotency: {
+        keyHash: "5".repeat(64),
+        principalId: fixture.admin,
+        routeId: "access.security_grants.revoke",
+        requestDigest: "6".repeat(64),
+      },
+      stepUpProof: fakeProof(fixture.admin),
+    });
+    expect(result).toMatchObject({
+      kind: "executed",
+      value: { grantsRevoked: 1 },
+    });
+    await expect(fixture.repository.revokeGrantBulk({
+      viewer: { userId: fixture.admin, role: "admin" },
+      target: { kind: "all" },
+      confirmation: "REVOKE ALL OAUTH GRANTS",
+      justification: "Must remain superadmin only.",
+      correlationId: correlationId("9"),
+      idempotency: {
+        keyHash: "7".repeat(64),
+        principalId: fixture.admin,
+        routeId: "access.security_grants.revoke",
+        requestDigest: "8".repeat(64),
+      },
+      stepUpProof: fakeProof(fixture.admin),
+    })).rejects.toEqual(new AccessManagementError("forbidden"));
+  });
+
+  it("lets superadmins revoke individual and atomic per-user/global browser scopes", async () => {
+    const fixture = await setup(true);
+    const single = await fixture.repository.revokeAdministrativeSession({
+      viewer: { userId: fixture.superadmin, role: "superadmin" },
+      sessionId: SESSION_ONE,
+      correlationId: correlationId("6"),
+      stepUpProof: fakeProof(fixture.superadmin),
+    });
+    expect(single).toMatchObject({ revoked: true, sessionsRevoked: 1 });
+    const bulk = await fixture.repository.revokeSessionBulk({
+      viewer: { userId: fixture.superadmin, role: "superadmin" },
+      target: { kind: "all" },
+      confirmation: "REVOKE ALL WEB SESSIONS",
+      justification: "End every current browser authority.",
+      correlationId: correlationId("7"),
+      idempotency: {
+        keyHash: "3".repeat(64),
+        principalId: fixture.superadmin,
+        routeId: "access.security_sessions.revoke_bulk",
+        requestDigest: "4".repeat(64),
+      },
+      stepUpProof: fakeProof(fixture.superadmin),
+    });
+    expect(bulk).toMatchObject({
+      kind: "executed",
+      value: { sessionsRevoked: 1 },
+    });
   });
 
   it.each([
@@ -773,6 +958,12 @@ function fakeStepUps(worker: PersistenceWorker): StepUpRepository {
             value: mutation(transaction),
             auditInput,
           }),
+        ),
+      }),
+    withConsumedProofGenerated: async (_proof, mutation) =>
+      worker.execute({
+        run: (database) => database.withGeneratedAdministrativeAudit(
+          mutation,
         ),
       }),
   } as StepUpRepository;

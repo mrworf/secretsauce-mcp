@@ -91,6 +91,10 @@ export type GrantBulkTarget =
   | { kind: "client"; id: string }
   | { kind: "all" };
 
+export type SessionBulkTarget =
+  | { kind: "user"; id: string }
+  | { kind: "all" };
+
 export type CapabilityInvalidationTarget =
   | { kind: "service" }
   | { kind: "credential"; id: string }
@@ -291,7 +295,7 @@ export class AccessManagementRepository {
     cursor?: string;
     pageSize?: number;
   }): Promise<AccessPage<SessionAccessItem>> {
-    validateViewerScope(input.viewer, input.scope);
+    validateSessionViewerScope(input.viewer, input.scope);
     validateListFilters(input.userId, undefined, input.query);
     const pageSize = pageSizeValue(input.pageSize);
     const cursorContext = accessCursorContext(input.viewer, input.scope, {
@@ -441,7 +445,7 @@ export class AccessManagementRepository {
     cursor?: string;
     pageSize?: number;
   }): Promise<AccessPage<GrantAccessItem>> {
-    validateViewerScope(input.viewer, input.scope);
+    validateGrantViewerScope(input.viewer, input.scope, input.userId);
     validateListFilters(input.userId, input.clientId, input.query);
     const pageSize = pageSizeValue(input.pageSize);
     const cursorContext = accessCursorContext(input.viewer, input.scope, {
@@ -499,7 +503,12 @@ export class AccessManagementRepository {
             LEFT JOIN oauth_refresh_families family
               ON family.grant_id = grant.id
             JOIN identity_security_state security ON security.singleton = 1
-            WHERE (? = 'global' OR grant.user_id = ?)
+            WHERE (
+                ? <> 'admin'
+                OR grant.user_id = ?
+                OR (${REGULAR_ADMIN_GRANT_ACCESS_SQL})
+              )
+              AND (? = 'global' OR grant.user_id = ?)
               AND (? IS NULL OR grant.user_id = ?)
               AND (? IS NULL OR grant.client_id = ?)
               AND (
@@ -525,6 +534,10 @@ export class AccessManagementRepository {
           this.currentOauth().refreshTokenMaxTtlMs,
           this.currentOauth().refreshTokenIdleTtlMs,
           now,
+          input.viewer.role,
+          input.viewer.userId,
+          input.viewer.userId,
+          input.viewer.userId,
           input.scope,
           input.viewer.userId,
           input.userId ?? null,
@@ -948,11 +961,10 @@ export class AccessManagementRepository {
             UPDATE browser_sessions
             SET revoked_at = ?, version = version + 1
             WHERE id = ? AND revoked_at IS NULL
-              AND (? = 'superadmin' OR user_id = ?)
+              AND user_id = ?
           `, [
             now,
             input.sessionId,
-            input.viewer.role,
             input.viewer.userId,
           ]).changes;
           return {
@@ -969,6 +981,126 @@ export class AccessManagementRepository {
           };
         }),
       });
+    } catch (error) {
+      throw mapAccessError(error);
+    }
+  }
+
+  async revokeAdministrativeSession(input: {
+    viewer: AccessViewer;
+    sessionId: string;
+    correlationId: string;
+    stepUpProof?: AlwaysStepUpHandle;
+  }): Promise<AccessRevocationResult> {
+    validateMutationInput(input.viewer, input.sessionId, input.correlationId);
+    if (
+      input.viewer.role !== "superadmin"
+      || this.stepUps === undefined
+      || input.stepUpProof === undefined
+    ) throw new AccessManagementError("forbidden");
+    const audit = revocationAudit({
+      viewer: input.viewer,
+      action: "access.session_revoke",
+      targetType: "session",
+      targetId: input.sessionId,
+      correlationId: input.correlationId,
+    });
+    try {
+      return await this.stepUps.withConsumedProofGenerated(input.stepUpProof, (transaction) => {
+        requireCurrentRole(transaction, input.viewer.userId, "superadmin");
+        const now = transaction.timestamp();
+        const sessionsRevoked = transaction.run(`
+          UPDATE browser_sessions
+          SET revoked_at = ?, version = version + 1
+          WHERE id = ? AND revoked_at IS NULL
+        `, [now, input.sessionId]).changes;
+        const value = {
+          targetId: input.sessionId,
+          revoked: sessionsRevoked === 1,
+          sessionsRevoked,
+          grantsRevoked: 0,
+        };
+        return {
+          value,
+          auditInput: {
+            ...audit,
+            changes: [{ field: "sessions_revoked", after: sessionsRevoked }],
+          },
+        };
+      });
+    } catch (error) {
+      throw mapAccessError(error);
+    }
+  }
+
+  async revokeSessionBulk(input: {
+    viewer: AccessViewer;
+    target: SessionBulkTarget;
+    confirmation: string;
+    justification: string;
+    correlationId: string;
+    idempotency: IdempotencyExecutionInput;
+    stepUpProof?: AlwaysStepUpHandle;
+  }): Promise<IdempotencyExecutionResult<AccessRevocationResult>> {
+    validateSessionBulkInput(input);
+    if (this.stepUps === undefined || input.stepUpProof === undefined) {
+      throw new AccessManagementError("forbidden");
+    }
+    const targetId = input.target.kind === "user"
+      ? input.target.id
+      : input.viewer.userId;
+    const audit = revocationAudit({
+      viewer: input.viewer,
+      action: input.target.kind === "user"
+        ? "access.user_sessions_revoke"
+        : "access.global_sessions_revoke",
+      targetType: input.target.kind === "user" ? "user" : "browser_sessions",
+      targetId,
+      correlationId: input.correlationId,
+      justification: input.justification,
+    });
+    try {
+      return await this.stepUps.withConsumedProofGenerated(
+        input.stepUpProof,
+        (transaction) => {
+          const result = transaction.idempotent(input.idempotency, () => {
+          requireCurrentRole(transaction, input.viewer.userId, "superadmin");
+          const now = transaction.timestamp();
+          const sessionsRevoked = transaction.run(`
+            UPDATE browser_sessions
+            SET revoked_at = ?, version = version + 1
+            WHERE revoked_at IS NULL
+              AND (? = 'all' OR user_id = ?)
+          `, [
+            now,
+            input.target.kind,
+            input.target.kind === "user" ? input.target.id : null,
+          ]).changes;
+          return {
+            value: {
+              targetId,
+              revoked: sessionsRevoked > 0,
+              sessionsRevoked,
+              grantsRevoked: 0,
+            },
+            resultReference: targetId,
+            responseStatus: 200,
+          };
+          });
+          return {
+            value: result,
+            auditInput: {
+              ...audit,
+              changes: [{
+                field: "sessions_revoked",
+                after: result.kind === "executed"
+                  ? result.value.sessionsRevoked
+                  : 0,
+              }],
+            },
+          };
+        },
+      );
     } catch (error) {
       throw mapAccessError(error);
     }
@@ -992,8 +1124,8 @@ export class AccessManagementRepository {
         run: (database) => database.withGeneratedAdministrativeAudit((transaction) => {
           const result = revokeGrantSet(
             transaction,
-            `grant.id = ? AND (? = 'superadmin' OR grant.user_id = ?)`,
-            [input.grantId, input.viewer.role, input.viewer.userId],
+            "grant.id = ? AND grant.user_id = ?",
+            [input.grantId, input.viewer.userId],
           );
           return {
             value: {
@@ -1013,6 +1145,72 @@ export class AccessManagementRepository {
             },
           };
         }),
+      });
+    } catch (error) {
+      throw mapAccessError(error);
+    }
+  }
+
+  async revokeAdministrativeGrant(input: {
+    viewer: AccessViewer;
+    grantId: string;
+    correlationId: string;
+    stepUpProof?: AlwaysStepUpHandle;
+  }): Promise<AccessRevocationResult> {
+    validateMutationInput(input.viewer, input.grantId, input.correlationId);
+    if (
+      input.viewer.role === "user"
+      || this.stepUps === undefined
+      || input.stepUpProof === undefined
+    ) throw new AccessManagementError("forbidden");
+    const audit = revocationAudit({
+      viewer: input.viewer,
+      action: "oauth.grant_revoke",
+      targetType: "oauth_grant",
+      targetId: input.grantId,
+      correlationId: input.correlationId,
+    });
+    try {
+      return await this.stepUps.withConsumedProofGenerated(input.stepUpProof, (transaction) => {
+        const predicate = input.viewer.role === "superadmin"
+          ? {
+              sql: "grant.id = ?",
+              values: [input.grantId],
+            }
+          : {
+              sql: `grant.id = ? AND (${REGULAR_ADMIN_GRANT_ACCESS_SQL})`,
+              values: [
+                input.grantId,
+                input.viewer.userId,
+                input.viewer.userId,
+              ],
+            };
+        if (input.viewer.role === "superadmin") {
+          requireCurrentRole(transaction, input.viewer.userId, "superadmin");
+        }
+        const revoked = revokeGrantSet(
+          transaction,
+          predicate.sql,
+          predicate.values,
+        );
+        const value = {
+          targetId: input.grantId,
+          revoked: revoked.grantsRevoked === 1,
+          sessionsRevoked: 0,
+          grantsRevoked: revoked.grantsRevoked,
+        };
+        return {
+          value,
+          auditInput: {
+            ...audit,
+            changes: [
+              { field: "grants_revoked", after: revoked.grantsRevoked },
+              { field: "refresh_families_revoked", after: revoked.familiesRevoked },
+              { field: "refresh_records_revoked", after: revoked.refreshTokensRevoked },
+              { field: "access_records_revoked", after: revoked.accessTokensRevoked },
+            ],
+          },
+        };
       });
     } catch (error) {
       throw mapAccessError(error);
@@ -1167,13 +1365,25 @@ export class AccessManagementRepository {
       correlationId: input.correlationId,
       justification: input.justification,
     });
-    const execute = (transaction: PersistenceTransaction) =>
-      transaction.idempotent(input.idempotency, () => {
+    const execute = (transaction: PersistenceTransaction) => {
+      const result = transaction.idempotent(input.idempotency, () => {
         const predicate = input.target.kind === "user"
-          ? { sql: "grant.user_id = ?", values: [input.target.id] }
+          ? input.viewer.role === "superadmin"
+            ? { sql: "grant.user_id = ?", values: [input.target.id] }
+            : {
+                sql: `grant.user_id = ? AND (${REGULAR_ADMIN_GRANT_ACCESS_SQL})`,
+                values: [
+                  input.target.id,
+                  input.viewer.userId,
+                  input.viewer.userId,
+                ],
+              }
           : input.target.kind === "client"
             ? { sql: "grant.client_id = ?", values: [input.target.id] }
             : { sql: "1 = 1", values: [] };
+        if (input.viewer.role === "superadmin") {
+          requireCurrentRole(transaction, input.viewer.userId, "superadmin");
+        }
         const result = revokeGrantSet(transaction, predicate.sql, predicate.values);
         return {
           value: {
@@ -1186,13 +1396,22 @@ export class AccessManagementRepository {
           responseStatus: 200,
         };
       });
-    try {
-      return await this.stepUps.withConsumedProof(
-        input.stepUpProof,
-        {
+      return {
+        value: result,
+        auditInput: {
           ...audit,
-          changes: [{ field: "grant_scope", after: input.target.kind }],
+          changes: [{
+            field: "grants_revoked",
+            after: result.kind === "executed"
+              ? result.value.grantsRevoked
+              : 0,
+          }],
         },
+      };
+    };
+    try {
+      return await this.stepUps.withConsumedProofGenerated(
+        input.stepUpProof,
         execute,
       );
     } catch (error) {
@@ -1306,6 +1525,42 @@ const SERVICE_ASSIGNMENT_PREDICATE = `
   )
 `;
 
+const REGULAR_ADMIN_GRANT_ACCESS_SQL = `
+  EXISTS (
+    SELECT 1 FROM users actor
+    WHERE actor.id = ?
+      AND actor.role = 'admin'
+      AND actor.status = 'active'
+  )
+  AND user.role = 'user'
+  AND user.status = 'active'
+  AND EXISTS (
+    SELECT 1
+    FROM runtime_active_services active
+    JOIN services service
+      ON service.id = active.service_id
+      AND service.lifecycle = 'published'
+    JOIN runtime_activation activation
+      ON activation.singleton = 1 AND activation.state = 'active'
+    WHERE ${SERVICE_ASSIGNMENT_PREDICATE}
+  )
+  AND NOT EXISTS (
+    SELECT 1
+    FROM runtime_active_services active
+    JOIN services service
+      ON service.id = active.service_id
+      AND service.lifecycle = 'published'
+    JOIN runtime_activation activation
+      ON activation.singleton = 1 AND activation.state = 'active'
+    WHERE ${SERVICE_ASSIGNMENT_PREDICATE}
+      AND NOT EXISTS (
+        SELECT 1 FROM service_admins administrator
+        WHERE administrator.service_id = service.id
+          AND administrator.user_id = ?
+      )
+  )
+`;
+
 function revokeGrantSet(
   transaction: PersistenceTransaction,
   predicate: string,
@@ -1318,15 +1573,20 @@ function revokeGrantSet(
 } {
   if (
     ![
-      "grant.id = ? AND (? = 'superadmin' OR grant.user_id = ?)",
+      "grant.id = ? AND grant.user_id = ?",
+      "grant.id = ?",
+      `grant.id = ? AND (${REGULAR_ADMIN_GRANT_ACCESS_SQL})`,
       "grant.user_id = ?",
+      `grant.user_id = ? AND (${REGULAR_ADMIN_GRANT_ACCESS_SQL})`,
       "grant.client_id = ?",
       "1 = 1",
     ].includes(predicate)
   ) throw new AccessManagementError("unavailable");
   const now = transaction.timestamp();
   const selected = `
-    SELECT grant.id FROM oauth_grants grant
+    SELECT grant.id
+    FROM oauth_grants grant
+    JOIN users user ON user.id = grant.user_id
     WHERE ${predicate}
   `;
   const refreshTokensRevoked = transaction.run(`
@@ -1354,7 +1614,7 @@ function revokeGrantSet(
     UPDATE oauth_grants AS grant
     SET status = 'revoked', revoked_at = ?,
       revocation_reason = 'manual', version = version + 1
-    WHERE status = 'active' AND ${predicate}
+    WHERE status = 'active' AND id IN (${selected})
   `, [now, ...parameters]).changes;
   return {
     grantsRevoked,
@@ -1383,6 +1643,19 @@ function requireServiceAdministrator(
       )
   `, [serviceId, viewer.role, viewer.userId]);
   if (authorized === undefined) {
+    throw new PersistenceError("authentication_failed");
+  }
+}
+
+function requireCurrentRole(
+  transaction: PersistenceTransaction,
+  userId: string,
+  role: "superadmin",
+): void {
+  if (transaction.get<{ id: string }>(`
+    SELECT id FROM users
+    WHERE id = ? AND role = ? AND status = 'active'
+  `, [userId, role]) === undefined) {
     throw new PersistenceError("authentication_failed");
   }
 }
@@ -1423,18 +1696,42 @@ function validateBulkInput(input: {
   correlationId: string;
 }): void {
   if (
-    input.viewer.role !== "superadmin"
+    input.viewer.role === "user"
     || !isUuidV7(input.viewer.userId)
     || !CORRELATION_ID.test(input.correlationId)
     || input.justification.trim().length < 1
     || input.justification.length > 1024
     || input.target.kind !== "all" && !isUuidV7(input.target.id)
+    || input.viewer.role === "admin" && input.target.kind !== "user"
   ) throw new AccessManagementError("forbidden");
   const expected = input.target.kind === "user"
     ? `REVOKE USER ${input.target.id}`
     : input.target.kind === "client"
       ? `REVOKE CLIENT ${input.target.id}`
       : "REVOKE ALL OAUTH GRANTS";
+  if (input.confirmation !== expected) {
+    throw new AccessManagementError("invalid_request");
+  }
+}
+
+function validateSessionBulkInput(input: {
+  viewer: AccessViewer;
+  target: SessionBulkTarget;
+  confirmation: string;
+  justification: string;
+  correlationId: string;
+}): void {
+  if (
+    input.viewer.role !== "superadmin"
+    || !isUuidV7(input.viewer.userId)
+    || !CORRELATION_ID.test(input.correlationId)
+    || input.justification.trim().length < 1
+    || input.justification.length > 1024
+    || input.target.kind === "user" && !isUuidV7(input.target.id)
+  ) throw new AccessManagementError("forbidden");
+  const expected = input.target.kind === "user"
+    ? `REVOKE USER SESSIONS ${input.target.id}`
+    : "REVOKE ALL WEB SESSIONS";
   if (input.confirmation !== expected) {
     throw new AccessManagementError("invalid_request");
   }
@@ -1503,12 +1800,25 @@ function mapAccessError(error: unknown): AccessManagementError {
 const CORRELATION_ID =
   /^(?:req_)?[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
-function validateViewerScope(
+function validateSessionViewerScope(
   viewer: AccessViewer,
   scope: "own" | "global",
 ): void {
   if (!isUuidV7(viewer.userId)) throw new AccessManagementError("forbidden");
   if (scope === "global" && viewer.role !== "superadmin") {
+    throw new AccessManagementError("forbidden");
+  }
+}
+
+function validateGrantViewerScope(
+  viewer: AccessViewer,
+  scope: "own" | "global",
+  targetUserId: string | undefined,
+): void {
+  if (!isUuidV7(viewer.userId)) throw new AccessManagementError("forbidden");
+  if (scope === "own") return;
+  if (viewer.role === "superadmin") return;
+  if (viewer.role !== "admin" || targetUserId === undefined) {
     throw new AccessManagementError("forbidden");
   }
 }

@@ -33,6 +33,7 @@ export interface SecretSauceApplicationOptions {
   operational?: () => boolean;
   setupStatus?: () => PublicSetupStatus;
   startOrdinaryJobs?: boolean;
+  onInitialEnrollmentComplete?: () => void;
 }
 
 export async function startSecretSauceApplication(
@@ -105,6 +106,12 @@ export async function startSecretSauceApplication(
         ...(options.startOrdinaryJobs === undefined
           ? {}
           : { startOrdinaryJobs: options.startOrdinaryJobs }),
+        ...(options.onInitialEnrollmentComplete === undefined
+          ? {}
+          : {
+              onInitialEnrollmentComplete:
+                options.onInitialEnrollmentComplete,
+            }),
       });
     }
     gateway = await startServer(config, {

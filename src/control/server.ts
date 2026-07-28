@@ -499,6 +499,7 @@ export async function startControlServer(
     setupStatus?: () => PublicSetupStatus;
     startOrdinaryJobs?: boolean;
     initialEnrollmentSecretSink?: (line: string) => void;
+    onInitialEnrollmentComplete?: () => void;
   } = {},
 ): Promise<ControlServerApplication> {
   if (config.control === undefined || config.persistence === undefined) {
@@ -722,6 +723,12 @@ export async function startControlServer(
           ...(initialEnrollment === undefined
             ? {}
             : { initialAuthority: initialEnrollment }),
+          ...(options.onInitialEnrollmentComplete === undefined
+            ? {}
+            : {
+                onInitialEnrollmentComplete:
+                  options.onInitialEnrollmentComplete,
+              }),
         });
         restrictedSessions = new RestrictedSessionAuthenticator(
           enrollmentRepository,

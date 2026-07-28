@@ -191,6 +191,14 @@ export class InitialEnrollmentAuthority {
     return this.#record(session).pending;
   }
 
+  profile(session: ValidatedRestrictedSession): {
+    email: string;
+    normalizedEmail: string;
+  } {
+    const record = this.#record(session);
+    return { email: record.email, normalizedEmail: record.normalizedEmail };
+  }
+
   consume(session: ValidatedRestrictedSession): void {
     this.#record(session);
     this.close();

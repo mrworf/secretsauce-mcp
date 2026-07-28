@@ -102,5 +102,5 @@ readiness, and release scan.
 | Slice | Status | Commit | Evidence | Deviations |
 | --- | --- | --- | --- | --- |
 | 1 | completed | this commit | 6/6 authority tests plus 10/10 existing enrollment tests; 192-bit secret with one dedicated startup line; Argon2 verifier; bounded memory-only provisional sessions; restart/close invalidation; domain-separated cookie and CSRF hashes; neutral enrollment-code route; setup gating admits only the enrollment surface | Full production-process log capture and post-commit lifecycle advancement remain Slice 3 qualification. |
-| 2 | pending | — | — | — |
+| 2 | completed | this commit | 10/10 initial-authority tests, 10/10 established enrollment tests, 3/3 lifecycle tests, and server build; in-memory profile/TOTP pending state; shared password policy, encrypted TOTP, and replay verifier; one transaction creates unique active superadmin, local credentials, accepted step, bootstrap marker, and audit; ordinary login proof; exact one-winner race; invalid profile/password/TOTP, expiry, and injected audit rollback leave zero users | Ordinary maintenance timers remain stopped until the initial commit; later abuse-control slices will add an explicit post-enrollment job-start boundary. |
 | 3 | pending | — | — | — |

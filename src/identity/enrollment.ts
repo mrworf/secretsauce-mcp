@@ -32,9 +32,10 @@ import {
   verifyTotpCode,
   type TotpEnvelope,
 } from "./totp.js";
-import { normalizeEmail } from "./validation.js";
+import { normalizeEmail, parseIdentityProfile } from "./validation.js";
 import {
   InitialEnrollmentAuthority,
+  type ProvisionalInitialPending,
 } from "./initialEnrollment.js";
 
 const SESSION_BYTES = 32;
@@ -681,6 +682,128 @@ export class LocalEnrollmentRepository {
     }
   }
 
+  async completeProvisionalInitialEnrollment(input: {
+    pending: ProvisionalInitialPending;
+    encodedHash: string;
+    acceptedStep: number;
+    correlationId: string;
+  }): Promise<void> {
+    const now = safeNow(this.now);
+    try {
+      await this.owner.execute({
+        run: (database) => database.withGeneratedAdministrativeAudit((transaction) => {
+          const users = transaction.get<{ count: number }>(
+            "SELECT count(*) AS count FROM users",
+          )?.count;
+          const marker = transaction.get<{ present: number }>(
+            "SELECT 1 AS present FROM identity_bootstrap WHERE singleton = 1",
+          );
+          const security = transaction.get<{
+            password_policy_version: number;
+            password_change_epoch: number;
+          }>(`
+            SELECT password_policy_version, password_change_epoch
+            FROM identity_security_state WHERE singleton = 1
+          `);
+          if (
+            users !== 0
+            || marker !== undefined
+            || security === undefined
+            || security.password_policy_version !== input.pending.passwordPolicyVersion
+          ) throw new PersistenceError("authentication_failed");
+          transaction.run(`
+            INSERT INTO users (
+              id, email, normalized_email, given_name, family_name, role, status,
+              security_epoch, password_policy_version,
+              last_qualifying_activity_at, version, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, 'superadmin', 'active', 1, ?, ?, 1, ?, ?)
+          `, [
+            input.pending.userId,
+            input.pending.email,
+            input.pending.normalizedEmail,
+            input.pending.givenName,
+            input.pending.familyName,
+            input.pending.passwordPolicyVersion,
+            now,
+            now,
+            now,
+          ]);
+          transaction.run(`
+            INSERT INTO local_authenticator_states (
+              user_id, password_state, totp_state, version, created_at, updated_at
+            ) VALUES (?, 'configured', 'configured', 1, ?, ?)
+          `, [input.pending.userId, now, now]);
+          transaction.run(`
+            INSERT INTO local_password_credentials (
+              user_id, encoded_hash, policy_version, password_change_epoch,
+              version, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, 1, ?, ?)
+          `, [
+            input.pending.userId,
+            input.encodedHash,
+            input.pending.passwordPolicyVersion,
+            security.password_change_epoch,
+            now,
+            now,
+          ]);
+          transaction.run(`
+            INSERT INTO local_totp_authenticators (
+              id, user_id, envelope_json, root_key_id, generation,
+              confirmed_at, version, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?)
+          `, [
+            input.pending.authenticatorId,
+            input.pending.userId,
+            input.pending.envelopeJson,
+            input.pending.rootKeyId,
+            input.pending.generation,
+            now,
+            now,
+            now,
+          ]);
+          transaction.run(`
+            INSERT INTO accepted_totp_steps (user_id, time_step, purpose, accepted_at)
+            VALUES (?, ?, 'confirmation', ?)
+          `, [input.pending.userId, input.acceptedStep, now]);
+          transaction.run(`
+            INSERT INTO identity_bootstrap (singleton, user_id, created_at)
+            VALUES (1, ?, ?)
+          `, [input.pending.userId, now]);
+          return {
+            value: undefined,
+            auditInput: {
+              actor: {
+                type: "system",
+                label: `user:${input.pending.userId}`,
+                authenticationMethod: "restricted_session",
+              },
+              action: "identity.bootstrap_enrollment_complete",
+              result: "allow",
+              target: {
+                type: "user",
+                id: input.pending.userId,
+                label: `user:${input.pending.userId}`,
+              },
+              changes: [
+                { field: "role", after: "superadmin" },
+                { field: "status", after: "active" },
+                { field: "enrollment", after: "configured" },
+              ],
+              correlationId: input.correlationId,
+              source: { category: "identity" },
+            } satisfies AdministrativeAuditEventInput,
+          };
+        }),
+      });
+    } catch (error) {
+      if (
+        error instanceof PersistenceError
+        && ["authentication_failed", "totp_replayed"].includes(error.code)
+      ) throw new EnrollmentError("authentication_failed");
+      throw new EnrollmentError("enrollment_unavailable");
+    }
+  }
+
   async completePasswordChange(input: {
     session: ValidatedRestrictedSession;
     candidate: EnrollmentCandidate;
@@ -1082,6 +1205,7 @@ export interface LocalEnrollmentServiceOptions {
   dummyTemporaryHash?: string;
   securitySettings?: () => SecuritySettings;
   initialAuthority?: InitialEnrollmentAuthority;
+  onInitialEnrollmentComplete?: () => void;
 }
 
 export class LocalEnrollmentService {
@@ -1094,6 +1218,7 @@ export class LocalEnrollmentService {
   readonly #uuid: () => string;
   readonly #dummyTemporaryHash: string;
   readonly #initialAuthority: InitialEnrollmentAuthority | undefined;
+  readonly #onInitialEnrollmentComplete: (() => void) | undefined;
   #passwordPolicy: PasswordPolicy;
   #passwordPolicyKey: string;
   readonly #securitySettings: (() => SecuritySettings) | undefined;
@@ -1117,6 +1242,7 @@ export class LocalEnrollmentService {
     this.#uuid = options.uuid ?? (() => generator.next());
     this.#dummyTemporaryHash = options.dummyTemporaryHash;
     this.#initialAuthority = options.initialAuthority;
+    this.#onInitialEnrollmentComplete = options.onInitialEnrollmentComplete;
     this.#securitySettings = options.securitySettings;
     this.#passwordPolicyKey = "";
     this.#passwordPolicy = new PasswordPolicy({
@@ -1396,10 +1522,43 @@ export class LocalEnrollmentService {
   async beginInitial(
     session: ValidatedRestrictedSession,
     newPassword: unknown,
+    profileInput?: { givenName: unknown; familyName: unknown },
   ): Promise<{ secret: string; uri: string; expiresAt: number }> {
     if (session.purpose !== "initial_enrollment") throw new EnrollmentError("invalid_request");
-    const candidate = await this.#repository.pending(session.sessionId, session.userId);
-    const profile = candidate ?? await this.#initialProfile(session.userId);
+    let profile: {
+      email: string;
+      givenName: string;
+      familyName: string;
+      passwordPolicyVersion: number;
+    };
+    if (session.provisional === true) {
+      if (
+        this.#initialAuthority === undefined
+        || profileInput === undefined
+        || typeof profileInput.givenName !== "string"
+        || typeof profileInput.familyName !== "string"
+      ) throw new EnrollmentError("invalid_request");
+      const provisional = this.#initialAuthority.pending(session);
+      const email = provisional?.email
+        ?? this.#initialAuthority.profile(session).email;
+      try {
+        const parsed = parseIdentityProfile({
+          email,
+          givenName: profileInput.givenName,
+          familyName: profileInput.familyName,
+        });
+        profile = {
+          ...parsed,
+          passwordPolicyVersion:
+            this.#securitySettings?.().passwordPolicyVersion ?? 1,
+        };
+      } catch {
+        throw new EnrollmentError("invalid_request");
+      }
+    } else {
+      const candidate = await this.#repository.pending(session.sessionId, session.userId);
+      profile = candidate ?? await this.#initialProfile(session.userId);
+    }
     const normalized = this.passwordPolicy().validate(newPassword, {
       email: profile.email,
       givenName: profile.givenName,
@@ -1416,11 +1575,23 @@ export class LocalEnrollmentService {
       random: this.#random,
     });
     try {
-      await this.#repository.savePendingTotp(
-        session,
-        enrollment.envelope,
-        profile.passwordPolicyVersion,
-      );
+      if (session.provisional === true) {
+        this.#initialAuthority!.savePending(
+          session,
+          {
+            givenName: profile.givenName,
+            familyName: profile.familyName,
+          },
+          enrollment.envelope,
+          profile.passwordPolicyVersion,
+        );
+      } else {
+        await this.#repository.savePendingTotp(
+          session,
+          enrollment.envelope,
+          profile.passwordPolicyVersion,
+        );
+      }
       return {
         secret: enrollment.secret,
         uri: enrollment.uri,
@@ -1473,7 +1644,14 @@ export class LocalEnrollmentService {
       !/^\d{6}$/.test(input.totp) ||
       !validCorrelationId(input.correlationId)
     ) throw new EnrollmentError("invalid_request");
-    const pending = await this.#repository.pending(session.sessionId, session.userId);
+    let pending: ProvisionalInitialPending | PendingEnrollment | undefined;
+    try {
+      pending = session.provisional === true
+        ? this.#initialAuthority?.pending(session)
+        : await this.#repository.pending(session.sessionId, session.userId);
+    } catch {
+      throw new EnrollmentError("authentication_failed");
+    }
     if (pending === undefined || safeNow(this.#now) >= pending.expiresAt) {
       throw new EnrollmentError("authentication_failed");
     }
@@ -1531,14 +1709,25 @@ export class LocalEnrollmentService {
       releaseTotp();
     }
     if (acceptedStep === undefined) throw new EnrollmentError("authentication_failed");
-    await this.#repository.completeInitialEnrollment({
-      session,
-      pending,
-      encodedHash,
-      acceptedStep,
-      eventId: this.nextUuid(),
-      correlationId: input.correlationId,
-    });
+    if (session.provisional === true) {
+      await this.#repository.completeProvisionalInitialEnrollment({
+        pending: pending as ProvisionalInitialPending,
+        encodedHash,
+        acceptedStep,
+        correlationId: input.correlationId,
+      });
+      this.#initialAuthority!.consume(session);
+      this.#onInitialEnrollmentComplete?.();
+    } else {
+      await this.#repository.completeInitialEnrollment({
+        session,
+        pending: pending as PendingEnrollment,
+        encodedHash,
+        acceptedStep,
+        eventId: this.nextUuid(),
+        correlationId: input.correlationId,
+      });
+    }
   }
 
   async confirmPasswordChange(

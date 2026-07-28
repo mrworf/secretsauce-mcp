@@ -85,7 +85,7 @@ export async function startBrowserFirstApplication(
               )?.count ?? 0
             ),
         });
-        const operational = userCount > 0;
+        let operational = userCount > 0;
         monitor.set(operational
           ? {
               state: "available",
@@ -102,6 +102,15 @@ export async function startBrowserFirstApplication(
           operational: () => operational,
           setupStatus: () => monitor.current(),
           startOrdinaryJobs: operational,
+          onInitialEnrollmentComplete: () => {
+            operational = true;
+            phase = "operational";
+            monitor.set({
+              state: "available",
+              message: "SecretSauce is available.",
+              retryPending: false,
+            });
+          },
         });
         persistence = undefined;
         phase = operational ? "operational" : "enrollment";

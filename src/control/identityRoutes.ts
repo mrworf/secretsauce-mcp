@@ -977,6 +977,8 @@ function registerEnrollmentRoutes(
     schemas: {
       body: z.object({
         new_password: z.string().max(4_096),
+        given_name: z.string().max(512).optional(),
+        family_name: z.string().max(512).optional(),
       }).strict(),
       response: z.object({
         secret: z.string().regex(/^[A-Z2-7]{32}$/),
@@ -997,7 +999,14 @@ function registerEnrollmentRoutes(
         throw new ControlContractError(401, "unauthenticated", "Authentication required.");
       }
       try {
-        const result = await enrollment.beginInitial(session, body.new_password);
+        const result = await enrollment.beginInitial(
+          session,
+          body.new_password,
+          {
+            givenName: body.given_name,
+            familyName: body.family_name,
+          },
+        );
         return {
           data: {
             secret: result.secret,

@@ -982,10 +982,12 @@ limited without rolling back enrollment.
 - `VAULTAPI-003` Filesystem permissions are a reachability control, not
   sufficient runtime caller authentication. Every credential-API request must
   authenticate a fixed caller identity with its caller-specific HMAC key and
-  bind the signature to the API version, caller, uppercase method, canonical
-  origin-form request target, selected representation headers, raw body digest,
-  request UUID, timestamp, and nonce. Security-sensitive encodings must be
-  canonical, and stale or replayed requests must fail before store access.
+  bind the signature to a stable logical vault audience, API version, caller,
+  uppercase method, canonical origin-form request target, selected
+  representation headers, raw body digest, request UUID, timestamp, and nonce.
+  The audience must not depend on a Unix socket path or deployment hostname.
+  Security-sensitive encodings must be canonical, and stale or replayed
+  requests must fail before store access.
 - `VAULTAPI-004` Authenticated caller identity must map to a fixed server-side
   operation allowlist independent of socket access. Data-plane resolution must
   still require a valid one-use operation-bound capability; control, backup,
@@ -1507,8 +1509,8 @@ this document.
    parameterless read request and returns only the bounded status schema.
 3. Valid data, control, and backup requests authenticate independently and can
    invoke only their fixed operation allowlists; switching the claimed caller,
-   method, request target, representation headers, body, request UUID,
-   timestamp, or nonce invalidates authentication.
+   logical audience, method, request target, representation headers, body,
+   request UUID, timestamp, or nonce invalidates authentication.
 4. Missing/bad authentication, cross-caller operations, expired requests,
    replayed nonces, invalid capabilities, duplicate security headers, ambiguous
    framing/targets, unknown fields, unsupported methods/media types/upgrades,

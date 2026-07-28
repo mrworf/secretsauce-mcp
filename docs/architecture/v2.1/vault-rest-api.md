@@ -92,6 +92,7 @@ Filesystem permissions are defense in depth for the credential API. Each
 runtime request also carries a caller-specific HMAC authentication envelope.
 The signed canonical input binds:
 
+- stable logical vault audience independent of socket path or hostname;
 - protocol and API version;
 - claimed caller identity;
 - uppercase HTTP method;

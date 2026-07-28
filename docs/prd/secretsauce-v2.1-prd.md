@@ -200,13 +200,20 @@ An installation has:
   fingerprints.
 - A configured commitment containing the canonical aggregate digest of every
   required verified manifest entry.
+- A retained key-bound state inventory covering application database,
+  identity/authenticator, OAuth grant/token, vault ciphertext/store identity,
+  durable audit-lineage, installation-marker, and any other persisted state
+  whose confidentiality, integrity, or recoverability depends on a required
+  application key.
 - An internal setup state.
 - Zero or more users.
 
 Fingerprints must be collision-resistant, domain-separated digests of canonical
 key bytes computed by the owning component. The manifest and configured
 commitment must not contain raw keys, credential values, tokens, or reversible
-secret material.
+secret material. A retained-state inventory reports only whether recognized
+key-bound state is definitively absent/empty, present, or indeterminate; it must
+not expose protected record contents.
 
 ### 8.2 Internal setup states
 
@@ -215,7 +222,7 @@ secret material.
 | `provisioning` | A valid provisioning manifest exists and required application keys are being generated or validated. A blocked/error substate may retry. | Liveness, readiness, sanitized setup status | All keys validate and the manifest atomically commits to `configured` |
 | `enrollment_required` | A valid configured manifest exists, but no user exists. | Health, login, unified enrollment, safe static assets | Initial superadmin commits |
 | `operational` | Required keys validate and at least one user exists. | Normal role-authorized product behavior | Fatal key/configuration failure or process stop |
-| `configuration_error` | Manifest/key state is ambiguous, missing, malformed, or mismatched under the startup matrix in section 18.2. | No ordinary serving; process exits nonzero | Operator restores correct configuration or completes an explicitly authorized adoption and restarts |
+| `configuration_error` | Manifest/key/retained-state continuity is ambiguous, missing, malformed, or mismatched under the startup matrix in section 18.2. | No ordinary serving; process exits nonzero | Operator restores the matching state, key, and manifest set or completes an explicitly authorized adoption and restarts |
 
 `provisioning` and `enrollment_required` are not unhealthy states. They are not
 operationally ready.
@@ -363,8 +370,9 @@ Repeating a revocation is an audited no-change success.
 ### 11.1 Automatic key provisioning
 
 1. Startup reads enabled services and configured application key locations.
-2. Startup evaluates the manifest, key inventory, and explicit-adoption matrix
-   in section 18.2 before permitting any key creation.
+2. Startup evaluates the manifest, key inventory, retained key-bound state
+   inventory, and explicit-adoption matrix in section 18.2 before permitting
+   any key creation.
 3. For a true fresh installation, the coordinator durably creates a
    `provisioning` manifest containing every required key as `pending` before the
    first key-generation attempt.
@@ -568,12 +576,15 @@ limited without rolling back enrollment.
   replacing any key. A valid existing key for a `pending` entry must be
   fingerprinted and advanced to `verified` without replacement.
 - `SETUP-017` When no manifest exists, fresh provisioning is permitted only when
-  no required key is present and `setup.adopt_existing_keys` is `false` or
-  absent. Setting adoption to `true` without a complete key set, or finding
-  some-but-not-all required keys with any adoption value, must cause
-  `configuration_error`. All required keys must cause `configuration_error`
-  unless the host-local `setup.adopt_existing_keys: true` startup setting is
-  present.
+  no required key is present, every retained key-bound state inventory is
+  definitively absent or empty, and `setup.adopt_existing_keys` is `false` or
+  absent. If any retained key-bound state is present, or any required inventory
+  is unavailable or indeterminate, no-manifest/no-key startup must cause
+  `configuration_error` without writing a key or manifest. Setting adoption to
+  `true` without a complete key set, or finding some-but-not-all required keys
+  with any adoption value, must cause `configuration_error`. All required keys
+  must cause `configuration_error` unless the host-local
+  `setup.adopt_existing_keys: true` startup setting is present.
 - `SETUP-018` `setup.adopt_existing_keys` must be accepted only from deployment
   configuration available before database-managed settings. It must not be
   controllable through browser, control API, OAuth, MCP, or remotely invokable
@@ -586,6 +597,13 @@ limited without rolling back enrollment.
   coordinator atomically writes a configured manifest. Any failed or
   unavailable validation must cause `configuration_error` without modifying
   keys or manifest state.
+- `SETUP-020` Every component that owns recognized key-bound persistence must
+  provide a bounded, non-secret retained-state inventory to startup before fresh
+  provisioning is authorized. The inventory must distinguish definitively
+  absent/empty state from present state; inability to inspect or classify the
+  configured store is indeterminate and must fail closed. Recovery from retained
+  state without its matching keys or manifest requires restoring the matching
+  state/key/manifest set and must never trigger replacement-key generation.
 
 ### 13.2 Bootstrap and enrollment
 
@@ -1091,23 +1109,25 @@ heuristic, establish supported persistence behavior.
 
 Startup applies this authoritative matrix before key generation:
 
-| Manifest | Required keys | `setup.adopt_existing_keys` | Required behavior |
-| --- | --- | --- | --- |
-| Absent | None present | `false` or absent | Create the complete `provisioning` manifest before generating the first key |
-| Absent | None present | `true` | Enter `configuration_error`; create no key and require removal of the inapplicable adoption setting |
-| Absent | Some but not all present | Any value | Enter `configuration_error`; create or replace no key |
-| Absent | All present | `false` or absent | Enter `configuration_error` and direct the operator to the explicit adoption setting |
-| Absent | All present | `true` | Run complete owner-local adoption validation; atomically create a configured manifest only if every validation succeeds |
-| `provisioning` | All `verified` entries match; `pending` key files are valid or absent | Ignored | Validate and record present `pending` keys, then create only absent `pending` keys |
-| `provisioning` | Any `verified` entry is missing/mismatched or an existing `pending` key file is malformed | Ignored | Enter `configuration_error`; create or replace no key |
-| `configured` | Every required fingerprint and aggregate digest match | Ignored | Continue to `enrollment_required` or `operational` |
-| `configured` | Any required key, fingerprint, or aggregate digest missing or mismatched | Ignored | Enter `configuration_error`; create or replace no key |
+| Manifest | Required keys | Retained key-bound state | `setup.adopt_existing_keys` | Required behavior |
+| --- | --- | --- | --- | --- |
+| Absent | None present | Definitively absent/empty for every required inventory | `false` or absent | Create the complete `provisioning` manifest before generating the first key |
+| Absent | None present | Any present, unavailable, or indeterminate inventory | Any value | Enter `configuration_error`; create no key or manifest and require restoration of the matching state/key/manifest set |
+| Absent | None present | Definitively absent/empty for every required inventory | `true` | Enter `configuration_error`; create no key and require removal of the inapplicable adoption setting |
+| Absent | Some but not all present | Any result | Any value | Enter `configuration_error`; create or replace no key |
+| Absent | All present | Any result | `false` or absent | Enter `configuration_error` and direct the operator to the explicit adoption setting |
+| Absent | All present | Any result | `true` | Run complete owner-local adoption validation, including compatibility with every present store and successful classification of every required inventory; atomically create a configured manifest only if every validation succeeds |
+| `provisioning` | All `verified` entries match; `pending` key files are valid or absent | Not used to authorize replacement generation | Ignored | Validate and record present `pending` keys, then create only absent `pending` keys |
+| `provisioning` | Any `verified` entry is missing/mismatched or an existing `pending` key file is malformed | Any result | Ignored | Enter `configuration_error`; create or replace no key |
+| `configured` | Every required fingerprint and aggregate digest match | Not used to authorize replacement generation | Ignored | Continue to `enrollment_required` or `operational` |
+| `configured` | Any required key, fingerprint, or aggregate digest missing or mismatched | Any result | Ignored | Enter `configuration_error`; create or replace no key |
 
-If all key and manifest storage is discarded, the installation is
-indistinguishable from an intentional fresh installation only when no required
-key remains. Retained application data does not authorize automatic key
-replacement. Complete pre-manifest key adoption is the sole exception and
-requires the explicit host-local setting plus successful compatibility
+Discarding all key and manifest storage is treated as an intentional fresh
+installation only when no required key remains and every required retained-state
+inventory is definitively absent or empty. Retained application or vault data
+does not authorize automatic key replacement. An unavailable or indeterminate
+inventory fails closed. Complete pre-manifest key adoption is the sole exception
+and requires the explicit host-local setting plus successful compatibility
 validation by every owning component.
 
 ### 18.3 Observability
@@ -1193,6 +1213,15 @@ this document.
 16. A missing or mismatched `verified` key under a provisioning manifest and any
     mismatch under a configured manifest exit nonzero without creating,
     replacing, or recommitting a key.
+17. With no manifest and no required key, startup creates a provisioning
+    manifest only when every required retained-state inventory is definitively
+    absent or empty.
+18. With no manifest and no required key, any retained application database,
+    identity/authenticator, OAuth grant/token, vault ciphertext/store identity,
+    durable audit-lineage, installation-marker, or other recognized key-bound
+    state causes nonzero startup exit without creating a key or manifest.
+19. With no manifest and no required key, an unavailable or indeterminate
+    retained-state inventory fails closed without creating a key or manifest.
 
 ### 21.2 Initial enrollment
 
@@ -1297,8 +1326,11 @@ this document.
 - Process tests for fresh provisioning, interruption and restart at every
   per-key and manifest transition, idempotent key reuse, no-manifest
   none/some/all key inventories with valid and invalid adoption settings,
-  incompatible retained-state adoption, blocked retry, restart secret rotation,
-  configured missing-key fatal exit, and multi-service key readiness.
+  incompatible retained-state adoption, no-manifest/no-key startup while
+  independently retaining application database, vault, durable audit, or other
+  recognized key-bound state, unavailable/indeterminate retained-state
+  inventories, partial-restore combinations, blocked retry, restart secret
+  rotation, configured missing-key fatal exit, and multi-service key readiness.
 - Browser tests for branded login, unified enrollment, no setup-state disclosure,
   TOTP confirmation, redirect-to-login, successful logout, injected logout
   persistence/audit failure and retry, account settings, administrative scope,
@@ -1411,6 +1443,11 @@ These questions concern mechanisms and must not change the product contract:
   required key set is adopted only with the explicit host-local
   `setup.adopt_existing_keys: true` setting and complete owner-local
   compatibility validation.
+- Without a manifest and required keys, fresh provisioning is permitted only
+  when every retained key-bound state inventory is definitively absent or
+  empty. Any retained vault or application state, or any unavailable or
+  indeterminate inventory, is fatal and requires restoration of the matching
+  state/key/manifest set.
 - Fresh `pending`-key provisioning failures stay live and retry; a missing or
   mismatched `verified` or configured key is fatal and never regenerated.
 - There is no configured-manifest clearing or cryptographic-reset capability.

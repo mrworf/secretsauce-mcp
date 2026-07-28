@@ -33,6 +33,12 @@ describe("release container deployment", () => {
     const gateway = compose.services.secretsauce;
     expect(gateway.deploy.replicas).toBe(1);
     expect(gateway.ports).toEqual(["8080:8080", "8081:8081"]);
+    expect(gateway.healthcheck.test).toEqual([
+      "CMD",
+      "wget",
+      "-qO-",
+      "http://127.0.0.1:8080/health",
+    ]);
     expect(gateway.volumes).toEqual(expect.arrayContaining([
       "./examples/config-v2.1.yaml:/config/config.yaml:ro",
       "secretsauce-database:/var/lib/secretsauce/database",

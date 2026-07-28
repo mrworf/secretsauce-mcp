@@ -79,7 +79,7 @@ describe("vault deployment boundary", () => {
       "CMD",
       "wget",
       "-qO-",
-      "http://127.0.0.1:8081/api/v2/health/live",
+      "http://127.0.0.1:8080/health",
     ]);
   });
 

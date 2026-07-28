@@ -161,6 +161,6 @@ readiness, and release scan.
 | Slice | Status | Commit | Evidence | Deviations |
 | --- | --- | --- | --- | --- |
 | 1 | completed | this commit | 10/10 focused manifest/rotation tests; server build; exact canonical host grammar; checksum-protected mode-0600 journal with atomic create/replace and crash preservation; journal-only resume; post-commit crash replay; non-replacing physical-key staging; atomic physical-version/fingerprint/aggregate/receipt commit | Root activation and archived-root switching remain in Slice 4 so no partial production maintenance path is exposed. |
-| 2 | pending | | | |
+| 2 | completed | this commit | 14/14 focused record-store/rotation tests; server build; empty and populated inventory; bounded cursor batches; restart-safe already-new replay; authenticated old/new classification; exact-source race rejection; pre-commit crash preservation; unchanged header, value ciphertext, locator, binding, generation, timestamps, size class, and last-four metadata; new-root-only reads | The stable logical root ID remains in the authenticated record header; physical-root classification is cryptographic because ordinary writers are absent under exclusive maintenance authority. |
 | 3 | pending | | | |
 | 4 | pending | | | |

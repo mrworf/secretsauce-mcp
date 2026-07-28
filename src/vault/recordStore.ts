@@ -16,7 +16,13 @@ import {
   unlinkSync,
   writeFileSync,
 } from "node:fs";
-import { createCipheriv, createDecipheriv, randomBytes, randomUUID } from "node:crypto";
+import {
+  createCipheriv,
+  createDecipheriv,
+  createHash,
+  randomBytes,
+  randomUUID,
+} from "node:crypto";
 import { basename, dirname, join } from "node:path";
 import { isUuidV7 } from "../persistence/uuidV7.js";
 import {
@@ -106,6 +112,30 @@ export interface VaultWriteOptions {
   locator?: string;
 }
 
+export interface VaultRootRewrapInventory {
+  totalCount: number;
+  oldRootCount: number;
+  newRootCount: number;
+}
+
+export interface VaultRootRewrapBatch {
+  scannedCount: number;
+  rewrappedCount: number;
+  cursor?: string;
+}
+
+export interface VaultRecordRootRotationOptions {
+  directory: string;
+  logicalRootKeyId: string;
+  oldRoot: Uint8Array;
+  newRoot: Uint8Array;
+  randomBytes?: (size: number) => Buffer;
+  failureInjector?: (stage:
+    | "after_rewrap_file_sync_before_compare"
+    | "before_rewrap_source_compare"
+  ) => void;
+}
+
 interface ParsedRecord {
   locator: string;
   generation: number;
@@ -116,6 +146,214 @@ interface ParsedRecord {
   lastFour?: string;
   binding: VaultCredentialBinding;
   secret: Buffer;
+}
+
+/**
+ * Setup-only adapter that changes only the authenticated DEK wrapping in
+ * vault records. Ordinary record semantics and the stable logical root ID in
+ * each header remain byte-for-byte unchanged.
+ */
+export class VaultRecordRootRotationAdapter {
+  readonly #directory: string;
+  readonly #logicalRootKeyId: string;
+  readonly #oldRoot: Buffer;
+  readonly #newRoot: Buffer;
+  readonly #randomBytes: (size: number) => Buffer;
+  readonly #failureInjector?:
+    VaultRecordRootRotationOptions["failureInjector"];
+  #closed = false;
+
+  constructor(options: VaultRecordRootRotationOptions) {
+    if (
+      !ROOT_KEY_ID_PATTERN.test(options.logicalRootKeyId)
+      || options.oldRoot.byteLength !== DEK_BYTES
+      || options.newRoot.byteLength !== DEK_BYTES
+      || options.oldRoot.every(
+        (value, index) => value === options.newRoot[index],
+      )
+    ) throw vaultError("vault_store_unavailable");
+    ensureStoreDirectory(options.directory);
+    this.#directory = options.directory;
+    this.#logicalRootKeyId = options.logicalRootKeyId;
+    this.#oldRoot = Buffer.from(options.oldRoot);
+    this.#newRoot = Buffer.from(options.newRoot);
+    this.#randomBytes = options.randomBytes ?? randomBytes;
+    if (options.failureInjector !== undefined) {
+      this.#failureInjector = options.failureInjector;
+    }
+  }
+
+  preflight(): VaultRootRewrapInventory {
+    return this.inventory();
+  }
+
+  inventory(): VaultRootRewrapInventory {
+    this.#assertOpen();
+    const inventory: VaultRootRewrapInventory = {
+      totalCount: 0,
+      oldRootCount: 0,
+      newRootCount: 0,
+    };
+    for (const locator of rotationLocators(this.#directory)) {
+      const source = readRotationRecord(this.#directory, locator);
+      try {
+        const classification = classifyRotationRecord(
+          source,
+          locator,
+          this.#logicalRootKeyId,
+          this.#oldRoot,
+          this.#newRoot,
+        );
+        inventory.totalCount += 1;
+        if (classification.kind === "old") inventory.oldRootCount += 1;
+        else inventory.newRootCount += 1;
+        classification.dek.fill(0);
+      } finally {
+        source.fill(0);
+      }
+    }
+    return inventory;
+  }
+
+  rewrapBatch(cursor: string | undefined, limit: number): VaultRootRewrapBatch {
+    this.#assertOpen();
+    if (
+      (cursor !== undefined && !LOCATOR_PATTERN.test(cursor))
+      || !Number.isInteger(limit)
+      || limit < 1
+      || limit > 1_000
+    ) throw vaultError("vault_record_invalid");
+    const remaining = rotationLocators(this.#directory)
+      .filter((value) => cursor === undefined || value > cursor);
+    const selected = remaining.slice(0, limit);
+    let rewrappedCount = 0;
+    for (const locator of selected) {
+      if (this.#rewrapOne(locator)) rewrappedCount += 1;
+    }
+    const last = selected.at(-1);
+    return {
+      scannedCount: selected.length,
+      rewrappedCount,
+      ...(remaining.length > selected.length && last !== undefined
+        ? { cursor: last }
+        : {}),
+    };
+  }
+
+  verifyZero(): VaultRootRewrapInventory {
+    const inventory = this.inventory();
+    if (inventory.oldRootCount !== 0) {
+      throw vaultError("vault_store_unavailable");
+    }
+    return inventory;
+  }
+
+  close(): void {
+    if (this.#closed) return;
+    this.#closed = true;
+    this.#oldRoot.fill(0);
+    this.#newRoot.fill(0);
+  }
+
+  #rewrapOne(locator: string): boolean {
+    const source = readRotationRecord(this.#directory, locator);
+    let replacement: Buffer | undefined;
+    let dek: Buffer | undefined;
+    try {
+      const classification = classifyRotationRecord(
+        source,
+        locator,
+        this.#logicalRootKeyId,
+        this.#oldRoot,
+        this.#newRoot,
+      );
+      dek = classification.dek;
+      if (classification.kind === "new") return false;
+      const nonce = this.#randomBytes(NONCE_BYTES);
+      if (nonce.byteLength !== NONCE_BYTES) {
+        throw vaultError("vault_store_unavailable");
+      }
+      const wrapped = encrypt(
+        dek,
+        this.#newRoot,
+        nonce,
+        aad(classification.header, "dek"),
+      );
+      replacement = Buffer.from(source);
+      nonce.copy(replacement, classification.wrappedOffset);
+      wrapped.ciphertext.copy(
+        replacement,
+        classification.wrappedOffset + NONCE_BYTES,
+      );
+      wrapped.tag.copy(
+        replacement,
+        classification.wrappedOffset + NONCE_BYTES + DEK_BYTES,
+      );
+      this.#commitConditional(
+        locator,
+        source,
+        replacement,
+      );
+      replacement = undefined;
+      return true;
+    } finally {
+      dek?.fill(0);
+      replacement?.fill(0);
+      source.fill(0);
+    }
+  }
+
+  #commitConditional(
+    locator: string,
+    expected: Buffer,
+    replacement: Buffer,
+  ): void {
+    const target = join(this.#directory, `${locator}.ssvr`);
+    const temporary = join(
+      this.#directory,
+      `.${locator}.${randomUUID()}.tmp`,
+    );
+    let descriptor: number | undefined;
+    try {
+      descriptor = openSync(
+        temporary,
+        constants.O_CREAT | constants.O_EXCL | constants.O_WRONLY,
+        0o600,
+      );
+      writeFileSync(descriptor, replacement);
+      fsyncSync(descriptor);
+      closeSync(descriptor);
+      descriptor = undefined;
+      this.#failureInjector?.("after_rewrap_file_sync_before_compare");
+      this.#failureInjector?.("before_rewrap_source_compare");
+      const current = readRotationRecord(this.#directory, locator);
+      try {
+        if (
+          digestRecord(current) !== digestRecord(expected)
+          || !current.equals(expected)
+        ) throw vaultError("vault_record_conflict");
+      } finally {
+        current.fill(0);
+      }
+      renameSync(temporary, target);
+      fsyncDirectory(this.#directory);
+      replacement.fill(0);
+    } catch (error) {
+      if (error instanceof Error && error.name === "VaultError") throw error;
+      throw vaultError("vault_store_unavailable");
+    } finally {
+      if (descriptor !== undefined) closeSync(descriptor);
+      try {
+        unlinkSync(temporary);
+      } catch {
+        // The temporary record may already have been committed.
+      }
+    }
+  }
+
+  #assertOpen(): void {
+    if (this.#closed) throw vaultError("vault_store_unavailable");
+  }
 }
 
 export class VaultRecordStore {
@@ -733,6 +971,199 @@ function validateRecordFileMetadata(path: string): void {
   ) {
     throw vaultError("vault_record_invalid");
   }
+}
+
+function rotationLocators(directory: string): string[] {
+  try {
+    return readdirSync(directory).map((name) => {
+      const match = RECORD_NAME_PATTERN.exec(name);
+      if (match === null) throw vaultError("vault_record_invalid");
+      return match[1]!;
+    }).sort();
+  } catch (error) {
+    if (error instanceof Error && error.name === "VaultError") throw error;
+    throw vaultError("vault_store_unavailable");
+  }
+}
+
+function readRotationRecord(directory: string, locator: string): Buffer {
+  validateLocator(locator);
+  const path = join(directory, `${locator}.ssvr`);
+  let descriptor: number | undefined;
+  try {
+    validateRecordFileMetadata(path);
+    descriptor = openSync(path, constants.O_RDONLY | constants.O_NOFOLLOW);
+    const metadata = fstatSync(descriptor);
+    if (
+      !metadata.isFile()
+      || metadata.nlink !== 1
+      || (metadata.mode & 0o777) !== 0o600
+      || metadata.size < FIXED_HEADER_BYTES
+      || metadata.size > MAX_RECORD_BYTES
+      || !isAllowedOwner(metadata.uid)
+    ) throw vaultError("vault_record_invalid");
+    const source = readFileSync(descriptor);
+    if (source.byteLength !== metadata.size) {
+      source.fill(0);
+      throw vaultError("vault_record_conflict");
+    }
+    return source;
+  } catch (error) {
+    if (error instanceof Error && error.name === "VaultError") throw error;
+    throw vaultError("vault_store_unavailable");
+  } finally {
+    if (descriptor !== undefined) closeSync(descriptor);
+  }
+}
+
+function classifyRotationRecord(
+  source: Buffer,
+  expectedLocator: string,
+  expectedLogicalRootKeyId: string,
+  oldRoot: Buffer,
+  newRoot: Buffer,
+): {
+  kind: "old" | "new";
+  dek: Buffer;
+  header: Buffer;
+  wrappedOffset: number;
+} {
+  try {
+    if (
+      source.byteLength
+        < FIXED_HEADER_BYTES + NONCE_BYTES * 2 + DEK_BYTES + TAG_BYTES * 2
+      || !source.subarray(0, 4).equals(MAGIC)
+      || source[4] !== FORMAT_VERSION
+      || source[5] !== 0
+    ) throw vaultError("vault_record_invalid");
+    const rootIdLength = source[6]!;
+    const lastFourLength = source[7]!;
+    if (
+      rootIdLength < 1
+      || rootIdLength > 63
+      || (lastFourLength !== 0 && lastFourLength !== 4)
+      || source.subarray(49, 52).some((value) => value !== 0)
+    ) throw vaultError("vault_record_invalid");
+    const headerLength = FIXED_HEADER_BYTES + rootIdLength + lastFourLength;
+    const sizeClass = SIZE_CLASSES.find((item) => item.code === source[48]);
+    const expectedLength = headerLength
+      + NONCE_BYTES + DEK_BYTES + TAG_BYTES + NONCE_BYTES
+      + BINDING_BYTES + SECRET_LENGTH_BYTES
+      + (sizeClass?.bytes ?? 0) + TAG_BYTES;
+    if (sizeClass === undefined || source.byteLength !== expectedLength) {
+      throw vaultError("vault_record_invalid");
+    }
+    const header = source.subarray(0, headerLength);
+    if (
+      bytesToUuid(header.subarray(8, 24)) !== expectedLocator
+      || safeNumber(header.readBigUInt64BE(24)) < 1
+      || safeNumber(header.readBigUInt64BE(32))
+        > safeNumber(header.readBigUInt64BE(40))
+      || header.subarray(
+        FIXED_HEADER_BYTES,
+        FIXED_HEADER_BYTES + rootIdLength,
+      ).toString("ascii") !== expectedLogicalRootKeyId
+      || header.subarray(FIXED_HEADER_BYTES + rootIdLength)
+        .some((value) => value < 0x20 || value > 0x7e)
+    ) throw vaultError("vault_record_invalid");
+
+    const wrappedOffset = headerLength;
+    const wrappedNonce = source.subarray(
+      wrappedOffset,
+      wrappedOffset + NONCE_BYTES,
+    );
+    const wrappedCiphertext = source.subarray(
+      wrappedOffset + NONCE_BYTES,
+      wrappedOffset + NONCE_BYTES + DEK_BYTES,
+    );
+    const wrappedTag = source.subarray(
+      wrappedOffset + NONCE_BYTES + DEK_BYTES,
+      wrappedOffset + NONCE_BYTES + DEK_BYTES + TAG_BYTES,
+    );
+    const oldDek = tryUnwrap(
+      wrappedCiphertext,
+      wrappedTag,
+      oldRoot,
+      wrappedNonce,
+      aad(header, "dek"),
+    );
+    const newDek = tryUnwrap(
+      wrappedCiphertext,
+      wrappedTag,
+      newRoot,
+      wrappedNonce,
+      aad(header, "dek"),
+    );
+    if ((oldDek === undefined) === (newDek === undefined)) {
+      oldDek?.fill(0);
+      newDek?.fill(0);
+      throw vaultError("vault_record_invalid");
+    }
+    const kind = oldDek === undefined ? "new" : "old";
+    const dek = oldDek ?? newDek!;
+    const valueNonceOffset = wrappedOffset + NONCE_BYTES + DEK_BYTES
+      + TAG_BYTES;
+    const valueNonce = source.subarray(
+      valueNonceOffset,
+      valueNonceOffset + NONCE_BYTES,
+    );
+    const valueCiphertext = source.subarray(
+      valueNonceOffset + NONCE_BYTES,
+      source.byteLength - TAG_BYTES,
+    );
+    const valueTag = source.subarray(source.byteLength - TAG_BYTES);
+    let plaintext: Buffer | undefined;
+    try {
+      plaintext = decrypt(
+        valueCiphertext,
+        valueTag,
+        dek,
+        valueNonce,
+        aad(header, "value"),
+      );
+      if (
+        plaintext.byteLength
+          !== BINDING_BYTES + SECRET_LENGTH_BYTES + sizeClass.bytes
+        || !isUuidV7(bytesToUuid(plaintext.subarray(0, 16)))
+        || !isUuidV7(bytesToUuid(plaintext.subarray(16, 32)))
+        || !isUuidV7(bytesToUuid(plaintext.subarray(32, 48)))
+      ) throw vaultError("vault_record_invalid");
+      const secretLength = plaintext.readUInt32BE(BINDING_BYTES);
+      if (
+        secretLength < 1
+        || secretLength > sizeClass.bytes
+        || classForSecret(secretLength).code !== sizeClass.code
+      ) throw vaultError("vault_record_invalid");
+    } catch (error) {
+      dek.fill(0);
+      if (error instanceof Error && error.name === "VaultError") throw error;
+      throw vaultError("vault_record_invalid");
+    } finally {
+      plaintext?.fill(0);
+    }
+    return { kind, dek, header, wrappedOffset };
+  } catch (error) {
+    if (error instanceof Error && error.name === "VaultError") throw error;
+    throw vaultError("vault_record_invalid");
+  }
+}
+
+function tryUnwrap(
+  ciphertext: Buffer,
+  tag: Buffer,
+  key: Buffer,
+  nonce: Buffer,
+  associatedData: Buffer,
+): Buffer | undefined {
+  try {
+    return decrypt(ciphertext, tag, key, nonce, associatedData);
+  } catch {
+    return undefined;
+  }
+}
+
+function digestRecord(value: Buffer): string {
+  return createHash("sha256").update(value).digest("hex");
 }
 
 function validateBinding(binding: VaultCredentialBinding): void {

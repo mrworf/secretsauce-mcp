@@ -2,11 +2,11 @@ milestones:
   - id: "00"
     title: "Implementation Readiness And Contract Baseline"
     file: "docs/milestones/v2.1/00-implementation-readiness.md"
-    status: "in_progress"
+    status: "completed"
     dependencies: []
-    completed_at: null
-    commit_hash: null
-    notes: "Readiness contract selected; detailed architecture, UX/accessibility, API, threat-model, and validation artifacts are in progress."
+    completed_at: "2026-07-27T22:42:13-07:00"
+    commit_hash: "f9ab951"
+    notes: "Approved project-authored data/API, UX/accessibility, decision, threat-model, and validation baselines; readiness validator passed for 14 artifacts. Independent and human assurance remain later evidence."
   - id: "01"
     title: "Private Vault REST Boundary"
     file: "docs/milestones/v2.1/01-private-vault-rest-boundary.md"

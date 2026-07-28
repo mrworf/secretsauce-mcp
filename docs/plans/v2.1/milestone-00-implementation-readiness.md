@@ -161,7 +161,7 @@ milestones must not begin from a reverted or incomplete readiness contract.
 
 | Slice | Status | Commit | Evidence | Deviations |
 | --- | --- | --- | --- | --- |
-| 1 | completed | | `node scripts/validate-v2.1-readiness.mjs`; negative missing-artifact fixture; Markdown/link/OpenAPI/requirement/UX/threat checks; clean `git diff --check` | None |
+| 1 | completed | `f9ab951` | `node scripts/validate-v2.1-readiness.mjs`; negative missing-artifact fixture; Markdown/link/OpenAPI/requirement/UX/threat checks; clean `git diff --check` | None |
 
 ## Deferred follow-ups
 

@@ -49,12 +49,12 @@ milestones:
   - id: "05"
     title: "Browser Enrollment And Initial Superadmin"
     file: "docs/milestones/v2.1/05-browser-enrollment.md"
-    status: "pending"
+    status: "in_progress"
     dependencies:
       - "03"
     completed_at: null
     commit_hash: null
-    notes: "Pending implementation planning and acceptance evidence."
+    notes: "Implementation plan approved; process-lifetime provisional authority is the selected representation."
   - id: "06"
     title: "Browser Login, Sessions, And Logout"
     file: "docs/milestones/v2.1/06-browser-login-sessions-and-logout.md"

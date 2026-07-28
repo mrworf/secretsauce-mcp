@@ -2,7 +2,7 @@
 
 ## Scope
 
-- **Executable baseline:** `b780201`
+- **Executable baseline:** `7e3a2fd`
 - **Review time:** 2026-07-28 UTC
 - **Assurance boundary:** project-authored white-box review, not independent
   architecture approval or human operations sign-off.
@@ -10,9 +10,9 @@
   control listeners, vault isolation, persistence ownership, OAuth/session
   state, startup/restart, rotation/recovery, scale, official Compose,
   generated contracts, and operator procedures.
-- **Evidence:** production build; 168-file/1,089-test suite; exact
+- **Evidence:** production build; 168-file/1,090-test suite; exact
   100,000/100,001 revocation boundary; current OpenAPI; 14 readiness artifacts;
-  and closed-scope release scan.
+  container smoke; and partial clean/recreation Compose execution.
 
 ## Executive Summary
 
@@ -21,11 +21,14 @@ single-instance target. Browser-first provisioning, one combined application
 writer, separate public listeners, and a network-isolated vault align with the
 approved architecture. The final review found and closed one architecture gap:
 the approved 100,000-record transactional global-revocation boundary was not
-enforced. The corrected candidate is `b780201`.
+enforced. The correction landed in `b780201`.
 
-No additional source-level architecture blocker is confirmed. Release approval
-remains pending because the official Compose topology has not been executed on
-a Docker-capable host, the production advisory query is absent, and hosted
+Real Compose execution then found a production-only composition import cycle.
+Commit `7e3a2fd` defers the operational application import until browser-first
+handoff; the full suite and clean/recreated topology pass. No additional
+source-level architecture blocker is confirmed. Release approval remains
+pending because the interactive and operational portions of the Compose
+journey are incomplete, the production advisory query is absent, and hosted
 client and independent/human evidence are not available.
 
 ## What Is Good
@@ -54,9 +57,11 @@ active records while atomically rejecting 100,001.
 
 ## What Is Bad Or Risky
 
-**The official deployment journey is unexecuted here.** Static Compose and
-configuration tests prove declared topology, not real image build, volume
-ownership, network isolation, recreation, or root-rotation behavior.
+**The official deployment journey is only partially executed.** A clean image
+build, bounded setup startup, mount directions, network isolation, and
+generated-file recreation passed. Interactive enrollment, operational
+database/OAuth/audit continuity, process-authority invalidation, and both root
+rotations remain unexecuted.
 
 **One application remains a shared fault and compromise domain.** A crash
 affects both public surfaces, and arbitrary application-process compromise can
@@ -73,16 +78,16 @@ and mutation responsibilities increase review cost. It is covered by strong
 behavioral and transaction tests, so a release-time refactor would create more
 risk than it removes.
 
-**The current container smoke is not the v2.1 Compose proof.** It remains
-useful image/startup coverage, but the exact browser-first topology and
-recreation journey are separate mandatory evidence.
+**The passing container and partial Compose checks are not the complete v2.1
+deployment proof.** They cover image startup and the browser-first boundary,
+but not the post-enrollment operational and maintenance journey.
 
 ## What Should Change
 
-- Execute `docs/v2.1-release-qualification.md` on a disposable Docker amd64
-  host against `b780201` or the later exact executable candidate, recording
-  image digest, engine/filesystem details, durable/ephemeral state, vault
-  isolation, and both root rotations.
+- Continue `docs/v2.1-release-qualification.md` against `7e3a2fd` or the later
+  exact executable candidate, recording interactive enrollment,
+  post-enrollment durable/ephemeral state, operational MCP, and both root
+  rotations.
 - Run the production dependency gate under approved network/disclosure policy.
 - Run hosted Codex and ChatGPT against the deployed origin and full `/mcp`
   Server URL, then obtain named independent security, architecture,
@@ -107,6 +112,7 @@ recreation journey are separate mandatory evidence.
 
 The source architecture is implementation-ready and internally consistent for
 the declared single-instance product, including the remediated global
-revocation boundary. It is not yet release-qualified: exact Compose execution,
-dependency advisory evidence, hosted clients, and independent/human approvals
-remain blocking external gates.
+revocation boundary and browser-first import graph. It is not yet
+release-qualified: the remaining Compose journey, dependency advisory evidence,
+hosted clients, and independent/human approvals remain blocking external
+gates.

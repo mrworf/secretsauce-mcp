@@ -2,12 +2,11 @@
 
 ## Candidate and environment
 
-- Executable baseline: `b780201`
+- Executable baseline: `7e3a2fd`
 - Qualification environment: Node 26.4.0, npm 12.0.1, linux/x86_64
-- Container runtime: unavailable. A Docker 29.6.1 linux/amd64 client became
-  available after the initial audit, but the system daemon is inactive,
-  starting it requires an interactive administrator credential, and no Docker
-  Compose plugin or legacy client is installed. Podman and nerdctl are absent.
+- Container runtime: rootless Docker Engine 29.6.1, Compose 5.3.1,
+  linux/amd64, VFS storage, with a disposable data root outside the repository.
+  The rootless toolchain packages were signature-verified before use.
 - Decision rule: a missing external gate remains pending and blocks release
 
 This artifact records project-authored automated evidence. It is not an
@@ -28,12 +27,21 @@ approval.
   boundary.
 - The production server and web build passed. The existing Vite advisory for
   one JavaScript chunk over 500 kB remains non-blocking.
-- The full unit/integration/browser/security suite passed 168 files and 1,089
-  tests with approved loopback/private-socket permission.
+- The full unit/integration/browser/security suite passed 168 files and 1,090
+  tests.
 - Generated control OpenAPI is current.
 - The v2.1 readiness validator passed all 14 architecture/readiness artifacts.
 - The release artifact/privacy scan passed 662 closed-scope files after the
   exact-candidate runbook and project-authored review packet were staged.
+- `npm run smoke:container` passed against a real Docker daemon.
+- Official `docker compose config` passed. A clean `up --build --detach`
+  built the production image and started both services. Before enrollment,
+  application liveness and setup status returned 200, readiness returned 503,
+  MCP returned 503, and the vault was healthy with network mode `none`, no
+  published ports, and the declared read-only inventory mounts.
+- Forced recreation restored both services with zero restart count. All 11
+  generated files remained byte-identical, application liveness and setup
+  status returned 200, and the vault remained networkless.
 
 ## Integration finding and remediation
 
@@ -58,15 +66,25 @@ rejects 100,001 before any domain/idempotency/success-audit commit, and document
 the supported operator contract. The focused remediation suite passes 4 files
 and 45 tests.
 
+The first real clean Compose start exposed a production-only module evaluation
+cycle: `application.ts` dynamically loaded the browser-first lifecycle while
+the lifecycle statically imported the operational application starter. Node
+exited with code 13 before either listener started. Unit tests had injected the
+starter and therefore did not exercise the default import graph. Commit
+`7e3a2fd` makes the operational import type-only at entrypoint evaluation and
+defers the runtime import until handoff. A structural regression test, the full
+1,090-test suite, a clean Compose rebuild, bounded pre-enrollment probes, and
+forced recreation all pass.
+
 ## Pending release blockers
 
 - `npm run audit:production` could not query the public npm advisory endpoint
   in the sandbox. Escalation was rejected because it would disclose dependency
   metadata without explicit user authorization. No advisory result is claimed.
-- No usable Docker-compatible runtime exists on this host. The installed Docker
-  client cannot reach an active daemon and no Compose client is installed. The
-  exact-candidate official Compose clean setup, enrollment, MCP, recreation,
-  durable-state, vault-isolation, and rotation journey is not executed here.
+- The exact-candidate clean Compose start, pre-enrollment isolation, and
+  generated-file recreation checks passed. The interactive enrollment,
+  post-enrollment login/MCP and durable database/OAuth/audit journey, ephemeral
+  authority checks, and both root rotations are not executed here.
 - Hosted Codex and ChatGPT checks against a deployment are not supplied.
 - Independent/human security, architecture, UX/accessibility, data/API,
   operations, documentation, and release approvals are not supplied.

@@ -2,7 +2,7 @@
 
 ## Scope
 
-- **Executable baseline:** `b780201`
+- **Executable baseline:** `7e3a2fd`
 - **Review time:** 2026-07-28 UTC
 - **Assurance boundary:** project-authored contract review, not independent
   data/API approval, documentation approval, or human release sign-off.
@@ -47,7 +47,7 @@ request/response bodies, and private hostnames in the qualification record.
 ## Validation
 
 - production server and web build: pass;
-- full suite: 168 files and 1,089 tests pass;
+- full suite: 168 files and 1,090 tests pass;
 - generated control OpenAPI: current;
 - v2.1 readiness artifacts: 14 pass;
 - release-document links and contracts: pass before this artifact set;
@@ -56,8 +56,10 @@ request/response bodies, and private hostnames in the qualification record.
 
 ## Limitations And Verdict
 
-No real Docker Compose deployment, production advisory response, hosted
-Codex/ChatGPT client, external schema consumer, documentation usability study,
-or independent reviewer was available. Pass for the project-authored data,
-API, and documentation scope only. The final independent/human approval row
-remains pending and release blocking.
+A real rootless Docker Compose deployment proved clean pre-enrollment startup,
+vault isolation, and generated-file recreation. The production advisory
+response, remaining operational Compose journey, hosted Codex/ChatGPT client,
+external schema consumer, documentation usability study, and independent
+reviewer were not available. Pass for the project-authored data, API, and
+documentation scope only. The final independent/human approval row remains
+pending and release blocking.

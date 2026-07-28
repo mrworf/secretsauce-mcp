@@ -2,7 +2,7 @@
 
 ## Scope
 
-- **Executable baseline:** `b780201`
+- **Executable baseline:** `7e3a2fd`
 - **Review time:** 2026-07-28 UTC
 - **Assurance boundary:** project-authored source and automated review, not an
   independent accessibility audit or human approval.
@@ -19,7 +19,7 @@ movement; destructive confirmations; current-session handling; one-time
 values; write-only secret clearing; loading, empty, error, retry, and
 unauthorized states; and narrow-layout source contracts.
 
-The production web build and complete 168-file/1,089-test suite passed. The
+The production web build and complete 168-file/1,090-test suite passed. The
 release accessibility suite passed six role/route tests, and owning component
 suites cover setup, enrollment, login, recovery, access, backup, restore,
 security, service, policy, credential, and identity behavior.

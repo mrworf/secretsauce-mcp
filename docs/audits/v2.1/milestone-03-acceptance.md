@@ -59,10 +59,21 @@ preserves declared state in named volumes.
 
 ## Deviations and residual ownership
 
-- Docker is unavailable on this host. Static Compose/Dockerfile contracts and
-  real local process, Unix-socket, restart, and lifecycle tests passed; the
-  clean Compose and container-recreation journey remains an explicit
-  Milestone 10 release gate.
+- Later M10 qualification on executable candidate `7e3a2fd` used rootless
+  Docker Engine 29.6.1 and Compose 5.3.1 on linux/amd64. A clean official
+  Compose build exposed a production-only top-level-await cycle between the
+  browser-first and operational composition roots. Commit `7e3a2fd` replaced
+  the lifecycle's static runtime import with a deferred import and added a
+  regression contract. The clean topology then reached the browser enrollment
+  boundary: application liveness and setup status returned 200, readiness and
+  MCP remained bounded at 503, and the healthy vault retained network mode
+  `none`.
+- Forced recreation preserved all 11 generated files byte-for-byte, restored
+  both containers without restart loops, retained the declared read-only
+  application and inventory mount directions, and returned setup liveness.
+  Human enrollment, post-enrollment durable-state checks, operational MCP, and
+  root-rotation execution remain M10 gates rather than M03 implementation
+  claims.
 - The in-app browser backend reported no available browser. Component tests
   cover semantics, keyboard focus, live updates, strict status handling, and
   responsive/reduced-motion source contracts, but viewport screenshots,

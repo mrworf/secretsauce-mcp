@@ -3,7 +3,7 @@
 ## Metadata
 
 - **Project/repository:** SecretSauce (MCP)
-- **Executable baseline:** `b780201`
+- **Executable baseline:** `7e3a2fd`
 - **Review date/time:** 2026-07-28 UTC
 - **Reviewer role:** project-authored application security review
 - **Assurance boundary:** this is a white-box implementation review by the
@@ -41,7 +41,7 @@ threat model, ADRs, validation matrix, and milestone evidence, plus:
 
 - a 12-file/192-test focused security suite;
 - a 4-file/45-test access and persistence remediation suite;
-- the complete 168-file/1,089-test suite;
+- the complete 168-file/1,090-test suite;
 - current generated OpenAPI and all 14 readiness artifacts;
 - `npm ls --omit=dev --all`; and
 - the 662-file closed-scope artifact/privacy scan including this staged review
@@ -141,10 +141,12 @@ egress scanning.
 
 ## Assumptions / Limitations
 
-No Docker-compatible runtime, deployed reverse proxy, external identity
-provider, real downstream, hosted Codex/ChatGPT session, manual penetration
-test, or independent reviewer was available. The public production advisory
-query was not run. These are release gates, not implied passes.
+A rootless Docker-compatible runtime proved the clean pre-enrollment topology,
+vault isolation, and generated-file recreation. No deployed reverse proxy,
+external identity provider, real downstream, hosted Codex/ChatGPT session,
+manual penetration test, or independent reviewer was available. The public
+production advisory query and remaining operational Compose journey were not
+run. These are release gates, not implied passes.
 
 ## Appendix
 

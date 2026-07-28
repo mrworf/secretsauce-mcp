@@ -40,6 +40,7 @@ import {
   LocalEnrollmentService,
   RestrictedSessionAuthenticator,
 } from "../identity/enrollment.js";
+import { InitialEnrollmentAuthority } from "../identity/initialEnrollment.js";
 import {
   UserAdministrationRepository,
   UserAdministrationService,
@@ -277,6 +278,8 @@ export function createControlApplication(
     const setupWebPath = isSetupWebPath(request.url);
     const setupWebCandidate = isSetupWebCandidate(request.url);
     const setupPath = setupApiPath || setupWebPath;
+    const enrollmentPath = options.setupStatus?.().state === "enrollment"
+      && (isEnrollmentApiPath(request.url) || isEnrollmentWebPath(request.url));
     if (
       (setupPath || setupWebCandidate)
       && (
@@ -294,7 +297,7 @@ export function createControlApplication(
         },
       });
     }
-    if (operational() || setupPath) return;
+    if (operational() || setupPath || enrollmentPath) return;
     return reply
       .header("retry-after", "3")
       .code(503)
@@ -495,6 +498,7 @@ export async function startControlServer(
     operational?: () => boolean;
     setupStatus?: () => PublicSetupStatus;
     startOrdinaryJobs?: boolean;
+    initialEnrollmentSecretSink?: (line: string) => void;
   } = {},
 ): Promise<ControlServerApplication> {
   if (config.control === undefined || config.persistence === undefined) {
@@ -516,6 +520,7 @@ export async function startControlServer(
   let stepUpRepository: StepUpRepository | undefined;
   let stepUpAuthorization: BrowserStepUpAuthorization | undefined;
   let enrollment: LocalEnrollmentService | undefined;
+  let initialEnrollment: InitialEnrollmentAuthority | undefined;
   let restrictedSessions: RestrictedSessionAuthenticator | undefined;
   let userAdministration: UserAdministrationService | undefined;
   let oidcFlow: OidcFlowService | undefined;
@@ -580,6 +585,16 @@ export async function startControlServer(
         config.identity.rootKeyFiles,
       );
       const sessionKey = loadIdentitySessionHmacKey(config.identity.sessionHmacKeyFile);
+      initialEnrollment = options.operational?.() === false
+        ? await InitialEnrollmentAuthority.create({
+            config: config.identity,
+            sessionHmacKey: sessionKey,
+          })
+        : undefined;
+      initialEnrollment?.announce(
+        options.initialEnrollmentSecretSink
+          ?? ((line) => process.stdout.write(line)),
+      );
       const databaseOAuthConfig = config.auth.mode === "builtin_oauth"
         && config.auth.builtinOAuth.identitySource === "database"
         ? config.auth.builtinOAuth
@@ -704,10 +719,15 @@ export async function startControlServer(
           keyRing: identityKeyRing,
           sessionHmacKey: sessionKey,
           securitySettings: () => securitySettings!.store.current(),
+          ...(initialEnrollment === undefined
+            ? {}
+            : { initialAuthority: initialEnrollment }),
         });
         restrictedSessions = new RestrictedSessionAuthenticator(
           enrollmentRepository,
           sessionKey,
+          undefined,
+          initialEnrollment,
         );
         const serviceRelationships = new ServiceRelationshipRepository(persistence);
         serviceManagement = new ServiceManagementService(
@@ -1019,6 +1039,7 @@ export async function startControlServer(
     stepUp?.close();
     restrictedSessions?.close();
     enrollment?.close();
+    initialEnrollment?.close();
     userAdministration?.close();
     oidcFlow?.close();
     oidcLogin?.close();
@@ -1052,6 +1073,7 @@ export async function startControlServer(
         stepUp?.close();
         restrictedSessions?.close();
         enrollment?.close();
+        initialEnrollment?.close();
         userAdministration?.close();
         oidcFlow?.close();
         oidcLogin?.close();
@@ -1091,6 +1113,18 @@ function isSetupWebCandidate(url: string): boolean {
   return path === "/control/setup"
     || path === "/control/setup/"
     || path.startsWith("/control/assets/");
+}
+
+function isEnrollmentApiPath(url: string): boolean {
+  const path = url.split("?", 1)[0];
+  return path === "/api/v2/auth/enrollment/login"
+    || path === "/api/v2/auth/enrollment/begin"
+    || path === "/api/v2/auth/enrollment/confirm";
+}
+
+function isEnrollmentWebPath(url: string): boolean {
+  const path = url.split("?", 1)[0];
+  return path === "/control/enroll" || path === "/control/enroll/";
 }
 
 export function restoreStageCoordinatorFromEnvironment(

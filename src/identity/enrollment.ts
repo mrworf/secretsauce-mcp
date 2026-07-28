@@ -33,6 +33,9 @@ import {
   type TotpEnvelope,
 } from "./totp.js";
 import { normalizeEmail } from "./validation.js";
+import {
+  InitialEnrollmentAuthority,
+} from "./initialEnrollment.js";
 
 const SESSION_BYTES = 32;
 const SESSION_DOMAIN = "secretsauce.restricted-session.v1";
@@ -128,6 +131,7 @@ export interface ValidatedRestrictedSession {
   purpose: RestrictedSessionPurpose;
   csrfHash: string;
   expiresAt: number;
+  provisional?: true;
 }
 
 interface PendingEnrollment {
@@ -1077,6 +1081,7 @@ export interface LocalEnrollmentServiceOptions {
   uuid?: () => string;
   dummyTemporaryHash?: string;
   securitySettings?: () => SecuritySettings;
+  initialAuthority?: InitialEnrollmentAuthority;
 }
 
 export class LocalEnrollmentService {
@@ -1088,6 +1093,7 @@ export class LocalEnrollmentService {
   readonly #random: (size: number) => Buffer;
   readonly #uuid: () => string;
   readonly #dummyTemporaryHash: string;
+  readonly #initialAuthority: InitialEnrollmentAuthority | undefined;
   #passwordPolicy: PasswordPolicy;
   #passwordPolicyKey: string;
   readonly #securitySettings: (() => SecuritySettings) | undefined;
@@ -1110,6 +1116,7 @@ export class LocalEnrollmentService {
     const generator = new UuidV7Generator({ now: this.#now });
     this.#uuid = options.uuid ?? (() => generator.next());
     this.#dummyTemporaryHash = options.dummyTemporaryHash;
+    this.#initialAuthority = options.initialAuthority;
     this.#securitySettings = options.securitySettings;
     this.#passwordPolicyKey = "";
     this.#passwordPolicy = new PasswordPolicy({
@@ -1165,6 +1172,54 @@ export class LocalEnrollmentService {
     return new LocalEnrollmentService({ ...options, dummyTemporaryHash });
   }
 
+  async enrollmentLogin(input: unknown): Promise<RestrictedLoginResult> {
+    let parsed: ReturnType<typeof parseEnrollmentLogin>;
+    try {
+      parsed = parseEnrollmentLogin(input);
+    } catch {
+      await this.#uniformTemporaryDenial("invalid");
+      throw new EnrollmentError("authentication_failed");
+    }
+    const accountKey = keyedHash(
+      this.#sessionHmacKey,
+      ACCOUNT_DOMAIN,
+      parsed.normalizedEmail,
+    );
+    this.#takeLoginLimits(parsed.source, accountKey);
+    const release = this.#passwordInflight.acquire(parsed.source);
+    if (release === undefined) throw new EnrollmentError("rate_limited");
+    let bootstrapValid = false;
+    try {
+      bootstrapValid = this.#initialAuthority === undefined
+        ? await verifyPasswordHash(
+            Buffer.from(parsed.enrollmentCode, "utf8"),
+            this.#dummyTemporaryHash,
+          ).then(() => false)
+        : await this.#initialAuthority.verify(parsed.enrollmentCode);
+    } finally {
+      release();
+    }
+    try {
+      return await this.#temporaryLogin({
+        normalizedEmail: parsed.normalizedEmail,
+        temporaryPassword: parsed.enrollmentCode,
+        source: parsed.source,
+        correlationId: parsed.correlationId,
+      }, false);
+    } catch (error) {
+      if (
+        !bootstrapValid
+        || !(error instanceof EnrollmentError)
+        || error.code !== "authentication_failed"
+      ) throw error;
+    }
+    try {
+      return this.#initialAuthority!.issue(parsed.email);
+    } catch {
+      throw new EnrollmentError("enrollment_unavailable");
+    }
+  }
+
   async issueInitialTemporary(
     userId: string,
     audit: IdentityAuditContext,
@@ -1215,15 +1270,19 @@ export class LocalEnrollmentService {
       await this.#uniformTemporaryDenial("invalid");
       throw new EnrollmentError("authentication_failed");
     }
+    return this.#temporaryLogin(parsed, true);
+  }
+
+  async #temporaryLogin(
+    parsed: ReturnType<typeof parseTemporaryLogin>,
+    takeLimits: boolean,
+  ): Promise<RestrictedLoginResult> {
     const accountKey = keyedHash(
       this.#sessionHmacKey,
       ACCOUNT_DOMAIN,
       parsed.normalizedEmail,
     );
-    if (
-      !this.#loginLimiter.take(parsed.source, accountKey) ||
-      !this.#passwordLimiter.take(parsed.source, accountKey)
-    ) throw new EnrollmentError("rate_limited");
+    if (takeLimits) this.#takeLoginLimits(parsed.source, accountKey);
     let candidate: EnrollmentCandidate | undefined;
     try {
       candidate = await this.#repository.candidate(parsed.normalizedEmail);
@@ -1266,6 +1325,13 @@ export class LocalEnrollmentService {
       csrfToken,
       expiresAt: material.expiresAt,
     };
+  }
+
+  #takeLoginLimits(source: string, accountKey: string): void {
+    if (
+      !this.#loginLimiter.take(source, accountKey)
+      || !this.#passwordLimiter.take(source, accountKey)
+    ) throw new EnrollmentError("rate_limited");
   }
 
   async totpRecoveryLogin(input: unknown): Promise<RestrictedLoginResult> {
@@ -1894,6 +1960,7 @@ export class LocalEnrollmentService {
   }
 
   close(): void {
+    this.#initialAuthority?.close();
     this.#sessionHmacKey.fill(0);
   }
 }
@@ -1910,6 +1977,7 @@ export class RestrictedSessionAuthenticator implements ControlAuthenticator {
     private readonly repository: LocalEnrollmentRepository,
     sessionHmacKey: Buffer,
     private readonly random: (size: number) => Buffer = randomBytes,
+    private readonly initialAuthority?: InitialEnrollmentAuthority,
   ) {
     if (sessionHmacKey.byteLength !== 32) throw new Error("Invalid restricted session key.");
     this.#key = Buffer.from(sessionHmacKey);
@@ -1922,6 +1990,9 @@ export class RestrictedSessionAuthenticator implements ControlAuthenticator {
     try {
       session = await this.repository.restrictedSession(
         keyedHash(this.#key, SESSION_DOMAIN, token),
+      );
+      session ??= this.initialAuthority?.restrictedSession(
+        this.initialAuthority.sessionHash(token),
       );
     } catch {
       return undefined;
@@ -1945,10 +2016,12 @@ export class RestrictedSessionAuthenticator implements ControlAuthenticator {
     return session !== undefined &&
       session.context === context &&
       OPAQUE_VALUE.test(proof) &&
-      constantTimeHexEqual(
-        keyedHash(this.#key, CSRF_DOMAIN, proof),
-        session.csrfHash,
-      );
+      (session.provisional === true
+        ? this.initialAuthority?.csrfMatches(session, proof) === true
+        : constantTimeHexEqual(
+            keyedHash(this.#key, CSRF_DOMAIN, proof),
+            session.csrfHash,
+          ));
   }
 
   session(request: FastifyRequest): ValidatedRestrictedSession | undefined {
@@ -1959,9 +2032,16 @@ export class RestrictedSessionAuthenticator implements ControlAuthenticator {
     const session = this.#sessions.get(request);
     if (session === undefined) throw new EnrollmentError("authentication_failed");
     const token = opaqueValue(this.random);
-    const hash = keyedHash(this.#key, CSRF_DOMAIN, token);
-    await this.repository.rotateCsrf(session.sessionId, session.userId, hash);
-    session.csrfHash = hash;
+    const hash = session.provisional === true
+      ? this.initialAuthority?.rotateCsrf(session, token)
+      : keyedHash(this.#key, CSRF_DOMAIN, token);
+    if (hash === undefined) throw new EnrollmentError("enrollment_unavailable");
+    if (session.provisional === true) {
+      session.csrfHash = hash;
+    } else {
+      await this.repository.rotateCsrf(session.sessionId, session.userId, hash);
+      session.csrfHash = hash;
+    }
     return token;
   }
 
@@ -2033,6 +2113,44 @@ function parseTemporaryLogin(value: unknown): {
   return {
     normalizedEmail,
     temporaryPassword: input.temporaryPassword.normalize("NFKC"),
+    source: input.source,
+    correlationId: input.correlationId,
+  };
+}
+
+function parseEnrollmentLogin(value: unknown): {
+  email: string;
+  normalizedEmail: string;
+  enrollmentCode: string;
+  source: string;
+  correlationId: string;
+} {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    throw new EnrollmentError("authentication_failed");
+  }
+  const input = value as Record<string, unknown>;
+  if (
+    Object.keys(input).length !== 4
+    || typeof input.email !== "string"
+    || typeof input.enrollmentCode !== "string"
+    || typeof input.source !== "string"
+    || typeof input.correlationId !== "string"
+    || [...input.enrollmentCode].length > 1_024
+    || Buffer.byteLength(input.enrollmentCode, "utf8") > 4_096
+    || input.source.length < 1
+    || input.source.length > 128
+    || !validCorrelationId(input.correlationId)
+  ) throw new EnrollmentError("authentication_failed");
+  let normalizedEmail: string;
+  try {
+    normalizedEmail = normalizeEmail(input.email);
+  } catch {
+    throw new EnrollmentError("authentication_failed");
+  }
+  return {
+    email: input.email,
+    normalizedEmail,
+    enrollmentCode: input.enrollmentCode.normalize("NFKC"),
     source: input.source,
     correlationId: input.correlationId,
   };

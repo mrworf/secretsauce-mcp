@@ -528,7 +528,7 @@ describe("restricted initial local enrollment", () => {
       headers: { host: "control.example.org", "content-type": "application/json" },
       payload: {
         email: fixture.email,
-        temporary_password: issued.temporaryPassword,
+        enrollment_code: issued.temporaryPassword,
       },
     });
     expect(login.statusCode).toBe(200);

@@ -879,20 +879,20 @@ function registerEnrollmentRoutes(
     schemas: {
       body: z.object({
         email: z.string().min(3).max(254),
-        temporary_password: z.string().max(4_096),
+        enrollment_code: z.string().max(4_096),
       }).strict(),
       response: restrictedData,
     },
     rateLimit: "authentication",
-    secretFields: ["/temporary_password"],
+    secretFields: ["/enrollment_code"],
     cache: "no-store",
     concurrency: "none",
     idempotency: "none",
     handler: async ({ body, request, reply }) => {
       try {
-        const result = await enrollment.temporaryLogin({
+        const result = await enrollment.enrollmentLogin({
           email: body.email,
-          temporaryPassword: body.temporary_password,
+          enrollmentCode: body.enrollment_code,
           source: request.ip,
           correlationId: request.id,
         });

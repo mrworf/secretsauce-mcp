@@ -101,6 +101,6 @@ readiness, and release scan.
 
 | Slice | Status | Commit | Evidence | Deviations |
 | --- | --- | --- | --- | --- |
-| 1 | pending | — | — | — |
+| 1 | completed | this commit | 6/6 authority tests plus 10/10 existing enrollment tests; 192-bit secret with one dedicated startup line; Argon2 verifier; bounded memory-only provisional sessions; restart/close invalidation; domain-separated cookie and CSRF hashes; neutral enrollment-code route; setup gating admits only the enrollment surface | Full production-process log capture and post-commit lifecycle advancement remain Slice 3 qualification. |
 | 2 | pending | — | — | — |
 | 3 | pending | — | — | — |

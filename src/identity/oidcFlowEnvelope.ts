@@ -1,6 +1,6 @@
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 import { z } from "zod";
-import type { IdentityKeyRing } from "./totp.js";
+import { IdentityKeyRing } from "./totp.js";
 
 const envelopeSchema = z.object({
   version: z.literal(1),
@@ -120,12 +120,175 @@ export function decryptOidcFlowSecrets(
   }
 }
 
+export function classifyOidcFlowEnvelopePhysicalRoot(
+  value: unknown,
+  expected: {
+    flowId: string;
+    providerId: string;
+    purpose: OidcFlowPurpose;
+  },
+  logicalRootKeyId: string,
+  oldRoot: Uint8Array,
+  newRoot: Uint8Array,
+): "old" | "new" {
+  if (
+    !/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(logicalRootKeyId)
+    || oldRoot.byteLength !== 32
+    || newRoot.byteLength !== 32
+    || oldRoot.every((byte, index) => byte === newRoot[index])
+  ) throw new OidcFlowEnvelopeError();
+  const oldValid = canDecryptOidcFlowWithRoot(
+    value,
+    expected,
+    logicalRootKeyId,
+    oldRoot,
+  );
+  const newValid = canDecryptOidcFlowWithRoot(
+    value,
+    expected,
+    logicalRootKeyId,
+    newRoot,
+  );
+  if (oldValid === newValid) throw new OidcFlowEnvelopeError();
+  return oldValid ? "old" : "new";
+}
+
+export function rewrapOidcFlowEnvelopePhysicalRoot(
+  value: unknown,
+  expected: {
+    flowId: string;
+    providerId: string;
+    purpose: OidcFlowPurpose;
+  },
+  logicalRootKeyId: string,
+  oldRoot: Uint8Array,
+  newRoot: Uint8Array,
+  random: (size: number) => Buffer = randomBytes,
+): string {
+  if (
+    classifyOidcFlowEnvelopePhysicalRoot(
+      value,
+      expected,
+      logicalRootKeyId,
+      oldRoot,
+      newRoot,
+    ) !== "old"
+  ) throw new OidcFlowEnvelopeError();
+  const secrets = decryptOidcFlowSecretsWithRoot(
+    value,
+    expected,
+    logicalRootKeyId,
+    oldRoot,
+  );
+  const newRootCopy = Buffer.from(newRoot);
+  let keyRing: IdentityKeyRing | undefined;
+  try {
+    keyRing = new IdentityKeyRing(logicalRootKeyId, {
+      [logicalRootKeyId]: newRootCopy,
+    });
+    return encryptOidcFlowSecrets({
+      ...expected,
+      secrets,
+      keyRing,
+      random,
+    });
+  } finally {
+    newRootCopy.fill(0);
+    keyRing?.destroy();
+  }
+}
+
 function associatedData(
   flowId: string,
   providerId: string,
   purpose: OidcFlowPurpose,
 ): Buffer {
   return Buffer.from(`secretsauce.identity.oidc-flow.v1\0${flowId}\0${providerId}\0${purpose}`, "utf8");
+}
+
+function decryptOidcFlowSecretsWithRoot(
+  value: unknown,
+  expected: {
+    flowId: string;
+    providerId: string;
+    purpose: OidcFlowPurpose;
+  },
+  logicalRootKeyId: string,
+  root: Uint8Array,
+): OidcFlowSecrets {
+  let key: Buffer | undefined;
+  let plaintext: Buffer | undefined;
+  try {
+    const parsed = typeof value === "string" ? JSON.parse(value) : value;
+    const envelope = envelopeSchema.parse(parsed);
+    if (
+      envelope.flowId !== expected.flowId
+      || envelope.providerId !== expected.providerId
+      || envelope.purpose !== expected.purpose
+      || envelope.rootKeyId !== logicalRootKeyId
+      || root.byteLength !== 32
+    ) throw new Error("flow envelope binding mismatch");
+    key = Buffer.from(root);
+    const decipher = createDecipheriv(
+      "aes-256-gcm",
+      key,
+      Buffer.from(envelope.iv, "base64url"),
+    );
+    decipher.setAAD(associatedData(
+      envelope.flowId,
+      envelope.providerId,
+      envelope.purpose,
+    ));
+    decipher.setAuthTag(Buffer.from(envelope.tag, "base64url"));
+    plaintext = Buffer.concat([
+      decipher.update(Buffer.from(envelope.ciphertext, "base64url")),
+      decipher.final(),
+    ]);
+    const secrets = JSON.parse(
+      new TextDecoder("utf-8", { fatal: true }).decode(plaintext),
+    ) as unknown;
+    if (
+      secrets === null
+      || typeof secrets !== "object"
+      || Array.isArray(secrets)
+      || Object.keys(secrets).sort().join(",") !== "nonce,verifier"
+    ) throw new Error("invalid secrets");
+    const record = secrets as Record<string, unknown>;
+    validateSecret(record.nonce);
+    validateSecret(record.verifier);
+    return {
+      nonce: record.nonce as string,
+      verifier: record.verifier as string,
+    };
+  } catch {
+    throw new OidcFlowEnvelopeError();
+  } finally {
+    plaintext?.fill(0);
+    key?.fill(0);
+  }
+}
+
+function canDecryptOidcFlowWithRoot(
+  value: unknown,
+  expected: {
+    flowId: string;
+    providerId: string;
+    purpose: OidcFlowPurpose;
+  },
+  logicalRootKeyId: string,
+  root: Uint8Array,
+): boolean {
+  try {
+    decryptOidcFlowSecretsWithRoot(
+      value,
+      expected,
+      logicalRootKeyId,
+      root,
+    );
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function validateSecret(value: unknown): asserts value is string {

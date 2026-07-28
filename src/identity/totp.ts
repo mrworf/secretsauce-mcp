@@ -238,6 +238,78 @@ export function rewrapTotpEnvelope(
   }
 }
 
+export function classifyTotpEnvelopePhysicalRoot(
+  value: unknown,
+  logicalRootKeyId: string,
+  oldRoot: Uint8Array,
+  newRoot: Uint8Array,
+): "old" | "new" {
+  if (
+    !ROOT_KEY_ID.test(logicalRootKeyId)
+    || oldRoot.byteLength !== DEK_BYTES
+    || newRoot.byteLength !== DEK_BYTES
+    || oldRoot.every((byte, index) => byte === newRoot[index])
+  ) throw new TotpError("totp_key_unavailable");
+  const oldSeed = tryDecryptTotpSeedWithRoot(
+    value,
+    logicalRootKeyId,
+    oldRoot,
+  );
+  const newSeed = tryDecryptTotpSeedWithRoot(
+    value,
+    logicalRootKeyId,
+    newRoot,
+  );
+  try {
+    if ((oldSeed === undefined) === (newSeed === undefined)) {
+      throw new TotpError("totp_invalid");
+    }
+    return oldSeed === undefined ? "new" : "old";
+  } finally {
+    oldSeed?.fill(0);
+    newSeed?.fill(0);
+  }
+}
+
+export function rewrapTotpEnvelopePhysicalRoot(
+  value: unknown,
+  logicalRootKeyId: string,
+  oldRoot: Uint8Array,
+  newRoot: Uint8Array,
+  random: (size: number) => Buffer = randomBytes,
+): TotpEnvelope {
+  if (
+    classifyTotpEnvelopePhysicalRoot(
+      value,
+      logicalRootKeyId,
+      oldRoot,
+      newRoot,
+    ) !== "old"
+  ) throw new TotpError("totp_invalid");
+  const current = parseTotpEnvelope(value);
+  const seed = decryptTotpSeedWithRoot(value, logicalRootKeyId, oldRoot);
+  const newRootCopy = Buffer.from(newRoot);
+  let keyRing: IdentityKeyRing | undefined;
+  try {
+    keyRing = new IdentityKeyRing(logicalRootKeyId, {
+      [logicalRootKeyId]: newRootCopy,
+    });
+    return encryptSeed({
+      seed,
+      authenticatorId: current.authenticatorId,
+      userId: current.userId,
+      rootKeyId: logicalRootKeyId,
+      generation: current.generation + 1,
+      keyRing,
+      random,
+    });
+  } finally {
+    seed.fill(0);
+    newRootCopy.fill(0);
+    keyRing?.destroy();
+  }
+}
+
 export function totpCode(seed: Buffer, timestampMs: number, digits = TOTP_DIGITS): string {
   if (
     seed.byteLength !== SEED_BYTES ||
@@ -300,6 +372,52 @@ function encryptSeed(input: {
   } finally {
     rootKey.fill(0);
     dek.fill(0);
+  }
+}
+
+function decryptTotpSeedWithRoot(
+  value: unknown,
+  logicalRootKeyId: string,
+  root: Uint8Array,
+): Buffer {
+  const envelope = parseTotpEnvelope(value);
+  if (
+    envelope.rootKeyId !== logicalRootKeyId
+    || root.byteLength !== DEK_BYTES
+  ) throw new TotpError("totp_invalid");
+  const rootCopy = Buffer.from(root);
+  const associatedData = envelopeAssociatedData(envelope);
+  let dek: Buffer | undefined;
+  try {
+    dek = decryptValue(
+      envelope.wrappedDek,
+      rootCopy,
+      associatedData,
+    );
+    if (dek.byteLength !== DEK_BYTES) throw new Error("invalid DEK");
+    const seed = decryptValue(envelope.encryptedSeed, dek, associatedData);
+    if (seed.byteLength !== SEED_BYTES) {
+      seed.fill(0);
+      throw new Error("invalid seed");
+    }
+    return seed;
+  } catch {
+    throw new TotpError("totp_invalid");
+  } finally {
+    rootCopy.fill(0);
+    dek?.fill(0);
+  }
+}
+
+function tryDecryptTotpSeedWithRoot(
+  value: unknown,
+  logicalRootKeyId: string,
+  root: Uint8Array,
+): Buffer | undefined {
+  try {
+    return decryptTotpSeedWithRoot(value, logicalRootKeyId, root);
+  } catch {
+    return undefined;
   }
 }
 

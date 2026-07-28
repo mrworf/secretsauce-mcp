@@ -427,6 +427,9 @@ Logout:
 - Is visible in the persistent account menu.
 - Revokes only the current browser session.
 - Clears the current cookie after the revocation transaction commits.
+- On revocation or audit failure, leaves the cookie and session active, remains
+  on the authenticated page, and presents a retryable failure rather than a
+  success state.
 - Is distinct from **Revoke all my web sessions**.
 
 ### 11.5 Account settings
@@ -643,6 +646,21 @@ limited without rolling back enrollment.
   action.
 - `LOGOUT-002` Logout must atomically revoke the current browser session and
   audit the action before clearing the cookie.
+- `LOGOUT-003` If persistence or required audit work fails, rolls back, or
+  cannot be confirmed as committed, logout must return HTTP 503 with
+  `Retry-After`, must not clear or expire the browser cookie, and must not
+  display, announce, or redirect through a successful-logout state.
+- `LOGOUT-004` The authenticated page must remain available after a logout
+  failure and present the accessible sanitized message: **Logout could not be
+  completed. This session is still active. Try again.**
+- `LOGOUT-005` A failed logout must emit a sanitized operator-visible
+  `logout_revocation_unavailable` application event containing only timestamp,
+  correlation identifier, and `persistence` or `audit` failure category. It
+  must not contain a cookie, session identifier, user identifier, request body,
+  forwarding-header value, or downstream response.
+- `LOGOUT-006` After the dependency recovers, retrying logout with the still
+  active cookie must be able to commit revocation and audit exactly once, clear
+  the cookie, and complete the normal successful logout flow.
 
 ### 13.4 Rate limiting and suspension
 
@@ -1244,6 +1262,12 @@ this document.
 9. If a regular admin loses any required service scope after listing an agent
    connection but before revoking it, the revocation changes no user, grant,
    token, or reference state and returns the uniform inaccessible-target result.
+10. Injected persistence and audit failures during logout return retryable HTTP
+    503, retain the active cookie and session, remain on the authenticated page,
+    and never show or announce successful logout.
+11. After each injected failure clears, one retry revokes the session, commits
+    one audit event, clears the cookie, and completes the successful logout
+    flow.
 
 ### 21.6 UX and privacy
 
@@ -1255,6 +1279,8 @@ this document.
    device families.
 4. Logout is available from every authenticated view.
 5. Destructive bulk actions communicate scope and current-session effects.
+6. Logout failure announces that the session remains active, preserves the
+   authenticated page and keyboard focus, and offers an operable retry.
 
 ## 22. Testing requirements
 
@@ -1274,8 +1300,9 @@ this document.
   incompatible retained-state adoption, blocked retry, restart secret rotation,
   configured missing-key fatal exit, and multi-service key readiness.
 - Browser tests for branded login, unified enrollment, no setup-state disclosure,
-  TOTP confirmation, redirect-to-login, logout, account settings, administrative
-  scope, bulk confirmation, accessibility, and narrow screens.
+  TOTP confirmation, redirect-to-login, successful logout, injected logout
+  persistence/audit failure and retry, account settings, administrative scope,
+  bulk confirmation, accessibility, and narrow screens.
 - Security tests for enumeration resistance, timing comparability, brute-force
   limits, session fixation, CSRF, session replay after revocation, restricted
   session privilege denial, open redirect, markup injection through metadata,
@@ -1313,6 +1340,8 @@ Operator documentation must cover:
 - Client-source mode and header selection, trusted-proxy IP/CIDR entries,
   canonical chain behavior, and the `always` mode's network-isolation,
   header-sanitization, spoofing, and metadata limitations.
+- Diagnosis of `logout_revocation_unavailable` without exposing session or user
+  identifiers.
 
 User documentation must cover:
 
@@ -1323,6 +1352,8 @@ User documentation must cover:
   security-sensitive counter state on the login page.
 - Settings, logout, web sessions, agent connections, metadata limitations, and
   revocation effects.
+- Logout failure behavior, the fact that the current session remains active,
+  and how to retry after the service recovers.
 
 Security documentation must state:
 
@@ -1422,6 +1453,10 @@ These questions concern mechanisms and must not change the product contract:
   storage, logs, audits, and telemetry.
 - Revocation is immediate for requests authenticated after commit; in-flight
   dispatched work may complete.
+- Logout clears its cookie only after durable revocation and required audit
+  commit. A persistence or audit failure leaves the session and cookie active,
+  returns a retryable sanitized 503, visibly states that logout failed, and
+  emits only a sanitized operator signal.
 - Users manage their own sessions and agent connections; superadmins have global
   authority; regular admins never see browser sessions and receive only
   all-services-within-scope agent-connection authority.
@@ -1436,7 +1471,7 @@ These questions concern mechanisms and must not change the product contract:
 | --- | --- | --- |
 | Automatic fail-closed key setup | `SETUP-001`–`SETUP-019` | 21.1 |
 | Atomic initial superadmin | `ENROLL-001`–`ENROLL-013` | 21.2 |
-| Branded uniform login/logout | `LOGIN-001`–`LOGIN-007`, `LOGOUT-001`–`LOGOUT-002` | 21.3, 21.6 |
+| Branded uniform login/logout | `LOGIN-001`–`LOGIN-007`, `LOGOUT-001`–`LOGOUT-006` | 21.3, 21.5, 21.6 |
 | Rate limits and durable suspension | `ABUSE-001`–`ABUSE-014` | 21.3 |
 | Canonical client source and proxy trust | `SOURCE-001`–`SOURCE-009` | 21.3 |
 | Reset/reactivation consistency | `RECOVER-001`–`RECOVER-007` | 21.4 |

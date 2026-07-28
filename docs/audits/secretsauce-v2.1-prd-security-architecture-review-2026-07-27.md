@@ -23,6 +23,9 @@
   direct, enumerated-trusted-proxy, and explicit trust-all source modes. The
   trust-all mode is an accepted operator risk for unknown or changing proxy
   identities.
+- **Decision update:** On 2026-07-27, the product owner resolved `PRD-007` with
+  fail-honestly logout behavior: failed durable revocation or audit retains the
+  cookie, reports that the session remains active, and permits retry.
 
 ## Scope
 
@@ -67,9 +70,10 @@ authorization and reachability must hold at the mutation boundary, without
 mandating SQL or a particular persistence mechanism. Client-source derivation
 now defaults to the direct peer, supports enumerated trusted proxies, and offers
 an explicit trust-all forwarding mode whose spoofing risk the operator accepts.
-Two additional decisions should be made before milestone planning: define logout
-behavior when durable revocation or audit fails and correct the document's
-premature readiness declaration.
+Logout now fails honestly: persistence or audit failure retains the cookie,
+returns a retryable 503, and tells the user the session remains active. One
+additional decision should be made before milestone planning: correct the
+document's premature readiness declaration.
 
 No confirmed vulnerability exists merely because these requirements are
 unimplemented. Implementing the current text literally would, however, either
@@ -106,7 +110,7 @@ individual implementers.
 | PRD-004 | Accepted risk | Security / Operations | Bootstrap log access delegates initial-enrollment authority | Accepted and documented |
 | PRD-005 | Resolved | Authorization | Scoped grant revocation could use stale reachability or authorization | Require a mechanism-neutral conditional mutation and race tests |
 | PRD-006 | Resolved with accepted-risk mode | Security / Operations | Source identity was undefined behind a reverse proxy | Define direct, trusted-proxy, and explicit trust-all contracts |
-| PRD-007 | Required | Security / UX | Logout failure behavior is externally observable but unsettled | Make a product decision |
+| PRD-007 | Resolved | Security / UX | Logout failure behavior was externally observable but unsettled | Retain the active cookie, fail visibly, and permit retry |
 | PRD-008 | Required | Governance | “Implementation-ready” conflicts with unresolved mandatory gates | Change readiness declaration |
 
 ## Detailed Findings
@@ -396,20 +400,19 @@ forms normalize identically, and raw chains are not retained. Positive and
 negative tests cover direct spoofing, trusted and untrusted peers, deliberate
 trust-all spoofability, malformed chains, and canonicalization.
 
-### PRD-007: Logout behavior under audit/persistence failure is unsettled
+### PRD-007: Logout fails honestly under audit or persistence failure
 
 - **Category:** product failure-behavior ambiguity
-- **Priority:** required before implementation
+- **Priority:** resolved by product contract
 - **CVSS v3.1:** not applicable
-- **Affected requirements:** `LOGOUT-002`, section 12.5
+- **Affected requirements:** `LOGOUT-002` through `LOGOUT-006`, section 11.4
 
-#### Evidence
+#### Original evidence
 
-The PRD requires logout to revoke and audit before clearing the cookie
-(`docs/prd/secretsauce-v2.1-prd.md:573-576`) but does not state what the browser
-does if durable revocation or audit fails. The current implementation returns
-503 and leaves the cookie intact on repository failure
-(`src/control/identityRoutes.ts:297-304`).
+At review time, the PRD required logout to revoke and audit before clearing the
+cookie but did not state what the browser did if durable revocation or audit
+failed. The current implementation returns 503 and leaves the cookie intact on
+repository failure.
 
 #### Risk
 
@@ -418,13 +421,20 @@ choice. During database/audit degradation, the user may be unable to end the
 local browser session. Conversely, clearing only the browser cookie can create a
 false assurance because a stolen copy of the server-valid cookie remains usable.
 
-#### Required change
+#### Product-owner decision
 
-Choose and document the failure contract. A safe minimum is to distinguish
-“local cookie cleared” from “server revocation confirmed,” never claim successful
-revocation when the transaction failed, and provide an operator-visible
-degraded-security signal. The chosen behavior needs a browser test with injected
-audit and persistence failures.
+The PRD preserves the current safe direction and makes it explicit. If durable
+revocation, required audit, or confirmation of their commit fails, the response
+is a retryable sanitized HTTP 503; SecretSauce does not clear the cookie, leave
+the authenticated page, or present successful logout. The accessible message
+states that logout failed and the session remains active.
+
+The service emits a sanitized operator-visible failure event without cookie,
+session, user, request, forwarding-header, or downstream-response values. After
+the dependency recovers, the active session can retry; successful revocation and
+audit commit once, then the cookie clears. Browser tests inject both persistence
+and audit failures and verify failure, retained state, operator signal, and
+successful retry.
 
 ### PRD-008: The readiness declaration is premature
 
@@ -540,7 +550,9 @@ only happy-path UI behavior.
 4. **Resolved security decision:** direct, enumerated-trusted-proxy, and explicit
    trust-all source modes define canonical source derivation; trust-all spoofing
    risk is accepted by the operator.
-5. **Change before UX approval:** settle logout failure behavior and wording.
+5. **Resolved UX decision:** failed logout retains the active cookie and page,
+   reports the failure without claiming revocation, and permits retry after
+   dependency recovery.
 6. **Change before milestone planning:** mark implementation readiness as
    conditional on all mandatory reviews and blocker closure.
 
@@ -601,11 +613,12 @@ revision, not as an implementation-ready contract.
 
 Resolve PRD-001 through PRD-003 before architecture or data/API approval.
 PRD-004 is accepted and documented, PRD-005 is resolved by the
-conditional-mutation contract, and PRD-006 is resolved with an explicit
-accepted-risk trust-all proxy mode. Resolve PRD-007 and PRD-008 before milestone
-planning. After those changes, the existing setup states, enrollment model,
-opaque sessions, revocation semantics, and single-instance deployment are
-suitable foundations; they do not need broad redesign.
+conditional-mutation contract, PRD-006 is resolved with an explicit
+accepted-risk trust-all proxy mode, and PRD-007 is resolved by fail-honestly
+logout behavior. Resolve PRD-008 before milestone planning. After that change,
+the existing setup states, enrollment model, opaque sessions, revocation
+semantics, and single-instance deployment are suitable foundations; they do not
+need broad redesign.
 
 ## Assumptions and Limitations
 

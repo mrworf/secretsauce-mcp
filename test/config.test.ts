@@ -67,6 +67,71 @@ function validRaw(): any {
 }
 
 describe("config validation", () => {
+  it("validates client-source authority and sanitized protective environment overrides", () => {
+    const raw = validRaw();
+    raw.client_source = {
+      mode: "trusted_proxies",
+      header: "forwarded",
+      trusted_proxies: ["127.0.0.1", "2001:db8::/32"],
+    };
+    const environment = {
+      ...validEnv,
+      SECRETSAUCE_LOGIN_GLOBAL_ATTEMPTS: "20",
+      SECRETSAUCE_LOGIN_GLOBAL_WINDOW: "60m",
+      SECRETSAUCE_MAX_UNAUTHENTICATED_INFLIGHT: "8",
+      SECRETSAUCE_MAX_UNAUTHENTICATED_INFLIGHT_PER_SOURCE: "8",
+      SECRETSAUCE_MAX_PASSWORD_VERIFICATIONS: "4",
+      SECRETSAUCE_MAX_PASSWORD_VERIFICATIONS_PER_SOURCE: "4",
+    };
+    const configured = validateConfig(raw, environment);
+    expect(configured.clientSource).toEqual({
+      mode: "trusted_proxies",
+      header: "forwarded",
+      trustedProxies: ["127.0.0.1", "2001:db8::/32"],
+    });
+    expect(configured.limits).toMatchObject({
+      loginGlobalAttempts: 20,
+      loginGlobalWindowMs: 3_600_000,
+      maxUnauthenticatedInflight: 8,
+      maxUnauthenticatedInflightPerSource: 8,
+      maxPasswordVerifications: 4,
+      maxPasswordVerificationsPerSource: 4,
+    });
+
+    const always = validRaw();
+    always.client_source = {
+      mode: "always",
+      header: "x_forwarded_for",
+      trusted_proxies: [],
+    };
+    expect(validateConfig(always, validEnv).warnings).toContain(
+      "client_source.mode always trusts the selected forwarding header; direct access and header sanitization are operator responsibilities",
+    );
+
+    for (const [name, value] of [
+      ["SECRETSAUCE_LOGIN_GLOBAL_ATTEMPTS", ""],
+      ["SECRETSAUCE_LOGIN_GLOBAL_ATTEMPTS", "020"],
+      ["SECRETSAUCE_LOGIN_GLOBAL_ATTEMPTS", "19"],
+      ["SECRETSAUCE_LOGIN_GLOBAL_WINDOW", "5min"],
+      ["SECRETSAUCE_LOGIN_GLOBAL_WINDOW", "61m"],
+      ["SECRETSAUCE_MAX_UNAUTHENTICATED_INFLIGHT", "7"],
+      ["SECRETSAUCE_MAX_PASSWORD_VERIFICATIONS", "9"],
+    ]) {
+      expectConfigError(
+        () => validateConfig(validRaw(), { ...validEnv, [name]: value }),
+        name,
+      );
+    }
+    expectConfigError(
+      () => validateConfig(validRaw(), {
+        ...validEnv,
+        SECRETSAUCE_MAX_UNAUTHENTICATED_INFLIGHT: "8",
+        SECRETSAUCE_MAX_UNAUTHENTICATED_INFLIGHT_PER_SOURCE: "9",
+      }),
+      "must not exceed",
+    );
+  });
+
   it("loads the sample config and resolves env secrets", () => {
     process.env.TEST_GATEWAY_TOKEN = "dev-token";
     process.env.PORTAINER_API_KEY = "portainer-secret";

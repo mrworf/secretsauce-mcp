@@ -11,6 +11,7 @@ import type {
   CredentialConfig,
   CredentialSourceConfig,
   ConfigDebugDiagnostic,
+  ClientSourceConfig,
   ControlConfig,
   DestinationConfig,
   GatewayConfig,
@@ -29,6 +30,7 @@ import type {
 import { SECRET_RULE_IDS } from "./secretlintConfig.js";
 import { loadYamlConfig, validationDiagnostics } from "./yamlConfig.js";
 import { normalizeProviderIssuer } from "./identity/validation.js";
+import { ClientSourceResolver } from "./clientSource.js";
 
 const durationPattern = /^(\d+)(ms|s|m|h|d)$/;
 const sizePattern = /^(\d+)(b|kb|mb)$/i;
@@ -174,6 +176,15 @@ const rawConfigSchema = z.object({
     resource: z.string().url().optional(),
     allow_insecure_oauth_http: z.boolean().default(false),
   }).default({ listen: "0.0.0.0:8080", mcp_path: "/mcp", allow_insecure_oauth_http: false }),
+  client_source: z.object({
+    mode: z.enum(["direct", "trusted_proxies", "always"]).default("direct"),
+    header: z.enum(["x_forwarded_for", "forwarded"]).default("x_forwarded_for"),
+    trusted_proxies: z.array(z.string().min(1).max(64)).max(64).default([]),
+  }).strict().default({
+    mode: "direct",
+    header: "x_forwarded_for",
+    trusted_proxies: [],
+  }),
   control: z.object({
     listen: z.string().min(1),
     public_origin: z.string().url(),
@@ -382,7 +393,8 @@ export function validateConfig(raw: unknown, env: NodeJS.ProcessEnv = process.en
   const auth = normalizeAuth(parsed.auth, env);
   const control = normalizeControl(parsed.control, server, auth, parsed.persistence);
   const tokens = normalizeTokens(parsed.tokens);
-  const limits = normalizeLimits(parsed.limits);
+  const limits = normalizeLimits(parsed.limits, env);
+  const clientSource = normalizeClientSource(parsed.client_source, warnings);
   const logging: LoggingConfig = { level: parsed.logging.level };
   const audit: AuditConfig = {
     memoryEvents: parsed.audit.memory_events,
@@ -411,6 +423,7 @@ export function validateConfig(raw: unknown, env: NodeJS.ProcessEnv = process.en
 
   return {
     server,
+    clientSource,
     ...(control === undefined ? {} : { control }),
     auth,
     tokens,
@@ -1200,7 +1213,10 @@ function normalizeTokens(raw: RawConfig["tokens"]): TokenConfig {
   return { idleTtlMs, maxTtlMs };
 }
 
-function normalizeLimits(raw: RawConfig["limits"]): LimitsConfig {
+function normalizeLimits(
+  raw: RawConfig["limits"],
+  env: NodeJS.ProcessEnv,
+): LimitsConfig {
   const maxInboundBodyBytes = parseSize(raw.max_inbound_body, "limits.max_inbound_body");
   const inboundBodyTimeoutMs = parseDuration(raw.inbound_body_timeout, "limits.inbound_body_timeout");
   const maxRequestBodyBytes = parseSize(raw.max_request_body, "limits.max_request_body");
@@ -1211,10 +1227,52 @@ function normalizeLimits(raw: RawConfig["limits"]): LimitsConfig {
   if (maxInboundBodyBytes <= 0 || inboundBodyTimeoutMs <= 0 || maxRequestBodyBytes <= 0 || maxResponseBodyBytes <= 0 || timeoutMs <= 0 || denialTtlMs <= 0 || stateSweepIntervalMs <= 0) {
     throw configValidationError("limits values must be positive", ["limits"]);
   }
-  if (raw.max_unauthenticated_inflight_per_source > raw.max_unauthenticated_inflight) {
+  const maxUnauthenticatedInflight = protectiveInteger(
+    env,
+    "SECRETSAUCE_MAX_UNAUTHENTICATED_INFLIGHT",
+    raw.max_unauthenticated_inflight,
+    8,
+    128,
+  );
+  const maxUnauthenticatedInflightPerSource = protectiveInteger(
+    env,
+    "SECRETSAUCE_MAX_UNAUTHENTICATED_INFLIGHT_PER_SOURCE",
+    raw.max_unauthenticated_inflight_per_source,
+    1,
+    16,
+  );
+  const maxPasswordVerifications = protectiveInteger(
+    env,
+    "SECRETSAUCE_MAX_PASSWORD_VERIFICATIONS",
+    raw.max_password_verifications,
+    1,
+    8,
+  );
+  const maxPasswordVerificationsPerSource = protectiveInteger(
+    env,
+    "SECRETSAUCE_MAX_PASSWORD_VERIFICATIONS_PER_SOURCE",
+    raw.max_password_verifications_per_source,
+    1,
+    4,
+  );
+  const loginGlobalAttempts = protectiveInteger(
+    env,
+    "SECRETSAUCE_LOGIN_GLOBAL_ATTEMPTS",
+    100,
+    20,
+    1_000,
+  );
+  const loginGlobalWindowMs = protectiveMinutes(
+    env,
+    "SECRETSAUCE_LOGIN_GLOBAL_WINDOW",
+    15,
+    5,
+    60,
+  );
+  if (maxUnauthenticatedInflightPerSource > maxUnauthenticatedInflight) {
     throw configValidationError("limits.max_unauthenticated_inflight_per_source must not exceed limits.max_unauthenticated_inflight", ["limits", "max_unauthenticated_inflight_per_source"]);
   }
-  if (raw.max_password_verifications_per_source > raw.max_password_verifications) {
+  if (maxPasswordVerificationsPerSource > maxPasswordVerifications) {
     throw configValidationError("limits.max_password_verifications_per_source must not exceed limits.max_password_verifications", ["limits", "max_password_verifications_per_source"]);
   }
   if (raw.max_token_records_per_subject > raw.max_token_records) {
@@ -1232,10 +1290,12 @@ function normalizeLimits(raw: RawConfig["limits"]): LimitsConfig {
   return {
     maxInboundBodyBytes,
     inboundBodyTimeoutMs,
-    maxUnauthenticatedInflight: raw.max_unauthenticated_inflight,
-    maxUnauthenticatedInflightPerSource: raw.max_unauthenticated_inflight_per_source,
-    maxPasswordVerifications: raw.max_password_verifications,
-    maxPasswordVerificationsPerSource: raw.max_password_verifications_per_source,
+    maxUnauthenticatedInflight,
+    maxUnauthenticatedInflightPerSource,
+    maxPasswordVerifications,
+    maxPasswordVerificationsPerSource,
+    loginGlobalAttempts,
+    loginGlobalWindowMs,
     maxDenialRecords: raw.max_denial_records,
     denialTtlMs,
     stateSweepIntervalMs,
@@ -1252,6 +1312,88 @@ function normalizeLimits(raw: RawConfig["limits"]): LimitsConfig {
     maxResponseBodyBytes,
     timeoutMs,
   };
+}
+
+function protectiveInteger(
+  env: NodeJS.ProcessEnv,
+  name: string,
+  fallback: number,
+  minimum: number,
+  maximum: number,
+): number {
+  const text = env[name];
+  if (text === undefined) return fallback;
+  if (!/^[1-9][0-9]*$/.test(text)) {
+    throw configValidationError(`${name} must be a canonical nonzero decimal integer`, [name]);
+  }
+  const value = Number(text);
+  if (!Number.isSafeInteger(value) || value < minimum || value > maximum) {
+    throw configValidationError(`${name} is outside its allowed range`, [name]);
+  }
+  return value;
+}
+
+function protectiveMinutes(
+  env: NodeJS.ProcessEnv,
+  name: string,
+  fallbackMinutes: number,
+  minimum: number,
+  maximum: number,
+): number {
+  const text = env[name];
+  if (text === undefined) return fallbackMinutes * 60_000;
+  const match = /^([1-9][0-9]*)m$/.exec(text);
+  if (match === null) {
+    throw configValidationError(`${name} must use canonical whole-minute syntax`, [name]);
+  }
+  const minutes = Number(match[1]);
+  if (!Number.isSafeInteger(minutes) || minutes < minimum || minutes > maximum) {
+    throw configValidationError(`${name} is outside its allowed range`, [name]);
+  }
+  return minutes * 60_000;
+}
+
+function normalizeClientSource(
+  raw: RawConfig["client_source"],
+  warnings: string[],
+): ClientSourceConfig {
+  if (raw.mode === "trusted_proxies" && raw.trusted_proxies.length === 0) {
+    throw configValidationError(
+      "client_source.trusted_proxies must not be empty in trusted_proxies mode",
+      ["client_source", "trusted_proxies"],
+    );
+  }
+  if (new Set(raw.trusted_proxies).size !== raw.trusted_proxies.length) {
+    throw configValidationError(
+      "client_source.trusted_proxies must not contain duplicates",
+      ["client_source", "trusted_proxies"],
+    );
+  }
+  if (raw.mode !== "trusted_proxies" && raw.trusted_proxies.length > 0) {
+    throw configValidationError(
+      "client_source.trusted_proxies is only valid in trusted_proxies mode",
+      ["client_source", "trusted_proxies"],
+    );
+  }
+  if (raw.mode === "always") {
+    warnings.push(
+      "client_source.mode always trusts the selected forwarding header; direct access and header sanitization are operator responsibilities",
+    );
+  }
+  const normalized: ClientSourceConfig = {
+    mode: raw.mode,
+    header: raw.header,
+    trustedProxies: [...raw.trusted_proxies],
+  };
+  try {
+    new ClientSourceResolver(normalized);
+  } catch {
+    throw configValidationError(
+      "client_source.trusted_proxies must contain canonical IP addresses or CIDRs",
+      ["client_source", "trusted_proxies"],
+    );
+  }
+  return normalized;
 }
 
 function normalizeServices(

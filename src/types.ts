@@ -1,5 +1,6 @@
 export interface GatewayConfig {
   server: ServerConfig;
+  clientSource: ClientSourceConfig;
   control?: ControlConfig;
   auth: AuthConfig;
   tokens: TokenConfig;
@@ -12,6 +13,12 @@ export interface GatewayConfig {
   services: Record<string, ServiceConfig>;
   warnings: string[];
   debugDiagnostics: ConfigDebugDiagnostic[];
+}
+
+export interface ClientSourceConfig {
+  mode: "direct" | "trusted_proxies" | "always";
+  header: "x_forwarded_for" | "forwarded";
+  trustedProxies: string[];
 }
 
 export interface RuntimeAuthorityConfig {
@@ -114,6 +121,8 @@ export interface LimitsConfig {
   maxUnauthenticatedInflightPerSource: number;
   maxPasswordVerifications: number;
   maxPasswordVerificationsPerSource: number;
+  loginGlobalAttempts: number;
+  loginGlobalWindowMs: number;
   maxDenialRecords: number;
   denialTtlMs: number;
   stateSweepIntervalMs: number;

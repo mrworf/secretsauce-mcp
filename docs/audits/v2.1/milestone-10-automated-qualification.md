@@ -2,7 +2,9 @@
 
 ## Candidate and environment
 
-- Executable baseline: `b94a840`
+- Executable baseline: `3377e8c`
+- Qualified image:
+  `sha256:88385fa2e8cf8e72e56294f6116713b5a5aa74ceabc2dde129f67d2254fb2def`
 - Qualification environment: Node 26.4.0, npm 12.0.1, linux/x86_64
 - Container runtime: rootless Docker Engine 29.6.1, Compose 5.3.1,
   linux/amd64, VFS storage, with a disposable data root outside the repository.
@@ -27,7 +29,7 @@ approval.
   boundary.
 - The production server and web build passed. The existing Vite advisory for
   one JavaScript chunk over 500 kB remains non-blocking.
-- The full unit/integration/browser/security suite passed 168 files and 1,090
+- The full unit/integration/browser/security suite passed 168 files and 1,094
   tests.
 - Generated control OpenAPI is current.
 - The v2.1 readiness validator passed all 14 architecture/readiness artifacts.
@@ -42,6 +44,17 @@ approval.
 - Forced recreation restored both services with zero restart count. All 11
   generated files remained byte-identical, application liveness and setup
   status returned 200, and the vault remained networkless.
+- A second clean exact-candidate deployment completed enrollment, ordinary
+  login, current-session retrieval, logout, first-request post-logout
+  rejection, and bounded unauthenticated MCP rejection through the HTTP
+  contracts. Recreation preserved readiness and did not emit replacement
+  enrollment authority.
+- Identity and vault envelope-root rotations completed on disposable
+  snapshots. Only identity rotation made the database inventory writable.
+  Journal resume and exact-request replay passed. Vault rotation rewrapped a
+  populated record while preserving `1001:1001` ownership and `0600` mode; the
+  application decrypted record metadata afterward and normal topology
+  recreation remained ready.
 
 ## Integration finding and remediation
 
@@ -73,15 +86,30 @@ exited with code 13 before either listener started. Unit tests had injected the
 starter and therefore did not exercise the default import graph. Commit
 `7e3a2fd` makes the operational import type-only at entrypoint evaluation and
 defers the runtime import until handoff. A structural regression test, the full
-1,090-test suite, a clean Compose rebuild, bounded pre-enrollment probes, and
+suite, a clean Compose rebuild, bounded pre-enrollment probes, and
 forced recreation all pass.
 
 A later sustained health check found that Compose overrode the image's
 host-neutral gateway probe with the control liveness URL. The control listener
 correctly rejected the probe's loopback Host value, so the setup process stayed
-live while Docker eventually marked it unhealthy. Commit `b94a840` restores the
-gateway `/health` probe in Compose and adds exact deployment assertions. The
-recreated application became healthy, and the complete 1,090-test suite passes.
+live while Docker eventually marked it unhealthy. Commit `b94a840` restores a
+gateway probe in Compose and adds exact deployment assertions.
+
+The complete browser-first journey then exposed three further integration
+gaps. Fresh named volumes left the vault store inaccessible to the runtime UID;
+generated key validation ran before the provisioning sidecar could create
+those files; and the readiness endpoint was being used as container liveness.
+Commit `a38edc1` gives the new store a strict runtime-owned `0700` boundary,
+defers only the provisioned-key existence checks until the setup handoff, and
+adds a bounded `/health/live` endpoint while retaining readiness semantics.
+
+The first real vault-root rotation found that the vault container lacked the
+manifest's shared group and that privileged rotation rejected and would replace
+runtime-owned records as root. Commit `3377e8c` supplies the declared shared
+group and gives rotation an explicit, validated runtime record owner. Ordinary
+record access remains strict. Positive and negative ownership tests, the full
+suite, clean startup, populated-record rotation, and post-rotation recreation
+pass.
 
 ## Pending release blockers
 
@@ -90,10 +118,11 @@ recreated application became healthy, and the complete 1,090-test suite passes.
   `npm run audit:production` retrieval was rejected because it would disclose
   dependency metadata without explicit user authorization; no package or
   advisory detail is claimed.
-- The exact-candidate clean Compose start, pre-enrollment isolation, and
-  generated-file recreation checks passed. The interactive enrollment,
-  post-enrollment login/MCP and durable database/OAuth/audit journey, ephemeral
-  authority checks, and both root rotations are not executed here.
+- Clean enrollment/login/session/logout/recreation and both actual rotations
+  passed through HTTP and process contracts. A visual keyboard/zoom/screen
+  reader browser journey could not run because no in-app browser target was
+  available. Authenticated live MCP tools, complete database/OAuth/audit
+  durability, and the full ephemeral-authority matrix are not executed here.
 - Hosted Codex and ChatGPT checks against a deployment are not supplied.
 - Independent/human security, architecture, UX/accessibility, data/API,
   operations, documentation, and release approvals are not supplied.

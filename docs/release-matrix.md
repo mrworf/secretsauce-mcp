@@ -4,7 +4,7 @@ This matrix is the v2.1 release-candidate checklist. `pass` requires
 reproducible evidence from the named candidate. `pending` blocks release and
 cannot be converted to pass by documentation or agent inference.
 
-Automated evidence below was collected from executable candidate `b94a840` on
+Automated evidence below was collected from executable candidate `3377e8c` on
 2026-07-28 using Node 26.4.0 on linux/x86_64. Later project-authored review
 commits change only release documentation. Any later change to source,
 configuration, container definitions, generated contracts, or dependencies
@@ -14,7 +14,7 @@ creates a new executable candidate and requires the affected gates to be rerun.
 | --- | --- | --- | --- |
 | Milestones 00–09 complete | Release owner | v2.1 status manifest and milestone acceptance artifacts | pass |
 | Production server and web build | Maintainer | `npm run build`; server and Vite production build passed | pass |
-| Full unit/integration/browser/security regression | Maintainer | `npm test`; 168 files / 1,090 tests passed | pass |
+| Full unit/integration/browser/security regression | Maintainer | `npm test`; 168 files / 1,094 tests passed | pass |
 | Runtime/generated OpenAPI parity | Data/API owner | `npm run check:control-openapi`; generated artifact current | pass |
 | Readiness artifact integrity | Architecture owner | `node scripts/validate-v2.1-readiness.mjs`; 14 artifacts passed | pass |
 | Production dependency advisory threshold | Security owner | Production-image `npm ci --omit=dev` reported an aggregate two High advisories. An explicitly authorized `npm run audit:production` query and remediation must produce no High/Critical production advisory | pending |
@@ -26,7 +26,7 @@ creates a new executable candidate and requires the affected gates to be rerun.
 | Codex-named OAuth/MCP protocol journey | Compatibility owner | Durable OAuth/MCP/restart/refresh/revocation fixture using origin `https://mcp.example.org` and MCP path `/mcp` | pass |
 | ChatGPT-named OAuth/MCP protocol journey | Compatibility owner | Durable OAuth/MCP/restart/refresh/revocation fixture using origin `https://mcp.example.org` and MCP path `/mcp` | pass |
 | Project-authored final review packet | Delivery reviewer | [Security/invariant](audits/v2.1/milestone-10-security-invariant.md), [architecture/operations](audits/v2.1/milestone-10-architecture-operations.md), [UX/accessibility](audits/v2.1/milestone-10-ux-accessibility.md), and [data/API/documentation](audits/v2.1/milestone-10-data-api-documentation.md); explicitly non-independent | pass |
-| Official Compose clean setup and recreation | Operations owner | Rootless Docker 29.6.1 / Compose 5.3.1 clean build reached bounded enrollment setup; both containers are healthy, vault network isolation and read-only inventories passed, and forced recreation preserved 11 generated files. [Exact-candidate runbook](v2.1-release-qualification.md) still requires interactive enrollment, operational MCP, complete durable/ephemeral state checks, and both rotations | pending |
+| Official Compose clean setup and recreation | Operations owner | Rootless Docker 29.6.1 / Compose 5.3.1 clean candidate completed enrollment/login/session/logout/recreation HTTP contracts, vault isolation, and both actual rotations with replay/resume and populated-record proof. [Exact-candidate runbook](v2.1-release-qualification.md) still requires authenticated MCP, the complete durable/ephemeral matrix, and visual browser qualification | pending |
 | Live Codex and ChatGPT deployment procedure | Operator | [Exact-candidate runbook](v2.1-release-qualification.md); run both hosted clients against `https://mcp.example.org/mcp`; a failure blocks that deployment | pending |
 | Final security, architecture, UX, data/API, operations, documentation, and human approval | Named independent/human reviewers | Decision-complete exact-candidate artifacts with all remediation closed | pending |
 

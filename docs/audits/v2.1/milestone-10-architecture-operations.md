@@ -2,7 +2,7 @@
 
 ## Scope
 
-- **Executable baseline:** `b94a840`
+- **Executable baseline:** `3377e8c`
 - **Review time:** 2026-07-28 UTC
 - **Assurance boundary:** project-authored white-box review, not independent
   architecture approval or human operations sign-off.
@@ -10,9 +10,10 @@
   control listeners, vault isolation, persistence ownership, OAuth/session
   state, startup/restart, rotation/recovery, scale, official Compose,
   generated contracts, and operator procedures.
-- **Evidence:** production build; 168-file/1,090-test suite; exact
+- **Evidence:** production build; 168-file/1,094-test suite; exact
   100,000/100,001 revocation boundary; current OpenAPI; 14 readiness artifacts;
-  container smoke; and partial clean/recreation Compose execution.
+  container smoke; clean enrollment/recreation Compose execution; and both
+  actual envelope-root rotations.
 
 ## Executive Summary
 
@@ -27,11 +28,15 @@ Real Compose execution then found a production-only composition import cycle.
 Commit `7e3a2fd` defers the operational application import until browser-first
 handoff; the full suite and clean/recreated topology pass. No additional
 source-level architecture blocker is confirmed. A sustained Compose check also
-found and fixed the control-Host-dependent health probe in `b94a840`; the
-recreated setup container is healthy. Release approval remains
-pending because the interactive and operational portions of the Compose
-journey are incomplete, the production advisory query is absent, and hosted
-client and independent/human evidence are not available.
+found and fixed the control-Host-dependent health probe in `b94a840`. Later
+exact-candidate qualification fixed fresh-volume ownership, provisioned-key
+handoff, liveness/readiness, shared manifest-group, and privileged
+runtime-record rotation defects in `a38edc1` and `3377e8c`. Clean
+enrollment/login/logout/recreation and both rotations now pass. Release
+approval remains pending because authenticated live MCP and the complete
+durable/ephemeral matrix are incomplete, the production advisory query is
+absent, and visual-browser, hosted-client, and independent/human evidence are
+not available.
 
 ## What Is Good
 
@@ -59,11 +64,11 @@ active records while atomically rejecting 100,001.
 
 ## What Is Bad Or Risky
 
-**The official deployment journey is only partially executed.** A clean image
-build, bounded setup startup, mount directions, network isolation, and
-generated-file recreation passed. Interactive enrollment, operational
-database/OAuth/audit continuity, process-authority invalidation, and both root
-rotations remain unexecuted.
+**The official deployment journey is still incomplete.** Clean enrollment,
+login, session/logout, recreation, network isolation, and both root rotations
+passed. Authenticated MCP tools, the complete database/OAuth/audit continuity
+and process-authority matrix, and visual browser/accessibility behavior remain
+unexecuted.
 
 **One application remains a shared fault and compromise domain.** A crash
 affects both public surfaces, and arbitrary application-process compromise can
@@ -81,15 +86,15 @@ behavioral and transaction tests, so a release-time refactor would create more
 risk than it removes.
 
 **The passing container and partial Compose checks are not the complete v2.1
-deployment proof.** They cover image startup and the browser-first boundary,
-but not the post-enrollment operational and maintenance journey.
+deployment proof.** They cover the HTTP enrollment/login/logout boundary and
+maintenance rotations, but not every authenticated operational or visual
+browser journey.
 
 ## What Should Change
 
-- Continue `docs/v2.1-release-qualification.md` against `b94a840` or the later
-  exact executable candidate, recording interactive enrollment,
-  post-enrollment durable/ephemeral state, operational MCP, and both root
-  rotations.
+- Continue `docs/v2.1-release-qualification.md` against `3377e8c`, recording
+  authenticated MCP, the remaining durable/ephemeral state matrix, and visual
+  browser/accessibility evidence.
 - Run the production dependency gate under approved network/disclosure policy.
 - Run hosted Codex and ChatGPT against the deployed origin and full `/mcp`
   Server URL, then obtain named independent security, architecture,
@@ -114,7 +119,7 @@ but not the post-enrollment operational and maintenance journey.
 
 The source architecture is implementation-ready and internally consistent for
 the declared single-instance product, including the remediated global
-revocation boundary and browser-first import graph. It is not yet
-release-qualified: the remaining Compose journey, dependency advisory evidence,
-hosted clients, and independent/human approvals remain blocking external
-gates.
+revocation boundary and exact-candidate Compose/rotation fixes. It is not yet
+release-qualified: the remaining authenticated/visual deployment journey,
+dependency advisory evidence, hosted clients, and independent/human approvals
+remain blocking external gates.

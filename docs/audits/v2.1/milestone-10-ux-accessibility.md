@@ -2,7 +2,7 @@
 
 ## Scope
 
-- **Executable baseline:** `b94a840`
+- **Executable baseline:** `3377e8c`
 - **Review time:** 2026-07-28 UTC
 - **Assurance boundary:** project-authored source and automated review, not an
   independent accessibility audit or human approval.
@@ -19,7 +19,7 @@ movement; destructive confirmations; current-session handling; one-time
 values; write-only secret clearing; loading, empty, error, retry, and
 unauthorized states; and narrow-layout source contracts.
 
-The production web build and complete 168-file/1,090-test suite passed. The
+The production web build and complete 168-file/1,094-test suite passed. The
 release accessibility suite passed six role/route tests, and owning component
 suites cover setup, enrollment, login, recovery, access, backup, restore,
 security, service, policy, credential, and identity behavior.
@@ -42,6 +42,9 @@ silently create an ordinary browser session.
 - No representative assistive-technology user or independent accessibility
   reviewer participated.
 - Hosted Codex and ChatGPT UI behavior is outside the control web application.
+- The clean Compose enrollment/login/logout journey was verified through HTTP
+  contracts only; no in-app browser target was available for visual or
+  assistive-technology qualification.
 
 ## Verdict
 

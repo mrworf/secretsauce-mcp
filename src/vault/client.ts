@@ -41,10 +41,39 @@ export interface VaultClientOptions {
   ownerUid?: number;
 }
 
+export interface VaultProvisioningStatusDetails {
+  state: "ready" | "preparing" | "configuration_error";
+  retryPending: boolean;
+  errorCategory?:
+    | "state_mismatch"
+    | "storage_unavailable"
+    | "invalid_configuration"
+    | "unsupported_upgrade";
+}
+
 export async function readVaultProvisioningStatus(
   socketPath: string,
   ownerUid?: number,
 ): Promise<"ready" | "preparing" | "configuration_error"> {
+  return (await readVaultProvisioningStatusDetails(socketPath, {
+    ...(ownerUid === undefined ? {} : { ownerUid }),
+  })).state;
+}
+
+export async function readVaultProvisioningStatusDetails(
+  socketPath: string,
+  options: {
+    ownerUid?: number;
+    timeoutMs?: number;
+  } = {},
+): Promise<VaultProvisioningStatusDetails> {
+  const ownerUid = options.ownerUid;
+  const timeoutMs = options.timeoutMs ?? REQUEST_DEADLINE_MS;
+  if (
+    !Number.isSafeInteger(timeoutMs)
+    || timeoutMs < 100
+    || timeoutMs > REQUEST_DEADLINE_MS
+  ) throw vaultError("vault_config_invalid");
   const endpoint = validateVaultSocketEndpoint(socketPath, ownerUid);
   return new Promise((resolve, reject) => {
     const request = httpRequest({
@@ -52,7 +81,7 @@ export async function readVaultProvisioningStatus(
       method: "GET",
       path: "/v1/status",
       headers: { host: "localhost" },
-      timeout: REQUEST_DEADLINE_MS,
+      timeout: timeoutMs,
       setDefaultHeaders: false,
     }, (response) => {
       const chunks: Buffer[] = [];
@@ -66,18 +95,63 @@ export async function readVaultProvisioningStatus(
         const body = Buffer.concat(chunks, received);
         for (const chunk of chunks) chunk.fill(0);
         try {
-          if (response.statusCode !== 200) throw new Error("unavailable");
+          if (
+            response.statusCode !== 200
+            || !/^application\/json(?:;\s*charset=utf-8)?$/i.test(
+              String(response.headers["content-type"]),
+            )
+          ) throw new Error("unavailable");
           const parsed = parseJson(body) as Record<string, unknown>;
           if (
             !["ready", "preparing", "configuration_error"].includes(
               String(parsed.state),
             )
             || typeof parsed.retry_pending !== "boolean"
+            || (
+              parsed.error_category !== undefined
+              && ![
+                "state_mismatch",
+                "storage_unavailable",
+                "invalid_configuration",
+                "unsupported_upgrade",
+              ].includes(String(parsed.error_category))
+            )
             || Object.keys(parsed).some((key) =>
               !["state", "retry_pending", "error_category"].includes(key)
             )
+            || (
+              parsed.state === "ready"
+              && (
+                parsed.retry_pending !== false
+                || parsed.error_category !== undefined
+              )
+            )
+            || (
+              parsed.state === "configuration_error"
+              && (
+                parsed.retry_pending !== false
+                || parsed.error_category === undefined
+              )
+            )
+            || (
+              parsed.state === "preparing"
+              && parsed.error_category !== undefined
+              && parsed.error_category !== "storage_unavailable"
+            )
           ) throw new Error("invalid");
-          resolve(parsed.state as "ready" | "preparing" | "configuration_error");
+          resolve({
+            state:
+              parsed.state as VaultProvisioningStatusDetails["state"],
+            retryPending: parsed.retry_pending,
+            ...(parsed.error_category === undefined
+              ? {}
+              : {
+                  errorCategory:
+                    parsed.error_category as NonNullable<
+                      VaultProvisioningStatusDetails["errorCategory"]
+                    >,
+                }),
+          });
         } catch {
           reject(vaultError("vault_store_unavailable"));
         } finally {

@@ -143,6 +143,6 @@ readiness validation, and release scan.
 
 | Slice | Status | Commit | Evidence | Deviations |
 | --- | --- | --- | --- | --- |
-| 1 | pending | | | |
+| 1 | completed | | 17/17 setup/private-status/process tests; server build; strict status states, timeout/owner inputs, capped one-in-flight polling, exact live/ready/status routes, maintenance-first ordinary-route rejection, and dependency-free setup composition | Production lifecycle handoff remains Slice 2 so this slice introduces no partially gated entrypoint. |
 | 2 | pending | | | |
 | 3 | pending | | | |

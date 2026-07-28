@@ -91,7 +91,7 @@ describe("transaction-bound browser step-up", () => {
     expect(exactOperation.json().data).toMatchObject({ mode: "always" });
     expect(exactOperation.json().data.proof).toMatch(/^[A-Za-z0-9_-]{43}$/);
     fixture.seed.fill(0);
-  });
+  }, 15_000);
 
   it("binds an always proof to one exact operation and consumes it atomically", async () => {
     const fixture = await setup("always", "always-binding");

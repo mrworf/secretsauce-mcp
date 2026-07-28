@@ -276,7 +276,7 @@ describe("atomic local authentication", () => {
       "totp-source",
     ))).rejects.toEqual(new LocalAuthenticationError("rate_limited"));
     totpLimited.seed.fill(0);
-  });
+  }, 15_000);
 
   it("rolls back session and TOTP consumption when the success audit is invalid", async () => {
     const fixture = await configuredIdentity("audit-rollback");

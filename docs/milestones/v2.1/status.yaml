@@ -67,12 +67,12 @@ milestones:
   - id: "07"
     title: "Authentication Abuse Controls And Suspension"
     file: "docs/milestones/v2.1/07-authentication-abuse-and-suspension.md"
-    status: "in_progress"
+    status: "completed"
     dependencies:
       - "06"
-    completed_at: null
-    commit_hash: null
-    notes: "Implementation plan approved; canonical source and host-local protective configuration are the first slice."
+    completed_at: "2026-07-28T01:53:00-07:00"
+    commit_hash: "ebdd6f8"
+    notes: "Implemented shared bounded canonical-source resolution, host-local protective ceilings, cross-listener admission, and restart-safe automatic suspension with complete authority invalidation and recovery clearing. See docs/audits/v2.1/milestone-07-acceptance.md."
   - id: "08"
     title: "Recovery And Reactivation"
     file: "docs/milestones/v2.1/08-recovery-and-reactivation.md"

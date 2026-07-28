@@ -54,6 +54,8 @@ describe("standalone vault broker process", () => {
       const control = new ControlVaultClient({ socketPath: fixture.socketPath, key: fixture.keys.control });
       const data = new DataVaultClient({ socketPath: fixture.socketPath, key: fixture.keys.data });
       const backup = new BackupVaultClient({ socketPath: fixture.socketPath, key: fixture.keys.backup });
+      await Promise.all([data.readiness(), backup.readiness()]);
+      fixture.authority.bindBootId(data.bootId!);
       const created = await control.create({
         binding: fixture.binding,
         secret,
@@ -117,6 +119,8 @@ describe("standalone vault broker process", () => {
       const second = await startChild(fixture.configFile, fixture.socketPath);
       const restartedControl = new ControlVaultClient({ socketPath: fixture.socketPath, key: fixture.keys.control });
       const restartedData = new DataVaultClient({ socketPath: fixture.socketPath, key: fixture.keys.data });
+      await restartedData.readiness();
+      fixture.authority.bindBootId(restartedData.bootId!);
       expect(await restartedControl.metadata(created.locator, fixture.binding)).toEqual(created.metadata);
       await expect(restartedData.resolveForRequest({
         capability: issueResolve(fixture, created.locator, 1),

@@ -48,10 +48,14 @@ export class CapabilityRuntimeVault implements RuntimeVault {
     }
   }
 
-  resolve<T>(
+  async resolve<T>(
     input: RuntimeVaultResolveInput,
     callback: (secret: Buffer) => T | Promise<T>,
   ): Promise<T> {
+    if (this.client.bootId === undefined) {
+      const readiness = await this.readiness();
+      if (readiness !== "ready") throw new Error("Vault is unavailable.");
+    }
     const binding: VaultCredentialBinding = {
       serviceId: input.serviceId,
       destinationId: input.destinationId,

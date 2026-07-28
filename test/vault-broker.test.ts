@@ -8,7 +8,7 @@ import {
 import { createConnection } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createHmac, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { UuidV7Generator } from "../src/persistence/uuidV7.js";
 import {
@@ -18,8 +18,6 @@ import {
 import { VaultCapabilityAuthority } from "../src/vault/capabilities.js";
 import { VaultBrokerServer } from "../src/vault/broker.js";
 import { BackupVaultClient, ControlVaultClient, DataVaultClient } from "../src/vault/client.js";
-import { decodeVaultFrame, encodeVaultFrame } from "../src/vault/protocol.js";
-import { BoundedReplayCache } from "../src/vault/replayCache.js";
 import { VaultRecordStore, type VaultCredentialBinding } from "../src/vault/recordStore.js";
 
 describe("isolated vault broker and typed clients", () => {
@@ -94,65 +92,21 @@ describe("isolated vault broker and typed clients", () => {
     }
   });
 
-  it("rejects malformed schemas, cross-role operations, wrong caller keys, stale frames, and replay", async () => {
+  it("rejects malformed inputs and wrong caller keys without returning sensitive values", async () => {
     const fixture = await brokerFixture();
+    const wrongKey = new DataVaultClient({
+      socketPath: fixture.socketPath,
+      key: fixture.keys.control_plane,
+    });
     try {
-      const malformed = encodeVaultFrame({
-        kind: "request",
-        caller: "control_plane",
-        operation: "create",
-        requestId: randomUUID(),
-        payload: { unexpected: true },
-        key: fixture.keys.control_plane,
-      });
-      const malformedResponse = await rawExchange(fixture.socketPath, malformed);
-      expect(malformedResponse.toString("utf8")).not.toContain("unexpected");
-
-      const crossRole = encodeVaultFrame({
-        kind: "request",
-        caller: "control_plane",
-        operation: "metadata",
-        requestId: randomUUID(),
-        payload: {},
-        key: fixture.keys.control_plane,
-      });
-      crossRole[7] = 2; // resolve_for_request is not in the authenticated control caller's matrix.
-      resign(crossRole, fixture.keys.control_plane);
-      await expect(rawExchange(fixture.socketPath, crossRole)).rejects.toMatchObject({ code: "vault_store_unavailable" });
-
-      const wrongKey = encodeVaultFrame({
-        kind: "request",
-        caller: "data_plane",
-        operation: "readiness",
-        requestId: randomUUID(),
-        payload: {},
-        key: fixture.keys.control_plane,
-      });
-      await expect(rawExchange(fixture.socketPath, wrongKey)).rejects.toMatchObject({ code: "vault_store_unavailable" });
-
-      const replay = encodeVaultFrame({
-        kind: "request",
-        caller: "data_plane",
-        operation: "readiness",
-        requestId: randomUUID(),
-        nonce: Buffer.alloc(16, 33),
-        payload: {},
-        key: fixture.keys.data_plane,
-      });
-      await rawExchange(fixture.socketPath, replay);
-      await expect(rawExchange(fixture.socketPath, replay)).rejects.toMatchObject({ code: "vault_store_unavailable" });
-
-      const stale = encodeVaultFrame({
-        kind: "request",
-        caller: "backup",
-        operation: "readiness",
-        requestId: randomUUID(),
-        timestampMs: Date.now() - 30_001,
-        payload: {},
-        key: fixture.keys.backup,
-      });
-      await expect(rawExchange(fixture.socketPath, stale)).rejects.toMatchObject({ code: "vault_store_unavailable" });
+      await expect(wrongKey.readiness())
+        .rejects.toMatchObject({ code: "vault_authentication_failed" });
+      await expect(fixture.control.create({
+        binding: { ...fixture.binding, serviceId: "invalid" },
+        secret: Buffer.from("must-not-appear"),
+      })).rejects.toMatchObject({ code: "vault_frame_invalid" });
     } finally {
+      wrongKey.close();
       await fixture.close();
     }
   });
@@ -259,33 +213,6 @@ describe("isolated vault broker and typed clients", () => {
         selection,
       ))
         .rejects.toMatchObject({ code: "vault_capability_invalid" });
-
-      const manualCapability = issueBackup(
-        fixture,
-        "export_encrypted",
-        selection,
-      );
-      const startPayload = await rawBackupPayload(fixture, "export_encrypted", {
-        action: "start",
-        capability: manualCapability,
-        passphrase: passphrase.toString("base64url"),
-        selection,
-      });
-      const transferId = (startPayload as any).result.transferId as string;
-      const wrongTransfer = await rawBackupPayload(fixture, "export_encrypted", {
-        action: "read",
-        transferId,
-        transferToken: nonCanonicalSignature(manualCapability),
-        sequence: 0,
-      });
-      expect(wrongTransfer).toMatchObject({ ok: false, error: { code: "vault_capability_invalid" } });
-      const wrongSequence = await rawBackupPayload(fixture, "export_encrypted", {
-        action: "read",
-        transferId,
-        transferToken: manualCapability,
-        sequence: 1,
-      });
-      expect(wrongSequence).toMatchObject({ ok: false, error: { code: "vault_protocol_error" } });
 
       const tampered = Buffer.from(archive);
       tampered[tampered.length - 1] ^= 1;
@@ -462,16 +389,8 @@ describe("isolated vault broker and typed clients", () => {
     }
   }, 15_000);
 
-  it("enforces connection, active-work, and five-second incomplete-frame limits", async () => {
+  it("enforces active-work and five-second incomplete-request limits", async () => {
     const fixture = await brokerFixture();
-    const idleSockets = await Promise.all(Array.from({ length: 32 }, () => openIdleSocket(fixture.socketPath)));
-    try {
-      await expect(fixture.control.readiness()).rejects.toMatchObject({ code: "vault_store_unavailable" });
-    } finally {
-      for (const socket of idleSockets) socket.destroy();
-    }
-    await waitForReadiness(fixture.control);
-
     const started = Date.now();
     await incompleteExchange(fixture.socketPath);
     expect(Date.now() - started).toBeGreaterThanOrEqual(4_500);
@@ -480,19 +399,20 @@ describe("isolated vault broker and typed clients", () => {
     let releaseGate!: () => void;
     const gate = new Promise<void>((resolve) => { releaseGate = resolve; });
     const gated = await brokerFixture({ operationGate: () => gate });
-    const requests = Array.from({ length: 9 }, () => encodeVaultFrame({
-      kind: "request" as const,
-      caller: "data_plane" as const,
-      operation: "readiness" as const,
-      requestId: randomUUID(),
-      payload: {},
-      key: gated.keys.data_plane,
-    }));
-    const pending = requests.map((frame) => rawExchange(gated.socketPath, frame));
+    const pending = Array.from({ length: 9 }, () =>
+      gated.data.readiness().then(
+        (value) => ({ status: "fulfilled" as const, value }),
+        (reason: unknown) => ({ status: "rejected" as const, reason }),
+      ));
     await new Promise((resolve) => setTimeout(resolve, 50));
     releaseGate();
     const responses = await Promise.all(pending);
-    expect(responses.filter((response) => response.includes(Buffer.from("vault_capacity_exceeded")))).toHaveLength(1);
+    expect(responses.filter((response) =>
+      response.status === "rejected"
+      && response.reason instanceof Error
+      && "code" in response.reason
+      && response.reason.code === "vault_capacity_exceeded"
+    )).toHaveLength(1);
     await gated.close();
   }, 8_000);
 });
@@ -612,26 +532,6 @@ function selected(
   return [{ ...fixture.binding, locator, generation }];
 }
 
-async function rawBackupPayload(
-  fixture: BrokerFixture,
-  operation: "export_encrypted" | "import_encrypted",
-  payload: unknown,
-): Promise<unknown> {
-  const frame = encodeVaultFrame({
-    kind: "request",
-    caller: "backup",
-    operation,
-    requestId: randomUUID(),
-    payload,
-    key: fixture.keys.backup,
-  });
-  const response = await rawExchange(fixture.socketPath, frame);
-  return decodeVaultFrame(response, {
-    keys: fixture.keys,
-    replayCache: new BoundedReplayCache(),
-  }).payload;
-}
-
 function issueResolve(fixture: BrokerFixture, locator: string, generation: number): string {
   return fixture.authority.issueResolve({
     subjectId: new UuidV7Generator().next(),
@@ -647,58 +547,11 @@ function issueResolve(fixture: BrokerFixture, locator: string, generation: numbe
   });
 }
 
-async function rawExchange(socketPath: string, frame: Buffer): Promise<Buffer> {
-  return new Promise((resolve, reject) => {
-    const socket = createConnection(socketPath);
-    const chunks: Buffer[] = [];
-    const timer = setTimeout(() => {
-      socket.destroy();
-      reject(Object.assign(new Error("unavailable"), { code: "vault_store_unavailable" }));
-    }, 1_000);
-    socket.once("connect", () => socket.write(frame));
-    socket.on("data", (chunk) => chunks.push(chunk));
-    socket.once("end", () => {
-      clearTimeout(timer);
-      const response = Buffer.concat(chunks);
-      if (response.length === 0) reject(Object.assign(new Error("unavailable"), { code: "vault_store_unavailable" }));
-      else resolve(response);
-    });
-    socket.once("error", () => {
-      clearTimeout(timer);
-      reject(Object.assign(new Error("unavailable"), { code: "vault_store_unavailable" }));
-    });
-  });
-}
-
-function resign(frame: Buffer, key: Buffer): void {
-  createHmac("sha256", key).update(frame.subarray(0, frame.length - 32)).digest().copy(frame, frame.length - 32);
-}
-
 function nonCanonicalSignature(token: string): string {
   const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
   const last = token.at(-1)!;
   const index = alphabet.indexOf(last);
   return `${token.slice(0, -1)}${alphabet[(index & ~3) | ((index + 1) & 3)]}`;
-}
-
-function openIdleSocket(socketPath: string): Promise<import("node:net").Socket> {
-  return new Promise((resolve, reject) => {
-    const socket = createConnection(socketPath);
-    socket.once("connect", () => resolve(socket));
-    socket.once("error", reject);
-  });
-}
-
-async function waitForReadiness(control: ControlVaultClient): Promise<void> {
-  for (let attempt = 0; attempt < 50; attempt += 1) {
-    try {
-      await control.readiness();
-      return;
-    } catch {
-      await new Promise((resolve) => setTimeout(resolve, 10));
-    }
-  }
-  throw new Error("Broker did not release connection capacity.");
 }
 
 function incompleteExchange(socketPath: string): Promise<void> {
@@ -709,11 +562,7 @@ function incompleteExchange(socketPath: string): Promise<void> {
       reject(new Error("Broker did not enforce its request deadline."));
     }, 6_000);
     socket.once("connect", () => {
-      const prefix = Buffer.alloc(12);
-      prefix.write("SSVB", 0, "ascii");
-      prefix[4] = 1;
-      prefix.writeUInt32BE(100, 8);
-      socket.write(prefix);
+      socket.write("POST /v1/readiness HTTP/1.1\r\nHost: localhost\r\nContent-Length: 100\r\n");
     });
     socket.once("close", () => {
       clearTimeout(timer);

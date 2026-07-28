@@ -67,7 +67,11 @@ export function createBackupVaultAccess(
       socketPath,
       key: callerKey,
     });
-    const issuer = new VaultBackupCapabilityIssuer(capabilityKey);
+    const issuer = new VaultBackupCapabilityIssuer(
+      capabilityKey,
+      Date.now,
+      () => client.bootId,
+    );
     return {
       client,
       issuer,

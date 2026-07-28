@@ -237,7 +237,11 @@ function createDefaultRuntimeVault(
     resolveKey = readVaultKeyFile(resolveKeyFile);
     return new CapabilityRuntimeVault(
       readiness.dataClient,
-      new VaultResolveCapabilityIssuer(resolveKey),
+      new VaultResolveCapabilityIssuer(
+        resolveKey,
+        Date.now,
+        () => readiness.dataClient?.bootId,
+      ),
     );
   } catch {
     readiness.close();

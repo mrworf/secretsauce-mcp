@@ -83,6 +83,7 @@ paths:
         - $ref: "#/components/parameters/Nonce"
         - $ref: "#/components/parameters/RequestMac"
         - $ref: "#/components/parameters/ServiceId"
+        - $ref: "#/components/parameters/DestinationId"
         - $ref: "#/components/parameters/CredentialId"
         - $ref: "#/components/parameters/CaptureLastFour"
         - $ref: "#/components/parameters/RequestedLocator"
@@ -93,7 +94,7 @@ paths:
             schema:
               type: string
               contentMediaType: application/octet-stream
-              maxLength: 1048576
+              maxLength: 65536
       responses:
         "201":
           $ref: "#/components/responses/CredentialMetadata"
@@ -121,6 +122,7 @@ paths:
       - $ref: "#/components/parameters/Nonce"
       - $ref: "#/components/parameters/RequestMac"
       - $ref: "#/components/parameters/ServiceId"
+      - $ref: "#/components/parameters/DestinationId"
       - $ref: "#/components/parameters/CredentialId"
     get:
       tags: [credential]
@@ -154,7 +156,7 @@ paths:
             schema:
               type: string
               contentMediaType: application/octet-stream
-              maxLength: 1048576
+              maxLength: 65536
       responses:
         "200":
           $ref: "#/components/responses/CredentialMetadata"
@@ -226,7 +228,7 @@ paths:
               schema:
                 type: string
                 contentMediaType: application/octet-stream
-                maxLength: 1048576
+                maxLength: 65536
         "400":
           $ref: "#/components/responses/DomainFailure"
         "401":
@@ -322,7 +324,7 @@ paths:
               schema:
                 type: string
                 contentMediaType: application/octet-stream
-                maxLength: 1048576
+                maxLength: 65536
         "401":
           $ref: "#/components/responses/AuthenticationFailure"
         "403":
@@ -348,7 +350,7 @@ paths:
             schema:
               type: string
               contentMediaType: application/octet-stream
-              maxLength: 1048576
+              maxLength: 65536
       responses:
         "204":
           description: Chunk accepted.
@@ -385,7 +387,7 @@ paths:
                   record_count:
                     type: integer
                     minimum: 0
-                    maximum: 100000
+                    maximum: 10000
         "401":
           $ref: "#/components/responses/AuthenticationFailure"
         "403":
@@ -435,6 +437,12 @@ components:
         pattern: "^[A-Za-z0-9_-]{43}$"
     ServiceId:
       name: X-Vault-Service-Id
+      in: header
+      required: true
+      schema:
+        $ref: "#/components/schemas/Uuid"
+    DestinationId:
+      name: X-Vault-Destination-Id
       in: header
       required: true
       schema:
@@ -528,11 +536,13 @@ components:
     CredentialBinding:
       type: object
       additionalProperties: false
-      required: [service_id, credential_id]
+      required: [serviceId, destinationId, credentialId]
       properties:
-        service_id:
+        serviceId:
           $ref: "#/components/schemas/Uuid"
-        credential_id:
+        destinationId:
+          $ref: "#/components/schemas/Uuid"
+        credentialId:
           $ref: "#/components/schemas/Uuid"
     CredentialMetadata:
       type: object
@@ -554,7 +564,7 @@ components:
     ResolutionRequest:
       type: object
       additionalProperties: false
-      required: [locator, generation, binding, operation_digest]
+      required: [locator, generation, binding]
       properties:
         locator:
           $ref: "#/components/schemas/Uuid"
@@ -564,19 +574,13 @@ components:
           maximum: 9007199254740991
         binding:
           $ref: "#/components/schemas/CredentialBinding"
-        operation_digest:
-          type: string
-          pattern: "^[0-9a-f]{64}$"
     TransferStart:
       type: object
       additionalProperties: false
-      required: [operation, operation_digest, passphrase]
+      required: [direction]
       properties:
-        operation:
-          enum: [export_encrypted, import_encrypted, validate_restore, replace_restore, replace_empty, export_recovery, import_recovery]
-        operation_digest:
-          type: string
-          pattern: "^[0-9a-f]{64}$"
+        direction:
+          enum: [export, import]
         passphrase:
           description: Canonical base64url for 12–1024 raw passphrase bytes.
           type: string
@@ -585,7 +589,7 @@ components:
           pattern: "^[A-Za-z0-9_-]+$"
         selection:
           type: array
-          maxItems: 100000
+          maxItems: 10000
           uniqueItems: true
           items:
             type: object

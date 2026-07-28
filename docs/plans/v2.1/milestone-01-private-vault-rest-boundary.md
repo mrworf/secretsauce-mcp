@@ -288,8 +288,8 @@ caller environment together. No database or vault-store data migration occurs.
 
 | Slice | Status | Commit | Evidence | Deviations |
 | --- | --- | --- | --- | --- |
-| 1 | completed | | 15/15 focused domain/capability/archive tests; 21/21 legacy broker/process/credential regressions; server build | Boot fields for capability tokens remain in Slice 2 with the handshake; the handler already rejects wrong-boot contexts. |
-| 2 | pending | | | |
+| 1 | completed | `efcb969` | 15/15 focused domain/capability/archive tests; 21/21 legacy broker/process/credential regressions; server build | Boot fields for capability tokens moved with the Slice 2 handshake; the handler already rejected wrong-boot contexts. |
+| 2 | completed | | 12/12 HTTP protocol/broker tests; 12/12 capability/domain/protocol tests; 6/6 standalone process and migration tests; 8/8 credential-management tests; server build | Existing typed client method contracts were retained. Deployment configuration and endpoint mount validation remain in Slice 3. |
 | 3 | pending | | | |
 
 ## Deferred follow-ups

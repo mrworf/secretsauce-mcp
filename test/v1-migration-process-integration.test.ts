@@ -51,6 +51,7 @@ describe("resolved migration with standalone vault broker", () => {
   it("commits a real control-plane vault record and removes recovery artifacts", async () => {
     const fixture = await setup();
     const child = await startChild(fixture.configFile, fixture.socketPath);
+    await fixture.establishVaultBoot();
     const result = await fixture.coordinator(true).commit({
       resolved: fixture.resolved,
       correlationId: CORRELATION_ID,
@@ -83,6 +84,7 @@ describe("resolved migration with standalone vault broker", () => {
   it("restores both SQLite and the real vault after a post-commit health failure", async () => {
     const fixture = await setup();
     const child = await startChild(fixture.configFile, fixture.socketPath);
+    await fixture.establishVaultBoot();
     await expect(fixture.coordinator(false).commit({
       resolved: fixture.resolved,
       correlationId: CORRELATION_ID,
@@ -217,6 +219,8 @@ async function setup() {
   });
   const issuer = new VaultBackupCapabilityIssuer(
     keys.backupCapability,
+    Date.now,
+    () => backup.bootId,
   );
   const recovery = new RestoreRecoveryManager(
     recoveryDirectory,
@@ -260,6 +264,9 @@ async function setup() {
       } finally {
         database.close();
       }
+    },
+    establishVaultBoot: async () => {
+      await Promise.all([control.readiness(), backup.readiness()]);
     },
     close: () => {
       resolutionContext.dispose();

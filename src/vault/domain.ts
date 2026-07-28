@@ -102,6 +102,7 @@ export class VaultDomainHandler {
     this.#capabilities = options.capabilityAuthority;
     this.#store = options.store;
     this.#bootId = options.bootId ?? randomUUID();
+    this.#capabilities.bindBootId(this.#bootId);
     this.#now = options.now ?? Date.now;
   }
 
@@ -167,6 +168,8 @@ export class VaultDomainHandler {
       const payload = parse(resolveRequestSchema, request.input);
       const capability = this.#capabilities.consumeResolve(payload.capability);
       if (
+        capability.bootId !== this.#bootId
+        ||
         capability.locator !== payload.locator
         || capability.generation !== payload.generation
         || capability.serviceId !== payload.binding.serviceId
@@ -196,6 +199,8 @@ export class VaultDomainHandler {
       const payload = parse(replaceEmptyRequestSchema, request.input);
       const capability = this.#capabilities.consumeBackup(payload.capability);
       if (
+        capability.bootId !== this.#bootId
+        ||
         capability.operation !== "replace_empty"
         || !selectionDigestMatches([], capability.operationDigest)
       ) throw vaultError("vault_capability_invalid");
@@ -222,6 +227,8 @@ export class VaultDomainHandler {
       }
       const capability = this.#capabilities.consumeBackup(payload.capability);
       if (
+        capability.bootId !== this.#bootId
+        ||
         capability.operation !== "export_encrypted"
         && capability.operation !== "export_recovery"
       ) throw vaultError("vault_capability_invalid");
@@ -308,6 +315,9 @@ export class VaultDomainHandler {
         "replace_restore",
         "import_recovery",
       ].includes(capability.operation)) {
+        throw vaultError("vault_capability_invalid");
+      }
+      if (capability.bootId !== this.#bootId) {
         throw vaultError("vault_capability_invalid");
       }
       const selection = payload.selection === undefined

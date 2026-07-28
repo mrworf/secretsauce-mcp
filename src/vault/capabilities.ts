@@ -19,6 +19,7 @@ const resolveSchema = z.object({
   issuedAt: timestamp,
   expiresAt: timestamp,
   caller: z.literal("data_plane"),
+  bootId: uuidV4,
   subjectId: uuidV7,
   grantEpoch: epoch,
   securityEpoch: epoch,
@@ -40,6 +41,7 @@ const backupSchema = z.object({
   issuedAt: timestamp,
   expiresAt: timestamp,
   caller: z.literal("backup"),
+  bootId: uuidV4,
   operation: z.enum([
     "export_encrypted",
     "import_encrypted",
@@ -78,8 +80,8 @@ const backupSchema = z.object({
 export type ResolveCapability = z.infer<typeof resolveSchema>;
 export type BackupCapability = z.infer<typeof backupSchema>;
 export type VaultCapability = ResolveCapability | BackupCapability;
-export type ResolveCapabilityInput = Omit<ResolveCapability, "version" | "kind" | "capabilityId" | "issuedAt" | "expiresAt" | "caller">;
-export type BackupCapabilityInput = Omit<BackupCapability, "version" | "kind" | "capabilityId" | "issuedAt" | "expiresAt" | "caller">;
+export type ResolveCapabilityInput = Omit<ResolveCapability, "version" | "kind" | "capabilityId" | "issuedAt" | "expiresAt" | "caller" | "bootId">;
+export type BackupCapabilityInput = Omit<BackupCapability, "version" | "kind" | "capabilityId" | "issuedAt" | "expiresAt" | "caller" | "bootId">;
 
 export interface CapabilityVerifierOptions {
   resolveKey: Uint8Array;
@@ -96,6 +98,7 @@ export class VaultCapabilityAuthority {
   readonly #backupKey: Buffer;
   readonly #replayCache: BoundedReplayCache;
   readonly #now: () => number;
+  #bootId: string = randomUUID();
 
   constructor(options: CapabilityVerifierOptions) {
     this.#resolveKey = validatedKey(options.resolveKey);
@@ -114,6 +117,7 @@ export class VaultCapabilityAuthority {
       issuedAt,
       expiresAt: issuedAt + ttlMs,
       caller: "data_plane",
+      bootId: this.#bootId,
       ...input,
     }, this.#resolveKey, resolveSchema);
   }
@@ -128,6 +132,7 @@ export class VaultCapabilityAuthority {
       issuedAt,
       expiresAt: issuedAt + ttlMs,
       caller: "backup",
+      bootId: this.#bootId,
       ...input,
     }, this.#backupKey, backupSchema);
   }
@@ -138,6 +143,11 @@ export class VaultCapabilityAuthority {
 
   consumeBackup(token: string): BackupCapability {
     return this.#consume(token, "backup", this.#backupKey, backupSchema, BACKUP_TTL_MS);
+  }
+
+  bindBootId(bootId: string): void {
+    if (!uuidV4.safeParse(bootId).success) throw vaultError("vault_capability_invalid");
+    this.#bootId = bootId;
   }
 
   #consume<T extends VaultCapability>(
@@ -168,14 +178,22 @@ export class VaultCapabilityAuthority {
 export class VaultResolveCapabilityIssuer {
   readonly #resolveKey: Buffer;
   readonly #now: () => number;
+  readonly #bootId: () => string | undefined;
 
-  constructor(resolveKey: Uint8Array, now: () => number = Date.now) {
+  constructor(
+    resolveKey: Uint8Array,
+    now: () => number = Date.now,
+    bootId: () => string | undefined = () => randomUUID(),
+  ) {
     this.#resolveKey = validatedKey(resolveKey);
     this.#now = now;
+    this.#bootId = bootId;
   }
 
   issueResolve(input: ResolveCapabilityInput, ttlMs = RESOLVE_TTL_MS): string {
     const issuedAt = this.#now();
+    const bootId = this.#bootId();
+    if (bootId === undefined) throw vaultError("vault_capability_invalid");
     validateTtl(ttlMs, RESOLVE_TTL_MS);
     return sign({
       version: 1,
@@ -184,6 +202,7 @@ export class VaultResolveCapabilityIssuer {
       issuedAt,
       expiresAt: issuedAt + ttlMs,
       caller: "data_plane",
+      bootId,
       ...input,
     }, this.#resolveKey, resolveSchema);
   }
@@ -192,10 +211,16 @@ export class VaultResolveCapabilityIssuer {
 export class VaultBackupCapabilityIssuer {
   readonly #backupKey: Buffer;
   readonly #now: () => number;
+  readonly #bootId: () => string | undefined;
 
-  constructor(backupKey: Uint8Array, now: () => number = Date.now) {
+  constructor(
+    backupKey: Uint8Array,
+    now: () => number = Date.now,
+    bootId: () => string | undefined = () => randomUUID(),
+  ) {
     this.#backupKey = validatedKey(backupKey);
     this.#now = now;
+    this.#bootId = bootId;
   }
 
   issueBackup(
@@ -203,6 +228,8 @@ export class VaultBackupCapabilityIssuer {
     ttlMs = BACKUP_TTL_MS,
   ): string {
     const issuedAt = this.#now();
+    const bootId = this.#bootId();
+    if (bootId === undefined) throw vaultError("vault_capability_invalid");
     validateTtl(ttlMs, BACKUP_TTL_MS);
     return sign({
       version: 1,
@@ -211,6 +238,7 @@ export class VaultBackupCapabilityIssuer {
       issuedAt,
       expiresAt: issuedAt + ttlMs,
       caller: "backup",
+      bootId,
       ...input,
     }, this.#backupKey, backupSchema);
   }

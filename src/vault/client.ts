@@ -1,5 +1,5 @@
-import { randomUUID } from "node:crypto";
-import { createConnection } from "node:net";
+import { randomBytes, randomUUID } from "node:crypto";
+import { request as httpRequest } from "node:http";
 import type { z } from "zod";
 import {
   createResultSchema,
@@ -19,18 +19,17 @@ import {
 } from "./contracts.js";
 import { VaultError, vaultError, type VaultErrorCode } from "./errors.js";
 import {
-  decodeVaultFrame,
-  encodeVaultFrame,
-  MAX_VAULT_FRAME_BYTES,
-  type VaultCaller,
-  type VaultOperation,
-} from "./protocol.js";
-import { BoundedReplayCache } from "./replayCache.js";
+  signVaultHttpRequest,
+  verifyVaultHttpResponse,
+} from "./httpProtocol.js";
+import type { VaultCaller, VaultOperation } from "./protocol.js";
 import type { VaultCredentialBinding, VaultRecordMetadata } from "./recordStore.js";
 import type { VaultBackupSelection } from "./backupSelection.js";
 
 const REQUEST_DEADLINE_MS = 5_000;
-const MIN_FRAME_BYTES = 88;
+const MAX_RESPONSE_BYTES = 3 * 1024 * 1024;
+const JSON_MEDIA = "application/json";
+const SECRET_MEDIA = "application/vnd.secretsauce.vault-secret+octet-stream";
 
 export interface VaultClientOptions {
   socketPath: string;
@@ -67,7 +66,7 @@ abstract class VaultClient {
   readonly #socketPath: string;
   readonly #key: Buffer;
   readonly #caller: VaultCaller;
-  readonly #replayCache = new BoundedReplayCache();
+  #bootId: string | undefined;
   #closed = false;
 
   constructor(caller: VaultCaller, options: VaultClientOptions) {
@@ -83,58 +82,90 @@ abstract class VaultClient {
     this.#key.fill(0);
   }
 
+  get bootId(): string | undefined {
+    return this.#bootId;
+  }
+
   protected async readinessRequest(): Promise<z.infer<typeof readinessResultSchema>> {
     return this.request("readiness", {}, readinessResultSchema);
   }
 
   protected async request<T>(operation: VaultOperation, payload: unknown, resultSchema: z.ZodType<T>): Promise<T> {
     if (this.#closed) throw vaultError("vault_store_unavailable");
-    const requestId = randomUUID();
-    const frame = encodeVaultFrame({
-      kind: "request",
-      caller: this.#caller,
-      operation,
-      requestId,
-      payload,
-      key: this.#key,
-    });
-    let responseBytes: Buffer;
-    try {
-      responseBytes = await exchange(this.#socketPath, frame);
-    } finally {
-      frame.fill(0);
+    if (operation !== "readiness" && this.#bootId === undefined) {
+      await this.request("readiness", {}, readinessResultSchema);
     }
+    const requestId = randomUUID();
+    const spec = requestSpec(operation, payload);
+    const timestamp = String(Date.now());
+    const nonce = randomBytes(16).toString("base64url");
+    const authentication = {
+      caller: this.#caller,
+      method: spec.method,
+      target: spec.target,
+      contentType: spec.contentType,
+      body: spec.body,
+      requestId,
+      timestamp,
+      nonce,
+      ...(operation === "readiness" ? {} : { bootId: this.#bootId! }),
+      representationHeaders: spec.headers,
+    } as const;
+    const requestMac = signVaultHttpRequest(authentication, this.#key);
+    const response = await exchange(this.#socketPath, spec, {
+      "x-vault-caller": this.#caller,
+      "x-vault-request-id": requestId,
+      "x-vault-timestamp": timestamp,
+      "x-vault-nonce": nonce,
+      "x-vault-request-mac": requestMac,
+      ...(operation === "readiness" ? {} : { "x-vault-boot-id": this.#bootId! }),
+    });
     try {
-      const response = decodeVaultFrame(responseBytes, {
-        keys: {
-          data_plane: this.#caller === "data_plane" ? this.#key : zeroKey,
-          control_plane: this.#caller === "control_plane" ? this.#key : zeroKey,
-          backup: this.#caller === "backup" ? this.#key : zeroKey,
-        },
-        replayCache: this.#replayCache,
-      });
-      if (
-        response.kind !== "response"
-        || response.caller !== this.#caller
-        || response.operation !== operation
-        || response.requestId !== requestId
-      ) {
+      const responseBootId = singleResponseHeader(response.headers, "x-vault-boot-id");
+      const responseMac = singleResponseHeader(response.headers, "x-vault-response-mac");
+      const responseContentType = normalizedResponseContentType(response.headers);
+      verifyVaultHttpResponse({
+        caller: this.#caller,
+        bootId: responseBootId,
+        requestId,
+        status: response.status,
+        contentType: responseContentType,
+        body: response.body,
+      }, responseMac, this.#key);
+      if (operation !== "readiness" && responseBootId !== this.#bootId) {
+        throw vaultError("vault_authentication_failed");
+      }
+      let decoded: unknown;
+      if (responseContentType === SECRET_MEDIA) {
+        decoded = { secret: response.body.toString("base64url") };
+      } else if (responseContentType === JSON_MEDIA) {
+        decoded = parseJson(response.body);
+      } else {
         throw vaultError("vault_protocol_error");
       }
-      const failure = failureResponseSchema.safeParse(response.payload);
+      const failure = failureResponseSchema.safeParse(decoded);
       if (failure.success) throw remoteError(failure.data.error.code);
-      const success = successResponseSchema.safeParse(response.payload);
-      if (!success.success) throw vaultError("vault_protocol_error");
-      const result = resultSchema.safeParse(success.data.result);
+      if (response.status < 200 || response.status > 299) {
+        throw vaultError("vault_protocol_error");
+      }
+      if (operation === "readiness") {
+        const readiness = decoded as Record<string, unknown>;
+        if (readiness.boot_id !== responseBootId) throw vaultError("vault_protocol_error");
+        this.#bootId = responseBootId;
+        decoded = {
+          status: readiness.status,
+          recordCount: readiness.recordCount,
+        };
+      }
+      const result = resultSchema.safeParse(decoded);
       if (!result.success) throw vaultError("vault_protocol_error");
       return result.data;
     } finally {
-      responseBytes.fill(0);
+      response.body.fill(0);
+      spec.body.fill(0);
     }
   }
 }
-
-const zeroKey = Buffer.alloc(32);
 
 export class ControlVaultClient extends VaultClient {
   constructor(options: VaultClientOptions) {
@@ -359,47 +390,243 @@ export class BackupVaultClient extends VaultClient {
   }
 }
 
-async function exchange(socketPath: string, request: Buffer): Promise<Buffer> {
-  return new Promise<Buffer>((resolve, reject) => {
-    const socket = createConnection(socketPath);
+interface HttpRequestSpec {
+  method: string;
+  target: string;
+  contentType: string;
+  body: Buffer;
+  headers: Record<string, string>;
+}
+
+interface HttpResponse {
+  status: number;
+  headers: NodeJS.Dict<string | string[]>;
+  body: Buffer;
+}
+
+function requestSpec(operation: VaultOperation, payloadValue: unknown): HttpRequestSpec {
+  const payload = payloadValue as Record<string, unknown>;
+  if (operation === "readiness") return jsonSpec("POST", "/v1/readiness", {});
+  if (operation === "create" || operation === "replace") {
+    const secret = canonicalBase64Body(payload.secret);
+    const binding = clientBinding(payload.binding);
+    const headers = {
+      "x-vault-service-id": binding.serviceId,
+      "x-vault-destination-id": binding.destinationId,
+      "x-vault-credential-id": binding.credentialId,
+      "x-vault-capture-last-four": String(payload.captureLastFour === true),
+      ...(operation === "create" && typeof payload.locator === "string"
+        ? { "x-vault-requested-locator": payload.locator }
+        : {}),
+      ...(operation === "replace"
+        ? { "x-vault-expected-generation": String(payload.generation) }
+        : {}),
+    };
+    return {
+      method: operation === "create" ? "POST" : "PUT",
+      target: operation === "create"
+        ? "/v1/credentials"
+        : `/v1/credentials/${String(payload.locator)}`,
+      contentType: SECRET_MEDIA,
+      body: secret,
+      headers,
+    };
+  }
+  if (operation === "delete" || operation === "metadata") {
+    const binding = clientBinding(payload.binding);
+    return {
+      method: operation === "delete" ? "DELETE" : "GET",
+      target: `/v1/credentials/${String(payload.locator)}`,
+      contentType: JSON_MEDIA,
+      body: Buffer.alloc(0),
+      headers: {
+        "x-vault-service-id": binding.serviceId,
+        "x-vault-destination-id": binding.destinationId,
+        "x-vault-credential-id": binding.credentialId,
+        ...(operation === "delete"
+          ? { "x-vault-expected-generation": String(payload.generation) }
+          : {}),
+      },
+    };
+  }
+  if (operation === "resolve_for_request") {
+    const { capability, ...body } = payload;
+    return jsonSpec("POST", "/v1/resolutions", body, {
+      "x-vault-capability": String(capability),
+    });
+  }
+  if (operation === "replace_empty") {
+    return jsonSpec("POST", "/v1/transfers", { action: "replace_empty" }, {
+      "x-vault-capability": String(payload.capability),
+    });
+  }
+  if (operation === "export_encrypted") {
+    if (payload.action === "start") {
+      const { capability, action: _action, ...body } = payload;
+      return jsonSpec("POST", "/v1/transfers", {
+        direction: "export",
+        ...body,
+      }, { "x-vault-capability": String(capability) });
+    }
+    return {
+      method: "GET",
+      target: `/v1/transfers/${String(payload.transferId)}?sequence=${String(payload.sequence)}`,
+      contentType: JSON_MEDIA,
+      body: Buffer.alloc(0),
+      headers: { "x-vault-capability": String(payload.transferToken) },
+    };
+  }
+  if (operation === "import_encrypted") {
+    if (payload.action === "start") {
+      const { capability, action: _action, ...body } = payload;
+      return jsonSpec("POST", "/v1/transfers", {
+        direction: "import",
+        ...body,
+      }, { "x-vault-capability": String(capability) });
+    }
+    const { transferId, transferToken, action, ...body } = payload;
+    return jsonSpec(
+      action === "write" ? "PUT" : "POST",
+      action === "write"
+        ? `/v1/transfers/${String(transferId)}`
+        : `/v1/transfers/${String(transferId)}`,
+      body,
+      { "x-vault-capability": String(transferToken) },
+    );
+  }
+  throw vaultError("vault_operation_denied");
+}
+
+function jsonSpec(
+  method: string,
+  target: string,
+  value: unknown,
+  headers: Record<string, string> = {},
+): HttpRequestSpec {
+  return {
+    method,
+    target,
+    contentType: JSON_MEDIA,
+    body: Buffer.from(JSON.stringify(value), "utf8"),
+    headers,
+  };
+}
+
+function canonicalBase64Body(value: unknown): Buffer {
+  if (typeof value !== "string") throw vaultError("vault_protocol_error");
+  const decoded = Buffer.from(value, "base64url");
+  if (decoded.toString("base64url") !== value) {
+    decoded.fill(0);
+    throw vaultError("vault_protocol_error");
+  }
+  return decoded;
+}
+
+function clientBinding(value: unknown): {
+  serviceId: string;
+  destinationId: string;
+  credentialId: string;
+} {
+  if (typeof value !== "object" || value === null) {
+    throw vaultError("vault_protocol_error");
+  }
+  const binding = value as Record<string, unknown>;
+  if (
+    typeof binding.serviceId !== "string"
+    || typeof binding.destinationId !== "string"
+    || typeof binding.credentialId !== "string"
+  ) throw vaultError("vault_protocol_error");
+  return {
+    serviceId: binding.serviceId,
+    destinationId: binding.destinationId,
+    credentialId: binding.credentialId,
+  };
+}
+
+async function exchange(
+  socketPath: string,
+  spec: HttpRequestSpec,
+  authenticationHeaders: Record<string, string>,
+): Promise<HttpResponse> {
+  return new Promise<HttpResponse>((resolve, reject) => {
     const chunks: Buffer[] = [];
     let received = 0;
-    let expected: number | undefined;
     let settled = false;
     const fail = (): void => {
       if (settled) return;
       settled = true;
       for (const chunk of chunks) chunk.fill(0);
-      socket.destroy();
+      request.destroy();
       reject(vaultError("vault_store_unavailable"));
     };
-    socket.setTimeout(REQUEST_DEADLINE_MS, fail);
-    socket.once("error", fail);
-    socket.once("connect", () => socket.write(request));
-    socket.on("data", (chunk: Buffer) => {
-      if (settled) return;
-      received += chunk.byteLength;
-      if (received > MAX_VAULT_FRAME_BYTES) return fail();
-      chunks.push(chunk);
-      if (expected === undefined && received >= 12) {
-        const prefix = Buffer.concat(chunks, received);
-        expected = prefix.readUInt32BE(8);
-        prefix.fill(0);
-        if (expected < MIN_FRAME_BYTES || expected > MAX_VAULT_FRAME_BYTES) return fail();
-      }
-      if (expected !== undefined && received > expected) return fail();
-      if (expected !== undefined && received === expected) {
+    const request = httpRequest({
+      socketPath,
+      method: spec.method,
+      path: spec.target,
+      headers: {
+        host: "localhost",
+        "content-type": spec.contentType,
+        "content-length": String(spec.body.byteLength),
+        ...spec.headers,
+        ...authenticationHeaders,
+      },
+      timeout: REQUEST_DEADLINE_MS,
+      setDefaultHeaders: false,
+    }, (response) => {
+      response.on("data", (chunk: Buffer) => {
+        if (settled) return;
+        received += chunk.byteLength;
+        if (received > MAX_RESPONSE_BYTES) return fail();
+        chunks.push(chunk);
+      });
+      response.once("end", () => {
+        if (settled) return;
         settled = true;
-        const response = Buffer.concat(chunks, received);
+        const body = Buffer.concat(chunks, received);
         for (const item of chunks) item.fill(0);
-        socket.end();
-        resolve(response);
-      }
+        resolve({
+          status: response.statusCode ?? 0,
+          headers: response.headers,
+          body,
+        });
+      });
     });
-    socket.once("end", () => {
-      if (!settled) fail();
-    });
+    request.once("timeout", fail);
+    request.once("error", fail);
+    request.end(spec.body);
   });
+}
+
+function singleResponseHeader(
+  headers: NodeJS.Dict<string | string[]>,
+  name: string,
+): string {
+  const value = headers[name];
+  if (typeof value !== "string" || value.length < 1) {
+    throw vaultError("vault_authentication_failed");
+  }
+  return value;
+}
+
+function normalizedResponseContentType(
+  headers: NodeJS.Dict<string | string[]>,
+): string {
+  const value = singleResponseHeader(headers, "content-type");
+  const normalized = value.trim().toLowerCase();
+  if (normalized.includes(";")) throw vaultError("vault_authentication_failed");
+  return normalized;
+}
+
+function parseJson(body: Buffer): unknown {
+  try {
+    const source = body.toString("utf8");
+    if (Buffer.from(source, "utf8").byteLength !== body.byteLength) {
+      throw new Error("invalid utf8");
+    }
+    return JSON.parse(source);
+  } catch {
+    throw vaultError("vault_protocol_error");
+  }
 }
 
 function remoteError(code: string): VaultRemoteError {

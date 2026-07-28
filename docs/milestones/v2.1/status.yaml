@@ -67,12 +67,12 @@ milestones:
   - id: "07"
     title: "Authentication Abuse Controls And Suspension"
     file: "docs/milestones/v2.1/07-authentication-abuse-and-suspension.md"
-    status: "pending"
+    status: "in_progress"
     dependencies:
       - "06"
     completed_at: null
     commit_hash: null
-    notes: "Pending implementation planning and acceptance evidence."
+    notes: "Implementation plan approved; canonical source and host-local protective configuration are the first slice."
   - id: "08"
     title: "Recovery And Reactivation"
     file: "docs/milestones/v2.1/08-recovery-and-reactivation.md"

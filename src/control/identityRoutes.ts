@@ -37,6 +37,7 @@ import {
   CONTROL_OIDC_FLOW_COOKIE,
 } from "./security.js";
 import { z } from "./zod.js";
+import { PersistenceError } from "../persistence/errors.js";
 
 export interface LocalIdentityControl {
   authentication: LocalAuthenticationService;
@@ -48,6 +49,10 @@ export interface LocalIdentityControl {
   authenticator?: LocalControlAuthenticator;
   users?: UserAdministrationService;
   userLifecycle?: UserLifecycleAdministrationService;
+  logoutFailure?: (
+    category: "persistence" | "audit",
+    correlationId: string,
+  ) => void;
   oidc?: {
     flow: OidcFlowService;
     login: OidcLoginService;
@@ -305,8 +310,18 @@ export function registerLocalIdentityRoutes(
         await identity.browserSessions.logout(request);
         clearControlSessionCookie(reply);
         return { data: { logged_out: true as const } };
-      } catch {
-        throw new ControlContractError(503, "maintenance", "Authentication is unavailable.");
+      } catch (error) {
+        const category = error instanceof PersistenceError
+          && error.code.includes("audit")
+          ? "audit" as const
+          : "persistence" as const;
+        identity.logoutFailure?.(category, request.id);
+        reply.header("retry-after", "3");
+        throw new ControlContractError(
+          503,
+          "logout_unavailable",
+          "Logout could not be completed. This session is still active. Try again.",
+        );
       }
     },
   }));

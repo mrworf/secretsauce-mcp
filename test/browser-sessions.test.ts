@@ -26,6 +26,7 @@ import {
 } from "../src/control/permissions.js";
 import { createLogger } from "../src/logger.js";
 import { PersistenceWorker } from "../src/persistence/worker.js";
+import { PersistenceError } from "../src/persistence/errors.js";
 import type { GatewayConfig, IdentityConfig } from "../src/types.js";
 import { registryConfig } from "./helpers.js";
 
@@ -225,6 +226,49 @@ describe("durable browser sessions", () => {
       },
     });
     expect(staleCsrf.statusCode).toBe(403);
+
+    const originalLogout = fixture.authenticator.logout.bind(fixture.authenticator);
+    const mutableAuthenticator = fixture.authenticator as unknown as {
+      logout(request: unknown): Promise<void>;
+    };
+    mutableAuthenticator.logout = async () => {
+      throw new PersistenceError("invalid_audit_event");
+    };
+    const uncertain = await application.inject({
+      method: "POST",
+      url: "/api/v2/auth/logout",
+      headers: {
+        host: "control.example.org",
+        origin: "https://control.example.org",
+        cookie,
+        "x-csrf-token": rotatedCsrf,
+      },
+    });
+    expect(uncertain.statusCode).toBe(503);
+    expect(uncertain.headers["retry-after"]).toBe("3");
+    expect(uncertain.headers["set-cookie"]).toBeUndefined();
+    expect(uncertain.json()).toEqual({
+      error: {
+        code: "logout_unavailable",
+        message: "Logout could not be completed. This session is still active. Try again.",
+        request_id: expect.any(String),
+      },
+    });
+    const failureEvent = lines
+      .map((line) => JSON.parse(line) as Record<string, unknown>)
+      .find((line) => line.event === "logout_revocation_unavailable");
+    expect(failureEvent).toMatchObject({
+      event: "logout_revocation_unavailable",
+      failure_category: "audit",
+    });
+    expect(Object.keys(failureEvent!).sort()).toEqual([
+      "correlation_id",
+      "event",
+      "failure_category",
+      "level",
+      "timestamp",
+    ]);
+    mutableAuthenticator.logout = originalLogout;
 
     const logout = await application.inject({
       method: "POST",

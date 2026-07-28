@@ -357,7 +357,15 @@ export function createControlApplication(
     options.setupStatus,
   );
   if (options.localIdentity !== undefined) {
-    registerLocalIdentityRoutes(routeRegistry, options.localIdentity);
+    registerLocalIdentityRoutes(routeRegistry, {
+      ...options.localIdentity,
+      logoutFailure: (category, correlationId) => {
+        logger.error("logout_revocation_unavailable", {
+          correlation_id: correlationId,
+          failure_category: category,
+        });
+      },
+    });
     if (options.localIdentity.users !== undefined) {
       registerUserAdministrationRoutes(
         routeRegistry,

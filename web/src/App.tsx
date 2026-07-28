@@ -12,22 +12,54 @@ import {
   type HumanControlRole,
   type NavigationItem,
 } from "./navigation";
+import { useState } from "react";
+import {
+  browserControlApi,
+  type BrowserAuthenticationApi,
+  type ControlApi,
+} from "./controlApi";
 
 export interface AppShellProps {
   role?: HumanControlRole;
+  authApi?: Pick<ControlApi, "session"> & Pick<BrowserAuthenticationApi, "logout">;
+  navigate?: (url: string) => void;
 }
 
-export function AppShell({ role = "user" }: AppShellProps) {
+export function AppShell({
+  role = "user",
+  authApi = browserControlApi,
+  navigate = (url) => window.location.assign(url),
+}: AppShellProps) {
   const location = useLocation();
   const heading = useRef<HTMLHeadingElement>(null);
   const previousPath = useRef(location.pathname);
   const items = navigationForRole(role);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [logoutMessage, setLogoutMessage] = useState("");
+  const logoutButton = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (previousPath.current === location.pathname) return;
     previousPath.current = location.pathname;
     heading.current?.focus();
   }, [location.pathname]);
+
+  async function logout() {
+    setLoggingOut(true);
+    setLogoutMessage("");
+    try {
+      const session = await authApi.session();
+      await authApi.logout(session.csrf_token);
+      navigate("/control/login");
+    } catch {
+      setLogoutMessage(
+        "Logout could not be completed. This session is still active. Try again.",
+      );
+      queueMicrotask(() => logoutButton.current?.focus());
+    } finally {
+      setLoggingOut(false);
+    }
+  }
 
   return (
     <div className="app-shell">
@@ -38,7 +70,20 @@ export function AppShell({ role = "user" }: AppShellProps) {
         </NavLink>
         <div className="topbar-context">
           <span className="environment-label">Control plane</span>
-          <span className="role-label">Navigation preview: {role}</span>
+          <details className="account-menu">
+            <summary>Account</summary>
+            <div>
+              <NavLink to="/profile">Settings</NavLink>
+              <button
+                ref={logoutButton}
+                type="button"
+                disabled={loggingOut}
+                onClick={() => void logout()}
+              >
+                {loggingOut ? "Logging out…" : "Log out"}
+              </button>
+            </div>
+          </details>
         </div>
       </header>
 
@@ -71,6 +116,11 @@ export function AppShell({ role = "user" }: AppShellProps) {
       <div className="visually-hidden" role="status" aria-live="polite" aria-atomic="true">
         {navigationItem(location.pathname)?.label ?? "Page unavailable"} loaded.
       </div>
+      {logoutMessage !== "" && (
+        <div className="logout-error" role="alert">
+          {logoutMessage}
+        </div>
+      )}
     </div>
   );
 }

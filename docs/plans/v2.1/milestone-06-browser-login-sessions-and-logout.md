@@ -37,5 +37,5 @@ after audited revocation commits.
 | Slice | Status | Commit | Evidence | Deviations |
 | --- | --- | --- | --- | --- |
 | 1 | completed | this commit | Production build; 3/3 login-page tests and 5/5 durable browser-session tests; all local factors in one labeled form; configured OIDC alternatives; uniform failure; secret-field clearing; safe relative destination acceptance plus cross-origin, authority, backslash, wrong-root, and normalization rejection; existing strict cookie/CSRF/expiry/restart tests retained | — |
-| 2 | pending | — | — | — |
+| 2 | completed | this commit | Production build; 6/6 shell tests and 5/5 durable browser-session tests; account menu exposes Settings and Log out on every authenticated view; logout refreshes CSRF before revocation; injected audit failure returns 503 plus `Retry-After` without clearing the cookie, retains the authenticated page and focus, emits only bounded failure metadata, and succeeds on retry | — |
 | 3 | pending | — | — | — |

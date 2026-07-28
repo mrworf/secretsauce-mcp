@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
   MemoryRouter,
@@ -8,7 +8,7 @@ import {
   Routes,
   RouterProvider,
 } from "react-router-dom";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { AppShell } from "./App";
 import { createTestControlRouter } from "./router";
 
@@ -83,5 +83,46 @@ describe("control application shell", () => {
     expect(screen.getByRole("heading", { level: 2, name: "Create portable backup" }))
       .toBeInTheDocument();
     expect(screen.getByText("Permanent exclusions")).toBeInTheDocument();
+  });
+
+  it("keeps the page active and returns focus when logout cannot commit, then retries", async () => {
+    const user = userEvent.setup();
+    const navigate = vi.fn();
+    const authApi = {
+      session: vi.fn().mockResolvedValue({
+        user_id: "018f1f2e-7b3c-7a10-8000-000000000001",
+        role: "user" as const,
+        csrf_token: "c".repeat(43),
+        expires_at: 1_785_000_900_000,
+      }),
+      logout: vi.fn()
+        .mockRejectedValueOnce(new Error("audit unavailable"))
+        .mockResolvedValueOnce({ logged_out: true as const }),
+    };
+    render(
+      <MemoryRouter>
+        <Routes>
+          <Route
+            path="/"
+            element={<AppShell role="user" authApi={authApi} navigate={navigate} />}
+          >
+            <Route index element={<p>Still authenticated</p>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+    await user.click(screen.getByText("Account", { selector: "summary" }));
+    const logout = screen.getByRole("button", { name: "Log out" });
+    await user.click(logout);
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Logout could not be completed. This session is still active. Try again.",
+    );
+    expect(screen.getByText("Still authenticated")).toBeInTheDocument();
+    expect(logout).toHaveFocus();
+    expect(navigate).not.toHaveBeenCalled();
+
+    await user.click(logout);
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith("/control/login"));
+    expect(authApi.logout).toHaveBeenCalledTimes(2);
   });
 });

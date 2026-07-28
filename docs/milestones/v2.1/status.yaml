@@ -29,13 +29,13 @@ milestones:
   - id: "03"
     title: "Browser-First Setup And Compose Gating"
     file: "docs/milestones/v2.1/03-browser-first-setup-and-compose.md"
-    status: "pending"
+    status: "in_progress"
     dependencies:
       - "01"
       - "02"
     completed_at: null
     commit_hash: null
-    notes: "Pending implementation planning and acceptance evidence."
+    notes: "Dependency-ready after Milestones 01 and 02; implementation plan is docs/plans/v2.1/milestone-03-browser-first-setup-and-compose.md."
   - id: "04"
     title: "Envelope-Root Rotation"
     file: "docs/milestones/v2.1/04-envelope-root-rotation.md"

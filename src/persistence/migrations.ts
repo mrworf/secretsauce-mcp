@@ -3053,6 +3053,56 @@ ADD COLUMN coarse_source TEXT
   );
 `;
 
+const migration0026 = `
+CREATE TABLE access_cleanup_evidence (
+  record_kind TEXT NOT NULL CHECK (record_kind IN ('browser_session', 'oauth_grant')),
+  record_id TEXT NOT NULL CHECK (
+    length(record_id) = 36 AND record_id = lower(record_id)
+    AND substr(record_id, 15, 1) = '7'
+    AND substr(record_id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND record_id NOT GLOB '*[^0-9a-f-]*'
+  ),
+  owner_user_id TEXT NOT NULL CHECK (
+    length(owner_user_id) = 36 AND owner_user_id = lower(owner_user_id)
+    AND substr(owner_user_id, 15, 1) = '7'
+    AND substr(owner_user_id, 20, 1) IN ('8', '9', 'a', 'b')
+    AND owner_user_id NOT GLOB '*[^0-9a-f-]*'
+  ),
+  service_ids_json TEXT NOT NULL CHECK (
+    length(service_ids_json) BETWEEN 2 AND 16384
+    AND json_valid(service_ids_json)
+    AND json_type(service_ids_json) = 'array'
+  ),
+  inactive_at INTEGER NOT NULL CHECK (inactive_at >= 0),
+  cleaned_at INTEGER NOT NULL CHECK (cleaned_at >= inactive_at),
+  authorization_expires_at INTEGER NOT NULL CHECK (
+    authorization_expires_at > cleaned_at
+  ),
+  correlation_id TEXT NOT NULL CHECK (
+    length(correlation_id) BETWEEN 36 AND 40
+    AND correlation_id = lower(correlation_id)
+  ),
+  PRIMARY KEY (record_kind, record_id)
+) STRICT, WITHOUT ROWID;
+
+CREATE INDEX access_cleanup_evidence_owner_kind_idx
+  ON access_cleanup_evidence (
+    owner_user_id, record_kind, authorization_expires_at, record_id
+  );
+
+CREATE TRIGGER access_cleanup_evidence_immutable_update
+BEFORE UPDATE ON access_cleanup_evidence
+BEGIN
+  SELECT RAISE(ABORT, 'access cleanup evidence is immutable');
+END;
+
+CREATE TRIGGER access_cleanup_evidence_immutable_delete
+BEFORE DELETE ON access_cleanup_evidence
+BEGIN
+  SELECT RAISE(ABORT, 'access cleanup evidence is immutable');
+END;
+`;
+
 export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [
   {
     version: 1,
@@ -3178,6 +3228,11 @@ export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [
     version: 25,
     name: "browser_session_display_metadata",
     sql: migration0025,
+  },
+  {
+    version: 26,
+    name: "access_cleanup_evidence",
+    sql: migration0026,
   },
 ];
 

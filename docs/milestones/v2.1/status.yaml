@@ -86,12 +86,12 @@ milestones:
   - id: "09"
     title: "Session And Agent-Connection Management"
     file: "docs/milestones/v2.1/09-session-and-agent-connection-management.md"
-    status: "in_progress"
+    status: "completed"
     dependencies:
       - "06"
-    completed_at: null
-    commit_hash: null
-    notes: "Implementation plan approved for privacy-safe self service, transaction-authorized administration, account UX, retained cleanup evidence, and qualification."
+    completed_at: "2026-07-28T02:49:19-07:00"
+    commit_hash: "5137db5"
+    notes: "Implemented privacy-safe self access management, transaction-authorized scoped administration, account/global/user workspaces, and immutable cleanup evidence with authorized retry semantics. See docs/audits/v2.1/milestone-09-acceptance.md."
   - id: "10"
     title: "Release Qualification And Documentation"
     file: "docs/milestones/v2.1/10-release-qualification-and-documentation.md"

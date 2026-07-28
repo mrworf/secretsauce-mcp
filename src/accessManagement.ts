@@ -106,6 +106,11 @@ export interface CapabilityInvalidationResult {
   invalidatedReferences: number;
 }
 
+export interface AccessCleanupResult {
+  sessionsDeleted: number;
+  grantsDeleted: number;
+}
+
 export class AccessManagementError extends Error {
   constructor(readonly code: "invalid_request" | "forbidden" | "unavailable") {
     super("Access management could not be completed.");
@@ -1008,6 +1013,18 @@ export class AccessManagementRepository {
     try {
       return await this.stepUps.withConsumedProofGenerated(input.stepUpProof, (transaction) => {
         requireCurrentRole(transaction, input.viewer.userId, "superadmin");
+        if (
+          transaction.get<{ id: string }>(
+            "SELECT id FROM browser_sessions WHERE id = ?",
+            [input.sessionId],
+          ) === undefined
+          && !hasAuthorizedCleanupEvidence(
+            transaction,
+            "browser_session",
+            input.sessionId,
+            input.viewer,
+          )
+        ) throw new PersistenceError("authentication_failed");
         const now = transaction.timestamp();
         const sessionsRevoked = transaction.run(`
           UPDATE browser_sessions
@@ -1193,6 +1210,15 @@ export class AccessManagementRepository {
           predicate.sql,
           predicate.values,
         );
+        if (
+          revoked.selectedCount === 0
+          && !hasAuthorizedCleanupEvidence(
+            transaction,
+            "oauth_grant",
+            input.grantId,
+            input.viewer,
+          )
+        ) throw new PersistenceError("authentication_failed");
         const value = {
           targetId: input.grantId,
           revoked: revoked.grantsRevoked === 1,
@@ -1418,6 +1444,144 @@ export class AccessManagementRepository {
       throw mapAccessError(error);
     }
   }
+
+  async cleanupInactive(input: {
+    inactiveBefore: number;
+    evidenceRetentionMs: number;
+    limit: number;
+    correlationId: string;
+  }): Promise<AccessCleanupResult> {
+    const now = nowValue(this.now);
+    if (
+      !safeTimestamp(input.inactiveBefore)
+      || input.inactiveBefore > now
+      || !Number.isSafeInteger(input.evidenceRetentionMs)
+      || input.evidenceRetentionMs < 86_400_000
+      || input.evidenceRetentionMs > 366 * 86_400_000
+      || !Number.isSafeInteger(input.limit)
+      || input.limit < 1
+      || input.limit > 1_000
+      || !CORRELATION_ID.test(input.correlationId)
+    ) throw new AccessManagementError("invalid_request");
+    const authorizationExpiresAt = now + input.evidenceRetentionMs;
+    if (!safeTimestamp(authorizationExpiresAt)) {
+      throw new AccessManagementError("invalid_request");
+    }
+    try {
+      return await this.owner.execute({
+        run: (database) => database.withGeneratedAdministrativeAudit((transaction) => {
+          const sessions = transaction.all<{
+            id: string;
+            user_id: string;
+            inactive_at: number;
+          }>(`
+            SELECT id, user_id,
+              coalesce(revoked_at, absolute_expires_at) AS inactive_at
+            FROM browser_sessions
+            WHERE (
+                revoked_at IS NOT NULL AND revoked_at <= ?
+              )
+              OR (
+                revoked_at IS NULL
+                AND absolute_expires_at <= ?
+                AND absolute_expires_at <= ?
+              )
+            ORDER BY inactive_at, id
+            LIMIT ?
+          `, [
+            input.inactiveBefore,
+            input.inactiveBefore,
+            now,
+            input.limit,
+          ]);
+          const grants = transaction.all<{
+            id: string;
+            user_id: string;
+            inactive_at: number;
+          }>(`
+            SELECT id, user_id, revoked_at AS inactive_at
+            FROM oauth_grants
+            WHERE status <> 'active'
+              AND revoked_at IS NOT NULL
+              AND revoked_at <= ?
+            ORDER BY revoked_at, id
+            LIMIT ?
+          `, [input.inactiveBefore, input.limit]);
+          for (const row of sessions) {
+            insertCleanupEvidence(transaction, {
+              kind: "browser_session",
+              id: row.id,
+              ownerUserId: row.user_id,
+              serviceIds: [],
+              inactiveAt: row.inactive_at,
+              cleanedAt: now,
+              authorizationExpiresAt,
+              correlationId: input.correlationId,
+            });
+            transaction.run(`
+              DELETE FROM browser_sessions
+              WHERE id = ?
+                AND EXISTS (
+                  SELECT 1 FROM access_cleanup_evidence evidence
+                  WHERE evidence.record_kind = 'browser_session'
+                    AND evidence.record_id = browser_sessions.id
+                )
+            `, [row.id]);
+          }
+          for (const row of grants) {
+            insertCleanupEvidence(transaction, {
+              kind: "oauth_grant",
+              id: row.id,
+              ownerUserId: row.user_id,
+              serviceIds: currentServiceIds(transaction, row.user_id),
+              inactiveAt: row.inactive_at,
+              cleanedAt: now,
+              authorizationExpiresAt,
+              correlationId: input.correlationId,
+            });
+            transaction.run(`
+              DELETE FROM oauth_grants
+              WHERE id = ?
+                AND EXISTS (
+                  SELECT 1 FROM access_cleanup_evidence evidence
+                  WHERE evidence.record_kind = 'oauth_grant'
+                    AND evidence.record_id = oauth_grants.id
+                )
+            `, [row.id]);
+          }
+          const value = {
+            sessionsDeleted: sessions.length,
+            grantsDeleted: grants.length,
+          };
+          return {
+            value,
+            auditInput: {
+              actor: {
+                type: "job",
+                label: "access-cleanup",
+                role: "system",
+                authenticationMethod: "scheduled_job",
+              },
+              action: "access.cleanup",
+              result: "allow",
+              target: {
+                type: "access_records",
+                label: "inactive-access-records",
+              },
+              changes: [
+                { field: "sessions_deleted", after: sessions.length },
+                { field: "grants_deleted", after: grants.length },
+              ],
+              correlationId: input.correlationId,
+              source: { category: "access_management" },
+            },
+          };
+        }),
+      });
+    } catch (error) {
+      throw mapAccessError(error);
+    }
+  }
 }
 
 const EFFECTIVE_ASSIGNMENT_SQL = `
@@ -1525,6 +1689,35 @@ const SERVICE_ASSIGNMENT_PREDICATE = `
   )
 `;
 
+const USER_SERVICE_ASSIGNMENT_PREDICATE = `
+  EXISTS (
+    SELECT 1
+    FROM service_principal_assignments assignment
+    WHERE assignment.service_id = service.id
+      AND (
+        assignment.selector_kind = 'all'
+        OR (
+          assignment.selector_kind = 'user'
+          AND assignment.user_id = user.id
+        )
+        OR (
+          assignment.selector_kind = 'group'
+          AND EXISTS (
+            SELECT 1
+            FROM service_group_members member
+            JOIN service_groups service_group
+              ON service_group.id = member.group_id
+              AND service_group.service_id = member.service_id
+            WHERE member.service_id = assignment.service_id
+              AND member.group_id = assignment.group_id
+              AND member.user_id = user.id
+              AND service_group.lifecycle = 'active'
+          )
+        )
+      )
+  )
+`;
+
 const REGULAR_ADMIN_GRANT_ACCESS_SQL = `
   EXISTS (
     SELECT 1 FROM users actor
@@ -1542,7 +1735,7 @@ const REGULAR_ADMIN_GRANT_ACCESS_SQL = `
       AND service.lifecycle = 'published'
     JOIN runtime_activation activation
       ON activation.singleton = 1 AND activation.state = 'active'
-    WHERE ${SERVICE_ASSIGNMENT_PREDICATE}
+    WHERE ${USER_SERVICE_ASSIGNMENT_PREDICATE}
   )
   AND NOT EXISTS (
     SELECT 1
@@ -1552,7 +1745,7 @@ const REGULAR_ADMIN_GRANT_ACCESS_SQL = `
       AND service.lifecycle = 'published'
     JOIN runtime_activation activation
       ON activation.singleton = 1 AND activation.state = 'active'
-    WHERE ${SERVICE_ASSIGNMENT_PREDICATE}
+    WHERE ${USER_SERVICE_ASSIGNMENT_PREDICATE}
       AND NOT EXISTS (
         SELECT 1 FROM service_admins administrator
         WHERE administrator.service_id = service.id
@@ -1566,6 +1759,7 @@ function revokeGrantSet(
   predicate: string,
   parameters: readonly (string | number | null)[],
 ): {
+  selectedCount: number;
   grantsRevoked: number;
   familiesRevoked: number;
   refreshTokensRevoked: number;
@@ -1589,6 +1783,10 @@ function revokeGrantSet(
     JOIN users user ON user.id = grant.user_id
     WHERE ${predicate}
   `;
+  const selectedCount = transaction.get<{ count: number }>(
+    `SELECT count(*) AS count FROM (${selected})`,
+    parameters,
+  )?.count ?? 0;
   const refreshTokensRevoked = transaction.run(`
     UPDATE oauth_refresh_tokens
     SET status = 'revoked', used_at = coalesce(used_at, ?)
@@ -1617,6 +1815,7 @@ function revokeGrantSet(
     WHERE status = 'active' AND id IN (${selected})
   `, [now, ...parameters]).changes;
   return {
+    selectedCount,
     grantsRevoked,
     familiesRevoked,
     refreshTokensRevoked,
@@ -1658,6 +1857,104 @@ function requireCurrentRole(
   `, [userId, role]) === undefined) {
     throw new PersistenceError("authentication_failed");
   }
+}
+
+function currentServiceIds(
+  transaction: PersistenceTransaction,
+  userId: string,
+): string[] {
+  const rows = transaction.all<{ id: string }>(`
+    SELECT service.id
+    FROM users user
+    JOIN runtime_activation activation
+      ON activation.singleton = 1 AND activation.state = 'active'
+    JOIN runtime_active_services active ON 1 = 1
+    JOIN services service
+      ON service.id = active.service_id
+      AND service.lifecycle = 'published'
+    WHERE user.id = ?
+      AND ${USER_SERVICE_ASSIGNMENT_PREDICATE}
+    ORDER BY service.id
+    LIMIT 257
+  `, [userId]);
+  if (rows.length > 256) throw new AccessManagementError("unavailable");
+  return rows.map(({ id }) => id);
+}
+
+function insertCleanupEvidence(
+  transaction: PersistenceTransaction,
+  input: {
+    kind: "browser_session" | "oauth_grant";
+    id: string;
+    ownerUserId: string;
+    serviceIds: string[];
+    inactiveAt: number;
+    cleanedAt: number;
+    authorizationExpiresAt: number;
+    correlationId: string;
+  },
+): void {
+  transaction.run(`
+    INSERT OR IGNORE INTO access_cleanup_evidence (
+      record_kind, record_id, owner_user_id, service_ids_json,
+      inactive_at, cleaned_at, authorization_expires_at, correlation_id
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `, [
+    input.kind,
+    input.id,
+    input.ownerUserId,
+    JSON.stringify(input.serviceIds),
+    input.inactiveAt,
+    input.cleanedAt,
+    input.authorizationExpiresAt,
+    input.correlationId,
+  ]);
+}
+
+function hasAuthorizedCleanupEvidence(
+  transaction: PersistenceTransaction,
+  kind: "browser_session" | "oauth_grant",
+  recordId: string,
+  viewer: AccessViewer,
+): boolean {
+  const evidence = transaction.get<{
+    owner_user_id: string;
+    service_ids_json: string;
+  }>(`
+    SELECT owner_user_id, service_ids_json
+    FROM access_cleanup_evidence
+    WHERE record_kind = ? AND record_id = ?
+      AND authorization_expires_at > ?
+  `, [kind, recordId, transaction.timestamp()]);
+  if (evidence === undefined) return false;
+  if (viewer.role === "superadmin") {
+    return transaction.get<{ id: string }>(`
+      SELECT id FROM users
+      WHERE id = ? AND role = 'superadmin' AND status = 'active'
+    `, [viewer.userId]) !== undefined;
+  }
+  if (kind !== "oauth_grant" || viewer.role !== "admin") return false;
+  const actorAndOwner = transaction.get<{ valid: number }>(`
+    SELECT 1 AS valid
+    FROM users actor
+    JOIN users user ON user.id = ?
+    WHERE actor.id = ? AND actor.role = 'admin' AND actor.status = 'active'
+      AND user.role = 'user' AND user.status = 'active'
+  `, [evidence.owner_user_id, viewer.userId]);
+  if (actorAndOwner === undefined) return false;
+  const recordedServices = stringArray(evidence.service_ids_json);
+  if (recordedServices.length < 1) return false;
+  const currentServices = currentServiceIds(transaction, evidence.owner_user_id);
+  if (JSON.stringify(recordedServices) !== JSON.stringify(currentServices)) {
+    return false;
+  }
+  const placeholders = recordedServices.map(() => "?").join(",");
+  const managed = transaction.get<{ count: number }>(`
+    SELECT count(*) AS count
+    FROM service_admins
+    WHERE user_id = ? AND service_id IN (${placeholders})
+  `, [viewer.userId, ...recordedServices])?.count ?? 0;
+  return managed === recordedServices.length;
 }
 
 function accessCursorContext(

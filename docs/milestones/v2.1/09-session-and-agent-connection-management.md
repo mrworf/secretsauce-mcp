@@ -115,16 +115,16 @@ independent of suspension/recovery work, so it can proceed in parallel.
 
 ## Acceptance criteria
 
-- [ ] Users can safely inspect and revoke one/all of their browser sessions and
+- [x] Users can safely inspect and revoke one/all of their browser sessions and
       agent connections.
-- [ ] Superadmin and regular-admin authority exactly matches the PRD matrix at
+- [x] Superadmin and regular-admin authority exactly matches the PRD matrix at
       list and mutation time.
-- [ ] The first newly authenticated request after commit rejects every revoked
+- [x] The first newly authenticated request after commit rejects every revoked
       capability, including atomic bulk scope.
-- [ ] Inactive, inaccessible, and physically deleted targets follow their exact
+- [x] Inactive, inaccessible, and physically deleted targets follow their exact
       non-disclosing/idempotency contracts.
-- [ ] UI/API metadata and immutable audit contain only approved bounded fields.
-- [ ] Required concurrency, browser, performance, build, full-suite, OpenAPI,
+- [x] UI/API metadata and immutable audit contain only approved bounded fields.
+- [x] Required concurrency, browser, performance, build, full-suite, OpenAPI,
       and privacy gates pass.
 
 ## Planning handoff

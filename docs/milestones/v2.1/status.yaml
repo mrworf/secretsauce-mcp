@@ -49,12 +49,12 @@ milestones:
   - id: "05"
     title: "Browser Enrollment And Initial Superadmin"
     file: "docs/milestones/v2.1/05-browser-enrollment.md"
-    status: "in_progress"
+    status: "completed"
     dependencies:
       - "03"
-    completed_at: null
-    commit_hash: null
-    notes: "Implementation plan approved; process-lifetime provisional authority is the selected representation."
+    completed_at: "2026-07-28T01:11:50-07:00"
+    commit_hash: "25dc775"
+    notes: "Implemented process-lifetime bootstrap authority, memory-only provisional enrollment, atomic complete-superadmin creation, and one neutral accessible browser ceremony shared with temporary credentials. See docs/audits/v2.1/milestone-05-acceptance.md."
   - id: "06"
     title: "Browser Login, Sessions, And Logout"
     file: "docs/milestones/v2.1/06-browser-login-sessions-and-logout.md"

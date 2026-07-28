@@ -60,7 +60,7 @@ login without creating a browser session.
 - Full suite: 164 files and 1,057 tests passed.
 - Generated control OpenAPI: current.
 - v2.1 readiness validator: 14 artifacts passed.
-- Release artifact scan: 639 closed-scope files passed.
+- Release artifact scan: 641 closed-scope files passed.
 
 The initial sandboxed release scan could not spawn `git` (`EPERM`); the required
 escalated rerun passed. Docker remains unavailable on this host and is retained

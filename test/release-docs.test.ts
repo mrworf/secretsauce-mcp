@@ -7,11 +7,14 @@ const RELEASE_DOCS = [
   "docs/operator-guide.md",
   "docs/management-api.md",
   "docs/client-compatibility.md",
+  "docs/access-management.md",
   "docs/release-matrix.md",
-  "docs/audits/v2/milestone-24-acceptance.md",
-  "docs/audits/v2/milestone-24-architecture-operations.md",
-  "docs/audits/v2/milestone-24-security-invariant.md",
-  "docs/audits/v2/milestone-24-ux-accessibility.md",
+  "docs/plans/v2.1/milestone-10-release-qualification-and-documentation.md",
+  "docs/audits/v2.1/milestone-10-automated-qualification.md",
+  ...Array.from(
+    { length: 10 },
+    (_, index) => `docs/audits/v2.1/milestone-${String(index).padStart(2, "0")}-acceptance.md`,
+  ),
 ];
 
 describe("release operations documentation", () => {
@@ -93,75 +96,39 @@ describe("release operations documentation", () => {
     expect(api).not.toMatch(/Cookie:\s+\S+/);
   });
 
-  it("keeps the final release reviews decision-complete without waived gates", () => {
-    const ux = readFileSync(
-      "docs/audits/v2/milestone-24-ux-accessibility.md",
-      "utf8",
-    );
-    for (const heading of [
-      "## Scope",
-      "## Commands And Evidence",
-      "## Limitations And Residual Risk",
-      "## Verdict",
-    ]) expect(ux).toContain(heading);
-
-    const security = readFileSync(
-      "docs/audits/v2/milestone-24-security-invariant.md",
-      "utf8",
-    );
-    for (const expected of [
-      "## Threat Model",
-      "## Findings Summary",
-      "CVSS v3.1",
-      "Accepted risk",
-      "No open Critical or High",
-    ]) expect(security).toContain(expected);
-
-    const architecture = readFileSync(
-      "docs/audits/v2/milestone-24-architecture-operations.md",
-      "utf8",
-    );
-    for (const heading of [
-      "## Scope",
-      "## Executive Summary",
-      "## What Is Good",
-      "## What Is Bad Or Risky",
-      "## What Should Change",
-      "## What I Would Not Change Yet",
-      "## Overall Opinion",
-    ]) expect(architecture).toContain(heading);
-
-    const acceptance = readFileSync(
-      "docs/audits/v2/milestone-24-acceptance.md",
-      "utf8",
-    );
-    expect(acceptance).toContain("Production container execution | pass");
-    expect(acceptance).toContain(
-      "Milestone 24 acceptance criteria are satisfied",
-    );
-    expect(acceptance).toContain("No gate was waived");
-    expect(acceptance).not.toContain("remains incomplete");
-  });
-
-  it("records every verified release gate and completed milestone status", () => {
+  it("records verified v2.1 gates without converting external evidence to pass", () => {
     const matrix = readFileSync("docs/release-matrix.md", "utf8");
     const pendingRows = matrix
       .split("\n")
       .filter((line) => line.startsWith("|") && line.includes("pending"));
-    expect(pendingRows).toEqual([]);
+    expect(pendingRows).toHaveLength(4);
+    expect(pendingRows).toEqual(expect.arrayContaining([
+      expect.stringContaining("Production dependency advisory threshold"),
+      expect.stringContaining("Official Compose clean setup and recreation"),
+      expect.stringContaining("Live Codex and ChatGPT deployment procedure"),
+      expect.stringContaining("Final security, architecture, UX"),
+    ]));
     expect(matrix).toContain(
-      "Image build, unprivileged start, health, MCP, restart",
+      "Official Compose clean setup and recreation",
     );
-    expect(matrix).toContain("rootless Docker 29.6.2/amd64");
-    expect(matrix).toContain("146 files / 973 tests passed");
-    expect(matrix).toContain("562 tracked, staged, built, generated");
+    expect(matrix).toContain("168 files / 1,087 tests passed");
+    expect(matrix).toContain("657 tracked, staged, built, generated");
+    expect(matrix).toContain("executable candidate `1768357`");
+    expect(matrix).toContain("No red or pending gate is waived");
+    expect(matrix).not.toContain("candidate `acf8b67`");
 
-    const status = readFileSync("docs/milestones/v2/status.yaml", "utf8");
+    const status = readFileSync("docs/milestones/v2.1/status.yaml", "utf8");
+    for (const id of Array.from({ length: 10 }, (_, index) =>
+      String(index).padStart(2, "0"))) {
+      expect(status, id).toMatch(
+        new RegExp(`id: "${id}"[\\s\\S]*?status: "completed"`),
+      );
+    }
     expect(status).toMatch(
-      /id: "24"[\s\S]*status: "completed"[\s\S]*commit_hash: "acf8b67"/,
+      /id: "10"[\s\S]*status: "in_progress"[\s\S]*commit_hash: null/,
     );
     expect(status).not.toMatch(
-      /id: "24"[\s\S]*status: "in_progress"/,
+      /id: "10"[\s\S]*status: "completed"/,
     );
   });
 });

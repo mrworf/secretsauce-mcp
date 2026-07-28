@@ -1,0 +1,39 @@
+server:
+  listen: 0.0.0.0:8080
+  mcp_path: /mcp
+  resource: https://mcp.example.org
+
+control:
+  listen: 0.0.0.0:8081
+  public_origin: https://control.example.org
+  idempotency_hmac_key_file: /var/lib/secretsauce/generated/application/control-idempotency-hmac.key
+
+persistence:
+  database_file: /var/lib/secretsauce/database/control.sqlite
+
+runtime:
+  authority: database
+
+identity:
+  active_root_key_id: identity-primary
+  root_key_files:
+    identity-primary: /var/lib/secretsauce/generated/application/identity-envelope-root.key
+  session_hmac_key_file: /var/lib/secretsauce/generated/application/identity-session-hmac.key
+
+auth:
+  mode: builtin_oauth
+  builtin_oauth:
+    identity_source: database
+    issuer: https://mcp.example.org
+    token_hmac_key_file: /var/lib/secretsauce/generated/application/oauth-token-hmac.key
+    allowed_clients:
+      - https://chatgpt.example.org
+      - https://codex.example.org
+
+client_source:
+  mode: direct
+
+audit:
+  file: /var/lib/secretsauce/audit/audit.jsonl
+
+services: {}

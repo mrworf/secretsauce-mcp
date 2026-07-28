@@ -34,10 +34,10 @@ describe("release container deployment", () => {
     expect(gateway.deploy.replicas).toBe(1);
     expect(gateway.ports).toEqual(["8080:8080", "8081:8081"]);
     expect(gateway.volumes).toEqual(expect.arrayContaining([
+      "./examples/config-v2.1.yaml:/config/config.yaml:ro",
       "secretsauce-database:/var/lib/secretsauce/database",
       "secretsauce-audit:/var/lib/secretsauce/audit",
       "secretsauce-oauth:/var/lib/secretsauce/oauth",
-      "./restore:/var/lib/secretsauce/restore",
       "vault-generated:/var/lib/secretsauce/generated:ro",
       "vault-setup-state:/var/lib/secretsauce/setup:ro",
     ]));
@@ -48,6 +48,12 @@ describe("release container deployment", () => {
     );
     expect(source).toContain("gref_/sec_ capability state is intentionally ephemeral");
     expect(gateway.volumes.join("\n")).not.toMatch(/gref|sec-token|capability-state/);
+    expect(gateway.environment).not.toHaveProperty("SECRETSAUCE_MCP_TOKEN");
+    expect(gateway.environment).not.toHaveProperty("SECRETSAUCE_RESTORE_DIRECTORY");
+    expect(gateway.environment).not.toHaveProperty(
+      "SECRETSAUCE_RESTORE_RECOVERY_KEY_FILE",
+    );
+    expect(source).toContain("Portable restore is opt-in");
   });
 
   it("smokes independent stateless MCP requests before and after restart", () => {

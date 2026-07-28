@@ -47,14 +47,12 @@ services:
       - "8080:8080"
       - "8081:8081"
     volumes:
-      - ./examples/config.yaml:/config/config.yaml:ro
+      # Browser-first v2.1 database identity/runtime configuration.
+      - ./examples/config-v2.1.yaml:/config/config.yaml:ro
       # Replace this mount source with a custom extend/replace rules file as needed.
       - ./config/secretlint.yaml:/config/secretlint.yaml:ro
       # Sensitive-name rules use the same immutable-default/custom-read-only pattern.
       - ./config/sensitive-names.yaml:/config/sensitive-names.yaml:ro
-      - ./secrets:/run/secrets:ro
-      # Stable read-only signing keys keep built-in OAuth access tokens valid after restart.
-      - ./oauth:/run/oauth:ro
       # Audit and hash-only OAuth refresh state need writable persistent storage.
       # Fresh named volumes inherit the image's private UID-1000 directories.
       - secretsauce-audit:/var/lib/secretsauce/audit
@@ -66,16 +64,14 @@ services:
       # Runtime and backup coordination receive separate least-privilege key pairs.
       - vault-generated:/var/lib/secretsauce/generated:ro
       - vault-setup-state:/var/lib/secretsauce/setup:ro
-      # Restore recovery uses a distinct stable wrapping key.
-      - ./restore-keys/recovery.key:/run/restore-keys/recovery.key:ro
       - vault-runtime:/run/secretsauce-vault:ro
-      # Staged archives and encrypted recovery artifacts require private durable storage.
-      - ./restore:/var/lib/secretsauce/restore
+      # Portable restore is opt-in. Add its private durable directory and
+      # distinct stable recovery-key mount together with both environment
+      # variables documented in docs/restore.md.
     environment:
       CONFIG_PATH: /config/config.yaml
       SECRETLINT_CONFIG_PATH: /config/secretlint.yaml
       SENSITIVE_NAMES_CONFIG_PATH: /config/sensitive-names.yaml
-      SECRETSAUCE_MCP_TOKEN: ${SECRETSAUCE_MCP_TOKEN:?set an ephemeral gateway token}
       SECRETSAUCE_VAULT_CREDENTIAL_SOCKET: /run/secretsauce-vault/credential.sock
       SECRETSAUCE_VAULT_STATUS_SOCKET: /run/secretsauce-vault/status.sock
       SECRETSAUCE_SETUP_STATUS_TIMEOUT_MS: "2000"
@@ -88,9 +84,6 @@ services:
       SECRETSAUCE_VAULT_RESOLVE_KEY_FILE: /var/lib/secretsauce/generated/shared/resolve-capability.key
       SECRETSAUCE_VAULT_BACKUP_KEY_FILE: /var/lib/secretsauce/generated/shared/backup.key
       SECRETSAUCE_VAULT_BACKUP_CAPABILITY_KEY_FILE: /var/lib/secretsauce/generated/shared/backup-capability.key
-      SECRETSAUCE_RESTORE_DIRECTORY: /var/lib/secretsauce/restore
-      SECRETSAUCE_RESTORE_RECOVERY_KEY_FILE: /run/restore-keys/recovery.key
-      PORTAINER_API_KEY_FILE: /run/secrets/portainer_api_key
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8081/api/v2/health/live"]
       interval: 30s

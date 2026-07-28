@@ -1,4 +1,4 @@
-# SecretSauce V2 operator guide
+# SecretSauce v2.1 operator guide
 
 This is the release operations index for the supported topology: one
 SecretSauce application process owning the gateway and control listeners plus
@@ -8,28 +8,42 @@ focused guides before the corresponding destructive or recovery operation.
 ## Install and bootstrap
 
 1. Build or pull the pinned image and copy
-   [`docker-compose.example.yaml`](../docker-compose.example.yaml).
-2. Prepare private, explicitly owned directories for SQLite, vault storage,
-   audit, OAuth state, and restore recovery. Provision stable signing, HMAC,
-   wrapping, vault root, and caller keys as described in the
-   [configuration reference](config-reference.md).
+   [`docker-compose.example.yaml`](../docker-compose.example.yaml),
+   [`examples/config-v2.1.yaml`](../examples/config-v2.1.yaml), and
+   [`examples/vault.yaml`](../examples/vault.yaml) without changing their
+   container target paths.
+2. Review the public MCP/OAuth and control origins, allowed client-metadata
+   origins, source-trust mode, and storage ownership. The vault entrypoint
+   generates the fixed v2.1 key registry into the durable generated-key
+   volume; do not run a key-initialization CLI or inject those key values
+   through environment variables.
 3. Keep the backend listeners private. Use the separate
    [MCP/OAuth proxy](../examples/proxy-mcp-oauth.haproxy.cfg) and
    [control proxy](../examples/proxy-control.haproxy.cfg) examples when the
    surfaces use separate public origins.
-4. Start the vault, then `npm start` (or the image default command). The one
-   application process starts the configured control listener before the
-   gateway listener and shares one persistence owner between them. Require
-   sanitized readiness before exposing either public origin. `npm run
-   start:gateway` and `npm run start:control` are diagnostic single-surface
-   entrypoints, not a supported concurrent database-mode topology.
-5. Complete [local bootstrap and enrollment](local-authentication.md). A
-   pending or recovery identity is not MCP-eligible.
+4. Run `docker compose -f docker-compose.example.yaml up --build`. Both
+   services start concurrently. Before provisioning and validation complete,
+   only bounded setup/liveness surfaces are available; the vault remains
+   networkless. Require sanitized readiness before exposing either public
+   origin. `npm run start:gateway` and `npm run start:control` are diagnostic
+   single-surface entrypoints, not a supported concurrent database topology.
+5. Read the clearly labeled initial enrollment secret from the current
+   application container log, protect it as temporary root enrollment
+   authority, open **Enroll account** in the browser, and complete
+   [local bootstrap and enrollment](local-authentication.md). Log retention and
+   forwarding can retain that accepted bootstrap value, so restrict access and
+   retention. A restart invalidates unused process-lifetime enrollment
+   authority and emits a replacement only while the database has zero users.
 6. Configure services, groups, credential definitions, policies, and
    publication through the focused
    [service](service-management.md), [group](group-assignments.md),
    [credential](credential-management.md), and
    [policy](policy-management.md) guides.
+
+Portable restore is intentionally not enabled by the clean Compose example.
+Enable it only by adding the private durable restore directory, a distinct
+stable recovery-key file, and both variables specified in
+[Portable restore](restore.md). Adding only one input fails startup.
 
 ## Public URL contract
 

@@ -73,7 +73,7 @@ describe("vault deployment boundary", () => {
     expect(serialized).not.toContain("root-primary.key");
     expect(serialized).not.toContain("/var/lib/secretsauce/vault");
     expect(serialized).not.toContain("./vault-keys");
-    expect(data.environment.SECRETSAUCE_MCP_TOKEN).not.toContain("change-me");
+    expect(data.environment).not.toHaveProperty("SECRETSAUCE_MCP_TOKEN");
     expect(data.depends_on).toBeUndefined();
     expect(data.healthcheck.test).toEqual([
       "CMD",

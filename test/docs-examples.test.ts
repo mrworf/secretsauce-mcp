@@ -1,4 +1,11 @@
-import { mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parse } from "yaml";
@@ -21,11 +28,43 @@ describe("documentation examples", () => {
     expect(config.services["portainer-prod"]?.credentials[0]?.secret).toBe("example-secret");
   });
 
+  it("loads the browser-first v2.1 Compose config and rejects an incomplete identity boundary", () => {
+    const dir = mkdtempSync(join(tmpdir(), "gateway-v21-docs-"));
+    const key = (name: string, byte: number): string => {
+      const path = join(dir, name);
+      writeFileSync(path, Buffer.alloc(32, byte).toString("base64url"), {
+        mode: 0o400,
+      });
+      return path;
+    };
+    const raw = parse(readFileSync("examples/config-v2.1.yaml", "utf8")) as any;
+    raw.control.idempotency_hmac_key_file = key("idempotency.key", 1);
+    raw.identity.root_key_files["identity-primary"] = key("identity.key", 2);
+    raw.identity.session_hmac_key_file = key("session.key", 3);
+    raw.auth.builtin_oauth.token_hmac_key_file = key("oauth.key", 4);
+    raw.persistence.database_file = join(dir, "control.sqlite");
+
+    const config = validateConfig(raw, {});
+    expect(config.runtime.authority).toBe("database");
+    expect(config.auth.mode).toBe("builtin_oauth");
+    if (config.auth.mode === "builtin_oauth") {
+      expect(config.auth.builtinOAuth.identitySource).toBe("database");
+    }
+    expect(config.services).toEqual({});
+
+    const incomplete = structuredClone(raw);
+    delete incomplete.identity;
+    expect(() => validateConfig(incomplete, {})).toThrow(
+      "database auth.builtin_oauth requires persistence, identity, and runtime.authority database",
+    );
+  });
+
   it("does not include example raw downstream credentials in docs", () => {
     const files = [
       "README.md",
       "docker-compose.example.yaml",
       "examples/config.yaml",
+      "examples/config-v2.1.yaml",
       "docs/config-reference.md",
       "docs/codex-setup.md",
       "docs/security-notes.md",
@@ -163,11 +202,15 @@ describe("documentation examples", () => {
   it("documents fail-closed portable restore deployment and recovery", () => {
     const readme = readFileSync("README.md", "utf8");
     const compose = readFileSync("docker-compose.example.yaml", "utf8");
+    const operator = readFileSync("docs/operator-guide.md", "utf8");
     const reference = readFileSync("docs/config-reference.md", "utf8");
     const restore = readFileSync("docs/restore.md", "utf8");
     expect(readme).toContain("[Portable Restore](docs/restore.md)");
-    expect(compose).toContain("SECRETSAUCE_RESTORE_DIRECTORY: /var/lib/secretsauce/restore");
-    expect(compose).toContain("SECRETSAUCE_RESTORE_RECOVERY_KEY_FILE: /run/restore-keys/recovery.key");
+    expect(compose).toContain("Portable restore is opt-in");
+    expect(compose).not.toContain("SECRETSAUCE_RESTORE_DIRECTORY:");
+    expect(compose).not.toContain("SECRETSAUCE_RESTORE_RECOVERY_KEY_FILE:");
+    expect(operator).toMatch(/distinct\s+stable recovery-key file/);
+    expect(operator).toContain("Adding only one input fails startup");
     expect(reference).toContain("both deployment variables");
     expect(reference).toContain("stops startup instead of guessing");
     expect(restore).toMatch(/API keys cannot upload, inspect,\s+preview, or commit/);

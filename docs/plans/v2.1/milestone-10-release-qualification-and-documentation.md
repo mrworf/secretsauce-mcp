@@ -70,6 +70,6 @@ lack safe containment. Missing runtime or human evidence is pending, not pass.
 
 | Slice | Status | Commit | Evidence | Deviations |
 | --- | --- | --- | --- | --- |
-| 1 | in progress | — | M09 baseline: build; 168 files/1,087 tests; current OpenAPI; 14 readiness artifacts; 653-file release scan | v2.1-specific release documents and focused integrated gates remain. |
+| 1 | completed | this commit | 22-file/120-test focused integration suite; 4-file/28-test Compose/docs suite; build; 168 files/1,087 tests; current OpenAPI; 14 readiness artifacts; 657-file release scan; official config positive/negative validation | Production advisory lookup remains pending because registry disclosure was not authorized. Official Compose config was remediated after the legacy bearer/YAML example was found mounted. |
 | 2 | pending | — | Host audit: Node 26.4.0, x86_64; no Docker, Podman, or nerdctl available | Must execute on a Docker-capable environment; prior v2 image evidence is not reusable. |
 | 3 | pending | — | Synthetic named-client fixtures exist; prior v2 review templates exist | Hosted-client and independent/human approval evidence is external and cannot be agent-inferred. |

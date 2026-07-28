@@ -52,7 +52,7 @@ For every downstream request, the gateway validates the authenticated client, re
 
 ## Documentation
 
-- [V2 operator guide and release operations index](docs/operator-guide.md)
+- [v2.1 operator guide and release operations index](docs/operator-guide.md)
 - [Management API usage](docs/management-api.md)
 - [Codex and ChatGPT compatibility verification](docs/client-compatibility.md)
 - [Configuration reference](docs/config-reference.md)
@@ -189,19 +189,15 @@ services:
       - "8080:8080"
       - "8081:8081"
     volumes:
-      - ./config.yaml:/config/config.yaml:ro
+      - ./config-v2.1.yaml:/config/config.yaml:ro
       - ./secretlint.yaml:/config/secretlint.yaml:ro
       - ./sensitive-names.yaml:/config/sensitive-names.yaml:ro
-      - ./secrets:/run/secrets:ro
-      - ./oauth:/run/oauth:ro
       - secretsauce-audit:/var/lib/secretsauce/audit
       - secretsauce-database:/var/lib/secretsauce/database
       - secretsauce-oauth:/var/lib/secretsauce/oauth
       - vault-generated:/var/lib/secretsauce/generated:ro
       - vault-setup-state:/var/lib/secretsauce/setup:ro
-      - ./restore-keys/recovery.key:/run/restore-keys/recovery.key:ro
       - vault-runtime:/run/secretsauce-vault:ro
-      - ./restore:/var/lib/secretsauce/restore
     environment:
       CONFIG_PATH: /config/config.yaml
       SECRETLINT_CONFIG_PATH: /config/secretlint.yaml
@@ -218,8 +214,6 @@ services:
       SECRETSAUCE_VAULT_RESOLVE_KEY_FILE: /var/lib/secretsauce/generated/shared/resolve-capability.key
       SECRETSAUCE_VAULT_BACKUP_KEY_FILE: /var/lib/secretsauce/generated/shared/backup.key
       SECRETSAUCE_VAULT_BACKUP_CAPABILITY_KEY_FILE: /var/lib/secretsauce/generated/shared/backup-capability.key
-      SECRETSAUCE_RESTORE_DIRECTORY: /var/lib/secretsauce/restore
-      SECRETSAUCE_RESTORE_RECOVERY_KEY_FILE: /run/restore-keys/recovery.key
 
 volumes:
   vault-generated:
@@ -281,11 +275,13 @@ write-only credential management and cannot resolve or export values. See
 [Portable Backup Export](docs/backup-export.md) for archive contents,
 permanent exclusions, system-key automation, and operator custody.
 
-Portable restore additionally requires the complete restore directory/recovery
-key pair shown above, a durable SQLite database, and the complete backup-only
-vault pair. The restore directory must be a private mode-`0700` directory owned
-by the gateway process; the recovery key is a stable canonical 32-byte
-base64url file with mode `0400`. Keep both mounts stable across restart. A
+Portable restore is intentionally opt-in. It additionally requires a complete
+restore directory/recovery-key pair, a durable SQLite database, and the
+complete backup-only vault pair. Add the private directory and distinct stable
+key mounts together with both documented environment variables; supplying only
+one input stops startup. The restore directory must be a private mode-`0700`
+directory owned by the gateway process; the recovery key is a stable canonical
+32-byte base64url file with mode `0400`. Keep both mounts stable across restart. A
 successful restore signs out every browser session, revokes all API and OAuth
 access, and leaves restored services in draft with explicit remediation work.
 See [Portable Restore](docs/restore.md) before enabling or operating it.

@@ -145,7 +145,9 @@ is the sole boot-unbound credential request; its authenticated response binds th
 request UUID and returns the current boot identifier. Restarting only the vault
 invalidates all prior outstanding requests, nonces, capabilities, and in-memory
 transfers. Durable journaled work may resume only after a new handshake and
-fresh authorization.
+fresh authorization. This rule covers credential-API work; the pre-listener
+root-maintenance journal is a separate host-authorized setup transition governed
+by the provisioning contract.
 
 This preserves the existing caller separation:
 
@@ -154,7 +156,14 @@ This preserves the existing caller separation:
 | Data plane | Operation-bound, one-use credential resolution only |
 | Control plane | Credential create/replace/delete and non-secret metadata |
 | Backup coordinator | Explicitly authorized bounded export/import/snapshot operations |
-| Local key administration | Host-authorized lifecycle operations only |
+
+Host-authorized identity/vault envelope-root rotation is deliberately not an API
+caller capability. It occurs only when the vault service is restarted with the
+non-secret `--rotate-root-key identity` or `--rotate-root-key vault` argument
+plus a fresh canonical UUID in `--rotation-request-id`, before this credential
+listener exists. A durable setup-state journal may force continuation after
+interruption, but neither REST socket can create, select, cancel, or advance a
+rotation.
 
 A compromised caller retains the risk inherent in its permitted operations.
 Neither Unix sockets nor a future private network changes that. The server-side
@@ -236,6 +245,10 @@ all clients must use runtime validation and cross-implementation contract tests.
 Risky: calling the interface “private” may tempt implementers to rely only on
 socket permissions. Runtime caller authentication and operation authorization
 remain mandatory.
+
+Good: keeping envelope-root rotation outside the caller table prevents a
+compromised authorized service from converting ordinary socket reachability
+into key-lifecycle authority.
 
 Risky: caller authentication alone proves requests in only one direction.
 Endpoint ownership, a read-only client mount, and response authentication are

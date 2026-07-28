@@ -6,8 +6,8 @@
 
 - Product: SecretSauce (MCP)
 - Version: 2.1
-- Status: Product contract under final repair; not ready for milestone breakdown
-  or implementation
+- Status: Product contract ready for milestone breakdown; implementation
+  readiness still requires the downstream artifacts and validation in section 28
 - Date: 2026-07-24
 - Last reviewed: 2026-07-27
 - Intended audience: Product, security, architecture, UX, implementation,
@@ -64,6 +64,8 @@ The following existing behavior remains authoritative:
 - Administrative security mutations require the existing role authorization,
   step-up, confirmation, justification, and audit controls applicable to the
   operation.
+- Host-authorized identity and vault envelope-root rotation remains available
+  only as the explicit setup-only maintenance startup defined by this document.
 
 ### 3.2 Behavior changed
 
@@ -71,6 +73,8 @@ Version 2.1 changes:
 
 - Fresh key provisioning from operator-run commands to automatic startup
   provisioning for SecretSauce-owned application keys.
+- Fresh installations provision the fixed v2.1 superset of SecretSauce-owned
+  application key identities, independent of enabled features.
 - Initial superadmin creation from CLI bootstrap to an atomic browser
   enrollment authorized by an in-memory secret printed once per process start.
 - The web control plane from an assumed authenticated shell to a complete local
@@ -142,6 +146,8 @@ compatibility guarantee.
   commit.
 - Recreating containers in the official Compose deployment preserves generated
   keys, database state, vault state, and durable audit state.
+- Enabling or disabling a v2.1 feature does not add, remove, regenerate, or
+  retire a manifest key identity.
 - Public login and enrollment tests cannot distinguish nonexistent, suspended,
   deactivated, incomplete, or credential-invalid accounts from response content.
 
@@ -176,7 +182,8 @@ Version 2.1 does not provide:
 | OIDC provider | Owns external authentication, MFA assurance, and failed-attempt handling for linked external identities. |
 | Reverse proxy | Optionally supplies client-source information under the host-local source-resolution policy. It is trusted only as configured; `always` mode deliberately treats forwarding information from every immediate peer as authoritative. |
 | Host-local break-glass operator | Has direct host authority to reset and reactivate a superadmin through the restricted enrollment flow. |
-| Vault provisioning entrypoint | Sole setup coordinator, manifest writer, and generator for every SecretSauce-owned application key. It invokes closed key-type adapters, inspects retained state, and never accepts a remote provisioning trigger. |
+| Host-local key-maintenance operator | Has infrastructure-administrator authority to restart the vault with `--rotate-root-key identity` or `--rotate-root-key vault` plus a fresh non-secret `--rotation-request-id <UUID>`. No browser, REST, control, OAuth, or MCP caller receives this authority. |
+| Vault provisioning entrypoint | Sole setup coordinator, manifest writer, and generator for every SecretSauce-owned application key. It also owns the explicit setup-only envelope-root rotation transition, invokes closed key-type and store adapters, inspects retained state, and never accepts a remote provisioning or rotation trigger. |
 | SecretSauce runtime service | Starts concurrently in setup-only mode, consumes only its assigned keys after provisioning, validates them before use, and projects bounded vault status to browser, OAuth, and MCP clients. It never generates or replaces application keys. Its private vault socket volume is read-only, so it may connect but cannot bind, unlink, rename, or replace a vault endpoint. |
 
 Trust boundaries include:
@@ -187,6 +194,8 @@ Trust boundaries include:
 - Control plane to identity, persistence, OAuth, and vault services.
 - Privileged vault provisioning entrypoint to generated-key directories,
   retained-state inventories, and the durable setup-state volume.
+- Explicit root-key maintenance entrypoint to the selected versioned root-key
+  location and exclusive, bounded write access to the affected encrypted store.
 - Runtime application to the vault's private read-only provisioning-status
   REST socket and authenticated credential REST socket.
 - Compose-managed durable storage to replaceable containers.
@@ -203,8 +212,14 @@ An installation has:
 - Manifest entries for the required key identities, consuming components,
   vault-owned provisioning adapters, formats/versions, `pending` or `verified`
   status, and verified key fingerprints.
+- A fixed, release-versioned registry containing every SecretSauce-owned
+  application key identity supported by v2.1, whether or not its consuming
+  feature is enabled.
 - A configured commitment containing the canonical aggregate digest of every
   required verified manifest entry.
+- At most one durable non-secret root-rotation journal and non-secret
+  completed-request receipts keyed by canonical request UUID and retained for
+  the installation lifetime.
 - A retained key-bound state inventory covering application database,
   identity/authenticator, OAuth grant/token, vault ciphertext/store identity,
   durable audit-lineage, installation-marker, and any other persisted state
@@ -220,11 +235,32 @@ values, tokens, or reversible secret material. A retained-state inventory
 reports only whether recognized key-bound state is definitively absent/empty,
 present, or indeterminate; it must not expose protected record contents.
 
+The exact v2.1 logical key registry is:
+
+| Logical identity | Purpose |
+| --- | --- |
+| `identity.envelope-root` | Wrap identity/TOTP data-encryption keys; may have versioned physical instances during explicit identity-root rotation |
+| `identity.session-hmac` | Hash browser, enrollment, and restricted-session bearer values in their domain-separated uses |
+| `control.idempotency-hmac` | Protect control-plane idempotency identities |
+| `oauth.signing` | Sign built-in OAuth tokens or assertions |
+| `oauth.token-hmac` | Hash built-in OAuth authorization, access, and refresh bearer values in their domain-separated uses |
+| `vault.envelope-root` | Wrap vault record data-encryption keys; may have versioned physical instances during explicit vault-root rotation |
+| `vault.caller.data-plane` | Authenticate data-plane vault requests and responses |
+| `vault.caller.control-plane` | Authenticate control-plane vault requests and responses |
+| `vault.caller.backup` | Authenticate backup-coordinator vault requests and responses |
+| `vault.capability.resolve` | Authenticate one-use credential-resolution capabilities |
+| `vault.capability.backup` | Authenticate one-use backup/restore capabilities |
+
+These are logical identities, not prescribed file paths. A versioned root
+transition does not add a logical identity. Adding any other automatically
+generated identity requires an explicit amendment to this product contract or a
+reviewed later-version migration.
+
 ### 8.2 Internal setup states
 
 | State | Meaning | Permitted public surface | Exit |
 | --- | --- | --- | --- |
-| `provisioning` | Fresh-start preflight is running, or a valid provisioning manifest exists and required application keys are being generated or validated. A blocked/error substate may retry. | Liveness, readiness, sanitized setup status | Preflight rejects to `configuration_error`, or all keys validate and the manifest atomically commits to `configured` |
+| `provisioning` | Fresh-start preflight is running, a valid provisioning manifest exists and required application keys are being generated or validated, or an explicitly requested envelope-root maintenance transition is validating, rotating, rewrapping, or committing. A blocked/error substate may retry. | Liveness, readiness, sanitized setup status | Preflight rejects to `configuration_error`, or all keys/affected records validate and the manifest atomically commits to `configured` |
 | `enrollment_required` | A valid configured manifest exists, but no user exists. | Health, login, unified enrollment, safe static assets | Initial superadmin commits |
 | `operational` | Required keys validate and at least one user exists. | Normal role-authorized product behavior | Fatal key/configuration failure or process stop |
 | `configuration_error` | Manifest/key/retained-state continuity is ambiguous, missing, malformed, or mismatched under the startup matrix in section 18.2. | Vault status-only REST socket, application liveness/readiness, sanitized setup status; no credential API or ordinary serving | Operator restores the matching state, key, and manifest set or completes an explicitly authorized adoption and restarts |
@@ -406,9 +442,11 @@ Repeating a revocation is an audited no-change success.
    readiness, sanitized setup status, and safe static assets; it does not open
    the database writer, load application keys, or enable ordinary web, control,
    OAuth, or MCP behavior.
-2. The vault provisioning entrypoint reads enabled services and configured key
-   locations, determines the complete required SecretSauce-owned key set, and
-   loads the closed provisioning and retained-state adapters for those keys.
+2. The vault provisioning entrypoint reads the fixed v2.1 key registry and
+   configured key locations, determines the complete release-versioned superset
+   of SecretSauce-owned key identities, and loads the closed provisioning and
+   retained-state adapters for those keys. Enabled features do not change this
+   set.
 3. Before any write, the entrypoint evaluates the manifest, key inventory,
    retained key-bound state inventory, and explicit-adoption matrix in section
    18.2.
@@ -502,6 +540,39 @@ Superadmins also have a global **Sessions and connections** administration
 workspace. Authorized session/connection information also appears in user detail
 according to the permission matrix.
 
+### 11.6 Explicit envelope-root rotation
+
+1. An infrastructure administrator restarts the vault with
+   `--rotate-root-key identity` or `--rotate-root-key vault` plus a fresh
+   non-secret canonical UUID in `--rotation-request-id`.
+2. The vault and application remain in setup-only `provisioning`; the
+   authenticated credential REST socket, database writer, and ordinary
+   interfaces stay closed.
+3. Before mutation, the vault validates the configured manifest, every key and
+   aggregate commitment, retained-state compatibility, the selected active root
+   version, and exclusive maintenance authority.
+4. The vault durably records a rotation journal bound to the request UUID,
+   installation, target, starting aggregate, and old/new physical versions,
+   then atomically creates a new versioned root key without replacing the active
+   root key.
+5. The selected closed store adapter activates the new root for new writes and
+   resumably rewraps affected data-encryption keys. Conditional mutations must
+   change a record only when its current root reference is the expected old
+   version; the contract does not require SQL.
+6. The adapter verifies that no affected record still references the old root.
+   Only then may the vault atomically update the manifest fingerprint, active
+   version, aggregate commitment, and completed-request receipt and retire the
+   old root from application use.
+7. After successful commit, the entrypoint removes maintenance write authority,
+   drops to the runtime identity, opens the credential REST socket, reports
+   `ready`, and permits ordinary application initialization.
+8. After interruption, the next vault start must detect and validate the durable
+   journal and resume or finish the same transition before ordinary startup,
+   even when the rotation arguments are absent. It must never interpret an
+   incomplete rotation as fresh provisioning or configured-key corruption.
+9. A later start with the same completed request UUID returns an operator-visible
+   idempotent no-change result and must not perform a second rotation.
+
 ## 12. Negative and failure behavior
 
 ### 12.1 Provisioning failures
@@ -515,6 +586,12 @@ according to the permission matrix.
 - A missing or mismatched `verified` key and any missing or invalid key under a
   configured manifest are fatal. The service must not regenerate the key, clear
   the manifest, or expose a recovery UI.
+- An absent, unsupported, malformed, or concurrent root-rotation request must
+  not rotate a key. A missing old or staged key, corrupt journal, failed
+  conditional rewrap, nonzero old-root inventory, or manifest mismatch enters
+  status-only `configuration_error`; the old root remains available until a
+  verified commit, no ordinary interface opens, and diagnostics remain
+  secret-free.
 
 ### 12.2 Enrollment failures
 
@@ -566,25 +643,26 @@ limited without rolling back enrollment.
 ### 13.1 Setup and key provisioning
 
 - `SETUP-001` On startup, SecretSauce must determine the complete
-  SecretSauce-owned application key set required by every enabled service in the
-  vault provisioning entrypoint before permitting ordinary product use.
+  release-versioned superset of SecretSauce-owned application key identities
+  supported by v2.1 in the vault provisioning entrypoint before permitting
+  ordinary product use. Enabled services and features must not change this set.
 - `SETUP-002` When fresh provisioning is permitted, every missing
   SecretSauce-owned key must be created atomically and without replacement by
   exactly one closed vault-owned key-type adapter. Provisioning retries must
   validate and reuse successfully created keys, generate only remaining missing
   keys, and converge idempotently. Setup must not advance until every required
   key validates.
-- `SETUP-003` Automatically generated keys must include, when required by enabled
-  features, identity/TOTP encryption keys, browser-session hashing keys, OAuth
-  signing and token-hashing keys, vault root and authenticated-caller keys, and
-  other SecretSauce-owned integrity keys.
+- `SETUP-003` Automatically generated keys must include every logical identity
+  in the exact v2.1 registry in section 8.1, even when its consuming feature is
+  disabled; no other logical identity is eligible for automatic generation
+  without an explicit PRD amendment.
 - `SETUP-004` SecretSauce must not automatically generate TLS material, external
   OIDC client secrets, database credentials, downstream service credentials,
   backup passphrases, or other externally owned secrets.
 - `SETUP-005` The manifest must advance atomically from `provisioning` to
-  `configured` only after every enabled vault provisioning adapter validates its
-  complete required key set and the entrypoint records the canonical aggregate
-  digest of every required verified entry.
+  `configured` only after every registered v2.1 vault provisioning adapter
+  validates its complete key set and the entrypoint records the canonical
+  aggregate digest of every required verified entry.
 - `SETUP-006` A fresh key-generation failure for a `pending` entry must leave the
   manifest in `provisioning`, keep liveness healthy, block all ordinary
   interfaces, expose sanitized status, log secret-free diagnostics, and retry
@@ -614,7 +692,9 @@ limited without rolling back enrollment.
   receive only the access required to use or validate their assigned keys and
   must never generate or replace them. Two running components must never race to
   generate the same key, and automatic provisioning must never replace an
-  existing key file.
+  existing key file. The explicit versioned envelope-root rotation in
+  `SETUP-027` and `SETUP-028` is the only configured-state key-generation
+  transition in v2.1.
 - `SETUP-014` The official Compose deployment must start the vault provisioning
   entrypoint and application concurrently. The application must operate in
   setup-only mode until private vault status is `ready` and its assigned keys
@@ -662,11 +742,11 @@ limited without rolling back enrollment.
   requires restoring the matching state/key/manifest set and must never trigger
   replacement-key generation.
 - `SETUP-021` The installation identifier, progressive manifest, per-entry
-  fingerprints, sanitized provisioning status, and configured aggregate
-  commitment must reside in a dedicated durable setup-state volume. The vault
-  provisioning entrypoint is its sole writer. Runtime consumers may receive
-  read-only access only to the non-secret configured manifest fields they need
-  for key validation.
+  fingerprints, sanitized provisioning status, configured aggregate commitment,
+  root-rotation journal, and completed-request receipts must reside in a
+  dedicated durable setup-state volume. The vault provisioning entrypoint is its
+  sole writer. Runtime consumers may receive read-only access only to the
+  non-secret configured manifest fields they need for key validation.
 - `SETUP-022` The vault must expose provisioning status on a dedicated private
   HTTP/1.1 REST endpoint over a Unix-domain socket separate from the
   authenticated credential REST socket. Before caller keys exist,
@@ -679,22 +759,60 @@ limited without rolling back enrollment.
   mount and must have no bind, unlink, rename, or replacement authority.
 - `SETUP-023` The vault provisioning entrypoint may retain write access to
   generated-key directories only while provisioning or retrying a fresh
-  `pending` key. Before opening the credential REST socket after configured
-  completion, it must irreversibly drop setup-only privileges and access to
-  application-only key directories. On fatal `configuration_error`, it must
-  relinquish setup write authority before remaining available in status-only
-  mode.
-- `SETUP-024` The runtime vault identity must retain only its vault root and
-  authenticated-caller verification keys. Each application runtime component
-  must receive its assigned generated keys read-only and must independently
-  validate their format and configured-manifest fingerprints before enabling
-  key-dependent behavior.
+  `pending` key, or while executing the explicitly requested and journaled
+  envelope-root transition in `SETUP-027` and `SETUP-028`. Before opening the
+  credential REST socket after configured completion, it must irreversibly drop
+  setup-only and maintenance privileges and access to application-only key
+  directories. On fatal `configuration_error`, it must relinquish setup and
+  maintenance write authority before remaining available in status-only mode.
+- `SETUP-024` The runtime vault identity must retain only its vault root,
+  authenticated-caller verification keys, and capability-verification keys.
+  Each application runtime component must receive its assigned generated keys
+  read-only and must independently validate their format and
+  configured-manifest fingerprints before enabling key-dependent behavior.
 - `SETUP-025` The official Compose vault service must have no network
   attachment during provisioning, status-only error, or runtime credential API
   phases.
   Its provisioning-status and credential REST APIs must use only their separate
   filesystem-restricted Unix-domain sockets. Merely omitting published ports is
   insufficient.
+- `SETUP-026` The configured manifest must contain the fixed, release-versioned
+  superset of every SecretSauce-owned application key identity supported by
+  v2.1. Enabling or disabling a feature must not add, remove, generate,
+  regenerate, retire, or change any manifest key identity or fingerprint.
+  Disabled-feature keys remain securely stored and validated but must not be
+  loaded by a component unless the feature and that component's assignment
+  require them. A later release that adds an identity requires an explicitly
+  reviewed upgrade/migration and must not be inferred as fresh provisioning on
+  a configured v2.1 installation.
+- `SETUP-027` Version 2.1 must support configured identity and vault
+  envelope-root rotation only by restarting the vault with exactly
+  `--rotate-root-key identity` or `--rotate-root-key vault` and a fresh
+  canonical UUID supplied as `--rotation-request-id`. Both values are non-secret
+  and host-local; browser, REST, control API, OAuth, MCP, database configuration,
+  and remote CLI inputs must not initiate or select rotation. The vault and
+  application must remain setup-only, and the credential REST socket and
+  ordinary interfaces must remain absent, until the transition completes and
+  maintenance privileges are dropped.
+- `SETUP-028` Before root rotation writes, the vault entrypoint must validate
+  the configured manifest, complete key set, aggregate, retained-state
+  compatibility, selected active root, and exclusive maintenance authority,
+  then durably create a single-operation journal bound to the request UUID,
+  installation, target, starting aggregate, and old/new physical versions. It
+  must atomically create a new versioned root without replacing the old root,
+  activate it for new writes, resumably rewrap affected data-encryption keys
+  through the selected closed store adapter using expected-old-version
+  conditional mutations, prove zero remaining old-root references, and
+  atomically commit the new fingerprint, active version, aggregate, and durable
+  completed-request receipt before retiring the old root from application use.
+  The old root must remain available until that commit. Startup must resume a
+  valid incomplete journal before ordinary operation even without the
+  arguments. Reuse of a completed request UUID must be an idempotent no-change
+  result and must never rotate again; a conflicting target for an existing UUID
+  must fail closed. Malformed/concurrent requests, invalid state, missing keys,
+  journal corruption, failed rewrap, nonzero old-root inventory, or commit
+  failure must fail closed without exposing ordinary interfaces or treating the
+  transition as fresh provisioning.
 
 ### 13.2 Bootstrap and enrollment
 
@@ -1318,6 +1436,17 @@ attachment in any phase. During setup it has:
   with the application; and
 - no remotely invokable provisioning operation.
 
+For explicit configured-state root maintenance, the same service is restarted
+with `--rotate-root-key identity` or `--rotate-root-key vault` and a fresh
+canonical UUID in `--rotation-request-id`. It remains in setup-only mode, keeps
+both ordinary application initialization and the credential listener closed,
+and grants one vault entrypoint exclusive, operation-scoped write access to the
+selected versioned root location and affected encrypted store. The durable
+rotation journal is the sole authority to resume an interrupted transition, and
+the completed-request receipt prevents a restart with the same request UUID
+from rotating again. This is not an additional service, general key-management
+CLI, or REST operation.
+
 The application container starts concurrently with read-only key and manifest
 mounts. It exposes setup-only health/status surfaces until the vault reports
 `ready` and application initialization completes. The authenticated credential
@@ -1347,7 +1476,8 @@ volume configuration.
 The official deployment and release tests, rather than an unsafe runtime
 heuristic, establish supported persistence behavior.
 
-Startup applies this authoritative matrix before key generation:
+Automatic startup without a root-rotation argument applies this authoritative
+matrix before key generation:
 
 | Manifest | Required keys | Retained key-bound state | `setup.adopt_existing_keys` | Required behavior |
 | --- | --- | --- | --- | --- |
@@ -1369,6 +1499,10 @@ does not authorize automatic key replacement. An unavailable or indeterminate
 inventory fails closed. Complete pre-manifest key adoption is the sole exception
 and requires the explicit host-local setting plus successful compatibility
 validation by every registered vault provisioning adapter.
+
+Configured identity/vault envelope-root rotation is a separate explicit
+maintenance transition governed by `SETUP-027` and `SETUP-028`; it never changes
+the fixed v2.1 logical key-identity set and does not weaken any row above.
 
 ### 18.3 Observability
 
@@ -1420,8 +1554,8 @@ this document.
 
 ### 21.1 Setup
 
-1. A clean official Compose start automatically creates every configured missing
-   SecretSauce-owned key with restrictive permissions.
+1. A clean official Compose start automatically creates every missing identity
+   in the exact v2.1 logical key registry with restrictive permissions.
 2. TLS, OIDC client, database, downstream, and backup secrets are never invented.
 3. Login, control API, OAuth, and MCP requests fail uniformly before key setup
    permits them.
@@ -1485,6 +1619,32 @@ this document.
 24. The official Compose vault container has no network attachment in
     provisioning, status-only error, and runtime phases; both private interfaces
     remain usable through their separate Unix sockets.
+25. A fresh install with every optional feature disabled still generates,
+    validates, and manifests the complete fixed v2.1 key superset.
+26. Enabling or disabling any v2.1 feature after configuration leaves all key
+    files, logical manifest identities, fingerprints, and aggregate commitment
+    unchanged; only enabled consumers load their assigned existing keys.
+27. A configured v2.1 installation confronted with a future or unknown required
+    key identity fails as an unsupported upgrade without generating, adopting,
+    or amending a key.
+28. Restart with `--rotate-root-key identity` or `--rotate-root-key vault` and a
+    fresh canonical `--rotation-request-id` UUID validates all state before
+    writes, keeps the credential socket and ordinary interfaces absent, stages a
+    new versioned root, conditionally and resumably rewraps the affected store,
+    proves zero old-root references, atomically commits the manifest and
+    completed-request receipt, retires the old root, drops maintenance
+    authority, and only then becomes ready.
+29. Interruption after every root-rotation journal, key, activation, rewrap,
+    inventory, and manifest transition resumes the same operation on restart;
+    the old root remains available until verified commit and no mixed state
+    becomes operational.
+30. No rotation occurs without both exact host-local arguments or a valid
+    existing journal. Reusing a completed request UUID is an idempotent
+    no-change result. An unsupported target, malformed/reused UUID with a
+    conflicting target, remote attempt, concurrent request, configured-state
+    mismatch, missing old or staged key, corrupt journal, failed conditional
+    mutation, or nonzero old-root inventory fails closed in status-only
+    `configuration_error`.
 
 ### 21.2 Initial enrollment
 
@@ -1615,14 +1775,17 @@ this document.
    body-tampered responses before parsing or using their bodies.
 10. Restarting only the vault changes its boot identifier and invalidates every
     prior outstanding request, nonce, capability, and in-memory transfer.
-    Durable journaled work requires a new handshake and fresh authorization to
-    resume.
+    Credential-API durable journaled work requires a new handshake and fresh
+    authorization to resume. The separately host-authorized, pre-listener
+    root-maintenance journal follows `SETUP-028`.
 
 ## 22. Testing requirements
 
-- Unit tests for setup state transitions, required-key inventory, closed
+- Unit tests for setup state transitions, fixed release key registry,
+  required-key inventory, closed
   key-type and retained-store adapter registries, manifest entry transitions,
-  canonical adapter-computed fingerprints, aggregate commitment, private status
+  canonical adapter-computed fingerprints, aggregate commitment, rotation
+  journal transitions, expected-old-version mutation predicates, private status
   response bounds/mapping, validation, bootstrap
   generation/comparison/erasure boundaries, suspension counters, rolling-window
   behavior, and scope predicates.
@@ -1643,7 +1806,13 @@ this document.
   inventories, partial-restore combinations, blocked retry, restart secret
   rotation, configured missing-key status-only failure, setup privilege drop,
   credential-REST-socket absence before configured completion, and
-  multi-service runtime key readiness.
+  multi-service runtime key readiness. Cover every optional-feature combination
+  against the identical key set, unsupported future identities, both allowed
+  root-rotation targets, interruption at every rotation transition, journal-only
+  restart resume, repeated completed request UUIDs, conflicting UUID reuse,
+  invalid/concurrent/remote requests, missing old or staged roots, failed
+  conditional rewrap, nonzero old-root inventory, and atomic manifest/receipt
+  commit.
 - Compose tests for concurrent vault/application startup, setup-only application
   behavior without caller keys, private REST socket permissions, OpenAPI
   conformance, preparing, retry, ready, malformed/unavailable status, fatal
@@ -1697,6 +1866,12 @@ Operator documentation must cover:
 - The one-time complete-key adoption setting, its exact eligibility conditions,
   its inert behavior after configuration, and the requirement to remove it after
   successful adoption.
+- The fixed v2.1 key superset, the fact that feature toggles never mutate it,
+  and the explicit upgrade requirement for future key identities.
+- The exact host-local root-rotation arguments, setup-only maintenance behavior,
+  interruption/resume procedure, status and diagnostics, exclusive-write
+  requirement, and restoration/escalation steps for fatal journal or state
+  mismatch. Documentation must state that rotation is not remotely invokable.
 - Where the one-time bootstrap secret appears.
 - The fact that Docker/platform logs may be retained or forwarded and require
   access control.
@@ -1770,6 +1945,9 @@ These questions concern mechanisms and must not change the product contract:
 7. Which maintained HTTP/OpenAPI server and Unix-socket client adapters best
    satisfy `VAULTAPI-001` through `VAULTAPI-008` without generating a second
    authorization path?
+8. Which closed store-adapter transaction and journal representation should
+   implement expected-old-version root rewraps and exclusive maintenance
+   authority without coupling the product contract to SQL?
 
 ## 25. Settled decisions
 
@@ -1777,6 +1955,10 @@ These questions concern mechanisms and must not change the product contract:
   operational, and configuration error.
 - Public setup responses do not announce that zero users exist.
 - Automatic provisioning is limited to SecretSauce-owned application keys.
+- Every fresh v2.1 installation provisions the fixed, release-versioned superset
+  of all SecretSauce-owned application key identities supported by v2.1.
+  Feature enablement changes key consumption, never key or manifest identity.
+  New identities require an explicitly reviewed later-version migration.
 - The `secretsauce-vault` container entrypoint is the sole provisioning
   coordinator, manifest writer, and generator for every SecretSauce-owned key;
   no additional setup service or manual setup command exists.
@@ -1820,13 +2002,22 @@ These questions concern mechanisms and must not change the product contract:
   into clients. Credential responses are HMAC-authenticated and bound to the
   request, caller, and current vault boot identifier before use.
 - Every vault restart changes its boot identifier and invalidates outstanding
-  requests, nonces, capabilities, and in-memory transfers. Durable work resumes
-  only from validated journal state with fresh authorization.
+  requests, nonces, capabilities, and in-memory transfers. Credential-API
+  durable work resumes only from validated journal state with fresh
+  authorization; the pre-listener root-maintenance journal is instead bound to
+  its durable host request UUID under `SETUP-028`.
 - HTTP parsing and authentication are adapters around transport-independent
   vault domain handlers. Version 2.1 ships no TCP/HTTPS listener; a later
   reviewed HTTPS/mTLS adapter may reuse the same API, authenticated caller
   context, authorization, capability, schema, and error contracts.
 - There is no configured-manifest clearing or cryptographic-reset capability.
+- Configured identity and vault envelope-root rotation is available only through
+  the host-local vault restart arguments `--rotate-root-key identity` or
+  `--rotate-root-key vault` plus a fresh canonical
+  `--rotation-request-id <UUID>`. It is an idempotent, journaled, exclusive,
+  setup-only transition that retains the old root through verified rewrap and
+  aggregate/receipt commit; it is not exposed through either REST socket or any
+  remote product interface.
 - Administrative agent-connection revocation changes state only when current
   actor role, target-owner eligibility, and complete reachable-service scope
   authorize the mutation at its decision boundary. The persistence mechanism is
@@ -1886,7 +2077,7 @@ These questions concern mechanisms and must not change the product contract:
 
 | Capability/risk | Requirements | Acceptance |
 | --- | --- | --- |
-| Automatic fail-closed key setup | `SETUP-001`–`SETUP-025` | 21.1 |
+| Automatic fail-closed key setup and explicit root maintenance | `SETUP-001`–`SETUP-028` | 21.1 |
 | Atomic initial superadmin | `ENROLL-001`–`ENROLL-013` | 21.2 |
 | Branded uniform login/logout | `LOGIN-001`–`LOGIN-007`, `LOGOUT-001`–`LOGOUT-006` | 21.3, 21.5, 21.6 |
 | Rate limits and durable suspension | `ABUSE-001`–`ABUSE-015` | 21.3 |
@@ -1897,7 +2088,7 @@ These questions concern mechanisms and must not change the product contract:
 | Health before setup | `HEALTH-001`–`HEALTH-009` | 21.1 |
 | Private vault REST boundary | `VAULTAPI-001`–`VAULTAPI-008` | 21.7 |
 | Secret and personal-data minimization | Sections 14–16 | 21.2, 21.5, 21.6 |
-| Browser-first Compose deployment | `SETUP-010`–`SETUP-025`, sections 18–19 | 21.1 |
+| Browser-first Compose deployment | `SETUP-010`–`SETUP-028`, sections 18–19 | 21.1 |
 
 ## 27. Review readiness
 
@@ -1912,12 +2103,16 @@ These questions concern mechanisms and must not change the product contract:
 - Durable suspension race safety and final-superadmin recovery.
 - Session fixation, CSRF, cookie scope, rotation, replay, and revocation.
 - Admin service-scope enforcement for OAuth grants.
+- Stable key-superset enforcement and journaled, setup-only envelope-root
+  rotation with exclusive writer, retained old root, and fail-closed resume.
 - Secret-free setup, audit, and logging behavior.
 
 ### 27.2 Architecture-review focus
 
 - Vault-entrypoint adapter registry, single-writer manifest transitions, and
   atomic configured-state coordination.
+- Fixed release key registry and closed store adapters for conditional,
+  resumable identity/vault root rewrap without a new service or REST operation.
 - Dedicated durable setup-state representation and runtime read-only views.
 - Concurrent setup-only application composition and transition to operational
   initialization.
@@ -1957,10 +2152,10 @@ These questions concern mechanisms and must not change the product contract:
   `docs/audits/secretsauce-v2.1-prd-loose-ends-review-2026-07-27.md`.
 - Socket endpoint/response trust, vault-restart invalidation, and
   application-owned protective limits are now settled in this PRD.
-- The `LOOSE-001` finding remains open: post-configuration feature changes may
-  alter the required key set, but no settled transition exists for adding or
-  retiring feature-driven key identities. This product decision must be
-  recorded before milestone breakdown.
+- The `LOOSE-001` finding is closed: v2.1 uses a fixed release key superset,
+  feature toggles never change manifest identities, and identity/vault
+  envelope-root rotation is an explicit host-local, journaled, setup-only
+  maintenance startup.
 - The closure review finds the UX/accessibility and data/API contracts complete
   enough to plan, while their detailed artifact reviews remain required before
   implementation readiness.
@@ -1975,30 +2170,30 @@ These questions concern mechanisms and must not change the product contract:
 
 ## 28. Final readiness declaration
 
-**Product-behavior ready for downstream review: no**
+**Product-behavior ready for downstream review: yes**
 
 The socket endpoint/response trust, vault-restart invalidation, and
-application-owned protective-limit decisions are resolved. One material product
-decision remains: whether feature changes after configuration may add or retire
-required key identities and, if so, which explicit lifecycle permits that
-change without weakening automatic no-replacement provisioning.
+application-owned protective-limit decisions are resolved. The fixed v2.1 key
+superset removes feature-driven key-set evolution, while explicit journaled
+maintenance startup preserves the two supported envelope-root rotations without
+weakening automatic no-replacement provisioning.
 
 **Implementation-ready: no**
 
 Detailed UX/accessibility and data-model/API-contract reviews, implementation
-plans, and executable validation remain incomplete. The configured key-set
-evolution decision also remains unresolved.
+plans, and executable validation remain incomplete.
 
-**Milestone-breakdown ready: no**
+**Milestone-breakdown ready: yes**
 
 Review and planning status:
 
-- Security review: socket and protective-limit findings resolved in contract;
-  key-set lifecycle closure still required.
-- Architecture review: socket and reboot behavior resolved in contract;
-  key-set lifecycle closure still required.
+- Security review: no open PRD security blocker; implementation must prove the
+  fixed registry, exclusive journaled rotation, fail-closed resume, and old-root
+  retirement invariants.
+- Architecture review: no open PRD architecture blocker; internal journal,
+  store-adapter, and transaction choices remain milestone-plan work.
 - UX and accessibility review: milestone input complete; detailed approval still
   required for implementation readiness.
 - Data-model and API-contract review: milestone input complete; detailed
   approval still required for implementation readiness.
-- Milestone planning: blocked on `LOOSE-001`.
+- Milestone planning: ready.

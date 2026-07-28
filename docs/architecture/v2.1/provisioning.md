@@ -7,9 +7,10 @@
 
 ## Scope
 
-This record selects the v2.1 coordinator, manifest ownership, deployment
-topology, private provisioning-status interface, privilege transition, and
-failure behavior. It does not implement the design or change the runtime vault's
+This record selects the v2.1 coordinator, fixed key registry, manifest ownership,
+deployment topology, private provisioning-status interface, explicit
+envelope-root maintenance transition, privilege transition, and failure
+behavior. It does not implement the design or change the runtime vault's
 credential capabilities.
 
 ## Executive Summary
@@ -20,7 +21,12 @@ third setup service and no initialization CLI are introduced.
 
 The vault entrypoint is the sole writer of a dedicated durable setup-state
 volume and the sole generator of SecretSauce-owned application keys. The
-application starts concurrently in setup-only mode and reads a bounded private
+release registry is a stable superset independent of enabled features.
+Configured identity/vault envelope-root rotation reuses the same entrypoint only
+when the container starts with an exact host-local target argument and fresh
+canonical request UUID; it is idempotent, journaled, exclusive, setup-only, and
+absent from the REST API.
+The application starts concurrently in setup-only mode and reads a bounded private
 HTTP/1.1 REST status resource over a separate Unix-domain socket. The
 authenticated credential REST socket opens only after the manifest commits to
 `configured` and the entrypoint drops setup-only privileges. The vault container
@@ -35,8 +41,13 @@ has no network attachment in any phase.
   state, and sanitized private status.
 - A closed registry of key-type adapters inside the vault entrypoint owns key
   format generation, canonical fingerprints, validation, and adoption checks.
+- The registry contains the fixed, release-versioned superset of every
+  SecretSauce-owned application key identity supported by v2.1. Feature
+  configuration affects consumption, not generation or manifest membership.
 - A closed registry of store-specific inventory adapters classifies recognized
   retained key-bound stores as absent/empty, present, or indeterminate.
+- The same closed store adapters perform expected-old-version rewraps only
+  during an explicitly requested, journaled identity/vault root transition.
 - Runtime vault and application components never generate or replace application
   keys.
 
@@ -80,15 +91,16 @@ sockets and the versioned API in [vault-rest-api.md](vault-rest-api.md).
 | Phase/identity | Setup state | Generated keys | Retained state | Status socket | Broker socket |
 | --- | --- | --- | --- | --- | --- |
 | Vault provisioning entrypoint | Read/write | Write only as allowed by the startup matrix | Read-only inventory | Serve bounded read-only status | Closed |
+| Vault root-maintenance entrypoint | Read/write manifest, one durable operation journal, and completed-request receipts | Selected versioned root location only; old root retained through commit | Exclusive, bounded read/write access to the affected encrypted store through its closed adapter | Serve bounded read-only status | Closed |
 | Vault status-only error identity | Read-only | No setup write access | No setup write access | Serve `configuration_error` | Closed |
-| Runtime vault identity | Read-only fields needed by vault | Vault root and caller-verification keys only | Vault store only | Serve `ready` | Open |
+| Runtime vault identity | Read-only fields needed by vault | Vault root, caller-verification keys, and capability-verification keys only | Vault store only | Serve `ready` | Open |
 | Application setup-only identity | Read-only configured fields | Assigned keys mounted but not loaded before ready | No database writer | Query | No client use |
 | Operational application identity | Read-only configured fields | Assigned keys, read-only | Normal least-privilege runtime access | Query | Authenticated client |
 
 The implementation may use process credential changes, a narrow launcher, or an
 equivalent irreversible OS boundary. It must prove that the runtime vault cannot
-regain setup-only access to application key directories after the credential
-API opens.
+regain setup-only or root-maintenance access to key directories or affected
+stores after the credential API opens.
 
 Both private socket parents are vault-owned, non-symlinked, and not writable by
 the application or another workload. The application receives the shared socket
@@ -138,6 +150,32 @@ directly.
    initializes persistence, audit, credential-API handshake, jobs, and ordinary
    listeners.
 
+### Explicit root-maintenance lifecycle
+
+1. A host administrator restarts the vault with exactly
+   `--rotate-root-key identity` or `--rotate-root-key vault` and a fresh
+   canonical UUID in `--rotation-request-id`.
+2. The application remains setup-only, the credential socket remains absent,
+   and one vault entrypoint obtains exclusive maintenance authority.
+3. Complete manifest, key, aggregate, selected-root, affected-store, and
+   continuity validation precedes every write.
+4. The entrypoint durably creates a single-operation journal bound to the
+   request UUID, installation, target, starting aggregate, and old/new physical
+   versions, atomically stages a new versioned root without replacing the old
+   root, and activates it for new writes.
+5. The closed store adapter resumably rewraps affected data-encryption keys with
+   conditional mutations that apply only when the current root reference is the
+   expected old version. The mechanism is not coupled to SQL.
+6. After inventory proves zero old-root references, one atomic commit updates
+   the manifest fingerprint, active version, aggregate, and completed-request
+   receipt. Only then is the old root retired from application use. Reusing that
+   request UUID is an idempotent no-change result, never a second rotation.
+7. A restart with a valid incomplete journal resumes that transition before
+   ordinary startup even if the command argument is no longer present. Invalid
+   or ambiguous state fails closed in status-only `configuration_error`.
+8. Successful completion removes maintenance authority, drops to the runtime
+   identity, opens the credential API, and permits application initialization.
+
 ## Security Review
 
 Good: provisioning has one writer and one generator, so there is no distributed
@@ -148,16 +186,23 @@ Risky: the vault setup phase temporarily has authority over every generated
 application key and can inspect whether retained stores contain state. A defect
 or compromise in that phase has installation-wide impact.
 
+Risky: explicit root maintenance temporarily gains exclusive write authority to
+one affected encrypted store. A faulty rewrap or premature old-root retirement
+could make retained data unavailable.
+
 Change: minimize the setup entrypoint, use closed adapters, perform every
 continuity check before writes, prohibit secret-bearing diagnostics, and make
 the privilege drop an integration-tested boundary. Give retained-state adapters
 read-only access and return only bounded classifications. Deployment tests must
 prove the vault has no network attachment, not merely no published port.
 They must also prove that only the vault can bind or replace either socket.
+For root maintenance, prove journal durability, expected-old-version
+conditional updates, exclusive access, zero-reference inventory, retention of
+the old root through commit, and privilege removal before readiness.
 
-Do not change yet: do not add a network setup API, remotely triggered
-provisioning, a third service, or a general plugin system. None is required by
-the single-instance Compose deployment.
+Do not change yet: do not add a network setup/rotation API, remotely triggered
+provisioning, a third service, feature-driven manifest amendment, or a general
+plugin system. None is required by the single-instance Compose deployment.
 
 ## Architecture Review
 
@@ -169,10 +214,16 @@ take the SQLite writer lock or partially initialize ordinary interfaces before
 vault readiness. Treating setup-only mode as scattered route checks would be
 fragile.
 
+Risky: root maintenance needs exclusive affected-store writes without turning
+the vault into a second ordinary application writer. This must be a bounded
+maintenance composition, not a long-lived parallel persistence owner.
+
 Change: implement setup-only and operational initialization as explicit
 composition-root phases. Use the private status adapter as the single source of
 vault provisioning state, then add application-local checks before operational
-readiness.
+readiness. Implement root rewrap behind the affected store's closed adapter and
+one-writer maintenance boundary; do not make SQL syntax part of the product
+contract.
 
 Do not change yet: keep the runtime vault authorization/capability semantics,
 SQLite single-writer model, and public setup/health schemas. The status REST
@@ -182,7 +233,9 @@ established boundaries.
 ## Overall Opinion
 
 This topology is appropriate for the supported single-instance Compose model.
-It resolves coordinator ownership, manifest placement, startup ordering, status
-propagation, and failure visibility without adding another deployed service.
-Its acceptability depends on validating the setup privilege drop and proving
-that no key or manifest write occurs before the complete preflight decision.
+It resolves coordinator ownership, fixed key membership, explicit root
+maintenance, manifest placement, startup ordering, status propagation, and
+failure visibility without adding another deployed service or API. Its
+acceptability depends on validating the setup/maintenance privilege drops,
+proving that no key or manifest write occurs before complete preflight, and
+proving that interrupted rewrap cannot make mixed state operational.

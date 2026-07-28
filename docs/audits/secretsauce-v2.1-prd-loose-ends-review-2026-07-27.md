@@ -3,8 +3,8 @@
 ## Metadata
 
 - **Project/repository:** SecretSauce (MCP)
-- **Git SHA reviewed:** `22df5a27e4abffc8381257429a668ef9a1b065a3`
-- **Review date/time:** 2026-07-28T04:03:41Z
+- **Git SHA baseline:** `3f9dc00798476e2776aed2c92b9b167014022bc4`
+- **Review date/time:** 2026-07-28T05:15:23Z
 - **Reviewer roles:** senior application security reviewer and software architect
 - **Primary scope:** `docs/prd/secretsauce-v2.1-prd.md`
 - **Supporting architecture:** `docs/architecture/v2.1/provisioning.md`,
@@ -38,22 +38,14 @@ reported provisioning blockers. It checks:
 
 ## Executive Summary
 
-The PRD is substantially stronger than its earlier drafts, but it is not free of
-material loose ends.
+All four loose ends are now resolved in the governing contract:
 
-One blocker remains:
-
-1. **The configured key-set lifecycle is contradictory.** V2 preserves
-   host-authorized root-key rotation, and the v2.1 REST architecture still lists
-   local key administration. The v2.1 provisioning rules instead give the setup
-   entrypoint sole generation authority, remove its write authority after
-   configuration, and prohibit runtime components from generating or replacing
-   keys. They also provide no transition for enabling a feature that adds a
-   required key or disabling one that removes a required key. Implementers would
-   have to violate either the configured manifest or the preserved key-rotation
-   contract.
-
-Three findings are now resolved in the governing contract:
+- `LOOSE-001`: every fresh v2.1 installation provisions a fixed,
+  release-versioned superset of SecretSauce-owned application key identities,
+  so feature toggles never amend the manifest. Preserved identity/vault
+  envelope-root rotation occurs only through exact host-local maintenance
+  startup arguments, with one writer, durable journaling, conditional resumable
+  rewrap, old-root retention through verified commit, and no REST trigger.
 
 - `LOOSE-002`: v2.1 retains Unix sockets, requires vault-owned non-rebindable
   socket parents and read-only client mounts, and authenticates credential
@@ -71,12 +63,12 @@ failure behavior remain sound.
 
 **Readiness verdict:**
 
-- **Product-behavior ready for downstream review:** no, pending `LOOSE-001`
+- **Product-behavior ready for downstream review:** yes
 - **Implementation-ready:** no
-- **Milestone-breakdown ready:** no, pending `LOOSE-001`
+- **Milestone-breakdown ready:** yes
 
-The resolved contracts still require detailed API artifacts, implementation,
-and executable validation before implementation approval.
+Detailed UX/accessibility and data/API artifacts, implementation plans, and
+executable validation remain required before implementation approval.
 
 ## Threat Model
 
@@ -101,7 +93,7 @@ and executable validation before implementation approval.
 
 | ID | Category | Priority | CVSS | Confidence | Title | Status |
 | --- | --- | --- | --- | --- | --- | --- |
-| `LOOSE-001` | Architecture / security lifecycle | Blocker | N/A | Confirmed | Configured key rotation and key-set evolution have no valid owner or transition | Open |
+| `LOOSE-001` | Architecture / security lifecycle | Former blocker | N/A | Confirmed | Configured key rotation and key-set evolution have no valid owner or transition | Resolved in contract |
 | `LOOSE-002` | Security / private API | Former blocker | 7.8 conditional | High | REST requests are authenticated, but vault endpoint and response trust were unspecified | Resolved in contract |
 | `LOOSE-003` | Security contract | Required before implementation | N/A | Confirmed | Replay and one-use behavior across vault restart was undefined | Resolved in contract |
 | `LOOSE-004` | Abuse controls | Required before implementation | N/A | Confirmed | Global and concurrency limit bounds were missing | Resolved in contract |
@@ -115,19 +107,44 @@ The amended contract prohibits that deployment.
 
 ### LOOSE-001: Configured key rotation and key-set evolution have no valid owner or transition
 
-- **Priority:** Blocker
-- **Category:** confirmed product/architecture conflict
+- **Priority:** Former blocker
+- **Category:** resolved product/architecture conflict
 - **CVSS v3.1:** N/A; this is an unimplemented lifecycle contradiction
 - **Affected components:** PRD sections 3.1, 11.1, 13.1, 18.2, 25, and 28;
   `docs/architecture/v2/vault.md`;
   `docs/architecture/v2/decisions.md`; and
   `docs/architecture/v2.1/vault-rest-api.md`
+- **Status:** Resolved in the PRD and v2.1 architecture contract
+
+#### Disposition
+
+The product owner selected option 1 from the required change:
+
+- the v2.1 key registry is a fixed, release-versioned superset independent of
+  enabled features;
+- feature changes alter only which assigned existing keys are consumed;
+- future logical key identities require an explicitly reviewed later-version
+  migration and cannot be inferred as fresh provisioning;
+- identity and vault envelope-root rotation is requested only through
+  `--rotate-root-key identity` or `--rotate-root-key vault` plus a fresh
+  canonical UUID in `--rotation-request-id` at vault restart;
+- the vault stays setup-only with no credential listener, validates all state
+  before writes, holds exclusive maintenance authority, journals one operation,
+  conditionally rewraps only expected-old-version records, retains the old root
+  until zero-reference verification and atomic manifest commit, and resumes a
+  valid interrupted journal before ordinary startup; and
+- neither REST socket nor any browser, control, OAuth, MCP, database-managed, or
+  remote CLI input can initiate rotation.
+
+This closes the original contradiction without adding a service, broadening the
+runtime caller table, weakening automatic no-replacement provisioning, or
+coupling the product requirement to SQL.
 
 #### Evidence
 
-The PRD says existing behavior outside v2.1 scope remains unchanged
-(`docs/prd/secretsauce-v2.1-prd.md:16`). It determines the required key set from
-enabled services and features (`:561` and `:570`).
+At the reviewed baseline, the PRD said existing behavior outside v2.1 scope
+remained unchanged (`docs/prd/secretsauce-v2.1-prd.md:16`). It determined the
+required key set from enabled services and features (`:561` and `:570`).
 
 At the same time:
 
@@ -199,7 +216,7 @@ be interpreted as removing the preserved host-local maintenance authority.
 
 #### Verification
 
-Add positive and negative acceptance cases for:
+The amended contract adds positive and negative acceptance cases for:
 
 - enabling and disabling every conditionally keyed feature after configuration;
 - installing, activating, rewrapping, verifying, and retiring identity and vault
@@ -339,8 +356,10 @@ Add tests that:
 
 Every credential-API process start creates a new unpredictable boot identifier.
 Requests and capabilities bind it. A vault-only restart invalidates prior
-outstanding authority, while durable journaled work requires a new handshake and
-fresh authorization.
+outstanding authority, while credential-API durable journaled work requires a
+new handshake and fresh authorization. The separately host-authorized,
+pre-listener root-maintenance journal is bound to its durable request UUID and
+does not accept prior credential-process authority.
 
 #### Evidence
 
@@ -414,10 +433,10 @@ or expensive-work limits.
 
 No independent remote exploit chain was identified.
 
-An implementation must not add an ad hoc key-maintenance listener to escape
-`LOOSE-001`. That would expand key-write authority and private API exposure
-outside the reviewed contract. The remedy is to close the lifecycle through an
-explicit host-authorized startup transition, not a general maintenance endpoint.
+An implementation must not add an ad hoc key-maintenance listener. That would
+expand key-write authority and private API exposure outside the reviewed
+contract. The settled lifecycle uses an explicit host-authorized startup
+transition, not a general maintenance endpoint.
 
 ## What Is Good
 
@@ -440,9 +459,10 @@ explicit host-authorized startup transition, not a general maintenance endpoint.
 
 ## What Is Bad Or Risky
 
-- **Risky: “provisioning” and “key lifecycle” are currently conflated.** The
-  narrow startup safety rules accidentally remove an existing maintenance
-  capability.
+- **Risky: root maintenance is intentionally high authority.** It temporarily
+  writes the selected root and affected encrypted store, so journal integrity,
+  exclusive access, conditional rewrap, old-root retention, and zero-reference
+  verification are milestone-critical.
 - **Risky: the REST review considered caller authentication but not the reverse
   trust direction.** A private socket does not by itself prove which process is
   listening.
@@ -454,18 +474,22 @@ explicit host-authorized startup transition, not a general maintenance endpoint.
 
 ## What Should Change
 
-1. Resolve `LOOSE-001` as a product and architecture decision before generating
-   milestones.
-2. Implement and verify the now-settled `LOOSE-002`, `LOOSE-003`, and
-   `LOOSE-004` contracts in their respective milestones.
-3. Re-run the security and architecture readiness review after the PRD and both
-   v2.1 architecture records agree.
+1. Implement and verify all four settled loose-end contracts in their
+   respective milestones.
+2. Treat the exact rotation arguments and every environment setting as external
+   inputs with positive and negative tests.
+3. Complete the detailed UX/accessibility and data/API artifacts before
+   declaring implementation readiness.
 
 ## What I Would Not Change Yet
 
 - Do not add HTTPS, mTLS lifecycle, a Docker network, or remote vault discovery
   to solve `LOOSE-002`; the Unix transport can meet the invariant.
 - Do not add a third provisioning service or remotely invokable setup endpoint.
+- Do not add root rotation to either REST caller table; it remains an explicit
+  host-local maintenance startup.
+- Do not add feature-driven key-set amendment in v2.1; the fixed superset is the
+  settled policy.
 - Do not weaken the retained-state matrix, explicit adoption flag, no-replace
   automatic provisioning, or configured missing-key failure.
 - Do not generalize the closed key/store adapters into a plugin system.
@@ -487,20 +511,18 @@ explicit host-authorized startup transition, not a general maintenance endpoint.
 
 ## Overall Opinion
 
-The PRD is close, but the current readiness declaration must remain blocked on
-`LOOSE-001`.
+The PRD has no remaining security or architecture product-contract blocker and
+is ready for milestone breakdown.
 
-The earlier blockers around retained state and provisioning ownership remain
-closed. The fresh review found a different class of issue: the new provisioning
-authority was made so exclusive that it conflicts with preserved key rotation
-and future key-set changes. The REST server/response trust, restart
-invalidation, and application protective-limit findings are now resolved in the
-contract.
+The fixed v2.1 key superset makes feature toggles lifecycle-neutral. The
+explicit, journaled maintenance startup preserves identity/vault root rotation
+without adding a service, REST capability, or configured automatic-replacement
+path. REST endpoint/response trust, restart invalidation, retained-state
+freshness, adoption, and application-owned protective limits remain coherent.
 
-The remaining issue is tractable and does not require changing the chosen
-single-vault, REST-over-Unix-sockets architecture. It does require an explicit
-post-configuration key-set lifecycle decision before milestone breakdown is
-safe.
+Implementation readiness remains intentionally separate: detailed interface
+artifacts, implementation, and executable proof of the documented boundaries
+are still outstanding.
 
 ## Validation
 
@@ -509,13 +531,14 @@ review changes no executable behavior and the v2.1 design is not implemented.
 
 Validation confirmed:
 
-- 119 unique, contiguous requirement definitions across 11 domains;
+- 122 unique, contiguous requirement definitions across 11 domains;
 - the retained-state startup matrix, acceptance criteria, tests, traceability,
   and settled decisions agree;
 - the old custom framing is removed from the v2.1 contract;
 - the current protocol authenticates responses and checks a safe socket parent,
   providing concrete evidence for the REST equivalence gap;
-- v2 root-key rotation and v2.1 local key administration are documented outside
-  the PRD's configured lifecycle; and
-- the remaining findings are not duplicates of the previously closed
-  retained-state or provisioning-coordinator blockers.
+- the fixed v2.1 key registry and explicit identity/vault root-maintenance
+  lifecycle now agree across the PRD and both v2.1 architecture records;
+- root maintenance is absent from the REST caller table and retains one writer,
+  fail-closed resume, old-root retention, and atomic aggregate commitment; and
+- no material security or architecture product decision remains open.

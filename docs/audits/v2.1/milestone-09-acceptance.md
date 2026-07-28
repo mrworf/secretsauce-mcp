@@ -36,16 +36,20 @@ not disclose whether a record exists.
 - Evidence-backed retries remain no-change successes only while the current
   actor, owner, and scope still authorize the action. Unknown targets, expired
   evidence, and lost scope remain inaccessible.
-- A supported-scale test paginates 252 sessions and connections and atomically
-  revokes the global active set within the bounded performance budget.
+- A supported-scale test atomically revokes 100,000 active agent connections
+  within the bounded performance budget. A separate 100,001-session fixture
+  proves limit-plus-one rejection leaves every session, idempotency record, and
+  success audit unchanged.
 
 ## Validation
 
 - Focused access, browser, OAuth, persistence, API, and UI qualification: 14
-  files and 130 tests passed.
+  files and 130 tests passed. M10 release review then added the approved
+  100,000-record boundary and limit-plus-one regression; the affected access
+  and persistence suite passes 4 files and 45 tests.
 - Test-only migration-registry regression suite: 26 tests passed.
 - Production build: passed.
-- Full suite: 168 files and 1,087 tests passed.
+- Full suite after the M10 remediation: 168 files and 1,089 tests passed.
 - Generated control OpenAPI: current.
 - v2.1 readiness validator: 14 artifacts passed.
 - Release artifact scan: passed for 653 closed-scope files.

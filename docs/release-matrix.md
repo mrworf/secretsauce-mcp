@@ -14,14 +14,14 @@ and requires the affected gates to be rerun.
 | --- | --- | --- | --- |
 | Milestones 00–09 complete | Release owner | v2.1 status manifest and milestone acceptance artifacts | pass |
 | Production server and web build | Maintainer | `npm run build`; server and Vite production build passed | pass |
-| Full unit/integration/browser/security regression | Maintainer | `npm test`; 168 files / 1,087 tests passed with approved loopback/private-socket permission | pass |
+| Full unit/integration/browser/security regression | Maintainer | `npm test`; 168 files / 1,089 tests passed with approved loopback/private-socket permission | pass |
 | Runtime/generated OpenAPI parity | Data/API owner | `npm run check:control-openapi`; generated artifact current | pass |
 | Readiness artifact integrity | Architecture owner | `node scripts/validate-v2.1-readiness.mjs`; 14 artifacts passed | pass |
 | Production dependency advisory threshold | Security owner | `npm run audit:production` must report no High/Critical production advisory | pending |
 | Human/API role and cross-service authorization | Security owner | 246 human/API role-capability cells plus registered route and repository contracts | pass |
 | Wide/narrow accessibility and critical UX states | UX owner | Release-wide route/accessibility contracts plus owning component suites | pass |
 | Artifact/privacy prohibited-data scan | Security owner | 658 tracked, staged, built, generated, and synthetic closed-scope files | pass |
-| PRD scale and bounded-work budgets | Architecture owner | Deterministic SQLite/repository workloads plus 252-record access pagination/global revocation | pass |
+| PRD scale and bounded-work budgets | Architecture owner | Deterministic SQLite/repository workloads; exact 100,000-record global access revocation and atomic 100,001-record rejection | pass |
 | Setup, rotation, recovery, and invalidation integration | Security owner | Owning process, interruption, restart, fault, and persistence suites | pass |
 | Codex-named OAuth/MCP protocol journey | Compatibility owner | Durable OAuth/MCP/restart/refresh/revocation fixture using origin `https://mcp.example.org` and MCP path `/mcp` | pass |
 | ChatGPT-named OAuth/MCP protocol journey | Compatibility owner | Durable OAuth/MCP/restart/refresh/revocation fixture using origin `https://mcp.example.org` and MCP path `/mcp` | pass |

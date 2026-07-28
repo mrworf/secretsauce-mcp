@@ -25,7 +25,7 @@ approval.
   boundary.
 - The production server and web build passed. The existing Vite advisory for
   one JavaScript chunk over 500 kB remains non-blocking.
-- The full unit/integration/browser/security suite passed 168 files and 1,087
+- The full unit/integration/browser/security suite passed 168 files and 1,089
   tests with approved loopback/private-socket permission.
 - Generated control OpenAPI is current.
 - The v2.1 readiness validator passed all 14 architecture/readiness artifacts.
@@ -46,6 +46,14 @@ services. Compose now mounts that file, relies on automatic fixed-registry key
 provisioning, and treats portable restore as an explicit complete opt-in. The
 operator guide and README agree with the topology. Positive and negative
 configuration tests and the complete post-change suite pass.
+
+M10 source review also found that the approved ADR fixed the global access
+revocation boundary at 100,000 selected active records, while the accepted M09
+fixture covered only 252 and the repository had no preflight cap. The owning
+access behavior now accepts and atomically revokes exactly 100,000 records,
+rejects 100,001 before any domain/idempotency/success-audit commit, and documents
+the supported operator contract. The focused remediation suite passes 4 files
+and 45 tests.
 
 ## Pending release blockers
 

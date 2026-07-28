@@ -6,6 +6,7 @@ import {
   AccessCursorCodec,
   AccessManagementError,
   AccessManagementRepository,
+  GLOBAL_ACCESS_REVOCATION_LIMIT,
 } from "../src/accessManagement.js";
 import { IdentityRepository } from "../src/identity/repository.js";
 import type { AlwaysStepUpHandle, StepUpRepository } from "../src/identity/stepUp.js";
@@ -634,34 +635,16 @@ describe("access management projections", () => {
     });
   });
 
-  it("keeps paginated lists and atomic global revocation bounded at supported scale", async () => {
+  it("keeps paginated lists and atomic global grant revocation bounded at the supported limit", async () => {
     const fixture = await setup(true);
     await fixture.worker.execute({
       run: (database) => database.withOperationalTransaction((transaction) => {
-        for (let index = 0; index < 250; index += 1) {
-          const sessionId = scaleUuid(10_000 + index);
-          const grantId = scaleUuid(20_000 + index);
-          const hash = (index + 100).toString(16).padStart(64, "0");
-          transaction.run(`
-            INSERT INTO browser_sessions (
-              id, user_id, session_hash, csrf_hash, role_class,
-              issued_security_epoch, issued_global_epoch,
-              issued_absolute_ms, issued_inactivity_ms,
-              issued_at, last_activity_at, absolute_expires_at,
-              step_up_at, revoked_at, version
-            ) VALUES (?, ?, ?, ?, 'user', 1, 1, 86400000, 3600000,
-              ?, ?, ?, NULL, NULL, 1)
-          `, [
-            sessionId,
-            fixture.userOne,
-            hash,
-            (index + 1_000).toString(16).padStart(64, "0"),
-            NOW - 10_000,
-            NOW - index,
-            NOW + 86_390_000,
-          ]);
-          insertGrant(transaction, grantId, fixture.userOne, NOW - index);
-        }
+        insertScaleGrants(
+          transaction,
+          fixture.userOne,
+          GLOBAL_ACCESS_REVOCATION_LIMIT - 2,
+          20_000,
+        );
       }),
     });
     const page = await fixture.repository.grantsPage({
@@ -689,16 +672,31 @@ describe("access management projections", () => {
     });
     expect(grants).toMatchObject({
       kind: "executed",
-      value: { grantsRevoked: 252 },
+      value: { grantsRevoked: GLOBAL_ACCESS_REVOCATION_LIMIT },
     });
-    expect(performance.now() - grantStarted).toBeLessThan(1_000);
+    expect(performance.now() - grantStarted).toBeLessThan(10_000);
+  }, 30_000);
 
-    const sessionStarted = performance.now();
-    const sessions = await fixture.repository.revokeSessionBulk({
+  it("rejects a limit-plus-one global session set atomically without consuming state", async () => {
+    const fixture = await setup(true);
+    await fixture.worker.execute({
+      run: (database) => database.withOperationalTransaction((transaction) => {
+        insertScaleSessions(
+          transaction,
+          fixture.userOne,
+          GLOBAL_ACCESS_REVOCATION_LIMIT - 1,
+          30_000,
+        );
+      }),
+    });
+    const auditBefore = await fixture.worker.execute({
+      run: (database) => database.administrativeAuditCount(),
+    });
+    await expect(fixture.repository.revokeSessionBulk({
       viewer: { userId: fixture.superadmin, role: "superadmin" },
       target: { kind: "all" },
       confirmation: "REVOKE ALL WEB SESSIONS",
-      justification: "Exercise the supported global browser boundary.",
+      justification: "Reject the unsupported global browser boundary.",
       correlationId: correlationId("4"),
       idempotency: {
         keyHash: "b".repeat(64),
@@ -707,13 +705,26 @@ describe("access management projections", () => {
         requestDigest: "c".repeat(64),
       },
       stepUpProof: fakeProof(fixture.superadmin),
+    })).rejects.toEqual(new AccessManagementError("invalid_request"));
+    const state = await fixture.worker.execute({
+      run: (database) => database.read((query) => ({
+        active: query.get<{ count: number }>(`
+          SELECT count(*) AS count
+          FROM browser_sessions
+          WHERE revoked_at IS NULL
+        `)?.count,
+        idempotency: query.get<{ count: number }>(
+          "SELECT count(*) AS count FROM control_idempotency_records",
+        )?.count,
+        audits: database.administrativeAuditCount(),
+      })),
     });
-    expect(sessions).toMatchObject({
-      kind: "executed",
-      value: { sessionsRevoked: 252 },
+    expect(state).toEqual({
+      active: GLOBAL_ACCESS_REVOCATION_LIMIT + 1,
+      idempotency: 0,
+      audits: auditBefore,
     });
-    expect(performance.now() - sessionStarted).toBeLessThan(1_000);
-  }, 10_000);
+  }, 30_000);
 
   it("projects only a currently administered service with aggregate-only reference state", async () => {
     const fixture = await setup();
@@ -1033,6 +1044,105 @@ function insertGrant(
     lastUsed,
     NOW + 90 * 86_400_000,
     NOW + 30 * 86_400_000,
+  ]);
+}
+
+function insertScaleGrants(
+  transaction: { run(sql: string, parameters?: unknown[]): unknown },
+  userId: string,
+  count: number,
+  start: number,
+): void {
+  transaction.run(`
+    WITH digit(value) AS (
+      VALUES (0), (1), (2), (3), (4), (5), (6), (7), (8), (9)
+    ),
+    sequence(value) AS (
+      SELECT a.value
+        + 10 * b.value
+        + 100 * c.value
+        + 1000 * d.value
+        + 10000 * e.value
+      FROM digit a
+      CROSS JOIN digit b
+      CROSS JOIN digit c
+      CROSS JOIN digit d
+      CROSS JOIN digit e
+    )
+    INSERT INTO oauth_grants (
+      id, user_id, client_id, resource, scopes_json,
+      authentication_method, issued_security_epoch, issued_global_epoch,
+      issued_access_ttl_ms, issued_refresh_idle_ms,
+      issued_refresh_absolute_ms, status, issued_at, last_used_at,
+      absolute_expires_at, idle_expires_at, revoked_at,
+      revocation_reason, version
+    )
+    SELECT
+      printf('018f1f2e-7b3c-7a10-8000-%012x', ? + value),
+      ?, ?, 'https://mcp.example.org', '["gateway.read"]',
+      'local_password_totp', 1, 1, 300000, 2592000000, 7776000000,
+      'active', ?, ? - value, ?, ?, NULL, NULL, 1
+    FROM sequence
+    WHERE value < ?
+  `, [
+    start,
+    userId,
+    CLIENT_ID,
+    NOW - 200_000,
+    NOW,
+    NOW + 90 * 86_400_000,
+    NOW + 30 * 86_400_000,
+    count,
+  ]);
+}
+
+function insertScaleSessions(
+  transaction: { run(sql: string, parameters?: unknown[]): unknown },
+  userId: string,
+  count: number,
+  start: number,
+): void {
+  transaction.run(`
+    WITH digit(value) AS (
+      VALUES (0), (1), (2), (3), (4), (5), (6), (7), (8), (9)
+    ),
+    sequence(value) AS (
+      SELECT a.value
+        + 10 * b.value
+        + 100 * c.value
+        + 1000 * d.value
+        + 10000 * e.value
+      FROM digit a
+      CROSS JOIN digit b
+      CROSS JOIN digit c
+      CROSS JOIN digit d
+      CROSS JOIN digit e
+    )
+    INSERT INTO browser_sessions (
+      id, user_id, session_hash, csrf_hash, role_class,
+      issued_security_epoch, issued_global_epoch,
+      issued_absolute_ms, issued_inactivity_ms,
+      issued_at, last_activity_at, absolute_expires_at,
+      authentication_method, device_family, coarse_source,
+      step_up_at, revoked_at, version
+    )
+    SELECT
+      printf('018f1f2e-7b3c-7a10-8000-%012x', ? + value),
+      ?, printf('%064x', ? + value), printf('%064x', ? + value),
+      'user', 1, 1, 86400000, 3600000, ?, ? - value, ?,
+      'local_password_totp', 'Chrome on desktop', '192.0.2.0/24',
+      NULL, NULL, 1
+    FROM sequence
+    WHERE value < ?
+  `, [
+    start,
+    userId,
+    start + 1_000_000,
+    start + 2_000_000,
+    NOW - 200_000,
+    NOW,
+    NOW + 86_390_000,
+    count,
   ]);
 }
 

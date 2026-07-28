@@ -11,8 +11,8 @@ be inferred from prior releases.
 ## Current-state findings and decisions
 
 - Milestones 00–09 are complete with individual acceptance artifacts. The
-  current production build, 168-file/1,087-test suite, generated OpenAPI,
-  14-artifact readiness validator, and 653-file release scan pass.
+  current production build, 168-file/1,089-test suite, generated OpenAPI,
+  14-artifact readiness validator, and 658-file release scan pass.
 - The existing release matrix and final review artifacts describe v2 milestone
   24 candidate `acf8b67`, not v2.1. They are useful templates but are not v2.1
   release evidence.
@@ -70,6 +70,6 @@ lack safe containment. Missing runtime or human evidence is pending, not pass.
 
 | Slice | Status | Commit | Evidence | Deviations |
 | --- | --- | --- | --- | --- |
-| 1 | completed | this commit | 22-file/120-test focused integration suite; 4-file/28-test Compose/docs suite; build; 168 files/1,087 tests; current OpenAPI; 14 readiness artifacts; 657-file release scan; official config positive/negative validation | Production advisory lookup remains pending because registry disclosure was not authorized. Official Compose config was remediated after the legacy bearer/YAML example was found mounted. |
-| 2 | in progress | — | Exact-candidate runbook specifies clean setup/enrollment/activation/MCP, recreation, durable/ephemeral state, vault isolation, rotation/fault matrix, and sanitized record; host audit: Node 26.4.0, x86_64; no Docker, Podman, or nerdctl available | Must execute on a Docker-capable environment; prior v2 image evidence is not reusable. |
+| 1 | completed | `1c98931` | 22-file/120-test focused integration suite; 4-file/28-test Compose/docs suite; build; 168 files/1,087 tests; current OpenAPI; 14 readiness artifacts; 657-file release scan; official config positive/negative validation | Production advisory lookup remains pending because registry disclosure was not authorized. Official Compose config was remediated after the legacy bearer/YAML example was found mounted. M10 review later returned the missing 100,000-record access cap to M09 for release remediation. |
+| 2 | in progress | `10caaba` | Exact-candidate runbook specifies clean setup/enrollment/activation/MCP, recreation, durable/ephemeral state, vault isolation, rotation/fault matrix, and sanitized record; host audit: Node 26.4.0, x86_64; no Docker, Podman, or nerdctl available | Must execute on a Docker-capable environment; prior v2 image evidence is not reusable. |
 | 3 | pending | — | Synthetic named-client fixtures exist; prior v2 review templates exist | Hosted-client and independent/human approval evidence is external and cannot be agent-inferred. |

@@ -79,4 +79,14 @@ privacy-safe.
 | 1 | completed | `5137db5` | Migration 25 stores only derived authentication/device/coarse-network metadata; local and OIDC session creation share conservative derivation; access cursors bind actor/scope/filters; self individual/all session and agent revocation is atomic and current-session bulk clears the cookie; 42 focused tests and production build passed | Operational cleanup evidence is deferred to slice 4 as planned. |
 | 2 | completed | `fe1d77c` | Superadmin individual/per-user/global browser and connection revocation; regular-admin nonempty complete all-services-managed connection visibility/revocation; same-transaction actor-role, owner-role/status, and service-scope predicates; exact step-up/audit coupling and uniform no-change; 75 focused access/browser/OAuth tests plus production build | Listener-backed browser qualification required approved loopback/socket permission. |
 | 3 | completed | `07dec4d` | Account Settings groups and approved metadata; self/global/user-detail workspaces; regular-admin browser hiding; exact-scope confirmations; current-session warnings/navigation; operation-bound password/TOTP helpers that never forward credentials to mutations; accessible status and 25 focused browser/API tests plus production build | Existing Vite chunk-size advisory remains. |
-| 4 | completed | this commit | Migration 26 immutable cleanup evidence and evidence-authorized retries; bounded cleanup audit coupling; 252-record pagination/global-revocation scale coverage; access documentation; 14 focused files/130 tests, 26 migration-registry tests, production build, 168-file/1,087-test full suite, current OpenAPI, 14-artifact readiness validation, and 653-file release scan passed | Full-suite listener tests and the release scanner required approved sandbox permissions; two test-only migration versions were advanced after the new production migration exposed their collision. |
+| 4 | completed | `1768357` | Migration 26 immutable cleanup evidence and evidence-authorized retries; bounded cleanup audit coupling; initial 252-record pagination/global-revocation scale coverage; access documentation; 14 focused files/130 tests, 26 migration-registry tests, production build, 168-file/1,087-test full suite, current OpenAPI, 14-artifact readiness validation, and 653-file release scan passed | Full-suite listener tests and the release scanner required approved sandbox permissions; two test-only migration versions were advanced after the new production migration exposed their collision. The later M10 remediation below closes the approved 100,000-record boundary. |
+
+## M10 release remediation
+
+The final architecture review found that slice 4's 252-record fixture did not
+prove ADR-2.1-05's approved 100,000-record boundary and that production lacked
+the required preflight cap. The release remediation accepts and atomically
+revokes exactly 100,000 active selected records and rejects 100,001 before
+revocation, idempotency, success-audit, or step-up consumption can commit. The
+affected access/persistence suite passes 4 files and 45 tests; the complete
+post-remediation suite passes 168 files and 1,089 tests.

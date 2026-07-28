@@ -111,6 +111,8 @@ export interface AccessCleanupResult {
   grantsDeleted: number;
 }
 
+export const GLOBAL_ACCESS_REVOCATION_LIMIT = 100_000;
+
 export class AccessManagementError extends Error {
   constructor(readonly code: "invalid_request" | "forbidden" | "unavailable") {
     super("Access management could not be completed.");
@@ -1081,28 +1083,31 @@ export class AccessManagementRepository {
         input.stepUpProof,
         (transaction) => {
           const result = transaction.idempotent(input.idempotency, () => {
-          requireCurrentRole(transaction, input.viewer.userId, "superadmin");
-          const now = transaction.timestamp();
-          const sessionsRevoked = transaction.run(`
-            UPDATE browser_sessions
-            SET revoked_at = ?, version = version + 1
-            WHERE revoked_at IS NULL
-              AND (? = 'all' OR user_id = ?)
-          `, [
-            now,
-            input.target.kind,
-            input.target.kind === "user" ? input.target.id : null,
-          ]).changes;
-          return {
-            value: {
-              targetId,
-              revoked: sessionsRevoked > 0,
-              sessionsRevoked,
-              grantsRevoked: 0,
-            },
-            resultReference: targetId,
-            responseStatus: 200,
-          };
+            requireCurrentRole(transaction, input.viewer.userId, "superadmin");
+            if (input.target.kind === "all") {
+              requireGlobalRevocationCapacity(transaction, "browser_sessions");
+            }
+            const now = transaction.timestamp();
+            const sessionsRevoked = transaction.run(`
+              UPDATE browser_sessions
+              SET revoked_at = ?, version = version + 1
+              WHERE revoked_at IS NULL
+                AND (? = 'all' OR user_id = ?)
+            `, [
+              now,
+              input.target.kind,
+              input.target.kind === "user" ? input.target.id : null,
+            ]).changes;
+            return {
+              value: {
+                targetId,
+                revoked: sessionsRevoked > 0,
+                sessionsRevoked,
+                grantsRevoked: 0,
+              },
+              resultReference: targetId,
+              responseStatus: 200,
+            };
           });
           return {
             value: result,
@@ -1409,6 +1414,9 @@ export class AccessManagementRepository {
             : { sql: "1 = 1", values: [] };
         if (input.viewer.role === "superadmin") {
           requireCurrentRole(transaction, input.viewer.userId, "superadmin");
+        }
+        if (input.target.kind === "all") {
+          requireGlobalRevocationCapacity(transaction, "oauth_grants");
         }
         const result = revokeGrantSet(transaction, predicate.sql, predicate.values);
         return {
@@ -1787,7 +1795,12 @@ function revokeGrantSet(
     `SELECT count(*) AS count FROM (${selected})`,
     parameters,
   )?.count ?? 0;
-  const refreshTokensRevoked = transaction.run(`
+  const global = predicate === "1 = 1";
+  const refreshTokensRevoked = transaction.run(global ? `
+    UPDATE oauth_refresh_tokens
+    SET status = 'revoked', used_at = coalesce(used_at, ?)
+    WHERE status = 'active'
+  ` : `
     UPDATE oauth_refresh_tokens
     SET status = 'revoked', used_at = coalesce(used_at, ?)
     WHERE status = 'active'
@@ -1796,24 +1809,38 @@ function revokeGrantSet(
         FROM oauth_refresh_families family
         WHERE family.grant_id IN (${selected})
       )
-  `, [now, ...parameters]).changes;
-  const accessTokensRevoked = transaction.run(`
+  `, global ? [now] : [now, ...parameters]).changes;
+  const accessTokensRevoked = transaction.run(global ? `
+    UPDATE oauth_access_tokens
+    SET status = 'revoked'
+    WHERE status = 'active'
+  ` : `
     UPDATE oauth_access_tokens
     SET status = 'revoked'
     WHERE status = 'active' AND grant_id IN (${selected})
-  `, parameters).changes;
-  const familiesRevoked = transaction.run(`
+  `, global ? [] : parameters).changes;
+  const familiesRevoked = transaction.run(global ? `
+    UPDATE oauth_refresh_families
+    SET status = 'revoked', revoked_at = ?,
+      revocation_reason = 'manual', version = version + 1
+    WHERE status = 'active'
+  ` : `
     UPDATE oauth_refresh_families
     SET status = 'revoked', revoked_at = ?,
       revocation_reason = 'manual', version = version + 1
     WHERE status = 'active' AND grant_id IN (${selected})
-  `, [now, ...parameters]).changes;
-  const grantsRevoked = transaction.run(`
+  `, global ? [now] : [now, ...parameters]).changes;
+  const grantsRevoked = transaction.run(global ? `
+    UPDATE oauth_grants
+    SET status = 'revoked', revoked_at = ?,
+      revocation_reason = 'manual', version = version + 1
+    WHERE status = 'active'
+  ` : `
     UPDATE oauth_grants AS grant
     SET status = 'revoked', revoked_at = ?,
       revocation_reason = 'manual', version = version + 1
     WHERE status = 'active' AND id IN (${selected})
-  `, [now, ...parameters]).changes;
+  `, global ? [now] : [now, ...parameters]).changes;
   return {
     selectedCount,
     grantsRevoked,
@@ -1821,6 +1848,27 @@ function revokeGrantSet(
     refreshTokensRevoked,
     accessTokensRevoked,
   };
+}
+
+function requireGlobalRevocationCapacity(
+  transaction: PersistenceTransaction,
+  kind: "browser_sessions" | "oauth_grants",
+): void {
+  const activePredicate = kind === "browser_sessions"
+    ? "revoked_at IS NULL"
+    : "status = 'active'";
+  const count = transaction.get<{ count: number }>(`
+    SELECT count(*) AS count
+    FROM (
+      SELECT id
+      FROM ${kind}
+      WHERE ${activePredicate}
+      LIMIT ?
+    )
+  `, [GLOBAL_ACCESS_REVOCATION_LIMIT + 1])?.count ?? 0;
+  if (count > GLOBAL_ACCESS_REVOCATION_LIMIT) {
+    throw new PersistenceError("operation_limit_exceeded");
+  }
 }
 
 function requireServiceAdministrator(
@@ -2085,6 +2133,9 @@ function mapAccessError(error: unknown): AccessManagementError {
   if (error instanceof AccessManagementError) return error;
   if (error instanceof PersistenceError) {
     if (error.code === "idempotency_conflict") {
+      return new AccessManagementError("invalid_request");
+    }
+    if (error.code === "operation_limit_exceeded") {
       return new AccessManagementError("invalid_request");
     }
     if (error.code === "authentication_failed") {

@@ -74,6 +74,12 @@ access records. The next independently authenticated browser or OAuth request
 after commit observes the revocation; work fully authenticated before commit is
 not forcibly interrupted.
 
+Each global web-session or agent-connection operation supports at most 100,000
+active selected records. A limit-plus-one preflight rejects the operation
+before revocation, idempotency, success audit, or step-up consumption commits.
+Operators must first reduce the selected scope through supported narrower
+operations.
+
 An authorized inactive record returns a sanitized no-change result. An
 inaccessible or unknown administrative target follows the same uniform denial
 path without revealing which authorization condition failed.

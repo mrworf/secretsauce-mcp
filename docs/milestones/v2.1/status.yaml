@@ -95,7 +95,7 @@ milestones:
   - id: "10"
     title: "Release Qualification And Documentation"
     file: "docs/milestones/v2.1/10-release-qualification-and-documentation.md"
-    status: "in_progress"
+    status: "blocked"
     dependencies:
       - "03"
       - "04"
@@ -105,4 +105,4 @@ milestones:
       - "09"
     completed_at: null
     commit_hash: null
-    notes: "Implementation plan approved for candidate-wide automated qualification, exact-candidate official Compose evidence, live hosted-client checks, and final independent/human review closure. Docker-compatible runtime is not available in the current workspace."
+    notes: "Automated qualification and project-authored reviews pass for executable candidate b780201. Release remains blocked until: an authorized production npm advisory query passes; the exact-candidate official Compose clean/recreation journey passes on Docker amd64; live hosted Codex and ChatGPT checks pass against the documented origin and /mcp URL; and named independent/human reviewers approve security, architecture, UX/accessibility, data/API, operations, and documentation. Resume at docs/v2.1-release-qualification.md without rerunning unaffected gates unless the executable candidate changes."

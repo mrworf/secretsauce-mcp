@@ -132,7 +132,7 @@ describe("release operations documentation", () => {
       );
     }
     expect(status).toMatch(
-      /id: "10"[\s\S]*status: "in_progress"[\s\S]*commit_hash: null/,
+      /id: "10"[\s\S]*status: "blocked"[\s\S]*commit_hash: null/,
     );
     expect(status).not.toMatch(
       /id: "10"[\s\S]*status: "completed"/,

@@ -280,7 +280,11 @@ export function createControlApplication(
     genReqId: createRequestId,
     logController: new LogController({ disableRequestLogging: true }),
   });
-  const clientSources = new ClientSourceResolver(config.clientSource);
+  const clientSources = new ClientSourceResolver(config.clientSource ?? {
+    mode: "direct",
+    header: "x_forwarded_for",
+    trustedProxies: [],
+  });
   const operational = options.operational ?? (() => true);
   application.addHook("onRequest", async (request, reply) => {
     try {

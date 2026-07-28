@@ -195,6 +195,7 @@ function seed(): SecuritySettingsSeed {
     passwordWindowMs: 900_000,
     totpAttempts: 5,
     totpWindowMs: 300_000,
+    automaticSuspensionThreshold: null,
     managementApiAttempts: 120,
     managementApiWindowMs: 60_000,
     searchAttempts: 30,

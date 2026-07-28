@@ -160,7 +160,7 @@ readiness, and release scan.
 
 | Slice | Status | Commit | Evidence | Deviations |
 | --- | --- | --- | --- | --- |
-| 1 | pending | | | |
+| 1 | completed | this commit | 10/10 focused manifest/rotation tests; server build; exact canonical host grammar; checksum-protected mode-0600 journal with atomic create/replace and crash preservation; journal-only resume; post-commit crash replay; non-replacing physical-key staging; atomic physical-version/fingerprint/aggregate/receipt commit | Root activation and archived-root switching remain in Slice 4 so no partial production maintenance path is exposed. |
 | 2 | pending | | | |
 | 3 | pending | | | |
 | 4 | pending | | | |

@@ -29,12 +29,17 @@ const MAX_MANIFEST_BYTES = 128 * 1024;
 const uuidV4 = z.string().regex(
   /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
 );
+const canonicalUuid = z.string().regex(
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+);
 const digest = z.string().regex(/^[0-9a-f]{64}$/);
 const adapter = z.enum([
   "symmetric-base64url-32-v1",
   "rsa-pkcs8-pem-v1",
 ]);
 const identity = z.enum(VAULT_PROVISIONING_KEY_IDS);
+const physicalVersion = z.union([z.literal("legacy"), canonicalUuid]);
+const rotationTarget = z.enum(["identity", "vault"]);
 const entrySchema = z.object({
   id: identity,
   adapter,
@@ -42,6 +47,7 @@ const entrySchema = z.object({
   consumers: z.array(z.enum(["application", "vault"])).min(1).max(2),
   status: z.enum(["pending", "verified"]),
   fingerprint: digest.optional(),
+  activePhysicalVersion: physicalVersion.optional(),
 }).strict().superRefine((value, context) => {
   if ((value.status === "verified") !== (value.fingerprint !== undefined)) {
     context.addIssue({
@@ -50,7 +56,24 @@ const entrySchema = z.object({
       message: "Fingerprint must exist only for verified entries.",
     });
   }
+  if (
+    value.activePhysicalVersion !== undefined
+    && !["identity.envelope-root", "vault.envelope-root"].includes(value.id)
+  ) {
+    context.addIssue({
+      code: "custom",
+      path: ["activePhysicalVersion"],
+      message: "Physical versions are limited to envelope roots.",
+    });
+  }
 });
+const rotationReceiptSchema = z.object({
+  requestId: canonicalUuid,
+  target: rotationTarget,
+  oldPhysicalVersion: physicalVersion,
+  newPhysicalVersion: canonicalUuid,
+  completedAt: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER),
+}).strict();
 const manifestWithoutChecksumSchema = z.object({
   version: z.literal(1),
   installationId: uuidV4,
@@ -61,12 +84,14 @@ const manifestWithoutChecksumSchema = z.object({
     attempt: z.number().int().min(0).max(6),
     retryPending: z.boolean(),
   }).strict(),
+  rotationReceipts: z.array(rotationReceiptSchema).max(4096).optional(),
 }).strict();
 const manifestSchema = manifestWithoutChecksumSchema.extend({
   checksum: digest,
 }).strict();
 
 export type VaultProvisioningManifest = z.infer<typeof manifestSchema>;
+export type VaultRootRotationTarget = z.infer<typeof rotationTarget>;
 
 export class ProvisioningManifestError extends Error {
   constructor(
@@ -159,6 +184,81 @@ export function updateManifestRetry(
   return finalizeManifest({
     ...withoutChecksum(parsed),
     retry: { attempt, retryPending },
+  });
+}
+
+export function commitManifestRootRotation(
+  manifest: VaultProvisioningManifest,
+  input: {
+    requestId: string;
+    target: VaultRootRotationTarget;
+    startingAggregate: string;
+    oldPhysicalVersion: string;
+    newPhysicalVersion: string;
+    fingerprint: string;
+    completedAt: number;
+  },
+): VaultProvisioningManifest {
+  const parsed = parseManifest(manifest);
+  const receipt = rotationReceiptSchema.parse({
+    requestId: input.requestId,
+    target: input.target,
+    oldPhysicalVersion: input.oldPhysicalVersion,
+    newPhysicalVersion: input.newPhysicalVersion,
+    completedAt: input.completedAt,
+  });
+  if (!digest.safeParse(input.fingerprint).success) {
+    throw vaultError("vault_config_invalid");
+  }
+  const existing = parsed.rotationReceipts?.find(
+    (value) => value.requestId === receipt.requestId,
+  );
+  if (existing !== undefined) {
+    const keyId = existing.target === "identity"
+      ? "identity.envelope-root"
+      : "vault.envelope-root";
+    const current = parsed.entries.find((value) => value.id === keyId);
+    if (
+      existing.target !== receipt.target
+      || existing.oldPhysicalVersion !== receipt.oldPhysicalVersion
+      || existing.newPhysicalVersion !== receipt.newPhysicalVersion
+      || current?.activePhysicalVersion !== existing.newPhysicalVersion
+      || current.fingerprint !== input.fingerprint
+    ) throw vaultError("vault_config_invalid");
+    return parsed;
+  }
+  if (
+    parsed.state !== "configured"
+    || parsed.aggregate !== input.startingAggregate
+  ) throw vaultError("vault_config_invalid");
+  const keyId = receipt.target === "identity"
+    ? "identity.envelope-root"
+    : "vault.envelope-root";
+  const current = parsed.entries.find((value) => value.id === keyId);
+  if (
+    current === undefined
+    || current.status !== "verified"
+    || (current.activePhysicalVersion ?? "legacy")
+      !== receipt.oldPhysicalVersion
+  ) throw vaultError("vault_config_invalid");
+  const entries = parsed.entries.map((value) => value.id === keyId
+    ? {
+        ...value,
+        fingerprint: input.fingerprint,
+        activePhysicalVersion: receipt.newPhysicalVersion,
+      }
+    : value);
+  const aggregate = aggregateProvisionedKeys(entries.map((value) => ({
+    id: value.id,
+    adapter: value.adapter,
+    formatVersion: value.formatVersion,
+    fingerprint: value.fingerprint!,
+  })));
+  return finalizeManifest({
+    ...withoutChecksum(parsed),
+    entries,
+    aggregate,
+    rotationReceipts: [...(parsed.rotationReceipts ?? []), receipt],
   });
 }
 
@@ -299,6 +399,12 @@ function validateCompleteEntries(
         value !== expected.consumers[index]
       )
     ) throw vaultError("vault_config_invalid");
+  }
+  const receiptIds = manifest.rotationReceipts?.map(
+    (value) => value.requestId,
+  ) ?? [];
+  if (new Set(receiptIds).size !== receiptIds.length) {
+    throw vaultError("vault_config_invalid");
   }
 }
 

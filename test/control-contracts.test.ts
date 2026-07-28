@@ -186,7 +186,7 @@ describe("control setup boundary", () => {
         headers,
       });
       expect(live.statusCode).toBe(200);
-      expect(live.json().data).toEqual({ state: "live" });
+      expect(live.json()).toEqual({ state: "live" });
 
       const ready = await application.inject({
         method: "GET",
@@ -194,7 +194,7 @@ describe("control setup boundary", () => {
         headers,
       });
       expect(ready.statusCode).toBe(503);
-      expect(ready.json().data.state).toBe("not_ready");
+      expect(ready.json().state).toBe("not_ready");
 
       const status = await application.inject({
         method: "GET",
@@ -202,7 +202,7 @@ describe("control setup boundary", () => {
         headers,
       });
       expect(status.statusCode).toBe(200);
-      expect(status.json().data).toEqual({
+      expect(status.json()).toEqual({
         state: "preparing",
         message: "SecretSauce is preparing this installation.",
         retry_pending: true,

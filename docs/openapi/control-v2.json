@@ -1182,37 +1182,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": false,
-                  "properties": {
-                    "data": {
-                      "$ref": "#/components/schemas/ApplicationLiveness"
-                    },
-                    "meta": {
-                      "additionalProperties": false,
-                      "properties": {
-                        "api_version": {
-                          "enum": [
-                            "v2"
-                          ],
-                          "type": "string"
-                        },
-                        "request_id": {
-                          "pattern": "^req_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "request_id",
-                        "api_version"
-                      ],
-                      "type": "object"
-                    }
-                  },
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
-                  "type": "object"
+                  "$ref": "#/components/schemas/ApplicationLiveness"
                 }
               }
             },
@@ -1343,37 +1313,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": false,
-                  "properties": {
-                    "data": {
-                      "$ref": "#/components/schemas/ApplicationReadiness"
-                    },
-                    "meta": {
-                      "additionalProperties": false,
-                      "properties": {
-                        "api_version": {
-                          "enum": [
-                            "v2"
-                          ],
-                          "type": "string"
-                        },
-                        "request_id": {
-                          "pattern": "^req_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "request_id",
-                        "api_version"
-                      ],
-                      "type": "object"
-                    }
-                  },
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
-                  "type": "object"
+                  "$ref": "#/components/schemas/ApplicationReadiness"
                 }
               }
             },
@@ -1473,37 +1413,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": false,
-                  "properties": {
-                    "data": {
-                      "$ref": "#/components/schemas/ApplicationReadiness"
-                    },
-                    "meta": {
-                      "additionalProperties": false,
-                      "properties": {
-                        "api_version": {
-                          "enum": [
-                            "v2"
-                          ],
-                          "type": "string"
-                        },
-                        "request_id": {
-                          "pattern": "^req_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "request_id",
-                        "api_version"
-                      ],
-                      "type": "object"
-                    }
-                  },
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
-                  "type": "object"
+                  "$ref": "#/components/schemas/ApplicationReadiness"
                 }
               }
             },
@@ -2425,37 +2335,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": false,
-                  "properties": {
-                    "data": {
-                      "$ref": "#/components/schemas/ApplicationSetupStatus"
-                    },
-                    "meta": {
-                      "additionalProperties": false,
-                      "properties": {
-                        "api_version": {
-                          "enum": [
-                            "v2"
-                          ],
-                          "type": "string"
-                        },
-                        "request_id": {
-                          "pattern": "^req_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "request_id",
-                        "api_version"
-                      ],
-                      "type": "object"
-                    }
-                  },
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
-                  "type": "object"
+                  "$ref": "#/components/schemas/ApplicationSetupStatus"
                 }
               }
             },

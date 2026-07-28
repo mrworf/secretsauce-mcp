@@ -94,6 +94,51 @@ describe("built control web assets", () => {
       "Control web assets are unavailable.",
     );
   });
+
+  it("serves only setup assets while the operational application is gated", async () => {
+    const webAssets = loadControlWebAssets();
+    const application = createControlApplication(controlConfig(), {
+      webAssets,
+      operational: () => false,
+    });
+    try {
+      const setup = await application.inject({
+        method: "GET",
+        url: "/control/setup",
+        headers: { host: "control.example.org" },
+      });
+      expect(setup.statusCode).toBe(200);
+      expect(setup.body).toContain('<div id="root"></div>');
+
+      const assetName = [...webAssets.assets.keys()]
+        .find((name) => name.endsWith(".css"))!;
+      const asset = await application.inject({
+        method: "GET",
+        url: `/control/assets/${assetName}`,
+        headers: { host: "control.example.org" },
+      });
+      expect(asset.statusCode).toBe(200);
+      expect(asset.headers["cache-control"])
+        .toBe("public, max-age=31536000, immutable");
+
+      for (const url of [
+        "/control/services",
+        "/control/setup?detail=true",
+        `/control/assets/${assetName}?detail=true`,
+      ]) {
+        const rejected = await application.inject({
+          method: "GET",
+          url,
+          headers: { host: "control.example.org" },
+        });
+        expect(rejected.statusCode).toBe(
+          url === "/control/services" ? 503 : 400,
+        );
+      }
+    } finally {
+      await application.close();
+    }
+  });
 });
 
 function fixtureDirectory(name: string): string {

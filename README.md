@@ -234,6 +234,10 @@ volumes:
 The vault and application start concurrently; do not add a readiness-based
 `depends_on`. During provisioning the application serves bounded setup status
 without opening SQLite or ordinary OAuth, MCP, login, or control behavior.
+Open `/control/setup` on the configured control origin to view the accessible
+browser status page. It polls with capped backoff, offers a safe manual retry
+after failure, advances to the fixed enrollment route when permitted, and
+redirects to the ordinary control entrypoint once available.
 Compose health uses liveness at `GET /api/v2/health/live`; operational monitors
 should use `GET /api/v2/health/ready`, and setup clients may read
 `GET /api/v2/setup/status`.

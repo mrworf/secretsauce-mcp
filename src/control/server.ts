@@ -273,10 +273,15 @@ export function createControlApplication(
   });
   const operational = options.operational ?? (() => true);
   application.addHook("onRequest", async (request, reply) => {
-    const setupPath = isSetupPath(request.url);
+    const setupApiPath = isSetupApiPath(request.url);
+    const setupWebPath = isSetupWebPath(request.url);
+    const setupWebCandidate = isSetupWebCandidate(request.url);
+    const setupPath = setupApiPath || setupWebPath;
     if (
-      setupPath
+      (setupPath || setupWebCandidate)
       && (
+        !setupPath
+        ||
         request.method !== "GET"
         || request.headers["content-length"] !== undefined
         || request.headers["transfer-encoding"] !== undefined
@@ -1067,11 +1072,25 @@ export async function startControlServer(
   };
 }
 
-function isSetupPath(url: string): boolean {
+function isSetupApiPath(url: string): boolean {
   const path = url.split("?", 1)[0];
   return path === "/api/v2/health/live"
     || path === "/api/v2/health/ready"
     || path === "/api/v2/setup/status";
+}
+
+function isSetupWebPath(url: string): boolean {
+  return url === "/control/setup"
+    || url === "/control/setup/"
+    || /^\/control\/assets\/[A-Za-z0-9_-]+-[A-Za-z0-9_-]{8,}\.(?:css|js|png|svg|woff2)$/
+      .test(url);
+}
+
+function isSetupWebCandidate(url: string): boolean {
+  const path = url.split("?", 1)[0] ?? "";
+  return path === "/control/setup"
+    || path === "/control/setup/"
+    || path.startsWith("/control/assets/");
 }
 
 export function restoreStageCoordinatorFromEnvironment(

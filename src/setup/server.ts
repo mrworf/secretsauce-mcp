@@ -6,6 +6,10 @@ import {
 } from "node:http";
 import type { GatewayConfig } from "../types.js";
 import type { PublicSetupStatus } from "./status.js";
+import {
+  loadControlWebAssets,
+  type ControlWebAssets,
+} from "../control/webAssets.js";
 
 const RETRY_AFTER_SECONDS = 3;
 const MAX_SOCKET_WAIT_MS = 5_000;
@@ -22,6 +26,7 @@ export interface SetupOnlyApplication {
 export async function startSetupOnlyApplication(
   config: GatewayConfig,
   status: () => PublicSetupStatus,
+  webAssets: ControlWebAssets = loadControlWebAssets(),
 ): Promise<SetupOnlyApplication> {
   if (config.control === undefined) {
     throw new Error("Control configuration is required.");
@@ -32,6 +37,7 @@ export async function startSetupOnlyApplication(
       response,
       status,
       config.control!.publicAuthority,
+      webAssets,
     );
   });
   const gatewayServer = createServer((request, response) => {
@@ -66,6 +72,7 @@ function handleControlSetupRequest(
   response: ServerResponse,
   status: () => PublicSetupStatus,
   publicAuthority: string,
+  webAssets: ControlWebAssets,
 ): void {
   setSecurityHeaders(response);
   if (!hasExactHost(request, publicAuthority)) {
@@ -108,12 +115,44 @@ function handleControlSetupRequest(
     return;
   }
   if (
+    isExactGet(request, "/control/setup")
+    || isExactGet(request, "/control/setup/")
+  ) {
+    writeAsset(response, webAssets.index.body, webAssets.index.contentType);
+    return;
+  }
+  if (request.method === "GET" && request.url?.startsWith("/control/assets/")) {
+    const name = request.url.slice("/control/assets/".length);
+    const asset = webAssets.assets.get(name);
+    if (
+      asset !== undefined
+      && !name.includes("?")
+      && request.headers["content-length"] === undefined
+      && request.headers["transfer-encoding"] === undefined
+    ) {
+      response.setHeader("cache-control", "public, max-age=31536000, immutable");
+      writeAsset(response, asset.body, asset.contentType);
+      return;
+    }
+    writeJson(response, 400, {
+      error: {
+        code: "invalid_request",
+        message: "The request is invalid.",
+      },
+    });
+    return;
+  }
+  if (
     request.url === LIVE_PATH
     || request.url === READY_PATH
     || request.url === STATUS_PATH
     || request.url?.startsWith(`${LIVE_PATH}?`)
     || request.url?.startsWith(`${READY_PATH}?`)
     || request.url?.startsWith(`${STATUS_PATH}?`)
+    || request.url === "/control/setup"
+    || request.url === "/control/setup/"
+    || request.url?.startsWith("/control/setup?")
+    || request.url?.startsWith("/control/setup/?")
   ) {
     writeJson(response, 400, {
       error: {
@@ -124,6 +163,18 @@ function handleControlSetupRequest(
     return;
   }
   writeUnavailable(response);
+}
+
+function writeAsset(
+  response: ServerResponse,
+  body: Buffer,
+  contentType: string,
+): void {
+  response.writeHead(200, {
+    "content-type": contentType,
+    "content-length": String(body.byteLength),
+  });
+  response.end(body);
 }
 
 function handleGatewaySetupRequest(

@@ -39,6 +39,11 @@ describe("setup-only application boundary", () => {
           status: 200,
           body: { state: "preparing", retry_pending: true },
         });
+      const setupPage = await call(controlPort, "GET", "/control/setup");
+      expect(setupPage.status).toBe(200);
+      expect(setupPage.headers["content-type"]).toContain("text/html");
+      expect(setupPage.body).toContain('<div id="root"></div>');
+      expect(setupPage.body).toContain("<noscript>");
 
       for (const target of [
         [controlPort, "POST", "/api/v2/auth/login"],
@@ -87,6 +92,8 @@ describe("setup-only application boundary", () => {
         ["POST", "/api/v2/setup/status", undefined],
         ["GET", "/api/v2/setup/status?detail=true", undefined],
         ["GET", "/api/v2/setup/status", "x"],
+        ["GET", "/control/setup?detail=true", undefined],
+        ["POST", "/control/setup", undefined],
       ] as const) {
         await expect(call(port, ...input)).resolves.toMatchObject({
           status: 400,
@@ -156,7 +163,9 @@ function call(
         resolve({
           status: response.statusCode ?? 0,
           headers: response.headers,
-          body: JSON.parse(source),
+          body: response.headers["content-type"]?.includes("application/json")
+            ? JSON.parse(source)
+            : source,
         });
       });
     });

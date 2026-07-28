@@ -94,6 +94,7 @@ export function createDefaultControlRouteRegistry(
     cache: "no-store",
     concurrency: "none",
     idempotency: "none",
+    rawResponse: true,
     successStatuses: [200],
     handler: () => ({ data: { state: "live" } }),
   });
@@ -115,6 +116,7 @@ export function createDefaultControlRouteRegistry(
     cache: "no-store",
     concurrency: "none",
     idempotency: "none",
+    rawResponse: true,
     successStatuses: [200, 503],
     handler: () => operational()
       ? { data: { state: "operational" as const } }
@@ -144,6 +146,7 @@ export function createDefaultControlRouteRegistry(
     cache: "no-store",
     concurrency: "none",
     idempotency: "none",
+    rawResponse: true,
     successStatuses: [200],
     handler: () => {
       const status = setupStatus?.() ?? {

@@ -8,6 +8,7 @@ import {
   type UserRole,
 } from "./controlApi";
 import { OidcSignIn } from "./OidcSignIn";
+import { SetupPage } from "./SetupPage";
 import "./styles.css";
 
 const root = document.getElementById("root");
@@ -15,7 +16,10 @@ if (root === null) throw new Error("Control application root is unavailable.");
 
 createRoot(root).render(
   <StrictMode>
-    <AuthenticatedControl />
+    {window.location.pathname === "/control/setup"
+      || window.location.pathname === "/control/setup/"
+      ? <SetupPage />
+      : <AuthenticatedControl />}
   </StrictMode>,
 );
 

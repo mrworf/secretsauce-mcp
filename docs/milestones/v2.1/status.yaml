@@ -58,12 +58,12 @@ milestones:
   - id: "06"
     title: "Browser Login, Sessions, And Logout"
     file: "docs/milestones/v2.1/06-browser-login-sessions-and-logout.md"
-    status: "pending"
+    status: "in_progress"
     dependencies:
       - "05"
     completed_at: null
     commit_hash: null
-    notes: "Pending implementation planning and acceptance evidence."
+    notes: "Implementation plan approved; existing session domain is retained behind a new branded browser shell and honest logout boundary."
   - id: "07"
     title: "Authentication Abuse Controls And Suspension"
     file: "docs/milestones/v2.1/07-authentication-abuse-and-suspension.md"

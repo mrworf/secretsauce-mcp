@@ -33,7 +33,7 @@
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "9.1.0",
     "@fastify/cookie": "11.1.2",
-    "@modelcontextprotocol/sdk": "^1.18.1",
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "@secretlint/core": "^13.0.2",
     "@secretlint/secretlint-rule-pattern": "^13.0.2",
     "@secretlint/secretlint-rule-preset-recommend": "^13.0.2",

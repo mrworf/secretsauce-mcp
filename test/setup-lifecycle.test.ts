@@ -43,15 +43,22 @@ describe("browser-first application lifecycle", () => {
       const setupClose = vi.fn(async () => undefined);
       const applicationClose = vi.fn(async () => undefined);
       const persistenceClose = vi.fn(async () => undefined);
-      const openPersistence = vi.fn(() => ({
-        readiness: {
-          database: "ready",
-          schema: "ready",
-          administrativeAudit: "ready",
-        },
-        execute: vi.fn(async () => users),
-        close: persistenceClose,
-      }));
+      const calls: string[] = [];
+      const validateOperationalConfig = vi.fn(() => {
+        calls.push("validate");
+      });
+      const openPersistence = vi.fn(() => {
+        calls.push("persistence");
+        return {
+          readiness: {
+            database: "ready",
+            schema: "ready",
+            administrativeAudit: "ready",
+          },
+          execute: vi.fn(async () => users),
+          close: persistenceClose,
+        };
+      });
       const startOperational = vi.fn(async (
         _config,
         _environment,
@@ -73,6 +80,7 @@ describe("browser-first application lifecycle", () => {
           })) as never,
           openPersistence: openPersistence as never,
           startOperational: startOperational as never,
+          validateOperationalConfig,
         },
       );
       try {
@@ -88,7 +96,9 @@ describe("browser-first application lifecycle", () => {
         });
         await expect(lifecycle.transition()).resolves.toBe(expectedPhase);
         expect(setupClose).toHaveBeenCalledTimes(1);
+        expect(validateOperationalConfig).toHaveBeenCalledTimes(1);
         expect(openPersistence).toHaveBeenCalledTimes(1);
+        expect(calls).toEqual(["validate", "persistence"]);
         const options = startOperational.mock.calls[0]![2];
         expect(options.operational()).toBe(expectedOperational);
         expect(options.startOrdinaryJobs).toBe(expectedJobs);
@@ -146,6 +156,49 @@ describe("browser-first application lifecycle", () => {
         retryPending: false,
       });
       expect(persistenceClose).toHaveBeenCalledTimes(1);
+      expect(startSetup).toHaveBeenCalledTimes(2);
+    } finally {
+      await lifecycle.close();
+    }
+  });
+
+  it("does not open durable state when provisioned key validation fails", async () => {
+    const monitor = dormantMonitor();
+    monitor.set({
+      state: "available",
+      message: "SecretSauce setup prerequisites are available.",
+      retryPending: false,
+    });
+    const startSetup = vi.fn(async () => ({
+      controlServer: {},
+      gatewayServer: {},
+      close: async () => undefined,
+    }));
+    const openPersistence = vi.fn();
+    const startOperational = vi.fn();
+    const lifecycle = await startBrowserFirstApplication(
+      lifecycleConfig(),
+      {},
+      {
+        monitor,
+        startSetup: startSetup as never,
+        openPersistence: openPersistence as never,
+        startOperational: startOperational as never,
+        validateOperationalConfig: () => {
+          throw new Error("private validation detail");
+        },
+      },
+    );
+    try {
+      await expect(lifecycle.transition()).resolves.toBe("not_ready");
+      expect(lifecycle.status()).toEqual({
+        state: "not_ready",
+        message:
+          "SecretSauce needs operator attention before setup can continue.",
+        retryPending: false,
+      });
+      expect(openPersistence).not.toHaveBeenCalled();
+      expect(startOperational).not.toHaveBeenCalled();
       expect(startSetup).toHaveBeenCalledTimes(2);
     } finally {
       await lifecycle.close();

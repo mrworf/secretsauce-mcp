@@ -5,7 +5,11 @@ import { generateKeyPairSync } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { parse } from "yaml";
 import { GatewayError } from "../src/errors.js";
-import { loadConfig, validateConfig } from "../src/config.js";
+import {
+  loadConfig,
+  validateConfig,
+  validateProvisionedKeyFiles,
+} from "../src/config.js";
 
 const validEnv = {
   TEST_GATEWAY_TOKEN: "dev-token",
@@ -842,39 +846,7 @@ describe("config validation", () => {
   });
 
   it("accepts only a complete database-backed built-in OAuth authority", () => {
-    const configured = (): any => {
-      const raw = validRaw();
-      raw.server.resource = "https://mcp.example.org";
-      raw.runtime = { authority: "database" };
-      raw.services = {};
-      raw.persistence = {
-        database_file: "/var/lib/secretsauce/control.sqlite",
-      };
-      raw.control = {
-        listen: "127.0.0.1:8081",
-        public_origin: "https://control.example.org",
-        idempotency_hmac_key_file: controlKeyFile("database-oauth"),
-      };
-      raw.identity = {
-        active_root_key_id: "current",
-        root_key_files: {
-          current: identityKeyFile("database-oauth-root", 81),
-        },
-        session_hmac_key_file:
-          identityKeyFile("database-oauth-session", 82),
-      };
-      raw.auth = {
-        mode: "builtin_oauth",
-        builtin_oauth: {
-          issuer: "https://mcp.example.org",
-          identity_source: "database",
-          token_hmac_key_file:
-            identityKeyFile("database-oauth-token", 83),
-          allowed_clients: ["https://chatgpt.com"],
-        },
-      };
-      return raw;
-    };
+    const configured = databaseOAuthRaw;
 
     const config = validateConfig(configured(), validEnv);
     expect(config.auth).toMatchObject({
@@ -921,6 +893,38 @@ describe("config validation", () => {
     expectConfigError(
       () => validateConfig(writableKey, validEnv),
       "mode-0400",
+    );
+  });
+
+  it("defers only vault-provisioned key files and revalidates them before use", () => {
+    const raw = databaseOAuthRaw();
+    const missingDirectory = mkdtempSync(
+      join(tmpdir(), "secretsauce-unprovisioned-"),
+    );
+    raw.control.idempotency_hmac_key_file =
+      join(missingDirectory, "idempotency.key");
+    raw.identity.root_key_files.current =
+      join(missingDirectory, "identity-root.key");
+    raw.identity.session_hmac_key_file =
+      join(missingDirectory, "identity-session.key");
+    raw.auth.builtin_oauth.token_hmac_key_file =
+      join(missingDirectory, "oauth-token.key");
+
+    expectConfigError(
+      () => validateConfig(raw, validEnv),
+      "mode-0400",
+    );
+    const deferred = validateConfig(
+      raw,
+      validEnv,
+      { deferProvisionedKeyValidation: true },
+    );
+    expect(deferred.control?.idempotencyHmacKeyFile).toBe(
+      raw.control.idempotency_hmac_key_file,
+    );
+    expectConfigError(
+      () => validateProvisionedKeyFiles(deferred),
+      "mode-restricted",
     );
   });
 
@@ -1307,6 +1311,40 @@ function identityKeyFile(name: string, fill: number): string {
   writeFileSync(file, `${Buffer.alloc(32, fill).toString("base64url")}\n`, { mode: 0o400 });
   chmodSync(file, 0o400);
   return file;
+}
+
+function databaseOAuthRaw(): any {
+  const raw = validRaw();
+  raw.server.resource = "https://mcp.example.org";
+  raw.runtime = { authority: "database" };
+  raw.services = {};
+  raw.persistence = {
+    database_file: "/var/lib/secretsauce/control.sqlite",
+  };
+  raw.control = {
+    listen: "127.0.0.1:8081",
+    public_origin: "https://control.example.org",
+    idempotency_hmac_key_file: controlKeyFile("database-oauth"),
+  };
+  raw.identity = {
+    active_root_key_id: "current",
+    root_key_files: {
+      current: identityKeyFile("database-oauth-root", 81),
+    },
+    session_hmac_key_file:
+      identityKeyFile("database-oauth-session", 82),
+  };
+  raw.auth = {
+    mode: "builtin_oauth",
+    builtin_oauth: {
+      issuer: "https://mcp.example.org",
+      identity_source: "database",
+      token_hmac_key_file:
+        identityKeyFile("database-oauth-token", 83),
+      allowed_clients: ["https://chatgpt.com"],
+    },
+  };
+  return raw;
 }
 
 function oidcRaw(): { raw: any; clientSecret: string } {

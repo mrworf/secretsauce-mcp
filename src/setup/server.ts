@@ -182,7 +182,10 @@ function handleGatewaySetupRequest(
   response: ServerResponse,
 ): void {
   setSecurityHeaders(response);
-  if (isExactGet(request, "/health")) {
+  if (
+    isExactGet(request, "/health")
+    || isExactGet(request, "/health/live")
+  ) {
     writeJson(response, 200, { state: "live" });
     return;
   }

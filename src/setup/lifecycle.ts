@@ -1,5 +1,6 @@
 import type { GatewayConfig } from "../types.js";
 import type { SecretSauceApplication } from "../application.js";
+import { validateProvisionedKeyFiles } from "../config.js";
 import { configuredAuditTextSanitizer } from "../runtime.js";
 import { PersistenceWorker } from "../persistence/worker.js";
 import { PACKAGE_VERSION } from "../version.js";
@@ -39,6 +40,7 @@ export async function startBrowserFirstApplication(
     startSetup?: typeof startSetupOnlyApplication;
     startOperational?: StartOperational;
     openPersistence?: typeof PersistenceWorker.open;
+    validateOperationalConfig?: typeof validateProvisionedKeyFiles;
   } = {},
 ): Promise<BrowserFirstApplication> {
   if (config.control === undefined || config.persistence === undefined) {
@@ -52,6 +54,8 @@ export async function startBrowserFirstApplication(
       (await import("../application.js"))
         .startSecretSauceApplication(...args));
   const openPersistence = dependencies.openPersistence ?? PersistenceWorker.open;
+  const validateOperationalConfig =
+    dependencies.validateOperationalConfig ?? validateProvisionedKeyFiles;
   let setup: SetupOnlyApplication | undefined = await startSetup(
     config,
     () => monitor.current(),
@@ -75,6 +79,7 @@ export async function startBrowserFirstApplication(
       setup = undefined;
       let persistence: PersistenceWorker | undefined;
       try {
+        validateOperationalConfig(config);
         persistence = openPersistence({
           databaseFile: config.persistence!.databaseFile,
           productVersion: PACKAGE_VERSION,

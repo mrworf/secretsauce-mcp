@@ -24,6 +24,16 @@ describe("setup-only application boundary", () => {
         (application.controlServer.address() as AddressInfo).port;
       const gatewayPort =
         (application.gatewayServer.address() as AddressInfo).port;
+      await expect(call(gatewayPort, "GET", "/health/live"))
+        .resolves.toMatchObject({
+          status: 200,
+          body: { state: "live" },
+        });
+      await expect(call(gatewayPort, "POST", "/health/live"))
+        .resolves.toMatchObject({
+          status: 503,
+          body: { error: { code: "temporarily_unavailable" } },
+        });
       await expect(call(controlPort, "GET", "/api/v2/health/live"))
         .resolves.toMatchObject({
           status: 200,

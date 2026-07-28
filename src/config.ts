@@ -359,11 +359,23 @@ type RawConfig = z.infer<typeof rawConfigSchema>;
 type RawService = RawConfig["services"][string];
 type RawDestination = RawService["destinations"][number];
 
-export function loadConfig(path: string): GatewayConfig {
-  return loadYamlConfig(path, "config", (raw) => validateConfig(raw));
+export interface ConfigValidationOptions {
+  deferProvisionedKeyValidation?: boolean;
 }
 
-export function validateConfig(raw: unknown, env: NodeJS.ProcessEnv = process.env): GatewayConfig {
+export function loadConfig(
+  path: string,
+  options: ConfigValidationOptions = {},
+): GatewayConfig {
+  return loadYamlConfig(path, "config", (raw) =>
+    validateConfig(raw, process.env, options));
+}
+
+export function validateConfig(
+  raw: unknown,
+  env: NodeJS.ProcessEnv = process.env,
+  options: ConfigValidationOptions = {},
+): GatewayConfig {
   const warnings: string[] = [];
   const debugDiagnostics: ConfigDebugDiagnostic[] = [];
   const parsed = parseRawConfig(raw);
@@ -390,8 +402,14 @@ export function validateConfig(raw: unknown, env: NodeJS.ProcessEnv = process.en
   }
   validateOAuthTrustUrls(parsed, warnings);
   const server = normalizeServer(parsed.server);
-  const auth = normalizeAuth(parsed.auth, env);
-  const control = normalizeControl(parsed.control, server, auth, parsed.persistence);
+  const auth = normalizeAuth(parsed.auth, env, options);
+  const control = normalizeControl(
+    parsed.control,
+    server,
+    auth,
+    parsed.persistence,
+    options,
+  );
   const tokens = normalizeTokens(parsed.tokens);
   const limits = normalizeLimits(parsed.limits, env);
   const clientSource = normalizeClientSource(parsed.client_source, warnings);
@@ -403,7 +421,12 @@ export function validateConfig(raw: unknown, env: NodeJS.ProcessEnv = process.en
   const persistence: PersistenceConfig | undefined = parsed.persistence === undefined
     ? undefined
     : { databaseFile: parsed.persistence.database_file };
-  const identity = normalizeIdentity(parsed.identity, parsed.control, parsed.persistence);
+  const identity = normalizeIdentity(
+    parsed.identity,
+    parsed.control,
+    parsed.persistence,
+    options,
+  );
   if (
     auth.mode === "builtin_oauth"
     && auth.builtinOAuth.identitySource === "database"
@@ -443,6 +466,7 @@ function normalizeIdentity(
   raw: RawConfig["identity"],
   control: RawConfig["control"],
   persistence: RawConfig["persistence"],
+  options: ConfigValidationOptions,
 ): IdentityConfig | undefined {
   if (raw === undefined) return undefined;
   if (control === undefined || persistence === undefined) {
@@ -458,16 +482,27 @@ function normalizeIdentity(
   const rootKeyFiles: Record<string, string> = {};
   const canonicalPaths = new Set<string>();
   for (const [keyId, path] of Object.entries(raw.root_key_files)) {
-    validateRestrictedIdentityKeyFile(path, ["identity", "root_key_files", keyId]);
-    const canonical = safeRealpath(path, ["identity", "root_key_files", keyId]);
+    const configPath: ConfigPath = ["identity", "root_key_files", keyId];
+    let canonical = path;
+    if (!options.deferProvisionedKeyValidation) {
+      validateRestrictedIdentityKeyFile(path, configPath);
+      canonical = safeRealpath(path, configPath);
+    }
     if (canonicalPaths.has(canonical)) {
       throw configValidationError("identity key files must be distinct", ["identity", "root_key_files", keyId]);
     }
     canonicalPaths.add(canonical);
     rootKeyFiles[keyId] = path;
   }
-  validateRestrictedIdentityKeyFile(raw.session_hmac_key_file, ["identity", "session_hmac_key_file"]);
-  const sessionCanonical = safeRealpath(raw.session_hmac_key_file, ["identity", "session_hmac_key_file"]);
+  const sessionPath: ConfigPath = ["identity", "session_hmac_key_file"];
+  let sessionCanonical = raw.session_hmac_key_file;
+  if (!options.deferProvisionedKeyValidation) {
+    validateRestrictedIdentityKeyFile(
+      raw.session_hmac_key_file,
+      sessionPath,
+    );
+    sessionCanonical = safeRealpath(raw.session_hmac_key_file, sessionPath);
+  }
   if (canonicalPaths.has(sessionCanonical)) {
     throw configValidationError("identity session and root key files must be distinct", ["identity", "session_hmac_key_file"]);
   }
@@ -538,6 +573,77 @@ function normalizeIdentity(
       maxTotpVerificationsPerSource: raw.limits.max_totp_verifications_per_source,
     },
   };
+}
+
+export function validateProvisionedKeyFiles(config: GatewayConfig): void {
+  if (config.control !== undefined) {
+    validateRestrictedControlKeyFile(config.control.idempotencyHmacKeyFile);
+  }
+  if (
+    config.auth.mode === "builtin_oauth"
+    && config.auth.builtinOAuth.tokenHmacKeyFile !== undefined
+  ) {
+    validateRestrictedOAuthTokenKeyFile(
+      config.auth.builtinOAuth.tokenHmacKeyFile,
+    );
+  }
+  if (config.identity === undefined) return;
+
+  const canonicalPaths = new Set<string>();
+  for (const [keyId, path] of Object.entries(config.identity.rootKeyFiles)) {
+    const configPath: ConfigPath = ["identity", "root_key_files", keyId];
+    validateRestrictedIdentityKeyFile(path, configPath);
+    const canonical = safeRealpath(path, configPath);
+    if (canonicalPaths.has(canonical)) {
+      throw configValidationError(
+        "identity key files must be distinct",
+        configPath,
+      );
+    }
+    canonicalPaths.add(canonical);
+  }
+
+  const sessionPath: ConfigPath = ["identity", "session_hmac_key_file"];
+  validateRestrictedIdentityKeyFile(
+    config.identity.sessionHmacKeyFile,
+    sessionPath,
+  );
+  const sessionCanonical = safeRealpath(
+    config.identity.sessionHmacKeyFile,
+    sessionPath,
+  );
+  if (canonicalPaths.has(sessionCanonical)) {
+    throw configValidationError(
+      "identity session and root key files must be distinct",
+      sessionPath,
+    );
+  }
+  canonicalPaths.add(sessionCanonical);
+
+  for (const [providerId, provider] of Object.entries(
+    config.identity.oidc?.providers ?? {},
+  )) {
+    if (provider.clientSecretFile === undefined) continue;
+    const configPath: ConfigPath = [
+      "identity",
+      "oidc",
+      "providers",
+      providerId,
+      "client_secret_file",
+    ];
+    validateRestrictedOidcClientSecretFile(
+      provider.clientSecretFile,
+      configPath,
+    );
+    const canonical = safeRealpath(provider.clientSecretFile, configPath);
+    if (canonicalPaths.has(canonical)) {
+      throw configValidationError(
+        "OIDC client secret and identity key files must be distinct",
+        configPath,
+      );
+    }
+    canonicalPaths.add(canonical);
+  }
 }
 
 function normalizeIdentityOidc(
@@ -857,6 +963,7 @@ function normalizeControl(
   server: ServerConfig,
   auth: AuthConfig,
   persistence: RawConfig["persistence"],
+  options: ConfigValidationOptions,
 ): ControlConfig | undefined {
   if (raw === undefined) return undefined;
   if (persistence === undefined) {
@@ -901,7 +1008,9 @@ function normalizeControl(
       originPath,
     );
   }
-  validateRestrictedControlKeyFile(raw.idempotency_hmac_key_file);
+  if (!options.deferProvisionedKeyValidation) {
+    validateRestrictedControlKeyFile(raw.idempotency_hmac_key_file);
+  }
   return {
     listen: raw.listen,
     host: listener.host,
@@ -995,7 +1104,11 @@ function validateRestrictedOAuthTokenKeyFile(path: string): void {
   }
 }
 
-function normalizeAuth(raw: RawConfig["auth"], env: NodeJS.ProcessEnv): AuthConfig {
+function normalizeAuth(
+  raw: RawConfig["auth"],
+  env: NodeJS.ProcessEnv,
+  options: ConfigValidationOptions,
+): AuthConfig {
   if (raw.mode === "oauth") {
     if (!raw.oauth.audience && !raw.oauth.resource) {
       throw configValidationError("auth.oauth must include audience or resource", ["auth", "oauth"]);
@@ -1051,7 +1164,10 @@ function normalizeAuth(raw: RawConfig["auth"], env: NodeJS.ProcessEnv): AuthConf
         ["auth", "builtin_oauth"],
       );
     }
-    if (tokenHmacKeyFile !== undefined) {
+    if (
+      tokenHmacKeyFile !== undefined
+      && !options.deferProvisionedKeyValidation
+    ) {
       validateRestrictedOAuthTokenKeyFile(tokenHmacKeyFile);
     }
     const username = usernameEnv === undefined ? undefined : env[usernameEnv];

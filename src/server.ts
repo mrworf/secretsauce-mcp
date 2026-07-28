@@ -68,6 +68,15 @@ export function createGatewayServer(
       });
       return;
     }
+    if (
+      request.method === "GET"
+      && request.url === "/health/live"
+      && request.headers["content-length"] === undefined
+      && request.headers["transfer-encoding"] === undefined
+    ) {
+      writeJson(response, 200, { status: "live" });
+      return;
+    }
     if (options.operational !== undefined && !options.operational()) {
       response.setHeader("retry-after", "3");
       writeJson(response, 503, {

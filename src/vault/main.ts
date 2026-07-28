@@ -1,5 +1,16 @@
 import { dirname, join } from "node:path";
-import { chmodSync, chownSync, existsSync } from "node:fs";
+import {
+  chmodSync,
+  chownSync,
+  closeSync,
+  constants,
+  existsSync,
+  fchmodSync,
+  fchownSync,
+  fstatSync,
+  mkdirSync,
+  openSync,
+} from "node:fs";
 import { VaultCapabilityAuthority } from "./capabilities.js";
 import { VaultBrokerServer } from "./broker.js";
 import {
@@ -101,6 +112,11 @@ export async function startVaultService(
   publishRotation?: (phase: string) => void,
 ): Promise<RunningVaultService> {
   const config = loadVaultStructuralConfig(configFile);
+  prepareVaultStoreDirectory(
+    config.storeDirectory,
+    config.setup.runtimeUid,
+    config.setup.runtimeGid,
+  );
   const setupOwnerUid = process.getuid?.() ?? config.setup.runtimeUid;
   for (const path of new Set([
     dirname(config.statusSocket.path),
@@ -270,6 +286,35 @@ export async function startVaultService(
       await status.close();
     },
   };
+}
+
+function prepareVaultStoreDirectory(
+  path: string,
+  uid: number,
+  gid: number,
+): void {
+  try {
+    if (!existsSync(path)) mkdirSync(path, { mode: 0o700 });
+    const descriptor = openSync(
+      path,
+      constants.O_RDONLY | constants.O_DIRECTORY | constants.O_NOFOLLOW,
+    );
+    try {
+      fchownSync(descriptor, uid, gid);
+      fchmodSync(descriptor, 0o700);
+      const metadata = fstatSync(descriptor);
+      if (
+        !metadata.isDirectory()
+        || metadata.uid !== uid
+        || metadata.gid !== gid
+        || (metadata.mode & 0o777) !== 0o700
+      ) throw new Error("Vault store ownership is invalid.");
+    } finally {
+      closeSync(descriptor);
+    }
+  } catch {
+    throw new Error("Vault store could not be prepared.");
+  }
 }
 
 async function main(): Promise<void> {

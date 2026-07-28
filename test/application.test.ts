@@ -26,6 +26,9 @@ describe("combined SecretSauce application", () => {
       "referenceAggregates: runtime.capabilities.tokenBroker",
     );
     expect(source).not.toContain("runtime.capabilities.tokenBroker.records");
+    expect(source).toContain(
+      "browserFirst\n        ? { deferProvisionedKeyValidation: true }",
+    );
   });
 
   it("serves gateway and control listeners through one database owner", async () => {

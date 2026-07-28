@@ -48,6 +48,13 @@ describe("health server", () => {
     }
     const baseUrl = `http://127.0.0.1:${address.port}`;
     try {
+      const live = await fetch(`${baseUrl}/health/live`);
+      expect(live.status).toBe(200);
+      await expect(live.json()).resolves.toEqual({ status: "live" });
+      const invalidLive = await fetch(`${baseUrl}/health/live`, {
+        method: "POST",
+      });
+      expect(invalidLive.status).toBe(503);
       for (const request of [
         fetch(`${baseUrl}/health`),
         fetch(`${baseUrl}/.well-known/oauth-authorization-server`),

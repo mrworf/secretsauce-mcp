@@ -5,10 +5,11 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  symlinkSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { request } from "node:http";
 import { describe, expect, it, vi } from "vitest";
 import { parse, stringify } from "yaml";
@@ -35,6 +36,8 @@ describe("vault provisioning entrypoint lifecycle", () => {
       expect(existsSync(fixture.credentialSocket)).toBe(false);
       expect(existsSync(join(fixture.stateDirectory, "manifest.json")))
         .toBe(true);
+      expect(lstatSync(fixture.retained.vault_store).mode & 0o777)
+        .toBe(0o700);
     });
     const service = await startVaultService(fixture.configFile, drop);
     try {
@@ -73,6 +76,20 @@ describe("vault provisioning entrypoint lifecycle", () => {
     } finally {
       await service.close();
     }
+  });
+
+  it("rejects a symlinked vault store before provisioning or privilege drop", async () => {
+    const fixture = configFixture();
+    const target = join(dirname(fixture.retained.vault_store), "vault-target");
+    mkdirSync(target, { mode: 0o700, recursive: true });
+    symlinkSync(target, fixture.retained.vault_store);
+    const drop = vi.fn();
+
+    await expect(startVaultService(fixture.configFile, drop)).rejects.toThrow();
+    expect(drop).not.toHaveBeenCalled();
+    expect(existsSync(fixture.statusSocket)).toBe(false);
+    expect(existsSync(fixture.credentialSocket)).toBe(false);
+    expect(Object.values(fixture.keyPaths).some(existsSync)).toBe(false);
   });
 
   it("drops setup authority and remains status-only for retained-state mismatch", async () => {

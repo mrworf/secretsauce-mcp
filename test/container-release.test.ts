@@ -22,6 +22,9 @@ describe("release container deployment", () => {
     expect(runtime).toContain("/var/lib/secretsauce/audit");
     expect(runtime).toContain("/var/lib/secretsauce/oauth");
     expect(runtime).toContain("HEALTHCHECK");
+    expect(runtime).toContain(
+      "http://127.0.0.1:8080/health/live",
+    );
     expect(runtime).toContain('CMD ["node", "dist/application.js"]');
     expect(runtime).toContain("EXPOSE 8080 8081");
     expect(runtime).not.toMatch(/\bUSER\s+(?:0|root)\b/);
@@ -37,7 +40,7 @@ describe("release container deployment", () => {
       "CMD",
       "wget",
       "-qO-",
-      "http://127.0.0.1:8080/health",
+      "http://127.0.0.1:8080/health/live",
     ]);
     expect(gateway.volumes).toEqual(expect.arrayContaining([
       "./examples/config-v2.1.yaml:/config/config.yaml:ro",

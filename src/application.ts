@@ -197,8 +197,15 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     process.exit(1);
   }
   try {
-    const config = loadConfig(configPath);
-    const application = process.env.SECRETSAUCE_VAULT_STATUS_SOCKET === undefined
+    const browserFirst =
+      process.env.SECRETSAUCE_VAULT_STATUS_SOCKET !== undefined;
+    const config = loadConfig(
+      configPath,
+      browserFirst
+        ? { deferProvisionedKeyValidation: true }
+        : {},
+    );
+    const application = !browserFirst
       ? await startSecretSauceApplication(config)
       : await (
           await import("./setup/lifecycle.js")

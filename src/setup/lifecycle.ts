@@ -1,8 +1,5 @@
 import type { GatewayConfig } from "../types.js";
-import {
-  startSecretSauceApplication,
-  type SecretSauceApplication,
-} from "../application.js";
+import type { SecretSauceApplication } from "../application.js";
 import { configuredAuditTextSanitizer } from "../runtime.js";
 import { PersistenceWorker } from "../persistence/worker.js";
 import { PACKAGE_VERSION } from "../version.js";
@@ -31,13 +28,16 @@ export interface BrowserFirstApplication {
   close(): Promise<void>;
 }
 
+type StartOperational =
+  typeof import("../application.js").startSecretSauceApplication;
+
 export async function startBrowserFirstApplication(
   config: GatewayConfig,
   environment: NodeJS.ProcessEnv = process.env,
   dependencies: {
     monitor?: SetupStatusMonitor;
     startSetup?: typeof startSetupOnlyApplication;
-    startOperational?: typeof startSecretSauceApplication;
+    startOperational?: StartOperational;
     openPersistence?: typeof PersistenceWorker.open;
   } = {},
 ): Promise<BrowserFirstApplication> {
@@ -46,8 +46,11 @@ export async function startBrowserFirstApplication(
   }
   const monitor = dependencies.monitor ?? vaultSetupStatusMonitor(environment);
   const startSetup = dependencies.startSetup ?? startSetupOnlyApplication;
-  const startOperational =
-    dependencies.startOperational ?? startSecretSauceApplication;
+  const startOperational: StartOperational =
+    dependencies.startOperational
+    ?? (async (...args) =>
+      (await import("../application.js"))
+        .startSecretSauceApplication(...args));
   const openPersistence = dependencies.openPersistence ?? PersistenceWorker.open;
   let setup: SetupOnlyApplication | undefined = await startSetup(
     config,

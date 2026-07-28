@@ -1,4 +1,4 @@
-import { chmodSync, mkdtempSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
@@ -7,6 +7,17 @@ import { startBrowserFirstApplication } from "../src/setup/lifecycle.js";
 import { SetupStatusMonitor } from "../src/setup/status.js";
 
 describe("browser-first application lifecycle", () => {
+  it("defers the operational composition import until after entrypoint evaluation", () => {
+    const source = readFileSync("src/setup/lifecycle.ts", "utf8");
+    expect(source).toContain(
+      'import type { SecretSauceApplication } from "../application.js";',
+    );
+    expect(source).toContain('await import("../application.js")');
+    expect(source).not.toMatch(
+      /import\s*\{[^}]*startSecretSauceApplication[^}]*\}\s*from\s*"\.\.\/application\.js"/s,
+    );
+  });
+
   it.each([
     {
       users: 0,

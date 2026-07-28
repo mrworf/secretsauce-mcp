@@ -123,6 +123,11 @@ pass.
   reader browser journey could not run because no in-app browser target was
   available. Authenticated live MCP tools, complete database/OAuth/audit
   durability, and the full ephemeral-authority matrix are not executed here.
+  A qualification-only bearer probe was correctly rejected by the database
+  runtime because the bearer subject was not an active durable user; it is
+  negative boundary evidence, not a substitute for built-in OAuth. The live
+  journey needs an approved externally reachable HTTPS client-metadata
+  document.
 - Hosted Codex and ChatGPT checks against a deployment are not supplied.
 - Independent/human security, architecture, UX/accessibility, data/API,
   operations, documentation, and release approvals are not supplied.

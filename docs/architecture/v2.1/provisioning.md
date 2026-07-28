@@ -23,7 +23,8 @@ volume and the sole generator of SecretSauce-owned application keys. The
 application starts concurrently in setup-only mode and reads a bounded private
 status operation over a separate Unix-domain socket. The authenticated
 credential-broker socket opens only after the manifest commits to `configured`
-and the entrypoint drops setup-only privileges.
+and the entrypoint drops setup-only privileges. The vault container has no
+network attachment in any phase.
 
 ## Decision
 
@@ -70,7 +71,9 @@ Compose starts the vault and application concurrently. The application does not
 wait for operational vault readiness merely to expose liveness, readiness,
 sanitized setup status, and safe static assets. It defers its database writer,
 key-dependent subsystems, and ordinary web, control, OAuth, and MCP behavior
-until vault provisioning reports `ready`.
+until vault provisioning reports `ready`. The vault service is configured
+without a network namespace attachment; both of its interfaces use shared Unix
+sockets.
 
 ### Access and privilege boundaries
 
@@ -140,7 +143,8 @@ or compromise in that phase has installation-wide impact.
 Change: minimize the setup entrypoint, use closed adapters, perform every
 continuity check before writes, prohibit secret-bearing diagnostics, and make
 the privilege drop an integration-tested boundary. Give retained-state adapters
-read-only access and return only bounded classifications.
+read-only access and return only bounded classifications. Deployment tests must
+prove the vault has no network attachment, not merely no published port.
 
 Do not change yet: do not add a network setup API, remotely triggered
 provisioning, a third service, or a general plugin system. None is required by

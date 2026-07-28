@@ -676,6 +676,11 @@ limited without rolling back enrollment.
   must receive its assigned generated keys read-only and must independently
   validate their format and configured-manifest fingerprints before enabling
   key-dependent behavior.
+- `SETUP-025` The official Compose vault service must have no network
+  attachment during provisioning, status-only error, or runtime broker phases.
+  Provisioning status and credential operations must use only their separate
+  filesystem-restricted Unix-domain sockets. Merely omitting published ports is
+  insufficient.
 
 ### 13.2 Bootstrap and enrollment
 
@@ -1178,8 +1183,8 @@ baseline for this lifecycle.
 
 The `secretsauce-vault` container entrypoint owns automatic provisioning and
 then transitions into the runtime credential broker; this is one deployed
-service, not an additional setup service. It has no TCP port. During setup it
-has:
+service, not an additional setup service. The vault container has no network
+attachment in any phase. During setup it has:
 
 - sole write access to the dedicated setup-state volume and generated-key
   directories;
@@ -1344,6 +1349,9 @@ this document.
 23. After vault `ready`, every runtime consumer validates only its assigned
     read-only keys and configured-manifest entries before key-dependent behavior
     becomes available.
+24. The official Compose vault container has no network attachment in
+    provisioning, status-only error, and runtime phases; both private interfaces
+    remain usable through their separate Unix sockets.
 
 ### 21.2 Initial enrollment
 
@@ -1461,7 +1469,9 @@ this document.
   behavior without caller keys, private status-socket permissions, preparing,
   retry, ready, malformed/unavailable status, fatal configuration error without
   a restart loop, application runtime initialization after vault readiness, and
-  container recreation with durable setup/key/state volumes.
+  container recreation with durable setup/key/state volumes. Deployment tests
+  must also prove that the vault has no network attachment rather than merely no
+  published ports.
 - Browser tests for branded login, unified enrollment, no setup-state disclosure,
   TOTP confirmation, redirect-to-login, successful logout, injected logout
   persistence/audit failure and retry, account settings, administrative scope,
@@ -1592,6 +1602,8 @@ These questions concern mechanisms and must not change the product contract:
 - The authenticated vault broker socket opens only after the manifest commits
   to `configured` and the entrypoint drops setup-only access. Runtime consumers
   receive only their assigned keys with read-only access.
+- The vault service has no network attachment in setup, status-only error, or
+  runtime phases; its two private interfaces use Unix sockets.
 - There is no configured-manifest clearing or cryptographic-reset capability.
 - Administrative agent-connection revocation changes state only when current
   actor role, target-owner eligibility, and complete reachable-service scope
@@ -1648,7 +1660,7 @@ These questions concern mechanisms and must not change the product contract:
 
 | Capability/risk | Requirements | Acceptance |
 | --- | --- | --- |
-| Automatic fail-closed key setup | `SETUP-001`–`SETUP-024` | 21.1 |
+| Automatic fail-closed key setup | `SETUP-001`–`SETUP-025` | 21.1 |
 | Atomic initial superadmin | `ENROLL-001`–`ENROLL-013` | 21.2 |
 | Branded uniform login/logout | `LOGIN-001`–`LOGIN-007`, `LOGOUT-001`–`LOGOUT-006` | 21.3, 21.5, 21.6 |
 | Rate limits and durable suspension | `ABUSE-001`–`ABUSE-014` | 21.3 |
@@ -1658,7 +1670,7 @@ These questions concern mechanisms and must not change the product contract:
 | Scoped revocation and audit | `ACCESS-001`–`ACCESS-012` | 21.5 |
 | Health before setup | `HEALTH-001`–`HEALTH-009` | 21.1 |
 | Secret and personal-data minimization | Sections 14–16 | 21.2, 21.5, 21.6 |
-| Browser-first Compose deployment | `SETUP-010`–`SETUP-024`, sections 18–19 | 21.1 |
+| Browser-first Compose deployment | `SETUP-010`–`SETUP-025`, sections 18–19 | 21.1 |
 
 ## 27. Review readiness
 

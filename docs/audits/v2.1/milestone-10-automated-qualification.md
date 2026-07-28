@@ -29,7 +29,8 @@ approval.
   tests with approved loopback/private-socket permission.
 - Generated control OpenAPI is current.
 - The v2.1 readiness validator passed all 14 architecture/readiness artifacts.
-- The release artifact/privacy scan passed 657 closed-scope files.
+- The release artifact/privacy scan passed 658 closed-scope files after the
+  exact-candidate external qualification runbook was staged.
 
 ## Integration finding and remediation
 

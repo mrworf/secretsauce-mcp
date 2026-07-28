@@ -20,13 +20,13 @@ and requires the affected gates to be rerun.
 | Production dependency advisory threshold | Security owner | `npm run audit:production` must report no High/Critical production advisory | pending |
 | Human/API role and cross-service authorization | Security owner | 246 human/API role-capability cells plus registered route and repository contracts | pass |
 | Wide/narrow accessibility and critical UX states | UX owner | Release-wide route/accessibility contracts plus owning component suites | pass |
-| Artifact/privacy prohibited-data scan | Security owner | 657 tracked, staged, built, generated, and synthetic closed-scope files | pass |
+| Artifact/privacy prohibited-data scan | Security owner | 658 tracked, staged, built, generated, and synthetic closed-scope files | pass |
 | PRD scale and bounded-work budgets | Architecture owner | Deterministic SQLite/repository workloads plus 252-record access pagination/global revocation | pass |
 | Setup, rotation, recovery, and invalidation integration | Security owner | Owning process, interruption, restart, fault, and persistence suites | pass |
 | Codex-named OAuth/MCP protocol journey | Compatibility owner | Durable OAuth/MCP/restart/refresh/revocation fixture using origin `https://mcp.example.org` and MCP path `/mcp` | pass |
 | ChatGPT-named OAuth/MCP protocol journey | Compatibility owner | Durable OAuth/MCP/restart/refresh/revocation fixture using origin `https://mcp.example.org` and MCP path `/mcp` | pass |
-| Official Compose clean setup and recreation | Operations owner | Exact-candidate clean setup-only, enrollment handoff, operational MCP, recreation, durable-store, vault-isolation, and rotation journey on Docker amd64 | pending |
-| Live Codex and ChatGPT deployment procedure | Operator | Run both hosted clients against `https://mcp.example.org/mcp`; a failure blocks that deployment | pending |
+| Official Compose clean setup and recreation | Operations owner | [Exact-candidate runbook](v2.1-release-qualification.md); clean setup-only, enrollment handoff, operational MCP, recreation, durable-store, vault-isolation, and rotation journey on Docker amd64 | pending |
+| Live Codex and ChatGPT deployment procedure | Operator | [Exact-candidate runbook](v2.1-release-qualification.md); run both hosted clients against `https://mcp.example.org/mcp`; a failure blocks that deployment | pending |
 | Final security, architecture, UX, data/API, operations, documentation, and human approval | Named independent/human reviewers | Decision-complete exact-candidate artifacts with all remediation closed | pending |
 
 ## Release-blocking policy

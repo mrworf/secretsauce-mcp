@@ -9,6 +9,7 @@ const RELEASE_DOCS = [
   "docs/client-compatibility.md",
   "docs/access-management.md",
   "docs/release-matrix.md",
+  "docs/v2.1-release-qualification.md",
   "docs/plans/v2.1/milestone-10-release-qualification-and-documentation.md",
   "docs/audits/v2.1/milestone-10-automated-qualification.md",
   ...Array.from(
@@ -112,7 +113,7 @@ describe("release operations documentation", () => {
       "Official Compose clean setup and recreation",
     );
     expect(matrix).toContain("168 files / 1,087 tests passed");
-    expect(matrix).toContain("657 tracked, staged, built, generated");
+    expect(matrix).toContain("658 tracked, staged, built, generated");
     expect(matrix).toContain("executable candidate `1768357`");
     expect(matrix).toContain("No red or pending gate is waived");
     expect(matrix).not.toContain("candidate `acf8b67`");
@@ -130,5 +131,31 @@ describe("release operations documentation", () => {
     expect(status).not.toMatch(
       /id: "10"[\s\S]*status: "completed"/,
     );
+  });
+
+  it("keeps exact-candidate external qualification complete and secret-safe", () => {
+    const runbook = readFileSync("docs/v2.1-release-qualification.md", "utf8");
+    const normalized = runbook.replace(/\s+/g, " ");
+    for (const expected of [
+      "npm run audit:production",
+      "docker-compose.example.yaml",
+      "network mode `none`",
+      "does not automatically create a browser session",
+      "force-recreate both containers",
+      "identity` and `vault`",
+      "https://mcp.example.org/mcp",
+      "200% zoom",
+      "representative screen reader",
+      "No gate is waived",
+    ]) expect(normalized).toContain(expected);
+    expect(normalized).toContain(
+      "sends dependency metadata to the public npm registry",
+    );
+    expect(normalized).toContain(
+      "never apply the cleanup command to an existing installation",
+    );
+    expect(runbook).not.toMatch(/Authorization:\s+(?!Bearer <)/);
+    expect(runbook).not.toMatch(/Cookie:\s+\S+/);
+    expect(runbook).not.toMatch(/https?:\/\/(?![a-z0-9.-]*example\.org)[a-z0-9.-]+/i);
   });
 });

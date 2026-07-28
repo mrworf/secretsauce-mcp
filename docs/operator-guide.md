@@ -159,4 +159,5 @@ retention policy explicitly permits it.
 - Restore or migration is incomplete: do not edit recovery files or database
   rows manually; use the Recovery tasks workspace and focused runbook.
 
-Release validation is defined in the [release matrix](release-matrix.md).
+Release validation is defined in the [release matrix](release-matrix.md) and
+the [exact-candidate v2.1 qualification runbook](v2.1-release-qualification.md).

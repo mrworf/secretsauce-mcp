@@ -2,7 +2,7 @@
 
 ## Candidate and environment
 
-- Executable baseline: `7e3a2fd`
+- Executable baseline: `b94a840`
 - Qualification environment: Node 26.4.0, npm 12.0.1, linux/x86_64
 - Container runtime: rootless Docker Engine 29.6.1, Compose 5.3.1,
   linux/amd64, VFS storage, with a disposable data root outside the repository.
@@ -75,6 +75,13 @@ starter and therefore did not exercise the default import graph. Commit
 defers the runtime import until handoff. A structural regression test, the full
 1,090-test suite, a clean Compose rebuild, bounded pre-enrollment probes, and
 forced recreation all pass.
+
+A later sustained health check found that Compose overrode the image's
+host-neutral gateway probe with the control liveness URL. The control listener
+correctly rejected the probe's loopback Host value, so the setup process stayed
+live while Docker eventually marked it unhealthy. Commit `b94a840` restores the
+gateway `/health` probe in Compose and adds exact deployment assertions. The
+recreated application became healthy, and the complete 1,090-test suite passes.
 
 ## Pending release blockers
 

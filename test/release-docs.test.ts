@@ -118,7 +118,7 @@ describe("release operations documentation", () => {
     );
     expect(matrix).toContain("168 files / 1,090 tests passed");
     expect(matrix).toContain("662 tracked, staged, built, generated");
-    expect(matrix).toContain("executable candidate `7e3a2fd`");
+    expect(matrix).toContain("executable candidate `b94a840`");
     expect(matrix).toContain("Project-authored final review packet");
     expect(matrix).toContain("explicitly non-independent");
     expect(matrix).toContain("No red or pending gate is waived");

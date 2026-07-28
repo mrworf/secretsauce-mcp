@@ -2,7 +2,7 @@
 
 ## Scope
 
-- **Executable baseline:** `7e3a2fd`
+- **Executable baseline:** `b94a840`
 - **Review time:** 2026-07-28 UTC
 - **Assurance boundary:** project-authored contract review, not independent
   data/API approval, documentation approval, or human release sign-off.

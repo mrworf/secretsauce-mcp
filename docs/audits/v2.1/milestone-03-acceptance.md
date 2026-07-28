@@ -59,7 +59,7 @@ preserves declared state in named volumes.
 
 ## Deviations and residual ownership
 
-- Later M10 qualification on executable candidate `7e3a2fd` used rootless
+- Later M10 qualification on executable candidate `b94a840` used rootless
   Docker Engine 29.6.1 and Compose 5.3.1 on linux/amd64. A clean official
   Compose build exposed a production-only top-level-await cycle between the
   browser-first and operational composition roots. Commit `7e3a2fd` replaced
@@ -68,6 +68,11 @@ preserves declared state in named volumes.
   boundary: application liveness and setup status returned 200, readiness and
   MCP remained bounded at 503, and the healthy vault retained network mode
   `none`.
+- A long-running check then found the Compose application health override used
+  the control liveness URL without its required public Host value, leaving the
+  live setup container marked unhealthy. Commit `b94a840` moved the declared
+  probe to the gateway's host-neutral `/health` liveness endpoint. The exact
+  contract and a recreated healthy container now pass.
 - Forced recreation preserved all 11 generated files byte-for-byte, restored
   both containers without restart loops, retained the declared read-only
   application and inventory mount directions, and returned setup liveness.

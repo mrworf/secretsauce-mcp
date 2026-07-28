@@ -2,7 +2,7 @@
 
 ## Scope
 
-- **Executable baseline:** `7e3a2fd`
+- **Executable baseline:** `b94a840`
 - **Review time:** 2026-07-28 UTC
 - **Assurance boundary:** project-authored white-box review, not independent
   architecture approval or human operations sign-off.
@@ -26,7 +26,9 @@ enforced. The correction landed in `b780201`.
 Real Compose execution then found a production-only composition import cycle.
 Commit `7e3a2fd` defers the operational application import until browser-first
 handoff; the full suite and clean/recreated topology pass. No additional
-source-level architecture blocker is confirmed. Release approval remains
+source-level architecture blocker is confirmed. A sustained Compose check also
+found and fixed the control-Host-dependent health probe in `b94a840`; the
+recreated setup container is healthy. Release approval remains
 pending because the interactive and operational portions of the Compose
 journey are incomplete, the production advisory query is absent, and hosted
 client and independent/human evidence are not available.
@@ -84,7 +86,7 @@ but not the post-enrollment operational and maintenance journey.
 
 ## What Should Change
 
-- Continue `docs/v2.1-release-qualification.md` against `7e3a2fd` or the later
+- Continue `docs/v2.1-release-qualification.md` against `b94a840` or the later
   exact executable candidate, recording interactive enrollment,
   post-enrollment durable/ephemeral state, operational MCP, and both root
   rotations.

@@ -2,7 +2,7 @@
 
 ## Scope
 
-- **Executable baseline:** `7e3a2fd`
+- **Executable baseline:** `b94a840`
 - **Review time:** 2026-07-28 UTC
 - **Assurance boundary:** project-authored source and automated review, not an
   independent accessibility audit or human approval.

@@ -3,7 +3,7 @@
 ## Metadata
 
 - **Project/repository:** SecretSauce (MCP)
-- **Executable baseline:** `7e3a2fd`
+- **Executable baseline:** `b94a840`
 - **Review date/time:** 2026-07-28 UTC
 - **Reviewer role:** project-authored application security review
 - **Assurance boundary:** this is a white-box implementation review by the

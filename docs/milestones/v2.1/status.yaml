@@ -19,13 +19,13 @@ milestones:
   - id: "02"
     title: "Fail-Closed Key Provisioning"
     file: "docs/milestones/v2.1/02-fail-closed-key-provisioning.md"
-    status: "in_progress"
+    status: "completed"
     dependencies:
       - "00"
       - "01"
-    completed_at: null
-    commit_hash: null
-    notes: "Dependency-ready after Milestones 00 and 01; implementation plan is docs/plans/v2.1/milestone-02-fail-closed-key-provisioning.md."
+    completed_at: "2026-07-27T23:48:00-07:00"
+    commit_hash: "7ead067"
+    notes: "Implemented fixed-registry automatic provisioning, checksum-protected continuity, bounded retry/fatal status, irreversible setup-authority release, independent runtime validation, and read-only Compose consumers. See docs/audits/v2.1/milestone-02-acceptance.md."
   - id: "03"
     title: "Browser-First Setup And Compose Gating"
     file: "docs/milestones/v2.1/03-browser-first-setup-and-compose.md"

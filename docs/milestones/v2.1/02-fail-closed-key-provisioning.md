@@ -115,17 +115,17 @@ inventing recovery keys.
 
 ## Acceptance criteria
 
-- [ ] A true fresh start converges to the exact fixed v2.1 configured manifest
+- [x] A true fresh start converges to the exact fixed v2.1 configured manifest
       after any permitted interruption without rotating a valid key.
-- [ ] Every retained, partial, malformed, missing, mismatched, indeterminate, or
+- [x] Every retained, partial, malformed, missing, mismatched, indeterminate, or
       unsupported state follows the PRD matrix without prohibited writes.
-- [ ] Complete explicit adoption validates all keys and present stores without
+- [x] Complete explicit adoption validates all keys and present stores without
       modifying keys; every invalid adoption fails closed.
-- [ ] Setup authority is singular and absent after configured transition or
+- [x] Setup authority is singular and absent after configured transition or
       fatal error.
-- [ ] The credential listener exists only after configured commit and proven
+- [x] The credential listener exists only after configured commit and proven
       privilege drop.
-- [ ] Required process, build, full-suite, OpenAPI, and secret-scan gates pass.
+- [x] Required process, build, full-suite, OpenAPI, and secret-scan gates pass.
 
 ## Planning handoff
 

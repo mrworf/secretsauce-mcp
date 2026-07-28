@@ -136,5 +136,5 @@ readiness validator, release scan, and permission-correct full suite.
 | Slice | Status | Commit | Evidence | Deviations |
 | --- | --- | --- | --- | --- |
 | 1 | completed | `66a2b91` | 6/6 registry/manifest tests; server build; negative external-input and unsafe-storage cases included | Asymmetric signing-key generation/validation moved with the adapter execution lifecycle in Slice 2. |
-| 2 | completed | | 14/14 registry/manifest/provisioning/retry tests; server build; fresh/adoption/partial/retained/pending/configured/future-state and real RSA/symmetric adapter cases | Durable retry metadata is best-effort status only and never authorizes a transition; every retry re-reads the authoritative manifest and key/store state. |
-| 3 | pending | | | |
+| 2 | completed | `36c8066` | 14/14 registry/manifest/provisioning/retry tests; server build; fresh/adoption/partial/retained/pending/configured/future-state and real RSA/symmetric adapter cases | Durable retry metadata is best-effort status only and never authorizes a transition; every retry re-reads the authoritative manifest and key/store state. |
+| 3 | completed | `7ead067` | 48/48 focused lifecycle/protocol/process tests; real mapped-root UID/GID drop; 996/996 bounded-worker full suite; build, OpenAPI, readiness, release scan | Public setup-only application composition remains Milestone 03. The host's unconstrained Vitest worker count caused unrelated five-second authentication timeouts; every unchanged test and timeout passed with four file workers. |

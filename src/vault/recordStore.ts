@@ -136,6 +136,53 @@ export interface VaultRecordRootRotationOptions {
   ) => void;
 }
 
+export function preflightVaultRecordRoot(
+  directory: string,
+  logicalRootKeyId: string,
+  root: Uint8Array,
+): number {
+  if (
+    !ROOT_KEY_ID_PATTERN.test(logicalRootKeyId)
+    || root.byteLength !== DEK_BYTES
+  ) throw vaultError("vault_store_unavailable");
+  const metadata = lstatSync(directory);
+  if (
+    !metadata.isDirectory()
+    || metadata.isSymbolicLink()
+    || (metadata.mode & 0o777) !== 0o700
+    || !isAllowedOwner(metadata.uid)
+  ) throw vaultError("vault_store_unavailable");
+  const rootCopy = Buffer.from(root);
+  const impossibleAlternative = Buffer.from(root);
+  impossibleAlternative[0] = impossibleAlternative[0]! ^ 1;
+  let count = 0;
+  try {
+    for (const locator of rotationLocators(directory)) {
+      const source = readRotationRecord(directory, locator);
+      try {
+        const classification = classifyRotationRecord(
+          source,
+          locator,
+          logicalRootKeyId,
+          rootCopy,
+          impossibleAlternative,
+        );
+        classification.dek.fill(0);
+        if (classification.kind !== "old") {
+          throw vaultError("vault_record_invalid");
+        }
+        count += 1;
+      } finally {
+        source.fill(0);
+      }
+    }
+    return count;
+  } finally {
+    rootCopy.fill(0);
+    impossibleAlternative.fill(0);
+  }
+}
+
 interface ParsedRecord {
   locator: string;
   generation: number;

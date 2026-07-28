@@ -130,6 +130,23 @@ export function createProvisioningKeyAdapters(
   return new Map(adapters.map((adapter) => [adapter.id, adapter]));
 }
 
+export function readProvisionedSymmetricKey(
+  entry: VaultProvisioningRegistryEntry,
+  ownership: ProvisionedKeyOwnership,
+): Buffer {
+  if (entry.adapter !== "symmetric-base64url-32-v1") {
+    throw vaultError("vault_key_invalid");
+  }
+  const source = readRestrictedFile(entry.path, 64, ownership);
+  try {
+    const text = source.toString("utf8");
+    const canonical = text.endsWith("\n") ? text.slice(0, -1) : text;
+    return decodeVaultKey(canonical);
+  } finally {
+    source.fill(0);
+  }
+}
+
 function ensureKeyParent(file: string): void {
   const parent = dirname(file);
   try {
@@ -138,7 +155,7 @@ function ensureKeyParent(file: string): void {
     if (
       !metadata.isDirectory()
       || metadata.isSymbolicLink()
-      || (metadata.mode & 0o077) !== 0
+      || (metadata.mode & 0o022) !== 0
     ) throw new Error("unsafe");
   } catch {
     throw vaultError("vault_key_invalid");

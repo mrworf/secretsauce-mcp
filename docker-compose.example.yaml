@@ -15,6 +15,8 @@ services:
       - vault-runtime:/run/secretsauce-vault
       - vault-store:/var/lib/secretsauce/vault
       # Retained-state adapters receive read-only inventory views.
+      # Keep this read-only ordinarily. An explicit identity-root rotation
+      # override temporarily replaces only this mount with the same target RW.
       - secretsauce-database:/inventory/database:ro
       - secretsauce-audit:/inventory/audit:ro
       - secretsauce-oauth:/inventory/oauth:ro

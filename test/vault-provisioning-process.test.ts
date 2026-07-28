@@ -22,6 +22,7 @@ import { VaultSetupAuthority } from "../src/vault/setupAuthority.js";
 import {
   validateAssignedRuntimeProvisionedKeys,
 } from "../src/vault/runtimeProvisioning.js";
+import { readProvisioningManifest } from "../src/vault/provisioningManifest.js";
 import {
   VAULT_PROVISIONING_KEY_IDS,
   type VaultProvisioningKeyPaths,
@@ -149,6 +150,77 @@ describe("vault provisioning entrypoint lifecycle", () => {
           path: fixture.keyPaths["vault.caller.data-plane"],
         }],
       )).toThrow();
+    } finally {
+      await service.close();
+    }
+  });
+
+  it("finishes host rotation before privilege drop and credential readiness", async () => {
+    const fixture = configFixture();
+    const first = await startVaultService(fixture.configFile, vi.fn());
+    await first.close();
+    const phases: string[] = [];
+    const drop = vi.fn(() => {
+      expect(existsSync(fixture.credentialSocket)).toBe(false);
+      expect(existsSync(join(
+        fixture.stateDirectory,
+        "rotation-journal.json",
+      ))).toBe(false);
+    });
+    const service = await startVaultService(
+      fixture.configFile,
+      drop,
+      [
+        "--rotate-root-key",
+        "vault",
+        "--rotation-request-id",
+        "1000000a-0000-7000-8000-000000000002",
+      ],
+      (phase) => {
+        phases.push(phase);
+        expect(existsSync(fixture.credentialSocket)).toBe(false);
+      },
+    );
+    try {
+      expect(phases).toEqual([
+        "preflight",
+        "staged",
+        "rewrapping",
+        "verified",
+        "committed",
+      ]);
+      expect(drop).toHaveBeenCalledOnce();
+      expect(await readVaultProvisioningStatus(fixture.statusSocket))
+        .toBe("ready");
+      expect(existsSync(fixture.credentialSocket)).toBe(true);
+      expect(readProvisioningManifest(join(
+        fixture.stateDirectory,
+        "manifest.json",
+      )).rotationReceipts).toHaveLength(1);
+    } finally {
+      await service.close();
+    }
+  });
+
+  it("keeps malformed maintenance commands status-only", async () => {
+    const fixture = configFixture();
+    const first = await startVaultService(fixture.configFile, vi.fn());
+    await first.close();
+    const drop = vi.fn();
+    const service = await startVaultService(
+      fixture.configFile,
+      drop,
+      ["--rotate-root-key", "vault"],
+    );
+    try {
+      expect(drop).toHaveBeenCalledOnce();
+      expect(await readVaultProvisioningStatus(fixture.statusSocket))
+        .toBe("configuration_error");
+      expect(existsSync(fixture.credentialSocket)).toBe(false);
+      expect(readProvisioningManifest(join(
+        fixture.stateDirectory,
+        "manifest.json",
+      )).rotationReceipts).toBeUndefined();
     } finally {
       await service.close();
     }

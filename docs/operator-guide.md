@@ -76,6 +76,44 @@ Never persist runtime `gref_…` or `sec_…` references. Persist SQLite, vault
 store/root keys, OAuth signing and HMAC keys, audit, and restore recovery state.
 Back up key material separately from application archives.
 
+## Envelope-root rotation
+
+Only the host-local vault entrypoint may rotate the configured `identity` or
+`vault` envelope root. Before starting, take a consistent backup of the
+database, vault store, generated-key volume, and setup-state volume. Stop the
+ordinary application and vault processes together; do not leave the
+application SQLite writer running.
+
+Start the vault with exactly one target and a fresh canonical UUID:
+
+```text
+node dist/vault/main.js --rotate-root-key identity --rotation-request-id 10000000-0000-7000-8000-000000000001
+node dist/vault/main.js --rotate-root-key vault --rotation-request-id 10000000-0000-7000-8000-000000000002
+```
+
+For Compose, apply a temporary command override containing the same arguments
+and recreate both services concurrently. An identity rotation override must
+also replace the vault's ordinary read-only database inventory mount with the
+same volume mounted read-write at `/inventory/database`. Do not make any other
+retained store writable. The application remains in setup-only mode and does
+not acquire its SQLite writer until the vault commits and reports ready.
+Remove the override and recreate the vault after success.
+
+The status socket and setup page remain available, but the credential socket,
+OAuth, MCP, login, and ordinary control behavior remain absent through
+maintenance. Safe vault logs report only the phase class. A restart with a
+valid journal resumes without repeating the arguments. Repeating the exact
+completed UUID is a no-change replay; reusing it for the other target fails
+closed.
+
+On `configuration_error`, do not edit the journal, manifest, archived root,
+encrypted records, or SQLite rows. Correct storage availability or ownership
+and restart without arguments to resume. If continuity cannot be established,
+stop both services and restore the database, vault store, generated keys, and
+setup state from one consistent pre-rotation snapshot, then escalate for
+review. Never delete a retained `*.retired` root until a later reviewed
+retention policy explicitly permits it.
+
 ## Upgrade and restart
 
 1. Create and verify a credential-less backup; use encrypted credential export

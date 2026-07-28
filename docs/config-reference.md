@@ -36,6 +36,15 @@ files use owner-read access; application/vault shared files use group-read
 access. The official Compose deployment supplies the required ownership and
 read-only consumer mounts.
 
+For identity-envelope rotation, `setup.identity_rotation` declares the stable
+application `logical_root_key_id` and the exact SQLite `database_file` below
+the `retained_state.application_database` inventory directory. These are
+non-secret structural values. The database mount stays read-only during
+ordinary vault startup and becomes writable only for an explicitly authorized
+identity-root maintenance restart. Omitting this block disables identity-root
+rotation without weakening ordinary provisioning; vault-root rotation remains
+available.
+
 The broker requires distinct data, control, backup, resolve-capability, and
 backup-capability keys. The broker mounts all of them. A caller mounts only its
 own caller key and the socket directory—never root keys, the encrypted store, or

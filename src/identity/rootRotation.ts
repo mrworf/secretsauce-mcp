@@ -11,12 +11,14 @@ import type {
 import {
   classifyOidcFlowEnvelopePhysicalRoot,
   rewrapOidcFlowEnvelopePhysicalRoot,
+  validateOidcFlowEnvelopePhysicalRoot,
   type OidcFlowPurpose,
 } from "./oidcFlowEnvelope.js";
 import {
   classifyTotpEnvelopePhysicalRoot,
   parseTotpEnvelope,
   rewrapTotpEnvelopePhysicalRoot,
+  validateTotpEnvelopePhysicalRoot,
 } from "./totp.js";
 
 const ROOT_KEY_ID = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
@@ -79,8 +81,7 @@ export interface IdentityRootRewrapBatch {
   cursor?: string;
 }
 
-export interface IdentityRootRotationOptions
-  extends PersistenceDatabaseOptions {
+export interface IdentityRootRotationMaterialOptions {
   logicalRootKeyId: string;
   oldRoot: Uint8Array;
   newRoot: Uint8Array;
@@ -90,6 +91,9 @@ export interface IdentityRootRotationOptions
     table: IdentityRootTable,
   ) => void;
 }
+
+export interface IdentityRootRotationOptions
+  extends PersistenceDatabaseOptions, IdentityRootRotationMaterialOptions {}
 
 interface TotpRow {
   kind: "confirmed" | "pending";
@@ -142,7 +146,7 @@ export class IdentityRootRotationAdapter {
 
   private constructor(
     owner: PersistenceOwner,
-    options: IdentityRootRotationOptions,
+    options: IdentityRootRotationMaterialOptions,
   ) {
     this.#owner = owner;
     this.#logicalRootKeyId = options.logicalRootKeyId;
@@ -157,6 +161,14 @@ export class IdentityRootRotationAdapter {
   static open(options: IdentityRootRotationOptions): IdentityRootRotationAdapter {
     validateOptions(options);
     const owner = PersistenceWorker.open(options);
+    return new IdentityRootRotationAdapter(owner, options);
+  }
+
+  static attach(
+    owner: PersistenceOwner,
+    options: IdentityRootRotationMaterialOptions,
+  ): IdentityRootRotationAdapter {
+    validateOptions(options);
     return new IdentityRootRotationAdapter(owner, options);
   }
 
@@ -388,7 +400,59 @@ export class IdentityRootRotationAdapter {
   }
 }
 
-function validateOptions(options: IdentityRootRotationOptions): void {
+export async function preflightIdentityRootStore(
+  owner: PersistenceOwner,
+  logicalRootKeyId: string,
+  oldRoot: Uint8Array,
+): Promise<Readonly<Record<IdentityRootTable, number>>> {
+  if (!ROOT_KEY_ID.test(logicalRootKeyId) || oldRoot.byteLength !== 32) {
+    throw new Error("Identity root rotation configuration is invalid.");
+  }
+  return owner.execute({
+    run: (database) => database.read((query) => {
+      validateClosedSchema(query);
+      const tables: Record<IdentityRootTable, number> = {
+        local_totp_authenticators: 0,
+        identity_pending_totp: 0,
+        identity_oidc_flows: 0,
+      };
+      for (const row of readIdentityRows(
+        query,
+        undefined,
+        Number.MAX_SAFE_INTEGER,
+      )) {
+        if (row.kind === "oidc") {
+          validateOidcFlowEnvelopePhysicalRoot(
+            row.envelope_json,
+            {
+              flowId: row.id,
+              providerId: row.provider_id,
+              purpose: row.purpose,
+            },
+            logicalRootKeyId,
+            oldRoot,
+          );
+        } else {
+          const envelope = parseTotpEnvelope(JSON.parse(row.envelope_json));
+          if (
+            row.root_key_id !== logicalRootKeyId
+            || envelope.rootKeyId !== row.root_key_id
+            || envelope.generation !== row.generation
+          ) throw new Error("Identity root envelope is invalid.");
+          validateTotpEnvelopePhysicalRoot(
+            envelope,
+            logicalRootKeyId,
+            oldRoot,
+          );
+        }
+        tables[row.table] += 1;
+      }
+      return tables;
+    }),
+  });
+}
+
+function validateOptions(options: IdentityRootRotationMaterialOptions): void {
   if (
     !ROOT_KEY_ID.test(options.logicalRootKeyId)
     || options.oldRoot.byteLength !== 32

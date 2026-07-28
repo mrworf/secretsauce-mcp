@@ -50,3 +50,6 @@ setup:
     vault_store: /var/lib/secretsauce/vault
     audit_store: /inventory/audit
     installation_marker: /inventory/database
+  identity_rotation:
+    logical_root_key_id: identity-primary
+    database_file: /inventory/database/control.sqlite

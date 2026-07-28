@@ -1,5 +1,5 @@
 import { dirname, join } from "node:path";
-import { chmodSync, chownSync } from "node:fs";
+import { chmodSync, chownSync, existsSync } from "node:fs";
 import { VaultCapabilityAuthority } from "./capabilities.js";
 import { VaultBrokerServer } from "./broker.js";
 import {
@@ -22,6 +22,7 @@ import {
   VaultProvisioningStatusServer,
 } from "./statusServer.js";
 import { validateRuntimeProvisionedKeys } from "./runtimeProvisioning.js";
+import { runRootRotationMaintenance } from "./rootRotationCoordinator.js";
 
 export interface RunningVaultService {
   close(): Promise<void>;
@@ -96,6 +97,8 @@ export async function startConfiguredVaultBroker(
 export async function startVaultService(
   configFile: string,
   dropPrivileges: VaultPrivilegeDrop = dropProcessPrivileges,
+  rotationArguments: readonly string[] = [],
+  publishRotation?: (phase: string) => void,
 ): Promise<RunningVaultService> {
   const config = loadVaultStructuralConfig(configFile);
   const setupOwnerUid = process.getuid?.() ?? config.setup.runtimeUid;
@@ -160,6 +163,41 @@ export async function startVaultService(
     config.setup.runtimeGid,
     config.setup.sharedGid,
   );
+
+  const rotationJournalFile = join(
+    config.setup.stateDirectory,
+    "rotation-journal.json",
+  );
+  if (rotationArguments.length > 0 || existsSync(rotationJournalFile)) {
+    try {
+      await runRootRotationMaintenance({
+        config,
+        arguments: rotationArguments,
+        ...(publishRotation === undefined
+          ? {}
+          : { publish: publishRotation }),
+      });
+    } catch {
+      try {
+        authority.relinquish(dropPrivileges);
+      } catch {
+        await status.close();
+        throw new Error("Vault setup authority could not be relinquished.");
+      }
+      status.setStatus({
+        state: "configuration_error",
+        retryPending: false,
+        errorCategory: "invalid_configuration",
+      });
+      return {
+        close: async () => {
+          if (closed) return;
+          closed = true;
+          await status.close();
+        },
+      };
+    }
+  }
 
   const transition = async (
     result: ReturnType<VaultProvisioner["runOnce"]>,
@@ -242,7 +280,18 @@ async function main(): Promise<void> {
     return;
   }
   try {
-    const service = await startVaultService(configFile);
+    const service = await startVaultService(
+      configFile,
+      dropProcessPrivileges,
+      process.argv.slice(2),
+      (phase) => {
+        process.stdout.write(JSON.stringify({
+          level: "info",
+          event: "root_rotation",
+          phase,
+        }) + "\n");
+      },
+    );
     const shutdown = (): void => {
       void service.close().finally(() => {
         process.exitCode = 0;

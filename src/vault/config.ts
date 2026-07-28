@@ -1,4 +1,4 @@
-import { isAbsolute, normalize, resolve } from "node:path";
+import { isAbsolute, normalize, relative, resolve } from "node:path";
 import { z } from "zod";
 import { loadYamlConfig, validationDiagnostics } from "../yamlConfig.js";
 import { configError } from "../errors.js";
@@ -51,6 +51,11 @@ const schema = z.object({
       audit_store: absolutePath,
       installation_marker: absolutePath,
     }).strict(),
+    identity_rotation: z.object({
+      logical_root_key_id: z.string()
+        .regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/),
+      database_file: absolutePath,
+    }).strict().optional(),
     runtime_uid: z.number().int().min(1).max(0x7fffffff),
     runtime_gid: z.number().int().min(1).max(0x7fffffff),
     application_uid: z.number().int().min(1).max(0x7fffffff),
@@ -70,6 +75,10 @@ export interface VaultStructuralConfig {
     adoptExistingKeys: boolean;
     registry: readonly VaultProvisioningRegistryEntry[];
     retainedState: Readonly<Record<string, string>>;
+    identityRotation?: {
+      logicalRootKeyId: string;
+      databaseFile: string;
+    };
     runtimeUid: number;
     runtimeGid: number;
     applicationUid: number;
@@ -198,6 +207,23 @@ export function validateVaultStructuralConfig(
       === canonicalPath(value.store_directory)
     || registry.some((entry) => protectedPaths.has(entry.path))
   ) throw vaultError("vault_config_invalid");
+  if (value.setup.identity_rotation !== undefined) {
+    const inventoryDirectory = canonicalPath(
+      value.setup.retained_state.application_database,
+    );
+    const databaseFile = canonicalPath(
+      value.setup.identity_rotation.database_file,
+    );
+    const relationship = relative(inventoryDirectory, databaseFile);
+    if (
+      relationship.length === 0
+      || relationship === ".."
+      || relationship.startsWith("../")
+      || isAbsolute(relationship)
+      || protectedPaths.has(databaseFile)
+      || paths.includes(databaseFile)
+    ) throw vaultError("vault_config_invalid");
+  }
   const expectedBindings: [string, string][] = [
     [value.root_keys[value.active_root_key]!, keyPath(registry, "vault.envelope-root")],
     [value.caller_keys.data_plane, keyPath(registry, "vault.caller.data-plane")],
@@ -229,6 +255,17 @@ export function validateVaultStructuralConfig(
       retainedState: Object.fromEntries(Object.entries(
         value.setup.retained_state,
       ).map(([id, path]) => [id, canonicalPath(path)])),
+      ...(value.setup.identity_rotation === undefined
+        ? {}
+        : {
+            identityRotation: {
+              logicalRootKeyId:
+                value.setup.identity_rotation.logical_root_key_id,
+              databaseFile: canonicalPath(
+                value.setup.identity_rotation.database_file,
+              ),
+            },
+          }),
       runtimeUid: value.setup.runtime_uid,
       runtimeGid: value.setup.runtime_gid,
       applicationUid: value.setup.application_uid,

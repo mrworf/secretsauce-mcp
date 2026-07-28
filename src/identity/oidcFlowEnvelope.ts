@@ -153,6 +153,24 @@ export function classifyOidcFlowEnvelopePhysicalRoot(
   return oldValid ? "old" : "new";
 }
 
+export function validateOidcFlowEnvelopePhysicalRoot(
+  value: unknown,
+  expected: {
+    flowId: string;
+    providerId: string;
+    purpose: OidcFlowPurpose;
+  },
+  logicalRootKeyId: string,
+  root: Uint8Array,
+): void {
+  decryptOidcFlowSecretsWithRoot(
+    value,
+    expected,
+    logicalRootKeyId,
+    root,
+  );
+}
+
 export function rewrapOidcFlowEnvelopePhysicalRoot(
   value: unknown,
   expected: {

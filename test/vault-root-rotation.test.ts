@@ -1,5 +1,6 @@
 import {
   chmodSync,
+  existsSync,
   lstatSync,
   mkdtempSync,
   readFileSync,
@@ -26,6 +27,7 @@ import {
 } from "../src/vault/provisioningRegistry.js";
 import {
   advanceRootRotationJournal,
+  archivedRootPath,
   initialRootRotationJournal,
   parseRootRotationArguments,
   parseRootRotationJournal,
@@ -33,6 +35,7 @@ import {
   RootRotationJournalStore,
   stagedRootPath,
   stageRootRotationKey,
+  switchRootPhysicalVersion,
 } from "../src/vault/rootRotation.js";
 
 const INSTALLATION_ID = "10000000-0000-4000-8000-000000000001";
@@ -112,6 +115,21 @@ describe("root rotation command boundary", () => {
       journal,
     )).toThrow();
 
+    let completedJournal = advanceRootRotationJournal(journal, {
+      phase: "staged",
+      stagedFingerprint: "a".repeat(64),
+    });
+    for (const phase of [
+      "activated",
+      "rewrapping",
+      "verified",
+      "root_switched",
+    ] as const) {
+      completedJournal = advanceRootRotationJournal(
+        completedJournal,
+        { phase },
+      );
+    }
     const completed = commitManifestRootRotation(manifest, {
       requestId: REQUEST_ID,
       target: "identity",
@@ -121,11 +139,19 @@ describe("root rotation command boundary", () => {
       fingerprint: "a".repeat(64),
       completedAt: 42,
     });
-    expect(rootRotationDisposition(completed, request, journal)).toEqual({
+    expect(rootRotationDisposition(
+      completed,
+      request,
+      completedJournal,
+    )).toEqual({
       kind: "completed",
       request,
     });
-    expect(rootRotationDisposition(completed, undefined, journal)).toEqual({
+    expect(rootRotationDisposition(
+      completed,
+      undefined,
+      completedJournal,
+    )).toEqual({
       kind: "completed",
       request,
     });
@@ -258,6 +284,62 @@ describe("root key staging and manifest receipt", () => {
     expect(() => stageRootRotationKey(journal, entry, adapter)).toThrow();
   });
 
+  it("resumes every no-replace physical root switch boundary", () => {
+    for (const failureStage of [
+      "after_archive_link",
+      "after_configured_unlink",
+      "after_configured_link",
+      "after_staged_unlink",
+    ] as const) {
+      const directory = secureTempDirectory(`root-switch-${failureStage}-`);
+      const keyPaths = paths(directory);
+      const registry = createVaultProvisioningRegistry(keyPaths);
+      const entry = registry.find(
+        (value) => value.id === "vault.envelope-root",
+      )!;
+      const adapter = createProvisioningKeyAdapters().get(entry.adapter)!;
+      adapter.create(entry);
+      const oldFingerprint = adapter.validate(entry);
+      const manifest = configuredManifest(keyPaths, {
+        "vault.envelope-root": oldFingerprint,
+      });
+      let journal = initialRootRotationJournal(
+        manifest,
+        { target: "vault", requestId: REQUEST_ID },
+        entry.path,
+      );
+      journal = stageRootRotationKey(journal, entry, adapter);
+      for (const phase of [
+        "activated",
+        "rewrapping",
+        "verified",
+      ] as const) {
+        journal = advanceRootRotationJournal(journal, { phase });
+      }
+      let injected = false;
+      expect(() => switchRootPhysicalVersion(
+        journal,
+        entry,
+        adapter,
+        (stage) => {
+          if (!injected && stage === failureStage) {
+            injected = true;
+            throw new Error("injected");
+          }
+        },
+      )).toThrow();
+
+      const switched = switchRootPhysicalVersion(journal, entry, adapter);
+      expect(switched.phase).toBe("root_switched");
+      expect(adapter.validate(entry)).toBe(journal.stagedFingerprint);
+      expect(adapter.validate({
+        ...entry,
+        path: archivedRootPath(journal),
+      })).toBe(oldFingerprint);
+      expect(existsSync(stagedRootPath(journal))).toBe(false);
+    }
+  });
+
   it("atomically records the physical version, fingerprint, and receipt", () => {
     const manifest = configuredManifest(paths());
     const beforeIds = manifest.entries.map((value) => value.id);
@@ -326,6 +408,10 @@ describe("root key staging and manifest receipt", () => {
 
 function configuredManifest(
   keyPaths: VaultProvisioningKeyPaths,
+  fingerprintOverrides: Partial<Record<
+    typeof VAULT_PROVISIONING_KEY_IDS[number],
+    string
+  >> = {},
 ): VaultProvisioningManifest {
   const registry = createVaultProvisioningRegistry(keyPaths);
   let manifest = initialProvisioningManifest(registry, INSTALLATION_ID);
@@ -333,7 +419,8 @@ function configuredManifest(
     manifest = verifyManifestEntry(
       manifest,
       entry.id,
-      fingerprintProvisionedKey(entry, Buffer.alloc(32, index + 1)),
+      fingerprintOverrides[entry.id]
+        ?? fingerprintProvisionedKey(entry, Buffer.alloc(32, index + 1)),
     );
   }
   return configureManifest(manifest);

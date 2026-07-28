@@ -271,6 +271,15 @@ export function classifyTotpEnvelopePhysicalRoot(
   }
 }
 
+export function validateTotpEnvelopePhysicalRoot(
+  value: unknown,
+  logicalRootKeyId: string,
+  root: Uint8Array,
+): void {
+  const seed = decryptTotpSeedWithRoot(value, logicalRootKeyId, root);
+  seed.fill(0);
+}
+
 export function rewrapTotpEnvelopePhysicalRoot(
   value: unknown,
   logicalRootKeyId: string,

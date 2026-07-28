@@ -11,7 +11,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { generateKeyPairSync } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import { loadVaultConfig } from "../src/vault/config.js";
+import {
+  loadVaultConfig,
+  loadVaultStructuralConfig,
+} from "../src/vault/config.js";
 import { VaultError } from "../src/vault/errors.js";
 import { createVaultKeyFile, encodeVaultKey, readVaultKeyFile } from "../src/vault/keyFile.js";
 import { runVaultKeyCli } from "../src/vault/keyCli.js";
@@ -82,6 +85,14 @@ describe("vault key files and configuration", () => {
     expect(config.rootKeys.get("root-primary")).toHaveLength(32);
     expect(config.callerKeys.dataPlane).not.toEqual(config.callerKeys.controlPlane);
     expect(config.capabilityKeys.resolve).not.toEqual(config.capabilityKeys.backup);
+    expect(loadVaultStructuralConfig(fixture.configFile).setup.identityRotation)
+      .toEqual({
+        logicalRootKeyId: "identity-primary",
+        databaseFile: join(
+          fixture.raw.setup.retained_state.application_database,
+          "control.sqlite",
+        ),
+      });
   });
 
   it("rejects unknown fields, relative/colliding paths, missing active roots, and unsafe key material", () => {
@@ -106,6 +117,20 @@ describe("vault key files and configuration", () => {
       (raw: Record<string, any>) => {
         raw.setup.retained_state.vault_store =
           join(raw.setup.retained_state.vault_store, "other");
+      },
+      (raw: Record<string, any>) => {
+        raw.setup.identity_rotation.logical_root_key_id = "invalid root";
+      },
+      (raw: Record<string, any>) => {
+        raw.setup.identity_rotation.database_file =
+          raw.setup.retained_state.application_database;
+      },
+      (raw: Record<string, any>) => {
+        raw.setup.identity_rotation.database_file =
+          join(raw.setup.state_directory, "control.sqlite");
+      },
+      (raw: Record<string, any>) => {
+        raw.setup.identity_rotation.unexpected = true;
       },
     ]) {
       const fixture = vaultFixture();
@@ -209,6 +234,10 @@ function vaultFixture(): { configFile: string; raw: Record<string, any> } {
         vault_store: join(directory, "store"),
         audit_store: join(retained, "audit"),
         installation_marker: join(retained, "installation"),
+      },
+      identity_rotation: {
+        logical_root_key_id: "identity-primary",
+        database_file: join(retained, "application.db", "control.sqlite"),
       },
       runtime_uid: process.getuid?.() ?? 1000,
       runtime_gid: process.getgid?.() ?? 1000,

@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import {
   closeSync,
   constants,
@@ -55,6 +55,7 @@ const journalWithoutChecksumSchema = z.object({
   startingAggregate: digest,
   configuredRootPath: z.string().min(1).max(4096)
     .refine(isAbsolute),
+  oldFingerprint: digest,
   oldPhysicalVersion: physicalVersion,
   newPhysicalVersion: canonicalUuid,
   phase: phaseSchema,
@@ -162,6 +163,10 @@ export function rootRotationDisposition(
           || journal.target !== receipt.target
           || journal.oldPhysicalVersion !== receipt.oldPhysicalVersion
           || journal.newPhysicalVersion !== receipt.newPhysicalVersion
+          || journal.phase !== "root_switched"
+          || manifest.entries.find(
+            (value) => value.id === journal.logicalKeyId,
+          )?.fingerprint !== journal.stagedFingerprint
         )
       )
     ) throw vaultError("vault_config_invalid");
@@ -174,9 +179,18 @@ export function rootRotationDisposition(
     };
   }
   if (journal !== undefined) {
+    const targetKeyId = journal.target === "identity"
+      ? "identity.envelope-root"
+      : "vault.envelope-root";
+    const targetEntry = manifest.entries.find(
+      (value) => value.id === targetKeyId,
+    );
     if (
       journal.installationId !== manifest.installationId
       || journal.startingAggregate !== manifest.aggregate
+      || targetEntry?.fingerprint !== journal.oldFingerprint
+      || (targetEntry.activePhysicalVersion ?? "legacy")
+        !== journal.oldPhysicalVersion
       || (
         request !== undefined
         && (
@@ -214,6 +228,7 @@ export function initialRootRotationJournal(
     logicalKeyId,
     startingAggregate: manifest.aggregate,
     configuredRootPath,
+    oldFingerprint: entry.fingerprint!,
     oldPhysicalVersion: entry.activePhysicalVersion ?? "legacy",
     newPhysicalVersion: request.requestId,
     phase: "created",
@@ -227,7 +242,7 @@ export function advanceRootRotationJournal(
   input: {
     phase: RootRotationPhase;
     stagedFingerprint?: string;
-    cursor?: string;
+    cursor?: string | null;
     scannedCount?: number;
     rewrappedCount?: number;
   },
@@ -251,13 +266,17 @@ export function advanceRootRotationJournal(
       && input.phase !== "rewrapping"
     )
   ) throw vaultError("vault_config_invalid");
+  const nextValue = withoutChecksum(parsed);
+  if (input.cursor === null) delete nextValue.cursor;
   return finalizeJournal({
-    ...withoutChecksum(parsed),
+    ...nextValue,
     phase: input.phase,
     ...(input.stagedFingerprint === undefined
       ? {}
       : { stagedFingerprint: input.stagedFingerprint }),
-    ...(input.cursor === undefined ? {} : { cursor: input.cursor }),
+    ...(input.cursor === undefined || input.cursor === null
+      ? {}
+      : { cursor: input.cursor }),
     scannedCount: input.scannedCount ?? parsed.scannedCount,
     rewrappedCount: input.rewrappedCount ?? parsed.rewrappedCount,
   });
@@ -295,6 +314,103 @@ export function stageRootRotationKey(
     phase: "staged",
     stagedFingerprint: fingerprint,
   });
+}
+
+export function switchRootPhysicalVersion(
+  journal: RootRotationJournal,
+  registryEntry: VaultProvisioningRegistryEntry,
+  adapter: VaultProvisioningKeyAdapter,
+  failureInjector?: (stage:
+    | "after_archive_link"
+    | "after_configured_unlink"
+    | "after_configured_link"
+    | "after_staged_unlink"
+  ) => void,
+): RootRotationJournal {
+  const parsed = parseRootRotationJournal(journal);
+  if (parsed.phase === "root_switched") return parsed;
+  if (
+    parsed.phase !== "verified"
+    || parsed.stagedFingerprint === undefined
+    || registryEntry.id !== parsed.logicalKeyId
+    || registryEntry.path !== parsed.configuredRootPath
+    || registryEntry.adapter !== adapter.id
+  ) throw vaultError("vault_config_invalid");
+  const configured = parsed.configuredRootPath;
+  const staged = stagedRootPath(parsed);
+  const archived = archivedRootPath(parsed);
+
+  normalizeInterruptedLink(configured, archived, "configured");
+  normalizeInterruptedLink(configured, staged, "staged");
+
+  if (
+    pathExists(configured)
+    && pathExists(staged)
+    && !pathExists(archived)
+  ) {
+    assertFingerprint(
+      configured,
+      registryEntry,
+      adapter,
+      parsed.oldFingerprint,
+    );
+    assertFingerprint(
+      staged,
+      registryEntry,
+      adapter,
+      parsed.stagedFingerprint,
+    );
+    linkSync(configured, archived);
+    fsyncDirectory(dirname(configured));
+    failureInjector?.("after_archive_link");
+    unlinkSync(configured);
+    fsyncDirectory(dirname(configured));
+    failureInjector?.("after_configured_unlink");
+  }
+
+  if (
+    !pathExists(configured)
+    && pathExists(staged)
+    && pathExists(archived)
+  ) {
+    assertFingerprint(
+      archived,
+      registryEntry,
+      adapter,
+      parsed.oldFingerprint,
+    );
+    assertFingerprint(
+      staged,
+      registryEntry,
+      adapter,
+      parsed.stagedFingerprint,
+    );
+    linkSync(staged, configured);
+    fsyncDirectory(dirname(configured));
+    failureInjector?.("after_configured_link");
+    unlinkSync(staged);
+    fsyncDirectory(dirname(configured));
+    failureInjector?.("after_staged_unlink");
+  }
+
+  if (
+    !pathExists(configured)
+    || pathExists(staged)
+    || !pathExists(archived)
+  ) throw vaultError("vault_config_invalid");
+  assertFingerprint(
+    configured,
+    registryEntry,
+    adapter,
+    parsed.stagedFingerprint,
+  );
+  assertFingerprint(
+    archived,
+    registryEntry,
+    adapter,
+    parsed.oldFingerprint,
+  );
+  return advanceRootRotationJournal(parsed, { phase: "root_switched" });
 }
 
 export class RootRotationJournalStore {
@@ -389,7 +505,7 @@ export class RootRotationJournalStore {
         && metadata.uid !== 0
       )
     ) throw vaultError("vault_config_invalid");
-    const temporary = join(parent, `.${basename(this.file)}.${journal.requestId}.tmp`);
+    const temporary = join(parent, `.${basename(this.file)}.${randomUUID()}.tmp`);
     let descriptor: number | undefined;
     try {
       descriptor = openSync(
@@ -466,4 +582,43 @@ function fsyncDirectory(directory: string): void {
   } finally {
     closeSync(descriptor);
   }
+}
+
+function pathExists(path: string): boolean {
+  try {
+    lstatSync(path);
+    return true;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return false;
+    throw vaultError("vault_config_invalid");
+  }
+}
+
+function normalizeInterruptedLink(
+  configured: string,
+  other: string,
+  survivor: "configured" | "staged",
+): void {
+  if (!pathExists(configured) || !pathExists(other)) return;
+  const configuredMetadata = lstatSync(configured);
+  const otherMetadata = lstatSync(other);
+  if (
+    configuredMetadata.dev !== otherMetadata.dev
+    || configuredMetadata.ino !== otherMetadata.ino
+    || configuredMetadata.nlink !== 2
+    || otherMetadata.nlink !== 2
+  ) return;
+  if (survivor === "configured") unlinkSync(configured);
+  else unlinkSync(other);
+  fsyncDirectory(dirname(configured));
+}
+
+function assertFingerprint(
+  path: string,
+  registryEntry: VaultProvisioningRegistryEntry,
+  adapter: VaultProvisioningKeyAdapter,
+  expected: string,
+): void {
+  const actual = adapter.validate({ ...registryEntry, path });
+  if (actual !== expected) throw vaultError("vault_config_invalid");
 }

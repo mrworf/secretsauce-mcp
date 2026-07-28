@@ -1519,21 +1519,37 @@ These questions concern mechanisms and must not change the product contract:
 
 ### 27.5 Milestone-planning prerequisites
 
+- Product-behavior readiness permits the mandatory downstream reviews to begin;
+  it does not by itself permit implementation or milestone breakdown.
 - Security, architecture, UX, and data/API reviews must approve their respective
   focus areas.
 - Architecture must resolve the questions in section 24 without changing the
   settled product contract.
+- A downstream review may reopen a settled decision only when it demonstrates a
+  concrete security, correctness, feasibility, accessibility, or interface
+  conflict. The resulting product decision must be recorded in this PRD before
+  readiness advances.
 - Milestones must preserve a vertical, testable setup-to-enrollment path and may
   not expose partial interfaces between slices.
 
 ## 28. Final readiness declaration
 
-**Implementation-ready: yes**
+**Product-behavior ready for downstream review: yes**
 
 All material product decisions identified during the v2.1 ambiguity audit are
-resolved in this document. Remaining questions in section 24 concern internal
-mechanisms and do not change user-visible behavior, authorization, security
-posture, lifecycle, failure behavior, or acceptance criteria.
+resolved in this document. Remaining questions in section 24 are intended to
+concern internal mechanisms and must be tested by the mandatory reviews against
+the settled user-visible behavior, authorization, security posture, lifecycle,
+failure behavior, and acceptance criteria.
+
+**Implementation-ready: no**
+
+**Milestone-breakdown ready: no**
+
+Both declarations remain `no` until security, architecture, UX/accessibility,
+and data-model/API-contract reviews approve their focus areas. Any concrete
+conflict found by those reviews must be resolved in this PRD before either
+declaration changes to `yes`.
 
 Required downstream reviews:
 

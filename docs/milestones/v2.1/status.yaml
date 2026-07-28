@@ -2,11 +2,11 @@ milestones:
   - id: "00"
     title: "Implementation Readiness And Contract Baseline"
     file: "docs/milestones/v2.1/00-implementation-readiness.md"
-    status: "pending"
+    status: "in_progress"
     dependencies: []
     completed_at: null
     commit_hash: null
-    notes: "Pending detailed UX/accessibility, data/API, threat-model, and validation-contract approval."
+    notes: "Readiness contract selected; detailed architecture, UX/accessibility, API, threat-model, and validation artifacts are in progress."
   - id: "01"
     title: "Private Vault REST Boundary"
     file: "docs/milestones/v2.1/01-private-vault-rest-boundary.md"

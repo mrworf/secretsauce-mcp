@@ -103,14 +103,18 @@ accessibility, data-model, API-contract, and validation reviews are complete.
 
 ## Acceptance criteria
 
-- [ ] Detailed UX/accessibility and data/API reviews are approved and linked.
-- [ ] All eight Section 24 questions have decision-complete recorded answers.
-- [ ] The updated threat model and validation matrix cover all v2.1 trust
+- [x] Detailed UX/accessibility and data/API reviews are approved and linked.
+- [x] All eight Section 24 questions have decision-complete recorded answers.
+- [x] The updated threat model and validation matrix cover all v2.1 trust
       boundaries, requirement families, and negative paths.
-- [ ] Milestone 01 and Milestone 02 can be planned without selecting shared
+- [x] Milestone 01 and Milestone 02 can be planned without selecting shared
       schemas, transaction semantics, trust boundaries, or validation strategy.
-- [ ] No artifact contradicts the PRD, approved architecture baselines, or
+- [x] No artifact contradicts the PRD, approved architecture baselines, or
       repository security rules.
+
+Acceptance evidence is recorded in
+[`docs/audits/v2.1/milestone-00-acceptance.md`](../../audits/v2.1/milestone-00-acceptance.md)
+and enforced by `node scripts/validate-v2.1-readiness.mjs`.
 
 ## Planning handoff
 

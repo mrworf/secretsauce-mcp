@@ -1,0 +1,633 @@
+openapi: 3.1.0
+info:
+  title: SecretSauce Private Vault API
+  version: 1.0.0
+  description: >-
+    Canonical v2.1 contract for the separate provisioning-status and
+    authenticated credential HTTP/1.1 interfaces over Unix-domain sockets.
+    This document does not authorize a TCP or HTTPS listener.
+servers:
+  - url: http://localhost
+    description: Logical origin only; clients connect through a validated Unix socket.
+tags:
+  - name: status
+  - name: credential
+paths:
+  /v1/status:
+    get:
+      tags: [status]
+      operationId: getProvisioningStatus
+      description: Bodyless, queryless, parameterless pre-key status read.
+      responses:
+        "200":
+          description: Bounded non-secret provisioning state.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProvisioningStatus"
+        "503":
+          $ref: "#/components/responses/Unavailable"
+  /v1/readiness:
+    post:
+      tags: [credential]
+      operationId: establishVaultReadiness
+      description: >-
+        Sole boot-unbound credential request. Its authenticated response returns
+        the current boot identifier. It performs no store access.
+      parameters:
+        - $ref: "#/components/parameters/Caller"
+        - $ref: "#/components/parameters/RequestId"
+        - $ref: "#/components/parameters/Timestamp"
+        - $ref: "#/components/parameters/Nonce"
+        - $ref: "#/components/parameters/RequestMac"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+      responses:
+        "200":
+          description: Authenticated readiness handshake.
+          headers:
+            X-Vault-Boot-Id:
+              $ref: "#/components/headers/BootId"
+            X-Vault-Response-MAC:
+              $ref: "#/components/headers/ResponseMac"
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [status, boot_id]
+                properties:
+                  status:
+                    const: ready
+                  boot_id:
+                    $ref: "#/components/schemas/Uuid"
+        "401":
+          $ref: "#/components/responses/AuthenticationFailure"
+        "503":
+          $ref: "#/components/responses/Unavailable"
+  /v1/credentials:
+    post:
+      tags: [credential]
+      operationId: createCredential
+      description: Control-plane only. Secret-bearing bounded creation.
+      parameters:
+        - $ref: "#/components/parameters/Caller"
+        - $ref: "#/components/parameters/BootId"
+        - $ref: "#/components/parameters/RequestId"
+        - $ref: "#/components/parameters/Timestamp"
+        - $ref: "#/components/parameters/Nonce"
+        - $ref: "#/components/parameters/RequestMac"
+        - $ref: "#/components/parameters/ServiceId"
+        - $ref: "#/components/parameters/CredentialId"
+        - $ref: "#/components/parameters/CaptureLastFour"
+        - $ref: "#/components/parameters/RequestedLocator"
+      requestBody:
+        required: true
+        content:
+          application/vnd.secretsauce.vault-secret+octet-stream:
+            schema:
+              type: string
+              contentMediaType: application/octet-stream
+              maxLength: 1048576
+      responses:
+        "201":
+          $ref: "#/components/responses/CredentialMetadata"
+        "400":
+          $ref: "#/components/responses/DomainFailure"
+        "401":
+          $ref: "#/components/responses/AuthenticationFailure"
+        "403":
+          $ref: "#/components/responses/AuthorizationFailure"
+        "413":
+          $ref: "#/components/responses/TooLarge"
+        "503":
+          $ref: "#/components/responses/Unavailable"
+  /v1/credentials/{locator}:
+    parameters:
+      - name: locator
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/Uuid"
+      - $ref: "#/components/parameters/Caller"
+      - $ref: "#/components/parameters/BootId"
+      - $ref: "#/components/parameters/RequestId"
+      - $ref: "#/components/parameters/Timestamp"
+      - $ref: "#/components/parameters/Nonce"
+      - $ref: "#/components/parameters/RequestMac"
+      - $ref: "#/components/parameters/ServiceId"
+      - $ref: "#/components/parameters/CredentialId"
+    get:
+      tags: [credential]
+      operationId: getCredentialMetadata
+      description: Control-plane metadata only; never returns the secret.
+      responses:
+        "200":
+          $ref: "#/components/responses/CredentialMetadata"
+        "401":
+          $ref: "#/components/responses/AuthenticationFailure"
+        "403":
+          $ref: "#/components/responses/AuthorizationFailure"
+        "404":
+          $ref: "#/components/responses/DomainFailure"
+    put:
+      tags: [credential]
+      operationId: replaceCredential
+      description: Control-plane expected-generation replacement.
+      parameters:
+        - name: X-Vault-Expected-Generation
+          in: header
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 9007199254740991
+      requestBody:
+        required: true
+        content:
+          application/vnd.secretsauce.vault-secret+octet-stream:
+            schema:
+              type: string
+              contentMediaType: application/octet-stream
+              maxLength: 1048576
+      responses:
+        "200":
+          $ref: "#/components/responses/CredentialMetadata"
+        "401":
+          $ref: "#/components/responses/AuthenticationFailure"
+        "403":
+          $ref: "#/components/responses/AuthorizationFailure"
+        "409":
+          $ref: "#/components/responses/DomainFailure"
+        "413":
+          $ref: "#/components/responses/TooLarge"
+    delete:
+      tags: [credential]
+      operationId: deleteCredential
+      description: Control-plane expected-generation deletion.
+      parameters:
+        - name: X-Vault-Expected-Generation
+          in: header
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 9007199254740991
+      responses:
+        "204":
+          description: Deleted.
+          headers:
+            X-Vault-Response-MAC:
+              $ref: "#/components/headers/ResponseMac"
+        "401":
+          $ref: "#/components/responses/AuthenticationFailure"
+        "403":
+          $ref: "#/components/responses/AuthorizationFailure"
+        "409":
+          $ref: "#/components/responses/DomainFailure"
+  /v1/resolutions:
+    post:
+      tags: [credential]
+      operationId: resolveCredentialForRequest
+      description: Data-plane only; requires a current one-use operation-bound capability.
+      parameters:
+        - $ref: "#/components/parameters/Caller"
+        - $ref: "#/components/parameters/BootId"
+        - $ref: "#/components/parameters/RequestId"
+        - $ref: "#/components/parameters/Timestamp"
+        - $ref: "#/components/parameters/Nonce"
+        - $ref: "#/components/parameters/RequestMac"
+        - name: X-Vault-Capability
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 80
+            maxLength: 8192
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResolutionRequest"
+      responses:
+        "200":
+          description: Authenticated bounded secret body.
+          headers:
+            X-Vault-Response-MAC:
+              $ref: "#/components/headers/ResponseMac"
+          content:
+            application/vnd.secretsauce.vault-secret+octet-stream:
+              schema:
+                type: string
+                contentMediaType: application/octet-stream
+                maxLength: 1048576
+        "400":
+          $ref: "#/components/responses/DomainFailure"
+        "401":
+          $ref: "#/components/responses/AuthenticationFailure"
+        "403":
+          $ref: "#/components/responses/AuthorizationFailure"
+        "413":
+          $ref: "#/components/responses/TooLarge"
+  /v1/transfers:
+    post:
+      tags: [credential]
+      operationId: startVaultTransfer
+      description: Backup caller only; starts a capability-bound bounded transfer.
+      parameters:
+        - $ref: "#/components/parameters/Caller"
+        - $ref: "#/components/parameters/BootId"
+        - $ref: "#/components/parameters/RequestId"
+        - $ref: "#/components/parameters/Timestamp"
+        - $ref: "#/components/parameters/Nonce"
+        - $ref: "#/components/parameters/RequestMac"
+        - name: X-Vault-Capability
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 80
+            maxLength: 8192
+      requestBody:
+        required: true
+        content:
+          application/vnd.secretsauce.vault-transfer-start+json:
+            schema:
+              $ref: "#/components/schemas/TransferStart"
+      responses:
+        "201":
+          description: Transfer created.
+          headers:
+            X-Vault-Response-MAC:
+              $ref: "#/components/headers/ResponseMac"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransferState"
+        "401":
+          $ref: "#/components/responses/AuthenticationFailure"
+        "403":
+          $ref: "#/components/responses/AuthorizationFailure"
+        "409":
+          $ref: "#/components/responses/DomainFailure"
+  /v1/transfers/{transfer_id}:
+    parameters:
+      - name: transfer_id
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/Uuid"
+      - $ref: "#/components/parameters/Caller"
+      - $ref: "#/components/parameters/BootId"
+      - $ref: "#/components/parameters/RequestId"
+      - $ref: "#/components/parameters/Timestamp"
+      - $ref: "#/components/parameters/Nonce"
+      - $ref: "#/components/parameters/RequestMac"
+      - name: X-Vault-Capability
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 80
+          maxLength: 8192
+    get:
+      tags: [credential]
+      operationId: readVaultTransferChunk
+      description: Read the exact next authenticated export chunk.
+      parameters:
+        - name: sequence
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 1048575
+      responses:
+        "200":
+          description: Bounded authenticated archive chunk.
+          headers:
+            X-Vault-Response-MAC:
+              $ref: "#/components/headers/ResponseMac"
+            X-Vault-Transfer-Done:
+              schema:
+                type: boolean
+          content:
+            application/vnd.secretsauce.vault-archive-chunk:
+              schema:
+                type: string
+                contentMediaType: application/octet-stream
+                maxLength: 1048576
+        "401":
+          $ref: "#/components/responses/AuthenticationFailure"
+        "403":
+          $ref: "#/components/responses/AuthorizationFailure"
+        "409":
+          $ref: "#/components/responses/DomainFailure"
+    put:
+      tags: [credential]
+      operationId: writeVaultTransferChunk
+      description: Write the exact next authenticated import chunk.
+      parameters:
+        - name: sequence
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 1048575
+      requestBody:
+        required: true
+        content:
+          application/vnd.secretsauce.vault-archive-chunk:
+            schema:
+              type: string
+              contentMediaType: application/octet-stream
+              maxLength: 1048576
+      responses:
+        "204":
+          description: Chunk accepted.
+          headers:
+            X-Vault-Response-MAC:
+              $ref: "#/components/headers/ResponseMac"
+        "401":
+          $ref: "#/components/responses/AuthenticationFailure"
+        "403":
+          $ref: "#/components/responses/AuthorizationFailure"
+        "409":
+          $ref: "#/components/responses/DomainFailure"
+        "413":
+          $ref: "#/components/responses/TooLarge"
+    post:
+      tags: [credential]
+      operationId: finishVaultTransfer
+      description: Finish and validate or atomically apply a bounded import/export transfer.
+      responses:
+        "200":
+          description: Transfer result.
+          headers:
+            X-Vault-Response-MAC:
+              $ref: "#/components/headers/ResponseMac"
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [outcome, record_count]
+                properties:
+                  outcome:
+                    enum: [exported, imported, validated, replaced, emptied]
+                  record_count:
+                    type: integer
+                    minimum: 0
+                    maximum: 100000
+        "401":
+          $ref: "#/components/responses/AuthenticationFailure"
+        "403":
+          $ref: "#/components/responses/AuthorizationFailure"
+        "409":
+          $ref: "#/components/responses/DomainFailure"
+components:
+  parameters:
+    Caller:
+      name: X-Vault-Caller
+      in: header
+      required: true
+      schema:
+        enum: [data_plane, control_plane, backup]
+    BootId:
+      name: X-Vault-Boot-Id
+      in: header
+      required: true
+      schema:
+        $ref: "#/components/schemas/Uuid"
+    RequestId:
+      name: X-Vault-Request-Id
+      in: header
+      required: true
+      schema:
+        $ref: "#/components/schemas/Uuid"
+    Timestamp:
+      name: X-Vault-Timestamp
+      in: header
+      required: true
+      schema:
+        type: string
+        pattern: "^(0|[1-9][0-9]{0,15})$"
+    Nonce:
+      name: X-Vault-Nonce
+      in: header
+      required: true
+      schema:
+        type: string
+        pattern: "^[A-Za-z0-9_-]{22}$"
+    RequestMac:
+      name: X-Vault-Request-MAC
+      in: header
+      required: true
+      schema:
+        type: string
+        pattern: "^[A-Za-z0-9_-]{43}$"
+    ServiceId:
+      name: X-Vault-Service-Id
+      in: header
+      required: true
+      schema:
+        $ref: "#/components/schemas/Uuid"
+    CredentialId:
+      name: X-Vault-Credential-Id
+      in: header
+      required: true
+      schema:
+        $ref: "#/components/schemas/Uuid"
+    CaptureLastFour:
+      name: X-Vault-Capture-Last-Four
+      in: header
+      required: false
+      schema:
+        type: boolean
+        default: false
+    RequestedLocator:
+      name: X-Vault-Requested-Locator
+      in: header
+      required: false
+      schema:
+        $ref: "#/components/schemas/Uuid"
+  headers:
+    BootId:
+      schema:
+        $ref: "#/components/schemas/Uuid"
+    ResponseMac:
+      required: true
+      schema:
+        type: string
+        pattern: "^[A-Za-z0-9_-]{43}$"
+  responses:
+    CredentialMetadata:
+      description: Secret-free credential metadata.
+      headers:
+        X-Vault-Response-MAC:
+          $ref: "#/components/headers/ResponseMac"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CredentialMetadata"
+    AuthenticationFailure:
+      description: Generic caller authentication failure; body may be absent.
+    AuthorizationFailure:
+      description: Authenticated caller lacks this fixed operation.
+      headers:
+        X-Vault-Response-MAC:
+          $ref: "#/components/headers/ResponseMac"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    DomainFailure:
+      description: Bounded authenticated domain failure.
+      headers:
+        X-Vault-Response-MAC:
+          $ref: "#/components/headers/ResponseMac"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    TooLarge:
+      description: Request exceeded a declared bound.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Unavailable:
+      description: Generic bounded unavailable response.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Error"
+  schemas:
+    Uuid:
+      type: string
+      format: uuid
+      pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    ProvisioningStatus:
+      type: object
+      additionalProperties: false
+      required: [state, retry_pending]
+      properties:
+        state:
+          enum: [preparing, ready, configuration_error]
+        retry_pending:
+          type: boolean
+        error_category:
+          enum: [state_mismatch, storage_unavailable, invalid_configuration, unsupported_upgrade]
+    CredentialBinding:
+      type: object
+      additionalProperties: false
+      required: [service_id, credential_id]
+      properties:
+        service_id:
+          $ref: "#/components/schemas/Uuid"
+        credential_id:
+          $ref: "#/components/schemas/Uuid"
+    CredentialMetadata:
+      type: object
+      additionalProperties: false
+      required: [locator, generation, created_at]
+      properties:
+        locator:
+          $ref: "#/components/schemas/Uuid"
+        generation:
+          type: integer
+          minimum: 1
+          maximum: 9007199254740991
+        created_at:
+          type: string
+          format: date-time
+        last_four:
+          type: string
+          pattern: "^[ -~]{4}$"
+    ResolutionRequest:
+      type: object
+      additionalProperties: false
+      required: [locator, generation, binding, operation_digest]
+      properties:
+        locator:
+          $ref: "#/components/schemas/Uuid"
+        generation:
+          type: integer
+          minimum: 1
+          maximum: 9007199254740991
+        binding:
+          $ref: "#/components/schemas/CredentialBinding"
+        operation_digest:
+          type: string
+          pattern: "^[0-9a-f]{64}$"
+    TransferStart:
+      type: object
+      additionalProperties: false
+      required: [operation, operation_digest, passphrase]
+      properties:
+        operation:
+          enum: [export_encrypted, import_encrypted, validate_restore, replace_restore, replace_empty, export_recovery, import_recovery]
+        operation_digest:
+          type: string
+          pattern: "^[0-9a-f]{64}$"
+        passphrase:
+          description: Canonical base64url for 12–1024 raw passphrase bytes.
+          type: string
+          minLength: 16
+          maxLength: 1366
+          pattern: "^[A-Za-z0-9_-]+$"
+        selection:
+          type: array
+          maxItems: 100000
+          uniqueItems: true
+          items:
+            type: object
+            additionalProperties: false
+            required: [binding, generation]
+            properties:
+              binding:
+                $ref: "#/components/schemas/CredentialBinding"
+              generation:
+                type: integer
+                minimum: 1
+                maximum: 9007199254740991
+        expected_bytes:
+          type: integer
+          minimum: 0
+          maximum: 1073741824
+    TransferState:
+      type: object
+      additionalProperties: false
+      required: [transfer_id, next_sequence, expires_at]
+      properties:
+        transfer_id:
+          $ref: "#/components/schemas/Uuid"
+        next_sequence:
+          type: integer
+          minimum: 0
+          maximum: 1048575
+        expires_at:
+          type: string
+          format: date-time
+    Error:
+      type: object
+      additionalProperties: false
+      required: [type, status, category, request_id]
+      properties:
+        type:
+          const: about:blank
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+        category:
+          enum: [invalid_request, authentication_failed, forbidden, conflict, too_large, unavailable]
+        request_id:
+          $ref: "#/components/schemas/Uuid"

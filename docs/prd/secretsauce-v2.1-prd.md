@@ -6,8 +6,8 @@
 
 - Product: SecretSauce (MCP)
 - Version: 2.1
-- Status: Product contract ready for milestone breakdown; implementation
-  readiness still requires the downstream artifacts and validation in section 28
+- Status: Product contract and Milestone 00 implementation baseline approved;
+  implementation proceeds through the dependency-ordered v2.1 milestones
 - Date: 2026-07-24
 - Last reviewed: 2026-07-27
 - Intended audience: Product, security, architecture, UX, implementation,
@@ -2156,11 +2156,12 @@ These questions concern mechanisms and must not change the product contract:
   feature toggles never change manifest identities, and identity/vault
   envelope-root rotation is an explicit host-local, journaled, setup-only
   maintenance startup.
-- The closure review finds the UX/accessibility and data/API contracts complete
-  enough to plan, while their detailed artifact reviews remain required before
-  implementation readiness.
-- Section 24 questions must be resolved within milestone plans without changing
-  the settled product contract.
+- The closure review found the UX/accessibility and data/API inputs complete
+  enough to plan. Milestone 00 subsequently approved their detailed artifacts
+  and validation baseline as linked in Section 28.
+- Section 24 questions are resolved by
+  `docs/architecture/v2.1/decisions.md`; implementing plans must preserve those
+  decisions and the settled product contract.
 - A downstream review may reopen a settled decision only when it demonstrates a
   concrete security, correctness, feasibility, accessibility, or interface
   conflict. The resulting product decision must be recorded in this PRD before
@@ -2178,10 +2179,18 @@ superset removes feature-driven key-set evolution, while explicit journaled
 maintenance startup preserves the two supported envelope-root rotations without
 weakening automatic no-replacement provisioning.
 
-**Implementation-ready: no**
+**Implementation-ready: yes**
 
-Detailed UX/accessibility and data-model/API-contract reviews, implementation
-plans, and executable validation remain incomplete.
+Milestone 00 approved the detailed
+[UX/accessibility](../architecture/v2.1/ux.md),
+[data/state](../architecture/v2.1/data-model.md),
+[public API](../architecture/v2.1/public-api.md),
+[private vault OpenAPI](../openapi/vault-v1.yaml),
+[threat-model](../architecture/v2.1/threat-model.md), and
+[validation](../architecture/v2.1/validation-matrix.md) baselines. The
+[acceptance review](../audits/v2.1/milestone-00-acceptance.md) is
+project-authored approval; it is not independent assurance, human approval,
+implementation evidence, release readiness, or deployment evidence.
 
 **Milestone-breakdown ready: yes**
 
@@ -2192,8 +2201,11 @@ Review and planning status:
   retirement invariants.
 - Architecture review: no open PRD architecture blocker; internal journal,
   store-adapter, and transaction choices remain milestone-plan work.
-- UX and accessibility review: milestone input complete; detailed approval still
-  required for implementation readiness.
-- Data-model and API-contract review: milestone input complete; detailed
-  approval still required for implementation readiness.
-- Milestone planning: ready.
+- UX and accessibility review: detailed project-authored baseline approved;
+  independent accessibility review remains release evidence.
+- Data-model and API-contract review: detailed project-authored baseline
+  approved; implementing milestones must prove executable conformance.
+- Threat model and validation review: detailed project-authored baseline
+  approved with failure-injection and evidence ownership.
+- Milestone planning: Milestones 01 and 02 are ready for separate detailed
+  implementation plans.

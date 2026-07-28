@@ -39,13 +39,13 @@ milestones:
   - id: "04"
     title: "Envelope-Root Rotation"
     file: "docs/milestones/v2.1/04-envelope-root-rotation.md"
-    status: "in_progress"
+    status: "completed"
     dependencies:
       - "01"
       - "02"
-    completed_at: null
-    commit_hash: null
-    notes: "Implementation plan created at docs/plans/v2.1/milestone-04-envelope-root-rotation.md; starting the journal, receipt, physical-root, and host-argument state-machine slice."
+    completed_at: "2026-07-28T00:46:00-07:00"
+    commit_hash: "d6ac0f0"
+    notes: "Implemented exact host-only identity/vault root rotation with a durable journal, conditional vault and identity adapters, recoverable physical switching, atomic lifetime receipts, argument-free resume, and pre-listener privilege ordering. See docs/audits/v2.1/milestone-04-acceptance.md."
   - id: "05"
     title: "Browser Enrollment And Initial Superadmin"
     file: "docs/milestones/v2.1/05-browser-enrollment.md"

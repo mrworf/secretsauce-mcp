@@ -1,0 +1,108 @@
+milestones:
+  - id: "00"
+    title: "Implementation Readiness And Contract Baseline"
+    file: "docs/milestones/v2.1/00-implementation-readiness.md"
+    status: "pending"
+    dependencies: []
+    completed_at: null
+    commit_hash: null
+    notes: "Pending detailed UX/accessibility, data/API, threat-model, and validation-contract approval."
+  - id: "01"
+    title: "Private Vault REST Boundary"
+    file: "docs/milestones/v2.1/01-private-vault-rest-boundary.md"
+    status: "pending"
+    dependencies:
+      - "00"
+    completed_at: null
+    commit_hash: null
+    notes: "Pending implementation planning and acceptance evidence."
+  - id: "02"
+    title: "Fail-Closed Key Provisioning"
+    file: "docs/milestones/v2.1/02-fail-closed-key-provisioning.md"
+    status: "pending"
+    dependencies:
+      - "00"
+      - "01"
+    completed_at: null
+    commit_hash: null
+    notes: "Pending implementation planning and acceptance evidence."
+  - id: "03"
+    title: "Browser-First Setup And Compose Gating"
+    file: "docs/milestones/v2.1/03-browser-first-setup-and-compose.md"
+    status: "pending"
+    dependencies:
+      - "01"
+      - "02"
+    completed_at: null
+    commit_hash: null
+    notes: "Pending implementation planning and acceptance evidence."
+  - id: "04"
+    title: "Envelope-Root Rotation"
+    file: "docs/milestones/v2.1/04-envelope-root-rotation.md"
+    status: "pending"
+    dependencies:
+      - "01"
+      - "02"
+    completed_at: null
+    commit_hash: null
+    notes: "Pending implementation planning and acceptance evidence."
+  - id: "05"
+    title: "Browser Enrollment And Initial Superadmin"
+    file: "docs/milestones/v2.1/05-browser-enrollment.md"
+    status: "pending"
+    dependencies:
+      - "03"
+    completed_at: null
+    commit_hash: null
+    notes: "Pending implementation planning and acceptance evidence."
+  - id: "06"
+    title: "Browser Login, Sessions, And Logout"
+    file: "docs/milestones/v2.1/06-browser-login-sessions-and-logout.md"
+    status: "pending"
+    dependencies:
+      - "05"
+    completed_at: null
+    commit_hash: null
+    notes: "Pending implementation planning and acceptance evidence."
+  - id: "07"
+    title: "Authentication Abuse Controls And Suspension"
+    file: "docs/milestones/v2.1/07-authentication-abuse-and-suspension.md"
+    status: "pending"
+    dependencies:
+      - "06"
+    completed_at: null
+    commit_hash: null
+    notes: "Pending implementation planning and acceptance evidence."
+  - id: "08"
+    title: "Recovery And Reactivation"
+    file: "docs/milestones/v2.1/08-recovery-and-reactivation.md"
+    status: "pending"
+    dependencies:
+      - "05"
+      - "07"
+    completed_at: null
+    commit_hash: null
+    notes: "Pending implementation planning and acceptance evidence."
+  - id: "09"
+    title: "Session And Agent-Connection Management"
+    file: "docs/milestones/v2.1/09-session-and-agent-connection-management.md"
+    status: "pending"
+    dependencies:
+      - "06"
+    completed_at: null
+    commit_hash: null
+    notes: "Pending implementation planning and acceptance evidence."
+  - id: "10"
+    title: "Release Qualification And Documentation"
+    file: "docs/milestones/v2.1/10-release-qualification-and-documentation.md"
+    status: "pending"
+    dependencies:
+      - "03"
+      - "04"
+      - "05"
+      - "07"
+      - "08"
+      - "09"
+    completed_at: null
+    commit_hash: null
+    notes: "Pending integrated release qualification and independent approval evidence."

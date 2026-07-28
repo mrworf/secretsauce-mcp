@@ -175,8 +175,8 @@ Version 2.1 does not provide:
 | OIDC provider | Owns external authentication, MFA assurance, and failed-attempt handling for linked external identities. |
 | Reverse proxy | Optionally supplies client-source information under the host-local source-resolution policy. It is trusted only as configured; `always` mode deliberately treats forwarding information from every immediate peer as authoritative. |
 | Host-local break-glass operator | Has direct host authority to reset and reactivate a superadmin through the restricted enrollment flow. |
-| Provisioning coordinator | Determines the required application-owned key set and advances setup state only after all enabled services validate. |
-| SecretSauce service | Generates only its own configured application key material and reports bounded provisioning state. |
+| Vault provisioning entrypoint | Sole setup coordinator, manifest writer, and generator for every SecretSauce-owned application key. It invokes closed key-type adapters, inspects retained state, and never accepts a remote provisioning trigger. |
+| SecretSauce runtime service | Starts concurrently in setup-only mode, consumes only its assigned keys after provisioning, validates them before use, and projects bounded vault status to browser, OAuth, and MCP clients. It never generates or replaces application keys. |
 
 Trust boundaries include:
 
@@ -184,6 +184,10 @@ Trust boundaries include:
 - Unauthenticated browser to setup, login, and enrollment endpoints.
 - Browser cookie to server-side session validation.
 - Control plane to identity, persistence, OAuth, and vault services.
+- Privileged vault provisioning entrypoint to generated-key directories,
+  retained-state inventories, and the durable setup-state volume.
+- Runtime application to the vault's private read-only provisioning-status
+  socket and authenticated credential-broker socket.
 - Compose-managed durable storage to replaceable containers.
 - SecretSauce to external OIDC providers.
 
@@ -195,9 +199,9 @@ An installation has:
 
 - A non-secret installation identifier.
 - A durable non-secret key manifest in `provisioning` or `configured` state.
-- Manifest entries for the required key identities, owning components,
-  formats/versions, `pending` or `verified` status, and verified key
-  fingerprints.
+- Manifest entries for the required key identities, consuming components,
+  vault-owned provisioning adapters, formats/versions, `pending` or `verified`
+  status, and verified key fingerprints.
 - A configured commitment containing the canonical aggregate digest of every
   required verified manifest entry.
 - A retained key-bound state inventory covering application database,
@@ -209,20 +213,20 @@ An installation has:
 - Zero or more users.
 
 Fingerprints must be collision-resistant, domain-separated digests of canonical
-key bytes computed by the owning component. The manifest and configured
-commitment must not contain raw keys, credential values, tokens, or reversible
-secret material. A retained-state inventory reports only whether recognized
-key-bound state is definitively absent/empty, present, or indeterminate; it must
-not expose protected record contents.
+key bytes computed by the vault provisioning adapter that owns the key format.
+The manifest and configured commitment must not contain raw keys, credential
+values, tokens, or reversible secret material. A retained-state inventory
+reports only whether recognized key-bound state is definitively absent/empty,
+present, or indeterminate; it must not expose protected record contents.
 
 ### 8.2 Internal setup states
 
 | State | Meaning | Permitted public surface | Exit |
 | --- | --- | --- | --- |
-| `provisioning` | A valid provisioning manifest exists and required application keys are being generated or validated. A blocked/error substate may retry. | Liveness, readiness, sanitized setup status | All keys validate and the manifest atomically commits to `configured` |
+| `provisioning` | Fresh-start preflight is running, or a valid provisioning manifest exists and required application keys are being generated or validated. A blocked/error substate may retry. | Liveness, readiness, sanitized setup status | Preflight rejects to `configuration_error`, or all keys validate and the manifest atomically commits to `configured` |
 | `enrollment_required` | A valid configured manifest exists, but no user exists. | Health, login, unified enrollment, safe static assets | Initial superadmin commits |
 | `operational` | Required keys validate and at least one user exists. | Normal role-authorized product behavior | Fatal key/configuration failure or process stop |
-| `configuration_error` | Manifest/key/retained-state continuity is ambiguous, missing, malformed, or mismatched under the startup matrix in section 18.2. | No ordinary serving; process exits nonzero | Operator restores the matching state, key, and manifest set or completes an explicitly authorized adoption and restarts |
+| `configuration_error` | Manifest/key/retained-state continuity is ambiguous, missing, malformed, or mismatched under the startup matrix in section 18.2. | Vault status-only socket, application liveness/readiness, sanitized setup status; no broker or ordinary serving | Operator restores the matching state, key, and manifest set or completes an explicitly authorized adoption and restarts |
 
 `provisioning` and `enrollment_required` are not unhealthy states. They are not
 operationally ready.
@@ -238,6 +242,19 @@ such as:
 
 The exact internal setup state, missing key identity, key path, user count, and
 failure cause are not public.
+
+The vault exposes a separate private, read-only provisioning-status operation
+over a Unix-domain socket. Its closed response contains only:
+
+- state: `preparing`, `ready`, or `configuration_error`;
+- whether automatic retry is pending; and
+- a stable sanitized error category when state is `configuration_error`.
+
+The status operation is authenticated by socket filesystem permissions because
+the authenticated vault caller keys may not exist yet. It accepts no
+provisioning command, path, key identity, or other caller-controlled parameter.
+The application maps this private result to the bounded public setup states; a
+browser, OAuth client, or MCP client never connects to the vault directly.
 
 ### 8.4 Bootstrap secret
 
@@ -322,8 +339,14 @@ If a configured manifest exists and any required key is missing, invalid, or
 has a fingerprint different from its committed entry:
 
 ```text
-process start -> configuration_error -> nonzero process exit
+process start
+  -> configuration_error
+  -> status-only vault + setup-only application
+  -> operator restores matching configuration and restarts
 ```
+
+The vault credential-broker socket and every ordinary application interface
+remain closed throughout `configuration_error`.
 
 ### 10.2 Initial enrollment
 
@@ -369,28 +392,42 @@ Repeating a revocation is an audited no-change success.
 
 ### 11.1 Automatic key provisioning
 
-1. Startup reads enabled services and configured application key locations.
-2. Startup evaluates the manifest, key inventory, retained key-bound state
-   inventory, and explicit-adoption matrix in section 18.2 before permitting
-   any key creation.
-3. For a true fresh installation, the coordinator durably creates a
-   `provisioning` manifest containing every required key as `pending` before the
-   first key-generation attempt.
-4. Each owning service reports the SecretSauce-owned keys it requires and
-   computes fingerprints locally without exposing raw key values.
-5. Each missing `pending` SecretSauce-owned key is created atomically by its single
-   designated owning component with restrictive permissions in its configured
-   durable location.
-6. After a key validates, its owning component reports its fingerprint and the
-   manifest entry atomically advances from `pending` to `verified`.
+1. The vault provisioning entrypoint and application start concurrently. The
+   application loads structural configuration and exposes only liveness,
+   readiness, sanitized setup status, and safe static assets; it does not open
+   the database writer, load application keys, or enable ordinary web, control,
+   OAuth, or MCP behavior.
+2. The vault provisioning entrypoint reads enabled services and configured key
+   locations, determines the complete required SecretSauce-owned key set, and
+   loads the closed provisioning and retained-state adapters for those keys.
+3. Before any write, the entrypoint evaluates the manifest, key inventory,
+   retained key-bound state inventory, and explicit-adoption matrix in section
+   18.2.
+4. For a true fresh installation, the entrypoint durably creates the complete
+   `provisioning` manifest in its dedicated setup-state volume with every
+   required key as `pending` before the first key-generation attempt.
+5. Each missing `pending` key is created atomically and without replacement by
+   its vault-owned key-type adapter, with restrictive ownership and permissions
+   for its runtime consumer.
+6. After an adapter validates a key and computes its canonical fingerprint, the
+   corresponding manifest entry atomically advances from `pending` to
+   `verified`.
 7. A retry validates and records any complete key file already present for a
    `pending` entry, creates only absent `pending` keys, reuses every `verified`
    key, and converges idempotently.
-8. Every owning service validates its complete required key set.
-9. The coordinator atomically records the canonical aggregate digest and
-   advances the manifest to `configured`.
-10. Browser status advances from preparing to the branded login/enrollment
-   experience.
+8. After every adapter validates its complete key set, the entrypoint atomically
+   records the canonical aggregate digest and advances the manifest to
+   `configured`.
+9. The entrypoint relinquishes setup-only write access that the runtime vault
+   does not need, drops to the runtime vault identity, opens the authenticated
+   credential-broker socket, and reports `ready` on the separate status socket.
+10. The application observes vault `ready`, independently validates every key
+    assigned to its runtime components against the read-only configured
+    manifest, then initializes persistence, audit, jobs, and ordinary listeners
+    in their established order.
+11. Browser status advances from preparing to the branded login/enrollment
+    experience only after application initialization succeeds. OAuth and MCP
+    remain temporarily unavailable until the application is operational.
 
 ### 11.2 Initial superadmin enrollment
 
@@ -519,13 +556,14 @@ limited without rolling back enrollment.
 ### 13.1 Setup and key provisioning
 
 - `SETUP-001` On startup, SecretSauce must determine the complete
-  SecretSauce-owned application key set required by every enabled service before
-  permitting ordinary product use.
+  SecretSauce-owned application key set required by every enabled service in the
+  vault provisioning entrypoint before permitting ordinary product use.
 - `SETUP-002` When fresh provisioning is permitted, every missing
-  SecretSauce-owned key must be created atomically by exactly one designated
-  owning component. Provisioning retries must validate and reuse successfully
-  created keys, generate only remaining missing keys, and converge
-  idempotently. Setup must not advance until every required key validates.
+  SecretSauce-owned key must be created atomically and without replacement by
+  exactly one closed vault-owned key-type adapter. Provisioning retries must
+  validate and reuse successfully created keys, generate only remaining missing
+  keys, and converge idempotently. Setup must not advance until every required
+  key validates.
 - `SETUP-003` Automatically generated keys must include, when required by enabled
   features, identity/TOTP encryption keys, browser-session hashing keys, OAuth
   signing and token-hashing keys, vault root and authenticated-caller keys, and
@@ -534,16 +572,19 @@ limited without rolling back enrollment.
   OIDC client secrets, database credentials, downstream service credentials,
   backup passphrases, or other externally owned secrets.
 - `SETUP-005` The manifest must advance atomically from `provisioning` to
-  `configured` only after every enabled owning service validates its complete
-  required key set and the coordinator records the canonical aggregate digest
-  of every required verified entry.
+  `configured` only after every enabled vault provisioning adapter validates its
+  complete required key set and the entrypoint records the canonical aggregate
+  digest of every required verified entry.
 - `SETUP-006` A fresh key-generation failure for a `pending` entry must leave the
   manifest in `provisioning`, keep liveness healthy, block all ordinary
   interfaces, expose sanitized status, log secret-free diagnostics, and retry
   with bounded backoff.
 - `SETUP-007` If a configured manifest exists and any required key is missing,
-  invalid, or fingerprint-mismatched, the affected service must exit nonzero
-  without regenerating the key.
+  invalid, or fingerprint-mismatched, the vault must enter
+  `configuration_error` without opening its credential-broker socket or
+  regenerating the key. The vault status-only socket and setup-only application
+  must remain live to expose bounded status until operator correction and
+  restart.
 - `SETUP-008` No web, control API, login, OAuth, or MCP operation outside the
   explicit setup allowlist may execute before the required setup state permits
   it.
@@ -558,18 +599,22 @@ limited without rolling back enrollment.
 - `SETUP-012` SecretSauce must not claim it can prove that an arbitrary
   container-visible filesystem is durable.
 - `SETUP-013` Every application-key identity must have exactly one component
-  with generation authority within the permitted setup lifecycle. Other
-  components may receive only the access required to use or validate that key.
-  Two running components must never race to generate the same key, and automatic
-  provisioning must never replace an existing key file.
-- `SETUP-014` The official Compose startup order must allow every provisioning
-  owner to complete before a key-dependent service declares readiness or exposes
-  an ordinary listener. A fresh supported deployment must require no manual
-  key-generation command.
+  with generation authority: the vault provisioning entrypoint through the
+  key's single registered adapter. Runtime vault and application components may
+  receive only the access required to use or validate their assigned keys and
+  must never generate or replace them. Two running components must never race to
+  generate the same key, and automatic provisioning must never replace an
+  existing key file.
+- `SETUP-014` The official Compose deployment must start the vault provisioning
+  entrypoint and application concurrently. The application must operate in
+  setup-only mode until private vault status is `ready` and its assigned keys
+  validate; it must not depend on configured vault readiness merely to expose
+  liveness and sanitized setup status. A fresh supported deployment must require
+  no manual key-generation command.
 - `SETUP-015` A true fresh installation must durably create the complete
   `provisioning` manifest with every required entry in `pending` state before the
-  first key-generation attempt. Each entry must atomically record its owner-local
-  fingerprint when it advances to `verified`.
+  first key-generation attempt. Each entry must atomically record its canonical
+  adapter-computed fingerprint when it advances to `verified`.
 - `SETUP-016` A provisioning retry may create only `pending` keys. A missing,
   malformed, or mismatched `verified` key, or a malformed existing key file for
   a `pending` entry, must cause `configuration_error` without creating or
@@ -592,18 +637,45 @@ limited without rolling back enrollment.
   key is present, must never relax validation, becomes inert after a configured
   manifest exists, and produces a sanitized operator warning until removed.
 - `SETUP-019` Complete pre-manifest adoption must not generate or replace keys.
-  Every owning component must validate key format, ownership, mode, canonical
-  fingerprint, and compatibility with all retained key-bound state before the
-  coordinator atomically writes a configured manifest. Any failed or
+  Every registered vault provisioning adapter must validate key format,
+  ownership, mode, canonical fingerprint, and compatibility with all retained
+  key-bound state before the vault entrypoint atomically writes a configured
+  manifest. Any failed or
   unavailable validation must cause `configuration_error` without modifying
   keys or manifest state.
-- `SETUP-020` Every component that owns recognized key-bound persistence must
-  provide a bounded, non-secret retained-state inventory to startup before fresh
-  provisioning is authorized. The inventory must distinguish definitively
-  absent/empty state from present state; inability to inspect or classify the
-  configured store is indeterminate and must fail closed. Recovery from retained
-  state without its matching keys or manifest requires restoring the matching
-  state/key/manifest set and must never trigger replacement-key generation.
+- `SETUP-020` The vault provisioning entrypoint must invoke a closed
+  store-specific inventory adapter for every recognized key-bound persistent
+  store before fresh provisioning is authorized. Each adapter must return only
+  a bounded, non-secret absent/empty, present, or indeterminate result. Inability
+  to inspect or classify the configured store is indeterminate and must fail
+  closed. Recovery from retained state without its matching keys or manifest
+  requires restoring the matching state/key/manifest set and must never trigger
+  replacement-key generation.
+- `SETUP-021` The installation identifier, progressive manifest, per-entry
+  fingerprints, sanitized provisioning status, and configured aggregate
+  commitment must reside in a dedicated durable setup-state volume. The vault
+  provisioning entrypoint is its sole writer. Runtime consumers may receive
+  read-only access only to the non-secret configured manifest fields they need
+  for key validation.
+- `SETUP-022` The vault must expose provisioning status on a dedicated private
+  Unix-domain socket separate from the authenticated credential-broker socket.
+  Before caller keys exist, filesystem ownership and mode must restrict this
+  socket to the application runtime identity. The operation must be read-only,
+  accept no caller-controlled fields, use a closed bounded response, expose no
+  key identity/path or retained-state details, and never trigger or alter
+  provisioning.
+- `SETUP-023` The vault provisioning entrypoint may retain write access to
+  generated-key directories only while provisioning or retrying a fresh
+  `pending` key. Before opening the credential-broker socket after configured
+  completion, it must irreversibly drop setup-only privileges and access to
+  application-only key directories. On fatal `configuration_error`, it must
+  relinquish setup write authority before remaining available in status-only
+  mode.
+- `SETUP-024` The runtime vault identity must retain only its vault root and
+  authenticated-caller verification keys. Each application runtime component
+  must receive its assigned generated keys read-only and must independently
+  validate their format and configured-manifest fingerprints before enabling
+  key-dependent behavior.
 
 ### 13.2 Bootstrap and enrollment
 
@@ -874,6 +946,16 @@ limited without rolling back enrollment.
 - `HEALTH-007` Before ordinary use is permitted, MCP and OAuth must return
   bounded temporary-unavailability behavior with `Retry-After` and no missing
   prerequisite disclosure.
+- `HEALTH-008` The application must derive its provisioning view from the
+  vault's private status operation, map `configuration_error` to public
+  `not_ready`, and add its own initialization checks before reporting
+  `available` or operational readiness. Loss, timeout, or malformed output from
+  the private status operation must fail closed as `not_ready`.
+- `HEALTH-009` Vault `ready` means key provisioning and configured-manifest
+  commitment are complete; it does not by itself mean the application is
+  operational. Application readiness must remain 503 until persistence, audit,
+  runtime key validation, vault broker handshake, jobs, and required listeners
+  are usable.
 
 ## 14. Data handling and privacy
 
@@ -988,7 +1070,7 @@ The browser must not need a setup-specific initial-superadmin URL.
 
 ### 16.2 Health contracts
 
-The health paths and semantics in `HEALTH-001` through `HEALTH-007` are stable
+The health paths and semantics in `HEALTH-001` through `HEALTH-009` are stable
 product contracts. Exact internal component wiring remains an architecture
 decision.
 
@@ -1091,6 +1173,30 @@ Login, enrollment, setup status, and account settings must:
 
 The supported v2.1 deployment is the official single-instance Docker Compose
 configuration with declared durable volumes and no initialization CLI.
+`docs/architecture/v2.1/provisioning.md` records the approved implementation
+baseline for this lifecycle.
+
+The `secretsauce-vault` container entrypoint owns automatic provisioning and
+then transitions into the runtime credential broker; this is one deployed
+service, not an additional setup service. It has no TCP port. During setup it
+has:
+
+- sole write access to the dedicated setup-state volume and generated-key
+  directories;
+- read-only access to configured retained application database, vault, audit,
+  and other recognized key-bound state required for inventory;
+- a private read-only provisioning-status Unix socket shared with the
+  application; and
+- no remotely invokable provisioning operation.
+
+The application container starts concurrently with read-only key and manifest
+mounts. It exposes setup-only health/status surfaces until the vault reports
+`ready` and application initialization completes. The normal vault broker socket
+does not exist in `preparing` or `configuration_error`; it opens only after a
+configured manifest commits and the entrypoint drops setup-only privileges.
+Compose process health checks use liveness, not operational readiness, so an
+operator can inspect bounded setup status during retryable or fatal setup
+failure without creating a restart loop.
 
 The operator must still:
 
@@ -1116,7 +1222,7 @@ Startup applies this authoritative matrix before key generation:
 | Absent | None present | Definitively absent/empty for every required inventory | `true` | Enter `configuration_error`; create no key and require removal of the inapplicable adoption setting |
 | Absent | Some but not all present | Any result | Any value | Enter `configuration_error`; create or replace no key |
 | Absent | All present | Any result | `false` or absent | Enter `configuration_error` and direct the operator to the explicit adoption setting |
-| Absent | All present | Any result | `true` | Run complete owner-local adoption validation, including compatibility with every present store and successful classification of every required inventory; atomically create a configured manifest only if every validation succeeds |
+| Absent | All present | Any result | `true` | Run complete adapter-owned adoption validation, including compatibility with every present store and successful classification of every required inventory; atomically create a configured manifest only if every validation succeeds |
 | `provisioning` | All `verified` entries match; `pending` key files are valid or absent | Not used to authorize replacement generation | Ignored | Validate and record present `pending` keys, then create only absent `pending` keys |
 | `provisioning` | Any `verified` entry is missing/mismatched or an existing `pending` key file is malformed | Any result | Ignored | Enter `configuration_error`; create or replace no key |
 | `configured` | Every required fingerprint and aggregate digest match | Not used to authorize replacement generation | Ignored | Continue to `enrollment_required` or `operational` |
@@ -1128,14 +1234,14 @@ inventory is definitively absent or empty. Retained application or vault data
 does not authorize automatic key replacement. An unavailable or indeterminate
 inventory fails closed. Complete pre-manifest key adoption is the sole exception
 and requires the explicit host-local setting plus successful compatibility
-validation by every owning component.
+validation by every registered vault provisioning adapter.
 
 ### 18.3 Observability
 
 Provisioning logs may include:
 
 - Safe phase/category.
-- Owning component.
+- Provisioning adapter category.
 - Success, retry, or fatal outcome.
 - Sanitized error category.
 
@@ -1185,8 +1291,9 @@ this document.
    enrollment.
 5. A fresh unwritable key location remains live, exposes safe status, retries,
    and never advances the manifest to `configured`.
-6. After configuration, removing or corrupting one required key causes nonzero
-   startup exit without key replacement.
+6. After configuration, removing or corrupting one required key enters
+   status-only `configuration_error` without key replacement or an authenticated
+   credential-broker socket.
 7. Recreating official Compose containers preserves keys, identities, vault
    state, and durable audits.
 8. Restart after any individual fresh key creation validates and reuses that key,
@@ -1198,30 +1305,45 @@ this document.
     requires no initialization CLI or manual key-generation command.
 11. A true fresh start persists the complete `provisioning` manifest before
     attempting the first key creation.
-12. With no manifest, startup exits nonzero without creating or replacing a key
-    when adoption is `true` but no required key is present, or when only some
-    required keys are present with any adoption value.
-13. With no manifest and every required key present, startup exits nonzero
-    without the adoption setting and identifies only the sanitized operator
-    action required.
+12. With no manifest, startup enters status-only `configuration_error` without
+    creating or replacing a key when adoption is `true` but no required key is
+    present, or when only some required keys are present with any adoption
+    value.
+13. With no manifest and every required key present, startup enters status-only
+    `configuration_error` without the adoption setting and identifies only the
+    sanitized operator action required.
 14. With no manifest, every required key present, and
-    `setup.adopt_existing_keys: true`, successful owner-local compatibility
+    `setup.adopt_existing_keys: true`, successful adapter-owned compatibility
     validation creates a configured manifest without changing any key.
 15. A malformed adoption setting or failed, unavailable, or incompatible
-    owner-local adoption validation exits nonzero without modifying keys or
-    manifest state.
+    adapter-owned adoption validation enters status-only `configuration_error`
+    without modifying keys or manifest state.
 16. A missing or mismatched `verified` key under a provisioning manifest and any
-    mismatch under a configured manifest exit nonzero without creating,
-    replacing, or recommitting a key.
+    mismatch under a configured manifest enter status-only
+    `configuration_error` without creating, replacing, or recommitting a key.
 17. With no manifest and no required key, startup creates a provisioning
     manifest only when every required retained-state inventory is definitively
     absent or empty.
 18. With no manifest and no required key, any retained application database,
     identity/authenticator, OAuth grant/token, vault ciphertext/store identity,
     durable audit-lineage, installation-marker, or other recognized key-bound
-    state causes nonzero startup exit without creating a key or manifest.
+    state enters status-only `configuration_error` without creating a key or
+    manifest.
 19. With no manifest and no required key, an unavailable or indeterminate
     retained-state inventory fails closed without creating a key or manifest.
+20. The vault and application start concurrently on a clean Compose deployment;
+    the application serves bounded setup status without opening its database
+    writer or enabling ordinary web, control, OAuth, or MCP behavior.
+21. The private vault status operation is reachable only through its
+    filesystem-restricted Unix socket, accepts no input fields, never initiates
+    provisioning, and maps loss, timeout, or malformed output to public
+    `not_ready`.
+22. Vault `preparing` and `configuration_error` expose no authenticated
+    credential-broker socket. After configured completion, the entrypoint drops
+    setup-only key-directory access before that broker socket opens.
+23. After vault `ready`, every runtime consumer validates only its assigned
+    read-only keys and configured-manifest entries before key-dependent behavior
+    becomes available.
 
 ### 21.2 Initial enrollment
 
@@ -1313,10 +1435,12 @@ this document.
 
 ## 22. Testing requirements
 
-- Unit tests for setup state transitions, required-key inventory, manifest
-  entry transitions, canonical owner-local fingerprints, aggregate commitment,
-  validation, bootstrap generation/comparison/erasure boundaries, suspension
-  counters, rolling-window behavior, and scope predicates.
+- Unit tests for setup state transitions, required-key inventory, closed
+  key-type and retained-store adapter registries, manifest entry transitions,
+  canonical adapter-computed fingerprints, aggregate commitment, private status
+  response bounds/mapping, validation, bootstrap
+  generation/comparison/erasure boundaries, suspension counters, rolling-window
+  behavior, and scope predicates.
 - Persistence tests for atomic configured-manifest commit, initial-superadmin
   commit, counter/suspension/revocation commit, bulk revocation, audit coupling,
   conditional administrative revocation, and concurrency races.
@@ -1330,7 +1454,14 @@ this document.
   independently retaining application database, vault, durable audit, or other
   recognized key-bound state, unavailable/indeterminate retained-state
   inventories, partial-restore combinations, blocked retry, restart secret
-  rotation, configured missing-key fatal exit, and multi-service key readiness.
+  rotation, configured missing-key status-only failure, setup privilege drop,
+  broker-socket absence before configured completion, and multi-service runtime
+  key readiness.
+- Compose tests for concurrent vault/application startup, setup-only application
+  behavior without caller keys, private status-socket permissions, preparing,
+  retry, ready, malformed/unavailable status, fatal configuration error without
+  a restart loop, application runtime initialization after vault readiness, and
+  container recreation with durable setup/key/state volumes.
 - Browser tests for branded login, unified enrollment, no setup-state disclosure,
   TOTP confirmation, redirect-to-login, successful logout, injected logout
   persistence/audit failure and retry, account settings, administrative scope,
@@ -1357,6 +1488,9 @@ this document.
 Operator documentation must cover:
 
 - Fresh Compose startup and browser enrollment.
+- The vault-owned provisioning phase, concurrent setup-only application
+  startup, private versus public status meanings, and the absence of a separate
+  setup service or manual initialization command.
 - The one-time complete-key adoption setting, its exact eligibility conditions,
   its inert behavior after configuration, and the requirement to remove it after
   successful adoption.
@@ -1365,7 +1499,8 @@ Operator documentation must cover:
   access control.
 - Liveness versus operational readiness.
 - Safe diagnosis of blocked provisioning.
-- Fatal behavior after configured key loss and restoration of the correct key.
+- Status-only fatal behavior after configured key loss and restoration of the
+  matching state/key/manifest set before restart.
 - Durable volume expectations and the limit of in-container persistence
   detection.
 - Host-local superadmin break glass.
@@ -1403,27 +1538,18 @@ MCP path.
 
 These questions concern mechanisms and must not change the product contract:
 
-1. Where should the installation identifier, progressive key manifest, and
-   configured aggregate commitment live so per-entry progress and final
-   multi-service validation commit atomically?
-2. Which component coordinates the designated per-key owners, and how does the
-   official Compose startup order avoid a cycle between provisioning owners and
-   key-dependent consumers?
-3. How should provisional initial-enrollment state be represented without
+1. How should provisional initial-enrollment state be represented without
    creating a user before final commit?
-4. Which internal key inventory API lets each designated owner generate and
-   validate only its keys, report canonical fingerprints and retained-state
-   compatibility, and avoid exposing raw key material?
-5. Which bounded retry scheduler and status propagation mechanism best serves
-   blocked fresh provisioning?
-6. Which user-agent parser or internal derivation produces safe bounded
+2. Which bounded in-process retry scheduler should the vault provisioning
+   entrypoint use for blocked fresh provisioning?
+3. Which user-agent parser or internal derivation produces safe bounded
    browser/device families with an acceptable maintenance and supply-chain
    profile?
-7. When may revoked operational session/grant rows be physically removed while
+4. When may revoked operational session/grant rows be physically removed while
    preserving API idempotency and immutable audit evidence?
-8. Which transactional strategy provides atomic high-cardinality global
+5. Which transactional strategy provides atomic high-cardinality global
    revocation within supported scale?
-9. Which shared request-boundary component should enforce `SOURCE-001` through
+6. Which shared request-boundary component should enforce `SOURCE-001` through
    `SOURCE-009` consistently for the control and OAuth/MCP listeners without
    duplicating proxy parsing or trust decisions?
 
@@ -1433,15 +1559,20 @@ These questions concern mechanisms and must not change the product contract:
   operational, and configuration error.
 - Public setup responses do not announce that zero users exist.
 - Automatic provisioning is limited to SecretSauce-owned application keys.
-- Each application-key identity has one designated owning component; each key is
-  created atomically, interrupted fresh provisioning reuses valid created keys,
-  and the complete key set converges idempotently without a manual setup command.
+- The `secretsauce-vault` container entrypoint is the sole provisioning
+  coordinator, manifest writer, and generator for every SecretSauce-owned key;
+  no additional setup service or manual setup command exists.
+- Each application-key identity has one closed vault-owned key-type adapter.
+  Each key is created atomically without replacement, interrupted fresh
+  provisioning reuses valid created keys, and the complete key set converges
+  idempotently.
 - A progressive manifest exists before the first key creation, records
-  owner-local canonical fingerprints, and commits to `configured` only after
-  every required entry verifies.
+  adapter-computed canonical fingerprints in a dedicated durable setup-state
+  volume with the vault entrypoint as sole writer, and commits to `configured`
+  only after every required entry verifies.
 - Without a manifest, a partial required key set is always fatal and a complete
   required key set is adopted only with the explicit host-local
-  `setup.adopt_existing_keys: true` setting and complete owner-local
+  `setup.adopt_existing_keys: true` setting and complete adapter-owned
   compatibility validation.
 - Without a manifest and required keys, fresh provisioning is permitted only
   when every retained key-bound state inventory is definitively absent or
@@ -1449,7 +1580,18 @@ These questions concern mechanisms and must not change the product contract:
   indeterminate inventory, is fatal and requires restoration of the matching
   state/key/manifest set.
 - Fresh `pending`-key provisioning failures stay live and retry; a missing or
-  mismatched `verified` or configured key is fatal and never regenerated.
+  mismatched `verified` or configured key enters status-only
+  `configuration_error` and is never regenerated.
+- The application and vault start concurrently. The application remains in
+  setup-only mode without its database writer or ordinary interfaces until
+  private vault status is `ready`, runtime keys validate, and application
+  initialization completes.
+- Vault provisioning status uses a separate filesystem-restricted, read-only
+  Unix socket with no mutation inputs. Browser, OAuth, and MCP clients receive
+  only the application's bounded projection and never connect to the vault.
+- The authenticated vault broker socket opens only after the manifest commits
+  to `configured` and the entrypoint drops setup-only access. Runtime consumers
+  receive only their assigned keys with read-only access.
 - There is no configured-manifest clearing or cryptographic-reset capability.
 - Administrative agent-connection revocation changes state only when current
   actor role, target-owner eligibility, and complete reachable-service scope
@@ -1506,7 +1648,7 @@ These questions concern mechanisms and must not change the product contract:
 
 | Capability/risk | Requirements | Acceptance |
 | --- | --- | --- |
-| Automatic fail-closed key setup | `SETUP-001`–`SETUP-019` | 21.1 |
+| Automatic fail-closed key setup | `SETUP-001`–`SETUP-024` | 21.1 |
 | Atomic initial superadmin | `ENROLL-001`–`ENROLL-013` | 21.2 |
 | Branded uniform login/logout | `LOGIN-001`–`LOGIN-007`, `LOGOUT-001`–`LOGOUT-006` | 21.3, 21.5, 21.6 |
 | Rate limits and durable suspension | `ABUSE-001`–`ABUSE-014` | 21.3 |
@@ -1514,9 +1656,9 @@ These questions concern mechanisms and must not change the product contract:
 | Reset/reactivation consistency | `RECOVER-001`–`RECOVER-007` | 21.4 |
 | Session-hijacking resistance | `SESSION-001`–`SESSION-008` | 21.5 |
 | Scoped revocation and audit | `ACCESS-001`–`ACCESS-012` | 21.5 |
-| Health before setup | `HEALTH-001`–`HEALTH-007` | 21.1 |
+| Health before setup | `HEALTH-001`–`HEALTH-009` | 21.1 |
 | Secret and personal-data minimization | Sections 14–16 | 21.2, 21.5, 21.6 |
-| Browser-first Compose deployment | `SETUP-010`–`SETUP-019`, sections 18–19 | 21.1 |
+| Browser-first Compose deployment | `SETUP-010`–`SETUP-024`, sections 18–19 | 21.1 |
 
 ## 27. Review readiness
 
@@ -1533,8 +1675,13 @@ These questions concern mechanisms and must not change the product contract:
 
 ### 27.2 Architecture-review focus
 
-- Multi-service key ownership and atomic configured-state coordination.
-- Durable setup-state and manifest representation.
+- Vault-entrypoint adapter registry, single-writer manifest transitions, and
+  atomic configured-state coordination.
+- Dedicated durable setup-state representation and runtime read-only views.
+- Concurrent setup-only application composition and transition to operational
+  initialization.
+- Filesystem-restricted private status socket and irreversible setup-privilege
+  drop before the credential broker opens.
 - Restricted provisional enrollment without premature user creation.
 - High-cardinality atomic revocation.
 - Compose storage layout and continuity checks.

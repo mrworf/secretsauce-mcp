@@ -36,6 +36,6 @@ after audited revocation commits.
 
 | Slice | Status | Commit | Evidence | Deviations |
 | --- | --- | --- | --- | --- |
-| 1 | pending | — | — | — |
+| 1 | completed | this commit | Production build; 3/3 login-page tests and 5/5 durable browser-session tests; all local factors in one labeled form; configured OIDC alternatives; uniform failure; secret-field clearing; safe relative destination acceptance plus cross-origin, authority, backslash, wrong-root, and normalization rejection; existing strict cookie/CSRF/expiry/restart tests retained | — |
 | 2 | pending | — | — | — |
 | 3 | pending | — | — | — |

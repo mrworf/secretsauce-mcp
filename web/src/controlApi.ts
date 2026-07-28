@@ -1124,6 +1124,16 @@ export interface ControlApi {
   ): Promise<ControlUser | OneTimeUser | { user_id: string; deleted: true }>;
 }
 
+export interface BrowserAuthenticationApi {
+  login(input: {
+    email: string;
+    password: string;
+    totp: string;
+    destination?: string;
+  }): Promise<ControlSession & { destination?: string; purpose?: "password_change" }>;
+  logout(csrfToken: string): Promise<{ logged_out: true }>;
+}
+
 export interface ServiceControlApi {
   listServices(input?: {
     q?: string;
@@ -1338,11 +1348,25 @@ export type UserAction =
   | "delete";
 
 export const browserControlApi:
-  ControlApi & OidcControlApi & OidcManagementApi & EnrollmentControlApi & ServiceControlApi &
+  ControlApi & BrowserAuthenticationApi & OidcControlApi & OidcManagementApi &
+    EnrollmentControlApi & ServiceControlApi &
     GroupControlApi & CredentialControlApi & PolicyControlApi & AccessControlApi &
     ApiKeyControlApi & SecurityControlApi & AuditControlApi & DashboardControlApi &
     BackupControlApi & RestoreControlApi & RecoveryControlApi = {
   session: () => get<ControlSession>("/api/v2/auth/session"),
+  login: (input) => request("/api/v2/auth/login", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(input),
+  }),
+  logout: (csrfToken) => request("/api/v2/auth/logout", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-csrf-token": csrfToken,
+    },
+    body: "{}",
+  }),
   enrollmentLogin: (input) => request("/api/v2/auth/enrollment/login", {
     method: "POST",
     headers: { "content-type": "application/json" },

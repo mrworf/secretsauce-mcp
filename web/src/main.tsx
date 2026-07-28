@@ -10,6 +10,7 @@ import {
 import { OidcSignIn } from "./OidcSignIn";
 import { SetupPage } from "./SetupPage";
 import { EnrollmentPage } from "./EnrollmentPage";
+import { LoginPage } from "./LoginPage";
 import "./styles.css";
 
 const root = document.getElementById("root");
@@ -23,6 +24,9 @@ createRoot(root).render(
       : window.location.pathname === "/control/enroll"
         || window.location.pathname === "/control/enroll/"
         ? <EnrollmentPage />
+      : window.location.pathname === "/control/login"
+        || window.location.pathname === "/control/login/"
+        ? <LoginPage />
       : <AuthenticatedControl />}
   </StrictMode>,
 );
@@ -46,7 +50,7 @@ function AuthenticatedControl() {
     return <OidcSignIn restricted={restricted} />;
   }
   if (failed) {
-    return <OidcSignIn />;
+    return <LoginPage />;
   }
   if (role === undefined) {
     return <main className="startup-message" role="status">Loading your control workspace…</main>;

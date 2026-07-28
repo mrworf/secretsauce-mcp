@@ -143,6 +143,26 @@ describe("durable browser sessions", () => {
     });
     closeables.add(application);
     const code = totpCode(fixture.seed, fixture.now.value);
+    for (const destination of [
+      "https://evil.example.org/control",
+      "//evil.example.org/control",
+      "/control\\evil",
+      "/other",
+      "/control/%2e%2e/other",
+    ]) {
+      const rejected = await application.inject({
+        method: "POST",
+        url: "/api/v2/auth/login",
+        headers: { host: "control.example.org", "content-type": "application/json" },
+        payload: {
+          email: fixture.email,
+          password: fixture.password,
+          totp: code,
+          destination,
+        },
+      });
+      expect(rejected.statusCode).toBe(400);
+    }
     const login = await application.inject({
       method: "POST",
       url: "/api/v2/auth/login",
@@ -151,6 +171,7 @@ describe("durable browser sessions", () => {
         email: fixture.email,
         password: fixture.password,
         totp: code,
+        destination: "/control/services?q=ready",
       },
     });
     expect(login.statusCode).toBe(200);
@@ -163,6 +184,7 @@ describe("durable browser sessions", () => {
     expect(setCookie).toContain("SameSite=Strict");
     const cookie = setCookie.split(";")[0] ?? "";
     const loginBody = login.json();
+    expect(loginBody.data.destination).toBe("/control/services?q=ready");
     const initialCsrf = loginBody.data.csrf_token as string;
     expect(initialCsrf).toMatch(/^[A-Za-z0-9_-]{43}$/);
     const openApi = await application.inject({

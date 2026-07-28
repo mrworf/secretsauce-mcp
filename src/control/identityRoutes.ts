@@ -68,6 +68,7 @@ const sessionDataSchema = z.object({
   csrf_token: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
   expires_at: z.number().int().nonnegative(),
   purpose: z.literal("password_change").optional(),
+  destination: z.string().max(2_048).optional(),
 }).strict();
 
 export function registerLocalIdentityRoutes(
@@ -109,6 +110,7 @@ export function registerLocalIdentityRoutes(
         email: z.string().min(3).max(254),
         password: z.string().max(4_096),
         totp: z.string().regex(/^\d{6}$/),
+        destination: z.string().max(2_048).optional(),
       }).strict(),
       response: sessionDataSchema,
     },
@@ -119,8 +121,11 @@ export function registerLocalIdentityRoutes(
     idempotency: "none",
     handler: async ({ body, request, reply }) => {
       try {
+        const destination = validatedControlDestination(body.destination);
         const result = await identity.authentication.login({
-          ...body,
+          email: body.email,
+          password: body.password,
+          totp: body.totp,
           source: request.ip,
           correlationId: request.id,
         });
@@ -141,6 +146,7 @@ export function registerLocalIdentityRoutes(
             csrf_token: result.csrfToken,
             expires_at: result.absoluteExpiresAt,
             ...(result.purpose === undefined ? {} : { purpose: result.purpose }),
+            ...(destination === undefined ? {} : { destination }),
           },
         };
       } catch (error) {
@@ -304,6 +310,28 @@ export function registerLocalIdentityRoutes(
       }
     },
   }));
+}
+
+function validatedControlDestination(value: string | undefined): string | undefined {
+  if (value === undefined) return undefined;
+  if (
+    !value.startsWith("/control")
+    || value.startsWith("//")
+    || /[\u0000-\u001f\u007f\\]/.test(value)
+  ) throw new ControlContractError(400, "invalid_request", "The request is invalid.");
+  let parsed: URL;
+  try {
+    parsed = new URL(value, "https://control.example.org");
+  } catch {
+    throw new ControlContractError(400, "invalid_request", "The request is invalid.");
+  }
+  const canonical = `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  if (
+    parsed.origin !== "https://control.example.org"
+    || canonical !== value
+    || !(parsed.pathname === "/control" || parsed.pathname.startsWith("/control/"))
+  ) throw new ControlContractError(400, "invalid_request", "The request is invalid.");
+  return canonical;
 }
 
 function registerOidcLoginRoutes(

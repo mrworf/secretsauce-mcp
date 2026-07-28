@@ -1831,7 +1831,9 @@ These questions concern mechanisms and must not change the product contract:
 ### 27.5 Milestone-planning prerequisites
 
 - Security and architecture approve this PRD for milestone breakdown in
-  `docs/audits/secretsauce-v2.1-prd-final-closure-review-2026-07-27.md`.
+  `docs/audits/secretsauce-v2.1-prd-final-closure-review-2026-07-27.md`; the
+  REST transport amendment is approved in
+  `docs/audits/secretsauce-v2.1-vault-rest-transport-review-2026-07-27.md`.
 - The closure review finds the UX/accessibility and data/API contracts complete
   enough to plan, while their detailed artifact reviews remain required before
   implementation readiness.

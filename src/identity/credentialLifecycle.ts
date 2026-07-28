@@ -278,6 +278,9 @@ export class LocalCredentialLifecycleRepository {
       return await this.owner.execute({
         run: (database) => database.withGeneratedAdministrativeAudit((transaction) => {
           requireCurrentTarget(transaction, input.target);
+          if (input.target.role !== "superadmin") {
+            throw new PersistenceError("identity_not_found");
+          }
           const counts = revokeUserSessions(transaction, input.target.id, now);
           transaction.run(
             "DELETE FROM local_password_credentials WHERE user_id = ?",
@@ -285,6 +288,14 @@ export class LocalCredentialLifecycleRepository {
           );
           transaction.run(
             "DELETE FROM local_totp_authenticators WHERE user_id = ?",
+            [input.target.id],
+          );
+          transaction.run(
+            "DELETE FROM identity_pending_totp WHERE user_id = ?",
+            [input.target.id],
+          );
+          transaction.run(
+            "DELETE FROM accepted_totp_steps WHERE user_id = ?",
             [input.target.id],
           );
           transaction.run(
@@ -314,6 +325,9 @@ export class LocalCredentialLifecycleRepository {
           const user = transaction.run(`
             UPDATE users
             SET status = 'enrollment_required',
+                suspended_at = NULL,
+                suspension_origin = NULL,
+                suspension_rule_version = NULL,
                 security_epoch = security_epoch + 1,
                 version = version + 1,
                 updated_at = ?

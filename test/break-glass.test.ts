@@ -25,8 +25,8 @@ afterEach(async () => {
 });
 
 describe("host-local break-glass recovery", () => {
-  it("recovers an active superadmin by UUID without changing identity or role", async () => {
-    const fixture = await configuredIdentity("superadmin", "active");
+  it("recovers a suspended superadmin by UUID without changing identity or role", async () => {
+    const fixture = await configuredIdentity("superadmin", "suspended");
     await fixture.worker.execute({
       run: (database) => database.withOperationalTransaction((transaction) => {
         transaction.run(`
@@ -64,6 +64,7 @@ describe("host-local break-glass recovery", () => {
       run: (database) => database.read((query) => query.get<Record<string, unknown>>(`
         SELECT
           u.id, u.role, u.status, u.security_epoch,
+          u.suspended_at, u.suspension_origin, u.suspension_rule_version,
           a.password_state, a.totp_state,
           (SELECT count(*) FROM local_password_credentials WHERE user_id = u.id)
             AS password_count,
@@ -77,6 +78,13 @@ describe("host-local break-glass recovery", () => {
             WHERE user_id = u.id AND revoked_at IS NOT NULL) AS browser_revoked,
           (SELECT count(*) FROM identity_restricted_sessions
             WHERE user_id = u.id AND revoked_at IS NOT NULL) AS restricted_revoked,
+          (
+            (SELECT count(*) FROM oauth_grants
+              WHERE user_id = u.id AND status = 'revoked')
+            + (SELECT count(*) FROM oauth_refresh_families WHERE status = 'revoked')
+            + (SELECT count(*) FROM oauth_refresh_tokens WHERE status = 'revoked')
+            + (SELECT count(*) FROM oauth_access_tokens WHERE status = 'revoked')
+          ) AS revoked_oauth_records,
           (SELECT reason FROM identity_invalidation_events
             WHERE user_id = u.id ORDER BY rowid DESC LIMIT 1) AS reason,
           (SELECT json_extract(source_json, '$.osActor') FROM administrative_audit_events
@@ -93,6 +101,9 @@ describe("host-local break-glass recovery", () => {
       role: "superadmin",
       status: "enrollment_required",
       security_epoch: 2,
+      suspended_at: null,
+      suspension_origin: null,
+      suspension_rule_version: null,
       password_state: "temporary",
       totp_state: "not_configured",
       password_count: 0,
@@ -100,6 +111,7 @@ describe("host-local break-glass recovery", () => {
       qualifying_failure_count: 0,
       browser_revoked: 1,
       restricted_revoked: 1,
+      revoked_oauth_records: 4,
       reason: "break_glass",
       justification: "Host-local break-glass credential recovery.",
     });
@@ -110,7 +122,7 @@ describe("host-local break-glass recovery", () => {
     expect(serialized).toContain("[REDACTED]");
   });
 
-  it("finds a non-active ordinary user by normalized email", async () => {
+  it("rejects a non-active ordinary user by normalized email without disclosure", async () => {
     const fixture = await configuredIdentity("ordinary", "suspended", "admin");
     await fixture.worker.close();
     workers.delete(fixture.worker);
@@ -121,13 +133,11 @@ describe("host-local break-glass recovery", () => {
       correlationUuid: () => CORRELATION_UUID,
       now: () => NOW,
       osActor: () => "operator",
-    })).toBe(0);
-    expect(JSON.parse(io.output[0]!)).toMatchObject({
-      user_id: fixture.userId,
-      role: "admin",
-      status: "enrollment_required",
-    });
+    })).toBe(1);
+    expect(io.output).toEqual([]);
+    expect(io.errors).toEqual(['{"error":{"code":"break_glass_failed"}}\n']);
     expect(io.output.join("")).not.toContain(submitted);
+    expect(io.errors.join("")).not.toContain(submitted);
   });
 
   it("fails uniformly for arguments, non-terminals, cancellation, and unknown targets", async () => {
@@ -221,6 +231,60 @@ async function configuredIdentity(
           ?, ?, 1, 1, ?, ?, NULL, 1
         )
       `, [identity.id, "3".repeat(64), "4".repeat(64), NOW, NOW + 900_000]);
+      transaction.run(`
+        INSERT INTO oauth_clients (
+          id, client_identifier, display_name, metadata_json, metadata_digest,
+          lifecycle, first_seen_at, last_seen_at, version
+        ) VALUES (
+          '018f1f2e-7b3c-7a10-8000-000000000080', 'break-glass-client',
+          'Break glass client', '{}', ?, 'active', ?, ?, 1
+        )
+      `, ["a".repeat(64), NOW, NOW]);
+      transaction.run(`
+        INSERT INTO oauth_grants (
+          id, user_id, client_id, resource, scopes_json,
+          authentication_method, issued_security_epoch, issued_global_epoch,
+          issued_access_ttl_ms, issued_refresh_idle_ms,
+          issued_refresh_absolute_ms, status, issued_at, last_used_at,
+          absolute_expires_at, idle_expires_at, revoked_at,
+          revocation_reason, version
+        ) VALUES (
+          '018f1f2e-7b3c-7a10-8000-000000000081', ?,
+          '018f1f2e-7b3c-7a10-8000-000000000080', 'https://mcp.example.org',
+          '["gateway.read"]', 'local_password_totp', 1, 1, 300000,
+          86400000, 604800000, 'active', ?, ?, ?, ?, NULL, NULL, 1
+        )
+      `, [identity.id, NOW, NOW, NOW + 604_800_000, NOW + 86_400_000]);
+      transaction.run(`
+        INSERT INTO oauth_refresh_families (
+          id, grant_id, current_sequence, status, issued_at, last_used_at,
+          absolute_expires_at, idle_expires_at, revoked_at,
+          revocation_reason, version
+        ) VALUES (
+          '018f1f2e-7b3c-7a10-8000-000000000082',
+          '018f1f2e-7b3c-7a10-8000-000000000081', 0, 'active', ?, ?, ?, ?,
+          NULL, NULL, 1
+        )
+      `, [NOW, NOW, NOW + 604_800_000, NOW + 86_400_000]);
+      transaction.run(`
+        INSERT INTO oauth_refresh_tokens (
+          id, token_hash, family_id, sequence, status, issued_at, used_at
+        ) VALUES (
+          '018f1f2e-7b3c-7a10-8000-000000000083', ?,
+          '018f1f2e-7b3c-7a10-8000-000000000082', 0, 'active', ?, NULL
+        )
+      `, ["b".repeat(64), NOW]);
+      transaction.run(`
+        INSERT INTO oauth_access_tokens (
+          id, token_hash, grant_id, family_id, scopes_json,
+          issued_at, expires_at, last_used_at, status
+        ) VALUES (
+          '018f1f2e-7b3c-7a10-8000-000000000084', ?,
+          '018f1f2e-7b3c-7a10-8000-000000000081',
+          '018f1f2e-7b3c-7a10-8000-000000000082', '["gateway.read"]',
+          ?, ?, ?, 'active'
+        )
+      `, ["c".repeat(64), NOW, NOW + 300_000, NOW]);
     }),
   });
   return { databaseFile, worker, userId: identity.id };

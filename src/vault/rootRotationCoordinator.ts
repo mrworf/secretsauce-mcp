@@ -227,6 +227,10 @@ export async function runRootRotationMaintenance(
           logicalRootKeyId: options.config.activeRootKey,
           oldRoot,
           newRoot,
+          recordOwner: {
+            uid: options.config.setup.runtimeUid,
+            gid: options.config.setup.runtimeGid,
+          },
         });
         vaultAdapter.preflight();
       }
@@ -406,6 +410,7 @@ function preflightVaultStore(
       config.storeDirectory,
       config.activeRootKey,
       oldRoot,
+      config.setup.runtimeUid,
     );
   } catch {
     throw vaultError("vault_config_invalid");

@@ -3,6 +3,7 @@ import {
   closeSync,
   constants,
   existsSync,
+  fchownSync,
   fstatSync,
   fsyncSync,
   linkSync,
@@ -129,6 +130,10 @@ export interface VaultRecordRootRotationOptions {
   logicalRootKeyId: string;
   oldRoot: Uint8Array;
   newRoot: Uint8Array;
+  recordOwner?: {
+    uid: number;
+    gid: number;
+  };
   randomBytes?: (size: number) => Buffer;
   failureInjector?: (stage:
     | "after_rewrap_file_sync_before_compare"
@@ -140,17 +145,22 @@ export function preflightVaultRecordRoot(
   directory: string,
   logicalRootKeyId: string,
   root: Uint8Array,
+  allowedOwnerUid?: number,
 ): number {
   if (
     !ROOT_KEY_ID_PATTERN.test(logicalRootKeyId)
     || root.byteLength !== DEK_BYTES
+    || (
+      allowedOwnerUid !== undefined
+      && (!Number.isInteger(allowedOwnerUid) || allowedOwnerUid < 0)
+    )
   ) throw vaultError("vault_store_unavailable");
   const metadata = lstatSync(directory);
   if (
     !metadata.isDirectory()
     || metadata.isSymbolicLink()
     || (metadata.mode & 0o777) !== 0o700
-    || !isAllowedOwner(metadata.uid)
+    || !isAllowedOwner(metadata.uid, allowedOwnerUid)
   ) throw vaultError("vault_store_unavailable");
   const rootCopy = Buffer.from(root);
   const impossibleAlternative = Buffer.from(root);
@@ -158,7 +168,11 @@ export function preflightVaultRecordRoot(
   let count = 0;
   try {
     for (const locator of rotationLocators(directory)) {
-      const source = readRotationRecord(directory, locator);
+      const source = readRotationRecord(
+        directory,
+        locator,
+        allowedOwnerUid,
+      );
       try {
         const classification = classifyRotationRecord(
           source,
@@ -205,6 +219,7 @@ export class VaultRecordRootRotationAdapter {
   readonly #logicalRootKeyId: string;
   readonly #oldRoot: Buffer;
   readonly #newRoot: Buffer;
+  readonly #recordOwner?: VaultRecordRootRotationOptions["recordOwner"];
   readonly #randomBytes: (size: number) => Buffer;
   readonly #failureInjector?:
     VaultRecordRootRotationOptions["failureInjector"];
@@ -215,15 +230,27 @@ export class VaultRecordRootRotationAdapter {
       !ROOT_KEY_ID_PATTERN.test(options.logicalRootKeyId)
       || options.oldRoot.byteLength !== DEK_BYTES
       || options.newRoot.byteLength !== DEK_BYTES
+      || (
+        options.recordOwner !== undefined
+        && (
+          !Number.isInteger(options.recordOwner.uid)
+          || options.recordOwner.uid < 0
+          || !Number.isInteger(options.recordOwner.gid)
+          || options.recordOwner.gid < 0
+        )
+      )
       || options.oldRoot.every(
         (value, index) => value === options.newRoot[index],
       )
     ) throw vaultError("vault_store_unavailable");
-    ensureStoreDirectory(options.directory);
+    ensureStoreDirectory(options.directory, options.recordOwner?.uid);
     this.#directory = options.directory;
     this.#logicalRootKeyId = options.logicalRootKeyId;
     this.#oldRoot = Buffer.from(options.oldRoot);
     this.#newRoot = Buffer.from(options.newRoot);
+    if (options.recordOwner !== undefined) {
+      this.#recordOwner = { ...options.recordOwner };
+    }
     this.#randomBytes = options.randomBytes ?? randomBytes;
     if (options.failureInjector !== undefined) {
       this.#failureInjector = options.failureInjector;
@@ -242,7 +269,11 @@ export class VaultRecordRootRotationAdapter {
       newRootCount: 0,
     };
     for (const locator of rotationLocators(this.#directory)) {
-      const source = readRotationRecord(this.#directory, locator);
+      const source = readRotationRecord(
+        this.#directory,
+        locator,
+        this.#recordOwner?.uid,
+      );
       try {
         const classification = classifyRotationRecord(
           source,
@@ -303,7 +334,11 @@ export class VaultRecordRootRotationAdapter {
   }
 
   #rewrapOne(locator: string): boolean {
-    const source = readRotationRecord(this.#directory, locator);
+    const source = readRotationRecord(
+      this.#directory,
+      locator,
+      this.#recordOwner?.uid,
+    );
     let replacement: Buffer | undefined;
     let dek: Buffer | undefined;
     try {
@@ -368,12 +403,23 @@ export class VaultRecordRootRotationAdapter {
         0o600,
       );
       writeFileSync(descriptor, replacement);
+      if (this.#recordOwner !== undefined) {
+        fchownSync(
+          descriptor,
+          this.#recordOwner.uid,
+          this.#recordOwner.gid,
+        );
+      }
       fsyncSync(descriptor);
       closeSync(descriptor);
       descriptor = undefined;
       this.#failureInjector?.("after_rewrap_file_sync_before_compare");
       this.#failureInjector?.("before_rewrap_source_compare");
-      const current = readRotationRecord(this.#directory, locator);
+      const current = readRotationRecord(
+        this.#directory,
+        locator,
+        this.#recordOwner?.uid,
+      );
       try {
         if (
           digestRecord(current) !== digestRecord(expected)
@@ -981,14 +1027,17 @@ function isMissingRootKey(error: unknown): boolean {
   return error instanceof MissingRootKeyError;
 }
 
-function ensureStoreDirectory(directory: string): void {
+function ensureStoreDirectory(
+  directory: string,
+  allowedOwnerUid?: number,
+): void {
   if (!existsSync(directory)) {
     const parent = lstatSync(dirname(directory));
     if (
       !parent.isDirectory()
       || parent.isSymbolicLink()
       || (parent.mode & 0o022) !== 0
-      || !isAllowedOwner(parent.uid)
+      || !isAllowedOwner(parent.uid, allowedOwnerUid)
     ) {
       throw vaultError("vault_store_unavailable");
     }
@@ -999,14 +1048,17 @@ function ensureStoreDirectory(directory: string): void {
     !metadata.isDirectory()
     || metadata.isSymbolicLink()
     || (metadata.mode & 0o777) !== 0o700
-    || !isAllowedOwner(metadata.uid)
+    || !isAllowedOwner(metadata.uid, allowedOwnerUid)
   ) {
     throw vaultError("vault_store_unavailable");
   }
   chmodSync(directory, 0o700);
 }
 
-function validateRecordFileMetadata(path: string): void {
+function validateRecordFileMetadata(
+  path: string,
+  allowedOwnerUid?: number,
+): void {
   const metadata = lstatSync(path);
   if (
     !metadata.isFile()
@@ -1014,7 +1066,7 @@ function validateRecordFileMetadata(path: string): void {
     || metadata.nlink !== 1
     || (metadata.mode & 0o777) !== 0o600
     || metadata.size > MAX_RECORD_BYTES
-    || !isAllowedOwner(metadata.uid)
+    || !isAllowedOwner(metadata.uid, allowedOwnerUid)
   ) {
     throw vaultError("vault_record_invalid");
   }
@@ -1033,12 +1085,16 @@ function rotationLocators(directory: string): string[] {
   }
 }
 
-function readRotationRecord(directory: string, locator: string): Buffer {
+function readRotationRecord(
+  directory: string,
+  locator: string,
+  allowedOwnerUid?: number,
+): Buffer {
   validateLocator(locator);
   const path = join(directory, `${locator}.ssvr`);
   let descriptor: number | undefined;
   try {
-    validateRecordFileMetadata(path);
+    validateRecordFileMetadata(path, allowedOwnerUid);
     descriptor = openSync(path, constants.O_RDONLY | constants.O_NOFOLLOW);
     const metadata = fstatSync(descriptor);
     if (
@@ -1047,7 +1103,7 @@ function readRotationRecord(directory: string, locator: string): Buffer {
       || (metadata.mode & 0o777) !== 0o600
       || metadata.size < FIXED_HEADER_BYTES
       || metadata.size > MAX_RECORD_BYTES
-      || !isAllowedOwner(metadata.uid)
+      || !isAllowedOwner(metadata.uid, allowedOwnerUid)
     ) throw vaultError("vault_record_invalid");
     const source = readFileSync(descriptor);
     if (source.byteLength !== metadata.size) {
@@ -1299,7 +1355,10 @@ function fsyncDirectory(directory: string): void {
   }
 }
 
-function isAllowedOwner(uid: number): boolean {
+function isAllowedOwner(uid: number, additionalUid?: number): boolean {
   const current = process.getuid?.();
-  return current === undefined || uid === current || uid === 0;
+  return current === undefined
+    || uid === current
+    || uid === 0
+    || uid === additionalUid;
 }

@@ -11,6 +11,7 @@ describe("vault deployment boundary", () => {
     expect(vault.ports).toBeUndefined();
     expect(vault.network_mode).toBe("none");
     expect(vault.user).toBe("0:0");
+    expect(vault.group_add).toEqual(["1002"]);
     expect(vault.environment.SECRETSAUCE_VAULT_CONFIG).toBe("/config/vault.yaml");
     expect(vault.environment.SECRETSAUCE_VAULT_STATUS_SOCKET)
       .toBe("/run/secretsauce-vault/status.sock");

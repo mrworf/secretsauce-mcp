@@ -5,6 +5,8 @@ services:
     image: secretsauce-mcp:latest
     command: ["node", "dist/vault/main.js"]
     user: "0:0"
+    group_add:
+      - "1002"
     network_mode: "none"
     volumes:
       - ./examples/vault.yaml:/config/vault.yaml:ro

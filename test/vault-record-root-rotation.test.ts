@@ -1,5 +1,6 @@
 import {
   chmodSync,
+  lstatSync,
   mkdtempSync,
   readFileSync,
   writeFileSync,
@@ -210,6 +211,39 @@ describe("vault-record root rewrap adapter", () => {
       oldRoot,
       newRoot: oldRoot,
     })).toThrow();
+    expect(() => new VaultRecordRootRotationAdapter({
+      directory,
+      logicalRootKeyId: "root-a",
+      oldRoot,
+      newRoot,
+      recordOwner: { uid: -1, gid: 0 },
+    })).toThrow();
+  });
+
+  it("preserves the explicit runtime record owner during privileged rotation", () => {
+    const uid = process.getuid?.() ?? 0;
+    const gid = process.getgid?.() ?? 0;
+    const directory = secureDirectory();
+    const binding = bindings();
+    store(directory, "root-a", oldRoot).create(
+      binding,
+      Buffer.from("runtime-owned-value"),
+      { locator: locators[0] },
+    );
+    const adapter = new VaultRecordRootRotationAdapter({
+      directory,
+      logicalRootKeyId: "root-a",
+      oldRoot,
+      newRoot,
+      recordOwner: { uid, gid },
+    });
+
+    expect(adapter.rewrapBatch(undefined, 1)).toMatchObject({
+      scannedCount: 1,
+      rewrappedCount: 1,
+    });
+    const metadata = lstatSync(recordPath(directory, locators[0]));
+    expect({ uid: metadata.uid, gid: metadata.gid }).toEqual({ uid, gid });
   });
 });
 

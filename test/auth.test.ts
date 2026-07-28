@@ -1118,6 +1118,51 @@ describe("auth", () => {
     }
   });
 
+  it("uses configured forwarding authority for OAuth admission and rejects invalid chains first", async () => {
+    const config = await builtinOAuthConfig({
+      maxUnauthenticatedInflight: 2,
+      maxUnauthenticatedInflightPerSource: 1,
+    });
+    config.clientSource = {
+      mode: "always",
+      header: "x_forwarded_for",
+      trustedProxies: [],
+    };
+    const fixture = await startServer(config);
+    const stalled = httpRequest(`${fixture.baseUrl}/oauth/authorize`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/x-www-form-urlencoded",
+        "x-forwarded-for": "198.51.100.20",
+      },
+    });
+    stalled.on("error", () => undefined);
+    stalled.write("partial=body");
+    await once(stalled, "socket");
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    try {
+      const independent = await localRequest(`${fixture.baseUrl}/oauth/token`, {
+        method: "POST",
+        body: "grant_type=authorization_code",
+        headers: { "x-forwarded-for": "203.0.113.30" },
+      });
+      expect(independent.status).not.toBe(429);
+
+      const invalid = await localRequest(`${fixture.baseUrl}/oauth/token`, {
+        method: "POST",
+        body: "grant_type=authorization_code",
+        headers: { "x-forwarded-for": "unknown" },
+      });
+      expect(invalid.status).toBe(400);
+      expect(JSON.parse(invalid.body)).toEqual({
+        error: { code: "invalid_request", message: "Invalid request." },
+      });
+    } finally {
+      stalled.destroy();
+      await fixture.close();
+    }
+  });
+
   it("rejects unallowed built-in OAuth CIMD clients and redirect mismatches", async () => {
     const config = await builtinOAuthConfig();
     const fixture = await startServer(config);

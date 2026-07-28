@@ -82,6 +82,7 @@ export async function startSecretSauceApplication(
         backupVault,
       );
       control = await startControlServer(config, {
+        authenticationAbuse: runtime.builtinOAuth,
         persistence: runtime.persistence,
         restoreMaintenance: runtime.restoreMaintenance,
         referenceAggregates: runtime.capabilities.tokenBroker,

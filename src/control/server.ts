@@ -186,6 +186,13 @@ import { RestoreMaintenanceGate } from "../restoreMaintenance.js";
 import { RecoveryRemediationService } from "../recoveryRemediations.js";
 import { registerRecoveryRoutes } from "./recoveryRoutes.js";
 import type { PublicSetupStatus } from "../setup/status.js";
+import type { AuthenticationAbuseRuntime } from "../builtinOAuth.js";
+import {
+  canonicalRequestSource,
+  ClientSourceError,
+  ClientSourceResolver,
+  setCanonicalRequestSource,
+} from "../clientSource.js";
 
 export interface ControlApplicationOptions {
   authenticator?: ControlAuthenticator;
@@ -229,6 +236,7 @@ export interface ControlApplicationOptions {
   restoreMaintenance?: RestoreMaintenanceGate;
   operational?: () => boolean;
   setupStatus?: () => PublicSetupStatus;
+  authenticationAbuse?: AuthenticationAbuseRuntime;
 }
 
 export function createControlApplication(
@@ -272,8 +280,23 @@ export function createControlApplication(
     genReqId: createRequestId,
     logController: new LogController({ disableRequestLogging: true }),
   });
+  const clientSources = new ClientSourceResolver(config.clientSource);
   const operational = options.operational ?? (() => true);
   application.addHook("onRequest", async (request, reply) => {
+    try {
+      setCanonicalRequestSource(
+        request.raw,
+        clientSources.resolve(request.raw.socket.remoteAddress, request.raw.headers),
+      );
+    } catch (error) {
+      if (!(error instanceof ClientSourceError)) throw error;
+      return reply.code(400).type("application/json").send({
+        error: {
+          code: "invalid_request",
+          message: "The request is invalid.",
+        },
+      });
+    }
     const setupApiPath = isSetupApiPath(request.url);
     const setupWebPath = isSetupWebPath(request.url);
     const setupWebCandidate = isSetupWebCandidate(request.url);
@@ -359,6 +382,9 @@ export function createControlApplication(
   if (options.localIdentity !== undefined) {
     registerLocalIdentityRoutes(routeRegistry, {
       ...options.localIdentity,
+      ...(options.authenticationAbuse === undefined
+        ? {}
+        : { authenticationAbuse: options.authenticationAbuse }),
       logoutFailure: (category, correlationId) => {
         logger.error("logout_revocation_unavailable", {
           correlation_id: correlationId,
@@ -493,7 +519,10 @@ export interface ControlServerApplication {
 
 export async function startControlServer(
   config: GatewayConfig,
-  options: Pick<ControlApplicationOptions, "vaultReadiness"> & {
+  options: Pick<
+    ControlApplicationOptions,
+    "vaultReadiness" | "authenticationAbuse"
+  > & {
     persistence?: PersistenceOwner;
     credentialVaultClient?: CredentialControlVault;
     backupVaultClient?: BackupVaultClient;

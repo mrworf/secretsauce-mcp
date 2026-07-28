@@ -38,6 +38,8 @@ import {
 } from "./security.js";
 import { z } from "./zod.js";
 import { PersistenceError } from "../persistence/errors.js";
+import type { AuthenticationAbuseRuntime } from "../builtinOAuth.js";
+import { canonicalRequestSource } from "../clientSource.js";
 
 export interface LocalIdentityControl {
   authentication: LocalAuthenticationService;
@@ -53,6 +55,7 @@ export interface LocalIdentityControl {
     category: "persistence" | "audit",
     correlationId: string,
   ) => void;
+  authenticationAbuse?: AuthenticationAbuseRuntime;
   oidc?: {
     flow: OidcFlowService;
     login: OidcLoginService;
@@ -125,13 +128,50 @@ export function registerLocalIdentityRoutes(
     concurrency: "none",
     idempotency: "none",
     handler: async ({ body, request, reply }) => {
+      const source = canonicalRequestSource(request.raw);
+      const releaseBody = identity.authenticationAbuse?.bodyLimiter.acquire(source);
+      if (identity.authenticationAbuse !== undefined && releaseBody === undefined) {
+        reply.header("retry-after", "1");
+        throw new ControlContractError(
+          429,
+          "rate_limited",
+          "Authentication is temporarily unavailable.",
+        );
+      }
+      const globalAdmission = identity.authenticationAbuse?.globalLoginLimiter.take();
+      if (globalAdmission !== undefined && !globalAdmission.allowed) {
+        releaseBody?.();
+        reply.header(
+          "retry-after",
+          String(Math.max(1, Math.ceil(globalAdmission.retryAfterMs / 1_000))),
+        );
+        throw new ControlContractError(
+          429,
+          "rate_limited",
+          "Authentication is temporarily unavailable.",
+        );
+      }
+      const releasePassword =
+        identity.authenticationAbuse?.passwordLimiter.acquire(source);
+      if (
+        identity.authenticationAbuse !== undefined
+        && releasePassword === undefined
+      ) {
+        releaseBody?.();
+        reply.header("retry-after", "1");
+        throw new ControlContractError(
+          429,
+          "rate_limited",
+          "Authentication is temporarily unavailable.",
+        );
+      }
       try {
         const destination = validatedControlDestination(body.destination);
         const result = await identity.authentication.login({
           email: body.email,
           password: body.password,
           totp: body.totp,
-          source: request.ip,
+          source,
           correlationId: request.id,
         });
         const maxAge = Math.max(
@@ -163,6 +203,9 @@ export function registerLocalIdentityRoutes(
           throw new ControlContractError(503, "maintenance", "Authentication is unavailable.");
         }
         throw new ControlContractError(401, "unauthenticated", "Authentication failed.");
+      } finally {
+        releasePassword?.();
+        releaseBody?.();
       }
     },
   }));
@@ -214,7 +257,7 @@ export function registerLocalIdentityRoutes(
             role: session.role,
             password: body.password,
             totp: body.totp,
-            source: request.ip,
+            source: canonicalRequestSource(request.raw),
             correlationId: request.id,
             ...(body.operation === undefined ? {} : {
               operation: {
@@ -940,7 +983,7 @@ function registerEnrollmentRoutes(
         const result = await enrollment.enrollmentLogin({
           email: body.email,
           enrollmentCode: body.enrollment_code,
-          source: request.ip,
+          source: canonicalRequestSource(request.raw),
           correlationId: request.id,
         });
         setControlEnrollmentCookie(
@@ -986,7 +1029,7 @@ function registerEnrollmentRoutes(
         const result = await enrollment.totpRecoveryLogin({
           email: body.email,
           password: body.password,
-          source: request.ip,
+          source: canonicalRequestSource(request.raw),
           correlationId: request.id,
         });
         setControlEnrollmentCookie(
@@ -1097,7 +1140,7 @@ function registerEnrollmentRoutes(
           newPassword: body.new_password,
           totp: body.totp,
           correlationId: request.id,
-          source: request.ip,
+          source: canonicalRequestSource(request.raw),
         });
         clearControlEnrollmentCookie(reply);
         return { data: { enrolled: true as const } };
@@ -1139,7 +1182,7 @@ function registerEnrollmentRoutes(
           newPassword: body.new_password,
           totp: body.totp,
           correlationId: request.id,
-          source: request.ip,
+          source: canonicalRequestSource(request.raw),
         });
         clearControlEnrollmentCookie(reply);
         return { data: { changed: true as const } };
@@ -1221,7 +1264,7 @@ function registerEnrollmentRoutes(
         await enrollment.confirmTotpEnrollment(session, {
           totp: body.totp,
           correlationId: request.id,
-          source: request.ip,
+          source: canonicalRequestSource(request.raw),
         });
         clearControlEnrollmentCookie(reply);
         return { data: { enrolled: true as const } };
@@ -1272,7 +1315,7 @@ function registerSelfServiceRoutes(
           currentTotp: body.current_totp,
           newPassword: body.new_password,
           correlationId: request.id,
-          source: request.ip,
+          source: canonicalRequestSource(request.raw),
         });
         clearControlSessionCookie(reply);
         clearControlEnrollmentCookie(reply);
@@ -1320,7 +1363,7 @@ function registerSelfServiceRoutes(
           currentPassword: body.current_password,
           currentTotp: body.current_totp,
           correlationId: request.id,
-          source: request.ip,
+          source: canonicalRequestSource(request.raw),
         });
         setControlEnrollmentCookie(
           reply,
@@ -1369,7 +1412,7 @@ function registerSelfServiceRoutes(
         await enrollment.confirmTotpReplacement(session, {
           totp: body.totp,
           correlationId: request.id,
-          source: request.ip,
+          source: canonicalRequestSource(request.raw),
         });
         clearControlSessionCookie(reply);
         clearControlEnrollmentCookie(reply);

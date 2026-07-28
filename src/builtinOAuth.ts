@@ -32,6 +32,7 @@ import { loadIdentitySessionHmacKey } from "./identity/browserSessions.js";
 import { readVaultKeyFile } from "./vault/keyFile.js";
 import { OAuthIntentStateCodec } from "./oauth/intentState.js";
 import { LoginAttemptLimiter } from "./loginAttemptLimiter.js";
+import { canonicalRequestSource } from "./clientSource.js";
 import {
   type SecuritySettings,
   type SecuritySettingsStore,
@@ -100,6 +101,12 @@ export interface BuiltinOAuthState {
   refreshTokens: Map<string, RefreshTokenRecord>;
 }
 
+export interface AuthenticationAbuseRuntime {
+  readonly bodyLimiter: InflightLimiter;
+  readonly passwordLimiter: InflightLimiter;
+  readonly globalLoginLimiter: GlobalLoginLimiter;
+}
+
 interface PersistedRefreshState {
   version: 1;
   refreshGrants: RefreshGrant[];
@@ -115,6 +122,7 @@ export class BuiltinOAuthRuntime {
   readonly bodyLimiter: InflightLimiter;
   readonly passwordLimiter: InflightLimiter;
   readonly loginAttemptLimiter: LoginAttemptLimiter;
+  readonly globalLoginLimiter: GlobalLoginLimiter;
   readonly clientMetadataFetcher: OAuthClientMetadataFetcher;
   readonly database: Promise<DatabaseBuiltinOAuthServices> | undefined;
 
@@ -149,6 +157,10 @@ export class BuiltinOAuthRuntime {
       windowMs: 15 * 60_000, perSource: 10, perAccount: 10, global: 100,
       initialLockoutMs: 15 * 60_000, maxLockoutMs: 60 * 60_000, maxEntries: 1000,
     });
+    this.globalLoginLimiter = new GlobalLoginLimiter(
+      config.limits.loginGlobalAttempts,
+      config.limits.loginGlobalWindowMs,
+    );
     this.clientMetadataFetcher = new OAuthClientMetadataFetcher(
       config.limits.maxOAuthClientMetadataInflight,
       config.limits.maxOAuthClientMetadataInflightPerOrigin,
@@ -203,6 +215,30 @@ export class BuiltinOAuthRuntime {
     } catch {
       // Startup already reports database OAuth initialization failures.
     }
+  }
+}
+
+export class GlobalLoginLimiter {
+  #count = 0;
+  #resetAt = 0;
+
+  constructor(
+    readonly limit: number,
+    readonly windowMs: number,
+    readonly now: () => number = Date.now,
+  ) {}
+
+  take(): { allowed: true } | { allowed: false; retryAfterMs: number } {
+    const now = this.now();
+    if (now >= this.#resetAt) {
+      this.#count = 0;
+      this.#resetAt = now + this.windowMs;
+    }
+    if (this.#count >= this.limit) {
+      return { allowed: false, retryAfterMs: Math.max(1, this.#resetAt - now) };
+    }
+    this.#count += 1;
+    return { allowed: true };
   }
 }
 
@@ -713,7 +749,16 @@ async function handleAuthorizePost(config: GatewayConfig, request: IncomingMessa
     return;
   }
 
-  const source = request.socket.remoteAddress ?? "unknown";
+  const source = canonicalRequestSource(request);
+  const globalAdmission = runtime.globalLoginLimiter.take();
+  if (!globalAdmission.allowed) {
+    response.setHeader(
+      "retry-after",
+      String(Math.max(1, Math.ceil(globalAdmission.retryAfterMs / 1_000))),
+    );
+    writeOAuthError(response, 429, "temporarily_unavailable");
+    return;
+  }
   const account = (body.get("username") ?? "").trim().toLowerCase();
   const attemptLimiter = runtime.loginAttemptLimiter;
   const admission = attemptLimiter.check(source, account);
@@ -725,7 +770,7 @@ async function handleAuthorizePost(config: GatewayConfig, request: IncomingMessa
 
   let passwordValid = false;
   if (body.get("username") === auth.adminUsername) {
-    const release = runtime.passwordLimiter.acquire(request.socket.remoteAddress ?? "unknown");
+    const release = runtime.passwordLimiter.acquire(source);
     if (release === undefined) {
       response.setHeader("retry-after", "1");
       writeOAuthError(response, 429, "temporarily_unavailable");
@@ -854,13 +899,34 @@ async function handleDatabaseAuthorizePost(
       return;
     }
     const correlationId = `req_${randomUUID()}`;
-    const proof = await services.localAuthentication.verifyMcpProof({
+    const source = canonicalRequestSource(request);
+    const globalAdmission = runtime.globalLoginLimiter.take();
+    if (!globalAdmission.allowed) {
+      response.setHeader(
+        "retry-after",
+        String(Math.max(1, Math.ceil(globalAdmission.retryAfterMs / 1_000))),
+      );
+      writeOAuthError(response, 429, "temporarily_unavailable");
+      return;
+    }
+    const releasePassword = runtime.passwordLimiter.acquire(source);
+    if (releasePassword === undefined) {
+      response.setHeader("retry-after", "1");
+      writeOAuthError(response, 429, "temporarily_unavailable");
+      return;
+    }
+    let proof;
+    try {
+      proof = await services.localAuthentication.verifyMcpProof({
       email: body.get("username") ?? "",
       password: body.get("password") ?? "",
       totp: body.get("totp") ?? "",
-      source: request.socket.remoteAddress ?? "unknown",
+      source,
       correlationId,
-    });
+      });
+    } finally {
+      releasePassword();
+    }
     const authorization = await services.repository.authorizeLocal({
       proof,
       client: {
@@ -1631,7 +1697,7 @@ async function readLimitedFormBody(
   response: ServerResponse,
   runtime: BuiltinOAuthRuntime,
 ): Promise<URLSearchParams | undefined> {
-  const source = request.socket.remoteAddress ?? "unknown";
+  const source = canonicalRequestSource(request);
   const release = runtime.bodyLimiter.acquire(source);
   if (release === undefined) {
     response.setHeader("retry-after", "1");

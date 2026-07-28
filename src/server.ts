@@ -18,6 +18,11 @@ import {
   type RestoreMaintenanceGate,
   type RestoreOrdinaryLease,
 } from "./restoreMaintenance.js";
+import {
+  ClientSourceError,
+  ClientSourceResolver,
+  setCanonicalRequestSource,
+} from "./clientSource.js";
 
 type AuthenticatedRequest = IncomingMessage & { auth?: AuthContext };
 
@@ -43,10 +48,26 @@ export function createGatewayServer(
     });
   }
   const runtime = options.runtime ?? new GatewayRuntime(config, { ...(options.auditSink === undefined ? {} : { auditSink: options.auditSink }) });
+  const clientSources = new ClientSourceResolver(config.clientSource);
   const auditSink = runtime.auditSink;
   const restoreMaintenance =
     options.restoreMaintenance ?? runtime.restoreMaintenance;
   const server = createServer(async (request, response) => {
+    try {
+      setCanonicalRequestSource(
+        request,
+        clientSources.resolve(request.socket.remoteAddress, request.headers),
+      );
+    } catch (error) {
+      if (!(error instanceof ClientSourceError)) throw error;
+      writeJson(response, 400, {
+        error: {
+          code: "invalid_request",
+          message: "Invalid request.",
+        },
+      });
+      return;
+    }
     if (options.operational !== undefined && !options.operational()) {
       response.setHeader("retry-after", "3");
       writeJson(response, 503, {

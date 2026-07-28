@@ -44,6 +44,6 @@ evidence into an atomic durable account suspension.
 | Slice | Status | Commit | Evidence | Deviations |
 | --- | --- | --- | --- | --- |
 | 1 | completed | this commit | 65/65 source/config tests; direct and untrusted-peer header ignoring; trusted server-side chain walk; always client-most selection and bounded warning; X-Forwarded-For/RFC Forwarded parsing; IPv4/IPv6/mapped canonicalization; IP/CIDR validation; six exact environment defaults/overrides with syntax, range, and cross-field rejection; server build | — |
-| 2 | pending | — | — | — |
+| 2 | completed | this commit | 55/55 OAuth/auth tests, 6/6 browser-session integrations, and 6/6 focused source/admission tests; request-boundary source resolution on gateway/control; direct spoof resistance; configured forwarding source separation; malformed-header pre-auth rejection; shared fixed global window; shared unauthenticated/password concurrency; uniform 429 plus `Retry-After`; canonical source propagated through local login/enrollment/step-up and local MCP OAuth | — |
 | 3 | pending | — | — | — |
 | 4 | pending | — | — | — |

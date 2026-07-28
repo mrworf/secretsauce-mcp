@@ -9,6 +9,7 @@ import {
 } from "../src/identity/browserSessions.js";
 import {
   LocalAuthenticationRepository,
+  LocalAuthenticationError,
   LocalAuthenticationService,
 } from "../src/identity/localAuthentication.js";
 import { hashPassword } from "../src/identity/password.js";
@@ -29,6 +30,8 @@ import { PersistenceWorker } from "../src/persistence/worker.js";
 import { PersistenceError } from "../src/persistence/errors.js";
 import type { GatewayConfig, IdentityConfig } from "../src/types.js";
 import { registryConfig } from "./helpers.js";
+import { GlobalLoginLimiter } from "../src/builtinOAuth.js";
+import { InflightLimiter } from "../src/inflightLimiter.js";
 
 const START = 1_785_000_000_000;
 const REQUEST_ID = "req_12345678-1234-4234-8234-123456789abc";
@@ -43,6 +46,78 @@ afterEach(async () => {
 });
 
 describe("durable browser sessions", () => {
+  it("resolves forwarding authority before shared admission and password work", async () => {
+    const fixture = await setup("canonical-source");
+    const config = controlConfig(fixture.databaseFile, fixture.config);
+    config.clientSource = {
+      mode: "always",
+      header: "x_forwarded_for",
+      trustedProxies: [],
+    };
+    const sources: string[] = [];
+    const authentication = {
+      login: async (input: unknown) => {
+        sources.push((input as { source: string }).source);
+        throw new LocalAuthenticationError("authentication_failed");
+      },
+    } as unknown as LocalAuthenticationService;
+    const globalLoginLimiter = new GlobalLoginLimiter(1, 60_000, () => START);
+    const application = createControlApplication(config, {
+      persistence: fixture.worker,
+      localIdentity: {
+        authentication,
+        browserSessions: fixture.authenticator,
+      },
+      authenticationAbuse: {
+        globalLoginLimiter,
+        bodyLimiter: new InflightLimiter(2, 1),
+        passwordLimiter: new InflightLimiter(2, 1),
+      },
+    });
+    closeables.add(application);
+    const payload = {
+      email: fixture.email,
+      password: fixture.password,
+      totp: "000000",
+    };
+    const first = await application.inject({
+      method: "POST",
+      url: "/api/v2/auth/login",
+      headers: {
+        host: "control.example.org",
+        "x-forwarded-for": "::ffff:192.0.2.9",
+      },
+      payload,
+    });
+    expect(first.statusCode).toBe(401);
+    expect(sources).toEqual(["192.0.2.9"]);
+
+    const limited = await application.inject({
+      method: "POST",
+      url: "/api/v2/auth/login",
+      headers: {
+        host: "control.example.org",
+        "x-forwarded-for": "198.51.100.8",
+      },
+      payload,
+    });
+    expect(limited.statusCode).toBe(429);
+    expect(limited.headers["retry-after"]).toBe("60");
+    expect(sources).toHaveLength(1);
+
+    const malformed = await application.inject({
+      method: "POST",
+      url: "/api/v2/auth/login",
+      headers: {
+        host: "control.example.org",
+        "x-forwarded-for": "unknown",
+      },
+      payload,
+    });
+    expect(malformed.statusCode).toBe(400);
+    expect(sources).toHaveLength(1);
+  });
+
   it("starts and restarts the production control runtime with stable identity key files", async () => {
     const directory = mkdtempSync(join(tmpdir(), "secretsauce-browser-runtime-"));
     const databaseFile = join(directory, "control.sqlite");

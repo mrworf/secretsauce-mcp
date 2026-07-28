@@ -1,5 +1,6 @@
 import { isIP } from "node:net";
 import type { IncomingHttpHeaders } from "node:http";
+import type { IncomingMessage } from "node:http";
 import type { ClientSourceConfig } from "./types.js";
 
 export class ClientSourceError extends Error {
@@ -43,6 +44,16 @@ export class ClientSourceResolver {
     }
     return chain[0]!;
   }
+}
+
+const requestSources = new WeakMap<object, string>();
+
+export function setCanonicalRequestSource(request: object, source: string): void {
+  requestSources.set(request, source);
+}
+
+export function canonicalRequestSource(request: IncomingMessage): string {
+  return requestSources.get(request) ?? canonicalIp(request.socket.remoteAddress ?? "");
 }
 
 export function canonicalIp(input: string): string {

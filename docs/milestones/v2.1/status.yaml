@@ -95,7 +95,7 @@ milestones:
   - id: "10"
     title: "Release Qualification And Documentation"
     file: "docs/milestones/v2.1/10-release-qualification-and-documentation.md"
-    status: "pending"
+    status: "in_progress"
     dependencies:
       - "03"
       - "04"
@@ -105,4 +105,4 @@ milestones:
       - "09"
     completed_at: null
     commit_hash: null
-    notes: "Pending integrated release qualification and independent approval evidence."
+    notes: "Implementation plan approved for candidate-wide automated qualification, exact-candidate official Compose evidence, live hosted-client checks, and final independent/human review closure. Docker-compatible runtime is not available in the current workspace."

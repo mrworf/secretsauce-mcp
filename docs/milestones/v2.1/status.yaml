@@ -86,12 +86,12 @@ milestones:
   - id: "09"
     title: "Session And Agent-Connection Management"
     file: "docs/milestones/v2.1/09-session-and-agent-connection-management.md"
-    status: "pending"
+    status: "in_progress"
     dependencies:
       - "06"
     completed_at: null
     commit_hash: null
-    notes: "Pending implementation planning and acceptance evidence."
+    notes: "Implementation plan approved for privacy-safe self service, transaction-authorized administration, account UX, retained cleanup evidence, and qualification."
   - id: "10"
     title: "Release Qualification And Documentation"
     file: "docs/milestones/v2.1/10-release-qualification-and-documentation.md"

@@ -39,13 +39,13 @@ milestones:
   - id: "04"
     title: "Envelope-Root Rotation"
     file: "docs/milestones/v2.1/04-envelope-root-rotation.md"
-    status: "pending"
+    status: "in_progress"
     dependencies:
       - "01"
       - "02"
     completed_at: null
     commit_hash: null
-    notes: "Pending implementation planning and acceptance evidence."
+    notes: "Implementation plan created at docs/plans/v2.1/milestone-04-envelope-root-rotation.md; starting the journal, receipt, physical-root, and host-argument state-machine slice."
   - id: "05"
     title: "Browser Enrollment And Initial Superadmin"
     file: "docs/milestones/v2.1/05-browser-enrollment.md"

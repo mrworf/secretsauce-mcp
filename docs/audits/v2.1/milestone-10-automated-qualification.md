@@ -2,7 +2,7 @@
 
 ## Candidate and environment
 
-- Executable baseline: `1768357`
+- Executable baseline: `b780201`
 - Qualification environment: Node 26.4.0, npm 12.0.1, linux/x86_64
 - Container runtime: unavailable; Docker, Podman, and nerdctl are absent
 - Decision rule: a missing external gate remains pending and blocks release
@@ -29,8 +29,8 @@ approval.
   tests with approved loopback/private-socket permission.
 - Generated control OpenAPI is current.
 - The v2.1 readiness validator passed all 14 architecture/readiness artifacts.
-- The release artifact/privacy scan passed 658 closed-scope files after the
-  exact-candidate external qualification runbook was staged.
+- The release artifact/privacy scan passed 662 closed-scope files after the
+  exact-candidate runbook and project-authored review packet were staged.
 
 ## Integration finding and remediation
 

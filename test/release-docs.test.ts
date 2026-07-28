@@ -12,6 +12,10 @@ const RELEASE_DOCS = [
   "docs/v2.1-release-qualification.md",
   "docs/plans/v2.1/milestone-10-release-qualification-and-documentation.md",
   "docs/audits/v2.1/milestone-10-automated-qualification.md",
+  "docs/audits/v2.1/milestone-10-security-invariant.md",
+  "docs/audits/v2.1/milestone-10-architecture-operations.md",
+  "docs/audits/v2.1/milestone-10-ux-accessibility.md",
+  "docs/audits/v2.1/milestone-10-data-api-documentation.md",
   ...Array.from(
     { length: 10 },
     (_, index) => `docs/audits/v2.1/milestone-${String(index).padStart(2, "0")}-acceptance.md`,
@@ -112,9 +116,11 @@ describe("release operations documentation", () => {
     expect(matrix).toContain(
       "Official Compose clean setup and recreation",
     );
-    expect(matrix).toContain("168 files / 1,087 tests passed");
-    expect(matrix).toContain("658 tracked, staged, built, generated");
-    expect(matrix).toContain("executable candidate `1768357`");
+    expect(matrix).toContain("168 files / 1,089 tests passed");
+    expect(matrix).toContain("662 tracked, staged, built, generated");
+    expect(matrix).toContain("executable candidate `b780201`");
+    expect(matrix).toContain("Project-authored final review packet");
+    expect(matrix).toContain("explicitly non-independent");
     expect(matrix).toContain("No red or pending gate is waived");
     expect(matrix).not.toContain("candidate `acf8b67`");
 

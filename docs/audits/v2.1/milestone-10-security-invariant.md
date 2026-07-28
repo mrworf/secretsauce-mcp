@@ -25,9 +25,10 @@ downstream can apply an arbitrary invertible transformation that exact and
 pattern scanners cannot universally recognize. Route, destination, credential
 placement, and policy constraints remain the structural containment boundary.
 
-The production dependency advisory gate is still pending because the public
-registry query was not authorized in this environment. This review therefore
-does not approve release.
+The production dependency advisory gate is still pending. The production image
+install emitted an aggregate count of two High advisories, while the detailed
+public registry query was not authorized in this environment. This review
+therefore does not approve release.
 
 ## Scope / Methodology
 

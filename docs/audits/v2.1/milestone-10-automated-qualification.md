@@ -85,9 +85,11 @@ recreated application became healthy, and the complete 1,090-test suite passes.
 
 ## Pending release blockers
 
-- `npm run audit:production` could not query the public npm advisory endpoint
-  in the sandbox. Escalation was rejected because it would disclose dependency
-  metadata without explicit user authorization. No advisory result is claimed.
+- The production image's `npm ci --omit=dev` emitted an aggregate count of two
+  High advisories, so the release threshold is not passing. Detailed
+  `npm run audit:production` retrieval was rejected because it would disclose
+  dependency metadata without explicit user authorization; no package or
+  advisory detail is claimed.
 - The exact-candidate clean Compose start, pre-enrollment isolation, and
   generated-file recreation checks passed. The interactive enrollment,
   post-enrollment login/MCP and durable database/OAuth/audit journey, ephemeral

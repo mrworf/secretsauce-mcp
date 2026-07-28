@@ -17,7 +17,7 @@ creates a new executable candidate and requires the affected gates to be rerun.
 | Full unit/integration/browser/security regression | Maintainer | `npm test`; 168 files / 1,090 tests passed | pass |
 | Runtime/generated OpenAPI parity | Data/API owner | `npm run check:control-openapi`; generated artifact current | pass |
 | Readiness artifact integrity | Architecture owner | `node scripts/validate-v2.1-readiness.mjs`; 14 artifacts passed | pass |
-| Production dependency advisory threshold | Security owner | `npm run audit:production` must report no High/Critical production advisory | pending |
+| Production dependency advisory threshold | Security owner | Production-image `npm ci --omit=dev` reported an aggregate two High advisories. An explicitly authorized `npm run audit:production` query and remediation must produce no High/Critical production advisory | pending |
 | Human/API role and cross-service authorization | Security owner | 246 human/API role-capability cells plus registered route and repository contracts | pass |
 | Wide/narrow accessibility and critical UX states | UX owner | Release-wide route/accessibility contracts plus owning component suites | pass |
 | Artifact/privacy prohibited-data scan | Security owner | 662 tracked, staged, built, generated, and synthetic closed-scope files | pass |

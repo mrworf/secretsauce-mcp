@@ -135,6 +135,6 @@ readiness validator, release scan, and permission-correct full suite.
 
 | Slice | Status | Commit | Evidence | Deviations |
 | --- | --- | --- | --- | --- |
-| 1 | completed | | 6/6 registry/manifest tests; server build; negative external-input and unsafe-storage cases included | Asymmetric signing-key generation/validation remains in Slice 2 with the adapter execution lifecycle. |
-| 2 | pending | | | |
+| 1 | completed | `66a2b91` | 6/6 registry/manifest tests; server build; negative external-input and unsafe-storage cases included | Asymmetric signing-key generation/validation moved with the adapter execution lifecycle in Slice 2. |
+| 2 | completed | | 14/14 registry/manifest/provisioning/retry tests; server build; fresh/adoption/partial/retained/pending/configured/future-state and real RSA/symmetric adapter cases | Durable retry metadata is best-effort status only and never authorizes a transition; every retry re-reads the authoritative manifest and key/store state. |
 | 3 | pending | | | |

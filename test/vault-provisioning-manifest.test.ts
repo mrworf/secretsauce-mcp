@@ -70,6 +70,18 @@ describe("durable vault provisioning manifest", () => {
         checksum: `${manifest.checksum[0] === "0" ? "1" : "0"}${manifest.checksum.slice(1)}`,
       },
     ]) expect(() => parseManifest(invalid)).toThrow();
+    expect(() => parseManifest({ ...manifest, version: 2 }))
+      .toThrowError(expect.objectContaining({
+        category: "unsupported_upgrade",
+      }));
+    expect(() => parseManifest({
+      ...manifest,
+      entries: manifest.entries.map((entry, index) =>
+        index === 0 ? { ...entry, id: "future.key" } : entry
+      ),
+    })).toThrowError(expect.objectContaining({
+      category: "unsupported_upgrade",
+    }));
     expect(() => configureManifest(manifest)).toThrow();
   });
 

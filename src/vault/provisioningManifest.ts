@@ -68,9 +68,18 @@ const manifestSchema = manifestWithoutChecksumSchema.extend({
 
 export type VaultProvisioningManifest = z.infer<typeof manifestSchema>;
 
+export class ProvisioningManifestError extends Error {
+  constructor(
+    readonly category: "invalid_configuration" | "unsupported_upgrade",
+  ) {
+    super("Provisioning manifest is invalid.");
+    this.name = "ProvisioningManifestError";
+  }
+}
+
 export function initialProvisioningManifest(
   registry: readonly VaultProvisioningRegistryEntry[],
-  installationId = randomUUID(),
+  installationId: string = randomUUID(),
 ): VaultProvisioningManifest {
   return finalizeManifest({
     version: 1,
@@ -135,7 +144,47 @@ export function configureManifest(
   });
 }
 
+export function updateManifestRetry(
+  manifest: VaultProvisioningManifest,
+  attempt: number,
+  retryPending: boolean,
+): VaultProvisioningManifest {
+  const parsed = parseManifest(manifest);
+  if (
+    parsed.state !== "provisioning"
+    || !Number.isInteger(attempt)
+    || attempt < 0
+    || attempt > 6
+  ) throw vaultError("vault_config_invalid");
+  return finalizeManifest({
+    ...withoutChecksum(parsed),
+    retry: { attempt, retryPending },
+  });
+}
+
 export function parseManifest(value: unknown): VaultProvisioningManifest {
+  if (typeof value === "object" && value !== null) {
+    const candidate = value as {
+      version?: unknown;
+      entries?: unknown;
+    };
+    if (
+      candidate.version !== undefined
+      && candidate.version !== 1
+    ) throw new ProvisioningManifestError("unsupported_upgrade");
+    if (
+      Array.isArray(candidate.entries)
+      && candidate.entries.some((entry) =>
+        typeof entry === "object"
+        && entry !== null
+        && "id" in entry
+        && typeof entry.id === "string"
+        && !VAULT_PROVISIONING_KEY_IDS.includes(
+          entry.id as VaultProvisioningKeyId,
+        )
+      )
+    ) throw new ProvisioningManifestError("unsupported_upgrade");
+  }
   const parsed = manifestSchema.safeParse(value);
   if (!parsed.success) throw vaultError("vault_config_invalid");
   validateCompleteEntries(parsed.data);
@@ -186,7 +235,10 @@ export function readProvisioningManifest(
     }
     return parsed;
   } catch (error) {
-    if (error instanceof Error && error.name === "VaultError") throw error;
+    if (
+      error instanceof ProvisioningManifestError
+      || (error instanceof Error && error.name === "VaultError")
+    ) throw error;
     throw vaultError("vault_config_invalid");
   } finally {
     if (descriptor !== undefined) closeSync(descriptor);

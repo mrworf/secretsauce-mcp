@@ -52,6 +52,9 @@ describe("access management projections", () => {
         userId: fixture.userOne,
         current: true,
         status: "active",
+        authenticationMethod: "local_password_totp",
+        deviceFamily: "Chrome on desktop",
+        coarseSource: "192.0.2.0/24",
       })],
     });
     expect(JSON.stringify(ownSessions)).not.toContain("session_hash");
@@ -107,8 +110,10 @@ describe("access management projections", () => {
       pageSize: 101,
     })).rejects.toEqual(new AccessManagementError("invalid_request"));
 
-    const cursor = fixture.codec.encode("grant", NOW, GRANT_ONE);
+    const cursor = fixture.codec.encode("grant", NOW, GRANT_ONE, "viewer-a");
     expect(() => fixture.codec.decode(cursor, "session"))
+      .toThrow(new AccessManagementError("invalid_request"));
+    expect(() => fixture.codec.decode(cursor, "grant", "viewer-b"))
       .toThrow(new AccessManagementError("invalid_request"));
     const changed = `${cursor.slice(0, -1)}${cursor.endsWith("A") ? "B" : "A"}`;
     expect(() => fixture.codec.decode(changed, "grant"))
@@ -261,6 +266,51 @@ describe("access management projections", () => {
       stepUpProof: fakeProof(fixture.superadmin),
     });
     expect(replay).toMatchObject({ kind: "replayed" });
+  });
+
+  it("atomically revokes all own sessions and grants with exact confirmations", async () => {
+    const fixture = await setup();
+    const sessions = await fixture.repository.revokeOwnSessions({
+      viewer: { userId: fixture.userOne, role: "user" },
+      confirmation: "REVOKE ALL MY WEB SESSIONS",
+      correlationId: correlationId("c"),
+      idempotency: {
+        keyHash: "c".repeat(64),
+        principalId: fixture.userOne,
+        routeId: "access.sessions.revoke_all",
+        requestDigest: "d".repeat(64),
+      },
+    });
+    expect(sessions).toMatchObject({
+      kind: "executed",
+      value: { sessionsRevoked: 1, grantsRevoked: 0 },
+    });
+    const grants = await fixture.repository.revokeOwnGrants({
+      viewer: { userId: fixture.userOne, role: "user" },
+      confirmation: "REVOKE ALL MY AGENT CONNECTIONS",
+      correlationId: correlationId("d"),
+      idempotency: {
+        keyHash: "e".repeat(64),
+        principalId: fixture.userOne,
+        routeId: "access.grants.revoke_all",
+        requestDigest: "f".repeat(64),
+      },
+    });
+    expect(grants).toMatchObject({
+      kind: "executed",
+      value: { sessionsRevoked: 0, grantsRevoked: 1 },
+    });
+    await expect(fixture.repository.revokeOwnSessions({
+      viewer: { userId: fixture.userOne, role: "user" },
+      confirmation: "REVOKE ALL WEB SESSIONS",
+      correlationId: correlationId("e"),
+      idempotency: {
+        keyHash: "1".repeat(64),
+        principalId: fixture.userOne,
+        routeId: "access.sessions.revoke_all",
+        requestDigest: "2".repeat(64),
+      },
+    })).rejects.toEqual(new AccessManagementError("invalid_request"));
   });
 
   it.each([
@@ -577,9 +627,11 @@ function insertSession(
       issued_security_epoch, issued_global_epoch,
       issued_absolute_ms, issued_inactivity_ms,
       issued_at, last_activity_at, absolute_expires_at,
+      authentication_method, device_family, coarse_source,
       step_up_at, revoked_at, version
     ) VALUES (?, ?, ?, ?, 'user', 1, 1, 86400000, 3600000,
-      ?, ?, ?, NULL, NULL, 1)
+      ?, ?, ?, 'local_password_totp', 'Chrome on desktop',
+      '192.0.2.0/24', NULL, NULL, 1)
   `, [
     id,
     userId,

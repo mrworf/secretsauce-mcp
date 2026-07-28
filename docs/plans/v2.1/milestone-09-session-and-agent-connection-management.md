@@ -76,7 +76,7 @@ privacy-safe.
 
 | Slice | Status | Commit | Evidence | Deviations |
 | --- | --- | --- | --- | --- |
-| 1 | pending | — | — | — |
+| 1 | completed | this commit | Migration 25 stores only derived authentication/device/coarse-network metadata; local and OIDC session creation share conservative derivation; access cursors bind actor/scope/filters; self individual/all session and agent revocation is atomic and current-session bulk clears the cookie; 42 focused tests and production build passed | Operational cleanup evidence is deferred to slice 4 as planned. |
 | 2 | pending | — | — | — |
 | 3 | pending | — | — | — |
 | 4 | pending | — | — | — |

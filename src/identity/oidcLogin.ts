@@ -10,6 +10,7 @@ import type {
   BrowserSessionMaterial,
   LoginResult,
 } from "./localAuthentication.js";
+import { browserSessionMetadata } from "./sessionMetadata.js";
 import type { ProviderAssertion } from "./provider.js";
 import { parseIdentityProfile } from "./validation.js";
 
@@ -197,6 +198,7 @@ export class OidcLoginService {
   async login(
     assertion: ProviderAssertion,
     correlationId: string,
+    metadata: { source?: unknown; userAgent?: unknown } = {},
   ): Promise<LoginResult> {
     try {
       const provider = this.config.oidc?.providers[assertion.providerId];
@@ -230,6 +232,10 @@ export class OidcLoginService {
         absoluteMs,
         inactivityMs,
         issuedAt,
+        ...browserSessionMetadata({
+          authenticationMethod: "oidc",
+          ...metadata,
+        }),
       };
       await this.repository.commit({
         assertion,
@@ -300,8 +306,10 @@ function insertBrowserSession(
       issued_security_epoch, issued_global_epoch,
       issued_absolute_ms, issued_inactivity_ms,
       issued_at, last_activity_at, absolute_expires_at,
+      authentication_method, device_family, coarse_source,
       step_up_at, revoked_at, version
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, 1)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+      NULL, NULL, 1)
   `, [
     session.id,
     userId,
@@ -315,6 +323,9 @@ function insertBrowserSession(
     session.issuedAt,
     session.issuedAt,
     session.issuedAt + session.absoluteMs,
+    session.authenticationMethod,
+    session.deviceFamily,
+    session.coarseSource,
   ]);
 }
 

@@ -72,6 +72,20 @@ export function canonicalIp(input: string): string {
   return new URL(`http://[${input}]/`).hostname.slice(1, -1).toLowerCase();
 }
 
+export function coarseClientNetwork(input: string): string {
+  const address = canonicalIp(input);
+  const bytes = addressBytes(address);
+  if (bytes.length === 4) {
+    return `${bytes[0]}.${bytes[1]}.${bytes[2]}.0/24`;
+  }
+  const words = [
+    (bytes[0]! << 8) | bytes[1]!,
+    (bytes[2]! << 8) | bytes[3]!,
+    (bytes[4]! << 8) | bytes[5]!,
+  ];
+  return `${words.map((word) => word.toString(16)).join(":")}::/48`;
+}
+
 function parseXForwardedFor(value: string): string[] {
   const parts = value.split(",");
   if (parts.some((part) => part.trim().length === 0)) throw new ClientSourceError();

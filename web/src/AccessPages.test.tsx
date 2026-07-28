@@ -3,6 +3,7 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { MemoryRouter } from "react-router-dom";
 import { AccessPage } from "./AccessPages";
 import type { AccessControlApi } from "./controlApi";
 
@@ -18,12 +19,18 @@ describe("access and sessions workspace", () => {
   it("shows personal sessions and MCP connections without protected values", async () => {
     const user = userEvent.setup();
     const api = fakeApi();
-    const view = render(<AccessPage role="user" api={api} />);
+    const view = render(
+      <MemoryRouter><AccessPage role="user" api={api} /></MemoryRouter>,
+    );
 
-    expect(await screen.findByRole("heading", { name: "Your sessions" }))
+    expect(await screen.findByRole("heading", { name: "Web sessions" }))
       .toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Your MCP connections" }))
+    expect(screen.getByRole("heading", { name: "Agent connections" }))
       .toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Profile" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Password and TOTP" })).toBeInTheDocument();
+    expect(screen.getByText("Device: Chrome on desktop")).toBeInTheDocument();
+    expect(screen.getByText("Source network: 192.0.2.0/24")).toBeInTheDocument();
     expect(screen.getByText("Current services: Payments API")).toBeInTheDocument();
     expect(view.container.innerHTML).not.toMatch(
       /gref_|sec_|token_hash|refresh_token|credential_value/i,
@@ -36,7 +43,9 @@ describe("access and sessions workspace", () => {
   it("keeps service capability invalidation distinct from OAuth revocation", async () => {
     const user = userEvent.setup();
     const api = fakeApi();
-    render(<AccessPage role="admin" api={api} />);
+    render(
+      <MemoryRouter><AccessPage role="admin" api={api} /></MemoryRouter>,
+    );
 
     expect(await screen.findByRole("heading", { name: "Dynamic service access" }))
       .toBeInTheDocument();
@@ -75,6 +84,9 @@ function fakeApi(): AccessControlApi & {
         last_used_at: 2,
         expires_at: 3,
         status: "active",
+        authentication_method: "local_password_totp",
+        device_family: "Chrome on desktop",
+        coarse_source: "192.0.2.0/24",
       }],
     }),
     listOAuthGrants: async () => ({
@@ -100,6 +112,16 @@ function fakeApi(): AccessControlApi & {
     revokeOAuthGrant: vi.fn<AccessControlApi["revokeOAuthGrant"]>(
       async () => ({ target_id: GRANT, revoked: true }),
     ),
+    revokeAllOwnSessions: async () => ({
+      target_id: USER,
+      revoked: true,
+      sessions_revoked: 1,
+    }),
+    revokeAllOwnOAuthGrants: async () => ({
+      target_id: USER,
+      revoked: true,
+      grants_revoked: 1,
+    }),
     listServices: async () => ({
       services: [{
         id: SERVICE,

@@ -814,6 +814,9 @@ export interface AccessSession {
   last_used_at: number;
   expires_at: number;
   status: "active" | "expired" | "revoked" | "invalid";
+  authentication_method: "local_password_totp" | "oidc" | null;
+  device_family: string | null;
+  coarse_source: string | null;
 }
 
 export interface OAuthGrantAccess {
@@ -867,6 +870,16 @@ export interface AccessControlApi
   revokeOAuthGrant(grantId: string): Promise<{
     target_id: string;
     revoked: boolean;
+  }>;
+  revokeAllOwnSessions(): Promise<{
+    target_id: string;
+    revoked: boolean;
+    sessions_revoked: number;
+  }>;
+  revokeAllOwnOAuthGrants(): Promise<{
+    target_id: string;
+    revoked: boolean;
+    grants_revoked: number;
   }>;
   serviceGrantAccess(serviceId: string): Promise<{
     items: ServiceGrantAccess[];
@@ -1724,6 +1737,22 @@ export const browserControlApi:
       `/api/v2/access/grants/${encodeURIComponent(grantId)}`,
       "DELETE",
       undefined,
+    ),
+  revokeAllOwnSessions: () =>
+    mutation(
+      "/api/v2/access/sessions/revoke",
+      "POST",
+      { confirmation: "REVOKE ALL MY WEB SESSIONS" },
+      undefined,
+      true,
+    ),
+  revokeAllOwnOAuthGrants: () =>
+    mutation(
+      "/api/v2/access/grants/revoke",
+      "POST",
+      { confirmation: "REVOKE ALL MY AGENT CONNECTIONS" },
+      undefined,
+      true,
     ),
   serviceGrantAccess: (serviceId) =>
     get(`/api/v2/services/${encodeURIComponent(serviceId)}/access`),

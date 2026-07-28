@@ -67,6 +67,20 @@ describe("access management HTTP contracts", () => {
       "__Host-secretsauce_session=",
     );
     expect(revoked.headers["set-cookie"]).toContain("Max-Age=0");
+
+    const revokedAll = await fixture.application.inject({
+      method: "POST",
+      url: "/api/v2/access/sessions/revoke",
+      headers: mutationHeaders({ "idempotency-key": "self-sessions-0001" }),
+      payload: { confirmation: "REVOKE ALL MY WEB SESSIONS" },
+    });
+    expect(revokedAll.statusCode).toBe(200);
+    expect(revokedAll.json().data).toMatchObject({
+      target_id: USER,
+      revoked: true,
+      sessions_revoked: 2,
+    });
+    expect(revokedAll.headers["set-cookie"]).toContain("Max-Age=0");
   });
 
   it("rejects broad or malformed access and documents every access boundary", async () => {
@@ -105,8 +119,10 @@ describe("access management HTTP contracts", () => {
     for (const path of [
       "/api/v2/access/sessions",
       "/api/v2/access/sessions/{session_id}",
+      "/api/v2/access/sessions/revoke",
       "/api/v2/access/grants",
       "/api/v2/access/grants/{grant_id}",
+      "/api/v2/access/grants/revoke",
       "/api/v2/security/sessions",
       "/api/v2/security/oauth-grants",
       "/api/v2/security/oauth-grants/revoke",
@@ -145,6 +161,9 @@ function setup() {
           lastUsedAt: 2,
           expiresAt: 3,
           status: "active" as const,
+          authenticationMethod: "local_password_totp" as const,
+          deviceFamily: "Chrome on desktop",
+          coarseSource: "192.0.2.0/24",
         }],
       };
     },
@@ -175,6 +194,24 @@ function setup() {
       revoked: true,
       sessionsRevoked: 1,
       grantsRevoked: 0,
+    }),
+    revokeOwnSessions: async () => ({
+      kind: "executed" as const,
+      value: {
+        targetId: USER,
+        revoked: true,
+        sessionsRevoked: 2,
+        grantsRevoked: 0,
+      },
+    }),
+    revokeOwnGrants: async () => ({
+      kind: "executed" as const,
+      value: {
+        targetId: USER,
+        revoked: true,
+        sessionsRevoked: 0,
+        grantsRevoked: 1,
+      },
     }),
   } as unknown as AccessManagementRepository;
   const browserSessions = {

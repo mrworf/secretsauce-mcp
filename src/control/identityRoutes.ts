@@ -172,6 +172,7 @@ export function registerLocalIdentityRoutes(
           password: body.password,
           totp: body.totp,
           source,
+          userAgent: request.headers["user-agent"],
           correlationId: request.id,
         });
         const maxAge = Math.max(
@@ -579,13 +580,20 @@ function registerOidcLoginRoutes(
           request.id,
         );
         if (completed.binding.purpose === "login") {
-          const login = await oidc.login.login(completed.assertion, request.id);
+          const login = await oidc.login.login(completed.assertion, request.id, {
+            source: canonicalRequestSource(request.raw),
+            userAgent: request.headers["user-agent"],
+          });
           setBrowserSession(reply, login);
         } else if (completed.binding.purpose === "restricted_link" && oidc.link !== undefined) {
           const login = await oidc.link.completeRestricted(
             completed.assertion,
             completed.binding,
             request.id,
+            {
+              source: canonicalRequestSource(request.raw),
+              userAgent: request.headers["user-agent"],
+            },
           );
           setBrowserSession(reply, login);
           clearControlEnrollmentCookie(reply);

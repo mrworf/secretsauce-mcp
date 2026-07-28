@@ -40,6 +40,9 @@ const sessionSchema = z.object({
   last_used_at: z.number().int().nonnegative(),
   expires_at: z.number().int().nonnegative(),
   status,
+  authentication_method: z.enum(["local_password_totp", "oidc"]).nullable(),
+  device_family: z.string().min(1).max(64).nullable(),
+  coarse_source: z.string().min(1).max(64).nullable(),
 }).strict();
 const grantSchema = z.object({
   id: uuid,
@@ -122,9 +125,11 @@ export function registerAccessManagementRoutes(
   registerSessionList(registry, dependencies, true);
   registerSessionRevoke(registry, dependencies, false);
   registerSessionRevoke(registry, dependencies, true);
+  registerOwnSessionBulkRevoke(registry, dependencies);
   registerGrantList(registry, dependencies, false);
   registerGrantList(registry, dependencies, true);
   registerGrantRevoke(registry, dependencies);
+  registerOwnGrantBulkRevoke(registry, dependencies);
   registerBulkGrantRevoke(registry, dependencies);
 
   registry.register(defineControlRoute({
@@ -212,6 +217,112 @@ export function registerAccessManagementRoutes(
           invalidated_references: result.invalidatedReferences,
           oauth_grants_revoked: 0 as const,
         },
+      };
+    }),
+  }));
+}
+
+function registerOwnSessionBulkRevoke(
+  registry: ControlRouteRegistry,
+  dependencies: AccessRouteDependencies,
+): void {
+  registry.register(defineControlRoute({
+    id: "access.sessions.revoke_all",
+    method: "POST",
+    path: "/api/v2/access/sessions/revoke",
+    summary: "Revoke all own browser sessions",
+    tags: ["Access"],
+    authentication: ["browser_session"],
+    permission: "authenticated",
+    stepUp: "none",
+    schemas: {
+      body: z.object({
+        confirmation: z.literal("REVOKE ALL MY WEB SESSIONS"),
+      }).strict(),
+      response: revokeSchema,
+    },
+    rateLimit: "management",
+    auditAction: "access.own_sessions_revoke",
+    secretFields: [],
+    cache: "no-store",
+    concurrency: "none",
+    idempotency: "required",
+    handler: async ({
+      authentication,
+      body,
+      idempotencyKey,
+      requestId,
+      reply,
+    }) => run(async () => {
+      const actor = authentication!;
+      const result = await dependencies.repository.revokeOwnSessions({
+        viewer: viewer(actor),
+        confirmation: body.confirmation,
+        correlationId: requestId,
+        idempotency: idempotencyInput(
+          dependencies,
+          actor.principalId,
+          "access.sessions.revoke_all",
+          idempotencyKey!,
+          body,
+        ),
+      });
+      if (result.kind === "executed" && result.value.sessionsRevoked > 0) {
+        clearControlSessionCookie(reply);
+      }
+      return {
+        data: wireIdempotentRevocation(result),
+      };
+    }),
+  }));
+}
+
+function registerOwnGrantBulkRevoke(
+  registry: ControlRouteRegistry,
+  dependencies: AccessRouteDependencies,
+): void {
+  registry.register(defineControlRoute({
+    id: "access.grants.revoke_all",
+    method: "POST",
+    path: "/api/v2/access/grants/revoke",
+    summary: "Revoke all own agent connections",
+    tags: ["Access"],
+    authentication: ["browser_session"],
+    permission: "authenticated",
+    stepUp: "none",
+    schemas: {
+      body: z.object({
+        confirmation: z.literal("REVOKE ALL MY AGENT CONNECTIONS"),
+      }).strict(),
+      response: revokeSchema,
+    },
+    rateLimit: "management",
+    auditAction: "oauth.own_grants_revoke",
+    secretFields: [],
+    cache: "no-store",
+    concurrency: "none",
+    idempotency: "required",
+    handler: async ({
+      authentication,
+      body,
+      idempotencyKey,
+      requestId,
+    }) => run(async () => {
+      const actor = authentication!;
+      const result = await dependencies.repository.revokeOwnGrants({
+        viewer: viewer(actor),
+        confirmation: body.confirmation,
+        correlationId: requestId,
+        idempotency: idempotencyInput(
+          dependencies,
+          actor.principalId,
+          "access.grants.revoke_all",
+          idempotencyKey!,
+          body,
+        ),
+      });
+      return {
+        data: wireIdempotentRevocation(result),
       };
     }),
   }));
@@ -524,6 +635,9 @@ function wireSession(item: SessionAccessItem) {
     last_used_at: item.lastUsedAt,
     expires_at: item.expiresAt,
     status: item.status,
+    authentication_method: item.authenticationMethod,
+    device_family: item.deviceFamily,
+    coarse_source: item.coarseSource,
   };
 }
 
@@ -566,6 +680,47 @@ function wireServiceAccess(item: ServiceAccessItem) {
     policy_count: item.policyCount,
     references: item.references,
   };
+}
+
+function idempotencyInput(
+  dependencies: AccessRouteDependencies,
+  principalId: string,
+  routeId: string,
+  key: string,
+  body: unknown,
+) {
+  return {
+    keyHash: dependencies.idempotency.keyHash({
+      key,
+      principalId,
+      routeId,
+    }),
+    principalId,
+    routeId,
+    requestDigest: dependencies.idempotency.requestDigest(body),
+  };
+}
+
+function wireIdempotentRevocation(
+  result: Awaited<ReturnType<
+    AccessManagementRepository["revokeOwnSessions"]
+  >>,
+) {
+  return result.kind === "executed"
+    ? {
+        target_id: result.value.targetId,
+        revoked: result.value.revoked,
+        sessions_revoked: result.value.sessionsRevoked,
+        grants_revoked: result.value.grantsRevoked,
+        replayed: false,
+      }
+    : {
+        target_id: result.resultReference,
+        revoked: false,
+        sessions_revoked: 0,
+        grants_revoked: 0,
+        replayed: true,
+      };
 }
 
 async function run<T>(operation: () => Promise<T>): Promise<T> {

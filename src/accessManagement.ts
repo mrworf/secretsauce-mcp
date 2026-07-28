@@ -37,6 +37,9 @@ export interface SessionAccessItem {
   lastUsedAt: number;
   expiresAt: number;
   status: AccessRecordStatus;
+  authenticationMethod: "local_password_totp" | "oidc" | null;
+  deviceFamily: string | null;
+  coarseSource: string | null;
 }
 
 export interface GrantAccessItem {
@@ -117,6 +120,9 @@ interface SessionRow {
   last_activity_at: number;
   effective_expires_at: number;
   effective_status: AccessRecordStatus;
+  authentication_method: "local_password_totp" | "oidc" | null;
+  device_family: string | null;
+  coarse_source: string | null;
 }
 
 interface GrantRow {
@@ -168,12 +174,13 @@ export class AccessCursorCodec {
     this.#key = Buffer.from(key);
   }
 
-  encode(kind: CursorKind, timestamp: number, id: string): string {
+  encode(kind: CursorKind, timestamp: number, id: string, context = ""): string {
     if (!safeTimestamp(timestamp) || !isUuidV7(id)) {
       throw new AccessManagementError("unavailable");
     }
+    const binding = this.binding(context);
     const payload = Buffer.from(
-      JSON.stringify({ version: 1, kind, timestamp, id }),
+      JSON.stringify({ version: 2, kind, timestamp, id, binding }),
       "utf8",
     ).toString("base64url");
     const mac = createHmac("sha256", this.#key)
@@ -183,7 +190,7 @@ export class AccessCursorCodec {
     return `${payload}.${mac}`;
   }
 
-  decode(value: string, expectedKind: CursorKind): {
+  decode(value: string, expectedKind: CursorKind, context = ""): {
     timestamp: number;
     id: string;
   } {
@@ -210,9 +217,10 @@ export class AccessCursorCodec {
         new TextDecoder("utf-8", { fatal: true }).decode(decodedPayload),
       ) as Record<string, unknown>;
       if (
-        Object.keys(parsed).sort().join(",") !== "id,kind,timestamp,version"
-        || parsed.version !== 1
+        Object.keys(parsed).sort().join(",") !== "binding,id,kind,timestamp,version"
+        || parsed.version !== 2
         || parsed.kind !== expectedKind
+        || parsed.binding !== this.binding(context)
         || !safeTimestamp(parsed.timestamp)
         || typeof parsed.id !== "string"
         || !isUuidV7(parsed.id)
@@ -225,6 +233,16 @@ export class AccessCursorCodec {
 
   close(): void {
     this.#key.fill(0);
+  }
+
+  private binding(context: string): string {
+    if (Buffer.byteLength(context, "utf8") > 4_096) {
+      throw new AccessManagementError("invalid_request");
+    }
+    return createHmac("sha256", this.#key)
+      .update("secretsauce.access-cursor-binding.v1\0", "utf8")
+      .update(context, "utf8")
+      .digest("base64url");
   }
 }
 
@@ -276,9 +294,14 @@ export class AccessManagementRepository {
     validateViewerScope(input.viewer, input.scope);
     validateListFilters(input.userId, undefined, input.query);
     const pageSize = pageSizeValue(input.pageSize);
+    const cursorContext = accessCursorContext(input.viewer, input.scope, {
+      status: input.status,
+      userId: input.userId,
+      query: input.query,
+    });
     const cursor = input.cursor === undefined
       ? undefined
-      : this.cursors.decode(input.cursor, "session");
+      : this.cursors.decode(input.cursor, "session", cursorContext);
     const now = nowValue(this.now);
     try {
       const rows = await this.owner.execute({
@@ -288,6 +311,8 @@ export class AccessManagementRepository {
               session.id, session.user_id,
               user.email, user.given_name, user.family_name, user.role,
               session.issued_at, session.last_activity_at,
+              session.authentication_method, session.device_family,
+              session.coarse_source,
               min(
                 session.absolute_expires_at,
                 session.issued_at + CASE
@@ -385,6 +410,9 @@ export class AccessManagementRepository {
           lastUsedAt: row.last_activity_at,
           expiresAt: row.effective_expires_at,
           status: row.effective_status,
+          authenticationMethod: row.authentication_method,
+          deviceFamily: row.device_family,
+          coarseSource: row.coarse_source,
         })),
         ...(rows.length <= pageSize
           ? {}
@@ -393,6 +421,7 @@ export class AccessManagementRepository {
                 "session",
                 pageRows.at(-1)!.last_activity_at,
                 pageRows.at(-1)!.id,
+                cursorContext,
               ),
             }),
       };
@@ -415,9 +444,15 @@ export class AccessManagementRepository {
     validateViewerScope(input.viewer, input.scope);
     validateListFilters(input.userId, input.clientId, input.query);
     const pageSize = pageSizeValue(input.pageSize);
+    const cursorContext = accessCursorContext(input.viewer, input.scope, {
+      status: input.status,
+      userId: input.userId,
+      clientId: input.clientId,
+      query: input.query,
+    });
     const cursor = input.cursor === undefined
       ? undefined
-      : this.cursors.decode(input.cursor, "grant");
+      : this.cursors.decode(input.cursor, "grant", cursorContext);
     const now = nowValue(this.now);
     try {
       const rows = await this.owner.execute({
@@ -538,6 +573,7 @@ export class AccessManagementRepository {
                 "grant",
                 pageRows.at(-1)!.last_used_at,
                 pageRows.at(-1)!.id,
+                cursorContext,
               ),
             }),
       };
@@ -563,9 +599,13 @@ export class AccessManagementRepository {
       throw new AccessManagementError("unavailable");
     }
     const pageSize = pageSizeValue(input.pageSize);
+    const cursorContext = accessCursorContext(input.viewer, "service", {
+      serviceId: input.serviceId,
+      status: input.status,
+    });
     const cursor = input.cursor === undefined
       ? undefined
-      : this.cursors.decode(input.cursor, "service_access");
+      : this.cursors.decode(input.cursor, "service_access", cursorContext);
     const now = nowValue(this.now);
     try {
       const queryResult = await this.owner.execute({
@@ -708,6 +748,7 @@ export class AccessManagementRepository {
                 "service_access",
                 pageRows.at(-1)!.last_used_at,
                 pageRows.at(-1)!.grant_id,
+                cursorContext,
               ),
             }),
       };
@@ -978,6 +1019,123 @@ export class AccessManagementRepository {
     }
   }
 
+  async revokeOwnSessions(input: {
+    viewer: AccessViewer;
+    confirmation: string;
+    correlationId: string;
+    idempotency: IdempotencyExecutionInput;
+  }): Promise<IdempotencyExecutionResult<AccessRevocationResult>> {
+    validateOwnBulkInput(
+      input.viewer,
+      input.confirmation,
+      "REVOKE ALL MY WEB SESSIONS",
+      input.correlationId,
+    );
+    const audit = revocationAudit({
+      viewer: input.viewer,
+      action: "access.own_sessions_revoke",
+      targetType: "browser_sessions",
+      targetId: input.viewer.userId,
+      correlationId: input.correlationId,
+    });
+    try {
+      return await this.owner.execute({
+        run: (database) => database.withGeneratedAdministrativeAudit((transaction) => {
+          const result = transaction.idempotent(input.idempotency, () => {
+            const now = transaction.timestamp();
+            const sessionsRevoked = transaction.run(`
+              UPDATE browser_sessions
+              SET revoked_at = ?, version = version + 1
+              WHERE user_id = ? AND revoked_at IS NULL
+            `, [now, input.viewer.userId]).changes;
+            return {
+              value: {
+                targetId: input.viewer.userId,
+                revoked: sessionsRevoked > 0,
+                sessionsRevoked,
+                grantsRevoked: 0,
+              },
+              resultReference: input.viewer.userId,
+              responseStatus: 200,
+            };
+          });
+          return {
+            value: result,
+            auditInput: {
+              ...audit,
+              changes: [{
+                field: "sessions_revoked",
+                after: result.kind === "executed"
+                  ? result.value.sessionsRevoked
+                  : 0,
+              }],
+            },
+          };
+        }),
+      });
+    } catch (error) {
+      throw mapAccessError(error);
+    }
+  }
+
+  async revokeOwnGrants(input: {
+    viewer: AccessViewer;
+    confirmation: string;
+    correlationId: string;
+    idempotency: IdempotencyExecutionInput;
+  }): Promise<IdempotencyExecutionResult<AccessRevocationResult>> {
+    validateOwnBulkInput(
+      input.viewer,
+      input.confirmation,
+      "REVOKE ALL MY AGENT CONNECTIONS",
+      input.correlationId,
+    );
+    const audit = revocationAudit({
+      viewer: input.viewer,
+      action: "oauth.own_grants_revoke",
+      targetType: "oauth_grants",
+      targetId: input.viewer.userId,
+      correlationId: input.correlationId,
+    });
+    try {
+      return await this.owner.execute({
+        run: (database) => database.withGeneratedAdministrativeAudit((transaction) => {
+          const result = transaction.idempotent(input.idempotency, () => {
+            const revoked = revokeGrantSet(
+              transaction,
+              "grant.user_id = ?",
+              [input.viewer.userId],
+            );
+            return {
+              value: {
+                targetId: input.viewer.userId,
+                revoked: revoked.grantsRevoked > 0,
+                sessionsRevoked: 0,
+                grantsRevoked: revoked.grantsRevoked,
+              },
+              resultReference: input.viewer.userId,
+              responseStatus: 200,
+            };
+          });
+          return {
+            value: result,
+            auditInput: {
+              ...audit,
+              changes: [{
+                field: "grants_revoked",
+                after: result.kind === "executed"
+                  ? result.value.grantsRevoked
+                  : 0,
+              }],
+            },
+          };
+        }),
+      });
+    } catch (error) {
+      throw mapAccessError(error);
+    }
+  }
+
   async revokeGrantBulk(input: {
     viewer: AccessViewer;
     target: GrantBulkTarget;
@@ -1229,6 +1387,22 @@ function requireServiceAdministrator(
   }
 }
 
+function accessCursorContext(
+  viewer: AccessViewer,
+  scope: "own" | "global" | "service",
+  filters: Record<string, string | undefined>,
+): string {
+  return JSON.stringify({
+    viewer: { userId: viewer.userId, role: viewer.role },
+    scope,
+    filters: Object.fromEntries(
+      Object.entries(filters)
+        .filter((entry): entry is [string, string] => entry[1] !== undefined)
+        .sort(([left], [right]) => left.localeCompare(right)),
+    ),
+  });
+}
+
 function validateMutationInput(
   viewer: AccessViewer,
   targetId: string,
@@ -1262,6 +1436,21 @@ function validateBulkInput(input: {
       ? `REVOKE CLIENT ${input.target.id}`
       : "REVOKE ALL OAUTH GRANTS";
   if (input.confirmation !== expected) {
+    throw new AccessManagementError("invalid_request");
+  }
+}
+
+function validateOwnBulkInput(
+  viewer: AccessViewer,
+  confirmation: string,
+  expected: string,
+  correlationId: string,
+): void {
+  if (
+    !isUuidV7(viewer.userId)
+    || !CORRELATION_ID.test(correlationId)
+  ) throw new AccessManagementError("invalid_request");
+  if (confirmation !== expected) {
     throw new AccessManagementError("invalid_request");
   }
 }

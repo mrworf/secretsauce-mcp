@@ -66,7 +66,11 @@ describe("atomic local authentication", () => {
   it("authenticates an active configured identity, consumes TOTP, and persists only hashed session values", async () => {
     const fixture = await configuredIdentity("success");
     const code = totpCode(fixture.seed, NOW);
-    const result = await fixture.service.login(loginInput(fixture.email, fixture.password, code));
+    const result = await fixture.service.login({
+      ...loginInput(fixture.email, fixture.password, code, "192.0.2.129"),
+      userAgent:
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/126.0 Safari/537.36",
+    });
 
     expect(result).toMatchObject({
       userId: fixture.userId,
@@ -85,12 +89,19 @@ describe("atomic local authentication", () => {
         csrf_hash: string;
         last_login_at: number;
         audit: string;
+        authentication_method: string;
+        device_family: string;
+        coarse_source: string;
       }>(`
         SELECT
           (SELECT count(*) FROM browser_sessions) AS sessions,
           (SELECT count(*) FROM accepted_totp_steps) AS steps,
           (SELECT session_hash FROM browser_sessions) AS session_hash,
           (SELECT csrf_hash FROM browser_sessions) AS csrf_hash,
+          (SELECT authentication_method FROM browser_sessions)
+            AS authentication_method,
+          (SELECT device_family FROM browser_sessions) AS device_family,
+          (SELECT coarse_source FROM browser_sessions) AS coarse_source,
           (SELECT last_login_at FROM users WHERE id = ?) AS last_login_at,
           (SELECT group_concat(action || ':' || target_label_snapshot)
              FROM administrative_audit_events) AS audit
@@ -102,6 +113,9 @@ describe("atomic local authentication", () => {
       session_hash: expect.stringMatching(/^[a-f0-9]{64}$/),
       csrf_hash: expect.stringMatching(/^[a-f0-9]{64}$/),
       last_login_at: NOW,
+      authentication_method: "local_password_totp",
+      device_family: "Chrome on desktop",
+      coarse_source: "192.0.2.0/24",
     });
     const serialized = JSON.stringify(stored);
     expect(serialized).not.toContain(result.sessionToken);

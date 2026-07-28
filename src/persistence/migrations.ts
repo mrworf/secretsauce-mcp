@@ -3023,6 +3023,36 @@ CREATE INDEX identity_qualifying_failures_user_time_idx
   );
 `;
 
+const migration0025 = `
+ALTER TABLE browser_sessions
+ADD COLUMN authentication_method TEXT
+  CHECK (
+    authentication_method IS NULL
+    OR authentication_method IN ('local_password_totp', 'oidc')
+  );
+ALTER TABLE browser_sessions
+ADD COLUMN device_family TEXT
+  CHECK (
+    device_family IS NULL
+    OR (
+      length(device_family) BETWEEN 1 AND 64
+      AND device_family NOT GLOB '*[' || char(0) || '-' || char(31) || ']*'
+    )
+  );
+ALTER TABLE browser_sessions
+ADD COLUMN coarse_source TEXT
+  CHECK (
+    coarse_source IS NULL
+    OR (
+      length(coarse_source) BETWEEN 1 AND 64
+      AND (
+        coarse_source GLOB '*.*.*.0/24'
+        OR coarse_source GLOB '*::/48'
+      )
+    )
+  );
+`;
+
 export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [
   {
     version: 1,
@@ -3143,6 +3173,11 @@ export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [
     version: 24,
     name: "automatic_authentication_suspension",
     sql: migration0024,
+  },
+  {
+    version: 25,
+    name: "browser_session_display_metadata",
+    sql: migration0025,
   },
 ];
 

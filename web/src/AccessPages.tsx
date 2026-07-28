@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   browserControlApi,
   ControlApiError,
@@ -84,6 +85,35 @@ export function AccessPage({
     setMessage(result.revoked ? "OAuth connection revoked." : "Connection was already inactive.");
   }
 
+  async function revokeAllSessions() {
+    if (!window.confirm(
+      "Revoke all your web sessions, including this current session?",
+    )) return;
+    setError("");
+    try {
+      await api.revokeAllOwnSessions();
+      window.location.assign("/control/login");
+    } catch (caught) {
+      setError(messageFor(caught));
+    }
+  }
+
+  async function revokeAllGrants() {
+    if (!window.confirm("Revoke all your agent connections?")) return;
+    setError("");
+    try {
+      const result = await api.revokeAllOwnOAuthGrants();
+      setGrants((current) => current.map((entry) => ({
+        ...entry,
+        oauth_grant_status: "revoked",
+        usable: false,
+      })));
+      setMessage(`${result.grants_revoked} agent connections revoked.`);
+    } catch (caught) {
+      setError(messageFor(caught));
+    }
+  }
+
   async function invalidateAssignment(row: ServiceGrantAccess) {
     if (justification.trim() === "") {
       setError("Enter a justification before invalidating capabilities.");
@@ -111,6 +141,14 @@ export function AccessPage({
 
   return (
     <div className="page-stack">
+      <section className="content-panel" aria-labelledby="account-settings-heading">
+        <p className="card-kicker">Account Settings</p>
+        <h2 id="account-settings-heading">Profile and authentication</h2>
+        <div className="button-row">
+          <Link className="button-link" to="/profile">Profile</Link>
+          <Link className="button-link" to="/security">Password and TOTP</Link>
+        </div>
+      </section>
       <section className="content-panel access-explainer" aria-labelledby="access-boundaries">
         <p className="card-kicker">Two distinct controls</p>
         <h2 id="access-boundaries">Connections are not capabilities</h2>
@@ -128,8 +166,14 @@ export function AccessPage({
         : (
           <>
             <AccessList
-              title={global ? "Global browser sessions" : "Your sessions"}
+              title={global ? "Global web sessions" : "Web sessions"}
               empty="No browser sessions are visible."
+              footer={!global && sessions.some(({ status }) => status === "active")
+                ? {
+                    label: "Revoke all my web sessions",
+                    run: () => void revokeAllSessions(),
+                  }
+                : undefined}
               rows={sessions.map((session) => ({
                 id: session.id,
                 heading: session.current
@@ -137,8 +181,14 @@ export function AccessPage({
                   : session.user_label,
                 facts: [
                   `Status: ${label(session.status)}`,
+                  `Created: ${date(session.issued_at)}`,
                   `Last used: ${date(session.last_used_at)}`,
                   `Expires: ${date(session.expires_at)}`,
+                  `Authentication: ${session.authentication_method === null
+                    ? "Unknown"
+                    : label(session.authentication_method)}`,
+                  `Device: ${session.device_family ?? "Unknown"}`,
+                  `Source network: ${session.coarse_source ?? "Unknown"}`,
                 ],
                 action: session.status === "active"
                   ? {
@@ -150,16 +200,27 @@ export function AccessPage({
               }))}
             />
             <AccessList
-              title={global ? "Global MCP connections" : "Your MCP connections"}
+              title={global ? "Global agent connections" : "Agent connections"}
               empty="No OAuth connections are visible."
+              footer={!global && grants.some(({ oauth_grant_status }) =>
+                oauth_grant_status === "active")
+                ? {
+                    label: "Revoke all my agent connections",
+                    run: () => void revokeAllGrants(),
+                  }
+                : undefined}
               rows={grants.map((grant) => ({
                 id: grant.id,
                 heading: grant.client_name,
                 facts: [
                   global ? grant.user_label : grant.client_identifier,
                   `OAuth grant: ${label(grant.oauth_grant_status)}`,
+                  `Authentication: ${label(grant.authentication_method)}`,
+                  `Scopes: ${grant.scopes.join(", ") || "None"}`,
                   `Current services: ${grant.services.join(", ") || "None"}`,
+                  `Created: ${date(grant.issued_at)}`,
                   `Last used: ${date(grant.last_used_at)}`,
+                  `Expires: ${date(grant.expires_at)}`,
                 ],
                 action: !global && grant.oauth_grant_status === "active"
                   ? {
@@ -170,6 +231,10 @@ export function AccessPage({
                   : undefined,
               }))}
             />
+            <p className="muted-copy">
+              Device and source-network labels are informational and do not bind
+              authentication authority.
+            </p>
           </>
         )}
 
@@ -234,6 +299,7 @@ function AccessList({
   title,
   empty,
   rows,
+  footer,
 }: {
   title: string;
   empty: string;
@@ -243,6 +309,7 @@ function AccessList({
     facts: string[];
     action?: { label: string; run(): void };
   }>;
+  footer?: { label: string; run(): void };
 }) {
   return (
     <section className="content-panel">
@@ -264,6 +331,11 @@ function AccessList({
             ))}
           </div>
         )}
+      {footer !== undefined && (
+        <button type="button" className="danger-button" onClick={footer.run}>
+          {footer.label}
+        </button>
+      )}
     </section>
   );
 }

@@ -22,6 +22,10 @@ import {
   type TotpEnvelope,
   verifyTotpCode,
 } from "./totp.js";
+import {
+  browserSessionMetadata,
+  type BrowserSessionMetadata,
+} from "./sessionMetadata.js";
 import { normalizeEmail } from "./validation.js";
 import { recordQualifyingActivity } from "../humanActivity.js";
 
@@ -76,7 +80,7 @@ type EligibleLoginCandidate = LoginCandidate & {
   credentialPasswordChangeEpoch: number;
 };
 
-export interface BrowserSessionMaterial {
+export interface BrowserSessionMaterial extends BrowserSessionMetadata {
   id: string;
   sessionHash: string;
   csrfHash: string;
@@ -327,8 +331,10 @@ export class LocalAuthenticationRepository {
               issued_security_epoch, issued_global_epoch,
               issued_absolute_ms, issued_inactivity_ms,
               issued_at, last_activity_at, absolute_expires_at,
+              authentication_method, device_family, coarse_source,
               step_up_at, revoked_at, version
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, 1)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+              NULL, NULL, 1)
           `, [
             input.session.id,
             input.candidate.userId,
@@ -342,6 +348,9 @@ export class LocalAuthenticationRepository {
             input.session.issuedAt,
             input.session.issuedAt,
             input.session.issuedAt + input.session.absoluteMs,
+            input.session.authenticationMethod,
+            input.session.deviceFamily,
+            input.session.coarseSource,
           ]);
           transaction.run(`
             UPDATE users
@@ -825,6 +834,11 @@ export class LocalAuthenticationService {
       absoluteMs,
       inactivityMs,
       issuedAt,
+      ...browserSessionMetadata({
+        authenticationMethod: "local_password_totp",
+        source: parsed.source,
+        userAgent: parsed.userAgent,
+      }),
     };
     await this.#repository.commitLogin({
       candidate,
@@ -1059,20 +1073,24 @@ interface ParsedLogin {
   totp: string;
   source: string;
   correlationId: string;
+  userAgent?: string;
 }
 
 function parseLogin(input: unknown): ParsedLogin {
   if (input === null || typeof input !== "object" || Array.isArray(input)) throw new Error("invalid");
   const value = input as Record<string, unknown>;
   if (
-    Object.keys(value).length !== 5 ||
+    ![5, 6].includes(Object.keys(value).length) ||
     !["email", "password", "totp", "source", "correlationId"].every((field) =>
       Object.prototype.hasOwnProperty.call(value, field)) ||
+    Object.keys(value).some((field) =>
+      !["email", "password", "totp", "source", "correlationId", "userAgent"].includes(field)) ||
     typeof value.email !== "string" ||
     typeof value.password !== "string" ||
     typeof value.totp !== "string" ||
     typeof value.source !== "string" ||
-    typeof value.correlationId !== "string"
+    typeof value.correlationId !== "string" ||
+    value.userAgent !== undefined && typeof value.userAgent !== "string"
   ) throw new Error("invalid");
   const normalizedEmail = normalizeEmail(value.email);
   const password = value.password.normalize("NFKC");
@@ -1091,6 +1109,7 @@ function parseLogin(input: unknown): ParsedLogin {
     totp: value.totp,
     source: value.source,
     correlationId: value.correlationId,
+    ...(typeof value.userAgent === "string" ? { userAgent: value.userAgent } : {}),
   };
 }
 

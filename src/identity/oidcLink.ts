@@ -9,6 +9,7 @@ import type { IdentityConfig, OidcProviderConfig } from "../types.js";
 import type { ValidatedBrowserSession } from "./browserSessions.js";
 import type { ValidatedRestrictedSession } from "./enrollment.js";
 import type { BrowserSessionMaterial, LoginResult } from "./localAuthentication.js";
+import { browserSessionMetadata } from "./sessionMetadata.js";
 import type { OidcFlowBinding } from "./oidcFlow.js";
 import type { ProviderAssertion } from "./provider.js";
 import type { AlwaysStepUpHandle, StepUpRepository } from "./stepUp.js";
@@ -444,6 +445,7 @@ export class OidcLinkService {
     assertion: ProviderAssertion,
     binding: OidcFlowBinding,
     correlationId: string,
+    metadata: { source?: unknown; userAgent?: unknown } = {},
   ): Promise<LoginResult> {
     const provider = this.provider(assertion);
     const issuedAt = safeNow(this.#now);
@@ -457,6 +459,7 @@ export class OidcLinkService {
       this.#sessionSettings(),
       this.#sessionKey,
       issuedAt,
+      metadata,
     );
     const linked = await this.repository.completeRestricted({
       assertion,
@@ -767,8 +770,10 @@ function insertSession(
       issued_security_epoch, issued_global_epoch,
       issued_absolute_ms, issued_inactivity_ms,
       issued_at, last_activity_at, absolute_expires_at,
+      authentication_method, device_family, coarse_source,
       step_up_at, revoked_at, version
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, 1)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+      NULL, NULL, 1)
   `, [
     session.id,
     target.id,
@@ -782,6 +787,9 @@ function insertSession(
     session.issuedAt,
     session.issuedAt,
     session.issuedAt + absoluteMs,
+    session.authenticationMethod,
+    session.deviceFamily,
+    session.coarseSource,
   ]);
 }
 
@@ -813,6 +821,7 @@ function sessionMaterial(
   settings: IdentityConfig["sessions"],
   key: Buffer,
   issuedAt: number,
+  metadata: { source?: unknown; userAgent?: unknown } = {},
 ): BrowserSessionMaterial {
   const roleClass = role === "user" ? "user" : "admin";
   return {
@@ -827,6 +836,10 @@ function sessionMaterial(
       ? settings.userInactivityMs
       : settings.adminInactivityMs,
     issuedAt,
+    ...browserSessionMetadata({
+      authenticationMethod: "oidc",
+      ...metadata,
+    }),
   };
 }
 

@@ -58,12 +58,12 @@ milestones:
   - id: "06"
     title: "Browser Login, Sessions, And Logout"
     file: "docs/milestones/v2.1/06-browser-login-sessions-and-logout.md"
-    status: "in_progress"
+    status: "completed"
     dependencies:
       - "05"
-    completed_at: null
-    commit_hash: null
-    notes: "Implementation plan approved; existing session domain is retained behind a new branded browser shell and honest logout boundary."
+    completed_at: "2026-07-28T01:23:47-07:00"
+    commit_hash: "ccd1227"
+    notes: "Implemented one branded local/OIDC login surface, closed relative resume destinations, persistent account navigation, and durable logout with honest retry behavior. See docs/audits/v2.1/milestone-06-acceptance.md."
   - id: "07"
     title: "Authentication Abuse Controls And Suspension"
     file: "docs/milestones/v2.1/07-authentication-abuse-and-suspension.md"

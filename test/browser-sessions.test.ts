@@ -254,14 +254,43 @@ describe("durable browser sessions", () => {
         request_id: expect.any(String),
       },
     });
-    const failureEvent = lines
+    const auditFailureEvent = lines
       .map((line) => JSON.parse(line) as Record<string, unknown>)
       .find((line) => line.event === "logout_revocation_unavailable");
-    expect(failureEvent).toMatchObject({
+    expect(auditFailureEvent).toMatchObject({
       event: "logout_revocation_unavailable",
       failure_category: "audit",
     });
-    expect(Object.keys(failureEvent!).sort()).toEqual([
+    expect(Object.keys(auditFailureEvent!).sort()).toEqual([
+      "correlation_id",
+      "event",
+      "failure_category",
+      "level",
+      "timestamp",
+    ]);
+
+    mutableAuthenticator.logout = async () => {
+      throw new Error("storage unavailable");
+    };
+    const persistenceUncertain = await application.inject({
+      method: "POST",
+      url: "/api/v2/auth/logout",
+      headers: {
+        host: "control.example.org",
+        origin: "https://control.example.org",
+        cookie,
+        "x-csrf-token": rotatedCsrf,
+      },
+    });
+    expect(persistenceUncertain.statusCode).toBe(503);
+    expect(persistenceUncertain.headers["retry-after"]).toBe("3");
+    expect(persistenceUncertain.headers["set-cookie"]).toBeUndefined();
+    const failureEvents = lines
+      .map((line) => JSON.parse(line) as Record<string, unknown>)
+      .filter((line) => line.event === "logout_revocation_unavailable");
+    expect(failureEvents.map((event) => event.failure_category))
+      .toEqual(["audit", "persistence"]);
+    expect(Object.keys(failureEvents[1]!).sort()).toEqual([
       "correlation_id",
       "event",
       "failure_category",

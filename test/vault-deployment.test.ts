@@ -9,6 +9,8 @@ describe("vault deployment boundary", () => {
 
     expect(vault.command).toEqual(["node", "dist/vault/main.js"]);
     expect(vault.ports).toBeUndefined();
+    expect(vault.network_mode).toBe("none");
+    expect(vault.user).toBe("0:0");
     expect(vault.environment.SECRETSAUCE_VAULT_CONFIG).toBe("/config/vault.yaml");
     expect(vault.environment.SECRETSAUCE_VAULT_STATUS_SOCKET)
       .toBe("/run/secretsauce-vault/status.sock");
@@ -16,7 +18,15 @@ describe("vault deployment boundary", () => {
       "SECRETSAUCE_VAULT_DATA_KEY_FILE",
     );
     expect(vault.healthcheck.test).toEqual(["CMD", "node", "dist/vault/healthCli.js"]);
-    expect(vault.volumes).toContain("./vault-keys:/run/vault-keys:ro");
+    expect(vault.volumes).toContain(
+      "vault-generated:/var/lib/secretsauce/generated",
+    );
+    expect(vault.volumes).toContain(
+      "vault-setup-state:/var/lib/secretsauce/setup",
+    );
+    expect(vault.volumes).toContain("./database:/inventory/database:ro");
+    expect(vault.volumes).toContain("./audit:/inventory/audit:ro");
+    expect(vault.volumes).toContain("./oauth-state:/inventory/oauth:ro");
     expect(vault.volumes).toContain("./vault-store:/var/lib/secretsauce/vault");
     expect(vault.volumes).toContain("./vault-runtime:/run/secretsauce-vault");
   });
@@ -26,26 +36,34 @@ describe("vault deployment boundary", () => {
     const data = compose.services.secretsauce;
     const serialized = JSON.stringify(data);
 
-    expect(data.volumes).toContain("./vault-keys/data-plane.key:/run/vault-caller/data-plane.key:ro");
-    expect(data.volumes).toContain("./vault-keys/control-plane.key:/run/vault-caller/control-plane.key:ro");
-    expect(data.volumes).toContain("./vault-keys/resolve-capability.key:/run/vault-caller/resolve-capability.key:ro");
-    expect(data.volumes).toContain("./vault-keys/backup.key:/run/vault-caller/backup.key:ro");
-    expect(data.volumes).toContain("./vault-keys/backup-capability.key:/run/vault-caller/backup-capability.key:ro");
+    expect(data.user).toBe("1000:1000");
+    expect(data.group_add).toEqual(["1002"]);
+    expect(data.volumes).toContain(
+      "vault-generated:/var/lib/secretsauce/generated:ro",
+    );
+    expect(data.volumes).toContain(
+      "vault-setup-state:/var/lib/secretsauce/setup:ro",
+    );
     expect(data.volumes).toContain("./vault-runtime:/run/secretsauce-vault:ro");
-    expect(data.environment.SECRETSAUCE_VAULT_DATA_KEY_FILE).toBe("/run/vault-caller/data-plane.key");
+    expect(data.environment.SECRETSAUCE_VAULT_DATA_KEY_FILE)
+      .toBe("/var/lib/secretsauce/generated/shared/data-plane.key");
     expect(data.environment.SECRETSAUCE_VAULT_CREDENTIAL_SOCKET)
       .toBe("/run/secretsauce-vault/credential.sock");
+    expect(data.environment.SECRETSAUCE_VAULT_MANIFEST_FILE)
+      .toBe("/var/lib/secretsauce/setup/manifest.json");
+    expect(data.environment.SECRETSAUCE_VAULT_KEY_OWNER_UID).toBe("0");
+    expect(data.environment.SECRETSAUCE_VAULT_SHARED_GID).toBe("1002");
     expect(data.environment.SECRETSAUCE_VAULT_CONTROL_KEY_FILE)
-      .toBe("/run/vault-caller/control-plane.key");
+      .toBe("/var/lib/secretsauce/generated/shared/control-plane.key");
     expect(data.environment.SECRETSAUCE_VAULT_RESOLVE_KEY_FILE)
-      .toBe("/run/vault-caller/resolve-capability.key");
+      .toBe("/var/lib/secretsauce/generated/shared/resolve-capability.key");
     expect(data.environment.SECRETSAUCE_VAULT_BACKUP_KEY_FILE)
-      .toBe("/run/vault-caller/backup.key");
+      .toBe("/var/lib/secretsauce/generated/shared/backup.key");
     expect(data.environment.SECRETSAUCE_VAULT_BACKUP_CAPABILITY_KEY_FILE)
-      .toBe("/run/vault-caller/backup-capability.key");
+      .toBe("/var/lib/secretsauce/generated/shared/backup-capability.key");
     expect(serialized).not.toContain("root-primary.key");
     expect(serialized).not.toContain("/var/lib/secretsauce/vault");
-    expect(data.volumes).not.toContain("./vault-keys:/run/vault-keys:ro");
+    expect(serialized).not.toContain("./vault-keys");
     expect(data.environment.SECRETSAUCE_MCP_TOKEN).not.toContain("change-me");
   });
 
@@ -59,6 +77,8 @@ describe("vault deployment boundary", () => {
       .toBe("/run/secretsauce-vault/credential.sock");
     expect(config.status_socket.mode).toBe(0o660);
     expect(config.credential_socket.mode).toBe(0o660);
+    expect(Object.keys(config.setup.key_paths)).toHaveLength(11);
+    expect(config.setup.adopt_existing_keys).toBe(false);
     expect(source).not.toMatch(/[A-Za-z0-9_-]{43}/);
     expect(source).not.toContain("Authorization");
   });

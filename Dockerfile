@@ -18,6 +18,9 @@ COPY assets/brand ./assets/brand
 RUN npm run build
 
 FROM node:22-alpine
+RUN addgroup -g 1001 secretsauce-vault \
+    && addgroup -g 1002 secretsauce-shared \
+    && adduser -D -u 1001 -G secretsauce-vault secretsauce-vault
 WORKDIR /app
 ENV NODE_ENV=production
 ENV CONFIG_PATH=/config/config.yaml

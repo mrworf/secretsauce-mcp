@@ -43,8 +43,7 @@ export function readVaultKeyFile(file: string): Buffer {
       !metadata.isFile()
       || metadata.isSymbolicLink()
       || metadata.nlink !== 1
-      || (metadata.mode & 0o777) !== 0o400
-      || !isAllowedOwner(metadata.uid)
+      || !isAllowedKeyAccess(metadata.uid, metadata.gid, metadata.mode & 0o777)
     ) {
       throw vaultError("vault_key_invalid");
     }
@@ -115,4 +114,10 @@ function safeLstat(path: string): Stats {
 function isAllowedOwner(uid: number): boolean {
   const current = process.getuid?.();
   return current === undefined || uid === current || uid === 0;
+}
+
+function isAllowedKeyAccess(uid: number, gid: number, mode: number): boolean {
+  if (mode === 0o400) return isAllowedOwner(uid);
+  if (mode !== 0o440 || !isAllowedOwner(uid)) return false;
+  return process.getgroups?.().includes(gid) ?? false;
 }

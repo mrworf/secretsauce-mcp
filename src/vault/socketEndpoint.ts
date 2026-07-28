@@ -11,12 +11,13 @@ export interface VaultSocketIdentity {
 
 export function validateVaultSocketEndpoint(
   socketPath: string,
+  expectedOwnerUid?: number,
 ): VaultSocketIdentity {
   if (!isAbsolute(socketPath) || socketPath.includes("\0")) {
     throw vaultError("vault_store_unavailable");
   }
   const canonical = resolve(socketPath);
-  validateParents(dirname(canonical));
+  validateParents(dirname(canonical), expectedOwnerUid);
   let metadata: BigIntStats;
   try {
     metadata = lstatSync(canonical, { bigint: true });
@@ -28,7 +29,11 @@ export function validateVaultSocketEndpoint(
   if (
     !metadata.isSocket()
     || metadata.isSymbolicLink()
-    || !isAllowedOwner(uid)
+    || (
+      expectedOwnerUid === undefined
+        ? !isAllowedOwner(uid)
+        : uid !== expectedOwnerUid
+    )
     || (mode !== 0o600 && mode !== 0o660)
   ) throw vaultError("vault_store_unavailable");
   return {
@@ -42,9 +47,10 @@ export function validateVaultSocketEndpoint(
 export function sameVaultSocketEndpoint(
   socketPath: string,
   expected: VaultSocketIdentity,
+  expectedOwnerUid?: number,
 ): boolean {
   try {
-    const actual = validateVaultSocketEndpoint(socketPath);
+    const actual = validateVaultSocketEndpoint(socketPath, expectedOwnerUid);
     return actual.device === expected.device
       && actual.inode === expected.inode
       && actual.owner === expected.owner
@@ -54,7 +60,7 @@ export function sameVaultSocketEndpoint(
   }
 }
 
-function validateParents(directory: string): void {
+function validateParents(directory: string, expectedOwnerUid?: number): void {
   const root = parse(directory).root;
   const segments = directory.slice(root.length).split("/").filter(Boolean);
   let current = root;
@@ -73,13 +79,16 @@ function validateParents(directory: string): void {
     if (
       !metadata.isDirectory()
       || metadata.isSymbolicLink()
-      || !isAllowedOwner(metadata.uid)
+      || !isAllowedOwner(metadata.uid, expectedOwnerUid)
       || ((mode & 0o022) !== 0 && !stickyRootDirectory)
     ) throw vaultError("vault_store_unavailable");
   }
 }
 
-function isAllowedOwner(uid: number): boolean {
+function isAllowedOwner(uid: number, expectedOwnerUid?: number): boolean {
   const current = process.getuid?.();
-  return current === undefined || uid === current || uid === 0;
+  return current === undefined
+    || uid === current
+    || uid === 0
+    || uid === expectedOwnerUid;
 }

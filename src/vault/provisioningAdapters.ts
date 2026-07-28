@@ -4,14 +4,17 @@ import {
 } from "node:crypto";
 import {
   closeSync,
+  chownSync,
+  chmodSync,
   constants,
   fsyncSync,
   fstatSync,
   linkSync,
   lstatSync,
+  mkdirSync,
   openSync,
+  opendirSync,
   readFileSync,
-  readdirSync,
   unlinkSync,
   writeFileSync,
 } from "node:fs";
@@ -20,7 +23,7 @@ import { randomUUID } from "node:crypto";
 import { vaultError } from "./errors.js";
 import {
   createVaultKeyFile,
-  readVaultKeyFile,
+  decodeVaultKey,
 } from "./keyFile.js";
 import {
   fingerprintProvisionedKey,
@@ -44,28 +47,62 @@ export interface VaultProvisioningKeyAdapter {
   validate(entry: VaultProvisioningRegistryEntry): string;
 }
 
-export function createProvisioningKeyAdapters(): ReadonlyMap<
+export interface ProvisionedKeyOwnership {
+  uid: number;
+  gid: number;
+  mode: 0o400 | 0o440;
+}
+
+export function createProvisioningKeyAdapters(
+  ownership: (
+    entry: VaultProvisioningRegistryEntry,
+  ) => ProvisionedKeyOwnership = () => ({
+    uid: process.getuid?.() ?? 0,
+    gid: process.getgid?.() ?? 0,
+    mode: 0o400,
+  }),
+): ReadonlyMap<
   VaultProvisioningAdapterId,
   VaultProvisioningKeyAdapter
 > {
   const adapters: VaultProvisioningKeyAdapter[] = [
     {
       id: "symmetric-base64url-32-v1",
-      create: (entry) => createVaultKeyFile(entry.path),
+      create: (entry) => {
+        ensureKeyParent(entry.path);
+        createVaultKeyFile(entry.path);
+        applyOwnership(entry.path, ownership(entry));
+      },
       validate: (entry) => {
-        const key = readVaultKeyFile(entry.path);
+        const expected = ownership(entry);
+        const source = readRestrictedFile(entry.path, 64, expected);
         try {
-          return fingerprintProvisionedKey(entry, key);
+          const text = source.toString("utf8");
+          const canonical = text.endsWith("\n") ? text.slice(0, -1) : text;
+          const key = decodeVaultKey(canonical);
+          try {
+            return fingerprintProvisionedKey(entry, key);
+          } finally {
+            key.fill(0);
+          }
         } finally {
-          key.fill(0);
+          source.fill(0);
         }
       },
     },
     {
       id: "rsa-pkcs8-pem-v1",
-      create: (entry) => createRsaKeyFile(entry.path),
+      create: (entry) => {
+        ensureKeyParent(entry.path);
+        createRsaKeyFile(entry.path);
+        applyOwnership(entry.path, ownership(entry));
+      },
       validate: (entry) => {
-        const source = readRestrictedFile(entry.path, 16_384);
+        const source = readRestrictedFile(
+          entry.path,
+          16_384,
+          ownership(entry),
+        );
         try {
           const key = createPrivateKey(source);
           if (
@@ -93,6 +130,29 @@ export function createProvisioningKeyAdapters(): ReadonlyMap<
   return new Map(adapters.map((adapter) => [adapter.id, adapter]));
 }
 
+function ensureKeyParent(file: string): void {
+  const parent = dirname(file);
+  try {
+    mkdirSync(parent, { recursive: true, mode: 0o700 });
+    const metadata = lstatSync(parent);
+    if (
+      !metadata.isDirectory()
+      || metadata.isSymbolicLink()
+      || (metadata.mode & 0o077) !== 0
+    ) throw new Error("unsafe");
+  } catch {
+    throw vaultError("vault_key_invalid");
+  }
+}
+
+function applyOwnership(
+  file: string,
+  ownership: ProvisionedKeyOwnership,
+): void {
+  chownSync(file, ownership.uid, ownership.gid);
+  chmodSync(file, ownership.mode);
+}
+
 export function pathInventoryAdapter(
   id: string,
   path: string,
@@ -106,9 +166,14 @@ export function pathInventoryAdapter(
           return metadata.size === 0 ? "absent_or_empty" : "present";
         }
         if (metadata.isDirectory()) {
-          return readdirSync(path).length === 0
-            ? "absent_or_empty"
-            : "present";
+          const directory = opendirSync(path);
+          try {
+            return directory.readSync() === null
+              ? "absent_or_empty"
+              : "present";
+          } finally {
+            directory.closeSync();
+          }
         }
         return "indeterminate";
       } catch (error) {
@@ -175,7 +240,11 @@ function writeNoReplace(file: string, value: Uint8Array): void {
   }
 }
 
-function readRestrictedFile(file: string, maxBytes: number): Buffer {
+function readRestrictedFile(
+  file: string,
+  maxBytes: number,
+  expected: ProvisionedKeyOwnership,
+): Buffer {
   let descriptor: number | undefined;
   try {
     descriptor = openSync(file, constants.O_RDONLY | constants.O_NOFOLLOW);
@@ -184,7 +253,9 @@ function readRestrictedFile(file: string, maxBytes: number): Buffer {
       !metadata.isFile()
       || metadata.isSymbolicLink()
       || metadata.nlink !== 1
-      || (metadata.mode & 0o777) !== 0o400
+      || (metadata.mode & 0o777) !== expected.mode
+      || metadata.uid !== expected.uid
+      || metadata.gid !== expected.gid
       || metadata.size < 1
       || metadata.size > maxBytes
     ) throw new Error("invalid");

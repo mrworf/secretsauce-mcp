@@ -162,20 +162,28 @@ services:
   secretsauce-vault:
     image: ghcr.io/example-org/secretsauce-mcp:latest
     command: ["node", "dist/vault/main.js"]
+    user: "0:0"
+    network_mode: "none"
     volumes:
       - ./vault.yaml:/config/vault.yaml:ro
-      - ./vault-keys:/run/vault-keys:ro
+      - vault-generated:/var/lib/secretsauce/generated
+      - vault-setup-state:/var/lib/secretsauce/setup
       - ./vault-runtime:/run/secretsauce-vault
       - ./vault-store:/var/lib/secretsauce/vault
+      - ./database:/inventory/database:ro
+      - ./audit:/inventory/audit:ro
+      - ./oauth-state:/inventory/oauth:ro
     environment:
       SECRETSAUCE_VAULT_CONFIG: /config/vault.yaml
-      SECRETSAUCE_VAULT_SOCKET: /run/secretsauce-vault/vault.sock
-      SECRETSAUCE_VAULT_DATA_KEY_FILE: /run/vault-keys/data-plane.key
+      SECRETSAUCE_VAULT_STATUS_SOCKET: /run/secretsauce-vault/status.sock
+      SECRETSAUCE_VAULT_OWNER_UID: "1001"
     healthcheck:
       test: ["CMD", "node", "dist/vault/healthCli.js"]
 
   secretsauce:
     image: ghcr.io/example-org/secretsauce-mcp:latest
+    user: "1000:1000"
+    group_add: ["1002"]
     ports:
       - "8080:8080"
       - "8081:8081"
@@ -188,11 +196,8 @@ services:
       - ./audit:/var/lib/secretsauce/audit
       - ./database:/var/lib/secretsauce/database
       - ./oauth-state:/var/lib/secretsauce/oauth
-      - ./vault-keys/data-plane.key:/run/vault-caller/data-plane.key:ro
-      - ./vault-keys/control-plane.key:/run/vault-caller/control-plane.key:ro
-      - ./vault-keys/resolve-capability.key:/run/vault-caller/resolve-capability.key:ro
-      - ./vault-keys/backup.key:/run/vault-caller/backup.key:ro
-      - ./vault-keys/backup-capability.key:/run/vault-caller/backup-capability.key:ro
+      - vault-generated:/var/lib/secretsauce/generated:ro
+      - vault-setup-state:/var/lib/secretsauce/setup:ro
       - ./restore-keys/recovery.key:/run/restore-keys/recovery.key:ro
       - ./vault-runtime:/run/secretsauce-vault:ro
       - ./restore:/var/lib/secretsauce/restore
@@ -200,28 +205,37 @@ services:
       CONFIG_PATH: /config/config.yaml
       SECRETLINT_CONFIG_PATH: /config/secretlint.yaml
       SENSITIVE_NAMES_CONFIG_PATH: /config/sensitive-names.yaml
-      SECRETSAUCE_VAULT_SOCKET: /run/secretsauce-vault/vault.sock
-      SECRETSAUCE_VAULT_DATA_KEY_FILE: /run/vault-caller/data-plane.key
-      SECRETSAUCE_VAULT_CONTROL_KEY_FILE: /run/vault-caller/control-plane.key
-      SECRETSAUCE_VAULT_RESOLVE_KEY_FILE: /run/vault-caller/resolve-capability.key
-      SECRETSAUCE_VAULT_BACKUP_KEY_FILE: /run/vault-caller/backup.key
-      SECRETSAUCE_VAULT_BACKUP_CAPABILITY_KEY_FILE: /run/vault-caller/backup-capability.key
+      SECRETSAUCE_VAULT_CREDENTIAL_SOCKET: /run/secretsauce-vault/credential.sock
+      SECRETSAUCE_VAULT_OWNER_UID: "1001"
+      SECRETSAUCE_VAULT_MANIFEST_FILE: /var/lib/secretsauce/setup/manifest.json
+      SECRETSAUCE_VAULT_KEY_OWNER_UID: "0"
+      SECRETSAUCE_VAULT_SHARED_GID: "1002"
+      SECRETSAUCE_VAULT_DATA_KEY_FILE: /var/lib/secretsauce/generated/shared/data-plane.key
+      SECRETSAUCE_VAULT_CONTROL_KEY_FILE: /var/lib/secretsauce/generated/shared/control-plane.key
+      SECRETSAUCE_VAULT_RESOLVE_KEY_FILE: /var/lib/secretsauce/generated/shared/resolve-capability.key
+      SECRETSAUCE_VAULT_BACKUP_KEY_FILE: /var/lib/secretsauce/generated/shared/backup.key
+      SECRETSAUCE_VAULT_BACKUP_CAPABILITY_KEY_FILE: /var/lib/secretsauce/generated/shared/backup-capability.key
       SECRETSAUCE_RESTORE_DIRECTORY: /var/lib/secretsauce/restore
       SECRETSAUCE_RESTORE_RECOVERY_KEY_FILE: /run/restore-keys/recovery.key
+
+volumes:
+  vault-generated:
+  vault-setup-state:
 ```
 
 Use the writable audit mount for `audit.file`, for example `/var/lib/secretsauce/audit/audit.jsonl`. Monitor `/health` and disk capacity: an audit open or write failure keeps privileged operations fail-open but changes readiness to `503` with a sanitized audit-degraded check until restart. The open descriptor supports `copytruncate`-style rotation; rename-based rotation requires a restart. Static built-in OAuth keeps `signing_key_file` on stable read-only storage and can use a writable `refresh_token_store_file` for hash-only refresh continuity. Database built-in OAuth instead keeps `token_hmac_key_file` on stable mode-`0400` storage; its hash-only token and grant state is already in the durable SQLite database.
 
 The vault broker is a separate process with no TCP listener. Start from
-[`examples/vault.yaml`](examples/vault.yaml), create each listed key with
-`npm run vault:key -- generate --output /absolute/path/to/key`, and set every key
-file to mode `0400`. The socket directory and encrypted store use modes `0750`
-(or stricter) and `0700`; make their container ownership explicit before startup.
-The broker mounts all caller/verifier and root keys, while each caller mounts only
-its own caller key and the socket directory. Root keys and the encrypted store
-must never be mounted into a caller container. Keep the root-key mount stable
-across restart; the passphrase-encrypted backup flow is the recovery path when a
-root key is unavailable.
+[`examples/vault.yaml`](examples/vault.yaml). The production entrypoint
+automatically provisions the fixed v2.1 application-key registry into durable
+generated-key and setup-state volumes, validates its checksum-protected manifest,
+drops setup authority, and only then opens the credential socket. It never
+replaces a continuity key. The application mounts those volumes read-only and
+validates each assigned key against the configured manifest before use. Root
+keys and the encrypted store must never be mounted into the application
+container. Keep the generated-key, setup-state, and encrypted-store mounts
+stable across restart; the passphrase-encrypted backup flow is the recovery path
+when a root key is unavailable.
 
 The image default command (and `npm start`) starts one application process that
 owns both configured listeners and the single SQLite writer. The

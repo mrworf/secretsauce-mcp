@@ -46,6 +46,7 @@ describe("standalone vault broker process", () => {
       const controlReadiness = createControlVaultReadiness({
         SECRETSAUCE_VAULT_CREDENTIAL_SOCKET: fixture.socketPath,
         SECRETSAUCE_VAULT_CONTROL_KEY_FILE: fixture.raw.caller_keys.control_plane,
+        SECRETSAUCE_VAULT_OWNER_UID: String(process.getuid?.() ?? 0),
       })!;
       await expect(controlReadiness.readiness()).resolves.toBe("ready");
       controlReadiness.close();
@@ -152,7 +153,9 @@ describe("standalone vault broker process", () => {
     const fixture = processFixture();
     fixture.raw.caller_keys.data_plane = join(dirnameOf(fixture.configFile), "missing.key");
     writeFileSync(fixture.configFile, JSON.stringify(fixture.raw), "utf8");
-    const child = spawn(process.execPath, ["dist/vault/main.js"], {
+    const child = spawn(process.execPath, [
+      "test/fixtures/configured-vault-child.mjs",
+    ], {
       cwd: process.cwd(),
       env: { ...process.env, SECRETSAUCE_VAULT_CONFIG: fixture.configFile },
       stdio: ["ignore", "pipe", "pipe"],
@@ -167,12 +170,19 @@ describe("standalone vault broker process", () => {
   });
 
   it("rejects partial or relative readiness configuration without echoing inputs", () => {
+    const fixture = processFixture();
     for (const environment of [
       { SECRETSAUCE_VAULT_CREDENTIAL_SOCKET: "/private/runtime/vault.sock" },
       { SECRETSAUCE_VAULT_CONTROL_KEY_FILE: "/private/keys/control.key" },
       {
         SECRETSAUCE_VAULT_CREDENTIAL_SOCKET: "relative.sock",
         SECRETSAUCE_VAULT_CONTROL_KEY_FILE: "/private/keys/control.key",
+      },
+      {
+        SECRETSAUCE_VAULT_CREDENTIAL_SOCKET: fixture.socketPath,
+        SECRETSAUCE_VAULT_CONTROL_KEY_FILE:
+          fixture.raw.caller_keys.control_plane,
+        SECRETSAUCE_VAULT_OWNER_UID: "-1",
       },
     ]) {
       let serialized = "";
@@ -261,6 +271,21 @@ function processFixture(): ProcessFixture {
     keyPaths[name] = file;
   }
   const socketPath = join(run, "vault.sock");
+  const stateDirectory = join(directory, "setup-state");
+  mkdirSync(stateDirectory, { mode: 0o700 });
+  const setupKeyPaths = {
+    "identity.envelope-root": join(keysDirectory, "identity-root.key"),
+    "identity.session-hmac": join(keysDirectory, "identity-session.key"),
+    "control.idempotency-hmac": join(keysDirectory, "control-idempotency.key"),
+    "oauth.signing": join(keysDirectory, "oauth-signing.pem"),
+    "oauth.token-hmac": join(keysDirectory, "oauth-token.key"),
+    "vault.envelope-root": keyPaths.root,
+    "vault.caller.data-plane": keyPaths.data,
+    "vault.caller.control-plane": keyPaths.control,
+    "vault.caller.backup": keyPaths.backup,
+    "vault.capability.resolve": keyPaths.resolve,
+    "vault.capability.backup": keyPaths.backupCapability,
+  };
   const raw = {
     version: 1,
     status_socket: { path: `${socketPath}.status`, mode: 0o600 },
@@ -276,6 +301,24 @@ function processFixture(): ProcessFixture {
     capability_keys: {
       resolve: keyPaths.resolve,
       backup: keyPaths.backupCapability,
+    },
+    setup: {
+      state_directory: stateDirectory,
+      adopt_existing_keys: false,
+      key_paths: setupKeyPaths,
+      retained_state: {
+        application_database: join(directory, "application.db"),
+        identity_store: join(directory, "identity"),
+        oauth_store: join(directory, "oauth"),
+        vault_store: join(directory, "store"),
+        audit_store: join(directory, "audit"),
+        installation_marker: join(directory, "installation"),
+      },
+      runtime_uid: process.getuid?.() ?? 1000,
+      runtime_gid: process.getgid?.() ?? 1000,
+      application_uid: process.getuid?.() ?? 1000,
+      application_gid: process.getgid?.() ?? 1000,
+      shared_gid: process.getgid?.() ?? 1000,
     },
   };
   const configFile = join(directory, "vault.yaml");
@@ -346,7 +389,9 @@ function issueRestore(
 }
 
 async function startChild(configFile: string, socketPath: string): Promise<ChildProcessWithoutNullStreams> {
-  const child = spawn(process.execPath, ["dist/vault/main.js"], {
+  const child = spawn(process.execPath, [
+    "test/fixtures/configured-vault-child.mjs",
+  ], {
     cwd: process.cwd(),
     env: { ...process.env, SECRETSAUCE_VAULT_CONFIG: configFile },
     stdio: ["pipe", "pipe", "pipe"],

@@ -12,13 +12,41 @@ store_directory: /var/lib/secretsauce/vault
 active_root_key: root-primary
 
 root_keys:
-  root-primary: /run/vault-keys/root-primary.key
+  root-primary: /var/lib/secretsauce/generated/vault/vault-envelope-root.key
 
 caller_keys:
-  data_plane: /run/vault-keys/data-plane.key
-  control_plane: /run/vault-keys/control-plane.key
-  backup: /run/vault-keys/backup.key
+  data_plane: /var/lib/secretsauce/generated/shared/data-plane.key
+  control_plane: /var/lib/secretsauce/generated/shared/control-plane.key
+  backup: /var/lib/secretsauce/generated/shared/backup.key
 
 capability_keys:
-  resolve: /run/vault-keys/resolve-capability.key
-  backup: /run/vault-keys/backup-capability.key
+  resolve: /var/lib/secretsauce/generated/shared/resolve-capability.key
+  backup: /var/lib/secretsauce/generated/shared/backup-capability.key
+
+setup:
+  state_directory: /var/lib/secretsauce/setup
+  adopt_existing_keys: false
+  runtime_uid: 1001
+  runtime_gid: 1001
+  application_uid: 1000
+  application_gid: 1000
+  shared_gid: 1002
+  key_paths:
+    identity.envelope-root: /var/lib/secretsauce/generated/application/identity-envelope-root.key
+    identity.session-hmac: /var/lib/secretsauce/generated/application/identity-session-hmac.key
+    control.idempotency-hmac: /var/lib/secretsauce/generated/application/control-idempotency-hmac.key
+    oauth.signing: /var/lib/secretsauce/generated/application/oauth-signing.pem
+    oauth.token-hmac: /var/lib/secretsauce/generated/application/oauth-token-hmac.key
+    vault.envelope-root: /var/lib/secretsauce/generated/vault/vault-envelope-root.key
+    vault.caller.data-plane: /var/lib/secretsauce/generated/shared/data-plane.key
+    vault.caller.control-plane: /var/lib/secretsauce/generated/shared/control-plane.key
+    vault.caller.backup: /var/lib/secretsauce/generated/shared/backup.key
+    vault.capability.resolve: /var/lib/secretsauce/generated/shared/resolve-capability.key
+    vault.capability.backup: /var/lib/secretsauce/generated/shared/backup-capability.key
+  retained_state:
+    application_database: /inventory/database
+    identity_store: /inventory/database
+    oauth_store: /inventory/oauth
+    vault_store: /var/lib/secretsauce/vault
+    audit_store: /inventory/audit
+    installation_marker: /inventory/database

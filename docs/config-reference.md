@@ -26,10 +26,15 @@ The single instance should mount stable read-only built-in OAuth signing keys pl
 The vault broker uses its own closed YAML document; see
 [`examples/vault.yaml`](../examples/vault.yaml). It runs as a separate process,
 listens only on a Unix-domain socket, and owns the encrypted record store and
-root keys. Key files contain one canonical 32-byte base64url key, have mode
-`0400`, and are generated with
-`npm run vault:key -- generate --output /absolute/path/to/key`; the command never
-prints key bytes or replaces an existing file.
+root keys. Its `setup` block declares the exact fixed eleven-key registry,
+dedicated durable manifest directory, all retained-state inventory paths,
+deployment-only `adopt_existing_keys` setting, and the runtime/application/shared
+numeric identities. Fresh startup creates the complete manifest before any key,
+generates keys without replacement, commits only after every fingerprint
+validates, and drops setup authority before opening credentials. Vault-only
+files use owner-read access; application/vault shared files use group-read
+access. The official Compose deployment supplies the required ownership and
+read-only consumer mounts.
 
 The broker requires distinct data, control, backup, resolve-capability, and
 backup-capability keys. The broker mounts all of them. A caller mounts only its
@@ -46,6 +51,14 @@ only `ready` or `unavailable`. The application control module can use
 `SECRETSAUCE_VAULT_CONTROL_KEY_FILE`; `/api/v2/health` then includes only
 `checks.vault: ready|unavailable`. Supplying just one variable fails startup
 without echoing either path.
+
+In the v2.1 Compose path, application consumers also receive
+`SECRETSAUCE_VAULT_MANIFEST_FILE`, `SECRETSAUCE_VAULT_KEY_OWNER_UID`, and
+`SECRETSAUCE_VAULT_SHARED_GID`. If any of these manifest-validation settings is
+present, all three are required and each assigned key must match its configured
+manifest fingerprint before a vault client or capability issuer is created.
+The manual `vault:key` command remains available for legacy, non-provisioned
+layouts; it is not part of fresh v2.1 Compose setup.
 
 Portable encrypted-backup coordination uses `SECRETSAUCE_VAULT_CREDENTIAL_SOCKET`,
 `SECRETSAUCE_VAULT_BACKUP_KEY_FILE`, and

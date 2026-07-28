@@ -38,12 +38,14 @@ const SECRET_MEDIA = "application/vnd.secretsauce.vault-secret+octet-stream";
 export interface VaultClientOptions {
   socketPath: string;
   key: Uint8Array;
+  ownerUid?: number;
 }
 
 export async function readVaultProvisioningStatus(
   socketPath: string,
+  ownerUid?: number,
 ): Promise<"ready" | "preparing" | "configuration_error"> {
-  const endpoint = validateVaultSocketEndpoint(socketPath);
+  const endpoint = validateVaultSocketEndpoint(socketPath, ownerUid);
   return new Promise((resolve, reject) => {
     const request = httpRequest({
       socketPath,
@@ -88,7 +90,7 @@ export async function readVaultProvisioningStatus(
       reject(vaultError("vault_store_unavailable"));
     };
     request.once("socket", () => {
-      if (!sameVaultSocketEndpoint(socketPath, endpoint)) fail();
+      if (!sameVaultSocketEndpoint(socketPath, endpoint, ownerUid)) fail();
     });
     request.once("timeout", fail);
     request.once("error", fail);
@@ -126,6 +128,7 @@ abstract class VaultClient {
   readonly #socketPath: string;
   readonly #key: Buffer;
   readonly #caller: VaultCaller;
+  readonly #ownerUid: number | undefined;
   #bootId: string | undefined;
   #closed = false;
 
@@ -134,6 +137,7 @@ abstract class VaultClient {
     this.#socketPath = options.socketPath;
     this.#key = Buffer.from(options.key);
     this.#caller = caller;
+    this.#ownerUid = options.ownerUid;
   }
 
   close(): void {
@@ -172,7 +176,7 @@ abstract class VaultClient {
       representationHeaders: spec.headers,
     } as const;
     const requestMac = signVaultHttpRequest(authentication, this.#key);
-    const response = await exchange(this.#socketPath, spec, {
+    const response = await exchange(this.#socketPath, this.#ownerUid, spec, {
       "x-vault-caller": this.#caller,
       "x-vault-request-id": requestId,
       "x-vault-timestamp": timestamp,
@@ -605,10 +609,11 @@ function clientBinding(value: unknown): {
 
 async function exchange(
   socketPath: string,
+  ownerUid: number | undefined,
   spec: HttpRequestSpec,
   authenticationHeaders: Record<string, string>,
 ): Promise<HttpResponse> {
-  const endpoint = validateVaultSocketEndpoint(socketPath);
+  const endpoint = validateVaultSocketEndpoint(socketPath, ownerUid);
   return new Promise<HttpResponse>((resolve, reject) => {
     const chunks: Buffer[] = [];
     let received = 0;
@@ -653,7 +658,7 @@ async function exchange(
       });
     });
     request.once("socket", () => {
-      if (!sameVaultSocketEndpoint(socketPath, endpoint)) fail();
+      if (!sameVaultSocketEndpoint(socketPath, endpoint, ownerUid)) fail();
     });
     request.once("timeout", fail);
     request.once("error", fail);

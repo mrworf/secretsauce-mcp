@@ -11,6 +11,9 @@ import { PersistedRuntimeAuthority, type RuntimeAuthority } from "./runtimeAutho
 import { RuntimeInvalidationConsumer } from "./runtimeInvalidation.js";
 import { createDataVaultReadiness } from "./vault/readiness.js";
 import { readVaultKeyFile } from "./vault/keyFile.js";
+import {
+  validateAssignedRuntimeProvisionedKeys,
+} from "./vault/runtimeProvisioning.js";
 import { VaultResolveCapabilityIssuer } from "./vault/capabilities.js";
 import { CapabilityRuntimeVault, type RuntimeVault } from "./runtimeVault.js";
 import { ApiKeyRepository, ApiKeyVerifierPool } from "./apiKeys.js";
@@ -234,6 +237,10 @@ function createDefaultRuntimeVault(
   }
   let resolveKey: Buffer | undefined;
   try {
+    validateAssignedRuntimeProvisionedKeys(environment, [{
+      id: "vault.capability.resolve",
+      path: resolveKeyFile,
+    }]);
     resolveKey = readVaultKeyFile(resolveKeyFile);
     return new CapabilityRuntimeVault(
       readiness.dataClient,

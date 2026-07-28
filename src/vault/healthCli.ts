@@ -12,7 +12,23 @@ export async function runVaultHealthCli(
       || !isAbsolute(socketPath)
       || socketPath.includes("\0")
     ) throw new Error("not configured");
-    const state = await readVaultProvisioningStatus(socketPath);
+    const ownerValue = environment.SECRETSAUCE_VAULT_OWNER_UID;
+    const ownerUid = ownerValue === undefined
+      ? undefined
+      : /^(0|[1-9][0-9]{0,9})$/.test(ownerValue)
+        ? Number(ownerValue)
+        : Number.NaN;
+    if (
+      ownerUid !== undefined
+      && (
+        !Number.isSafeInteger(ownerUid)
+        || ownerUid < 0
+        || ownerUid > 0x7fffffff
+      )
+    ) {
+      throw new Error("invalid owner");
+    }
+    const state = await readVaultProvisioningStatus(socketPath, ownerUid);
     const status = state === "ready" ? "ready" : "unavailable";
     write(`${JSON.stringify({ status })}\n`);
     return status === "ready" ? 0 : 1;

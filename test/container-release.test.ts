@@ -34,10 +34,11 @@ describe("release container deployment", () => {
       "./audit:/var/lib/secretsauce/audit",
       "./oauth-state:/var/lib/secretsauce/oauth",
       "./restore:/var/lib/secretsauce/restore",
-      "./vault-keys/control-plane.key:/run/vault-caller/control-plane.key:ro",
+      "vault-generated:/var/lib/secretsauce/generated:ro",
+      "vault-setup-state:/var/lib/secretsauce/setup:ro",
     ]));
     expect(gateway.environment.SECRETSAUCE_VAULT_CONTROL_KEY_FILE)
-      .toBe("/run/vault-caller/control-plane.key");
+      .toBe("/var/lib/secretsauce/generated/shared/control-plane.key");
     expect(compose.services["secretsauce-vault"].volumes).toContain(
       "./vault-store:/var/lib/secretsauce/vault",
     );

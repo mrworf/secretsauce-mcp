@@ -217,10 +217,22 @@ export function readProvisioningManifest(
     if (!isAbsolute(file)) throw vaultError("vault_config_invalid");
     descriptor = openSync(file, constants.O_RDONLY | constants.O_NOFOLLOW);
     const metadata = fstatSync(descriptor);
+    const mode = metadata.mode & 0o777;
+    const currentUid = process.getuid?.();
+    const currentGroups = new Set([
+      process.getgid?.(),
+      ...(process.getgroups?.() ?? []),
+    ]);
     if (
       !metadata.isFile()
       || metadata.nlink !== 1
-      || ![0o400, 0o600].includes(metadata.mode & 0o777)
+      || ![0o400, 0o440, 0o600].includes(mode)
+      || (
+        currentUid !== undefined
+        && metadata.uid !== currentUid
+        && metadata.uid !== 0
+      )
+      || (mode === 0o440 && !currentGroups.has(metadata.gid))
       || metadata.size < 2
       || metadata.size > MAX_MANIFEST_BYTES
     ) throw vaultError("vault_config_invalid");

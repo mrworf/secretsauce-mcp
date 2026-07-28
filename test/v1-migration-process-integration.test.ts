@@ -143,12 +143,15 @@ async function setup() {
     keyFiles[name] = file;
   }
   const socketPath = join(runDirectory, "vault.sock");
+  const stateDirectory = join(directory, "setup-state");
+  mkdirSync(stateDirectory, { mode: 0o700 });
+  const storeDirectory = join(directory, "store");
   const configFile = join(directory, "vault.yaml");
   writeFileSync(configFile, JSON.stringify({
     version: 1,
     status_socket: { path: `${socketPath}.status`, mode: 0o600 },
     credential_socket: { path: socketPath, mode: 0o600 },
-    store_directory: join(directory, "store"),
+    store_directory: storeDirectory,
     active_root_key: "root-a",
     root_keys: { "root-a": keyFiles.root },
     caller_keys: {
@@ -159,6 +162,36 @@ async function setup() {
     capability_keys: {
       resolve: keyFiles.resolve,
       backup: keyFiles.backupCapability,
+    },
+    setup: {
+      state_directory: stateDirectory,
+      adopt_existing_keys: false,
+      key_paths: {
+        "identity.envelope-root": join(keyDirectory, "identity-root.key"),
+        "identity.session-hmac": join(keyDirectory, "identity-session.key"),
+        "control.idempotency-hmac": join(keyDirectory, "control-idempotency.key"),
+        "oauth.signing": join(keyDirectory, "oauth-signing.pem"),
+        "oauth.token-hmac": join(keyDirectory, "oauth-token.key"),
+        "vault.envelope-root": keyFiles.root,
+        "vault.caller.data-plane": keyFiles.data,
+        "vault.caller.control-plane": keyFiles.control,
+        "vault.caller.backup": keyFiles.backup,
+        "vault.capability.resolve": keyFiles.resolve,
+        "vault.capability.backup": keyFiles.backupCapability,
+      },
+      retained_state: {
+        application_database: join(directory, "application-retained.db"),
+        identity_store: join(directory, "identity"),
+        oauth_store: join(directory, "oauth"),
+        vault_store: storeDirectory,
+        audit_store: join(directory, "audit"),
+        installation_marker: join(directory, "installation"),
+      },
+      runtime_uid: process.getuid?.() ?? 1000,
+      runtime_gid: process.getgid?.() ?? 1000,
+      application_uid: process.getuid?.() ?? 1000,
+      application_gid: process.getgid?.() ?? 1000,
+      shared_gid: process.getgid?.() ?? 1000,
     },
   }));
 
@@ -290,7 +323,9 @@ async function startChild(
   configFile: string,
   socketPath: string,
 ): Promise<ChildProcessWithoutNullStreams> {
-  const child = spawn(process.execPath, ["dist/vault/main.js"], {
+  const child = spawn(process.execPath, [
+    "test/fixtures/configured-vault-child.mjs",
+  ], {
     cwd: process.cwd(),
     env: { ...process.env, SECRETSAUCE_VAULT_CONFIG: configFile },
     stdio: ["pipe", "pipe", "pipe"],

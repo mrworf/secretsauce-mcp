@@ -1,5 +1,6 @@
 import {
   chmodSync,
+  chownSync,
   existsSync,
   lstatSync,
   unlinkSync,
@@ -50,6 +51,7 @@ export interface VaultBrokerOptions {
   socketMode: 0o600 | 0o660;
   statusSocketMode?: 0o600 | 0o660;
   credentialSocketMode?: 0o600 | 0o660;
+  credentialSocketGid?: number;
   callerKeys: Readonly<Record<VaultCaller, Uint8Array>>;
   capabilityAuthority: VaultCapabilityAuthority;
   store: VaultRecordStore;
@@ -68,6 +70,7 @@ export class VaultBrokerServer {
   readonly #statusSocketPath: string;
   readonly #statusSocketMode: 0o600 | 0o660;
   readonly #credentialSocketMode: 0o600 | 0o660;
+  readonly #credentialSocketGid: number | undefined;
   readonly #callerKeys: Readonly<Record<VaultCaller, Buffer>>;
   readonly #domain: VaultDomainHandler;
   readonly #operationGate?: () => Promise<void>;
@@ -88,6 +91,7 @@ export class VaultBrokerServer {
     this.#statusSocketMode = options.statusSocketMode ?? options.socketMode;
     this.#credentialSocketMode =
       options.credentialSocketMode ?? options.socketMode;
+    this.#credentialSocketGid = options.credentialSocketGid;
     this.#callerKeys = {
       data_plane: copyKey(options.callerKeys.data_plane),
       control_plane: copyKey(options.callerKeys.control_plane),
@@ -122,7 +126,32 @@ export class VaultBrokerServer {
       await status.listen({ path: this.#statusSocketPath });
       secureSocket(this.#statusSocketPath, this.#statusSocketMode);
       await credential.listen({ path: this.#credentialSocketPath });
-      secureSocket(this.#credentialSocketPath, this.#credentialSocketMode);
+      secureSocket(
+        this.#credentialSocketPath,
+        this.#credentialSocketMode,
+        this.#credentialSocketGid,
+      );
+    } catch {
+      await this.close();
+      throw vaultError("vault_store_unavailable");
+    }
+  }
+
+  async listenCredentialOnly(): Promise<void> {
+    if (this.#closed || this.#credentialServer !== undefined) {
+      throw vaultError("vault_store_unavailable");
+    }
+    validateSocketParent(this.#credentialSocketPath);
+    removeStaleSocket(this.#credentialSocketPath);
+    const credential = this.#createCredentialServer();
+    this.#credentialServer = credential;
+    try {
+      await credential.listen({ path: this.#credentialSocketPath });
+      secureSocket(
+        this.#credentialSocketPath,
+        this.#credentialSocketMode,
+        this.#credentialSocketGid,
+      );
     } catch {
       await this.close();
       throw vaultError("vault_store_unavailable");
@@ -641,7 +670,18 @@ function validateSocketParent(socketPath: string): void {
   }
 }
 
-function secureSocket(socketPath: string, mode: 0o600 | 0o660): void {
+function secureSocket(
+  socketPath: string,
+  mode: 0o600 | 0o660,
+  gid?: number,
+): void {
+  if (gid !== undefined) {
+    chownSync(
+      socketPath,
+      process.getuid?.() ?? 0,
+      gid,
+    );
+  }
   chmodSync(socketPath, mode);
   const metadata = lstatSync(socketPath);
   if (

@@ -41,7 +41,7 @@ reported provisioning blockers. It checks:
 The PRD is substantially stronger than its earlier drafts, but it is not free of
 material loose ends.
 
-Two blockers remain:
+One blocker remains:
 
 1. **The configured key-set lifecycle is contradictory.** V2 preserves
    host-authorized root-key rotation, and the v2.1 REST architecture still lists
@@ -52,20 +52,17 @@ Two blockers remain:
    required key or disabling one that removes a required key. Implementers would
    have to violate either the configured manifest or the preserved key-rotation
    contract.
-2. **The REST replacement does not state how a client authenticates the vault
-   server and its response.** It authenticates credential requests but does not
-   require a non-rebindable vault-owned socket endpoint, peer/server identity
-   validation, or a response authenticator bound to the request. The current
-   binary protocol authenticates responses. A literal implementation could
-   expose secret-bearing requests to an impostor local listener or accept forged
-   credential results.
 
-Two additional contracts must be made explicit before implementation:
+Three findings are now resolved in the governing contract:
 
-- whether request nonces and one-use capabilities survive a vault-only restart
-  or are invalidated by a new boot epoch; and
-- the default and allowed bounds for the global login limit and expensive-work
-  concurrency controls required by `ABUSE-001`.
+- `LOOSE-002`: v2.1 retains Unix sockets, requires vault-owned non-rebindable
+  socket parents and read-only client mounts, and authenticates credential
+  responses against the request and current vault boot identifier.
+- `LOOSE-003`: every vault restart creates a new boot identifier and invalidates
+  prior outstanding requests, nonces, capabilities, and in-memory transfers.
+- `LOOSE-004`: host-local environment variables have explicit defaults and
+  bounds for global login, unauthenticated concurrency, and password-verification
+  concurrency. Reverse-proxy limits are supplementary.
 
 The retained-state matrix, explicit adoption gate, setup-only application phase,
 single provisioning writer, no-network vault, HMAC caller separation, conditional
@@ -76,10 +73,10 @@ failure behavior remain sound.
 
 - **Product-behavior ready for downstream review:** no, pending `LOOSE-001`
 - **Implementation-ready:** no
-- **Milestone-breakdown ready:** no, pending `LOOSE-001` and `LOOSE-002`
+- **Milestone-breakdown ready:** no, pending `LOOSE-001`
 
-The two smaller clarifications can be assigned to the relevant security and
-data/API milestones, but they must be resolved before implementation approval.
+The resolved contracts still require detailed API artifacts, implementation,
+and executable validation before implementation approval.
 
 ## Threat Model
 
@@ -105,13 +102,14 @@ data/API milestones, but they must be resolved before implementation approval.
 | ID | Category | Priority | CVSS | Confidence | Title | Status |
 | --- | --- | --- | --- | --- | --- | --- |
 | `LOOSE-001` | Architecture / security lifecycle | Blocker | N/A | Confirmed | Configured key rotation and key-set evolution have no valid owner or transition | Open |
-| `LOOSE-002` | Security / private API | Blocker | 7.8 conditional | High | REST requests are authenticated, but vault endpoint and response trust are unspecified | Open |
-| `LOOSE-003` | Security contract | Required before implementation | N/A | Confirmed | Replay and one-use behavior across vault restart is undefined | Open |
-| `LOOSE-004` | Abuse controls | Required before implementation | N/A | Confirmed | Global and concurrency limit bounds are missing | Open |
+| `LOOSE-002` | Security / private API | Former blocker | 7.8 conditional | High | REST requests are authenticated, but vault endpoint and response trust were unspecified | Resolved in contract |
+| `LOOSE-003` | Security contract | Required before implementation | N/A | Confirmed | Replay and one-use behavior across vault restart was undefined | Resolved in contract |
+| `LOOSE-004` | Abuse controls | Required before implementation | N/A | Confirmed | Global and concurrency limit bounds were missing | Resolved in contract |
 
 No deployed v2.1 vulnerability is claimed. The conditional CVSS score for
 `LOOSE-002` describes the result if the new design is implemented with a
 caller-writable or replaceable socket endpoint and unauthenticated responses.
+The amended contract prohibits that deployment.
 
 ## Detailed Findings
 
@@ -220,9 +218,18 @@ Add positive and negative acceptance cases for:
   `CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H`
 - **Confidence:** High for the contract gap; exploitability is conditional on
   socket-directory or endpoint replacement access
-- **Affected components:** `VAULTAPI-001` through `VAULTAPI-007`,
+- **Affected components:** `VAULTAPI-001` through `VAULTAPI-008`,
   `docs/architecture/v2.1/vault-rest-api.md`, and the official Compose socket
   volume
+- **Status:** Resolved in the PRD and v2.1 architecture contract
+
+#### Disposition
+
+The product owner selected REST over Unix sockets for v2.1. The amended contract
+requires vault-owned non-rebindable socket parents, read-only client mounts,
+endpoint metadata validation before request transmission, credential-response
+HMAC binding, and negative endpoint-replacement tests. HTTPS/mTLS remains
+deferred until a version introduces a network transport.
 
 #### Evidence
 
@@ -326,6 +333,14 @@ Add tests that:
 - **CVSS v3.1:** N/A; no v2.1 mechanism is implemented
 - **Affected components:** `VAULTAPI-003`, `VAULTAPI-004`, acceptance 21.7, and
   private vault API security tests
+- **Status:** Resolved in the PRD and v2.1 architecture contract
+
+#### Disposition
+
+Every credential-API process start creates a new unpredictable boot identifier.
+Requests and capabilities bind it. A vault-only restart invalidates prior
+outstanding authority, while durable journaled work requires a new handshake and
+fresh authorization.
 
 #### Evidence
 
@@ -364,6 +379,13 @@ cases.
 - **CVSS v3.1:** N/A
 - **Affected components:** `ABUSE-001`, `ABUSE-002`, acceptance 21.3, and
   deployment configuration
+- **Status:** Resolved in the PRD
+
+#### Disposition
+
+The PRD now defines host-local environment names, safe defaults, allowed ranges,
+cross-field validation, sanitized startup failure, and application enforcement
+when a reverse proxy is absent or more permissive.
 
 #### Evidence
 
@@ -392,11 +414,10 @@ or expensive-work limits.
 
 No independent remote exploit chain was identified.
 
-`LOOSE-001` and `LOOSE-002` can combine operationally if an implementation adds
-an ad hoc key-maintenance listener to escape the undefined lifecycle. That would
-expand both key-write authority and private API exposure outside the reviewed
-contract. The remedy is to close the lifecycle and endpoint-authentication
-contracts before implementation, not to add a general maintenance endpoint.
+An implementation must not add an ad hoc key-maintenance listener to escape
+`LOOSE-001`. That would expand key-write authority and private API exposure
+outside the reviewed contract. The remedy is to close the lifecycle through an
+explicit host-authorized startup transition, not a general maintenance endpoint.
 
 ## What Is Good
 
@@ -435,11 +456,9 @@ contracts before implementation, not to add a general maintenance endpoint.
 
 1. Resolve `LOOSE-001` as a product and architecture decision before generating
    milestones.
-2. Add the endpoint/server and response-trust invariant from `LOOSE-002` to the
-   PRD and REST architecture before treating that transport amendment as closed.
-3. Put `LOOSE-003` and `LOOSE-004` into the mandatory security and data/API
-   contract work, with explicit acceptance tests.
-4. Re-run the security and architecture readiness review after the PRD and both
+2. Implement and verify the now-settled `LOOSE-002`, `LOOSE-003`, and
+   `LOOSE-004` contracts in their respective milestones.
+3. Re-run the security and architecture readiness review after the PRD and both
    v2.1 architecture records agree.
 
 ## What I Would Not Change Yet
@@ -468,17 +487,20 @@ contracts before implementation, not to add a general maintenance endpoint.
 
 ## Overall Opinion
 
-The PRD is close, but the current readiness declaration is premature.
+The PRD is close, but the current readiness declaration must remain blocked on
+`LOOSE-001`.
 
 The earlier blockers around retained state and provisioning ownership remain
 closed. The fresh review found a different class of issue: the new provisioning
 authority was made so exclusive that it conflicts with preserved key rotation
-and future key-set changes, while the REST conversion preserved client
-authentication without explicitly preserving server/response trust.
+and future key-set changes. The REST server/response trust, restart
+invalidation, and application protective-limit findings are now resolved in the
+contract.
 
-Both issues are tractable and do not require changing the chosen single-vault,
-REST-over-Unix-sockets architecture. They do require explicit PRD and
-architecture amendments before milestone breakdown is safe.
+The remaining issue is tractable and does not require changing the chosen
+single-vault, REST-over-Unix-sockets architecture. It does require an explicit
+post-configuration key-set lifecycle decision before milestone breakdown is
+safe.
 
 ## Validation
 
@@ -487,7 +509,7 @@ review changes no executable behavior and the v2.1 design is not implemented.
 
 Validation confirmed:
 
-- 117 unique, contiguous requirement definitions across 11 domains;
+- 119 unique, contiguous requirement definitions across 11 domains;
 - the retained-state startup matrix, acceptance criteria, tests, traceability,
   and settled decisions agree;
 - the old custom framing is removed from the v2.1 contract;

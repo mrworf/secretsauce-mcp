@@ -90,6 +90,12 @@ equivalent irreversible OS boundary. It must prove that the runtime vault cannot
 regain setup-only access to application key directories after the credential
 API opens.
 
+Both private socket parents are vault-owned, non-symlinked, and not writable by
+the application or another workload. The application receives the shared socket
+volume read-only: it may connect to the permitted sockets but cannot bind,
+unlink, rename, or replace them. First-party clients validate endpoint type,
+owner, and mode before connection and fail closed on any unsafe change.
+
 ### Provisioning-status REST interface
 
 The status surface is a dedicated HTTP/1.1 REST resource over a Unix-domain
@@ -147,6 +153,7 @@ continuity check before writes, prohibit secret-bearing diagnostics, and make
 the privilege drop an integration-tested boundary. Give retained-state adapters
 read-only access and return only bounded classifications. Deployment tests must
 prove the vault has no network attachment, not merely no published port.
+They must also prove that only the vault can bind or replace either socket.
 
 Do not change yet: do not add a network setup API, remotely triggered
 provisioning, a third service, or a general plugin system. None is required by

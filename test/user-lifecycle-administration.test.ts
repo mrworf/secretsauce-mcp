@@ -145,6 +145,15 @@ describe("guarded user lifecycle administration", () => {
       CORRELATION,
     );
     expect(suspended.status).toBe("suspended");
+    await fixture.worker.execute({
+      run: (database) => database.withOperationalTransaction((transaction) => {
+        transaction.run(`
+          UPDATE users
+          SET suspension_origin = 'manual', suspension_rule_version = 7
+          WHERE id = ?
+        `, [target.id]);
+      }),
+    });
     await expect(fixture.service.transition(
       "reactivate",
       fixture.actor,
@@ -181,6 +190,10 @@ describe("guarded user lifecycle administration", () => {
     expect(replay).toEqual({
       user: reactivated.user,
       oneTimeValueDisplayed: false,
+    });
+    expect(await snapshot(fixture.worker, target.id)).toMatchObject({
+      suspension_origin: null,
+      suspension_rule_version: null,
     });
     const deactivationTarget = await fixture.create(
       "deactivation-target@example.org",
@@ -677,6 +690,8 @@ async function snapshot(worker: PersistenceWorker, userId: string) {
       totp_count: number;
       temporary_count: number;
       pending_count: number;
+      suspension_origin: string | null;
+      suspension_rule_version: number | null;
     }>(`
       SELECT
         (SELECT encoded_hash FROM identity_temporary_passwords WHERE user_id = u.id)
@@ -690,7 +705,9 @@ async function snapshot(worker: PersistenceWorker, userId: string) {
         (SELECT count(*) FROM identity_temporary_passwords WHERE user_id = u.id)
           AS temporary_count,
         (SELECT count(*) FROM identity_pending_totp WHERE user_id = u.id)
-          AS pending_count
+          AS pending_count,
+        u.suspension_origin,
+        u.suspension_rule_version
       FROM users u WHERE u.id = ?
     `, [userId])),
   });

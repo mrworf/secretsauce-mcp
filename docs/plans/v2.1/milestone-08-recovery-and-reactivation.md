@@ -54,7 +54,7 @@ system-wide password-only changes retain TOTP exactly where specified.
 
 | Slice | Status | Commit | Evidence | Deviations |
 | --- | --- | --- | --- | --- |
-| 1 | pending | — | — | — |
-| 2 | pending | — | — | — |
-| 3 | pending | — | — | — |
-| 4 | pending | — | — | — |
+| 1 | completed | `03da66a` | Atomic reset-to-enrollment primitive; idempotent one-time reactivation route; direct suspended-to-active denial; old-TOTP rejection; counter/session/OAuth revocation; 30 focused tests and production build | — |
+| 2 | completed | `f1ac594` | Superadmin-only transactional break glass; uniform non-superadmin failure; UUID/role preservation; suspension/counter/session/OAuth cleanup across database reopen; 9 focused tests | — |
+| 3 | completed | `bc2aa97` | Administrative reset/reactivation warnings; visible one-time expiry; expired-value replacement; explicit self-service and global password-event TOTP retention; operator and architecture documentation; 22 focused tests and production build | — |
+| 4 | completed | this commit | 42 distinct focused recovery tests; 15 focused authentication/step-up tests; production build; 167-file/1,075-test full regression; current control OpenAPI; 14-artifact readiness validation; 650-file closed-scope release scan | Full-suite listener gates required approved loopback/socket permission; two CPU-bound tests received explicit 15-second budgets; one released-port test race was hardened. |

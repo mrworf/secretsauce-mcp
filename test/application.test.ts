@@ -71,13 +71,14 @@ describe("combined SecretSauce application", () => {
   });
 
   it("closes the control listener and shared database when gateway startup fails", async () => {
-    const dataPort = await unusedPort();
-    const controlPort = await unusedPort();
     const blocker = createNetServer();
     await new Promise<void>((resolve, reject) => {
       blocker.once("error", reject);
-      blocker.listen(dataPort, "127.0.0.1", resolve);
+      blocker.listen(0, "127.0.0.1", resolve);
     });
+    const blockedAddress = blocker.address() as AddressInfo;
+    const dataPort = blockedAddress.port;
+    const controlPort = await unusedPort();
     const config = combinedConfig(dataPort, controlPort);
     try {
       await expect(startSecretSauceApplication(config, {})).rejects.toBeDefined();

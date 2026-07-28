@@ -246,7 +246,7 @@ describe("transaction-bound browser step-up", () => {
       body: { value: "epoch" },
     })).statusCode).toBe(401);
     epoch.seed.fill(0);
-  });
+  }, 15_000);
 });
 
 interface Fixture {

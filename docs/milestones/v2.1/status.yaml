@@ -76,13 +76,13 @@ milestones:
   - id: "08"
     title: "Recovery And Reactivation"
     file: "docs/milestones/v2.1/08-recovery-and-reactivation.md"
-    status: "in_progress"
+    status: "completed"
     dependencies:
       - "05"
       - "07"
-    completed_at: null
-    commit_hash: null
-    notes: "Implementation plan approved; atomic administrative reset/reactivation into restricted enrollment is the first slice."
+    completed_at: "2026-07-28T02:13:33-07:00"
+    commit_hash: "03da66a"
+    notes: "Implemented complete restricted-enrollment recovery for administrative reset, every suspended reactivation, deactivated restore, and superadmin-only host break glass while preserving self-service and system-wide password-only TOTP behavior. See docs/audits/v2.1/milestone-08-acceptance.md."
   - id: "09"
     title: "Session And Agent-Connection Management"
     file: "docs/milestones/v2.1/09-session-and-agent-connection-management.md"

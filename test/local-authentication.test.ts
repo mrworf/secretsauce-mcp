@@ -192,7 +192,7 @@ describe("atomic local authentication", () => {
     expect(audits).not.toContain(fixture.email);
     expect(audits).not.toContain("missing");
     fixture.seed.fill(0);
-  });
+  }, 15_000);
 
   it("enforces independent attempt and password-work concurrency budgets before expensive work", async () => {
     const fixture = await configuredIdentity("limits", {

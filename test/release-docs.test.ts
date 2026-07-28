@@ -8,10 +8,10 @@ const RELEASE_DOCS = [
   "docs/management-api.md",
   "docs/client-compatibility.md",
   "docs/release-matrix.md",
-  "docs/audits/milestone-24-acceptance.md",
-  "docs/audits/milestone-24-architecture-operations.md",
-  "docs/audits/milestone-24-security-invariant.md",
-  "docs/audits/milestone-24-ux-accessibility.md",
+  "docs/audits/v2/milestone-24-acceptance.md",
+  "docs/audits/v2/milestone-24-architecture-operations.md",
+  "docs/audits/v2/milestone-24-security-invariant.md",
+  "docs/audits/v2/milestone-24-ux-accessibility.md",
 ];
 
 describe("release operations documentation", () => {
@@ -95,7 +95,7 @@ describe("release operations documentation", () => {
 
   it("keeps the final release reviews decision-complete without waived gates", () => {
     const ux = readFileSync(
-      "docs/audits/milestone-24-ux-accessibility.md",
+      "docs/audits/v2/milestone-24-ux-accessibility.md",
       "utf8",
     );
     for (const heading of [
@@ -106,7 +106,7 @@ describe("release operations documentation", () => {
     ]) expect(ux).toContain(heading);
 
     const security = readFileSync(
-      "docs/audits/milestone-24-security-invariant.md",
+      "docs/audits/v2/milestone-24-security-invariant.md",
       "utf8",
     );
     for (const expected of [
@@ -118,7 +118,7 @@ describe("release operations documentation", () => {
     ]) expect(security).toContain(expected);
 
     const architecture = readFileSync(
-      "docs/audits/milestone-24-architecture-operations.md",
+      "docs/audits/v2/milestone-24-architecture-operations.md",
       "utf8",
     );
     for (const heading of [
@@ -132,7 +132,7 @@ describe("release operations documentation", () => {
     ]) expect(architecture).toContain(heading);
 
     const acceptance = readFileSync(
-      "docs/audits/milestone-24-acceptance.md",
+      "docs/audits/v2/milestone-24-acceptance.md",
       "utf8",
     );
     expect(acceptance).toContain("Production container execution | pass");
@@ -156,7 +156,7 @@ describe("release operations documentation", () => {
     expect(matrix).toContain("146 files / 973 tests passed");
     expect(matrix).toContain("562 tracked, staged, built, generated");
 
-    const status = readFileSync("docs/milestones/status.yaml", "utf8");
+    const status = readFileSync("docs/milestones/v2/status.yaml", "utf8");
     expect(status).toMatch(
       /id: "24"[\s\S]*status: "completed"[\s\S]*commit_hash: "acf8b67"/,
     );

@@ -35,7 +35,7 @@
 - [UX and accessibility](milestone-24-ux-accessibility.md)
 - [Security and invariants](milestone-24-security-invariant.md)
 - [Architecture and operations](milestone-24-architecture-operations.md)
-- [Release matrix](../release-matrix.md)
+- [Release matrix](../../release-matrix.md)
 
 ## Findings And Disposition
 

@@ -6,9 +6,10 @@
 
 - Product: SecretSauce (MCP)
 - Version: 2.1
-- Status: Proposed product contract for security, architecture, UX, data/API,
-  and milestone review
+- Status: Reviewed product contract; ready for milestone breakdown and not yet
+  implementation-ready
 - Date: 2026-07-24
+- Last reviewed: 2026-07-27
 - Intended audience: Product, security, architecture, UX, implementation,
   test, operations, and documentation reviewers
 
@@ -1715,12 +1716,13 @@ These questions concern mechanisms and must not change the product contract:
 
 ### 27.5 Milestone-planning prerequisites
 
-- Product-behavior readiness permits the mandatory downstream reviews to begin;
-  it does not by itself permit implementation or milestone breakdown.
-- Security, architecture, UX, and data/API reviews must approve their respective
-  focus areas.
-- Architecture must resolve the questions in section 24 without changing the
-  settled product contract.
+- Security and architecture approve this PRD for milestone breakdown in
+  `docs/audits/secretsauce-v2.1-prd-final-closure-review-2026-07-27.md`.
+- The closure review finds the UX/accessibility and data/API contracts complete
+  enough to plan, while their detailed artifact reviews remain required before
+  implementation readiness.
+- Section 24 questions must be resolved within milestone plans without changing
+  the settled product contract.
 - A downstream review may reopen a settled decision only when it demonstrates a
   concrete security, correctness, feasibility, accessibility, or interface
   conflict. The resulting product decision must be recorded in this PRD before
@@ -1740,17 +1742,18 @@ failure behavior, and acceptance criteria.
 
 **Implementation-ready: no**
 
-**Milestone-breakdown ready: no**
+Detailed UX/accessibility and data-model/API-contract reviews, implementation
+plans, and executable validation remain incomplete. No unresolved material
+product or architecture decision blocks milestone planning.
 
-Both declarations remain `no` until security, architecture, UX/accessibility,
-and data-model/API-contract reviews approve their focus areas. Any concrete
-conflict found by those reviews must be resolved in this PRD before either
-declaration changes to `yes`.
+**Milestone-breakdown ready: yes**
 
-Required downstream reviews:
+Review and planning status:
 
-- Security review
-- Architecture review
-- UX and accessibility review
-- Data-model and API-contract review
-- Milestone planning
+- Security review: approved for milestone breakdown.
+- Architecture review: approved for milestone breakdown.
+- UX and accessibility review: milestone input complete; detailed approval still
+  required for implementation readiness.
+- Data-model and API-contract review: milestone input complete; detailed
+  approval still required for implementation readiness.
+- Milestone planning: authorized.

@@ -15,16 +15,16 @@ credential capabilities.
 ## Executive Summary
 
 The existing `secretsauce-vault` deployed service owns provisioning through a
-startup entrypoint and then transitions into the runtime credential broker. No
+startup entrypoint and then transitions into the runtime credential service. No
 third setup service and no initialization CLI are introduced.
 
 The vault entrypoint is the sole writer of a dedicated durable setup-state
 volume and the sole generator of SecretSauce-owned application keys. The
 application starts concurrently in setup-only mode and reads a bounded private
-status operation over a separate Unix-domain socket. The authenticated
-credential-broker socket opens only after the manifest commits to `configured`
-and the entrypoint drops setup-only privileges. The vault container has no
-network attachment in any phase.
+HTTP/1.1 REST status resource over a separate Unix-domain socket. The
+authenticated credential REST socket opens only after the manifest commits to
+`configured` and the entrypoint drops setup-only privileges. The vault container
+has no network attachment in any phase.
 
 ## Decision
 
@@ -48,8 +48,8 @@ flowchart LR
   S[(Durable setup-state volume)]
   K[(Generated-key directories)]
   R[(Retained state, read-only inventory)]
-  PS[Private status socket]
-  B[Runtime vault broker]
+  PS[Private status REST socket]
+  B[Runtime credential REST socket]
   A[Application setup-only mode]
   P[Public health/setup projection]
   O[Operational application]
@@ -73,7 +73,7 @@ sanitized setup status, and safe static assets. It defers its database writer,
 key-dependent subsystems, and ordinary web, control, OAuth, and MCP behavior
 until vault provisioning reports `ready`. The vault service is configured
 without a network namespace attachment; both of its interfaces use shared Unix
-sockets.
+sockets and the versioned API in [vault-rest-api.md](vault-rest-api.md).
 
 ### Access and privilege boundaries
 
@@ -87,16 +87,18 @@ sockets.
 
 The implementation may use process credential changes, a narrow launcher, or an
 equivalent irreversible OS boundary. It must prove that the runtime vault cannot
-regain setup-only access to application key directories after the broker opens.
+regain setup-only access to application key directories after the credential
+API opens.
 
-### Provisioning-status interface
+### Provisioning-status REST interface
 
-The status surface is a dedicated Unix-domain socket, not a TCP or public HTTP
-endpoint and not an operation on the authenticated credential-broker protocol.
-Filesystem ownership and mode authenticate the application identity before
-caller HMAC keys exist.
+The status surface is a dedicated HTTP/1.1 REST resource over a Unix-domain
+socket, not a TCP or public endpoint and not a resource on the authenticated
+credential API socket. Filesystem ownership and mode authorize the application
+identity before caller HMAC keys exist.
 
-The request has no caller-controlled fields. The closed response contains:
+The request has no body, query, path parameter, or other caller-controlled
+field. The closed JSON response contains:
 
 ```text
 state: preparing | ready | configuration_error
@@ -125,16 +127,16 @@ directly.
    write, relinquishes setup authority, and remains in status-only
    `configuration_error` until operator correction and restart.
 7. Configured completion commits the aggregate, drops setup-only privileges,
-   starts the normal broker, and reports `ready`.
+   starts the authenticated credential REST API, and reports `ready`.
 8. The application validates its assigned keys and manifest entries, then
-   initializes persistence, audit, broker handshake, jobs, and ordinary
+   initializes persistence, audit, credential-API handshake, jobs, and ordinary
    listeners.
 
 ## Security Review
 
 Good: provisioning has one writer and one generator, so there is no distributed
-commit protocol or per-service key-generation race. The status socket is
-read-only, local, input-free, bounded, and separate from the credential protocol.
+commit protocol or per-service key-generation race. The status REST resource is
+read-only, local, input-free, bounded, and separate from the credential API.
 
 Risky: the vault setup phase temporarily has authority over every generated
 application key and can inspect whether retained stores contain state. A defect
@@ -165,9 +167,10 @@ composition-root phases. Use the private status adapter as the single source of
 vault provisioning state, then add application-local checks before operational
 readiness.
 
-Do not change yet: keep the normal runtime vault protocol, SQLite single-writer
-model, and public setup/health schemas. The new status socket is a bootstrap
-coordination surface, not a replacement for those established boundaries.
+Do not change yet: keep the runtime vault authorization/capability semantics,
+SQLite single-writer model, and public setup/health schemas. The status REST
+socket is a bootstrap coordination surface, not a replacement for those
+established boundaries.
 
 ## Overall Opinion
 

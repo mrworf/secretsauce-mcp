@@ -188,7 +188,7 @@ Trust boundaries include:
 - Privileged vault provisioning entrypoint to generated-key directories,
   retained-state inventories, and the durable setup-state volume.
 - Runtime application to the vault's private read-only provisioning-status
-  socket and authenticated credential-broker socket.
+  REST socket and authenticated credential REST socket.
 - Compose-managed durable storage to replaceable containers.
 - SecretSauce to external OIDC providers.
 
@@ -227,7 +227,7 @@ present, or indeterminate; it must not expose protected record contents.
 | `provisioning` | Fresh-start preflight is running, or a valid provisioning manifest exists and required application keys are being generated or validated. A blocked/error substate may retry. | Liveness, readiness, sanitized setup status | Preflight rejects to `configuration_error`, or all keys validate and the manifest atomically commits to `configured` |
 | `enrollment_required` | A valid configured manifest exists, but no user exists. | Health, login, unified enrollment, safe static assets | Initial superadmin commits |
 | `operational` | Required keys validate and at least one user exists. | Normal role-authorized product behavior | Fatal key/configuration failure or process stop |
-| `configuration_error` | Manifest/key/retained-state continuity is ambiguous, missing, malformed, or mismatched under the startup matrix in section 18.2. | Vault status-only socket, application liveness/readiness, sanitized setup status; no broker or ordinary serving | Operator restores the matching state, key, and manifest set or completes an explicitly authorized adoption and restarts |
+| `configuration_error` | Manifest/key/retained-state continuity is ambiguous, missing, malformed, or mismatched under the startup matrix in section 18.2. | Vault status-only REST socket, application liveness/readiness, sanitized setup status; no credential API or ordinary serving | Operator restores the matching state, key, and manifest set or completes an explicitly authorized adoption and restarts |
 
 `provisioning` and `enrollment_required` are not unhealthy states. They are not
 operationally ready.
@@ -244,18 +244,19 @@ such as:
 The exact internal setup state, missing key identity, key path, user count, and
 failure cause are not public.
 
-The vault exposes a separate private, read-only provisioning-status operation
-over a Unix-domain socket. Its closed response contains only:
+The vault exposes a separate private, read-only HTTP/1.1 provisioning-status
+REST resource over a Unix-domain socket. Its closed response contains only:
 
 - state: `preparing`, `ready`, or `configuration_error`;
 - whether automatic retry is pending; and
 - a stable sanitized error category when state is `configuration_error`.
 
-The status operation is authenticated by socket filesystem permissions because
-the authenticated vault caller keys may not exist yet. It accepts no
-provisioning command, path, key identity, or other caller-controlled parameter.
-The application maps this private result to the bounded public setup states; a
-browser, OAuth client, or MCP client never connects to the vault directly.
+The status request is authorized by socket filesystem permissions because the
+authenticated vault caller keys may not exist yet. It accepts no request body,
+query, provisioning command, path parameter, key identity, or other
+caller-controlled field. The application maps this private result to the
+bounded public setup states; a browser, OAuth client, or MCP client never
+connects to the vault directly.
 
 ### 8.4 Bootstrap secret
 
@@ -346,7 +347,7 @@ process start
   -> operator restores matching configuration and restarts
 ```
 
-The vault credential-broker socket and every ordinary application interface
+The vault credential REST socket and every ordinary application interface
 remain closed throughout `configuration_error`.
 
 ### 10.2 Initial enrollment
@@ -421,7 +422,8 @@ Repeating a revocation is an audited no-change success.
    `configured`.
 9. The entrypoint relinquishes setup-only write access that the runtime vault
    does not need, drops to the runtime vault identity, opens the authenticated
-   credential-broker socket, and reports `ready` on the separate status socket.
+   credential REST socket, and reports `ready` on the separate status REST
+   socket.
 10. The application observes vault `ready`, independently validates every key
     assigned to its runtime components against the read-only configured
     manifest, then initializes persistence, audit, jobs, and ordinary listeners
@@ -582,10 +584,10 @@ limited without rolling back enrollment.
   with bounded backoff.
 - `SETUP-007` If a configured manifest exists and any required key is missing,
   invalid, or fingerprint-mismatched, the vault must enter
-  `configuration_error` without opening its credential-broker socket or
-  regenerating the key. The vault status-only socket and setup-only application
-  must remain live to expose bounded status until operator correction and
-  restart.
+  `configuration_error` without opening its credential REST socket or
+  regenerating the key. The vault status-only REST socket and setup-only
+  application must remain live to expose bounded status until operator
+  correction and restart.
 - `SETUP-008` No web, control API, login, OAuth, or MCP operation outside the
   explicit setup allowlist may execute before the required setup state permits
   it.
@@ -659,15 +661,16 @@ limited without rolling back enrollment.
   read-only access only to the non-secret configured manifest fields they need
   for key validation.
 - `SETUP-022` The vault must expose provisioning status on a dedicated private
-  Unix-domain socket separate from the authenticated credential-broker socket.
-  Before caller keys exist, filesystem ownership and mode must restrict this
-  socket to the application runtime identity. The operation must be read-only,
-  accept no caller-controlled fields, use a closed bounded response, expose no
-  key identity/path or retained-state details, and never trigger or alter
+  HTTP/1.1 REST endpoint over a Unix-domain socket separate from the
+  authenticated credential REST socket. Before caller keys exist,
+  filesystem ownership and mode must restrict this status socket to the
+  application runtime identity. The endpoint must be read-only, accept no body,
+  query, or path parameters, use a closed bounded JSON response, expose no key
+  identity/path or retained-state details, and never trigger or alter
   provisioning.
 - `SETUP-023` The vault provisioning entrypoint may retain write access to
   generated-key directories only while provisioning or retrying a fresh
-  `pending` key. Before opening the credential-broker socket after configured
+  `pending` key. Before opening the credential REST socket after configured
   completion, it must irreversibly drop setup-only privileges and access to
   application-only key directories. On fatal `configuration_error`, it must
   relinquish setup write authority before remaining available in status-only
@@ -678,8 +681,9 @@ limited without rolling back enrollment.
   validate their format and configured-manifest fingerprints before enabling
   key-dependent behavior.
 - `SETUP-025` The official Compose vault service must have no network
-  attachment during provisioning, status-only error, or runtime broker phases.
-  Provisioning status and credential operations must use only their separate
+  attachment during provisioning, status-only error, or runtime credential API
+  phases.
+  Its provisioning-status and credential REST APIs must use only their separate
   filesystem-restricted Unix-domain sockets. Merely omitting published ports is
   insufficient.
 
@@ -953,15 +957,62 @@ limited without rolling back enrollment.
   bounded temporary-unavailability behavior with `Retry-After` and no missing
   prerequisite disclosure.
 - `HEALTH-008` The application must derive its provisioning view from the
-  vault's private status operation, map `configuration_error` to public
+  vault's private status REST resource, map `configuration_error` to public
   `not_ready`, and add its own initialization checks before reporting
   `available` or operational readiness. Loss, timeout, or malformed output from
-  the private status operation must fail closed as `not_ready`.
+  the private status resource must fail closed as `not_ready`.
 - `HEALTH-009` Vault `ready` means key provisioning and configured-manifest
   commitment are complete; it does not by itself mean the application is
   operational. Application readiness must remain 503 until persistence, audit,
-  runtime key validation, vault broker handshake, jobs, and required listeners
-  are usable.
+  runtime key validation, vault credential-API handshake, jobs, and required
+  listeners are usable.
+
+### 13.9 Private vault REST API
+
+- `VAULTAPI-001` Both private vault interfaces must use a versioned HTTP/1.1
+  resource API over Unix-domain sockets in v2.1. Status and ordinary metadata
+  use closed JSON schemas; secret-bearing and streaming operations may use only
+  their explicitly declared bounded media types. The API must have one
+  canonical OpenAPI 3.1 contract used by the vault server, all first-party
+  clients, and contract tests.
+- `VAULTAPI-002` The provisioning-status API and authenticated credential API
+  must use separate socket paths and listener lifecycles. The status API may
+  expose only its fixed read-only resource before keys exist. The credential API
+  must not listen before configured manifest commit and setup-privilege drop.
+- `VAULTAPI-003` Filesystem permissions are a reachability control, not
+  sufficient runtime caller authentication. Every credential-API request must
+  authenticate a fixed caller identity with its caller-specific HMAC key and
+  bind the signature to the API version, caller, uppercase method, canonical
+  origin-form request target, selected representation headers, raw body digest,
+  request UUID, timestamp, and nonce. Security-sensitive encodings must be
+  canonical, and stale or replayed requests must fail before store access.
+- `VAULTAPI-004` Authenticated caller identity must map to a fixed server-side
+  operation allowlist independent of socket access. Data-plane resolution must
+  still require a valid one-use operation-bound capability; control, backup,
+  and data callers must not acquire one another's operations. A compromised
+  authorized caller is contained to its current authenticated operations and
+  capabilities, regardless of Unix-socket transport.
+- `VAULTAPI-005` The private HTTP servers must reject unknown methods/routes,
+  unsupported media types, duplicate security headers, ambiguous or
+  non-canonical request targets, conflicting length/framing metadata, oversized
+  headers or bodies, unknown schema fields, invalid UTF-8 where text is
+  required, and unsupported protocol upgrades before domain or store access.
+  They must not use cookies, browser CORS, redirects, proxy discovery, or
+  unbounded buffering. Errors, access logs, and traces must never contain raw
+  credentials, opaque authorization values, request/response bodies, cookies,
+  or secret-bearing headers.
+- `VAULTAPI-006` HTTP parsing, request authentication, caller authorization, and
+  vault domain handlers must be separate interfaces. Domain handlers must accept
+  a transport-independent authenticated caller context and validated operation
+  input rather than a socket or HTTP request object. Version 2.1 must ship no TCP
+  listener, HTTPS listener, remote-vault setting, or dormant network transport.
+- `VAULTAPI-007` A future version may bind the same versioned API and domain
+  handlers to HTTPS with mutually authenticated service identities. Adding that
+  transport must not weaken per-operation authorization, capability checks,
+  replay/idempotency behavior, schemas, error semantics, or secret-free logging.
+  HTTPS certificate lifecycle, network policy, service discovery, and remote
+  availability behavior are explicitly deferred and must be reviewed before
+  that transport is enabled.
 
 ## 14. Data handling and privacy
 
@@ -1180,10 +1231,12 @@ Login, enrollment, setup status, and account settings must:
 The supported v2.1 deployment is the official single-instance Docker Compose
 configuration with declared durable volumes and no initialization CLI.
 `docs/architecture/v2.1/provisioning.md` records the approved implementation
-baseline for this lifecycle.
+baseline for this lifecycle, and
+`docs/architecture/v2.1/vault-rest-api.md` records the private API and
+transport boundary.
 
 The `secretsauce-vault` container entrypoint owns automatic provisioning and
-then transitions into the runtime credential broker; this is one deployed
+then transitions into the runtime credential service; this is one deployed
 service, not an additional setup service. The vault container has no network
 attachment in any phase. During setup it has:
 
@@ -1191,18 +1244,21 @@ attachment in any phase. During setup it has:
   directories;
 - read-only access to configured retained application database, vault, audit,
   and other recognized key-bound state required for inventory;
-- a private read-only provisioning-status Unix socket shared with the
-  application; and
+- a private read-only HTTP provisioning-status API over a Unix socket shared
+  with the application; and
 - no remotely invokable provisioning operation.
 
 The application container starts concurrently with read-only key and manifest
 mounts. It exposes setup-only health/status surfaces until the vault reports
-`ready` and application initialization completes. The normal vault broker socket
-does not exist in `preparing` or `configuration_error`; it opens only after a
-configured manifest commits and the entrypoint drops setup-only privileges.
+`ready` and application initialization completes. The authenticated credential
+REST socket does not exist in `preparing` or `configuration_error`; it opens only
+after a configured manifest commits and the entrypoint drops setup-only
+privileges.
 Compose process health checks use liveness, not operational readiness, so an
 operator can inspect bounded setup status during retryable or fatal setup
-failure without creating a restart loop.
+failure without creating a restart loop. Both private vault APIs use the same
+versioned REST contract and domain handlers that a future reviewed HTTPS
+transport may reuse; v2.1 creates no TCP listener.
 
 The operator must still:
 
@@ -1299,7 +1355,7 @@ this document.
    and never advances the manifest to `configured`.
 6. After configuration, removing or corrupting one required key enters
    status-only `configuration_error` without key replacement or an authenticated
-   credential-broker socket.
+   credential REST socket.
 7. Recreating official Compose containers preserves keys, identities, vault
    state, and durable audits.
 8. Restart after any individual fresh key creation validates and reuses that key,
@@ -1340,13 +1396,13 @@ this document.
 20. The vault and application start concurrently on a clean Compose deployment;
     the application serves bounded setup status without opening its database
     writer or enabling ordinary web, control, OAuth, or MCP behavior.
-21. The private vault status operation is reachable only through its
-    filesystem-restricted Unix socket, accepts no input fields, never initiates
-    provisioning, and maps loss, timeout, or malformed output to public
-    `not_ready`.
+21. The private vault status REST resource is reachable only through its
+    filesystem-restricted Unix socket, accepts no body, query, or path
+    parameters, never initiates provisioning, and maps loss, timeout, or
+    malformed output to public `not_ready`.
 22. Vault `preparing` and `configuration_error` expose no authenticated
-    credential-broker socket. After configured completion, the entrypoint drops
-    setup-only key-directory access before that broker socket opens.
+    credential REST socket. After configured completion, the entrypoint drops
+    setup-only key-directory access before that socket opens.
 23. After vault `ready`, every runtime consumer validates only its assigned
     read-only keys and configured-manifest entries before key-dependent behavior
     becomes available.
@@ -1442,6 +1498,32 @@ this document.
 6. Logout failure announces that the session remains active, preserves the
    authenticated page and keyboard focus, and offers an operable retry.
 
+### 21.7 Private vault REST API
+
+1. The status and credential interfaces conform to one versioned OpenAPI
+   contract over separate Unix sockets, and the v2.1 vault opens no TCP or HTTPS
+   listener.
+2. The pre-key status resource accepts only its fixed bodyless, queryless,
+   parameterless read request and returns only the bounded status schema.
+3. Valid data, control, and backup requests authenticate independently and can
+   invoke only their fixed operation allowlists; switching the claimed caller,
+   method, request target, representation headers, body, request UUID,
+   timestamp, or nonce invalidates authentication.
+4. Missing/bad authentication, cross-caller operations, expired requests,
+   replayed nonces, invalid capabilities, duplicate security headers, ambiguous
+   framing/targets, unknown fields, unsupported methods/media types/upgrades,
+   and oversized inputs fail before domain or vault-store access.
+5. A compromised data-plane caller cannot write, delete, export, or perform an
+   unbound resolution; a compromised control caller cannot resolve or export;
+   and a backup caller cannot operate without its required one-use
+   authorization.
+6. Private HTTP errors, logs, traces, and OpenAPI examples contain no raw
+   credentials, opaque authorization values, cookies, secret-bearing headers,
+   or request/response bodies.
+7. The same domain-handler contract passes adapter tests with a synthetic
+   authenticated caller context and no Unix-socket or HTTP object, proving that
+   a later reviewed HTTPS adapter will not require vault-domain redesign.
+
 ## 22. Testing requirements
 
 - Unit tests for setup state transitions, required-key inventory, closed
@@ -1455,7 +1537,8 @@ this document.
   conditional administrative revocation, and concurrency races.
 - Positive and negative contract tests for every new setup, enrollment, login,
   client-source configuration/header, metadata, filter, confirmation, and
-  revocation input.
+  revocation input, plus every private vault REST route, method, media type,
+  schema, signature field, bound, and caller operation.
 - Process tests for fresh provisioning, interruption and restart at every
   per-key and manifest transition, idempotent key reuse, no-manifest
   none/some/all key inventories with valid and invalid adoption settings,
@@ -1464,15 +1547,16 @@ this document.
   recognized key-bound state, unavailable/indeterminate retained-state
   inventories, partial-restore combinations, blocked retry, restart secret
   rotation, configured missing-key status-only failure, setup privilege drop,
-  broker-socket absence before configured completion, and multi-service runtime
-  key readiness.
+  credential-REST-socket absence before configured completion, and
+  multi-service runtime key readiness.
 - Compose tests for concurrent vault/application startup, setup-only application
-  behavior without caller keys, private status-socket permissions, preparing,
-  retry, ready, malformed/unavailable status, fatal configuration error without
-  a restart loop, application runtime initialization after vault readiness, and
-  container recreation with durable setup/key/state volumes. Deployment tests
-  must also prove that the vault has no network attachment rather than merely no
-  published ports.
+  behavior without caller keys, private REST socket permissions, OpenAPI
+  conformance, preparing, retry, ready, malformed/unavailable status, fatal
+  configuration error without a restart loop, credential-listener absence
+  before setup completion, application runtime initialization after vault
+  readiness, and container recreation with durable setup/key/state volumes.
+  Deployment tests must also prove that the vault has no network attachment
+  rather than merely no published ports.
 - Browser tests for branded login, unified enrollment, no setup-state disclosure,
   TOTP confirmation, redirect-to-login, successful logout, injected logout
   persistence/audit failure and retry, account settings, administrative scope,
@@ -1486,6 +1570,12 @@ this document.
   log/audit secret absence, positive delivery through every designated session,
   CSRF, and OAuth channel, and absence of those values from every prohibited
   channel.
+- Private vault API security tests for caller substitution, method/target/header
+  and raw-body tampering, canonical base64url enforcement, nonce replay,
+  timestamp expiry, duplicate security headers, request-target ambiguity,
+  conflicting `Content-Length`/`Transfer-Encoding`, unsupported upgrades,
+  bounded streaming, cross-caller authorization, operation-bound capability
+  enforcement, and secret-free HTTP diagnostics.
 - OAuth/MCP tests from both Codex and ChatGPT after operational setup, including
   pre-operational temporary unavailability and post-revocation denial.
 - Compose release tests that create a clean installation, enroll the first
@@ -1540,6 +1630,12 @@ Security documentation must state:
 - The initial bootstrap secret is intentionally printed once and must be treated
   as a temporary bearer credential.
 - OAuth provider failure policy remains provider-owned.
+- Unix-socket filesystem permissions limit private vault API reachability but do
+  not make an authorized compromised caller trustworthy; caller-specific
+  authentication, operation allowlists, and capabilities remain mandatory.
+- HTTPS vault transport is not present in v2.1. Its future addition requires
+  mTLS identity, certificate lifecycle, network-policy, availability, and
+  transport-security review without changing the REST/domain contracts.
 
 Examples must use `example.org` hostnames. ChatGPT setup documentation must keep
 OAuth issuer/resource origins distinct from the MCP Server URL containing the
@@ -1563,6 +1659,9 @@ These questions concern mechanisms and must not change the product contract:
 6. Which shared request-boundary component should enforce `SOURCE-001` through
    `SOURCE-009` consistently for the control and OAuth/MCP listeners without
    duplicating proxy parsing or trust decisions?
+7. Which maintained HTTP/OpenAPI server and Unix-socket client adapters best
+   satisfy `VAULTAPI-001` through `VAULTAPI-007` without generating a second
+   authorization path?
 
 ## 25. Settled decisions
 
@@ -1598,13 +1697,21 @@ These questions concern mechanisms and must not change the product contract:
   private vault status is `ready`, runtime keys validate, and application
   initialization completes.
 - Vault provisioning status uses a separate filesystem-restricted, read-only
-  Unix socket with no mutation inputs. Browser, OAuth, and MCP clients receive
-  only the application's bounded projection and never connect to the vault.
-- The authenticated vault broker socket opens only after the manifest commits
-  to `configured` and the entrypoint drops setup-only access. Runtime consumers
-  receive only their assigned keys with read-only access.
+  HTTP/1.1 REST resource over a Unix socket with no mutation inputs. Browser,
+  OAuth, and MCP clients receive only the application's bounded projection and
+  never connect to the vault.
+- The authenticated vault credential REST socket opens only after the manifest
+  commits to `configured` and the entrypoint drops setup-only access. Runtime
+  consumers receive only their assigned keys with read-only access.
 - The vault service has no network attachment in setup, status-only error, or
-  runtime phases; its two private interfaces use Unix sockets.
+  runtime phases; its two private REST interfaces use Unix sockets.
+- The vault uses a versioned OpenAPI-described HTTP/1.1 resource contract rather
+  than custom binary framing. Unix-socket reachability and caller-specific
+  authentication remain separate controls.
+- HTTP parsing and authentication are adapters around transport-independent
+  vault domain handlers. Version 2.1 ships no TCP/HTTPS listener; a later
+  reviewed HTTPS/mTLS adapter may reuse the same API, authenticated caller
+  context, authorization, capability, schema, and error contracts.
 - There is no configured-manifest clearing or cryptographic-reset capability.
 - Administrative agent-connection revocation changes state only when current
   actor role, target-owner eligibility, and complete reachable-service scope
@@ -1670,6 +1777,7 @@ These questions concern mechanisms and must not change the product contract:
 | Session-hijacking resistance | `SESSION-001`–`SESSION-008` | 21.5 |
 | Scoped revocation and audit | `ACCESS-001`–`ACCESS-012` | 21.5 |
 | Health before setup | `HEALTH-001`–`HEALTH-009` | 21.1 |
+| Private vault REST boundary | `VAULTAPI-001`–`VAULTAPI-007` | 21.7 |
 | Secret and personal-data minimization | Sections 14–16 | 21.2, 21.5, 21.6 |
 | Browser-first Compose deployment | `SETUP-010`–`SETUP-025`, sections 18–19 | 21.1 |
 
@@ -1693,8 +1801,10 @@ These questions concern mechanisms and must not change the product contract:
 - Dedicated durable setup-state representation and runtime read-only views.
 - Concurrent setup-only application composition and transition to operational
   initialization.
-- Filesystem-restricted private status socket and irreversible setup-privilege
-  drop before the credential broker opens.
+- Filesystem-restricted private status REST socket and irreversible
+  setup-privilege drop before the credential API opens.
+- OpenAPI-described REST handlers, caller-authentication adapter, strict private
+  HTTP boundary, and future HTTPS transport seam.
 - Restricted provisional enrollment without premature user creation.
 - High-cardinality atomic revocation.
 - Compose storage layout and continuity checks.
@@ -1710,6 +1820,8 @@ These questions concern mechanisms and must not change the product contract:
 ### 27.4 Data/API-review focus
 
 - Setup/health response schemas.
+- Private vault OpenAPI resources, media types, authentication inputs, error
+  model, and Unix-socket client/server contract.
 - New suspension settings and counter lifecycle.
 - Session metadata normalization and privacy.
 - Scoped list/revocation contracts, pagination, idempotency, and audit evidence.

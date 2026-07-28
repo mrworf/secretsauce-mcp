@@ -26,10 +26,13 @@ be inferred from prior releases.
   and ephemeral gateway references. A release journey must exercise that
   topology rather than treating the legacy bearer-only image smoke as a clean
   setup journey.
-- This workspace has Node 26.4.0 on x86_64 but no Docker, Podman, or nerdctl.
-  Container image and official Compose gates therefore require a separate
-  Docker-capable environment and remain release-blocking until recorded for
-  the exact executable candidate.
+- This workspace has Node 26.4.0 on x86_64. A Docker 29.6.1 linux/amd64 client
+  is installed, but its daemon is inactive, starting the service requires an
+  interactive administrator credential, and neither the Compose plugin nor
+  legacy client is installed. Podman and nerdctl are absent. Container image
+  and official Compose gates therefore still require a usable Docker-capable
+  environment and remain release-blocking until recorded for the exact
+  executable candidate.
 - Hosted Codex/ChatGPT interaction and final human/independent approvals are
   external assurance. Synthetic fixtures and agent-authored review artifacts
   cannot substitute for them.
@@ -71,5 +74,5 @@ lack safe containment. Missing runtime or human evidence is pending, not pass.
 | Slice | Status | Commit | Evidence | Deviations |
 | --- | --- | --- | --- | --- |
 | 1 | completed | `1c98931` | 22-file/120-test focused integration suite; 4-file/28-test Compose/docs suite; build; 168 files/1,087 tests; current OpenAPI; 14 readiness artifacts; 657-file release scan; official config positive/negative validation | Production advisory lookup remains pending because registry disclosure was not authorized. Official Compose config was remediated after the legacy bearer/YAML example was found mounted. M10 review later returned the missing 100,000-record access cap to M09 for release remediation. |
-| 2 | blocked | `10caaba` | Exact-candidate runbook specifies clean setup/enrollment/activation/MCP, recreation, durable/ephemeral state, vault isolation, rotation/fault matrix, and sanitized record; host audit: Node 26.4.0, x86_64; no Docker, Podman, nerdctl, or legacy Compose client is available | Must execute on a Docker-capable environment; prior v2 image evidence is not reusable. |
+| 2 | blocked | `10caaba` | Exact-candidate runbook specifies clean setup/enrollment/activation/MCP, recreation, durable/ephemeral state, vault isolation, rotation/fault matrix, and sanitized record; host audit: Node 26.4.0, x86_64; Docker 29.6.1 client present, daemon inactive and admin-gated; no Compose client, Podman, or nerdctl | Must execute on a usable Docker/Compose environment; prior v2 image evidence is not reusable. |
 | 3 | blocked | `2f32206` | Project-authored security/invariant, architecture/operations, UX/accessibility, and data/API/documentation reviews cover executable candidate `b780201` and keep external gates explicit | An authorized production advisory query, hosted-client target, and named independent/human reviewers are required; agent-authored evidence cannot substitute for them. |

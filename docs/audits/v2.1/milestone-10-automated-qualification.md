@@ -4,7 +4,10 @@
 
 - Executable baseline: `b780201`
 - Qualification environment: Node 26.4.0, npm 12.0.1, linux/x86_64
-- Container runtime: unavailable; Docker, Podman, and nerdctl are absent
+- Container runtime: unavailable. A Docker 29.6.1 linux/amd64 client became
+  available after the initial audit, but the system daemon is inactive,
+  starting it requires an interactive administrator credential, and no Docker
+  Compose plugin or legacy client is installed. Podman and nerdctl are absent.
 - Decision rule: a missing external gate remains pending and blocks release
 
 This artifact records project-authored automated evidence. It is not an
@@ -60,9 +63,10 @@ and 45 tests.
 - `npm run audit:production` could not query the public npm advisory endpoint
   in the sandbox. Escalation was rejected because it would disclose dependency
   metadata without explicit user authorization. No advisory result is claimed.
-- No Docker-compatible runtime exists on this host. The exact-candidate
-  official Compose clean setup, enrollment, MCP, recreation, durable-state,
-  vault-isolation, and rotation journey is not executed here.
+- No usable Docker-compatible runtime exists on this host. The installed Docker
+  client cannot reach an active daemon and no Compose client is installed. The
+  exact-candidate official Compose clean setup, enrollment, MCP, recreation,
+  durable-state, vault-isolation, and rotation journey is not executed here.
 - Hosted Codex and ChatGPT checks against a deployment are not supplied.
 - Independent/human security, architecture, UX/accessibility, data/API,
   operations, documentation, and release approvals are not supplied.

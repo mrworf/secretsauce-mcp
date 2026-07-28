@@ -312,6 +312,12 @@ export class LocalEnrollmentRepository {
           if (!currentMatches) {
             throw new PersistenceError("authentication_failed");
           }
+          if (material.purpose === "totp_enrollment") {
+            transaction.run(
+              "DELETE FROM identity_qualifying_authentication_failures WHERE user_id = ?",
+              [candidate.userId],
+            );
+          }
           if (material.purpose !== "totp_enrollment") {
             const consumed = transaction.run(`
               UPDATE identity_temporary_passwords

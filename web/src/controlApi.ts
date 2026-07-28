@@ -903,6 +903,7 @@ export interface SecuritySettings {
   password_window_ms: number;
   totp_attempts: number;
   totp_window_ms: number;
+  automatic_suspension_threshold: number | null;
   management_api_attempts: number;
   management_api_window_ms: number;
   search_attempts: number;

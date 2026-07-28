@@ -414,6 +414,253 @@ describe("atomic local authentication", () => {
     })).toBe(0);
     epochFixture.seed.fill(0);
   });
+
+  it("durably suspends only after the configured qualifying TOTP threshold", async () => {
+    const config = identityConfig();
+    const settings = securitySettings(config, {
+      automaticSuspensionThreshold: 3,
+      version: 7,
+    });
+    const fixture = await configuredIdentity(
+      "automatic-suspension",
+      config,
+      () => settings,
+    );
+    await fixture.worker.execute({
+      run: (database) => database.withOperationalTransaction((transaction) => {
+        transaction.run(
+          "UPDATE users SET role = 'superadmin' WHERE id = ?",
+          [fixture.userId],
+        );
+        transaction.run(`
+          INSERT INTO oauth_clients (
+            id, client_identifier, display_name, metadata_json, metadata_digest,
+            lifecycle, first_seen_at, last_seen_at, version
+          ) VALUES (
+            '018f1f2e-7b3c-7a10-8000-000000000080', 'automatic-test-client',
+            'Automatic test client', '{}', ?, 'active', ?, ?, 1
+          )
+        `, ["a".repeat(64), NOW, NOW]);
+        transaction.run(`
+          INSERT INTO oauth_grants (
+            id, user_id, client_id, resource, scopes_json,
+            authentication_method, issued_security_epoch, issued_global_epoch,
+            issued_access_ttl_ms, issued_refresh_idle_ms,
+            issued_refresh_absolute_ms, status, issued_at, last_used_at,
+            absolute_expires_at, idle_expires_at, revoked_at,
+            revocation_reason, version
+          ) VALUES (
+            '018f1f2e-7b3c-7a10-8000-000000000081', ?,
+            '018f1f2e-7b3c-7a10-8000-000000000080', 'https://mcp.example.org',
+            '["gateway.read"]', 'local_password_totp', 1, 1, 300000,
+            86400000, 604800000, 'active', ?, ?, ?, ?, NULL, NULL, 1
+          )
+        `, [fixture.userId, NOW, NOW, NOW + 604_800_000, NOW + 86_400_000]);
+        transaction.run(`
+          INSERT INTO oauth_refresh_families (
+            id, grant_id, current_sequence, status, issued_at, last_used_at,
+            absolute_expires_at, idle_expires_at, revoked_at,
+            revocation_reason, version
+          ) VALUES (
+            '018f1f2e-7b3c-7a10-8000-000000000082',
+            '018f1f2e-7b3c-7a10-8000-000000000081', 0, 'active', ?, ?, ?, ?,
+            NULL, NULL, 1
+          )
+        `, [NOW, NOW, NOW + 604_800_000, NOW + 86_400_000]);
+        transaction.run(`
+          INSERT INTO oauth_refresh_tokens (
+            id, token_hash, family_id, sequence, status, issued_at, used_at
+          ) VALUES (
+            '018f1f2e-7b3c-7a10-8000-000000000083', ?,
+            '018f1f2e-7b3c-7a10-8000-000000000082', 0, 'active', ?, NULL
+          )
+        `, ["b".repeat(64), NOW]);
+        transaction.run(`
+          INSERT INTO oauth_access_tokens (
+            id, token_hash, grant_id, family_id, scopes_json,
+            issued_at, expires_at, last_used_at, status
+          ) VALUES (
+            '018f1f2e-7b3c-7a10-8000-000000000084', ?,
+            '018f1f2e-7b3c-7a10-8000-000000000081',
+            '018f1f2e-7b3c-7a10-8000-000000000082', '["gateway.read"]',
+            ?, ?, ?, 'active'
+          )
+        `, ["c".repeat(64), NOW, NOW + 300_000, NOW]);
+      }),
+    });
+    await fixture.service.login(loginInput(
+      fixture.email,
+      fixture.password,
+      totpCode(fixture.seed, NOW),
+      "192.0.2.1",
+      "req_00000000-0000-4000-8000-000000000001",
+    ));
+
+    await expect(fixture.service.login(loginInput(
+      fixture.email,
+      "Wrong-Password-2026",
+      "000000",
+      "192.0.2.2",
+      "req_00000000-0000-4000-8000-000000000002",
+    ))).rejects.toEqual(new LocalAuthenticationError("authentication_failed"));
+    await fixture.worker.execute({
+      run: (database) => database.withOperationalTransaction((transaction) => {
+        transaction.run(`
+          INSERT INTO identity_qualifying_authentication_failures (
+            correlation_id, user_id, occurred_at
+          ) VALUES ('req_00000000-0000-4000-8000-000000000000', ?, ?)
+        `, [fixture.userId, NOW - 86_400_001]);
+      }),
+    });
+    await Promise.all([3, 13].map((sourceSuffix) =>
+      expect(fixture.service.login(loginInput(
+        fixture.email,
+        fixture.password,
+        "000000",
+        `192.0.2.${sourceSuffix}`,
+        "req_00000000-0000-4000-8000-000000000003",
+      ))).rejects.toEqual(new LocalAuthenticationError("authentication_failed")),
+    ));
+    await expect(fixture.service.login(loginInput(
+      fixture.email,
+      fixture.password,
+      "000000",
+      "192.0.2.4",
+      "req_00000000-0000-4000-8000-000000000004",
+    ))).rejects.toEqual(new LocalAuthenticationError("authentication_failed"));
+    expect(await fixture.worker.execute({
+      run: (database) => database.read((query) => query.get<{ count: number }>(
+        "SELECT count(*) AS count FROM identity_qualifying_authentication_failures",
+      )?.count ?? -1),
+    })).toBe(2);
+
+    fixture.service.close();
+    services.delete(fixture.service);
+    await fixture.worker.close();
+    workers.delete(fixture.worker);
+    const restarted = open(fixture.databaseFile);
+    const keyRing = new IdentityKeyRing("root", { root: fixture.rootKey });
+    const repository = new LocalAuthenticationRepository(restarted, {
+      now: () => NOW,
+    });
+    const service = await LocalAuthenticationService.create({
+      repository,
+      config,
+      keyRing,
+      sessionHmacKey: fixture.sessionKey,
+      now: () => NOW,
+      securitySettings: () => settings,
+    });
+    services.add(service);
+    await expect(service.login(loginInput(
+      fixture.email,
+      fixture.password,
+      "000000",
+      "198.51.100.5",
+      "req_00000000-0000-4000-8000-000000000005",
+    ))).rejects.toEqual(new LocalAuthenticationError("authentication_failed"));
+
+    expect(await restarted.execute({
+      run: (database) => database.read((query) => query.get<{
+        status: string;
+        role: string;
+        security_epoch: number;
+        suspended_at: number;
+        suspension_rule_version: number;
+        active_sessions: number;
+        failures: number;
+        invalidations: number;
+        audits: number;
+        revoked_oauth_records: number;
+      }>(`
+        SELECT u.status, u.role, u.security_epoch, u.suspended_at,
+          u.suspension_rule_version,
+          (SELECT count(*) FROM browser_sessions WHERE revoked_at IS NULL)
+            AS active_sessions,
+          (SELECT count(*) FROM identity_qualifying_authentication_failures)
+            AS failures,
+          (SELECT count(*) FROM identity_invalidation_events
+             WHERE user_id = u.id AND reason = 'suspension') AS invalidations,
+          (SELECT count(*) FROM administrative_audit_events
+             WHERE action = 'identity.automatic_suspension'
+               AND target_id_snapshot = u.id) AS audits,
+          (SELECT
+            (SELECT count(*) FROM oauth_grants WHERE status = 'revoked')
+            + (SELECT count(*) FROM oauth_refresh_families WHERE status = 'revoked')
+            + (SELECT count(*) FROM oauth_refresh_tokens WHERE status = 'revoked')
+            + (SELECT count(*) FROM oauth_access_tokens WHERE status = 'revoked')
+          ) AS revoked_oauth_records
+        FROM users u WHERE u.id = ?
+      `, [fixture.userId])),
+    })).toMatchObject({
+      status: "suspended",
+      role: "superadmin",
+      security_epoch: 2,
+      suspended_at: NOW,
+      suspension_rule_version: 7,
+      active_sessions: 0,
+      failures: 0,
+      invalidations: 1,
+      audits: 1,
+      revoked_oauth_records: 4,
+    });
+    fixture.seed.fill(0);
+    keyRing.destroy();
+  });
+
+  it("applies a lower suspension threshold only on the next qualifying failure", async () => {
+    const config = identityConfig();
+    let settings = securitySettings(config, {
+      automaticSuspensionThreshold: 4,
+      version: 8,
+    });
+    const fixture = await configuredIdentity(
+      "lower-automatic-suspension",
+      config,
+      () => settings,
+    );
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      await expect(fixture.service.login(loginInput(
+        fixture.email,
+        fixture.password,
+        "000000",
+        `198.51.100.${attempt}`,
+        `req_00000000-0000-4000-8000-${String(attempt).padStart(12, "0")}`,
+      ))).rejects.toEqual(new LocalAuthenticationError("authentication_failed"));
+    }
+    settings = {
+      ...settings,
+      automaticSuspensionThreshold: 3,
+      version: 9,
+    };
+    expect(await fixture.worker.execute({
+      run: (database) => database.read((query) => query.get<{
+        status: string;
+        failures: number;
+      }>(`
+        SELECT status,
+          (SELECT count(*) FROM identity_qualifying_authentication_failures
+            WHERE user_id = users.id) AS failures
+        FROM users WHERE id = ?
+      `, [fixture.userId])),
+    })).toEqual({ status: "active", failures: 3 });
+    await expect(fixture.service.login(loginInput(
+      fixture.email,
+      fixture.password,
+      "000000",
+      "198.51.100.4",
+      "req_00000000-0000-4000-8000-000000000004",
+    ))).rejects.toEqual(new LocalAuthenticationError("authentication_failed"));
+    expect(await fixture.worker.execute({
+      run: (database) => database.read((query) => query.get<{
+        status: string;
+        suspension_rule_version: number;
+      }>("SELECT status, suspension_rule_version FROM users WHERE id = ?", [
+        fixture.userId,
+      ])),
+    })).toEqual({ status: "suspended", suspension_rule_version: 9 });
+    fixture.seed.fill(0);
+  });
 });
 
 async function configuredIdentity(
@@ -541,6 +788,7 @@ function securitySettings(
     passwordWindowMs: config.limits.passwordWindowMs,
     totpAttempts: config.limits.totpAttempts,
     totpWindowMs: config.limits.totpWindowMs,
+    automaticSuspensionThreshold: null,
     managementApiAttempts: 120,
     managementApiWindowMs: 60_000,
     searchAttempts: 30,
@@ -581,8 +829,9 @@ function loginInput(
   password: string,
   totp: string,
   source = "127.0.0.1",
+  correlationId = CORRELATION,
 ): Record<string, string> {
-  return { email, password, totp, source, correlationId: CORRELATION };
+  return { email, password, totp, source, correlationId };
 }
 
 function audit(): IdentityAuditContext {

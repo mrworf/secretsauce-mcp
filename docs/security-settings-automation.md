@@ -13,6 +13,8 @@ The durable settings row owns:
 - browser-session and database OAuth access/refresh lifetimes;
 - the default browser step-up mode;
 - login, password, TOTP, management, search, and backup rate windows;
+- optional automatic suspension after 3–20 qualifying local-login TOTP
+  failures;
 - optional inactivity suspension and delayed deactivation; and
 - inactivity-job interval, batch, and wall-time limits.
 
@@ -37,6 +39,17 @@ Reducing a session or OAuth lifetime constrains existing state at its next
 validation. Increasing a lifetime never extends an already issued session or
 grant. Rate changes apply to subsequent checks without extending existing
 counter reset times.
+
+Automatic suspension is disabled by default. When enabled, only a valid
+current password followed by an invalid TOTP in ordinary control login or
+local OAuth adds durable evidence keyed by immutable user UUID. Evidence
+expires after 24 hours. Reaching the threshold suspends even the final active
+superadmin, clears the evidence, advances the user security epoch, and revokes
+browser/restricted sessions and OAuth authority without changing the public
+authentication failure. Successful login/recovery and host-local break glass
+clear that user's evidence; disabling the setting clears all evidence. Lowering
+the threshold never suspends immediately—it is evaluated on the next
+qualifying failure.
 
 Increasing the password minimum or blocklist policy marker advances the
 password-policy version. SecretSauce does not inspect hashes. After a correct
@@ -106,4 +119,3 @@ Administrative audits contain safe setting names/numbers, actor and event IDs,
 justification, versions, and affected counts. They exclude passwords, hashes,
 TOTP seeds/codes, cookies, Authorization data, session/grant/token/reference
 values, request bodies, and blocklist paths or contents.
-

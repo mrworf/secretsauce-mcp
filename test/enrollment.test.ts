@@ -367,6 +367,15 @@ describe("restricted initial local enrollment", () => {
       source: "wrong-password",
       correlationId: CORRELATION,
     })).rejects.toEqual(new EnrollmentError("authentication_failed"));
+    await fixture.worker.execute({
+      run: (database) => database.withOperationalTransaction((transaction) => {
+        transaction.run(`
+          INSERT INTO identity_qualifying_authentication_failures (
+            correlation_id, user_id, occurred_at
+          ) VALUES ('req_00000000-0000-4000-8000-000000000020', ?, ?)
+        `, [fixture.userId, fixture.clock.value]);
+      }),
+    });
     const login = await fixture.service.totpRecoveryLogin({
       email: fixture.email,
       password,
@@ -374,6 +383,11 @@ describe("restricted initial local enrollment", () => {
       correlationId: CORRELATION,
     });
     expect(login.purpose).toBe("totp_enrollment");
+    expect(await fixture.worker.execute({
+      run: (database) => database.read((query) => query.get<{ count: number }>(
+        "SELECT count(*) AS count FROM identity_qualifying_authentication_failures",
+      )?.count ?? -1),
+    })).toBe(0);
     const restricted = await bindRestricted(fixture, login.sessionToken);
     const begun = await fixture.service.beginTotpEnrollment(restricted);
     const replacementSeed = parseTotpEnrollmentUri(begun.uri).seed;

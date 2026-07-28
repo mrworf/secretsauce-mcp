@@ -119,16 +119,39 @@ increasing it never extends an existing session. Logout, account ineligibility,
 authenticator-state change, or user/global security-epoch change invalidates a
 session immediately.
 
-Rate limits use the direct socket source and a keyed account identity. Proxy
-forwarding headers are not trusted. Login, password work, and TOTP work have
-separate windows and concurrency budgets, and public failures do not reveal
-whether an account exists.
+Rate limits use one canonical client source plus a keyed account identity.
+`client_source.mode: direct` is the default and ignores forwarding headers.
+Use `trusted_proxies` with the exact proxy IP/CIDR inventory when a reverse
+proxy removes inbound forwarding headers and writes the selected
+`x_forwarded_for` or RFC `forwarded` header. The resolver walks a trusted chain
+from the server side. `always` trusts the client-most supplied address and is
+spoofable whenever a client can reach the backend or influence the header; it
+exists only for explicitly accepted deployments and produces a startup
+warning. Malformed, oversized, or overlong selected chains fail before
+authentication work.
+
+Login, password work, TOTP work, unauthenticated requests, and expensive
+verification have separate account/source/global windows and concurrency
+budgets shared by control login and local OAuth. Reverse-proxy rate limiting is
+useful defense in depth but does not replace these application ceilings.
+Public failures do not reveal whether an account exists or whether a failure
+qualified for suspension.
 
 In database identity mode, the validated YAML values above seed the durable
 security settings only on first initialization. Supported password, lifetime,
 step-up, abuse-control, and inactivity values are then database-owned. See
 [Security Settings And Automation](security-settings-automation.md) for the
 ownership boundary and runtime effects.
+
+Automatic suspension is disabled by default. A superadmin may set a threshold
+from 3 through 20. Only a valid current password followed by an invalid TOTP in
+ordinary control login or local OAuth counts in the rolling 24-hour window.
+Wrong passwords, unknown/ineligible users, capacity denials, enrollment,
+recovery, replacement, and step-up failures do not count. The threshold
+transition preserves the uniform login failure while atomically suspending the
+identity, advancing its security epoch, revoking its authority, clearing the
+counter, and recording sanitized audit evidence. Successful login or recovery,
+host-local break glass, and disabling the setting clear accumulated failures.
 
 ## Enrollment, recovery, and self-service
 

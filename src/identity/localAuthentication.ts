@@ -121,15 +121,19 @@ export interface LocalMcpAuthenticationProof {
 
 export interface LocalAuthenticationRepositoryOptions {
   now?: () => number;
+  uuid?: () => string;
 }
 
 export class LocalAuthenticationRepository {
   readonly #owner: PersistenceOwner;
   readonly #now: () => number;
+  readonly #uuid: () => string;
 
   constructor(owner: PersistenceOwner, options: LocalAuthenticationRepositoryOptions = {}) {
     this.#owner = owner;
     this.#now = options.now ?? Date.now;
+    const generator = new UuidV7Generator({ now: this.#now });
+    this.#uuid = options.uuid ?? (() => generator.next());
   }
 
   async provisionConfiguredAuthenticator(
@@ -349,6 +353,10 @@ export class LocalAuthenticationRepository {
             input.session.issuedAt,
             input.candidate.userId,
           ]);
+          transaction.run(
+            "DELETE FROM identity_qualifying_authentication_failures WHERE user_id = ?",
+            [input.candidate.userId],
+          );
           recordQualifyingActivity(
             transaction,
             input.candidate.userId,
@@ -441,6 +449,10 @@ export class LocalAuthenticationRepository {
             input.candidate.userId,
             input.session.issuedAt,
           );
+          transaction.run(
+            "DELETE FROM identity_qualifying_authentication_failures WHERE user_id = ?",
+            [input.candidate.userId],
+          );
           return {
             value: undefined,
             auditInput: {
@@ -493,6 +505,148 @@ export class LocalAuthenticationRepository {
         } satisfies AdministrativeAuditEventInput);
       },
     });
+  }
+
+  async recordQualifyingTotpFailure(input: {
+    candidate: EligibleLoginCandidate;
+    correlationId: string;
+    threshold: number;
+    ruleVersion: number;
+  }): Promise<void> {
+    if (
+      !Number.isSafeInteger(input.threshold)
+      || input.threshold < 3
+      || input.threshold > 20
+      || !Number.isSafeInteger(input.ruleVersion)
+      || input.ruleVersion < 1
+    ) throw new LocalAuthenticationError("authentication_unavailable");
+    const eventId = this.#uuid();
+    if (!isUuidV7(eventId)) {
+      throw new LocalAuthenticationError("authentication_unavailable");
+    }
+    try {
+      await this.#owner.execute({
+        run: (database) => database.withGeneratedAdministrativeAuditOutcome((transaction) => {
+          const now = transaction.timestamp();
+          const user = transaction.get<{
+            status: string;
+            role: "superadmin" | "admin" | "user";
+          }>("SELECT status, role FROM users WHERE id = ?", [
+            input.candidate.userId,
+          ]);
+          if (user?.status !== "active") {
+            throw new PersistenceError("authentication_failed");
+          }
+          transaction.run(`
+            DELETE FROM identity_qualifying_authentication_failures
+            WHERE user_id = ? AND occurred_at <= ?
+          `, [input.candidate.userId, Math.max(0, now - 86_400_000)]);
+          const inserted = transaction.run(`
+            INSERT OR IGNORE INTO identity_qualifying_authentication_failures (
+              correlation_id, user_id, occurred_at
+            ) VALUES (?, ?, ?)
+          `, [input.correlationId, input.candidate.userId, now]);
+          const count = transaction.get<{ count: number }>(`
+            SELECT count(*) AS count
+            FROM identity_qualifying_authentication_failures
+            WHERE user_id = ?
+          `, [input.candidate.userId])?.count ?? 0;
+          const suspend = inserted.changes === 1 && count >= input.threshold;
+          if (suspend) {
+            const browser = Number(transaction.run(`
+              UPDATE browser_sessions
+              SET revoked_at = ?, version = version + 1
+              WHERE user_id = ? AND revoked_at IS NULL
+            `, [now, input.candidate.userId]).changes);
+            const restricted = Number(transaction.run(`
+              UPDATE identity_restricted_sessions
+              SET revoked_at = ?, version = version + 1
+              WHERE user_id = ? AND revoked_at IS NULL
+            `, [now, input.candidate.userId]).changes);
+            const updated = transaction.run(`
+              UPDATE users
+              SET status = 'suspended', suspended_at = ?,
+                  suspension_origin = 'manual',
+                  suspension_rule_version = ?,
+                  security_epoch = security_epoch + 1,
+                  version = version + 1, updated_at = ?
+              WHERE id = ? AND status = 'active'
+            `, [
+              now,
+              input.ruleVersion,
+              now,
+              input.candidate.userId,
+            ]);
+            if (updated.changes !== 1) {
+              throw new PersistenceError("authentication_failed");
+            }
+            transaction.run(
+              "DELETE FROM identity_qualifying_authentication_failures WHERE user_id = ?",
+              [input.candidate.userId],
+            );
+            transaction.run(`
+              INSERT INTO identity_invalidation_events (
+                id, user_id, reason, browser_sessions_revoked,
+                restricted_sessions_revoked, created_at, dispatched_at, attempts
+              ) VALUES (?, ?, 'suspension', ?, ?, ?, NULL, 0)
+            `, [eventId, input.candidate.userId, browser, restricted, now]);
+          }
+          const auditInput = {
+              actor: {
+                type: "system",
+                label: "automatic-authentication-suspension",
+                authenticationMethod: "local_password_totp",
+              },
+              action: suspend
+                ? "identity.automatic_suspension"
+                : "identity.login",
+              result: suspend ? "allow" : "deny",
+              target: {
+                type: suspend ? "user" : "authentication",
+                ...(suspend ? { id: input.candidate.userId } : {}),
+                label: suspend
+                  ? `user:${input.candidate.userId}`
+                  : "local-login",
+              },
+              changes: suspend
+                ? [
+                    { field: "status", after: "suspended" },
+                    { field: "security_epoch", after: "incremented" },
+                  ]
+                : [],
+              correlationId: input.correlationId,
+              source: { category: "authentication" },
+              ...(suspend
+                ? {}
+                : { failureCode: "authentication.invalid" }),
+            } satisfies AdministrativeAuditEventInput;
+          return {
+            value: undefined,
+            auditInput,
+          };
+        }),
+      });
+    } catch {
+      throw new LocalAuthenticationError("authentication_unavailable");
+    }
+  }
+
+  async clearQualifyingFailures(userId: string): Promise<void> {
+    if (!isUuidV7(userId)) {
+      throw new LocalAuthenticationError("authentication_unavailable");
+    }
+    try {
+      await this.#owner.execute({
+        run: (database) => database.withOperationalTransaction((transaction) => {
+          transaction.run(
+            "DELETE FROM identity_qualifying_authentication_failures WHERE user_id = ?",
+            [userId],
+          );
+        }),
+      });
+    } catch {
+      throw new LocalAuthenticationError("authentication_unavailable");
+    }
   }
 }
 
@@ -698,6 +852,7 @@ export class LocalAuthenticationService {
       await this.deny(verified.parsed.correlationId, "invalid");
       throw new LocalAuthenticationError("authentication_failed");
     }
+    await this.#repository.clearQualifyingFailures(verified.candidate.userId);
     return {
       userId: verified.candidate.userId,
       role: verified.candidate.role,
@@ -795,6 +950,23 @@ export class LocalAuthenticationService {
       !authenticatorValid ||
       acceptedStep === undefined
     ) {
+      const settings = this.#securitySettings?.();
+      if (
+        eligibleCandidate !== undefined
+        && passwordValid
+        && authenticatorValid
+        && acceptedStep === undefined
+        && settings?.automaticSuspensionThreshold !== null
+        && settings?.automaticSuspensionThreshold !== undefined
+      ) {
+        await this.#repository.recordQualifyingTotpFailure({
+          candidate: eligibleCandidate,
+          correlationId: parsed.correlationId,
+          threshold: settings.automaticSuspensionThreshold,
+          ruleVersion: settings.version,
+        });
+        throw new LocalAuthenticationError("authentication_failed");
+      }
       await this.deny(parsed.correlationId, "invalid");
       throw new LocalAuthenticationError("authentication_failed");
     }

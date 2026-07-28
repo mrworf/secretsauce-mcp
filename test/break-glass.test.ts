@@ -27,6 +27,15 @@ afterEach(async () => {
 describe("host-local break-glass recovery", () => {
   it("recovers an active superadmin by UUID without changing identity or role", async () => {
     const fixture = await configuredIdentity("superadmin", "active");
+    await fixture.worker.execute({
+      run: (database) => database.withOperationalTransaction((transaction) => {
+        transaction.run(`
+          INSERT INTO identity_qualifying_authentication_failures (
+            correlation_id, user_id, occurred_at
+          ) VALUES ('req_00000000-0000-4000-8000-000000000030', ?, ?)
+        `, [fixture.userId, NOW]);
+      }),
+    });
     await fixture.worker.close();
     workers.delete(fixture.worker);
     const marker = "configured-break-glass-marker";
@@ -60,6 +69,8 @@ describe("host-local break-glass recovery", () => {
             AS password_count,
           (SELECT count(*) FROM local_totp_authenticators WHERE user_id = u.id)
             AS totp_count,
+          (SELECT count(*) FROM identity_qualifying_authentication_failures
+            WHERE user_id = u.id) AS qualifying_failure_count,
           (SELECT encoded_hash FROM identity_temporary_passwords WHERE user_id = u.id)
             AS temporary_hash,
           (SELECT count(*) FROM browser_sessions
@@ -86,6 +97,7 @@ describe("host-local break-glass recovery", () => {
       totp_state: "not_configured",
       password_count: 0,
       totp_count: 0,
+      qualifying_failure_count: 0,
       browser_revoked: 1,
       restricted_revoked: 1,
       reason: "break_glass",

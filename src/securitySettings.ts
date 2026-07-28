@@ -26,6 +26,7 @@ export interface SecuritySettings {
   passwordWindowMs: number;
   totpAttempts: number;
   totpWindowMs: number;
+  automaticSuspensionThreshold: number | null;
   managementApiAttempts: number;
   managementApiWindowMs: number;
   searchAttempts: number;
@@ -80,6 +81,7 @@ const COLUMN_BY_KEY: Readonly<Record<MutableSettingKey, string>> = {
   passwordWindowMs: "password_window_ms",
   totpAttempts: "totp_attempts",
   totpWindowMs: "totp_window_ms",
+  automaticSuspensionThreshold: "automatic_suspension_threshold",
   managementApiAttempts: "management_api_attempts",
   managementApiWindowMs: "management_api_window_ms",
   searchAttempts: "search_attempts",
@@ -119,6 +121,7 @@ interface SecuritySettingsRow {
   password_window_ms: number;
   totp_attempts: number;
   totp_window_ms: number;
+  automatic_suspension_threshold: number | null;
   management_api_attempts: number;
   management_api_window_ms: number;
   search_attempts: number;
@@ -185,14 +188,15 @@ export class SecuritySettingsRepository {
               oauth_refresh_inactivity_ms, oauth_refresh_absolute_ms,
               step_up_mode, login_attempts, login_window_ms,
               password_attempts, password_window_ms, totp_attempts,
-              totp_window_ms, management_api_attempts,
+              totp_window_ms, automatic_suspension_threshold,
+              management_api_attempts,
               management_api_window_ms, search_attempts, search_window_ms,
               backup_attempts, backup_window_ms, inactivity_suspension_days,
               suspended_deactivation_days, security_job_interval_ms,
               security_job_batch_size, security_job_wall_time_ms,
               version, created_at, updated_at
             ) VALUES (
-              1, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+              1, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?,
               ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?
             )
           `, seedParameters(validated, now));
@@ -316,6 +320,14 @@ export class SecuritySettingsRepository {
               WHERE singleton = 1
             `, [candidate.passwordPolicyVersion, candidate.updatedAt]);
           }
+          if (
+            current.automaticSuspensionThreshold !== null
+            && candidate.automaticSuspensionThreshold === null
+          ) {
+            transaction.run(
+              "DELETE FROM identity_qualifying_authentication_failures",
+            );
+          }
           const committed = readRow(transaction);
           if (committed === undefined) throw new PersistenceError("database_unavailable");
           const value = rowToSettings(committed);
@@ -390,6 +402,7 @@ export function securitySettingsSeed(config: GatewayConfig): SecuritySettingsSee
     passwordWindowMs: config.identity.limits.passwordWindowMs,
     totpAttempts: config.identity.limits.totpAttempts,
     totpWindowMs: config.identity.limits.totpWindowMs,
+    automaticSuspensionThreshold: null,
     managementApiAttempts: 120,
     managementApiWindowMs: 60_000,
     searchAttempts: 30,
@@ -485,6 +498,7 @@ function validateSettings(settings: SecuritySettings): SecuritySettings {
   bounded(settings.passwordWindowMs, 300_000, 3_600_000);
   bounded(settings.totpAttempts, 3, 10);
   bounded(settings.totpWindowMs, 60_000, 900_000);
+  nullableBounded(settings.automaticSuspensionThreshold, 3, 20);
   bounded(settings.managementApiAttempts, 10, 600);
   bounded(settings.managementApiWindowMs, 60_000, 3_600_000);
   bounded(settings.searchAttempts, 5, 120);
@@ -547,6 +561,7 @@ function readRow(query: PersistenceQuery): SecuritySettingsRow | undefined {
       oauth_refresh_inactivity_ms, oauth_refresh_absolute_ms, step_up_mode,
       login_attempts, login_window_ms, password_attempts, password_window_ms,
       totp_attempts, totp_window_ms, management_api_attempts,
+      automatic_suspension_threshold,
       management_api_window_ms, search_attempts, search_window_ms,
       backup_attempts, backup_window_ms, inactivity_suspension_days,
       suspended_deactivation_days, security_job_interval_ms,
@@ -575,6 +590,7 @@ function rowToSettings(row: SecuritySettingsRow): SecuritySettings {
     passwordWindowMs: row.password_window_ms,
     totpAttempts: row.totp_attempts,
     totpWindowMs: row.totp_window_ms,
+    automaticSuspensionThreshold: row.automatic_suspension_threshold,
     managementApiAttempts: row.management_api_attempts,
     managementApiWindowMs: row.management_api_window_ms,
     searchAttempts: row.search_attempts,

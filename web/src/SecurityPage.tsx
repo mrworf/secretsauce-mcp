@@ -58,6 +58,7 @@ const groups: Array<{
       { key: "password_window_ms", label: "Password window (ms)", min: 300_000, max: 3_600_000 },
       { key: "totp_attempts", label: "TOTP attempts", min: 3, max: 10 },
       { key: "totp_window_ms", label: "TOTP window (ms)", min: 60_000, max: 900_000 },
+      { key: "automatic_suspension_threshold", label: "Suspend after qualifying TOTP failures (blank disables)", min: 3, max: 20, nullable: true },
       { key: "management_api_attempts", label: "Management API attempts", min: 10, max: 600 },
       { key: "management_api_window_ms", label: "Management API window (ms)", min: 60_000, max: 3_600_000 },
       { key: "search_attempts", label: "Search attempts", min: 5, max: 120 },

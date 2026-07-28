@@ -138,6 +138,8 @@ describe("security settings repository", () => {
       { passwordWindowMs: 299_999 },
       { totpAttempts: 11 },
       { totpWindowMs: 59_999 },
+      { automaticSuspensionThreshold: 2 },
+      { automaticSuspensionThreshold: 21 },
       { managementApiAttempts: 9 },
       { managementApiWindowMs: 3_600_001 },
       { searchAttempts: 4 },
@@ -186,6 +188,48 @@ describe("security settings repository", () => {
       justification: "Rollback marker.",
       correlationId: CORRELATION,
     }), "invalid");
+  });
+
+  it("accepts automatic-suspension boundaries and clears durable failures when disabled", async () => {
+    const fixture = await setup("automatic-suspension");
+    const initial = await fixture.repository.initialize(DEFAULT_SEED);
+    const lower = await fixture.repository.update({
+      actor: browserSuperadmin(),
+      expectedVersion: initial.version,
+      patch: { automaticSuspensionThreshold: 3 },
+      justification: "Enable the lower supported threshold.",
+      correlationId: CORRELATION,
+    });
+    expect(lower.automaticSuspensionThreshold).toBe(3);
+    const upper = await fixture.repository.update({
+      actor: browserSuperadmin(),
+      expectedVersion: lower.version,
+      patch: { automaticSuspensionThreshold: 20 },
+      justification: "Use the upper supported threshold.",
+      correlationId: CORRELATION,
+    });
+    await fixture.worker.execute({
+      run: (database) => database.withOperationalTransaction((transaction) => {
+        transaction.run(`
+          INSERT INTO identity_qualifying_authentication_failures (
+            correlation_id, user_id, occurred_at
+          ) VALUES ('req_00000000-0000-4000-8000-000000000010', ?, ?)
+        `, [SUPERADMIN_ID, NOW]);
+      }),
+    });
+    const disabled = await fixture.repository.update({
+      actor: browserSuperadmin(),
+      expectedVersion: upper.version,
+      patch: { automaticSuspensionThreshold: null },
+      justification: "Disable automatic suspension.",
+      correlationId: CORRELATION,
+    });
+    expect(disabled.automaticSuspensionThreshold).toBeNull();
+    expect(await fixture.worker.execute({
+      run: (database) => database.read((query) => query.get<{ count: number }>(
+        "SELECT count(*) AS count FROM identity_qualifying_authentication_failures",
+      )?.count ?? -1),
+    })).toBe(0);
   });
 
   it("allows a live system key to tune only its explicit non-interactive fields", async () => {
@@ -274,6 +318,7 @@ const DEFAULT_SEED: SecuritySettingsSeed = {
   passwordWindowMs: 900_000,
   totpAttempts: 5,
   totpWindowMs: 300_000,
+  automaticSuspensionThreshold: null,
   managementApiAttempts: 120,
   managementApiWindowMs: 60_000,
   searchAttempts: 30,

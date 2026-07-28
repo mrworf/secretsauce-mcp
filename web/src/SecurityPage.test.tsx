@@ -45,6 +45,9 @@ describe("security workspace", () => {
       name: "Security settings",
     })).closest("section")!;
     const scoped = within(panel);
+    expect(scoped.getByLabelText(
+      /^Suspend after qualifying TOTP failures/,
+    )).toHaveValue(null);
     const minimum = scoped.getByLabelText(/^Minimum Unicode characters/);
     await user.clear(minimum);
     await user.type(minimum, "16");
@@ -178,6 +181,7 @@ const SETTINGS: SecuritySettings = {
   password_window_ms: 900_000,
   totp_attempts: 5,
   totp_window_ms: 300_000,
+  automatic_suspension_threshold: null,
   management_api_attempts: 120,
   management_api_window_ms: 60_000,
   search_attempts: 30,

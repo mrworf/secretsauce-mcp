@@ -3000,6 +3000,29 @@ CREATE UNIQUE INDEX migration_remediations_service_idx
   WHERE target_id IS NULL;
 `;
 
+const migration0024 = `
+ALTER TABLE security_settings
+ADD COLUMN automatic_suspension_threshold INTEGER
+  CHECK (
+    automatic_suspension_threshold IS NULL
+    OR automatic_suspension_threshold BETWEEN 3 AND 20
+  );
+
+CREATE TABLE identity_qualifying_authentication_failures (
+  correlation_id TEXT PRIMARY KEY CHECK (
+    length(correlation_id) BETWEEN 36 AND 40
+    AND correlation_id = lower(correlation_id)
+  ),
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  occurred_at INTEGER NOT NULL CHECK (occurred_at >= 0)
+) STRICT;
+
+CREATE INDEX identity_qualifying_failures_user_time_idx
+  ON identity_qualifying_authentication_failures (
+    user_id, occurred_at, correlation_id
+  );
+`;
+
 export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [
   {
     version: 1,
@@ -3115,6 +3138,11 @@ export const PERSISTENCE_MIGRATIONS: readonly PersistenceMigration[] = [
     version: 23,
     name: "v1_migration_foundation",
     sql: migration0023,
+  },
+  {
+    version: 24,
+    name: "automatic_authentication_suspension",
+    sql: migration0024,
   },
 ];
 

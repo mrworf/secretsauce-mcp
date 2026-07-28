@@ -197,6 +197,10 @@ export class LocalCredentialLifecycleRepository {
             "DELETE FROM local_totp_authenticators WHERE user_id = ?",
             [input.target.id],
           );
+          transaction.run(
+            "DELETE FROM identity_qualifying_authentication_failures WHERE user_id = ?",
+            [input.target.id],
+          );
           transaction.run(`
             UPDATE local_authenticator_states
             SET totp_state = 'not_configured', version = version + 1, updated_at = ?
@@ -250,6 +254,10 @@ export class LocalCredentialLifecycleRepository {
           );
           transaction.run(
             "DELETE FROM local_totp_authenticators WHERE user_id = ?",
+            [input.target.id],
+          );
+          transaction.run(
+            "DELETE FROM identity_qualifying_authentication_failures WHERE user_id = ?",
             [input.target.id],
           );
           transaction.run(`

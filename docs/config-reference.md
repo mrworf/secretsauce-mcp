@@ -21,6 +21,54 @@ Sticky sessions do not provide the missing shared atomic capability store: there
 
 The single instance should mount stable read-only built-in OAuth signing keys plus writable persistent audit storage. If built-in OAuth refresh continuity is enabled, mount its hash-only refresh-state path on writable persistent storage and allow only this one process to write it. Opaque `gref_` and `sec_` state remains intentionally ephemeral and must not be placed on a shared filesystem.
 
+## Client source and authentication protection
+
+One client-source decision is shared by the gateway/OAuth and control
+listeners and is made before body parsing, authentication, or rate-limit work:
+
+```yaml
+client_source:
+  mode: trusted_proxies
+  header: x_forwarded_for
+  trusted_proxies:
+    - 192.0.2.10
+    - 2001:db8:100::/48
+```
+
+`direct` is the default, requires an empty `trusted_proxies` list, and ignores
+all forwarding headers. `trusted_proxies` requires at least one canonical IP
+address or CIDR and accepts the selected header only when the immediate peer is
+trusted; the chain is walked from the server side. `header` is
+`x_forwarded_for` (default) or `forwarded`. `always` requires an empty trusted
+list, accepts the client-most selected-header address, and emits a bounded
+startup warning because the value is spoofable unless the operator prevents
+direct backend access and strips/replaces inbound forwarding headers.
+
+Selected headers are limited to 4096 bytes and 32 hops. Malformed, hostname,
+obfuscated, `unknown`, zone-qualified, empty, or ambiguous chains stop the
+request before authentication. IPv4, IPv6, mapped IPv4, and format-valid
+address ports are canonicalized. Nonselected headers and absent selected
+headers do not affect the immediate-peer fallback.
+
+The following application-owned environment settings are canonical nonzero
+decimal integers, except the window which is a canonical whole-minute value
+such as `15m`. Empty, malformed, out-of-range, or inconsistent values stop
+startup without echoing the received value:
+
+| Setting | Default | Allowed |
+| --- | ---: | ---: |
+| `SECRETSAUCE_LOGIN_GLOBAL_ATTEMPTS` | `100` | `20`–`1000` |
+| `SECRETSAUCE_LOGIN_GLOBAL_WINDOW` | `15m` | `5m`–`60m` |
+| `SECRETSAUCE_MAX_UNAUTHENTICATED_INFLIGHT` | `32` | `8`–`128` |
+| `SECRETSAUCE_MAX_UNAUTHENTICATED_INFLIGHT_PER_SOURCE` | `4` | `1`–`16` |
+| `SECRETSAUCE_MAX_PASSWORD_VERIFICATIONS` | `2` | `1`–`8` |
+| `SECRETSAUCE_MAX_PASSWORD_VERIFICATIONS_PER_SOURCE` | `1` | `1`–`4` |
+
+Each per-source ceiling must not exceed its corresponding global ceiling.
+These limits apply across control login and local OAuth in the one supported
+application process. Proxy or load-balancer controls are additional defense,
+not a substitute for the application ceilings.
+
 ## Vault broker
 
 The vault broker uses its own closed YAML document; see

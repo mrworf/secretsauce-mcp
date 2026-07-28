@@ -25,7 +25,7 @@ afterEach(async () => {
 });
 
 describe("global security events", () => {
-  it("forces password change, erases TOTP, invalidates human state, preserves API keys, and replays once", async () => {
+  it("forces password change while retaining TOTP, then separately erases TOTP", async () => {
     const worker = open();
     const identities = new IdentityRepository(worker, { now: () => NOW });
     const actor = await create(identities, "root", "superadmin");
@@ -66,6 +66,16 @@ describe("global security events", () => {
     });
     expect((await events.list()).filter((event) =>
       event.kind === "password_change")).toHaveLength(1);
+    expect(await worker.execute({
+      run: (database) => database.read((query) => query.get<{
+        credentials: number;
+        totp: number;
+      }>(`
+        SELECT
+          (SELECT count(*) FROM local_password_credentials) AS credentials,
+          (SELECT count(*) FROM local_totp_authenticators) AS totp
+      `)),
+    })).toEqual({ credentials: 2, totp: 2 });
 
     const totp = await events.execute({
       kind: "totp_reset",

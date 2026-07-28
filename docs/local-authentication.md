@@ -169,10 +169,19 @@ retrieval endpoint. Confirmation rechecks the current password policy and commit
 password, encrypted TOTP, activation, epoch increment, session revocation,
 temporary-credential invalidation, and audit atomically.
 
-A password reset preserves TOTP. The temporary password enters only the
-restricted password-change flow, whose completion requires the existing TOTP.
-A TOTP reset returns no seed; the active user authenticates with the retained
-permanent password and enrolls TOTP through a restricted recovery session.
+An administrative password reset is compromise recovery: it erases both the
+current password and TOTP, revokes prior authority, moves the identity to
+`enrollment_required`, and displays one temporary password. The temporary
+password is accepted only by the restricted initial-enrollment ceremony, where
+the user must establish a new password and confirm a new TOTP. If it expires,
+the identity remains non-operational until an authorized administrator issues
+another reset.
+
+A separate TOTP-only reset returns no seed; the active user authenticates with
+the retained permanent password and enrolls TOTP through a restricted recovery
+session. Authenticated self-service password change retains the current TOTP
+after verifying it. A system-wide password-change event also retains every TOTP;
+only the separately authorized system-wide TOTP-reset event erases them.
 
 Authenticated users can change their own password or replace TOTP only after
 fresh current-password and current-TOTP verification. Successful changes
@@ -187,11 +196,13 @@ CONFIG_PATH=/absolute/path/to/config.yaml npm run identity:break-glass
 ```
 
 The command requires input and output terminals, accepts no arguments, prompts
-for an existing UUID or email and exact confirmation, and emits a generated
-temporary password once. It preserves UUID/role, moves the account to
+for an existing superadmin UUID or email and exact confirmation, and emits a
+generated temporary password once. Non-superadmin and unknown targets fail
+identically. It preserves UUID and the superadmin role, moves the account to
 `enrollment_required`, erases password/TOTP material, revokes sessions, increments
-the epoch, and audits bounded OS-actor metadata. Do not place the target or any
-credential in command arguments, shell history, logs, tickets, or chat.
+the epoch, clears suspension evidence, revokes OAuth authority, and audits bounded
+OS-actor metadata. Do not place the target or any credential in command
+arguments, shell history, logs, tickets, or chat.
 
 ## Step-up modes
 

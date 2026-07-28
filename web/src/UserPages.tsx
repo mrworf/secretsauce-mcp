@@ -591,6 +591,9 @@ function ConfirmationPanel({
       aria-labelledby="confirmation-heading">
       <h4 id="confirmation-heading" ref={heading} tabIndex={-1}>Confirm {label(action)}</h4>
       <p>This action applies to {user.email}. Server authorization and concurrency checks remain authoritative.</p>
+      {recoveryWarning(action) !== undefined && (
+        <p className="warning-copy">{recoveryWarning(action)}</p>
+      )}
       {action === "role" && (
         <label>New role<select value={nextRole}
           onChange={(event) => setNextRole(event.target.value as UserRole)}>
@@ -630,7 +633,14 @@ function OneTimePanel({
       <div aria-live="assertive" aria-atomic="true">
         <p className="card-kicker">Shown once</p>
         <h2 id="one-time-heading">Temporary password</h2>
-        <p>This value cannot be shown again. Transfer it through an approved channel.</p>
+        <p>
+          This value cannot be shown again. Transfer it through an approved channel.
+          {result.expires_at !== undefined && (
+            <> It expires at <time dateTime={new Date(result.expires_at).toISOString()}>
+              {new Date(result.expires_at).toLocaleString()}
+            </time>.</>
+          )}
+        </p>
         <output>{result.temporary_password}</output>
       </div>
       <div className="button-row">
@@ -680,6 +690,19 @@ function actionsFor(user: ControlUser, actorRole: UserRole): Array<{
 function displayName(user: ControlUser): string {
   const value = `${user.given_name} ${user.family_name}`.trim();
   return value === "" ? user.email : value;
+}
+
+function recoveryWarning(action: UserAction): string | undefined {
+  if (action === "password-reset") {
+    return "This erases the current password and authenticator, revokes active access, and requires complete password and authenticator enrollment.";
+  }
+  if (action === "reactivate") {
+    return "Reactivation erases the suspended account's password and authenticator, revokes prior access, and requires complete enrollment.";
+  }
+  if (action === "restore-enrollment") {
+    return "Restoration issues one temporary password and requires a new password and authenticator before the account can become active.";
+  }
+  return undefined;
 }
 
 function label(value: string): string {

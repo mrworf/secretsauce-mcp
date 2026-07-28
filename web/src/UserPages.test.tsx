@@ -87,6 +87,32 @@ describe("user and profile views", () => {
     expect((await screen.findAllByText("Deactivated")).length).toBeGreaterThan(1);
   });
 
+  it("warns that administrative password reset erases both authenticators", async () => {
+    const user = userEvent.setup();
+    render(<MemoryRouter><UsersPage role="superadmin" api={fakeApi()} /></MemoryRouter>);
+    await screen.findAllByText("target@example.org");
+    await user.click(screen.getByRole("button", { name: "Reset password" }));
+    expect(screen.getByRole("dialog", { name: /Confirm password reset/i }))
+      .toHaveTextContent(
+        "erases the current password and authenticator, revokes active access, and requires complete password and authenticator enrollment",
+      );
+  });
+
+  it("warns that suspended-account reactivation requires complete enrollment", async () => {
+    const user = userEvent.setup();
+    const api = fakeApi();
+    api.listUsers.mockResolvedValue({
+      users: [{ ...TARGET, status: "suspended" }],
+    });
+    render(<MemoryRouter><UsersPage role="superadmin" api={api} /></MemoryRouter>);
+    await screen.findAllByText("target@example.org");
+    await user.click(screen.getByRole("button", { name: "Reactivate" }));
+    expect(screen.getByRole("dialog", { name: /Confirm reactivate/i }))
+      .toHaveTextContent(
+        "erases the suspended account's password and authenticator, revokes prior access, and requires complete enrollment",
+      );
+  });
+
   it("edits only the authenticated profile and links isolated security actions", async () => {
     const user = userEvent.setup();
     const api = fakeApi();

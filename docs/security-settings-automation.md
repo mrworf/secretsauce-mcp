@@ -82,8 +82,10 @@ revokes the same durable human state as manual deactivation.
 The Security workspace shows the next/last run, safe outcome code, and affected
 counts. A superadmin can request a stepped-up run. An expired lease permits
 safe retry after process failure; account predicates make repeated processing
-idempotent. Manual reactivation remains justified and stepped-up, clears the
-automation origin metadata, and is never performed automatically.
+idempotent. Manual reactivation remains justified and stepped-up, erases both
+authenticators, clears the automation origin metadata, and issues one temporary
+password for complete restricted enrollment. It is never performed
+automatically.
 
 ## System-wide authenticator events
 
@@ -91,6 +93,9 @@ Two browser-only superadmin actions are available:
 
 - require every local password credential to complete password change; and
 - erase every local TOTP authenticator and require enrollment again.
+
+The password event retains each current TOTP. TOTP is erased only when the
+separately authorized TOTP-reset event is selected.
 
 Each action requires current global-state concurrency, idempotency,
 justification, its distinct exact acknowledgement, and password/TOTP proof

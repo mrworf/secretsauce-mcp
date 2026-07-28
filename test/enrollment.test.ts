@@ -214,6 +214,20 @@ describe("restricted initial local enrollment", () => {
       issued.temporaryPassword,
       "source-edge",
     ))).rejects.toEqual(new EnrollmentError("authentication_failed"));
+    expect(await credentialState(fixture)).toMatchObject({
+      status: "enrollment_required",
+      password_state: "temporary",
+      totp_state: "not_configured",
+    });
+    const replacement = await fixture.service.issueInitialTemporary(
+      fixture.userId,
+      audit(),
+    );
+    await expect(fixture.service.temporaryLogin(loginInput(
+      fixture.email,
+      replacement.temporaryPassword,
+      "replacement",
+    ))).resolves.toMatchObject({ purpose: "initial_enrollment" });
   });
 
   it("rejects weak passwords and a policy-version change without consuming the ceremony", async () => {

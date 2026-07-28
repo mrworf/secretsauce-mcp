@@ -42,9 +42,9 @@ The API supports:
 
 Use the generated contract at `/api/v2/openapi.json` for exact schemas. Mutable
 resource requests require the current strong `ETag` in `If-Match`. Invitation,
-password reset, TOTP reset, and enrollment restoration additionally require an
-`Idempotency-Key`. Retrying a successful one-time operation never displays its
-temporary password again.
+password reset, TOTP reset, suspended-account reactivation, and enrollment
+restoration additionally require an `Idempotency-Key`. Retrying a successful
+one-time operation never displays its temporary password again.
 
 Sensitive actions require a bounded justification and the configured browser
 step-up. In `five_minutes` mode, complete step-up before retrying the action. In
@@ -61,11 +61,18 @@ password once. Successful temporary authentication advances the identity to
 confirmed TOTP.
 
 Suspension retains password and TOTP material but prevents normal login.
-Reactivation of a suspended account returns it to `active`. Deactivation erases
-password, TOTP, temporary, and pending enrollment material; revokes sessions;
-increments the security epoch; and records durable invalidation. Restoring a
-deactivated account generates a new one-time temporary password and requires
-the complete initial enrollment ceremony.
+Reactivation never returns a suspended account directly to `active`: it erases
+both authenticators, revokes prior authority, clears suspension evidence, moves
+the account to `enrollment_required`, and displays one temporary password.
+Administrative password reset uses the same complete recovery lifecycle.
+Deactivation erases password, TOTP, temporary, and pending enrollment material;
+revokes sessions; increments the security epoch; and records durable
+invalidation. Restoring a deactivated account generates a new one-time temporary
+password and requires the complete initial enrollment ceremony.
+
+Temporary passwords use the configured expiry (72 hours by default). Expiry or
+replay does not reactivate the identity or restore old credentials; an
+authorized administrator must issue a new reset or recovery value.
 
 Changing an email address increments the target security epoch and revokes its
 sessions and durable references. Name-only profile edits do not invalidate

@@ -8,7 +8,7 @@ stateDiagram-v2
   invited --> enrollment_required: temporary password accepted
   enrollment_required --> active: permanent password + confirmed TOTP
   active --> suspended: manual or inactivity
-  suspended --> active: authorized reactivation
+  suspended --> enrollment_required: authorized recovery + temporary password
   active --> deactivated: authorized deactivation
   suspended --> deactivated: authorized/manual automation
   deactivated --> enrollment_required: new temporary password

@@ -277,11 +277,12 @@ through `7d`. `identity.restricted_session_ttl` defaults to `15m` and is bounded
 from `5m` through `30m`. Restricted enrollment cookies never authorize ordinary
 control or MCP routes.
 
-If an existing account cannot authenticate, run the terminal-only
+If a superadmin cannot authenticate, run the terminal-only
 `identity:break-glass` command on the gateway host. It accepts no arguments,
-preserves the selected UUID and role, invalidates active state, erases existing
-authenticators, and displays one new expiring temporary password. Target-not-found
-and reset failures use the same output and never echo the submitted identifier.
+preserves the selected UUID and superadmin role, invalidates active state,
+erases existing authenticators, and displays one new expiring temporary
+password. Non-superadmin, target-not-found, and reset failures use the same
+output and never echo the submitted identifier.
 
 ## Startup diagnostics
 

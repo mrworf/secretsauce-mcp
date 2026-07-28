@@ -2,23 +2,27 @@
 
 ## Protocol
 
-The private protocol is a small fixed binary frame over a Unix-domain socket:
-magic/version, total length, caller enum, operation enum, request UUID, timestamp,
-128-bit nonce, payload length, UTF-8 JSON payload bytes, and a 256-bit HMAC over
-the preceding raw bytes. The payload has an operation-specific closed Zod schema;
-the raw frame, not reserialized JSON, is authenticated. Maximum message size is
-1 MiB except bounded streaming export/import frames. The broker permits at most 32
-connections, 8 concurrent cryptographic operations, and a five-second request
-deadline. Unknown frame flags, fields, versions, callers, operations, stale
-timestamps, duplicate nonces, malformed lengths/UTF-8, and bad MACs are rejected
-before store access.
+The private protocol is authenticated HTTP/1.1 over separate provisioning-status
+and credential Unix-domain sockets. Request HMACs bind the fixed audience and
+version, caller, method, exact origin-form target, selected representation
+headers, exact body digest, request UUID, timestamp, 128-bit nonce, and current
+boot identifier. Authenticated response HMACs bind the caller, boot, request,
+status, representation, and exact body. The store-free readiness handshake is
+the only credential request without an inbound boot identifier.
+
+Operation payloads have closed Zod schemas. Credentials and transfer chunks are
+limited to 64 KiB, archives to 1 GiB, and selections to 10,000 records. The
+broker permits at most eight concurrent cryptographic operations and applies a
+five-second request deadline. Unknown routes or fields, ambiguous targets or
+framing, stale timestamps, duplicate nonces or security headers, malformed
+UTF-8/base64url, wrong boot identifiers, and bad MACs fail before domain/store
+access.
 
 | Caller | Allowed operations |
 | --- | --- |
-| Data plane | `resolve_for_request` |
-| Control plane | `create`, `replace`, `delete`, `metadata` |
-| Backup coordinator | `export_encrypted`, `import_encrypted`, `snapshot`, `restore_snapshot` |
-| Local key CLI | `key_status`, `install_key`, `rewrap`, `retire_key` |
+| Data plane | readiness and `resolve_for_request` |
+| Control plane | readiness, `create`, `replace`, `delete`, `metadata` |
+| Backup coordinator | readiness, `export_encrypted`, `import_encrypted`, `replace_empty` |
 
 The control caller has no resolve or export operation. Backup operations require a
 short-lived authorization record created by a stepped-up interactive superadmin;

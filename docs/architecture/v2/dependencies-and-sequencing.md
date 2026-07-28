@@ -15,7 +15,7 @@ Versions must be pinned through the existing lockfile and reviewed when introduc
 | Password/KDF | `argon2` | Bindings to the reference Argon2 implementation, tested on Node 22 with PHC password strings; native build/prebuild provenance is covered by CI and release review |
 | Encryption/signatures | Node `crypto` and existing `jose` | AES-256-GCM, HMAC, random bytes, OIDC/JWS without another cryptographic toolkit |
 | UUID | `uuid` package UUIDv7 | RFC 9562 IDs on full Node 22 range; parsing stays in Zod |
-| Vault framing | Internal fixed binary header + closed Zod JSON payload | HMAC authenticates raw bytes, avoiding parser canonicalization ambiguity and another protocol dependency |
+| Vault transport | Versioned HTTP/1.1 resources with closed Zod inputs over protected Unix sockets | Canonical request/response HMACs bind exact targets, representations, bodies, callers, and boot identity without a network listener |
 | Archive | `tar-stream` + `zlib` | Streaming entry-by-entry validation; never shell out or unpack blindly |
 | Browser testing | Playwright | Real enrollment, security-header, responsive, and secret-free UI checks |
 | Unit/integration | Existing Vitest | Focused and unchanged full-suite gates |

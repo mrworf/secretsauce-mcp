@@ -25,6 +25,10 @@ import {
 import type { VaultCaller, VaultOperation } from "./protocol.js";
 import type { VaultCredentialBinding, VaultRecordMetadata } from "./recordStore.js";
 import type { VaultBackupSelection } from "./backupSelection.js";
+import {
+  sameVaultSocketEndpoint,
+  validateVaultSocketEndpoint,
+} from "./socketEndpoint.js";
 
 const REQUEST_DEADLINE_MS = 5_000;
 const MAX_RESPONSE_BYTES = 3 * 1024 * 1024;
@@ -34,6 +38,62 @@ const SECRET_MEDIA = "application/vnd.secretsauce.vault-secret+octet-stream";
 export interface VaultClientOptions {
   socketPath: string;
   key: Uint8Array;
+}
+
+export async function readVaultProvisioningStatus(
+  socketPath: string,
+): Promise<"ready" | "preparing" | "configuration_error"> {
+  const endpoint = validateVaultSocketEndpoint(socketPath);
+  return new Promise((resolve, reject) => {
+    const request = httpRequest({
+      socketPath,
+      method: "GET",
+      path: "/v1/status",
+      headers: { host: "localhost" },
+      timeout: REQUEST_DEADLINE_MS,
+      setDefaultHeaders: false,
+    }, (response) => {
+      const chunks: Buffer[] = [];
+      let received = 0;
+      response.on("data", (chunk: Buffer) => {
+        received += chunk.byteLength;
+        if (received > 4096) request.destroy();
+        else chunks.push(chunk);
+      });
+      response.once("end", () => {
+        const body = Buffer.concat(chunks, received);
+        for (const chunk of chunks) chunk.fill(0);
+        try {
+          if (response.statusCode !== 200) throw new Error("unavailable");
+          const parsed = parseJson(body) as Record<string, unknown>;
+          if (
+            !["ready", "preparing", "configuration_error"].includes(
+              String(parsed.state),
+            )
+            || typeof parsed.retry_pending !== "boolean"
+            || Object.keys(parsed).some((key) =>
+              !["state", "retry_pending", "error_category"].includes(key)
+            )
+          ) throw new Error("invalid");
+          resolve(parsed.state as "ready" | "preparing" | "configuration_error");
+        } catch {
+          reject(vaultError("vault_store_unavailable"));
+        } finally {
+          body.fill(0);
+        }
+      });
+    });
+    const fail = (): void => {
+      request.destroy();
+      reject(vaultError("vault_store_unavailable"));
+    };
+    request.once("socket", () => {
+      if (!sameVaultSocketEndpoint(socketPath, endpoint)) fail();
+    });
+    request.once("timeout", fail);
+    request.once("error", fail);
+    request.end();
+  });
 }
 
 export interface ControlCreateInput {
@@ -548,6 +608,7 @@ async function exchange(
   spec: HttpRequestSpec,
   authenticationHeaders: Record<string, string>,
 ): Promise<HttpResponse> {
+  const endpoint = validateVaultSocketEndpoint(socketPath);
   return new Promise<HttpResponse>((resolve, reject) => {
     const chunks: Buffer[] = [];
     let received = 0;
@@ -590,6 +651,9 @@ async function exchange(
           body,
         });
       });
+    });
+    request.once("socket", () => {
+      if (!sameVaultSocketEndpoint(socketPath, endpoint)) fail();
     });
     request.once("timeout", fail);
     request.once("error", fail);

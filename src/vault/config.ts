@@ -12,7 +12,11 @@ const keyId = z.string().regex(/^[a-z][a-z0-9-]{0,62}$/);
 
 const schema = z.object({
   version: z.literal(1),
-  socket: z.object({
+  status_socket: z.object({
+    path: absolutePath,
+    mode: z.union([z.literal(0o600), z.literal(0o660)]).default(0o600),
+  }).strict(),
+  credential_socket: z.object({
     path: absolutePath,
     mode: z.union([z.literal(0o600), z.literal(0o660)]).default(0o600),
   }).strict(),
@@ -34,7 +38,8 @@ const schema = z.object({
 
 export interface VaultConfig {
   version: 1;
-  socket: { path: string; mode: 0o600 | 0o660 };
+  statusSocket: { path: string; mode: 0o600 | 0o660 };
+  credentialSocket: { path: string; mode: 0o600 | 0o660 };
   storeDirectory: string;
   activeRootKey: string;
   rootKeys: ReadonlyMap<string, Buffer>;
@@ -69,7 +74,8 @@ export function validateVaultConfig(raw: unknown): VaultConfig {
   }
 
   const paths = [
-    value.socket.path,
+    value.status_socket.path,
+    value.credential_socket.path,
     value.store_directory,
     ...Object.values(value.root_keys),
     value.caller_keys.data_plane,
@@ -83,7 +89,14 @@ export function validateVaultConfig(raw: unknown): VaultConfig {
   try {
     return {
       version: 1,
-      socket: { path: canonicalPath(value.socket.path), mode: value.socket.mode },
+      statusSocket: {
+        path: canonicalPath(value.status_socket.path),
+        mode: value.status_socket.mode,
+      },
+      credentialSocket: {
+        path: canonicalPath(value.credential_socket.path),
+        mode: value.credential_socket.mode,
+      },
       storeDirectory: canonicalPath(value.store_directory),
       activeRootKey: value.active_root_key,
       rootKeys: new Map(Object.entries(value.root_keys).map(([id, path]) => [id, readVaultKeyFile(path)])),

@@ -40,14 +40,14 @@ and key/socket/store paths reject links, unsafe ownership, or writable modes.
 
 Start the broker with `SECRETSAUCE_VAULT_CONFIG=/config/vault.yaml
 node dist/vault/main.js`. The authenticated health command uses
-`SECRETSAUCE_VAULT_SOCKET` plus `SECRETSAUCE_VAULT_DATA_KEY_FILE` and returns
+`SECRETSAUCE_VAULT_CREDENTIAL_SOCKET` plus `SECRETSAUCE_VAULT_DATA_KEY_FILE` and returns
 only `ready` or `unavailable`. The application control module can use
-`SECRETSAUCE_VAULT_SOCKET` plus
+`SECRETSAUCE_VAULT_CREDENTIAL_SOCKET` plus
 `SECRETSAUCE_VAULT_CONTROL_KEY_FILE`; `/api/v2/health` then includes only
 `checks.vault: ready|unavailable`. Supplying just one variable fails startup
 without echoing either path.
 
-Portable encrypted-backup coordination uses `SECRETSAUCE_VAULT_SOCKET`,
+Portable encrypted-backup coordination uses `SECRETSAUCE_VAULT_CREDENTIAL_SOCKET`,
 `SECRETSAUCE_VAULT_BACKUP_KEY_FILE`, and
 `SECRETSAUCE_VAULT_BACKUP_CAPABILITY_KEY_FILE` as one complete set. The caller
 mounts only those two backup keys and the socket; neither key permits ordinary
@@ -76,7 +76,7 @@ Restore is disabled unless both deployment variables below are set:
 
 Supplying only one variable stops startup with a sanitized configuration error.
 Enabling restore also requires `persistence.database_file` and the complete
-backup-only vault set (`SECRETSAUCE_VAULT_SOCKET`,
+backup-only vault set (`SECRETSAUCE_VAULT_CREDENTIAL_SOCKET`,
 `SECRETSAUCE_VAULT_BACKUP_KEY_FILE`, and
 `SECRETSAUCE_VAULT_BACKUP_CAPABILITY_KEY_FILE`). The recovery key is separate
 from every vault caller, capability, data, and root key.
@@ -119,7 +119,7 @@ requires at least one YAML service. See
 [Persisted runtime authorization](runtime-authorization.md) for activation,
 vault mounts, invalidation, reference, readiness, and rollback constraints.
 
-The database runtime requires `SECRETSAUCE_VAULT_SOCKET`,
+The database runtime requires `SECRETSAUCE_VAULT_CREDENTIAL_SOCKET`,
 `SECRETSAUCE_VAULT_DATA_KEY_FILE`, and
 `SECRETSAUCE_VAULT_RESOLVE_KEY_FILE`. Supplying an incomplete or invalid runtime
 vault setup stops startup. When the control listener is configured, the combined

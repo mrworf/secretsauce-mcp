@@ -1,7 +1,11 @@
 version: 1
 
-socket:
-  path: /run/secretsauce-vault/vault.sock
+status_socket:
+  path: /run/secretsauce-vault/status.sock
+  mode: 432 # 0660
+
+credential_socket:
+  path: /run/secretsauce-vault/credential.sock
   mode: 432 # 0660
 
 store_directory: /var/lib/secretsauce/vault

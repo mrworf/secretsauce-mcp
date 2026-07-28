@@ -26,7 +26,7 @@ export function createControlVaultReadiness(
 ): VaultReadinessHandle | undefined {
   return createReadiness(
     "control",
-    environment.SECRETSAUCE_VAULT_SOCKET,
+    environment.SECRETSAUCE_VAULT_CREDENTIAL_SOCKET,
     environment.SECRETSAUCE_VAULT_CONTROL_KEY_FILE,
   );
 }
@@ -36,7 +36,7 @@ export function createDataVaultReadiness(
 ): VaultReadinessHandle | undefined {
   return createReadiness(
     "data",
-    environment.SECRETSAUCE_VAULT_SOCKET,
+    environment.SECRETSAUCE_VAULT_CREDENTIAL_SOCKET,
     environment.SECRETSAUCE_VAULT_DATA_KEY_FILE,
   );
 }
@@ -44,7 +44,7 @@ export function createDataVaultReadiness(
 export function createBackupVaultAccess(
   environment: NodeJS.ProcessEnv = process.env,
 ): VaultBackupAccess | undefined {
-  const socketPath = environment.SECRETSAUCE_VAULT_SOCKET;
+  const socketPath = environment.SECRETSAUCE_VAULT_CREDENTIAL_SOCKET;
   const callerKeyFile = environment.SECRETSAUCE_VAULT_BACKUP_KEY_FILE;
   const capabilityKeyFile =
     environment.SECRETSAUCE_VAULT_BACKUP_CAPABILITY_KEY_FILE;

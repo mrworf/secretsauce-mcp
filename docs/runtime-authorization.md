@@ -46,7 +46,7 @@ cutover.
 The database stores credential metadata, an opaque vault locator, and a
 generation—not credential values. The gateway process needs only:
 
-- `SECRETSAUCE_VAULT_SOCKET`
+- `SECRETSAUCE_VAULT_CREDENTIAL_SOCKET`
 - `SECRETSAUCE_VAULT_DATA_KEY_FILE`
 - `SECRETSAUCE_VAULT_RESOLVE_KEY_FILE`
 
@@ -94,4 +94,3 @@ writable audit volume, database durability, vault durability, and invalidation
 processing. Runtime audits contain immutable IDs or safe names and never raw
 credentials, opaque references, request bodies, Authorization headers, cookies,
 or downstream response bodies.
-

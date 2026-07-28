@@ -104,7 +104,7 @@ stale, duplicate, or extra records fail the export.
 Credential-less exports do not require backup vault access. Encrypted exports
 require all three variables below as a complete set:
 
-- `SECRETSAUCE_VAULT_SOCKET`
+- `SECRETSAUCE_VAULT_CREDENTIAL_SOCKET`
 - `SECRETSAUCE_VAULT_BACKUP_KEY_FILE`
 - `SECRETSAUCE_VAULT_BACKUP_CAPABILITY_KEY_FILE`
 

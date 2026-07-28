@@ -15,8 +15,11 @@ export async function startVaultBroker(configFile: string): Promise<VaultBrokerS
     backupKey: config.capabilityKeys.backup,
   });
   const broker = new VaultBrokerServer({
-    socketPath: config.socket.path,
-    socketMode: config.socket.mode,
+    statusSocketPath: config.statusSocket.path,
+    credentialSocketPath: config.credentialSocket.path,
+    socketMode: config.credentialSocket.mode,
+    statusSocketMode: config.statusSocket.mode,
+    credentialSocketMode: config.credentialSocket.mode,
     callerKeys: {
       data_plane: config.callerKeys.dataPlane,
       control_plane: config.callerKeys.controlPlane,

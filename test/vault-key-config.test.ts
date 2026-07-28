@@ -76,7 +76,8 @@ describe("vault key files and configuration", () => {
     const config = loadVaultConfig(fixture.configFile);
 
     expect(config.version).toBe(1);
-    expect(config.socket.mode).toBe(0o600);
+    expect(config.statusSocket.mode).toBe(0o600);
+    expect(config.credentialSocket.mode).toBe(0o600);
     expect(config.rootKeys.get("root-primary")).toHaveLength(32);
     expect(config.callerKeys.dataPlane).not.toEqual(config.callerKeys.controlPlane);
     expect(config.capabilityKeys.resolve).not.toEqual(config.capabilityKeys.backup);
@@ -85,7 +86,9 @@ describe("vault key files and configuration", () => {
   it("rejects unknown fields, relative/colliding paths, missing active roots, and unsafe key material", () => {
     for (const mutate of [
       (raw: Record<string, any>) => { raw.unexpected = true; },
-      (raw: Record<string, any>) => { raw.socket.path = "vault.sock"; },
+      (raw: Record<string, any>) => {
+        raw.credential_socket.path = "vault.sock";
+      },
       (raw: Record<string, any>) => { raw.active_root_key = "root-missing"; },
       (raw: Record<string, any>) => { raw.capability_keys.resolve = raw.caller_keys.data_plane; },
     ]) {
@@ -123,7 +126,14 @@ function vaultFixture(): { configFile: string; raw: Record<string, any> } {
   }));
   const raw = {
     version: 1,
-    socket: { path: join(directory, "run", "vault.sock"), mode: 0o600 },
+    status_socket: {
+      path: join(directory, "run", "status.sock"),
+      mode: 0o600,
+    },
+    credential_socket: {
+      path: join(directory, "run", "credential.sock"),
+      mode: 0o600,
+    },
     store_directory: join(directory, "store"),
     active_root_key: "root-primary",
     root_keys: { "root-primary": paths.root },

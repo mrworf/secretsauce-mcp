@@ -113,7 +113,7 @@ npm run migrate:v1 -- commit --resolve-credentials
 Resolved commit additionally needs the control-only vault caller and the
 complete restore recovery deployment:
 
-- `SECRETSAUCE_VAULT_SOCKET`;
+- `SECRETSAUCE_VAULT_CREDENTIAL_SOCKET`;
 - `SECRETSAUCE_VAULT_CONTROL_KEY_FILE`;
 - `SECRETSAUCE_VAULT_BACKUP_KEY_FILE`;
 - `SECRETSAUCE_VAULT_BACKUP_CAPABILITY_KEY_FILE`;

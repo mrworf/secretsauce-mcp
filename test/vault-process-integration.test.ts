@@ -39,13 +39,12 @@ describe("standalone vault broker process", () => {
     try {
       const healthOutput: string[] = [];
       await expect(runVaultHealthCli({
-        SECRETSAUCE_VAULT_SOCKET: fixture.socketPath,
-        SECRETSAUCE_VAULT_DATA_KEY_FILE: fixture.raw.caller_keys.data_plane,
+        SECRETSAUCE_VAULT_STATUS_SOCKET: `${fixture.socketPath}.status`,
       }, (value) => healthOutput.push(value))).resolves.toBe(0);
       expect(healthOutput).toEqual(['{"status":"ready"}\n']);
       expect(healthOutput.join("")).not.toContain(fixture.socketPath);
       const controlReadiness = createControlVaultReadiness({
-        SECRETSAUCE_VAULT_SOCKET: fixture.socketPath,
+        SECRETSAUCE_VAULT_CREDENTIAL_SOCKET: fixture.socketPath,
         SECRETSAUCE_VAULT_CONTROL_KEY_FILE: fixture.raw.caller_keys.control_plane,
       })!;
       await expect(controlReadiness.readiness()).resolves.toBe("ready");
@@ -100,6 +99,12 @@ describe("standalone vault broker process", () => {
         archive,
         selection,
       )).resolves.toEqual({ replaced: true, recordCount: 1 });
+      const priorBootCapability = issueResolve(
+        fixture,
+        created.locator,
+        1,
+      );
+      const priorBootId = data.bootId;
       archive.fill(0);
       passphrase.fill(0);
       control.close();
@@ -111,8 +116,7 @@ describe("standalone vault broker process", () => {
       expect(existsSync(fixture.socketPath)).toBe(false);
       const stoppedOutput: string[] = [];
       await expect(runVaultHealthCli({
-        SECRETSAUCE_VAULT_SOCKET: fixture.socketPath,
-        SECRETSAUCE_VAULT_DATA_KEY_FILE: fixture.raw.caller_keys.data_plane,
+        SECRETSAUCE_VAULT_STATUS_SOCKET: `${fixture.socketPath}.status`,
       }, (value) => stoppedOutput.push(value))).resolves.toBe(1);
       expect(stoppedOutput).toEqual(['{"status":"unavailable"}\n']);
 
@@ -120,8 +124,16 @@ describe("standalone vault broker process", () => {
       const restartedControl = new ControlVaultClient({ socketPath: fixture.socketPath, key: fixture.keys.control });
       const restartedData = new DataVaultClient({ socketPath: fixture.socketPath, key: fixture.keys.data });
       await restartedData.readiness();
+      expect(restartedData.bootId).not.toBe(priorBootId);
       fixture.authority.bindBootId(restartedData.bootId!);
       expect(await restartedControl.metadata(created.locator, fixture.binding)).toEqual(created.metadata);
+      await expect(restartedData.resolveForRequest({
+        capability: priorBootCapability,
+        locator: created.locator,
+        generation: 1,
+        binding: fixture.binding,
+      }, (value) => value.toString()))
+        .rejects.toMatchObject({ code: "vault_capability_invalid" });
       await expect(restartedData.resolveForRequest({
         capability: issueResolve(fixture, created.locator, 1),
         locator: created.locator,
@@ -156,10 +168,10 @@ describe("standalone vault broker process", () => {
 
   it("rejects partial or relative readiness configuration without echoing inputs", () => {
     for (const environment of [
-      { SECRETSAUCE_VAULT_SOCKET: "/private/runtime/vault.sock" },
+      { SECRETSAUCE_VAULT_CREDENTIAL_SOCKET: "/private/runtime/vault.sock" },
       { SECRETSAUCE_VAULT_CONTROL_KEY_FILE: "/private/keys/control.key" },
       {
-        SECRETSAUCE_VAULT_SOCKET: "relative.sock",
+        SECRETSAUCE_VAULT_CREDENTIAL_SOCKET: "relative.sock",
         SECRETSAUCE_VAULT_CONTROL_KEY_FILE: "/private/keys/control.key",
       },
     ]) {
@@ -180,7 +192,7 @@ describe("standalone vault broker process", () => {
   it("mounts backup-only caller and capability keys only as a complete set", () => {
     const fixture = processFixture();
     const access = createBackupVaultAccess({
-      SECRETSAUCE_VAULT_SOCKET: fixture.socketPath,
+      SECRETSAUCE_VAULT_CREDENTIAL_SOCKET: fixture.socketPath,
       SECRETSAUCE_VAULT_BACKUP_KEY_FILE:
         fixture.raw.caller_keys.backup,
       SECRETSAUCE_VAULT_BACKUP_CAPABILITY_KEY_FILE:
@@ -193,12 +205,12 @@ describe("standalone vault broker process", () => {
 
     for (const environment of [
       {
-        SECRETSAUCE_VAULT_SOCKET: fixture.socketPath,
+        SECRETSAUCE_VAULT_CREDENTIAL_SOCKET: fixture.socketPath,
         SECRETSAUCE_VAULT_BACKUP_KEY_FILE:
           fixture.raw.caller_keys.backup,
       },
       {
-        SECRETSAUCE_VAULT_SOCKET: "relative.sock",
+        SECRETSAUCE_VAULT_CREDENTIAL_SOCKET: "relative.sock",
         SECRETSAUCE_VAULT_BACKUP_KEY_FILE:
           fixture.raw.caller_keys.backup,
         SECRETSAUCE_VAULT_BACKUP_CAPABILITY_KEY_FILE:
@@ -251,7 +263,8 @@ function processFixture(): ProcessFixture {
   const socketPath = join(run, "vault.sock");
   const raw = {
     version: 1,
-    socket: { path: socketPath, mode: 0o600 },
+    status_socket: { path: `${socketPath}.status`, mode: 0o600 },
+    credential_socket: { path: socketPath, mode: 0o600 },
     store_directory: join(directory, "store"),
     active_root_key: "root-a",
     root_keys: { "root-a": keyPaths.root },

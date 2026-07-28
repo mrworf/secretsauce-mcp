@@ -10,6 +10,11 @@ describe("vault deployment boundary", () => {
     expect(vault.command).toEqual(["node", "dist/vault/main.js"]);
     expect(vault.ports).toBeUndefined();
     expect(vault.environment.SECRETSAUCE_VAULT_CONFIG).toBe("/config/vault.yaml");
+    expect(vault.environment.SECRETSAUCE_VAULT_STATUS_SOCKET)
+      .toBe("/run/secretsauce-vault/status.sock");
+    expect(vault.environment).not.toHaveProperty(
+      "SECRETSAUCE_VAULT_DATA_KEY_FILE",
+    );
     expect(vault.healthcheck.test).toEqual(["CMD", "node", "dist/vault/healthCli.js"]);
     expect(vault.volumes).toContain("./vault-keys:/run/vault-keys:ro");
     expect(vault.volumes).toContain("./vault-store:/var/lib/secretsauce/vault");
@@ -28,6 +33,8 @@ describe("vault deployment boundary", () => {
     expect(data.volumes).toContain("./vault-keys/backup-capability.key:/run/vault-caller/backup-capability.key:ro");
     expect(data.volumes).toContain("./vault-runtime:/run/secretsauce-vault:ro");
     expect(data.environment.SECRETSAUCE_VAULT_DATA_KEY_FILE).toBe("/run/vault-caller/data-plane.key");
+    expect(data.environment.SECRETSAUCE_VAULT_CREDENTIAL_SOCKET)
+      .toBe("/run/secretsauce-vault/credential.sock");
     expect(data.environment.SECRETSAUCE_VAULT_CONTROL_KEY_FILE)
       .toBe("/run/vault-caller/control-plane.key");
     expect(data.environment.SECRETSAUCE_VAULT_RESOLVE_KEY_FILE)
@@ -46,8 +53,12 @@ describe("vault deployment boundary", () => {
     const source = readFileSync("examples/vault.yaml", "utf8");
     const config = parse(source) as any;
     expect(config.version).toBe(1);
-    expect(config.socket.path).toBe("/run/secretsauce-vault/vault.sock");
-    expect(config.socket.mode).toBe(0o660);
+    expect(config.status_socket.path)
+      .toBe("/run/secretsauce-vault/status.sock");
+    expect(config.credential_socket.path)
+      .toBe("/run/secretsauce-vault/credential.sock");
+    expect(config.status_socket.mode).toBe(0o660);
+    expect(config.credential_socket.mode).toBe(0o660);
     expect(source).not.toMatch(/[A-Za-z0-9_-]{43}/);
     expect(source).not.toContain("Authorization");
   });

@@ -48,6 +48,8 @@ export interface VaultBrokerOptions {
   credentialSocketPath?: string;
   statusSocketPath?: string;
   socketMode: 0o600 | 0o660;
+  statusSocketMode?: 0o600 | 0o660;
+  credentialSocketMode?: 0o600 | 0o660;
   callerKeys: Readonly<Record<VaultCaller, Uint8Array>>;
   capabilityAuthority: VaultCapabilityAuthority;
   store: VaultRecordStore;
@@ -64,7 +66,8 @@ interface AuthenticatedRequest {
 export class VaultBrokerServer {
   readonly #credentialSocketPath: string;
   readonly #statusSocketPath: string;
-  readonly #socketMode: 0o600 | 0o660;
+  readonly #statusSocketMode: 0o600 | 0o660;
+  readonly #credentialSocketMode: 0o600 | 0o660;
   readonly #callerKeys: Readonly<Record<VaultCaller, Buffer>>;
   readonly #domain: VaultDomainHandler;
   readonly #operationGate?: () => Promise<void>;
@@ -82,7 +85,9 @@ export class VaultBrokerServer {
     if (this.#statusSocketPath === this.#credentialSocketPath) {
       throw vaultError("vault_config_invalid");
     }
-    this.#socketMode = options.socketMode;
+    this.#statusSocketMode = options.statusSocketMode ?? options.socketMode;
+    this.#credentialSocketMode =
+      options.credentialSocketMode ?? options.socketMode;
     this.#callerKeys = {
       data_plane: copyKey(options.callerKeys.data_plane),
       control_plane: copyKey(options.callerKeys.control_plane),
@@ -115,9 +120,9 @@ export class VaultBrokerServer {
     this.#statusServer = status;
     try {
       await status.listen({ path: this.#statusSocketPath });
-      secureSocket(this.#statusSocketPath, this.#socketMode);
+      secureSocket(this.#statusSocketPath, this.#statusSocketMode);
       await credential.listen({ path: this.#credentialSocketPath });
-      secureSocket(this.#credentialSocketPath, this.#socketMode);
+      secureSocket(this.#credentialSocketPath, this.#credentialSocketMode);
     } catch {
       await this.close();
       throw vaultError("vault_store_unavailable");

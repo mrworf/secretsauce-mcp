@@ -99,16 +99,16 @@ be independently proven first.
 
 ## Acceptance criteria
 
-- [ ] All first-party vault operations use the canonical private REST contract
+- [x] All first-party vault operations use the canonical private REST contract
       and preserve existing least-privilege behavior.
-- [ ] Separate status and credential sockets enforce their distinct lifecycle,
+- [x] Separate status and credential sockets enforce their distinct lifecycle,
       authentication, and schema contracts.
-- [ ] Credential clients verify request-correlated response authentication and
+- [x] Credential clients verify request-correlated response authentication and
       current boot identity before parsing any body.
-- [ ] Negative protocol and caller tests prove rejection before domain/store
+- [x] Negative protocol and caller tests prove rejection before domain/store
       access.
-- [ ] No TCP/HTTPS listener or remote-vault configuration ships in v2.1.
-- [ ] OpenAPI, build, full-suite, process, and secret-scan gates pass.
+- [x] No TCP/HTTPS listener or remote-vault configuration ships in v2.1.
+- [x] OpenAPI, build, full-suite, process, and secret-scan gates pass.
 
 ## Planning handoff
 

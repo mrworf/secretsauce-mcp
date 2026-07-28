@@ -17,7 +17,12 @@ import {
 } from "../src/vault/backupSelection.js";
 import { VaultCapabilityAuthority } from "../src/vault/capabilities.js";
 import { VaultBrokerServer } from "../src/vault/broker.js";
-import { BackupVaultClient, ControlVaultClient, DataVaultClient } from "../src/vault/client.js";
+import {
+  BackupVaultClient,
+  ControlVaultClient,
+  DataVaultClient,
+  readVaultProvisioningStatus,
+} from "../src/vault/client.js";
 import { VaultRecordStore, type VaultCredentialBinding } from "../src/vault/recordStore.js";
 
 describe("isolated vault broker and typed clients", () => {
@@ -27,6 +32,9 @@ describe("isolated vault broker and typed clients", () => {
     try {
       expect(lstatSync(fixture.socketPath).isSocket()).toBe(true);
       expect(lstatSync(fixture.socketPath).mode & 0o777).toBe(0o600);
+      expect(lstatSync(`${fixture.socketPath}.status`).isSocket()).toBe(true);
+      expect(await readVaultProvisioningStatus(`${fixture.socketPath}.status`))
+        .toBe("ready");
       const created = await fixture.control.create({
         binding: fixture.binding,
         secret,

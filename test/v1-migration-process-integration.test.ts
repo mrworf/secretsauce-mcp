@@ -146,7 +146,8 @@ async function setup() {
   const configFile = join(directory, "vault.yaml");
   writeFileSync(configFile, JSON.stringify({
     version: 1,
-    socket: { path: socketPath, mode: 0o600 },
+    status_socket: { path: `${socketPath}.status`, mode: 0o600 },
+    credential_socket: { path: socketPath, mode: 0o600 },
     store_directory: join(directory, "store"),
     active_root_key: "root-a",
     root_keys: { "root-a": keyFiles.root },

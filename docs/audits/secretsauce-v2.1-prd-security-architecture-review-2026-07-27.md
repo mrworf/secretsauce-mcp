@@ -19,6 +19,10 @@
 - **Decision update:** On 2026-07-27, the product owner resolved `PRD-005` with
   a mechanism-neutral conditional-mutation invariant: current reachability and
   authorization must still hold when revocation is decided.
+- **Decision update:** On 2026-07-27, the product owner resolved `PRD-006` with
+  direct, enumerated-trusted-proxy, and explicit trust-all source modes. The
+  trust-all mode is an accepted operator risk for unknown or changing proxy
+  identities.
 
 ## Scope
 
@@ -60,10 +64,12 @@ single-operator deployment: readers of the current line are in the same trust
 domain as infrastructure administrators, and the secret is invalid after
 successful enrollment or restart. Scoped grant revocation is also settled:
 authorization and reachability must hold at the mutation boundary, without
-mandating SQL or a particular persistence mechanism. Three additional decisions
-should be made before milestone planning: define trusted proxy/source
-derivation, define logout behavior when durable revocation or audit fails, and
-correct the document's premature readiness declaration.
+mandating SQL or a particular persistence mechanism. Client-source derivation
+now defaults to the direct peer, supports enumerated trusted proxies, and offers
+an explicit trust-all forwarding mode whose spoofing risk the operator accepts.
+Two additional decisions should be made before milestone planning: define logout
+behavior when durable revocation or audit fails and correct the document's
+premature readiness declaration.
 
 No confirmed vulnerability exists merely because these requirements are
 unimplemented. Implementing the current text literally would, however, either
@@ -99,7 +105,7 @@ individual implementers.
 | PRD-003 | Blocker | Security / Data safety | Fresh-versus-retained-state decision is incomplete | Add authoritative state matrix and tests |
 | PRD-004 | Accepted risk | Security / Operations | Bootstrap log access delegates initial-enrollment authority | Accepted and documented |
 | PRD-005 | Resolved | Authorization | Scoped grant revocation could use stale reachability or authorization | Require a mechanism-neutral conditional mutation and race tests |
-| PRD-006 | Required | Security / Operations | Source identity is undefined behind a reverse proxy | Define trusted-proxy contract |
+| PRD-006 | Resolved with accepted-risk mode | Security / Operations | Source identity was undefined behind a reverse proxy | Define direct, trusted-proxy, and explicit trust-all contracts |
 | PRD-007 | Required | Security / UX | Logout failure behavior is externally observable but unsettled | Make a product decision |
 | PRD-008 | Required | Governance | “Implementation-ready” conflicts with unresolved mandatory gates | Change readiness declaration |
 
@@ -343,22 +349,22 @@ negative concurrency test must remove the admin's required service scope between
 list and revoke; revocation must change no protected state and target existence
 must remain undisclosed.
 
-### PRD-006: Direct-source identity is undefined behind reverse proxies
+### PRD-006: Client source uses explicit proxy trust modes
 
 - **Category:** security and operations contract gap
-- **Priority:** required before deployment/API design
+- **Priority:** resolved by product contract
 - **CVSS v3.1:** not applicable without a deployment configuration
-- **Affected requirements:** `ABUSE-001`, `ABUSE-002`, browser-session metadata
+- **Affected requirements:** `ABUSE-001`, `ABUSE-002`, `SOURCE-001` through
+  `SOURCE-009`, and browser-session metadata
 
 #### Evidence
 
-The PRD relies on direct-source rate limits and coarse source-network metadata
-(`docs/prd/secretsauce-v2.1-prd.md:580-590`,
-`docs/prd/secretsauce-v2.1-prd.md:724-741`). The v2 architecture permits the
-listeners to run behind reverse proxies
-(`docs/architecture/v2/system-architecture.md:36-41`), while the current control
-server deliberately sets `trustProxy: false`
-(`src/control/server.ts:263-269`).
+At review time, the PRD relied on direct-source rate limits and coarse
+source-network metadata without defining proxy behavior. The v2 architecture
+permits the listeners to run behind reverse proxies, while the current control
+server deliberately sets `trustProxy: false`. The PRD now defines the direct,
+enumerated-proxy, and explicit trust-all modes independently of that current
+implementation.
 
 #### Risk
 
@@ -367,15 +373,28 @@ address, producing shared throttling and misleading session metadata. Blindly
 trusting forwarding headers would instead let remote clients spoof source
 identity and evade per-source controls.
 
-#### Required change
+#### Product-owner decision
 
-Define whether the supported Compose path receives client traffic directly or
-through an enumerated trusted proxy. If proxies are supported, specify trusted
-proxy identities/hops, canonical address selection, malformed/multiple-header
-rejection, IPv4-mapped IPv6 handling, and the exact source used for both limits
-and display metadata. Keep caller-supplied forwarding headers untrusted unless
-the immediate peer is configured as trusted. Add positive and negative proxy
-chain tests.
+The default source is the direct socket peer. An enumerated trusted-proxy mode
+accepts a selected forwarding-header format only from configured immediate
+peers and derives one canonical address through the trusted chain. A separate
+explicit `always` mode accepts the client-most forwarded address without
+matching the peer so installations with unknown or changing proxy identities
+remain supported.
+
+`always` is an accepted operator risk, not a secure inference. If direct access
+is possible or the proxy does not overwrite or sanitize client-supplied
+forwarding values, a client can spoof per-source limits and displayed source
+metadata. The mode must be host-local, default-off, visibly warned at startup,
+and documented with those preconditions. Non-source account, password, TOTP,
+global, and concurrency controls remain active.
+
+All modes use the same canonical address for security controls and coarse
+metadata. Consumed header chains are bounded and accept only unambiguous IP
+literals; malformed chains fail before authentication work, equivalent address
+forms normalize identically, and raw chains are not retained. Positive and
+negative tests cover direct spoofing, trusted and untrusted peers, deliberate
+trust-all spoofability, malformed chains, and canonicalization.
 
 ### PRD-007: Logout behavior under audit/persistence failure is unsettled
 
@@ -518,7 +537,9 @@ only happy-path UI behavior.
    configured-state atomicity.
 3. **Change before data-model review:** define the installation identity and
    retained-state matrix across database, vault, key, and audit stores.
-4. **Change before security approval:** define trusted-proxy source derivation.
+4. **Resolved security decision:** direct, enumerated-trusted-proxy, and explicit
+   trust-all source modes define canonical source derivation; trust-all spoofing
+   risk is accepted by the operator.
 5. **Change before UX approval:** settle logout failure behavior and wording.
 6. **Change before milestone planning:** mark implementation readiness as
    conditional on all mandatory reviews and blocker closure.
@@ -579,8 +600,9 @@ already explicit. I would approve the PRD as a strong draft ready for focused
 revision, not as an implementation-ready contract.
 
 Resolve PRD-001 through PRD-003 before architecture or data/API approval.
-PRD-004 is accepted and documented, and PRD-005 is resolved by the
-conditional-mutation contract. Resolve PRD-006 through PRD-008 before milestone
+PRD-004 is accepted and documented, PRD-005 is resolved by the
+conditional-mutation contract, and PRD-006 is resolved with an explicit
+accepted-risk trust-all proxy mode. Resolve PRD-007 and PRD-008 before milestone
 planning. After those changes, the existing setup states, enrollment model,
 opaque sessions, revocation semantics, and single-instance deployment are
 suitable foundations; they do not need broad redesign.

@@ -173,6 +173,7 @@ Version 2.1 does not provide:
 | Admin | Retains existing service-scoped user authority and gains only the scoped agent-connection authority defined here. |
 | Superadmin | May manage global security settings and all browser sessions and OAuth agent connections, subject to step-up and audit. |
 | OIDC provider | Owns external authentication, MFA assurance, and failed-attempt handling for linked external identities. |
+| Reverse proxy | Optionally supplies client-source information under the host-local source-resolution policy. It is trusted only as configured; `always` mode deliberately treats forwarding information from every immediate peer as authoritative. |
 | Host-local break-glass operator | Has direct host authority to reset and reactivate a superadmin through the restricted enrollment flow. |
 | Provisioning coordinator | Determines the required application-owned key set and advances setup state only after all enabled services validate. |
 | SecretSauce service | Generates only its own configured application key material and reports bounded provisioning state. |
@@ -685,6 +686,48 @@ limited without rolling back enrollment.
   rule, but manual suspension protections remain unchanged.
 - `ABUSE-014` OIDC-provider failure counting, lockout, and suspension remain the
   provider's responsibility.
+- `SOURCE-001` SecretSauce must derive one canonical client source for each
+  request and use it consistently for direct-source limits, concurrency
+  controls, and coarse browser-session source metadata.
+- `SOURCE-002` Host-local deployment configuration must expose
+  `client_source.mode` as `direct`, `trusted_proxies`, or `always`. The default
+  must be `direct`. This setting must not be writable through browser, control,
+  OAuth, MCP, or remote CLI interfaces.
+- `SOURCE-003` In `direct` mode, the immediate socket peer must be the canonical
+  source and all forwarding headers must be ignored.
+- `SOURCE-004` In `trusted_proxies` mode, `client_source.trusted_proxies` must
+  contain at least one valid IP address or CIDR. The selected forwarding header
+  may be used only when the immediate socket peer matches that set. Source
+  derivation must walk the parsed client-to-server chain from the server side,
+  skip configured trusted proxy hops, and select the first untrusted hop; if
+  every hop is trusted, it must select the client-most supplied hop.
+- `SOURCE-005` In `always` mode, the client-most address in the selected
+  forwarding header must be treated as authoritative regardless of the
+  immediate peer. This mode intentionally supports proxies whose identity is
+  unknown or changes, but it transfers responsibility for preventing direct
+  access and for overwriting or sanitizing client-supplied forwarding values to
+  the operator. Startup and operator documentation must warn that otherwise a
+  client can spoof source limits and displayed source metadata. Account,
+  password, TOTP, global, and expensive-work concurrency controls remain
+  enforced.
+- `SOURCE-006` `client_source.header` must select exactly one supported format:
+  `x_forwarded_for` for `X-Forwarded-For` or `forwarded` for RFC `Forwarded`.
+  The default must be `x_forwarded_for`. Nonselected forwarding headers must not
+  affect source derivation.
+- `SOURCE-007` In `trusted_proxies` or `always` mode, an absent selected header
+  must fall back to the immediate socket peer. A present selected header must
+  be no larger than 4096 bytes, contain no more than 32 hops, and yield one
+  unambiguous nonempty chain of IP literals. Malformed, oversized, overlong,
+  hostname, obfuscated, `unknown`, or zone-identifier values must be rejected
+  before authentication work.
+- `SOURCE-008` Canonicalization must normalize equivalent IPv4, IPv6, and
+  IPv4-mapped IPv6 representations before rate-limit keys or coarse metadata
+  are derived. Optional syntactically valid ports in the selected header format
+  do not form part of the canonical address.
+- `SOURCE-009` Enabling `always` must emit a sanitized startup warning that
+  identifies the unsafe trust mode without logging any received header value or
+  address. Invalid mode, header, or trusted-proxy configuration must stop
+  startup with a sanitized configuration error.
 
 ### 13.5 Reset, reactivation, and break glass
 
@@ -828,6 +871,9 @@ metadata appears as **Unknown** and does not invalidate the session.
 
 User-agent and source values are untrusted, length-bounded external inputs.
 Derived labels must be escaped and must not introduce markup.
+Full forwarding-header chains must not be stored as session metadata or copied
+to logs, audits, analytics, or telemetry. Only the canonical source selected
+under `SOURCE-001` through `SOURCE-009` may feed the coarse network derivation.
 
 ### 14.3 Agent-connection display metadata
 
@@ -888,8 +934,8 @@ if the operational session/grant row is deleted.
   target-owner eligibility, and complete reachable-service scope at the
   mutation boundary; stale list or authorization results must not grant
   authority.
-- Every new external setup, enrollment, login, session-metadata, and
-  revocation input requires positive and negative tests.
+- Every new external setup, enrollment, login, client-source,
+  session-metadata, and revocation input requires positive and negative tests.
 
 ## 16. Interfaces and integrations
 
@@ -931,6 +977,20 @@ The branded login page may initiate configured OIDC flows. OIDC-provider
 authentication failures do not enter local suspension accounting. OIDC flow
 initiation and callback endpoints retain their own abuse limits and uniform
 public failures.
+
+### 16.5 Client-source trust
+
+The official deployment must document all three source-resolution modes and
+default to `direct`. `trusted_proxies` is the recommended reverse-proxy mode
+when stable proxy IP addresses or CIDRs are available. `always` is an explicit
+accepted-risk compatibility mode for otherwise supported deployments whose
+proxy identity cannot be known or remains unstable.
+
+`always` does not make an untrusted forwarding header trustworthy. It records
+the operator's assertion that network controls prevent direct client access and
+that the proxy overwrites or sanitizes the selected header. If either assertion
+is false, an attacker can choose the apparent source used by per-source limits
+and coarse session metadata.
 
 ## 17. UX requirements
 
@@ -1146,6 +1206,16 @@ this document.
 9. Disabling automatic suspension clears counters.
 10. The final superadmin can be automatically suspended and recovered through
     host-local break glass.
+11. Direct mode ignores spoofed forwarding headers and uses the immediate peer
+    for limits and coarse metadata.
+12. Trusted-proxy mode accepts a valid selected header only from a matching
+    immediate peer, derives the canonical source through the configured proxy
+    chain, and rejects malformed or ambiguous chains.
+13. Always mode accepts the client-most valid forwarded source without matching
+    the peer, emits its startup warning, and continues to enforce non-source
+    abuse controls.
+14. Equivalent IPv4, IPv4-mapped IPv6, and IPv6 address forms cannot create
+    distinct limiter identities for the same canonical address.
 
 ### 21.4 Recovery
 
@@ -1196,7 +1266,8 @@ this document.
   commit, counter/suspension/revocation commit, bulk revocation, audit coupling,
   conditional administrative revocation, and concurrency races.
 - Positive and negative contract tests for every new setup, enrollment, login,
-  metadata, filter, confirmation, and revocation input.
+  client-source configuration/header, metadata, filter, confirmation, and
+  revocation input.
 - Process tests for fresh provisioning, interruption and restart at every
   per-key and manifest transition, idempotent key reuse, no-manifest
   none/some/all key inventories with valid and invalid adoption settings,
@@ -1208,6 +1279,9 @@ this document.
 - Security tests for enumeration resistance, timing comparability, brute-force
   limits, session fixation, CSRF, session replay after revocation, restricted
   session privilege denial, open redirect, markup injection through metadata,
+  direct-mode header spoofing, trusted and untrusted proxy peers, `always`-mode
+  spoofability, malformed/oversized proxy chains, canonical address
+  normalization,
   log/audit secret absence, positive delivery through every designated session,
   CSRF, and OAuth channel, and absence of those values from every prohibited
   channel.
@@ -1236,6 +1310,9 @@ Operator documentation must cover:
 - Durable volume expectations and the limit of in-container persistence
   detection.
 - Host-local superadmin break glass.
+- Client-source mode and header selection, trusted-proxy IP/CIDR entries,
+  canonical chain behavior, and the `always` mode's network-isolation,
+  header-sanitization, spoofing, and metadata limitations.
 
 User documentation must cover:
 
@@ -1283,6 +1360,9 @@ These questions concern mechanisms and must not change the product contract:
    preserving API idempotency and immutable audit evidence?
 8. Which transactional strategy provides atomic high-cardinality global
    revocation within supported scale?
+9. Which shared request-boundary component should enforce `SOURCE-001` through
+   `SOURCE-009` consistently for the control and OAuth/MCP listeners without
+   duplicating proxy parsing or trust decisions?
 
 ## 25. Settled decisions
 
@@ -1307,6 +1387,10 @@ These questions concern mechanisms and must not change the product contract:
   actor role, target-owner eligibility, and complete reachable-service scope
   authorize the mutation at its decision boundary. The persistence mechanism is
   left to architecture.
+- Client-source derivation defaults to the direct socket peer, may trust an
+  enumerated proxy set, and includes an explicit `always` mode for unknown or
+  changing proxy identities. `always` accepts source spoofing risk if network
+  isolation or proxy header sanitization is incorrect.
 - The official Compose deployment uses durable volumes, but the container does
   not claim it can prove arbitrary mount durability.
 - The process-lifetime bootstrap secret is retained by the application only in
@@ -1354,6 +1438,7 @@ These questions concern mechanisms and must not change the product contract:
 | Atomic initial superadmin | `ENROLL-001`–`ENROLL-013` | 21.2 |
 | Branded uniform login/logout | `LOGIN-001`–`LOGIN-007`, `LOGOUT-001`–`LOGOUT-002` | 21.3, 21.6 |
 | Rate limits and durable suspension | `ABUSE-001`–`ABUSE-014` | 21.3 |
+| Canonical client source and proxy trust | `SOURCE-001`–`SOURCE-009` | 21.3 |
 | Reset/reactivation consistency | `RECOVER-001`–`RECOVER-007` | 21.4 |
 | Session-hijacking resistance | `SESSION-001`–`SESSION-008` | 21.5 |
 | Scoped revocation and audit | `ACCESS-001`–`ACCESS-012` | 21.5 |

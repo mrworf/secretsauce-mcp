@@ -5,6 +5,8 @@ import { vaultError } from "./errors.js";
 export interface VaultSocketIdentity {
   device: bigint;
   inode: bigint;
+  changeTimeNanoseconds: bigint;
+  birthTimeNanoseconds: bigint;
   owner: number;
   mode: number;
 }
@@ -39,6 +41,8 @@ export function validateVaultSocketEndpoint(
   return {
     device: BigInt(metadata.dev),
     inode: BigInt(metadata.ino),
+    changeTimeNanoseconds: metadata.ctimeNs,
+    birthTimeNanoseconds: metadata.birthtimeNs,
     owner: uid,
     mode,
   };
@@ -53,6 +57,8 @@ export function sameVaultSocketEndpoint(
     const actual = validateVaultSocketEndpoint(socketPath, expectedOwnerUid);
     return actual.device === expected.device
       && actual.inode === expected.inode
+      && actual.changeTimeNanoseconds === expected.changeTimeNanoseconds
+      && actual.birthTimeNanoseconds === expected.birthTimeNanoseconds
       && actual.owner === expected.owner
       && actual.mode === expected.mode;
   } catch {

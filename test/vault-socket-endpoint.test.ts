@@ -22,7 +22,12 @@ describe("vault Unix endpoint validation", () => {
     chmodSync(path, 0o600);
     try {
       const identity = validateVaultSocketEndpoint(path);
+      expect(identity.changeTimeNanoseconds).toBeGreaterThan(0n);
       expect(sameVaultSocketEndpoint(path, identity)).toBe(true);
+      expect(sameVaultSocketEndpoint(path, {
+        ...identity,
+        changeTimeNanoseconds: identity.changeTimeNanoseconds - 1n,
+      })).toBe(false);
       await close(first);
       const second = await listen(path);
       chmodSync(path, 0o600);

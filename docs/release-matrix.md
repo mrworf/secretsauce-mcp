@@ -2,7 +2,10 @@
 
 This matrix is the v2.1 release-candidate checklist. `pass` requires
 reproducible evidence from the named candidate. `pending` blocks release and
-cannot be converted to pass by documentation or agent inference.
+cannot be converted to pass by documentation or agent inference. Per the
+2026-07-30 product-owner qualification boundary, pending external HTTPS,
+hosted-client, browser E2E, and independent-review rows do not block M10
+implementation completion.
 
 Automated evidence below was collected from executable candidate `bfac16c` on
 2026-07-30 using Node 26.4.0 on linux/x86_64. Later project-authored review
@@ -37,7 +40,9 @@ authorization/cross-service failure, data-loss or rollback failure, stale
 OpenAPI, failed required compatibility or container journey,
 performance/accessibility/privacy failure, or full-suite failure blocks
 release. A Medium finding also blocks when it violates a settled invariant or
-has no safe containment. No red or pending gate is waived inside M10.
+has no safe containment. No red or pending gate is waived by completing M10;
+the unavailable external gates remain visibly pending for post-M10 release
+qualification.
 
 Automated named-client fixtures validate protocol compatibility, not behavior
 inside hosted Codex or ChatGPT. Prior v2 container and review evidence does not

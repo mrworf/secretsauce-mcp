@@ -131,10 +131,13 @@ describe("release operations documentation", () => {
       );
     }
     expect(status).toMatch(
-      /id: "10"[\s\S]*status: "blocked"[\s\S]*commit_hash: null/,
+      /id: "10"[\s\S]*status: "completed"[\s\S]*commit_hash: "6d682d4"/,
     );
-    expect(status).not.toMatch(
-      /id: "10"[\s\S]*status: "completed"/,
+    expect(status).toContain(
+      "post-M10 release evidence",
+    );
+    expect(matrix).toMatch(
+      /do not block M10\s+implementation completion/,
     );
   });
 

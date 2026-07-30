@@ -86,6 +86,11 @@ be inferred from prior releases.
    and artifact gates. The first cumulative run is allowed to stop only on the
    expected stale candidate/count contract; any product failure returns to its
    owning slice.
+7. **Product-owner qualification boundary:** record externally reachable HTTPS,
+   hosted-client, browser E2E/assistive-technology, and independent/human review
+   as post-M10 release evidence. Complete M10 from the passing implementation,
+   automated qualification, and transparent pending-evidence record without
+   converting an unavailable gate to pass.
 
 ## Release-blocking policy
 
@@ -105,4 +110,5 @@ lack safe containment. Missing runtime or human evidence is pending, not pass.
 | 3 | blocked | `2f32206` | Project-authored security/invariant, architecture/operations, UX/accessibility, and data/API/documentation reviews cover executable candidate `b780201` and keep external gates explicit | An authorized production advisory query, hosted-client target, and named independent/human reviewers are required; agent-authored evidence cannot substitute for them. |
 | 4 | completed | `c580fa7` | Production graph: MCP SDK 1.30.0/Hono 2.0.12 and no React Router; zero production advisories at Moderate threshold; production build; 8-file/37-test control-web suite; 6-file/62-test routing, accessibility, MCP surface, server, and release-compatibility suite | React Router 7.11.0 was rejected after it reintroduced older High findings. Browser E2E is deferred until after M10. |
 | 5 | completed | `bfac16c` | `better-sqlite3` 13.0.2 only; no `prebuild-install` lock or installed node; clean production install; bundled N-API binary smoke; forced source compilation and SQLite query; 11-file/81-test persistence, migration, application, and rotation suite; rootless Docker 29.6.1 build and release smoke | Full suite reached 1,096/1,097 passing; the sole failure was the deliberately stale exact-candidate/count release-document contract assigned to slice 6. |
-| 6 | completed | qualification documentation commit | Candidate `bfac16c`; production build; 169 files/1,097 tests; current OpenAPI; 14 readiness artifacts; 663-file release scan; zero production advisories through Moderate | Browser E2E remains deferred until after M10. Exact-candidate full Compose/live hosted-client and independent/human evidence remain external blockers. |
+| 6 | completed | `6d682d4` | Candidate `bfac16c`; production build; 169 files/1,097 tests; current OpenAPI; 14 readiness artifacts; 663-file release scan; zero production advisories through Moderate | Browser E2E remains deferred until after M10. Exact-candidate full Compose/live hosted-client and independent/human evidence remain external blockers. |
+| 7 | completed | status documentation commit | Product-owner direction recorded in the milestone, release matrix, runbook, automated qualification, and status contract; all unavailable external evidence remains pending | M10 completion is explicitly narrower than release approval or deployment qualification. |

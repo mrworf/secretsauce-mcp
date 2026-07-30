@@ -111,7 +111,7 @@ record access remains strict. Positive and negative ownership tests, the full
 suite, clean startup, populated-record rotation, and post-rotation recreation
 pass.
 
-## Pending release blockers
+## Remediation and pending post-M10 evidence
 
 - The authorized production audit initially confirmed two High React Router
   findings and two Medium MCP SDK/Hono findings. Candidate `bfac16c` removes
@@ -134,5 +134,8 @@ pass.
 - Independent/human security, architecture, UX/accessibility, data/API,
   operations, documentation, and release approvals are not supplied.
 
-The remaining external items stay `pending` in the release matrix. No release
-gate is waived and Milestone 10 remains in progress.
+The remaining external items stay `pending` in the release matrix. Per the
+2026-07-30 product-owner qualification boundary, they are post-M10 release
+evidence rather than M10 implementation blockers. No release gate is waived;
+M10 is complete for its bounded implementation and automated qualification
+scope.

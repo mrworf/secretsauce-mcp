@@ -95,7 +95,7 @@ milestones:
   - id: "10"
     title: "Release Qualification And Documentation"
     file: "docs/milestones/v2.1/10-release-qualification-and-documentation.md"
-    status: "blocked"
+    status: "completed"
     dependencies:
       - "03"
       - "04"
@@ -103,6 +103,6 @@ milestones:
       - "07"
       - "08"
       - "09"
-    completed_at: null
-    commit_hash: null
-    notes: "Executable candidate bfac16c fixes the confirmed 2 High and 2 Medium production findings, reports zero production advisories through Moderate, removes React Router, and removes deprecated prebuild-install through better-sqlite3 13.0.2. Production build, 169-file/1,097-test suite, current OpenAPI, 14 readiness artifacts, 663-file release scan, clean binary/source native installs, focused persistence/compatibility suites, and rootless Docker image sha256:b2ef16bc5d640a9523f6807f52cac205a07a4f5107daf151c323aa9119dd68a6 release smoke pass. Browser end-to-end testing is explicitly deferred until after M10. M10 remains blocked on exact-candidate authenticated MCP/database/OAuth/audit/ephemeral-authority Compose evidence using an approved reachable HTTPS client-metadata origin, hosted Codex and ChatGPT checks, and named independent/human review; prior full Compose/rotation evidence is not silently promoted to the changed candidate."
+    completed_at: "2026-07-30T08:20:46-07:00"
+    commit_hash: "6d682d4"
+    notes: "Executable candidate bfac16c fixes the confirmed 2 High and 2 Medium production findings, reports zero production advisories through Moderate, removes React Router, and removes deprecated prebuild-install through better-sqlite3 13.0.2. Production build, 169-file/1,097-test suite, current OpenAPI, 14 readiness artifacts, 663-file release scan, clean binary/source native installs, focused persistence/compatibility suites, and rootless Docker image sha256:b2ef16bc5d640a9523f6807f52cac205a07a4f5107daf151c323aa9119dd68a6 release smoke pass. By explicit product-owner direction, externally reachable HTTPS validation, hosted Codex/ChatGPT execution, browser E2E/assistive-technology testing, and independent/human review are post-M10 release evidence. They remain pending and are not claimed as passing; M10 completion means bounded implementation and automated qualification, not release approval or deployment qualification."

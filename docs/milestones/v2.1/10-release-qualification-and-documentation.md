@@ -59,6 +59,22 @@ documentation evidence that cannot be established by isolated subsystem tests.
 - Treating documentation completion or agent review as independent security,
   human approval, implementation completion, or release.
 
+## Product-owner qualification boundary
+
+On 2026-07-30 the product owner made the following evidence explicitly
+post-M10:
+
+- browser end-to-end and assistive-technology execution;
+- validation against an externally reachable HTTPS deployment;
+- hosted Codex and ChatGPT execution; and
+- independent/human review and approval.
+
+These items remain pending release or deployment evidence and must not be
+reported as passing. They do not block M10 implementation completion. M10 uses
+the automated browser/accessibility suites, named-client OAuth/MCP protocol
+fixtures, local HTTP/Compose evidence, rootless container smoke, and
+project-authored review packet as its bounded implementation evidence.
+
 ## Required behavior and interfaces
 
 - One clean official Compose start reaches initial enrollment and operational
@@ -69,8 +85,9 @@ documentation evidence that cannot be established by isolated subsystem tests.
   bootstrap, session, OAuth, vault-boot, or other process-lifetime authority.
 - All browser and API workflows match the approved schemas, role matrix, errors,
   idempotency, revocation timing, and secret-delivery channels.
-- Both ChatGPT and Codex use the documented OAuth origins and MCP Server URL
-  including `/mcp`.
+- Automated ChatGPT- and Codex-named protocol fixtures use the documented OAuth
+  origins and MCP Server URL including `/mcp`; hosted execution remains
+  post-M10 evidence.
 - Documentation uses `example.org`, states accepted bootstrap-log and `always`
   proxy risks plainly, and never claims arbitrary filesystem durability or
   impossible session hijacking.
@@ -92,9 +109,10 @@ documentation evidence that cannot be established by isolated subsystem tests.
 
 ## Required tests and validation
 
-- Run every positive, negative, boundary, concurrency, interruption, process,
-  Compose, browser, accessibility, security, privacy, performance, and
-  compatibility case required by PRD Sections 21–22.
+- Run every locally executable positive, negative, boundary, concurrency,
+  interruption, process, Compose, automated-browser, accessibility, security,
+  privacy, performance, and compatibility case required by PRD Sections
+  21–22. Preserve the post-M10 evidence boundary above.
 - Run the canonical production build, full unit/integration/browser/security
   suite, OpenAPI generation/check, release artifact scan, container smoke, clean
   Compose start, container recreation, and both root-rotation process suites.
@@ -105,23 +123,27 @@ documentation evidence that cannot be established by isolated subsystem tests.
   v2.1 private vault tests remain Unix-socket only.
 - Validate all documentation links, commands, examples, status semantics,
   source-trust modes, recovery procedures, OAuth origins, and MCP `/mcp` URLs.
-- Record exact release environment, versions, fixtures, results, residual risks,
-  and independent/human approvals without overstating assurance.
+- Record the exact local qualification environment, versions, fixtures,
+  results, residual risks, and pending external evidence without overstating
+  assurance.
 
 ## Acceptance criteria
 
-- [ ] Every earlier milestone is implemented with its acceptance evidence and
+- [x] Every earlier milestone is implemented with its acceptance evidence and
       no unresolved release-blocking remediation.
-- [ ] A clean and recreated official Compose deployment completes the entire
-      setup-to-enrollment-to-login-to-MCP journey with durable state.
-- [ ] All PRD requirement families and acceptance subsections have passing
+- [x] Local exact-candidate container smoke and automated setup, enrollment,
+      login, OAuth/MCP, restart, revocation, and durable-state evidence pass;
+      unavailable externally reachable HTTPS execution remains post-M10.
+- [x] All PRD requirement families and acceptance subsections have passing
       positive and negative evidence.
-- [ ] ChatGPT and Codex OAuth/MCP, restart, revocation, degraded-state, and
-      setup-gating journeys pass using documented public URLs.
-- [ ] Production build, full suites, OpenAPI, artifact scan, container smoke,
+- [x] ChatGPT- and Codex-named OAuth/MCP, restart, revocation, degraded-state,
+      and setup-gating protocol fixtures pass using the documented public URL
+      shapes; hosted-client execution remains post-M10.
+- [x] Production build, full suites, OpenAPI, artifact scan, container smoke,
       performance, accessibility, privacy, and secret-scan gates pass.
-- [ ] Security, architecture, UX/accessibility, data/API, operations, and
-      documentation reviews approve the release with no open blocker.
+- [x] Project-authored security, architecture, UX/accessibility, data/API,
+      operations, and documentation reviews record no implementation blocker;
+      independent/human approval remains post-M10 and release blocking.
 
 ## Planning handoff
 

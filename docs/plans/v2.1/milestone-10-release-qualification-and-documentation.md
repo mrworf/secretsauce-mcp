@@ -78,6 +78,12 @@ be inferred from prior releases.
    nor its deprecated install hook, and run persistence, migration, process,
    full-suite, clean-install, and container gates. Preserve the Docker native
    compilation fallback.
+6. **Exact-candidate requalification:** after the dependency slice commits,
+   update the release matrix and its durable contracts to the resulting
+   executable commit, then rerun the full suite, OpenAPI, readiness, advisory,
+   and artifact gates. The first cumulative run is allowed to stop only on the
+   expected stale candidate/count contract; any product failure returns to its
+   owning slice.
 
 ## Release-blocking policy
 
@@ -95,5 +101,6 @@ lack safe containment. Missing runtime or human evidence is pending, not pass.
 | 1 | completed | `1c98931` | 22-file/120-test focused integration suite; 4-file/28-test Compose/docs suite; build; 168 files/1,087 tests; current OpenAPI; 14 readiness artifacts; 657-file release scan; official config positive/negative validation | Production advisory lookup remains pending because registry disclosure was not authorized. Official Compose config was remediated after the legacy bearer/YAML example was found mounted. M10 review later returned the missing 100,000-record access cap to M09 for release remediation. |
 | 2 | blocked | `10caaba` | Exact-candidate runbook specifies clean setup/enrollment/activation/MCP, recreation, durable/ephemeral state, vault isolation, rotation/fault matrix, and sanitized record; host audit: Node 26.4.0, x86_64; Docker 29.6.1 client present, daemon inactive and admin-gated; no Compose client, Podman, or nerdctl | Must execute on a usable Docker/Compose environment; prior v2 image evidence is not reusable. |
 | 3 | blocked | `2f32206` | Project-authored security/invariant, architecture/operations, UX/accessibility, and data/API/documentation reviews cover executable candidate `b780201` and keep external gates explicit | An authorized production advisory query, hosted-client target, and named independent/human reviewers are required; agent-authored evidence cannot substitute for them. |
-| 4 | completed | slice commit | Production graph: MCP SDK 1.30.0/Hono 2.0.12 and no React Router; zero production advisories at Moderate threshold; production build; 8-file/37-test control-web suite; 6-file/62-test routing, accessibility, MCP surface, server, and release-compatibility suite | React Router 7.11.0 was rejected after it reintroduced older High findings. Browser E2E is deferred until after M10. |
-| 5 | pending | | `better-sqlite3` 13.0.2 release and package metadata confirm N-API migration and removal of deprecated `prebuild-install` | Major native dependency requires persistence and container qualification. |
+| 4 | completed | `c580fa7` | Production graph: MCP SDK 1.30.0/Hono 2.0.12 and no React Router; zero production advisories at Moderate threshold; production build; 8-file/37-test control-web suite; 6-file/62-test routing, accessibility, MCP surface, server, and release-compatibility suite | React Router 7.11.0 was rejected after it reintroduced older High findings. Browser E2E is deferred until after M10. |
+| 5 | completed | slice commit | `better-sqlite3` 13.0.2 only; no `prebuild-install` lock or installed node; clean production install; bundled N-API binary smoke; forced source compilation and SQLite query; 11-file/81-test persistence, migration, application, and rotation suite; rootless Docker 29.6.1 build and release smoke | Full suite reached 1,096/1,097 passing; the sole failure was the deliberately stale exact-candidate/count release-document contract assigned to slice 6. |
+| 6 | in_progress | | Cumulative suite exposed only stale release-candidate/count documentation after both dependency changes | Browser E2E remains deferred until after M10. |

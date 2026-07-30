@@ -1,11 +1,7 @@
-import {
-  createBrowserRouter,
-  createMemoryRouter,
-  type RouteObject,
-} from "react-router-dom";
 import type { ReactElement } from "react";
 import { AppShell, RouteErrorPage } from "./App";
 import { navigationForRole, type HumanControlRole } from "./navigation";
+import { BrowserRouter, MemoryRouter, useLocation } from "./routing";
 import { ProfilePage, UsersPage } from "./UserPages";
 import { ServicesPage } from "./ServicePages";
 import { GroupsPage } from "./GroupPages";
@@ -53,29 +49,32 @@ export function implementedControlPaths(): readonly string[] {
   return Object.keys(ROUTE_COMPONENTS);
 }
 
-function routes(role: HumanControlRole): RouteObject[] {
-  return [{
-    path: "/",
-    element: <AppShell role={role} />,
-    errorElement: <RouteErrorPage />,
-    children: [
-      ...navigationForRole(role).map((item) => ({
-        index: item.path === "/" ? true as const : undefined,
-        path: item.path === "/" ? undefined : item.path.slice(1),
-        element: ROUTE_COMPONENTS[item.path]?.(role) ?? <RouteErrorPage />,
-      })),
-      { path: "*", element: <RouteErrorPage /> },
-    ],
-  }];
+function ControlRoute({ role }: { role: HumanControlRole }) {
+  const { pathname } = useLocation();
+  const allowed = navigationForRole(role).some((item) => item.path === pathname);
+  const content = allowed ? ROUTE_COMPONENTS[pathname]?.(role) : undefined;
+  return (
+    <AppShell role={role}>
+      {content ?? <RouteErrorPage />}
+    </AppShell>
+  );
 }
 
 export function createControlRouter(role: HumanControlRole = "user") {
-  return createBrowserRouter(routes(role), { basename: "/control" });
+  return (
+    <BrowserRouter basename="/control">
+      <ControlRoute role={role} />
+    </BrowserRouter>
+  );
 }
 
 export function createTestControlRouter(
   role: HumanControlRole,
   initialPath = "/",
 ) {
-  return createMemoryRouter(routes(role), { initialEntries: [initialPath] });
+  return (
+    <MemoryRouter initialPath={initialPath}>
+      <ControlRoute role={role} />
+    </MemoryRouter>
+  );
 }

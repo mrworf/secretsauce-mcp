@@ -1,6 +1,5 @@
 import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { RouterProvider } from "react-router-dom";
 import { createControlRouter } from "./router";
 import {
   browserControlApi,
@@ -55,5 +54,5 @@ function AuthenticatedControl() {
   if (role === undefined) {
     return <main className="startup-message" role="status">Loading your control workspace…</main>;
   }
-  return <RouterProvider router={createControlRouter(role)} />;
+  return createControlRouter(role);
 }

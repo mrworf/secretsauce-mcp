@@ -95,7 +95,7 @@ milestones:
   - id: "10"
     title: "Release Qualification And Documentation"
     file: "docs/milestones/v2.1/10-release-qualification-and-documentation.md"
-    status: "blocked"
+    status: "in_progress"
     dependencies:
       - "03"
       - "04"
@@ -105,4 +105,4 @@ milestones:
       - "09"
     completed_at: null
     commit_hash: null
-    notes: "Automated qualification and project-authored reviews pass for executable candidate 3377e8c and image sha256:88385fa2e8cf8e72e56294f6116713b5a5aa74ceabc2dde129f67d2254fb2def. Rootless Docker 29.6.1 and Compose 5.3.1 passed clean enrollment/login/session/logout/recreation HTTP contracts, vault isolation, and both actual envelope-root rotations, including replay/resume and populated-record ownership/decryption evidence. Release remains blocked until: the aggregate two High production advisories are queried under explicit authorization and remediated; authenticated live MCP plus the complete database/OAuth/audit and ephemeral-authority matrix pass using an approved reachable HTTPS client-metadata origin (the database runtime correctly rejects bearer substitution); visual browser/accessibility qualification runs; live hosted Codex and ChatGPT checks pass against the documented origin and /mcp URL; and named independent/human reviewers approve security, architecture, UX/accessibility, data/API, operations, and documentation. Resume at docs/v2.1-release-qualification.md without rerunning unaffected gates unless the executable candidate changes."
+    notes: "Resumed 2026-07-30 with production advisory disclosure authorized. Slice 4 removed React Router, upgraded MCP SDK/Hono, and closed all production advisories through Moderate with focused browser/accessibility and MCP compatibility evidence. Deprecated prebuild-install removal remains in slice 5 before cumulative requalification. Prior exact-candidate evidence remains: image sha256:88385fa2e8cf8e72e56294f6116713b5a5aa74ceabc2dde129f67d2254fb2def; rootless Docker/Compose clean enrollment/login/session/logout/recreation HTTP contracts; vault isolation; and both envelope-root rotations. Browser end-to-end testing is explicitly deferred until after M10. Remaining release evidence includes the authenticated live MCP/database/OAuth/audit/ephemeral-authority matrix using an approved reachable HTTPS client-metadata origin, hosted Codex and ChatGPT checks, and named independent/human review."

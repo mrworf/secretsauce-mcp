@@ -1,10 +1,5 @@
-import { useEffect, useRef } from "react";
-import {
-  NavLink,
-  Outlet,
-  useLocation,
-  useRouteError,
-} from "react-router-dom";
+import { type ReactNode, useEffect, useRef } from "react";
+import { NavLink, useLocation } from "./routing";
 import brandLockup from "../../assets/brand/secretsauce-lockup.png";
 import {
   navigationForRole,
@@ -23,12 +18,14 @@ export interface AppShellProps {
   role?: HumanControlRole;
   authApi?: Pick<ControlApi, "session"> & Pick<BrowserAuthenticationApi, "logout">;
   navigate?: (url: string) => void;
+  children?: ReactNode;
 }
 
 export function AppShell({
   role = "user",
   authApi = browserControlApi,
   navigate = (url) => window.location.assign(url),
+  children,
 }: AppShellProps) {
   const location = useLocation();
   const heading = useRef<HTMLHeadingElement>(null);
@@ -106,7 +103,7 @@ export function AppShell({
           </div>
           <StatusPill />
         </div>
-        <Outlet />
+        {children}
       </main>
 
       <footer className="footer">
@@ -177,7 +174,6 @@ function StatusPill() {
 }
 
 export function RouteErrorPage() {
-  useRouteError();
   return (
     <section className="content-panel error-panel" role="alert">
       <h2>We could not open this page</h2>

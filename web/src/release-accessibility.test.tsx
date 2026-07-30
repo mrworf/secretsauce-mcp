@@ -3,7 +3,6 @@ import "@testing-library/jest-dom/vitest";
 import { readFileSync, readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { cleanup, render, screen } from "@testing-library/react";
-import { RouterProvider } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   CONTROL_NAVIGATION,
@@ -34,7 +33,7 @@ describe("release accessibility and route completeness", () => {
       vi.stubGlobal("fetch", vi.fn(() => new Promise<Response>(() => undefined)));
       for (const item of navigationForRole(role)) {
         const view = render(
-          <RouterProvider router={createTestControlRouter(role, item.path)} />,
+          createTestControlRouter(role, item.path),
         );
         expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
         expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(item.label);
@@ -60,7 +59,7 @@ describe("release accessibility and route completeness", () => {
   it("renders only public branding text and alternative text in source routes", () => {
     vi.stubGlobal("fetch", vi.fn(() => new Promise<Response>(() => undefined)));
     const view = render(
-      <RouterProvider router={createTestControlRouter("superadmin", "/openapi")} />,
+      createTestControlRouter("superadmin", "/openapi"),
     );
     expect(screen.getByRole("img", { name: "SecretSauce" })).toBeInTheDocument();
     expect(screen.getAllByText("SecretSauce").length).toBeGreaterThan(0);

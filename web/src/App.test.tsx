@@ -2,22 +2,17 @@
 import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import {
-  MemoryRouter,
-  Route,
-  Routes,
-  RouterProvider,
-} from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AppShell } from "./App";
 import { createTestControlRouter } from "./router";
+import { MemoryRouter } from "./routing";
 
 afterEach(cleanup);
 
 describe("control application shell", () => {
   it("renders landmarks, skip navigation, live status, and the active route", async () => {
     const user = userEvent.setup();
-    render(<RouterProvider router={createTestControlRouter("user")} />);
+    render(createTestControlRouter("user"));
 
     expect(screen.getByRole("banner")).toBeInTheDocument();
     expect(screen.getByRole("main")).toHaveAttribute("id", "main-content");
@@ -35,30 +30,21 @@ describe("control application shell", () => {
 
   it("moves focus to the page heading after client-side route changes", async () => {
     const user = userEvent.setup();
-    render(
-      <MemoryRouter>
-        <Routes>
-          <Route path="/" element={<AppShell role="user" />}>
-            <Route index element={<p>Overview body</p>} />
-            <Route path="services" element={<p>Services body</p>} />
-          </Route>
-        </Routes>
-      </MemoryRouter>,
-    );
+    render(createTestControlRouter("user"));
     await user.click(screen.getAllByRole("link", { name: "Services" })[0]!);
     expect(screen.getByRole("heading", { level: 1, name: "Services" })).toHaveFocus();
   });
 
   it("filters implemented workspaces through the central role matrix", () => {
     const userView = render(
-      <RouterProvider router={createTestControlRouter("user")} />,
+      createTestControlRouter("user"),
     );
     expect(screen.queryByRole("link", { name: "API keys" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Backup and restore" })).not.toBeInTheDocument();
     expect(screen.getAllByRole("link", { name: "Profile" })).toHaveLength(2);
     userView.unmount();
 
-    render(<RouterProvider router={createTestControlRouter("superadmin")} />);
+    render(createTestControlRouter("superadmin"));
     expect(screen.getAllByRole("link", { name: "API keys" })).toHaveLength(2);
     expect(screen.getAllByRole("link", { name: "Backup and restore" })).toHaveLength(2);
     expect(screen.getAllByRole("link", { name: "Recovery tasks" })).toHaveLength(2);
@@ -66,7 +52,7 @@ describe("control application shell", () => {
 
   it("renders a deep route semantically without credentials, references, or diagnostics", async () => {
     const view = render(
-      <RouterProvider router={createTestControlRouter("admin", "/services")} />,
+      createTestControlRouter("admin", "/services"),
     );
     expect(screen.getByRole("heading", { level: 1, name: "Services" })).toBeInTheDocument();
     expect(await screen.findByRole("heading", { level: 2, name: "Service drafts" }))
@@ -78,7 +64,7 @@ describe("control application shell", () => {
 
   it("renders the backup workspace only for a superadmin route", () => {
     render(
-      <RouterProvider router={createTestControlRouter("superadmin", "/backup")} />,
+      createTestControlRouter("superadmin", "/backup"),
     );
     expect(screen.getByRole("heading", { level: 2, name: "Create portable backup" }))
       .toBeInTheDocument();
@@ -101,14 +87,9 @@ describe("control application shell", () => {
     };
     render(
       <MemoryRouter>
-        <Routes>
-          <Route
-            path="/"
-            element={<AppShell role="user" authApi={authApi} navigate={navigate} />}
-          >
-            <Route index element={<p>Still authenticated</p>} />
-          </Route>
-        </Routes>
+        <AppShell role="user" authApi={authApi} navigate={navigate}>
+          <p>Still authenticated</p>
+        </AppShell>
       </MemoryRouter>,
     );
     await user.click(screen.getByText("Account", { selector: "summary" }));

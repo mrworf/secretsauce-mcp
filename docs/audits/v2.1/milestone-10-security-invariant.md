@@ -3,8 +3,8 @@
 ## Metadata
 
 - **Project/repository:** SecretSauce (MCP)
-- **Executable baseline:** `3377e8c`
-- **Review date/time:** 2026-07-28 UTC
+- **Executable baseline:** `bfac16c`
+- **Review date/time:** 2026-07-30 UTC
 - **Reviewer role:** project-authored application security review
 - **Assurance boundary:** this is a white-box implementation review by the
   delivery agent. It is not an independent security approval or a human
@@ -25,10 +25,11 @@ downstream can apply an arbitrary invertible transformation that exact and
 pattern scanners cannot universally recognize. Route, destination, credential
 placement, and policy constraints remain the structural containment boundary.
 
-The production dependency advisory gate is still pending. The production image
-install emitted an aggregate count of two High advisories, while the detailed
-public registry query was not authorized in this environment. This review
-therefore does not approve release.
+The production dependency advisory gate now passes. An authorized audit
+confirmed and then closed two High React Router findings and two Medium MCP
+SDK/Hono findings. The resulting graph has zero production advisories through
+Moderate; deprecated `prebuild-install` was also removed with the
+`better-sqlite3` 13.0.2 N-API migration.
 
 ## Scope / Methodology
 
@@ -42,10 +43,10 @@ threat model, ADRs, validation matrix, and milestone evidence, plus:
 
 - a 12-file/192-test focused security suite;
 - a 4-file/45-test access and persistence remediation suite;
-- the complete 168-file/1,094-test suite;
+- the complete 169-file/1,097-test suite;
 - current generated OpenAPI and all 14 readiness artifacts;
 - `npm ls --omit=dev --all`; and
-- the 662-file closed-scope artifact/privacy scan including this staged review
+- the 663-file closed-scope artifact/privacy scan including this staged review
   packet.
 
 ## Threat Model

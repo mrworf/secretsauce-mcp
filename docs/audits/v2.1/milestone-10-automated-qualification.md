@@ -2,9 +2,9 @@
 
 ## Candidate and environment
 
-- Executable baseline: `3377e8c`
+- Executable baseline: `bfac16c`
 - Qualified image:
-  `sha256:88385fa2e8cf8e72e56294f6116713b5a5aa74ceabc2dde129f67d2254fb2def`
+  `sha256:b2ef16bc5d640a9523f6807f52cac205a07a4f5107daf151c323aa9119dd68a6`
 - Qualification environment: Node 26.4.0, npm 12.0.1, linux/x86_64
 - Container runtime: rootless Docker Engine 29.6.1, Compose 5.3.1,
   linux/amd64, VFS storage, with a disposable data root outside the repository.
@@ -29,11 +29,11 @@ approval.
   boundary.
 - The production server and web build passed. The existing Vite advisory for
   one JavaScript chunk over 500 kB remains non-blocking.
-- The full unit/integration/browser/security suite passed 168 files and 1,094
+- The full unit/integration/browser/security suite passed 169 files and 1,097
   tests.
 - Generated control OpenAPI is current.
 - The v2.1 readiness validator passed all 14 architecture/readiness artifacts.
-- The release artifact/privacy scan passed 662 closed-scope files after the
+- The release artifact/privacy scan passed 663 closed-scope files after the
   exact-candidate runbook and project-authored review packet were staged.
 - `npm run smoke:container` passed against a real Docker daemon.
 - Official `docker compose config` passed. A clean `up --build --detach`
@@ -113,15 +113,17 @@ pass.
 
 ## Pending release blockers
 
-- The production image's `npm ci --omit=dev` emitted an aggregate count of two
-  High advisories, so the release threshold is not passing. Detailed
-  `npm run audit:production` retrieval was rejected because it would disclose
-  dependency metadata without explicit user authorization; no package or
-  advisory detail is claimed.
+- The authorized production audit initially confirmed two High React Router
+  findings and two Medium MCP SDK/Hono findings. Candidate `bfac16c` removes
+  React Router, pins MCP SDK 1.30.0 with Hono 2.0.12, and reports zero
+  production advisories through Moderate. It also upgrades `better-sqlite3`
+  to 13.0.2, removes deprecated `prebuild-install`, passes a clean production
+  install and forced source build, and retains Docker native build tooling.
 - Clean enrollment/login/session/logout/recreation and both actual rotations
-  passed through HTTP and process contracts. A visual keyboard/zoom/screen
-  reader browser journey could not run because no in-app browser target was
-  available. Authenticated live MCP tools, complete database/OAuth/audit
+  passed through HTTP and process contracts. Browser end-to-end testing is
+  scheduled after M10 by product-owner direction; automated browser and
+  accessibility contracts pass in M10. Authenticated live MCP tools, complete
+  database/OAuth/audit
   durability, and the full ephemeral-authority matrix are not executed here.
   A qualification-only bearer probe was correctly rejected by the database
   runtime because the bearer subject was not an active durable user; it is
@@ -132,5 +134,5 @@ pass.
 - Independent/human security, architecture, UX/accessibility, data/API,
   operations, documentation, and release approvals are not supplied.
 
-All four items remain `pending` in the release matrix. No gate is waived and
-Milestone 10 remains in progress.
+The remaining external items stay `pending` in the release matrix. No release
+gate is waived and Milestone 10 remains in progress.

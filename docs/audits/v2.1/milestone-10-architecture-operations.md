@@ -2,15 +2,15 @@
 
 ## Scope
 
-- **Executable baseline:** `3377e8c`
-- **Review time:** 2026-07-28 UTC
+- **Executable baseline:** `bfac16c`
+- **Review time:** 2026-07-30 UTC
 - **Assurance boundary:** project-authored white-box review, not independent
   architecture approval or human operations sign-off.
 - **Scope:** setup/provisioning, combined application composition, gateway and
   control listeners, vault isolation, persistence ownership, OAuth/session
   state, startup/restart, rotation/recovery, scale, official Compose,
   generated contracts, and operator procedures.
-- **Evidence:** production build; 168-file/1,094-test suite; exact
+- **Evidence:** production build; 169-file/1,097-test suite; exact
   100,000/100,001 revocation boundary; current OpenAPI; 14 readiness artifacts;
   container smoke; clean enrollment/recreation Compose execution; and both
   actual envelope-root rotations.
@@ -34,9 +34,9 @@ handoff, liveness/readiness, shared manifest-group, and privileged
 runtime-record rotation defects in `a38edc1` and `3377e8c`. Clean
 enrollment/login/logout/recreation and both rotations now pass. Release
 approval remains pending because authenticated live MCP and the complete
-durable/ephemeral matrix are incomplete, the production advisory query is
-absent, and visual-browser, hosted-client, and independent/human evidence are
-not available.
+durable/ephemeral matrix are incomplete, and hosted-client and
+independent/human evidence are not available. The production advisory gate is
+now clean; browser end-to-end qualification is scheduled after M10.
 
 ## What Is Good
 
@@ -92,10 +92,9 @@ browser journey.
 
 ## What Should Change
 
-- Continue `docs/v2.1-release-qualification.md` against `3377e8c`, recording
-  authenticated MCP, the remaining durable/ephemeral state matrix, and visual
-  browser/accessibility evidence.
-- Run the production dependency gate under approved network/disclosure policy.
+- Continue `docs/v2.1-release-qualification.md` against `bfac16c`, recording
+  authenticated MCP and the remaining durable/ephemeral state matrix. Record
+  visual browser/accessibility evidence in the scheduled post-M10 journey.
 - Run hosted Codex and ChatGPT against the deployed origin and full `/mcp`
   Server URL, then obtain named independent security, architecture,
   UX/accessibility, data/API, operations, documentation, and human approval.

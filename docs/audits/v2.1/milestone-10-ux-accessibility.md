@@ -2,8 +2,8 @@
 
 ## Scope
 
-- **Executable baseline:** `3377e8c`
-- **Review time:** 2026-07-28 UTC
+- **Executable baseline:** `bfac16c`
+- **Review time:** 2026-07-30 UTC
 - **Assurance boundary:** project-authored source and automated review, not an
   independent accessibility audit or human approval.
 - **Surfaces:** setup, enrollment, login, account/security settings, recovery,
@@ -19,7 +19,7 @@ movement; destructive confirmations; current-session handling; one-time
 values; write-only secret clearing; loading, empty, error, retry, and
 unauthorized states; and narrow-layout source contracts.
 
-The production web build and complete 168-file/1,094-test suite passed. The
+The production web build and complete 169-file/1,097-test suite passed. The
 release accessibility suite passed six role/route tests, and owning component
 suites cover setup, enrollment, login, recovery, access, backup, restore,
 security, service, policy, credential, and identity behavior.
@@ -43,12 +43,13 @@ silently create an ordinary browser session.
   reviewer participated.
 - Hosted Codex and ChatGPT UI behavior is outside the control web application.
 - The clean Compose enrollment/login/logout journey was verified through HTTP
-  contracts only; no in-app browser target was available for visual or
-  assistive-technology qualification.
+  contracts. Product-owner direction schedules browser end-to-end and
+  assistive-technology qualification after M10.
 
 ## Verdict
 
-Pass for the project-authored automated scope. The exact-candidate runbook's
-manual keyboard, 200% zoom, narrow viewport, and representative screen-reader
-checks remain pending and blocking; this artifact does not convert the final
-independent/human gate to pass.
+Pass for the project-authored automated M10 scope. The exact-candidate
+runbook's manual keyboard, 200% zoom, narrow viewport, and representative
+screen-reader checks remain pending for the post-M10 browser qualification;
+this artifact does not convert the final independent/human release gate to
+pass.

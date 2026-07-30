@@ -95,7 +95,7 @@ milestones:
   - id: "10"
     title: "Release Qualification And Documentation"
     file: "docs/milestones/v2.1/10-release-qualification-and-documentation.md"
-    status: "in_progress"
+    status: "blocked"
     dependencies:
       - "03"
       - "04"
@@ -105,4 +105,4 @@ milestones:
       - "09"
     completed_at: null
     commit_hash: null
-    notes: "Resumed 2026-07-30 with production advisory disclosure authorized. Slice 4 removed React Router, upgraded MCP SDK/Hono, and closed all production advisories through Moderate with focused browser/accessibility and MCP compatibility evidence. Slice 5 upgraded better-sqlite3 to 13.0.2, removed prebuild-install, and passed clean binary/source installs, focused persistence, and rootless container smoke. Exact-candidate release documents and cumulative gates remain in slice 6. Prior exact-candidate evidence remains: image sha256:88385fa2e8cf8e72e56294f6116713b5a5aa74ceabc2dde129f67d2254fb2def; rootless Docker/Compose clean enrollment/login/session/logout/recreation HTTP contracts; vault isolation; and both envelope-root rotations. Browser end-to-end testing is explicitly deferred until after M10. Remaining release evidence includes the authenticated live MCP/database/OAuth/audit/ephemeral-authority matrix using an approved reachable HTTPS client-metadata origin, hosted Codex and ChatGPT checks, and named independent/human review."
+    notes: "Executable candidate bfac16c fixes the confirmed 2 High and 2 Medium production findings, reports zero production advisories through Moderate, removes React Router, and removes deprecated prebuild-install through better-sqlite3 13.0.2. Production build, 169-file/1,097-test suite, current OpenAPI, 14 readiness artifacts, 663-file release scan, clean binary/source native installs, focused persistence/compatibility suites, and rootless Docker image sha256:b2ef16bc5d640a9523f6807f52cac205a07a4f5107daf151c323aa9119dd68a6 release smoke pass. Browser end-to-end testing is explicitly deferred until after M10. M10 remains blocked on exact-candidate authenticated MCP/database/OAuth/audit/ephemeral-authority Compose evidence using an approved reachable HTTPS client-metadata origin, hosted Codex and ChatGPT checks, and named independent/human review; prior full Compose/rotation evidence is not silently promoted to the changed candidate."

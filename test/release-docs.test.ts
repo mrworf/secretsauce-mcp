@@ -106,9 +106,8 @@ describe("release operations documentation", () => {
     const pendingRows = matrix
       .split("\n")
       .filter((line) => line.startsWith("|") && line.includes("pending"));
-    expect(pendingRows).toHaveLength(4);
+    expect(pendingRows).toHaveLength(3);
     expect(pendingRows).toEqual(expect.arrayContaining([
-      expect.stringContaining("Production dependency advisory threshold"),
       expect.stringContaining("Official Compose clean setup and recreation"),
       expect.stringContaining("Live Codex and ChatGPT deployment procedure"),
       expect.stringContaining("Final security, architecture, UX"),
@@ -116,9 +115,9 @@ describe("release operations documentation", () => {
     expect(matrix).toContain(
       "Official Compose clean setup and recreation",
     );
-    expect(matrix).toContain("168 files / 1,090 tests passed");
-    expect(matrix).toContain("662 tracked, staged, built, generated");
-    expect(matrix).toContain("executable candidate `b94a840`");
+    expect(matrix).toContain("169 files / 1,097 tests passed");
+    expect(matrix).toContain("663 tracked, staged, built, generated");
+    expect(matrix).toContain("executable candidate `bfac16c`");
     expect(matrix).toContain("Project-authored final review packet");
     expect(matrix).toContain("explicitly non-independent");
     expect(matrix).toContain("No red or pending gate is waived");

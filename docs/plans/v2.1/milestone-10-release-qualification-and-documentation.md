@@ -11,11 +11,13 @@ be inferred from prior releases.
 ## Current-state findings and decisions
 
 - Milestones 00–09 are complete with individual acceptance artifacts.
-- Executable candidate `3377e8c` passed the production build, 168-file/
-  1,094-test suite, current generated OpenAPI, 14-artifact readiness validator,
-  662-file release scan, rootless Docker container smoke, clean Compose
-  enrollment/login/logout/recreation HTTP journey, vault isolation, and both
-  actual envelope-root rotations.
+- Executable candidate `bfac16c` passes the production build, 169-file/
+  1,097-test suite, current generated OpenAPI, 14-artifact readiness validator,
+  663-file release scan, zero-advisory production audit, clean native install,
+  forced native source build, and rootless Docker container smoke. The prior
+  candidate's clean Compose enrollment/login/logout/recreation HTTP journey,
+  vault isolation, and both actual envelope-root rotations remain useful but
+  are not relabeled as exact-candidate evidence.
 - Exact-candidate integration fixes are recorded in `a38edc1` and `3377e8c`;
   qualification evidence is recorded in `b0c0085` and `3dadb36`.
 - The authorized 2026-07-30 production audit reports two High findings through
@@ -102,5 +104,5 @@ lack safe containment. Missing runtime or human evidence is pending, not pass.
 | 2 | blocked | `10caaba` | Exact-candidate runbook specifies clean setup/enrollment/activation/MCP, recreation, durable/ephemeral state, vault isolation, rotation/fault matrix, and sanitized record; host audit: Node 26.4.0, x86_64; Docker 29.6.1 client present, daemon inactive and admin-gated; no Compose client, Podman, or nerdctl | Must execute on a usable Docker/Compose environment; prior v2 image evidence is not reusable. |
 | 3 | blocked | `2f32206` | Project-authored security/invariant, architecture/operations, UX/accessibility, and data/API/documentation reviews cover executable candidate `b780201` and keep external gates explicit | An authorized production advisory query, hosted-client target, and named independent/human reviewers are required; agent-authored evidence cannot substitute for them. |
 | 4 | completed | `c580fa7` | Production graph: MCP SDK 1.30.0/Hono 2.0.12 and no React Router; zero production advisories at Moderate threshold; production build; 8-file/37-test control-web suite; 6-file/62-test routing, accessibility, MCP surface, server, and release-compatibility suite | React Router 7.11.0 was rejected after it reintroduced older High findings. Browser E2E is deferred until after M10. |
-| 5 | completed | slice commit | `better-sqlite3` 13.0.2 only; no `prebuild-install` lock or installed node; clean production install; bundled N-API binary smoke; forced source compilation and SQLite query; 11-file/81-test persistence, migration, application, and rotation suite; rootless Docker 29.6.1 build and release smoke | Full suite reached 1,096/1,097 passing; the sole failure was the deliberately stale exact-candidate/count release-document contract assigned to slice 6. |
-| 6 | in_progress | | Cumulative suite exposed only stale release-candidate/count documentation after both dependency changes | Browser E2E remains deferred until after M10. |
+| 5 | completed | `bfac16c` | `better-sqlite3` 13.0.2 only; no `prebuild-install` lock or installed node; clean production install; bundled N-API binary smoke; forced source compilation and SQLite query; 11-file/81-test persistence, migration, application, and rotation suite; rootless Docker 29.6.1 build and release smoke | Full suite reached 1,096/1,097 passing; the sole failure was the deliberately stale exact-candidate/count release-document contract assigned to slice 6. |
+| 6 | completed | qualification documentation commit | Candidate `bfac16c`; production build; 169 files/1,097 tests; current OpenAPI; 14 readiness artifacts; 663-file release scan; zero production advisories through Moderate | Browser E2E remains deferred until after M10. Exact-candidate full Compose/live hosted-client and independent/human evidence remain external blockers. |

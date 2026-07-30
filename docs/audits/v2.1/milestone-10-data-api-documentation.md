@@ -2,8 +2,8 @@
 
 ## Scope
 
-- **Executable baseline:** `3377e8c`
-- **Review time:** 2026-07-28 UTC
+- **Executable baseline:** `bfac16c`
+- **Review time:** 2026-07-30 UTC
 - **Assurance boundary:** project-authored contract review, not independent
   data/API approval, documentation approval, or human release sign-off.
 - **Artifacts:** persistence migrations and repositories, public control
@@ -47,18 +47,19 @@ request/response bodies, and private hostnames in the qualification record.
 ## Validation
 
 - production server and web build: pass;
-- full suite: 168 files and 1,094 tests pass;
+- full suite: 169 files and 1,097 tests pass;
 - generated control OpenAPI: current;
 - v2.1 readiness artifacts: 14 pass;
 - release-document links and contracts: pass before this artifact set;
-- closed-scope artifact/privacy scan: 662 files pass with this review packet
+- closed-scope artifact/privacy scan: 663 files pass with this review packet
   staged.
 
 ## Limitations And Verdict
 
 A real rootless Docker Compose deployment proved clean enrollment/login/logout,
-recreation, vault isolation, and both envelope-root rotations. The production
-advisory response, authenticated MCP and complete durable/ephemeral-state
+recreation, vault isolation, and both envelope-root rotations. The authorized
+production advisory response passes on `bfac16c`; authenticated MCP and the
+complete durable/ephemeral-state
 journey, visual browser qualification, hosted Codex/ChatGPT client, external
 schema consumer, documentation usability study, and independent reviewer were
 not available. Pass for the project-authored data, API, and documentation

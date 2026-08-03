@@ -24,6 +24,21 @@ describe("setup-only application boundary", () => {
         (application.controlServer.address() as AddressInfo).port;
       const gatewayPort =
         (application.gatewayServer.address() as AddressInfo).port;
+      await expect(call(controlPort, "GET", "/"))
+        .resolves.toMatchObject({
+          status: 302,
+          headers: { location: "/control" },
+        });
+      await expect(call(controlPort, "GET", "/control"))
+        .resolves.toMatchObject({
+          status: 302,
+          headers: { location: "/control/" },
+        });
+      const controlPage = await call(controlPort, "GET", "/control/");
+      expect(controlPage.status).toBe(200);
+      expect(controlPage.headers["content-type"]).toContain("text/html");
+      expect(controlPage.body).toContain('<div id="root"></div>');
+      expect(controlPage.body).not.toContain("/control/setup");
       await expect(call(gatewayPort, "GET", "/health/live"))
         .resolves.toMatchObject({
           status: 200,
@@ -54,6 +69,13 @@ describe("setup-only application boundary", () => {
       expect(setupPage.headers["content-type"]).toContain("text/html");
       expect(setupPage.body).toContain('<div id="root"></div>');
       expect(setupPage.body).toContain("<noscript>");
+      expect(setupPage.headers["content-security-policy"]).toContain(
+        "default-src 'self'",
+      );
+      expect(setupPage.headers["content-security-policy"]).toContain(
+        "script-src 'self'",
+      );
+      expect(setupPage.headers["x-frame-options"]).toBe("DENY");
 
       for (const target of [
         [controlPort, "POST", "/api/v2/auth/login"],
@@ -104,6 +126,10 @@ describe("setup-only application boundary", () => {
         ["GET", "/api/v2/setup/status", "x"],
         ["GET", "/control/setup?detail=true", undefined],
         ["POST", "/control/setup", undefined],
+        ["GET", "/?detail=true", undefined],
+        ["POST", "/", undefined],
+        ["GET", "/control?detail=true", undefined],
+        ["POST", "/control/", undefined],
       ] as const) {
         await expect(call(port, ...input)).resolves.toMatchObject({
           status: 400,

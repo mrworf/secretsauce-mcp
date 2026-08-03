@@ -1150,7 +1150,10 @@ function isSetupApiPath(url: string): boolean {
 }
 
 function isSetupWebPath(url: string): boolean {
-  return url === "/control/setup"
+  return url === "/"
+    || url === "/control"
+    || url === "/control/"
+    || url === "/control/setup"
     || url === "/control/setup/"
     || /^\/control\/assets\/[A-Za-z0-9_-]+-[A-Za-z0-9_-]{8,}\.(?:css|js|png|svg|woff2)$/
       .test(url);
@@ -1158,7 +1161,10 @@ function isSetupWebPath(url: string): boolean {
 
 function isSetupWebCandidate(url: string): boolean {
   const path = url.split("?", 1)[0] ?? "";
-  return path === "/control/setup"
+  return path === "/"
+    || path === "/control"
+    || path === "/control/"
+    || path === "/control/setup"
     || path === "/control/setup/"
     || path.startsWith("/control/assets/");
 }

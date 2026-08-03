@@ -10,6 +10,7 @@ import {
   loadControlWebAssets,
   type ControlWebAssets,
 } from "../control/webAssets.js";
+import { CONTROL_CONTENT_SECURITY_POLICY } from "../control/security.js";
 
 const RETRY_AFTER_SECONDS = 3;
 const MAX_SOCKET_WAIT_MS = 5_000;
@@ -84,6 +85,14 @@ function handleControlSetupRequest(
     });
     return;
   }
+  if (isExactGet(request, "/")) {
+    writeRedirect(response, "/control");
+    return;
+  }
+  if (isExactGet(request, "/control")) {
+    writeRedirect(response, "/control/");
+    return;
+  }
   if (isExactGet(request, LIVE_PATH)) {
     writeJson(response, 200, { state: "live" });
     return;
@@ -115,10 +124,20 @@ function handleControlSetupRequest(
     return;
   }
   if (
+    isExactGet(request, "/control/")
+  ) {
+    writeAsset(response, webAssets.index.body, webAssets.index.contentType);
+    return;
+  }
+  if (
     isExactGet(request, "/control/setup")
     || isExactGet(request, "/control/setup/")
   ) {
-    writeAsset(response, webAssets.index.body, webAssets.index.contentType);
+    writeAsset(
+      response,
+      webAssets.setupIndex.body,
+      webAssets.setupIndex.contentType,
+    );
     return;
   }
   if (request.method === "GET" && request.url?.startsWith("/control/assets/")) {
@@ -149,6 +168,12 @@ function handleControlSetupRequest(
     || request.url?.startsWith(`${LIVE_PATH}?`)
     || request.url?.startsWith(`${READY_PATH}?`)
     || request.url?.startsWith(`${STATUS_PATH}?`)
+    || request.url === "/"
+    || request.url?.startsWith("/?")
+    || request.url === "/control"
+    || request.url?.startsWith("/control?")
+    || request.url === "/control/"
+    || request.url?.startsWith("/control/?")
     || request.url === "/control/setup"
     || request.url === "/control/setup/"
     || request.url?.startsWith("/control/setup?")
@@ -163,6 +188,14 @@ function handleControlSetupRequest(
     return;
   }
   writeUnavailable(response);
+}
+
+function writeRedirect(response: ServerResponse, location: string): void {
+  response.writeHead(302, {
+    location,
+    "content-length": "0",
+  });
+  response.end();
 }
 
 function writeAsset(
@@ -223,9 +256,19 @@ function writeUnavailable(response: ServerResponse): void {
 
 function setSecurityHeaders(response: ServerResponse): void {
   response.setHeader("cache-control", "no-store");
-  response.setHeader("content-security-policy", "default-src 'none'");
+  response.setHeader(
+    "content-security-policy",
+    CONTROL_CONTENT_SECURITY_POLICY,
+  );
+  response.setHeader("x-frame-options", "DENY");
   response.setHeader("referrer-policy", "no-referrer");
   response.setHeader("x-content-type-options", "nosniff");
+  response.setHeader(
+    "permissions-policy",
+    "camera=(), microphone=(), geolocation=()",
+  );
+  response.setHeader("cross-origin-opener-policy", "same-origin");
+  response.setHeader("cross-origin-resource-policy", "same-origin");
 }
 
 function writeJson(

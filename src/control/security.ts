@@ -22,6 +22,8 @@ export const CONTROL_BODY_LIMIT_BYTES = 1_048_576;
 export const CONTROL_SESSION_COOKIE = "__Host-secretsauce_session";
 export const CONTROL_ENROLLMENT_COOKIE = "__Host-secretsauce_enrollment";
 export const CONTROL_OIDC_FLOW_COOKIE = "__Host-secretsauce_oidc";
+export const CONTROL_CONTENT_SECURITY_POLICY =
+  "default-src 'self'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'";
 
 export interface ControlRouteSecurity {
   public: boolean;
@@ -156,7 +158,7 @@ export function controlSecurityHooks(
       reply
         .header(
           "content-security-policy",
-          "default-src 'self'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'",
+          CONTROL_CONTENT_SECURITY_POLICY,
         )
         .header("x-frame-options", "DENY")
         .header("x-content-type-options", "nosniff")

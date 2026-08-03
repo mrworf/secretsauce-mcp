@@ -13,6 +13,14 @@ const MAX_ASSET_TOTAL_BYTES = 5 * 1024 * 1024;
 const MAX_ASSET_COUNT = 32;
 const assetNamePattern = /^[A-Za-z0-9_-]+-[A-Za-z0-9_-]{8,}\.(?:css|js|png|svg|woff2)$/;
 const spaPathPattern = /^\/control(?:\/[a-z0-9-]+)?\/?$/;
+const noscriptPattern = /<noscript>[\s\S]*?<\/noscript>/g;
+const setupNoscript = `<noscript>
+      <main>
+        <h1>Setting up SecretSauce</h1>
+        <p>Status updates require scripting. It is safe to refresh this page.</p>
+        <p><a href="/control/setup">Refresh setup status</a></p>
+      </main>
+    </noscript>`;
 
 export interface ControlWebAsset {
   body: Buffer;
@@ -21,6 +29,7 @@ export interface ControlWebAsset {
 
 export interface ControlWebAssets {
   index: ControlWebAsset;
+  setupIndex: ControlWebAsset;
   assets: ReadonlyMap<string, ControlWebAsset>;
 }
 
@@ -54,7 +63,17 @@ export function loadControlWebAssets(
     if (/<script(?![^>]*\bsrc=)/i.test(html) || /<style[\s>]/i.test(html)) {
       throw new Error("inline executable content");
     }
-    return { index, assets };
+    const noscript = [...html.matchAll(noscriptPattern)];
+    if (
+      noscript.length !== 1
+      || !noscript[0]![0].includes("SecretSauce Control")
+      || /setup/i.test(noscript[0]![0])
+    ) throw new Error("neutral no-script shell");
+    const setupIndex = {
+      ...index,
+      body: Buffer.from(html.replace(noscriptPattern, setupNoscript), "utf8"),
+    };
+    return { index, setupIndex, assets };
   } catch {
     throw new Error("Control web assets are unavailable.");
   }
@@ -64,6 +83,9 @@ export function installControlWebRoutes(
   application: FastifyInstance,
   webAssets: ControlWebAssets,
 ): void {
+  application.get("/", {
+    config: publicControlRoute(),
+  }, async (_request, reply) => reply.redirect("/control"));
   application.get("/control", {
     config: publicControlRoute(),
   }, async (_request, reply) => reply.redirect("/control/"));
@@ -85,7 +107,11 @@ export function installControlWebRoutes(
       sendControlError(reply, request.id, 404, "not_found", "Not found.");
       return;
     }
-    return reply.type(webAssets.index.contentType).send(webAssets.index.body);
+    const index = pathname === "/control/setup"
+      || pathname === "/control/setup/"
+      ? webAssets.setupIndex
+      : webAssets.index;
+    return reply.type(index.contentType).send(index.body);
   });
 }
 

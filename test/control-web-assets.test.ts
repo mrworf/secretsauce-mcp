@@ -58,7 +58,7 @@ describe("built control web assets", () => {
   it("rejects missing, unbounded, inline, unreferenced, and linked build inputs safely", () => {
     const directory = fixtureDirectory("invalid");
     mkdirSync(join(directory, "assets"));
-    writeFileSync(join(directory, "index.html"), "<!doctype html><div id=\"root\"></div>");
+    writeFileSync(join(directory, "index.html"), fixtureIndex());
     expect(() => loadControlWebAssets(directory)).toThrow("Control web assets are unavailable.");
 
     writeFileSync(join(directory, "assets", "index-abcdefgh.js"), "export {}");
@@ -66,19 +66,19 @@ describe("built control web assets", () => {
 
     writeFileSync(
       join(directory, "index.html"),
-      '<!doctype html><div id="root"></div><script src="/control/assets/index-abcdefgh.js"></script>',
+      `${fixtureIndex()}<script src="/control/assets/index-abcdefgh.js"></script>`,
     );
     expect(loadControlWebAssets(directory).assets.size).toBe(1);
 
     writeFileSync(
       join(directory, "index.html"),
-      '<!doctype html><script>globalThis.inline = true</script><script src="/control/assets/index-abcdefgh.js"></script>',
+      `${fixtureIndex()}<script>globalThis.inline = true</script><script src="/control/assets/index-abcdefgh.js"></script>`,
     );
     expect(() => loadControlWebAssets(directory)).toThrow("Control web assets are unavailable.");
 
     writeFileSync(
       join(directory, "index.html"),
-      '<!doctype html><script src="/control/assets/index-abcdefgh.js"></script>',
+      `${fixtureIndex()}<script src="/control/assets/index-abcdefgh.js"></script>`,
     );
     writeFileSync(join(directory, "assets", "index-abcdefgh.js"), Buffer.alloc(2 * 1024 * 1024 + 1));
     expect(() => loadControlWebAssets(directory)).toThrow("Control web assets are unavailable.");
@@ -87,7 +87,7 @@ describe("built control web assets", () => {
     mkdirSync(join(linkedDirectory, "assets"));
     writeFileSync(
       join(linkedDirectory, "index.html"),
-      '<!doctype html><script src="/control/assets/index-abcdefgh.js"></script>',
+      `${fixtureIndex()}<script src="/control/assets/index-abcdefgh.js"></script>`,
     );
     symlinkSync(join(directory, "assets", "index-abcdefgh.js"), join(linkedDirectory, "assets", "index-abcdefgh.js"));
     expect(() => loadControlWebAssets(linkedDirectory)).toThrow(
@@ -102,6 +102,22 @@ describe("built control web assets", () => {
       operational: () => false,
     });
     try {
+      const root = await application.inject({
+        method: "GET",
+        url: "/",
+        headers: { host: "control.example.org" },
+      });
+      expect(root.statusCode).toBe(302);
+      expect(root.headers.location).toBe("/control");
+
+      const controlEntry = await application.inject({
+        method: "GET",
+        url: "/control",
+        headers: { host: "control.example.org" },
+      });
+      expect(controlEntry.statusCode).toBe(302);
+      expect(controlEntry.headers.location).toBe("/control/");
+
       const setup = await application.inject({
         method: "GET",
         url: "/control/setup",
@@ -109,6 +125,18 @@ describe("built control web assets", () => {
       });
       expect(setup.statusCode).toBe(200);
       expect(setup.body).toContain('<div id="root"></div>');
+      expect(setup.body).toContain("Setting up SecretSauce");
+
+      const neutral = await application.inject({
+        method: "GET",
+        url: "/control/",
+        headers: { host: "control.example.org" },
+      });
+      expect(neutral.statusCode).toBe(200);
+      expect(neutral.body).toContain('<div id="root"></div>');
+      expect(neutral.body).toContain("SecretSauce Control");
+      expect(neutral.body).not.toContain("Setting up SecretSauce");
+      expect(neutral.body).not.toContain("/control/setup");
 
       const assetName = [...webAssets.assets.keys()]
         .find((name) => name.endsWith(".css"))!;
@@ -123,6 +151,8 @@ describe("built control web assets", () => {
 
       for (const url of [
         "/control/services",
+        "/?detail=true",
+        "/control?detail=true",
         "/control/setup?detail=true",
         `/control/assets/${assetName}?detail=true`,
       ]) {
@@ -143,6 +173,13 @@ describe("built control web assets", () => {
 
 function fixtureDirectory(name: string): string {
   return mkdtempSync(join(tmpdir(), `secretsauce-control-web-${name}-`));
+}
+
+function fixtureIndex(): string {
+  return '<!doctype html><div id="root"></div><noscript><main>'
+    + '<h1>SecretSauce Control</h1>'
+    + '<p>This browser interface requires scripting.</p>'
+    + '</main></noscript>';
 }
 
 function controlConfig(): GatewayConfig {

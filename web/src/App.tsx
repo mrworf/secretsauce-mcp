@@ -62,7 +62,11 @@ export function AppShell({
     <div className="app-shell">
       <a className="skip-link" href="#main-content">Skip to main content</a>
       <header className="topbar">
-        <NavLink className="brand" to="/" aria-label="SecretSauce control overview">
+        <NavLink
+          className="brand brand-surface"
+          to="/"
+          aria-label="SecretSauce control overview"
+        >
           <img src={brandLockup} alt="SecretSauce" />
         </NavLink>
         <div className="topbar-context">

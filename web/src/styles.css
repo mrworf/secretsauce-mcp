@@ -279,7 +279,15 @@ a {
 .brand {
   display: inline-flex;
   align-items: center;
+  width: min(220px, 58vw);
   max-width: 220px;
+}
+
+.brand-surface {
+  padding: 0.35rem 0.55rem;
+  background: #fff;
+  border: 1px solid #e3e7ec;
+  border-radius: 0.65rem;
 }
 
 .brand img {

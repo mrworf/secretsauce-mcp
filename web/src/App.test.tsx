@@ -35,6 +35,19 @@ describe("control application shell", () => {
     expect(screen.getByRole("heading", { level: 1, name: "Services" })).toHaveFocus();
   });
 
+  it("places the complete brand lockup on a keyboard-accessible light surface", async () => {
+    const user = userEvent.setup();
+    render(createTestControlRouter("user"));
+
+    const brand = screen.getByRole("link", { name: "SecretSauce control overview" });
+    expect(brand).toHaveClass("brand-surface");
+    expect(withinBrand(brand)).toHaveAttribute("alt", "SecretSauce");
+
+    await user.tab();
+    await user.tab();
+    expect(brand).toHaveFocus();
+  });
+
   it("filters implemented workspaces through the central role matrix", () => {
     const userView = render(
       createTestControlRouter("user"),
@@ -107,3 +120,9 @@ describe("control application shell", () => {
     expect(authApi.logout).toHaveBeenCalledTimes(2);
   });
 });
+
+function withinBrand(brand: HTMLElement): HTMLImageElement {
+  const image = brand.querySelector("img");
+  if (!(image instanceof HTMLImageElement)) throw new Error("Brand image is missing.");
+  return image;
+}

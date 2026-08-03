@@ -59,12 +59,46 @@ describe("documentation examples", () => {
     );
   });
 
+  it("loads the loopback browser-first config and rejects a non-loopback HTTP origin", () => {
+    const dir = mkdtempSync(join(tmpdir(), "gateway-v21-local-docs-"));
+    const key = (name: string, byte: number): string => {
+      const path = join(dir, name);
+      writeFileSync(path, Buffer.alloc(32, byte).toString("base64url"), {
+        mode: 0o400,
+      });
+      return path;
+    };
+    const raw = parse(
+      readFileSync("examples/config-v2.1.local.yaml", "utf8"),
+    ) as any;
+    raw.control.idempotency_hmac_key_file = key("idempotency.key", 11);
+    raw.identity.root_key_files["identity-primary"] = key("identity.key", 12);
+    raw.identity.session_hmac_key_file = key("session.key", 13);
+    raw.auth.builtin_oauth.token_hmac_key_file = key("oauth.key", 14);
+    raw.persistence.database_file = join(dir, "control.sqlite");
+
+    const config = validateConfig(raw, {});
+    expect(config.server.resource).toBe("http://localhost:8080");
+    expect(config.control?.publicOrigin).toBe("http://localhost:8081");
+    expect(config.auth.mode).toBe("builtin_oauth");
+    if (config.auth.mode === "builtin_oauth") {
+      expect(config.auth.builtinOAuth.issuer).toBe("http://localhost:8080");
+    }
+
+    const unsafe = structuredClone(raw);
+    unsafe.control.public_origin = "http://0.0.0.0:8081";
+    expect(() => validateConfig(unsafe, {})).toThrow(
+      "control.public_origin must use HTTPS except for loopback development",
+    );
+  });
+
   it("does not include example raw downstream credentials in docs", () => {
     const files = [
       "README.md",
       "docker-compose.example.yaml",
       "examples/config.yaml",
       "examples/config-v2.1.yaml",
+      "examples/config-v2.1.local.yaml",
       "docs/config-reference.md",
       "docs/codex-setup.md",
       "docs/security-notes.md",

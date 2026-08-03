@@ -1,0 +1,92 @@
+services:
+  secretsauce-vault:
+    build: .
+    image: secretsauce-mcp:local
+    command: ["node", "dist/vault/main.js"]
+    user: "0:0"
+    group_add:
+      - "1002"
+    network_mode: "none"
+    volumes:
+      - ./examples/vault.yaml:/config/vault.yaml:ro
+      - vault-generated:/var/lib/secretsauce/generated
+      - vault-setup-state:/var/lib/secretsauce/setup
+      - vault-runtime:/run/secretsauce-vault
+      - vault-store:/var/lib/secretsauce/vault
+      - secretsauce-database:/inventory/database:ro
+      - secretsauce-audit:/inventory/audit:ro
+      - secretsauce-oauth:/inventory/oauth:ro
+    environment:
+      SECRETSAUCE_VAULT_CONFIG: /config/vault.yaml
+      SECRETSAUCE_VAULT_STATUS_SOCKET: /run/secretsauce-vault/status.sock
+      SECRETSAUCE_VAULT_OWNER_UID: "1001"
+      SECRETSAUCE_VAULT_HEALTH_MODE: liveness
+    logging:
+      driver: local
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "node", "dist/vault/healthCli.js"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  secretsauce:
+    deploy:
+      replicas: 1
+    user: "1000:1000"
+    group_add:
+      - "1002"
+    build: .
+    image: secretsauce-mcp:local
+    ports:
+      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:8081:8081"
+    volumes:
+      - ./examples/config-v2.1.local.yaml:/config/config.yaml:ro
+      - ./config/secretlint.yaml:/config/secretlint.yaml:ro
+      - ./config/sensitive-names.yaml:/config/sensitive-names.yaml:ro
+      - secretsauce-audit:/var/lib/secretsauce/audit
+      - secretsauce-database:/var/lib/secretsauce/database
+      - secretsauce-oauth:/var/lib/secretsauce/oauth
+      - vault-generated:/var/lib/secretsauce/generated:ro
+      - vault-setup-state:/var/lib/secretsauce/setup:ro
+      - vault-runtime:/run/secretsauce-vault:ro
+    environment:
+      CONFIG_PATH: /config/config.yaml
+      SECRETLINT_CONFIG_PATH: /config/secretlint.yaml
+      SENSITIVE_NAMES_CONFIG_PATH: /config/sensitive-names.yaml
+      SECRETSAUCE_VAULT_CREDENTIAL_SOCKET: /run/secretsauce-vault/credential.sock
+      SECRETSAUCE_VAULT_STATUS_SOCKET: /run/secretsauce-vault/status.sock
+      SECRETSAUCE_SETUP_STATUS_TIMEOUT_MS: "2000"
+      SECRETSAUCE_VAULT_OWNER_UID: "1001"
+      SECRETSAUCE_VAULT_MANIFEST_FILE: /var/lib/secretsauce/setup/manifest.json
+      SECRETSAUCE_VAULT_KEY_OWNER_UID: "0"
+      SECRETSAUCE_VAULT_SHARED_GID: "1002"
+      SECRETSAUCE_VAULT_DATA_KEY_FILE: /var/lib/secretsauce/generated/shared/data-plane.key
+      SECRETSAUCE_VAULT_CONTROL_KEY_FILE: /var/lib/secretsauce/generated/shared/control-plane.key
+      SECRETSAUCE_VAULT_RESOLVE_KEY_FILE: /var/lib/secretsauce/generated/shared/resolve-capability.key
+      SECRETSAUCE_VAULT_BACKUP_KEY_FILE: /var/lib/secretsauce/generated/shared/backup.key
+      SECRETSAUCE_VAULT_BACKUP_CAPABILITY_KEY_FILE: /var/lib/secretsauce/generated/shared/backup-capability.key
+    logging:
+      driver: local
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/health/live"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  vault-generated:
+  vault-setup-state:
+  vault-runtime:
+  vault-store:
+  secretsauce-database:
+  secretsauce-audit:
+  secretsauce-oauth:

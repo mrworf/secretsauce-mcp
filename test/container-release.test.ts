@@ -71,6 +71,70 @@ describe("release container deployment", () => {
     expect(source).toContain("Portable restore is opt-in");
   });
 
+  it("provides a loopback-only Compose topology with production security parity", () => {
+    const production = parse(
+      readFileSync("docker-compose.example.yaml", "utf8"),
+    ) as any;
+    const source = readFileSync("docker-compose.local.yaml", "utf8");
+    const local = parse(source) as any;
+    const application = local.services.secretsauce;
+    const vault = local.services["secretsauce-vault"];
+
+    expect(Object.keys(local.services).sort()).toEqual(
+      Object.keys(production.services).sort(),
+    );
+    expect(application.ports).toEqual([
+      "127.0.0.1:8080:8080",
+      "127.0.0.1:8081:8081",
+    ]);
+    expect(application.volumes).toContain(
+      "./examples/config-v2.1.local.yaml:/config/config.yaml:ro",
+    );
+    expect(vault.network_mode).toBe("none");
+    expect(vault).not.toHaveProperty("ports");
+    expect(application.deploy.replicas).toBe(1);
+    expect(application.healthcheck.test).toEqual(
+      production.services.secretsauce.healthcheck.test,
+    );
+    expect(Object.keys(local.volumes).sort()).toEqual(
+      Object.keys(production.volumes).sort(),
+    );
+    expect(application.volumes).toEqual(expect.arrayContaining([
+      "secretsauce-database:/var/lib/secretsauce/database",
+      "secretsauce-audit:/var/lib/secretsauce/audit",
+      "secretsauce-oauth:/var/lib/secretsauce/oauth",
+      "vault-generated:/var/lib/secretsauce/generated:ro",
+      "vault-setup-state:/var/lib/secretsauce/setup:ro",
+      "vault-runtime:/run/secretsauce-vault:ro",
+    ]));
+    expect(vault.volumes).toEqual(expect.arrayContaining([
+      "vault-store:/var/lib/secretsauce/vault",
+      "secretsauce-database:/inventory/database:ro",
+      "secretsauce-audit:/inventory/audit:ro",
+      "secretsauce-oauth:/inventory/oauth:ro",
+    ]));
+    expect(application.logging).toEqual(
+      production.services.secretsauce.logging,
+    );
+    expect(vault.logging).toEqual(
+      production.services["secretsauce-vault"].logging,
+    );
+    expect(source).not.toContain("docker.sock");
+    expect(source).not.toContain("depends_on");
+
+    const scripts = JSON.parse(readFileSync("package.json", "utf8"))
+      .scripts as Record<string, string>;
+    expect(scripts["local:up"]).toBe(
+      "docker compose -f docker-compose.local.yaml up --build",
+    );
+    expect(scripts["local:down"]).toBe(
+      "docker compose -f docker-compose.local.yaml down",
+    );
+    expect(scripts["local:logs"]).toBe(
+      "docker compose -f docker-compose.local.yaml logs --follow secretsauce",
+    );
+  });
+
   it("smokes independent stateless MCP requests before and after restart", () => {
     const smoke = readFileSync("scripts/container-smoke.sh", "utf8");
     expect(smoke).toContain("docker build --platform linux/amd64");

@@ -157,6 +157,34 @@ SecretSauce rejects non-loopback HTTP resource, issuer, and JWKS URLs by default
 
 ## Local Docker Example
 
+The checked-in local topology runs the complete browser-first system directly
+on loopback without TLS or a reverse proxy:
+
+```text
+npm run local:up
+```
+
+Open `http://localhost:8081/`. The neutral entrypoint redirects through
+`/control` to the ordinary control shell in every lifecycle phase. The explicit
+operator status page is `http://localhost:8081/control/setup`; it is never the
+automatic entry destination. The MCP URL is `http://localhost:8080/mcp`.
+
+The foreground command shows both container logs. From another terminal,
+`npm run local:logs` follows only the application log containing the temporary
+initial enrollment secret. Stop the topology with `npm run local:down`; named
+volumes and enrolled state are preserved. If ports 8080 or 8081 are already in
+use, stop the conflicting process before starting because the configured
+loopback origins and published ports must remain identical.
+
+To erase a disposable local installation, first verify the Compose project and
+volume targets, then run `docker compose -f docker-compose.local.yaml down
+--volumes`. This permanently deletes its generated keys, manifest, database,
+vault store, OAuth state, and audit history; never run it against an installation
+whose state must be retained.
+
+The following excerpt illustrates the same two-container boundary. The
+checked-in `docker-compose.local.yaml` is canonical for local execution.
+
 ```yaml
 services:
   secretsauce-vault:
@@ -186,10 +214,10 @@ services:
     user: "1000:1000"
     group_add: ["1002"]
     ports:
-      - "8080:8080"
-      - "8081:8081"
+      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:8081:8081"
     volumes:
-      - ./config-v2.1.yaml:/config/config.yaml:ro
+      - ./config-v2.1.local.yaml:/config/config.yaml:ro
       - ./secretlint.yaml:/config/secretlint.yaml:ro
       - ./sensitive-names.yaml:/config/sensitive-names.yaml:ro
       - secretsauce-audit:/var/lib/secretsauce/audit
@@ -227,11 +255,13 @@ volumes:
 
 The vault and application start concurrently; do not add a readiness-based
 `depends_on`. During provisioning the application serves bounded setup status
-without opening SQLite or ordinary OAuth, MCP, login, or control behavior.
-Open `/control/setup` on the configured control origin to view the accessible
-browser status page. It polls with capped backoff, offers a safe manual retry
-after failure, advances to the fixed enrollment route when permitted, and
-redirects to the ordinary control entrypoint once available.
+and the lifecycle-neutral static control shell without opening SQLite or
+ordinary OAuth, MCP, login, or control API behavior.
+The ordinary control origin always enters through `/control`; open
+`/control/setup` explicitly to view the accessible operator status page. It
+polls with capped backoff, offers a safe manual retry after failure, advances to
+the fixed enrollment route when permitted, and redirects to the ordinary
+control entrypoint once available.
 Compose health uses liveness at `GET /api/v2/health/live`; operational monitors
 should use `GET /api/v2/health/ready`, and setup clients may read
 `GET /api/v2/setup/status`.

@@ -5,6 +5,14 @@ SecretSauce application process owning the gateway and control listeners plus
 their single SQLite writer, and one isolated vault broker. Read the linked
 focused guides before the corresponding destructive or recovery operation.
 
+For proxy-free workstation development, run `npm run local:up`, open
+`http://localhost:8081/`, and follow the application log with
+`npm run local:logs`. This loopback-only HTTP topology is not the production
+HTTPS deployment described below. `npm run local:down` preserves its named
+volumes; use the explicitly destructive `docker compose -f
+docker-compose.local.yaml down --volumes` only after confirming the local state
+may be permanently erased.
+
 ## Install and bootstrap
 
 1. Build or pull the pinned image and copy
@@ -23,10 +31,11 @@ focused guides before the corresponding destructive or recovery operation.
    surfaces use separate public origins.
 4. Run `docker compose -f docker-compose.example.yaml up --build`. Both
    services start concurrently. Before provisioning and validation complete,
-   only bounded setup/liveness surfaces are available; the vault remains
-   networkless. Require sanitized readiness before exposing either public
-   origin. `npm run start:gateway` and `npm run start:control` are diagnostic
-   single-surface entrypoints, not a supported concurrent database topology.
+   only bounded setup/liveness surfaces and the lifecycle-neutral static
+   control shell are available; the vault remains networkless. Require
+   sanitized readiness before exposing either public origin. `npm run
+   start:gateway` and `npm run start:control` are diagnostic single-surface
+   entrypoints, not a supported concurrent database topology.
 5. Read the clearly labeled initial enrollment secret from the current
    application container log, protect it as temporary root enrollment
    authority, open **Enroll account** in the browser, and complete

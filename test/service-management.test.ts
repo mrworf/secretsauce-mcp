@@ -264,6 +264,47 @@ describe("durable service ownership", () => {
     });
   });
 
+  it("lets an active superadmin explicitly own a service without changing scoped-admin access", async () => {
+    const fixture = await serviceFixture("superadmin-owner");
+    const created = await fixture.create("self-owned", "Self owned");
+    const assigned = await fixture.service.assign(
+      fixture.superadmin,
+      created.id,
+      fixture.superadmin.principalId,
+      created.version,
+      false,
+      CORRELATION,
+    );
+
+    expect(assigned).toMatchObject({ version: 2, adminCount: 1 });
+    await expect(fixture.service.admins(fixture.superadmin, created.id)).resolves.toEqual([
+      expect.objectContaining({ id: fixture.superadmin.principalId, status: "active" }),
+    ]);
+    await expect(fixture.service.validate(
+      fixture.superadmin,
+      created.id,
+      CORRELATION,
+    )).resolves.toMatchObject({
+      issues: [{ code: "destination_required", pointer: "/destinations" }],
+    });
+    await expect(fixture.relationships.relatedServiceIds(fixture.superadmin.principalId))
+      .resolves.toEqual([]);
+
+    const suspended = await fixture.identity(
+      "suspended-superadmin@example.org",
+      "superadmin",
+      "suspended",
+    );
+    await expect(fixture.service.assign(
+      fixture.superadmin,
+      created.id,
+      suspended.id,
+      assigned.version,
+      false,
+      CORRELATION,
+    )).rejects.toEqual(new ServiceManagementError("not_found"));
+  });
+
   it("edits canonical destination drafts and previews closed validation outcomes", async () => {
     const fixture = await serviceFixture("drafts");
     const created = await fixture.create("draft-api", "Draft API");
@@ -1007,10 +1048,9 @@ describe("durable service ownership", () => {
     expect(conflict.statusCode).toBe(409);
     expect(conflict.json().error).toMatchObject({ code: "service_conflict" });
 
-    const admin = await fixture.identity("route-admin@example.org", "admin", "active");
     const assigned = await application.inject({
       method: "PUT",
-      url: `/api/v2/services/${serviceId}/admins/${admin.id}`,
+      url: `/api/v2/services/${serviceId}/admins/${fixture.superadmin.principalId}`,
       headers: mutationHeaders({ "if-match": '"1"' }),
       payload: {},
     });
@@ -1019,7 +1059,7 @@ describe("durable service ownership", () => {
 
     const unjustifiedRemoval = await application.inject({
       method: "DELETE",
-      url: `/api/v2/services/${serviceId}/admins/${admin.id}`,
+      url: `/api/v2/services/${serviceId}/admins/${fixture.superadmin.principalId}`,
       headers: mutationHeaders({ "if-match": '"2"' }),
       payload: {},
     });

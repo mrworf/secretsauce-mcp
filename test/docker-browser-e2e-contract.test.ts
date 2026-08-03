@@ -24,6 +24,10 @@ describe("Docker browser end-to-end contract", () => {
     expect(journey).toContain('stdio: ["ignore", "pipe", "ignore"]');
     expect(journey).toContain("invalid-enrollment-code");
     expect(journey).toContain("setSensitiveValue");
+    expect(journey).toContain("brandPresentation");
+    expect(journey).toContain("Advanced routing limits");
+    expect(journey).toContain("Assign administrator");
+    expect(journey).toContain("Draft is publishable");
     expect(journey).not.toMatch(/console\.(?:log|error|warn)/);
     expect(journey).not.toMatch(/\.fill\((?:enrollmentSecret|password|totpCode)/);
   });

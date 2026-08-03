@@ -1482,7 +1482,10 @@ export class ServiceManagementRepository {
               "SELECT role, status FROM users WHERE id = ?",
               [input.userId],
             );
-            if (target?.role !== "admin" || target.status !== "active") {
+            if (
+              (target?.role !== "admin" && target?.role !== "superadmin") ||
+              target.status !== "active"
+            ) {
               throw new PersistenceError("identity_not_found");
             }
             transaction.run(`
@@ -2157,7 +2160,7 @@ function validationView(
   const activeAdmins = query.get<{ count: number }>(`
     SELECT count(*) AS count
     FROM service_admins sa JOIN users u ON u.id = sa.user_id
-    WHERE sa.service_id = ? AND u.role = 'admin' AND u.status = 'active'
+    WHERE sa.service_id = ? AND u.role IN ('admin', 'superadmin') AND u.status = 'active'
   `, [service.id])?.count ?? 0;
   if (activeAdmins < 1) {
     issues.push({ code: "service_admin_required", pointer: "/admins" });

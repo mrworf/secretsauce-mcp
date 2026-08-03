@@ -6,6 +6,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type {
   ControlServiceDetail,
+  ControlUser,
   ServiceControlApi,
   ServiceDraftDocument,
 } from "./controlApi";
@@ -158,6 +159,73 @@ describe("service management workspace", () => {
     expect(window.location.href).not.toContain("format_version");
   });
 
+  it("assigns the current superadmin through an eligible-account picker", async () => {
+    const user = userEvent.setup();
+    const api = fakeServiceApi({ ...SERVICE, admin_count: 0 });
+    api.serviceAdmins.mockResolvedValue({ admins: [] });
+    render(<ServicesPage role="superadmin" api={api} />);
+    expect(await screen.findByRole("heading", { name: "Managed API" })).toBeInTheDocument();
+    const picker = await screen.findByLabelText("Eligible administrator");
+    expect(picker).toHaveValue(CURRENT_SUPERADMIN.id);
+    expect(screen.getByRole("option", { name: /You — Super Admin.*Superadmin/i }))
+      .toBeInTheDocument();
+    expect(screen.queryByLabelText(/user ID/i)).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Assign administrator" }));
+    await waitFor(() => expect(api.assignServiceAdmin).toHaveBeenCalledWith(
+      expect.objectContaining({ id: SERVICE.id }),
+      CURRENT_SUPERADMIN.id,
+    ));
+  });
+
+  it("filters assigned candidates and reports a bounded eligibility race", async () => {
+    const user = userEvent.setup();
+    const api = fakeServiceApi();
+    api.assignServiceAdmin.mockRejectedValueOnce(
+      new ControlApiError("not_found", "The resource was not found."),
+    );
+    render(<ServicesPage role="superadmin" api={api} />);
+    expect(await screen.findByLabelText("Eligible administrator")).toHaveValue(
+      CURRENT_SUPERADMIN.id,
+    );
+    expect(screen.queryByRole("option", { name: /Service Admin/ })).not.toBeInTheDocument();
+
+    await user.type(screen.getByLabelText("Find an administrator"), "super@example.org");
+    await user.click(screen.getByRole("button", { name: "Search" }));
+    await waitFor(() => expect(api.listUsers).toHaveBeenCalledWith({
+      role: "superadmin",
+      status: "active",
+      q: "super@example.org",
+    }));
+    await user.click(screen.getByRole("button", { name: "Assign administrator" }));
+    expect(await screen.findByText(
+      "That account is no longer eligible. Refresh the list and try again.",
+    )).toBeInTheDocument();
+    expect(screen.queryByText("The resource was not found.")).not.toBeInTheDocument();
+  });
+
+  it("explains when every eligible administrator is already assigned", async () => {
+    const api = fakeServiceApi();
+    api.serviceAdmins.mockResolvedValue({
+      admins: [{
+        id: CURRENT_SUPERADMIN.id,
+        email: CURRENT_SUPERADMIN.email,
+        given_name: CURRENT_SUPERADMIN.given_name,
+        family_name: CURRENT_SUPERADMIN.family_name,
+        status: "active",
+        assigned_at: 1,
+      }],
+    });
+    api.listUsers.mockImplementation(async ({ role } = {}) => ({
+      users: role === "superadmin" ? [CURRENT_SUPERADMIN] : [],
+    }));
+    render(<ServicesPage role="superadmin" api={api} />);
+    expect(await screen.findByText(
+      "No eligible active administrators are available. Invite or reactivate one in Users.",
+    )).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Assign administrator" })).toBeDisabled();
+  });
+
   it("lets assigned admins configure and roll back without privileged controls", async () => {
     const user = userEvent.setup();
     const api = fakeServiceApi();
@@ -298,10 +366,36 @@ const SERVICE: ControlServiceDetail = {
   }],
 };
 
+const CURRENT_SUPERADMIN: ControlUser = {
+  id: "018f1f2e-7b3c-7a10-8000-000000000001",
+  email: "super@example.org",
+  given_name: "Super",
+  family_name: "Admin",
+  role: "superadmin",
+  status: "active",
+  password_state: "configured",
+  totp_state: "configured",
+  version: 1,
+  created_at: 1,
+  updated_at: 1,
+};
+
+const ASSIGNED_ADMIN: ControlUser = {
+  ...CURRENT_SUPERADMIN,
+  id: "018f1f2e-7b3c-7a10-8000-000000000030",
+  email: "admin@example.org",
+  given_name: "Service",
+  role: "admin",
+};
+
 function fakeServiceApi(initial: ControlServiceDetail = SERVICE) {
   let current = initial;
   const changed = () => ({ ...current, version: current.version + 1 });
   const api = {
+    self: vi.fn(async () => CURRENT_SUPERADMIN),
+    listUsers: vi.fn(async ({ role } = {}) => ({
+      users: role === "admin" ? [ASSIGNED_ADMIN] : [CURRENT_SUPERADMIN],
+    })),
     listServices: vi.fn(async () => ({ services: [current] })),
     service: vi.fn(async () => current),
     createService: vi.fn<ServiceControlApi["createService"]>(async () => current),

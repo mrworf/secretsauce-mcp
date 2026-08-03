@@ -143,7 +143,7 @@ and retains the existing browser step-up delegate.
 
 Only a superadmin creates a service. Creation is idempotent, starts as
 non-routable `draft`, and contains no implicit admin assignment. Superadmins add
-or remove active `admin` users with service-version concurrency. A
+or remove active `admin` or `superadmin` users with service-version concurrency. A
 non-archived service must retain at least one assigned admin after its first
 assignment; an archived service may remove the final admin before deletion.
 Admins cannot transfer their authority.

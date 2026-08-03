@@ -36,10 +36,11 @@ and one mutable draft:
 3. `archived` clears publication intent, advances the publication generation,
    and prevents further draft edits or publication.
 
-Publishing requires at least one active assigned administrator and one complete
-destination. It rejects an archived service, an unchanged already-published
-draft, and stale aggregate versions. Success atomically appends the canonical
-revision, advances the aggregate version and publication generation, emits an
+Publishing requires at least one active assigned administrator—an `admin` or
+`superadmin`—and one complete destination. It rejects an archived service, an
+unchanged already-published draft, and stale aggregate versions. Success
+atomically appends the canonical revision, advances the aggregate version and
+publication generation, emits an
 invalidation event, and records sanitized audit evidence.
 
 Publication does not probe the network and is not a downstream health check.
@@ -48,9 +49,10 @@ runtime activation is implemented.
 
 ## Destination rules
 
-A service has at most 64 destinations. Each destination contains a stable slug,
-canonical absolute base URL, one or two allowed schemes, one to 32 host
-matchers, one to 32 allowed ports, and an explicit TLS verification choice.
+A service has at most 64 destinations. Each destination contains a stable
+internal identifier, canonical absolute base URL, one or two allowed schemes,
+one to 32 host matchers, one to 32 allowed ports, and an explicit TLS
+verification choice.
 
 Validation rejects:
 

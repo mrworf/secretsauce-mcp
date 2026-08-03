@@ -1187,7 +1187,7 @@ export interface BrowserAuthenticationApi {
   logout(csrfToken: string): Promise<{ logged_out: true }>;
 }
 
-export interface ServiceControlApi {
+export interface ServiceControlApi extends Pick<ControlApi, "self" | "listUsers"> {
   listServices(input?: {
     q?: string;
     lifecycle?: ServiceLifecycle;

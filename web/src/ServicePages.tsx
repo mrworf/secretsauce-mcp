@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import {
   browserControlApi,
   ControlApiError,
+  type ControlUser,
   type ControlService,
   type ControlServiceDetail,
   type ServiceAdmin,
@@ -243,6 +244,7 @@ function ServiceWorkspace({
   async function apply(
     operation: () => Promise<ControlServiceDetail>,
     success: string,
+    errorMessage: (error: unknown) => string = messageFor,
   ) {
     setError("");
     setNotice("");
@@ -259,7 +261,7 @@ function ServiceWorkspace({
       setRevisions(history.revisions);
       setAdmins(ownership.admins);
     } catch (caught) {
-      setError(messageFor(caught));
+      setError(errorMessage(caught));
       throw caught;
     }
   }
@@ -1043,9 +1045,57 @@ function OwnershipEditor({
   service: ControlServiceDetail;
   admins: ServiceAdmin[];
   api: ServiceControlApi;
-  apply: (operation: () => Promise<ControlServiceDetail>, success: string) => Promise<void>;
+  apply: (
+    operation: () => Promise<ControlServiceDetail>,
+    success: string,
+    errorMessage?: (error: unknown) => string,
+  ) => Promise<void>;
 }) {
-  const [userId, setUserId] = useState("");
+  const [query, setQuery] = useState("");
+  const [candidates, setCandidates] = useState<ControlUser[]>([]);
+  const [selectedId, setSelectedId] = useState("");
+  const [selfId, setSelfId] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [directoryError, setDirectoryError] = useState("");
+  const assignedIds = admins.map(({ id }) => id).sort().join(":");
+
+  async function loadCandidates(search = query) {
+    setLoading(true);
+    setDirectoryError("");
+    try {
+      const q = search.trim();
+      const [self, adminResult, superadminResult] = await Promise.all([
+        api.self(),
+        api.listUsers({ role: "admin", status: "active", ...(q === "" ? {} : { q }) }),
+        api.listUsers({ role: "superadmin", status: "active", ...(q === "" ? {} : { q }) }),
+      ]);
+      setSelfId(self.id);
+      const eligible = new Map<string, ControlUser>();
+      for (const user of [self, ...adminResult.users, ...superadminResult.users]) {
+        if (
+          user.status === "active" &&
+          (user.role === "admin" || user.role === "superadmin") &&
+          !admins.some(({ id }) => id === user.id)
+        ) eligible.set(user.id, user);
+      }
+      const next = [...eligible.values()].sort((left, right) =>
+        left.id === self.id ? -1 : right.id === self.id ? 1 : left.email.localeCompare(right.email)
+      );
+      setCandidates(next);
+      setSelectedId((current) =>
+        next.some(({ id }) => id === current) ? current : next[0]?.id ?? ""
+      );
+    } catch {
+      setDirectoryError("Eligible administrators could not be loaded. Try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadCandidates("");
+  }, [service.id, assignedIds, api]);
+
   return (
     <>
       <h4>Administrative ownership</h4>
@@ -1067,24 +1117,68 @@ function OwnershipEditor({
       </ul>
       <form className="profile-form" onSubmit={(event) => {
         event.preventDefault();
+        if (selectedId === "") return;
         void apply(
-          () => api.assignServiceAdmin(service, userId),
+          () => api.assignServiceAdmin(service, selectedId),
           "Administrator assigned.",
-        ).then(() => setUserId(""), () => undefined);
+          assignmentMessage,
+        ).then(() => setSelectedId(""), () => undefined);
       }}>
-        <label>
-          Active administrator user ID
-          <input
-            required
-            type="text"
-            value={userId}
-            onChange={(event) => setUserId(event.target.value)}
-          />
-        </label>
-        <button type="submit">Assign administrator</button>
+        <div className="field-pair ownership-search">
+          <label>
+            Find an administrator
+            <input
+              type="search"
+              maxLength={512}
+              value={query}
+              placeholder="Name or email"
+              onChange={(event) => setQuery(event.target.value)}
+            />
+          </label>
+          <button type="button" disabled={loading} onClick={() => void loadCandidates()}>
+            Search
+          </button>
+        </div>
+        {directoryError !== "" && <p className="form-error" role="alert">{directoryError}</p>}
+        {loading ? (
+          <p role="status">Loading eligible administrators…</p>
+        ) : candidates.length === 0 ? (
+          <p className="muted-copy">
+            No eligible active administrators are available. Invite or reactivate one in Users.
+          </p>
+        ) : (
+          <label>
+            Eligible administrator
+            <select required value={selectedId} onChange={(event) => setSelectedId(event.target.value)}>
+              {candidates.map((candidate) => (
+                <option key={candidate.id} value={candidate.id}>
+                  {candidateLabel(candidate, candidate.id === selfId)}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        <button type="submit" disabled={loading || selectedId === ""}>
+          Assign administrator
+        </button>
       </form>
     </>
   );
+}
+
+function candidateLabel(user: ControlUser, self: boolean): string {
+  const name = `${user.given_name} ${user.family_name}`.trim();
+  return `${self ? "You — " : ""}${name} (${user.email}) · ${label(user.role)}`;
+}
+
+function assignmentMessage(error: unknown): string {
+  if (error instanceof ControlApiError && error.code === "not_found") {
+    return "That account is no longer eligible. Refresh the list and try again.";
+  }
+  if (error instanceof ControlApiError && error.code === "service_conflict") {
+    return "Service ownership changed. Refresh the service and try again.";
+  }
+  return messageFor(error);
 }
 
 function LifecycleEditor({

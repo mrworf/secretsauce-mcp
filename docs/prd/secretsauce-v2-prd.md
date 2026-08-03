@@ -600,7 +600,7 @@ If a request uses multiple configured credential references, assignment must suc
 
 Only a superadmin can create a service record.
 
-A new service begins as a non-routable draft. The superadmin assigns one or more admins. An assigned admin may configure the service from scratch and publish it after validation.
+A new service begins as a non-routable draft. The superadmin explicitly assigns one or more active administrators. An assigned administrator may be an `admin` or `superadmin`; an assigned admin may configure the service from scratch and publish it after validation.
 
 Only a superadmin can:
 
@@ -612,7 +612,7 @@ Only a superadmin can:
 
 The editor supports:
 
-- Name, stable slug, description, and documentation URL.
+- Name, stable internal identifier, description, and documentation URL. Ordinary browser workflows generate and hide the identifier.
 - Destinations, allowed schemes, hosts, ports, and TLS behavior.
 - Credential metadata and assignment.
 - Service policy operating mode and rules.

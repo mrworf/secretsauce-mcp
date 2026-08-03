@@ -100,6 +100,64 @@ test("runs the clean Docker browser enrollment and login journey", async ({
     await expect(page.getByRole("heading", { name: "Overview" })).toBeVisible({
       timeout: 30_000,
     });
+
+    const brand = page.getByRole("link", { name: "SecretSauce control overview" });
+    await expect(brand).toBeVisible();
+    const brandPresentation = await brand.evaluate((element) => {
+      const image = element.querySelector("img");
+      if (!(image instanceof HTMLImageElement)) throw new Error("Brand image is unavailable.");
+      const surface = element.getBoundingClientRect();
+      const mark = image.getBoundingClientRect();
+      return {
+        background: getComputedStyle(element).backgroundColor,
+        contained: mark.top >= surface.top && mark.bottom <= surface.bottom &&
+          mark.left >= surface.left && mark.right <= surface.right,
+      };
+    });
+    expect(brandPresentation).toEqual({ background: "rgb(255, 255, 255)", contained: true });
+
+    await page.getByRole("link", { name: "Services" }).first().click();
+    await expect(page.getByRole("heading", { name: "Service drafts" })).toBeVisible();
+    await expect(page.locator("body")).not.toContainText(/\bslug\b/i);
+    await page.getByRole("button", { name: "New service" }).click();
+    const serviceForm = page.locator("form").filter({
+      has: page.getByRole("heading", { name: "Create a non-routable draft" }),
+    });
+    await serviceForm.getByLabel("Service name").fill("Browser managed API");
+    await serviceForm.getByRole("button", { name: "Create service draft" }).click();
+    await expect(page.getByRole("heading", { name: "Browser managed API" })).toBeVisible();
+
+    await page.getByRole("button", { name: "Add destination" }).click();
+    const destinationForm = page.locator("form").filter({
+      has: page.getByRole("heading", { name: "New destination" }),
+    });
+    await destinationForm.getByLabel("Base URL").fill("https://api.example.org/v1/");
+    await expect(destinationForm).toContainText(
+      "Requests are limited to HTTPS on api.example.org:443.",
+    );
+    const tls = destinationForm.getByRole("checkbox", { name: /Verify TLS certificates/i });
+    const tlsPresentation = await tls.evaluate((element) => {
+      const input = element.getBoundingClientRect();
+      const control = element.closest("label")?.getBoundingClientRect();
+      return { width: input.width, height: input.height, controlHeight: control?.height ?? 0 };
+    });
+    expect(tlsPresentation.width).toBeLessThanOrEqual(24);
+    expect(tlsPresentation.height).toBeLessThanOrEqual(24);
+    expect(tlsPresentation.controlHeight).toBeGreaterThanOrEqual(44);
+    await destinationForm.getByText("Advanced routing limits").click();
+    await expect(destinationForm.getByLabel("Rule 1 value")).toHaveValue("api.example.org");
+    await expect(destinationForm.getByLabel("Port 1")).toHaveValue("443");
+    await destinationForm.getByRole("button", { name: "Create destination" }).click();
+    await expect(page.getByText("Destination added to the draft.")).toBeVisible();
+
+    const owner = await page.getByLabel("Eligible administrator");
+    await expect(owner).toContainText("You — Browser Administrator");
+    await page.getByRole("button", { name: "Assign administrator" }).click();
+    await expect(page.getByText("Administrator assigned.")).toBeVisible();
+    await page.getByRole("button", { name: "Validate draft" }).click();
+    await expect(page.getByText("Draft is publishable")).toBeVisible();
+    await page.getByRole("button", { name: "Publish draft" }).click();
+    await expect(page.getByText("Published draft current")).toBeVisible();
   } finally {
     parsed.seed.fill(0);
   }

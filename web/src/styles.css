@@ -1083,6 +1083,10 @@ button:disabled {
   font-weight: 700;
 }
 
+.ownership-search > button {
+  align-self: end;
+}
+
 .destination-card h5 {
   overflow-wrap: anywhere;
 }

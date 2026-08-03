@@ -232,7 +232,6 @@ export function ProfilePage({
             {services.map((service) => (
               <li key={service.id}>
                 <strong>{service.name}</strong>
-                <span>{service.slug}</span>
               </li>
             ))}
           </ul>

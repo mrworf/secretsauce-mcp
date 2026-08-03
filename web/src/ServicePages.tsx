@@ -100,7 +100,7 @@ export function ServicesPage({
               value={query}
               maxLength={512}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Slug or name"
+              placeholder="Service name"
             />
           </label>
           <label>
@@ -135,7 +135,6 @@ export function ServicesPage({
                 >
                   <span>
                     <strong>{service.name}</strong>
-                    <small>{service.slug}</small>
                   </span>
                   <span className={`state-label state-${service.lifecycle}`}>
                     {label(service.lifecycle)}
@@ -167,39 +166,28 @@ function CreateServiceForm({
   api: ServiceControlApi;
   onCreated: (service: ControlService) => void;
 }) {
-  const [slug, setSlug] = useState("");
   const [name, setName] = useState("");
   const [error, setError] = useState("");
+  const identifier = useGeneratedIdentifier("service", () => name);
   return (
     <form className="profile-form inset-form" onSubmit={(event) => {
       event.preventDefault();
       setError("");
-      void api.createService({ slug, name }).then(onCreated, (caught) => {
-        setError(messageFor(caught));
-      });
+      void api.createService({ slug: identifier.current(), name }).then((service) => {
+        identifier.reset();
+        onCreated(service);
+      }, (caught) => setError(messageFor(caught)));
     }}>
       <h3>Create a non-routable draft</h3>
-      <div className="field-pair">
-        <label>
-          Stable slug
-          <input
-            required
-            pattern="[a-z][a-z0-9-]{0,63}"
-            maxLength={64}
-            value={slug}
-            onChange={(event) => setSlug(event.target.value)}
-          />
-        </label>
-        <label>
-          Service name
-          <input
-            required
-            maxLength={120}
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-          />
-        </label>
-      </div>
+      <label>
+        Service name
+        <input
+          required
+          maxLength={120}
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+        />
+      </label>
       {error !== "" && <p className="form-error" role="alert">{error}</p>}
       <button type="submit">Create service draft</button>
     </form>
@@ -287,7 +275,7 @@ function ServiceWorkspace({
     <article className="service-workspace" aria-labelledby="selected-service-heading">
       <header className="service-workspace-header">
         <div>
-          <p className="card-kicker">{service.slug}</p>
+          <p className="card-kicker">Service configuration</p>
           <h3 id="selected-service-heading">{service.name}</h3>
         </div>
         <div className="service-statuses">
@@ -345,11 +333,11 @@ function ServiceWorkspace({
               disabled={!canConfigure || service.lifecycle === "archived"}
               onSave={(input) => apply(
                 () => api.updateDestination(service, destination.id, input),
-                `${destination.slug} destination saved.`,
+                "Destination saved.",
               )}
               onRemove={() => apply(
                 () => api.deleteDestination(service, destination.id),
-                `${destination.slug} destination removed.`,
+                "Destination removed.",
               )}
             />
           ))}
@@ -490,23 +478,16 @@ function ProfileEditor({
           : { documentation_url: documentationUrl.trim() }),
       }).catch(() => undefined);
     }}>
-      <div className="field-pair">
-        <label>
-          Service name
-          <input
-            required
-            maxLength={120}
-            disabled={disabled}
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-          />
-        </label>
-        <label>
-          Stable slug
-          <input value={service.slug} disabled aria-describedby="stable-slug-note" />
-          <small id="stable-slug-note">The slug cannot be changed.</small>
-        </label>
-      </div>
+      <label>
+        Service name
+        <input
+          required
+          maxLength={120}
+          disabled={disabled}
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+        />
+      </label>
       <label>
         Description
         <textarea
@@ -542,111 +523,53 @@ function DestinationEditor({
   onSave: (input: Omit<ServiceDestinationInput, "slug">) => Promise<void>;
   onRemove: () => Promise<void>;
 }) {
-  const [baseUrl, setBaseUrl] = useState(destination.base_url);
-  const [schemes, setSchemes] = useState(destination.schemes.join(", "));
-  const [hosts, setHosts] = useState(
-    destination.hosts.map((host) => `${host.type}:${host.value}`).join("\n"),
-  );
-  const [ports, setPorts] = useState(destination.ports.join(", "));
-  const [tlsVerify, setTlsVerify] = useState(destination.tls_verify);
+  const [draft, setDraft] = useState<DestinationDraft>(() => ({
+    baseUrl: destination.base_url,
+    schemes: destination.schemes,
+    hosts: destination.hosts,
+    ports: destination.ports,
+    tlsVerify: destination.tls_verify,
+  }));
+  const initiallyCustom = useRef(!hasDerivedLimits({
+    baseUrl: destination.base_url,
+    schemes: destination.schemes,
+    hosts: destination.hosts,
+    ports: destination.ports,
+    tlsVerify: destination.tls_verify,
+  }));
   const [error, setError] = useState("");
   return (
     <form className="destination-card" onSubmit={(event) => {
       event.preventDefault();
       setError("");
-      const parsedSchemes = schemes.split(",").map((value) => value.trim()).filter(Boolean);
-      const parsedHosts = hosts.split("\n").map((value) => value.trim()).filter(Boolean)
-        .map((value) => {
-          const separator = value.indexOf(":");
-          return {
-            type: value.slice(0, separator),
-            value: value.slice(separator + 1),
-          };
-        });
-      const parsedPorts = ports.split(",").map((value) => Number(value.trim()));
-      if (
-        parsedSchemes.length === 0 ||
-        parsedSchemes.some((value) => value !== "http" && value !== "https") ||
-        parsedHosts.length === 0 ||
-        parsedHosts.some(({ type, value }) =>
-          !["exact", "suffix", "regex"].includes(type) || value === "") ||
-        parsedPorts.length === 0 ||
-        parsedPorts.some((value) =>
-          !Number.isInteger(value) || value < 1 || value > 65_535)
-      ) {
-        setError("Schemes, host matchers, and ports must use the documented bounded format.");
-        return;
-      }
+      const validationError = destinationDraftError(draft);
+      if (validationError !== undefined) return setError(validationError);
       void onSave({
-        base_url: baseUrl,
-        schemes: parsedSchemes as Array<"http" | "https">,
-        hosts: parsedHosts as ServiceDestinationInput["hosts"],
-        ports: parsedPorts,
-        tls_verify: tlsVerify,
+        base_url: draft.baseUrl,
+        schemes: draft.schemes,
+        hosts: draft.hosts,
+        ports: draft.ports,
+        tls_verify: draft.tlsVerify,
       }).catch(() => undefined);
     }}>
       <div className="section-toolbar">
-        <h5>{destination.slug}</h5>
-        {!tlsVerify && <span className="warning-label">TLS verification disabled</span>}
+        <h5>{destination.base_url}</h5>
+        {!draft.tlsVerify && <span className="warning-label">TLS verification disabled</span>}
       </div>
-      <div className="destination-fields">
-        <label>
-          Base URL
-          <input
-            required
-            type="url"
-            maxLength={2048}
-            disabled={disabled}
-            value={baseUrl}
-            onChange={(event) => setBaseUrl(event.target.value)}
-          />
-        </label>
-        <label>
-          Allowed schemes (comma-separated)
-          <input
-            required
-            disabled={disabled}
-            value={schemes}
-            onChange={(event) => setSchemes(event.target.value)}
-          />
-        </label>
-        <label>
-          Host matchers (one type:value per line)
-          <textarea
-            required
-            maxLength={8_224}
-            disabled={disabled}
-            value={hosts}
-            onChange={(event) => setHosts(event.target.value)}
-          />
-        </label>
-        <label>
-          Allowed ports (comma-separated)
-          <input
-            required
-            disabled={disabled}
-            value={ports}
-            onChange={(event) => setPorts(event.target.value)}
-          />
-        </label>
-        <label className="checkbox-label">
-          <input
-            type="checkbox"
-            disabled={disabled}
-            checked={tlsVerify}
-            onChange={(event) => setTlsVerify(event.target.checked)}
-          />
-          Verify downstream TLS
-        </label>
-      </div>
+      <DestinationFields
+        draft={draft}
+        disabled={disabled}
+        initiallyCustom={initiallyCustom.current}
+        onChange={setDraft}
+      />
       {error !== "" && <p className="form-error" role="alert">{error}</p>}
       {!disabled && (
         <div className="button-row">
-          <button type="submit">Save {destination.slug} destination</button>
+          <button type="submit">Save destination</button>
           <button className="danger-button" type="button" onClick={() => {
             void onRemove().catch(() => undefined);
           }}>
-            Remove {destination.slug}
+            Remove destination
           </button>
         </div>
       )}
@@ -660,89 +583,316 @@ function NewDestinationForm({
   onCreate: (input: ServiceDestinationInput) => Promise<void>;
 }) {
   const [open, setOpen] = useState(false);
-  const [slug, setSlug] = useState("");
-  const [baseUrl, setBaseUrl] = useState("https://");
-  const [host, setHost] = useState("");
-  const [port, setPort] = useState("443");
-  const [tlsVerify, setTlsVerify] = useState(true);
+  const [draft, setDraft] = useState<DestinationDraft>(() => emptyDestinationDraft());
+  const [error, setError] = useState("");
+  const identifier = useGeneratedIdentifier("destination", () => destinationName(draft.baseUrl));
+  function close() {
+    setOpen(false);
+    setError("");
+    setDraft(emptyDestinationDraft());
+    identifier.reset();
+  }
   if (!open) {
     return <button type="button" onClick={() => setOpen(true)}>Add destination</button>;
   }
   return (
     <form className="destination-card" onSubmit={(event) => {
       event.preventDefault();
-      const url = new URL(baseUrl);
+      setError("");
+      const validationError = destinationDraftError(draft);
+      if (validationError !== undefined) return setError(validationError);
       void onCreate({
-        slug,
-        base_url: baseUrl,
-        schemes: [url.protocol === "http:" ? "http" : "https"],
-        hosts: [{ type: "exact", value: host }],
-        ports: [Number(port)],
-        tls_verify: tlsVerify,
-      }).then(() => setOpen(false), () => undefined);
+        slug: identifier.current(),
+        base_url: draft.baseUrl,
+        schemes: draft.schemes,
+        hosts: draft.hosts,
+        ports: draft.ports,
+        tls_verify: draft.tlsVerify,
+      }).then(close, (caught) => setError(messageFor(caught)));
     }}>
       <h5>New destination</h5>
-      <div className="destination-fields">
-        <label>
-          Destination slug
-          <input
-            required
-            pattern="[a-z][a-z0-9-]{0,63}"
-            maxLength={64}
-            value={slug}
-            onChange={(event) => setSlug(event.target.value)}
-          />
-        </label>
-        <label>
-          Base URL
-          <input
-            required
-            type="url"
-            maxLength={2048}
-            value={baseUrl}
-            onChange={(event) => setBaseUrl(event.target.value)}
-          />
-        </label>
-        <label>
-          Exact allowed host
-          <input
-            required
-            maxLength={253}
-            value={host}
-            onChange={(event) => setHost(event.target.value)}
-          />
-        </label>
-        <label>
-          Allowed port
-          <input
-            required
-            type="number"
-            min={1}
-            max={65535}
-            value={port}
-            onChange={(event) => setPort(event.target.value)}
-          />
-        </label>
-        <label className="checkbox-label">
-          <input
-            type="checkbox"
-            checked={tlsVerify}
-            onChange={(event) => setTlsVerify(event.target.checked)}
-          />
-          Verify downstream TLS
-        </label>
-      </div>
-      {!tlsVerify && (
-        <p className="warning-copy" role="alert">
-          TLS verification is disabled. The connection cannot verify the downstream identity.
-        </p>
-      )}
+      <DestinationFields draft={draft} onChange={setDraft} />
+      {error !== "" && <p className="form-error" role="alert">{error}</p>}
       <div className="button-row">
         <button type="submit">Create destination</button>
-        <button type="button" onClick={() => setOpen(false)}>Cancel</button>
+        <button type="button" onClick={close}>Cancel</button>
       </div>
     </form>
   );
+}
+
+type HostRule = ServiceDestinationInput["hosts"][number];
+
+interface DestinationDraft {
+  baseUrl: string;
+  schemes: Array<"http" | "https">;
+  hosts: HostRule[];
+  ports: number[];
+  tlsVerify: boolean;
+}
+
+function DestinationFields({
+  draft,
+  onChange,
+  disabled = false,
+  initiallyCustom = false,
+}: {
+  draft: DestinationDraft;
+  onChange: (draft: DestinationDraft) => void;
+  disabled?: boolean;
+  initiallyCustom?: boolean;
+}) {
+  const automaticLimits = useRef(!initiallyCustom);
+  function changeBaseUrl(baseUrl: string) {
+    const derived = deriveRoutingLimits(baseUrl);
+    onChange({
+      ...draft,
+      baseUrl,
+      ...(automaticLimits.current && derived !== undefined ? derived : {}),
+    });
+  }
+  function changeLimits(update: Partial<Pick<DestinationDraft, "schemes" | "hosts" | "ports">>) {
+    automaticLimits.current = false;
+    onChange({ ...draft, ...update });
+  }
+  function resetLimits() {
+    const derived = deriveRoutingLimits(draft.baseUrl);
+    if (derived === undefined) return;
+    automaticLimits.current = true;
+    onChange({ ...draft, ...derived });
+  }
+  return (
+    <div className="destination-fields">
+      <label className="destination-base-url">
+        Base URL
+        <input
+          required
+          type="url"
+          maxLength={2048}
+          disabled={disabled}
+          value={draft.baseUrl}
+          onChange={(event) => changeBaseUrl(event.target.value)}
+        />
+      </label>
+      <p className="routing-summary">{routingSummary(draft)}</p>
+      <label className="tls-control">
+        <input
+          type="checkbox"
+          disabled={disabled}
+          checked={draft.tlsVerify}
+          onChange={(event) => onChange({ ...draft, tlsVerify: event.target.checked })}
+        />
+        <span>
+          <strong>Verify TLS certificates</strong>
+          <small>Recommended. Confirms the destination identity using its certificate.</small>
+        </span>
+      </label>
+      {!draft.tlsVerify && (
+        <p className="warning-copy" role="alert">
+          TLS verification is disabled. The connection cannot verify the destination identity.
+        </p>
+      )}
+      <details className="routing-limits" open={initiallyCustom || undefined}>
+        <summary>Advanced routing limits</summary>
+        <p className="muted-copy">
+          These limits prevent requests from reaching protocols, hostnames, or ports outside
+          the intended destination.
+        </p>
+        <fieldset disabled={disabled}>
+          <legend>Allowed protocols</legend>
+          {(["https", "http"] as const).map((scheme) => (
+            <label className="compact-check" key={scheme}>
+              <input
+                type="checkbox"
+                checked={draft.schemes.includes(scheme)}
+                onChange={() => changeLimits({
+                  schemes: draft.schemes.includes(scheme)
+                    ? draft.schemes.filter((value) => value !== scheme)
+                    : [...draft.schemes, scheme],
+                })}
+              />
+              {scheme.toUpperCase()}
+            </label>
+          ))}
+        </fieldset>
+        <fieldset disabled={disabled}>
+          <legend>Allowed hostname rules</legend>
+          {draft.hosts.map((host, index) => (
+            <div className="routing-rule" key={index}>
+              <label>
+                Rule {index + 1} type
+                <select value={host.type} onChange={(event) => {
+                  const hosts = [...draft.hosts];
+                  hosts[index] = { ...host, type: event.target.value as HostRule["type"] };
+                  changeLimits({ hosts });
+                }}>
+                  <option value="exact">Exact hostname</option>
+                  <option value="suffix">Domain and subdomains</option>
+                  <option value="regex">Restricted regular expression</option>
+                </select>
+              </label>
+              <label>
+                Rule {index + 1} value
+                <input maxLength={256} value={host.value} onChange={(event) => {
+                  const hosts = [...draft.hosts];
+                  hosts[index] = { ...host, value: event.target.value };
+                  changeLimits({ hosts });
+                }} />
+              </label>
+              {draft.hosts.length > 1 && (
+                <button type="button" onClick={() => changeLimits({
+                  hosts: draft.hosts.filter((_, item) => item !== index),
+                })}>Remove hostname rule {index + 1}</button>
+              )}
+            </div>
+          ))}
+          {draft.hosts.length < 32 && (
+            <button type="button" onClick={() => changeLimits({
+              hosts: [...draft.hosts, { type: "exact", value: "" }],
+            })}>Add hostname rule</button>
+          )}
+        </fieldset>
+        <fieldset disabled={disabled}>
+          <legend>Allowed ports</legend>
+          <div className="port-rules">
+            {draft.ports.map((port, index) => (
+              <div className="port-rule" key={index}>
+                <label>
+                  Port {index + 1}
+                  <input type="number" min={1} max={65535} value={port || ""} onChange={(event) => {
+                    const ports = [...draft.ports];
+                    ports[index] = Number(event.target.value);
+                    changeLimits({ ports });
+                  }} />
+                </label>
+                {draft.ports.length > 1 && (
+                  <button type="button" onClick={() => changeLimits({
+                    ports: draft.ports.filter((_, item) => item !== index),
+                  })}>Remove port {index + 1}</button>
+                )}
+              </div>
+            ))}
+          </div>
+          {draft.ports.length < 32 && (
+            <button type="button" onClick={() => changeLimits({
+              ports: [...draft.ports, 443],
+            })}>Add port</button>
+          )}
+        </fieldset>
+        {!disabled && (
+          <button type="button" disabled={deriveRoutingLimits(draft.baseUrl) === undefined}
+            onClick={resetLimits}>Reset limits from Base URL</button>
+        )}
+      </details>
+    </div>
+  );
+}
+
+function emptyDestinationDraft(): DestinationDraft {
+  return {
+    baseUrl: "https://",
+    schemes: ["https"],
+    hosts: [{ type: "exact", value: "" }],
+    ports: [443],
+    tlsVerify: true,
+  };
+}
+
+function deriveRoutingLimits(
+  baseUrl: string,
+): Pick<DestinationDraft, "schemes" | "hosts" | "ports"> | undefined {
+  try {
+    const url = new URL(baseUrl);
+    if (
+      (url.protocol !== "http:" && url.protocol !== "https:") ||
+      url.hostname === "" || url.username !== "" || url.password !== "" ||
+      url.search !== "" || url.hash !== ""
+    ) return undefined;
+    const scheme = url.protocol === "https:" ? "https" : "http";
+    return {
+      schemes: [scheme],
+      hosts: [{ type: "exact", value: url.hostname.toLocaleLowerCase("und") }],
+      ports: [url.port === "" ? scheme === "https" ? 443 : 80 : Number(url.port)],
+    };
+  } catch {
+    return undefined;
+  }
+}
+
+function hasDerivedLimits(draft: DestinationDraft): boolean {
+  const derived = deriveRoutingLimits(draft.baseUrl);
+  return derived !== undefined &&
+    arraysEqual(draft.schemes, derived.schemes) &&
+    arraysEqual(draft.ports, derived.ports) &&
+    draft.hosts.length === 1 &&
+    draft.hosts[0]?.type === "exact" &&
+    draft.hosts[0].value === derived.hosts[0]?.value;
+}
+
+function arraysEqual<T>(left: T[], right: T[]): boolean {
+  return left.length === right.length && left.every((value, index) => value === right[index]);
+}
+
+function routingSummary(draft: DestinationDraft): string {
+  const parsed = parsedDestinationUrl(draft.baseUrl);
+  if (parsed === undefined) return "Enter a complete HTTP or HTTPS Base URL.";
+  const protocols = draft.schemes.map((value) => value.toUpperCase()).join(" or ") || "no protocol";
+  const hosts = draft.hosts.length === 1 && draft.hosts[0]?.type === "exact"
+    ? draft.hosts[0].value
+    : `${draft.hosts.length} hostname rule${draft.hosts.length === 1 ? "" : "s"}`;
+  const ports = draft.ports.join(", ") || "no ports";
+  return `Requests are limited to ${protocols} on ${hosts}:${ports}.`;
+}
+
+function destinationDraftError(draft: DestinationDraft): string | undefined {
+  const parsed = parsedDestinationUrl(draft.baseUrl);
+  if (parsed === undefined) {
+    return "Enter a complete HTTP or HTTPS Base URL without credentials, a query, or a fragment.";
+  }
+  if (
+    draft.schemes.length < 1 || draft.schemes.length > 2 ||
+    new Set(draft.schemes).size !== draft.schemes.length ||
+    !draft.schemes.includes(parsed.scheme)
+  ) return "Allowed protocols must include the Base URL protocol.";
+  if (
+    draft.ports.length < 1 || draft.ports.length > 32 ||
+    new Set(draft.ports).size !== draft.ports.length ||
+    draft.ports.some((port) => !Number.isInteger(port) || port < 1 || port > 65_535) ||
+    !draft.ports.includes(parsed.port)
+  ) return "Allowed ports must be unique, valid, and include the Base URL port.";
+  if (
+    draft.hosts.length < 1 || draft.hosts.length > 32 ||
+    draft.hosts.some((host) => host.value.trim() === "" || host.value !== host.value.trim())
+  ) return "Add at least one complete hostname rule.";
+  if (!draft.hosts.some((rule) => hostnameMatches(parsed.hostname, rule))) {
+    return "The hostname rules must allow the Base URL hostname.";
+  }
+  return undefined;
+}
+
+function parsedDestinationUrl(
+  value: string,
+): { scheme: "http" | "https"; hostname: string; port: number } | undefined {
+  const limits = deriveRoutingLimits(value);
+  if (limits === undefined) return undefined;
+  return {
+    scheme: limits.schemes[0]!,
+    hostname: limits.hosts[0]!.value,
+    port: limits.ports[0]!,
+  };
+}
+
+function hostnameMatches(hostname: string, rule: HostRule): boolean {
+  const value = rule.value.toLocaleLowerCase("und");
+  if (rule.type === "exact") return hostname === value;
+  if (rule.type === "suffix") return hostname.endsWith(value);
+  // The server validates and evaluates only its anchored linear-time regex subset.
+  // Browser code must never execute management-supplied patterns.
+  return true;
+}
+
+function destinationName(baseUrl: string): string {
+  return parsedDestinationUrl(baseUrl)?.hostname ?? "destination";
 }
 
 function ValidationSummary({
@@ -788,11 +938,11 @@ function SafeTransfer({
 }) {
   const [copyText, setCopyText] = useState("");
   const [importText, setImportText] = useState("");
-  const [cloneSlug, setCloneSlug] = useState("");
   const [cloneName, setCloneName] = useState("");
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const canConfigure = role === "admin" || role === "superadmin";
+  const cloneIdentifier = useGeneratedIdentifier("service", () => cloneName);
   return (
     <>
       <h4>Safe copy, import, and clone</h4>
@@ -857,36 +1007,24 @@ function SafeTransfer({
           event.preventDefault();
           setError("");
           void api.cloneService(service.id, {
-            slug: cloneSlug,
+            slug: cloneIdentifier.current(),
             name: cloneName,
           }).then((clone) => {
-            setNotice(`Created isolated draft ${clone.slug}.`);
-            setCloneSlug("");
+            setNotice(`Created isolated draft ${clone.name}.`);
+            cloneIdentifier.reset();
             setCloneName("");
           }, (caught) => setError(messageFor(caught)));
         }}>
           <h5>Clone as an isolated draft</h5>
-          <div className="field-pair">
-            <label>
-              New slug
-              <input
-                required
-                pattern="[a-z][a-z0-9-]{0,63}"
-                maxLength={64}
-                value={cloneSlug}
-                onChange={(event) => setCloneSlug(event.target.value)}
-              />
-            </label>
-            <label>
-              New name
-              <input
-                required
-                maxLength={120}
-                value={cloneName}
-                onChange={(event) => setCloneName(event.target.value)}
-              />
-            </label>
-          </div>
+          <label>
+            New service name
+            <input
+              required
+              maxLength={120}
+              value={cloneName}
+              onChange={(event) => setCloneName(event.target.value)}
+            />
+          </label>
           <button type="submit">Create secret-free clone</button>
         </form>
       )}
@@ -917,7 +1055,7 @@ function OwnershipEditor({
             <span>{admin.given_name} {admin.family_name} <small>{admin.email}</small></span>
             <JustifiedAction
               buttonLabel={`Remove ${admin.email}`}
-              heading={`Remove ${admin.email} from ${service.slug}?`}
+              heading={`Remove ${admin.email} from ${service.name}?`}
               consequence="This immediately removes administrative access to this service."
               onConfirm={(justification) => apply(
                 () => api.removeServiceAdmin(service, admin.id, justification),
@@ -971,12 +1109,12 @@ function LifecycleEditor({
       <h4>Lifecycle and deletion</h4>
       {service.lifecycle !== "archived" ? (
         <JustifiedAction
-          buttonLabel={`Archive ${service.slug}`}
-          heading={`Archive ${service.slug}?`}
+          buttonLabel={`Archive ${service.name}`}
+          heading={`Archive ${service.name}?`}
           consequence="Publication intent is disabled and an invalidation event is emitted."
           onConfirm={(reason) => apply(
             () => api.archiveService(service, reason),
-            `${service.slug} archived.`,
+            `${service.name} archived.`,
           )}
         />
       ) : (
@@ -994,7 +1132,7 @@ function LifecycleEditor({
             setError(messageFor(caught));
           });
         }}>
-          <h5 id={deleteHeadingId}>Permanently delete {service.slug}</h5>
+          <h5 id={deleteHeadingId}>Permanently delete {service.name}</h5>
           <p>
             This permanently removes the archived service, destinations, and retained
             revisions. The audit and final invalidation evidence remain.
@@ -1004,7 +1142,7 @@ function LifecycleEditor({
             verification bound to this exact operation.
           </p>
           <label>
-            Type {service.slug} to confirm
+            Type service identifier <code>{service.slug}</code> to confirm
             <input
               required
               autoComplete="off"
@@ -1047,7 +1185,7 @@ function LifecycleEditor({
           </div>
           {error !== "" && <p className="form-error" role="alert">{error}</p>}
           <button className="danger-button" type="submit" disabled={confirm !== service.slug}>
-            Permanently delete {service.slug}
+            Permanently delete {service.name}
           </button>
         </form>
       )}
@@ -1126,4 +1264,28 @@ function messageFor(error: unknown): string {
 
 function label(value: string): string {
   return value.replaceAll("_", " ").replace(/^\w/, (letter) => letter.toUpperCase());
+}
+
+function useGeneratedIdentifier(prefix: "service" | "destination", source: () => string) {
+  const identifier = useRef<string | undefined>(undefined);
+  return {
+    current() {
+      if (identifier.current === undefined) {
+        const normalized = source().normalize("NFKD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLocaleLowerCase("und")
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "");
+        const base = (normalized === "" || !/^[a-z]/.test(normalized)
+          ? `${prefix}-${normalized}`
+          : normalized).replace(/-+$/g, "") || prefix;
+        const suffix = crypto.randomUUID().replaceAll("-", "").slice(0, 8);
+        identifier.current = `${base.slice(0, 55)}-${suffix}`;
+      }
+      return identifier.current!;
+    },
+    reset() {
+      identifier.current = undefined;
+    },
+  };
 }

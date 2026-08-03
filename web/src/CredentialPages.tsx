@@ -111,7 +111,7 @@ export function CredentialsPage({
             onChange={(event) => setServiceId(event.target.value)}>
             {services.length === 0 && <option value="">No manageable services</option>}
             {services.map((item) => (
-              <option key={item.id} value={item.id}>{item.name} ({item.slug})</option>
+              <option key={item.id} value={item.id}>{item.name}</option>
             ))}
           </select>
         </label>

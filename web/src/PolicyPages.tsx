@@ -124,7 +124,7 @@ export function PoliciesPage({
             onChange={(event) => setServiceId(event.target.value)}>
             {services.length === 0 && <option value="">No manageable services</option>}
             {services.map((item) => (
-              <option key={item.id} value={item.id}>{item.name} ({item.slug})</option>
+              <option key={item.id} value={item.id}>{item.name}</option>
             ))}
           </select>
         </label>
@@ -637,7 +637,7 @@ function PolicySimulationPanel({
         <label>Destination<select required value={destinationId}
           onChange={(event) => setDestinationId(event.target.value)}>
           {destinations.map((destination) => (
-            <option key={destination.id} value={destination.id}>{destination.slug}</option>
+            <option key={destination.id} value={destination.id}>{destination.base_url}</option>
           ))}
         </select></label>
         <label>Method<input required maxLength={32} value={method}

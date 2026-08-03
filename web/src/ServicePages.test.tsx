@@ -15,6 +15,97 @@ import { ServicesPage } from "./ServicePages";
 afterEach(cleanup);
 
 describe("service management workspace", () => {
+  it("creates and clones from names while preserving hidden identifiers across retries", async () => {
+    const user = userEvent.setup();
+    const api = fakeServiceApi();
+    api.createService
+      .mockRejectedValueOnce(new ControlApiError("maintenance", "Try again."))
+      .mockResolvedValueOnce(SERVICE);
+    const view = render(<ServicesPage role="superadmin" api={api} />);
+    expect(await screen.findByRole("heading", { name: "Managed API" })).toBeInTheDocument();
+    expect(view.container.textContent).not.toMatch(/\bslug\b/i);
+
+    await user.click(screen.getByRole("button", { name: "New service" }));
+    expect(screen.queryByLabelText(/slug/i)).not.toBeInTheDocument();
+    const createForm = screen.getByRole("heading", { name: "Create a non-routable draft" })
+      .closest("form");
+    if (!(createForm instanceof HTMLFormElement)) throw new Error("Service form is missing.");
+    const create = within(createForm);
+    await user.type(create.getByLabelText("Service name"), "Portainer");
+    await user.click(create.getByRole("button", { name: "Create service draft" }));
+    expect(await screen.findByText("Try again.")).toBeInTheDocument();
+    const firstIdentifier = api.createService.mock.calls[0]![0].slug;
+    expect(firstIdentifier).toMatch(/^portainer-[a-f0-9]{8}$/);
+    await user.click(create.getByRole("button", { name: "Create service draft" }));
+    await waitFor(() => expect(api.createService).toHaveBeenCalledTimes(2));
+    expect(api.createService.mock.calls[1]![0].slug).toBe(firstIdentifier);
+
+    await user.type(screen.getByLabelText("New service name"), "Portainer Copy");
+    await user.click(screen.getByRole("button", { name: "Create secret-free clone" }));
+    await waitFor(() => expect(api.cloneService).toHaveBeenCalledWith(
+      SERVICE.id,
+      expect.objectContaining({
+        name: "Portainer Copy",
+        slug: expect.stringMatching(/^portainer-copy-[a-f0-9]{8}$/),
+      }),
+    ));
+  });
+
+  it("derives safe routing limits from the Base URL and validates advanced overrides", async () => {
+    const user = userEvent.setup();
+    const api = fakeServiceApi();
+    render(<ServicesPage role="superadmin" api={api} />);
+    expect(await screen.findByRole("heading", { name: "Managed API" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Add destination" }));
+    const form = screen.getByRole("heading", { name: "New destination" }).closest("form");
+    if (!(form instanceof HTMLFormElement)) throw new Error("Destination form is missing.");
+    const destination = within(form);
+    const baseUrl = destination.getByLabelText("Base URL");
+
+    await user.clear(baseUrl);
+    await user.type(baseUrl, "https://api.example.org/?debug=true");
+    await user.click(destination.getByRole("button", { name: "Create destination" }));
+    expect(await destination.findByText(/without credentials, a query, or a fragment/i))
+      .toBeInTheDocument();
+    expect(api.createDestination).not.toHaveBeenCalled();
+
+    await user.clear(baseUrl);
+    await user.type(baseUrl, "https://api.example.org/v1/");
+    expect(destination.getByText("Requests are limited to HTTPS on api.example.org:443."))
+      .toBeInTheDocument();
+    await user.click(destination.getByText("Advanced routing limits"));
+    expect(destination.getByLabelText("Rule 1 value")).toHaveValue("api.example.org");
+    expect(destination.getByLabelText("Port 1")).toHaveValue(443);
+
+    await user.clear(destination.getByLabelText("Rule 1 value"));
+    await user.type(destination.getByLabelText("Rule 1 value"), "blocked.example.org");
+    await user.click(destination.getByRole("button", { name: "Create destination" }));
+    expect(await destination.findByText(/must allow the Base URL hostname/i)).toBeInTheDocument();
+    expect(api.createDestination).not.toHaveBeenCalled();
+
+    await user.click(destination.getByRole("button", { name: "Reset limits from Base URL" }));
+    await user.clear(destination.getByLabelText("Port 1"));
+    await user.type(destination.getByLabelText("Port 1"), "444");
+    await user.click(destination.getByRole("button", { name: "Create destination" }));
+    expect(await destination.findByText(/must be unique, valid, and include the Base URL port/i))
+      .toBeInTheDocument();
+    expect(api.createDestination).not.toHaveBeenCalled();
+
+    await user.click(destination.getByRole("button", { name: "Reset limits from Base URL" }));
+    await user.click(destination.getByRole("button", { name: "Create destination" }));
+    await waitFor(() => expect(api.createDestination).toHaveBeenCalledWith(
+      expect.objectContaining({ id: SERVICE.id }),
+      expect.objectContaining({
+        slug: expect.stringMatching(/^api-example-org-[a-f0-9]{8}$/),
+        base_url: "https://api.example.org/v1/",
+        schemes: ["https"],
+        hosts: [{ type: "exact", value: "api.example.org" }],
+        ports: [443],
+        tls_verify: true,
+      }),
+    ));
+  });
+
   it("shows superadmin lifecycle, ownership, safe transfer, and TLS state", async () => {
     const user = userEvent.setup();
     const api = fakeServiceApi();
@@ -33,11 +124,15 @@ describe("service management workspace", () => {
     expect(screen.getByRole("button", { name: "New service" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Create secret-free clone" }))
       .toBeInTheDocument();
-    expect(screen.getByLabelText("Allowed schemes (comma-separated)"))
-      .toHaveValue("https, http");
-    expect(screen.getByLabelText("Allowed ports (comma-separated)"))
-      .toHaveValue("443, 80");
-    await user.click(screen.getByRole("button", { name: "Save primary destination" }));
+    expect(screen.getByText("Requests are limited to HTTPS or HTTP on 2 hostname rules:443, 80."))
+      .toBeInTheDocument();
+    expect(screen.getByText("Advanced routing limits").closest("details")).toHaveAttribute("open");
+    expect(screen.getByLabelText("HTTPS")).toBeChecked();
+    expect(screen.getByLabelText("HTTP")).toBeChecked();
+    const tls = screen.getByRole("checkbox", { name: /Verify TLS certificates/i });
+    expect(tls).not.toBeChecked();
+    expect(tls.closest("label")).toHaveClass("tls-control");
+    await user.click(screen.getByRole("button", { name: "Save destination" }));
     await waitFor(() => expect(api.updateDestination).toHaveBeenCalledWith(
       expect.objectContaining({ id: SERVICE.id }),
       DOCUMENT.destinations[0]!.id,
@@ -104,7 +199,8 @@ describe("service management workspace", () => {
     await user.type(name, "Unsaved local edit");
     await user.click(screen.getByRole("button", { name: "Save service basics" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(
+    expect(await screen.findByText(/Your non-secret edits remain here/)).toBeInTheDocument();
+    expect(screen.getAllByRole("alert")[0]).toHaveTextContent(
       "Your non-secret edits remain here",
     );
     expect(name).toHaveValue("Unsaved local edit");
@@ -112,7 +208,7 @@ describe("service management workspace", () => {
       .toBeInTheDocument();
   });
 
-  it("requires the exact archived slug and bound fresh credentials before deletion", async () => {
+  it("requires the exact archived identifier and bound fresh credentials before deletion", async () => {
     const user = userEvent.setup();
     const archived = {
       ...SERVICE,
@@ -124,11 +220,14 @@ describe("service management workspace", () => {
     const api = fakeServiceApi(archived);
     render(<ServicesPage role="superadmin" api={api} />);
     expect(await screen.findByRole("heading", { name: "Managed API" })).toBeInTheDocument();
-    const submit = screen.getByRole("button", { name: "Permanently delete managed-api" });
-    expect(screen.getByRole("dialog", { name: "Permanently delete managed-api" }))
+    const submit = screen.getByRole("button", { name: "Permanently delete Managed API" });
+    expect(screen.getByRole("dialog", { name: "Permanently delete Managed API" }))
       .toContainElement(submit);
     expect(submit).toBeDisabled();
-    await user.type(screen.getByLabelText("Type managed-api to confirm"), "managed-api");
+    await user.type(
+      screen.getByLabelText("Type service identifier managed-api to confirm"),
+      "managed-api",
+    );
     await user.type(screen.getByLabelText("Deletion justification"), "Retired and unowned.");
     await user.type(screen.getByLabelText("Current password"), "current-password");
     await user.type(screen.getByLabelText("Current TOTP code"), "123456");
@@ -205,7 +304,7 @@ function fakeServiceApi(initial: ControlServiceDetail = SERVICE) {
   const api = {
     listServices: vi.fn(async () => ({ services: [current] })),
     service: vi.fn(async () => current),
-    createService: vi.fn(async () => current),
+    createService: vi.fn<ServiceControlApi["createService"]>(async () => current),
     updateService: vi.fn(async (_service, input) => {
       current = { ...changed(), ...input };
       return current;

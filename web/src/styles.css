@@ -983,6 +983,110 @@ button:disabled {
   min-width: 44px;
 }
 
+.destination-base-url,
+.routing-summary,
+.tls-control,
+.destination-fields > .warning-copy,
+.routing-limits {
+  grid-column: 1 / -1;
+}
+
+.routing-summary {
+  margin: 0;
+  color: var(--muted);
+}
+
+.tls-control {
+  display: flex !important;
+  align-items: center;
+  min-height: 44px;
+  gap: 0.75rem !important;
+  padding: 0.65rem 0.75rem;
+  color: var(--text) !important;
+  background: var(--surface-subtle);
+  border: 1px solid var(--border);
+  border-radius: 0.55rem;
+  cursor: pointer;
+}
+
+.tls-control input,
+.compact-check input {
+  flex: 0 0 auto;
+  width: 20px;
+  min-width: 20px;
+  height: 20px;
+  min-height: 20px;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--focus);
+}
+
+.tls-control span {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.tls-control small {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.routing-limits {
+  padding: 0.75rem;
+  background: var(--surface-subtle);
+  border: 1px solid var(--border);
+  border-radius: 0.55rem;
+}
+
+.routing-limits summary {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 750;
+}
+
+.routing-limits fieldset {
+  display: grid;
+  gap: 0.75rem;
+  margin: 1rem 0;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+}
+
+.routing-limits legend {
+  padding: 0 0.35rem;
+  font-weight: 750;
+}
+
+.compact-check {
+  display: flex !important;
+  align-items: center;
+  min-height: 44px;
+  gap: 0.55rem !important;
+}
+
+.routing-rule,
+.port-rule,
+.port-rules {
+  display: grid;
+  min-width: 0;
+  gap: 0.75rem;
+}
+
+.routing-rule label,
+.port-rule label {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.destination-card h5 {
+  overflow-wrap: anywhere;
+}
+
 .warning-label {
   display: inline-flex;
   align-items: center;
@@ -1914,6 +2018,11 @@ table {
   .destination-fields {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .routing-rule,
+  .port-rule {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (min-width: 1200px) {
@@ -1997,6 +2106,11 @@ table {
   }
 
   .destination-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .routing-rule,
+  .port-rule {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 

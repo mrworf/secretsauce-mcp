@@ -109,7 +109,7 @@ export function GroupsPage({
             {services.length === 0 && <option value="">No manageable services</option>}
             {services.map((service) => (
               <option value={service.id} key={service.id}>
-                {service.name} ({service.slug})
+                {service.name}
               </option>
             ))}
           </select>

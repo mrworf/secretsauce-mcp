@@ -34,6 +34,11 @@ focused guides before the corresponding destructive or recovery operation.
    forwarding can retain that accepted bootstrap value, so restrict access and
    retention. A restart invalidates unused process-lifetime enrollment
    authority and emits a replacement only while the database has zero users.
+   Follow only the application log with
+   `docker compose -f docker-compose.example.yaml logs --follow secretsauce`.
+   The bounded local Docker log contains the intentional enrollment-secret
+   line, so treat access to it and retained log files as infrastructure
+   administrator authority.
 6. Configure services, groups, credential definitions, policies, and
    publication through the focused
    [service](service-management.md), [group](group-assignments.md),

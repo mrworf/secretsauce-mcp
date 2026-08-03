@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import { validateConfig } from "../src/config.js";
 import { startBrowserFirstApplication } from "../src/setup/lifecycle.js";
 import { SetupStatusMonitor } from "../src/setup/status.js";
+import { createLogger } from "../src/logger.js";
 
 describe("browser-first application lifecycle", () => {
   it("defers the operational composition import until after entrypoint evaluation", () => {
@@ -44,6 +45,7 @@ describe("browser-first application lifecycle", () => {
       const applicationClose = vi.fn(async () => undefined);
       const persistenceClose = vi.fn(async () => undefined);
       const calls: string[] = [];
+      const logLines: string[] = [];
       const validateOperationalConfig = vi.fn(() => {
         calls.push("validate");
       });
@@ -68,8 +70,9 @@ describe("browser-first application lifecycle", () => {
         close: applicationClose,
         options,
       }));
+      const config = lifecycleConfig();
       const lifecycle = await startBrowserFirstApplication(
-        lifecycleConfig(),
+        config,
         {},
         {
           monitor,
@@ -81,6 +84,10 @@ describe("browser-first application lifecycle", () => {
           openPersistence: openPersistence as never,
           startOperational: startOperational as never,
           validateOperationalConfig,
+          logger: createLogger(
+            config.logging,
+            (line) => logLines.push(line),
+          ),
         },
       );
       try {
@@ -105,6 +112,19 @@ describe("browser-first application lifecycle", () => {
         expect(lifecycle.status().state).toBe(expectedPhase === "operational"
           ? "available"
           : "enrollment");
+        const events = logLines.map(logEvent);
+        expect(events.map(({ event }) => event)).toEqual([
+          "setup.lifecycle_started",
+          "setup.vault_handoff_started",
+          "setup.vault_handoff_completed",
+          expectedPhase === "operational"
+            ? "setup.operational_ready"
+            : "setup.enrollment_available",
+        ]);
+        expect(events[2]).toMatchObject({ phase: expectedPhase });
+        expect(JSON.stringify(events)).not.toMatch(
+          /path|socket|credential|token|secret|password|response|body/i,
+        );
       } finally {
         await lifecycle.close();
       }
@@ -127,8 +147,10 @@ describe("browser-first application lifecycle", () => {
       close: setupClose,
     }));
     const persistenceClose = vi.fn(async () => undefined);
+    const logLines: string[] = [];
+    const config = lifecycleConfig();
     const lifecycle = await startBrowserFirstApplication(
-      lifecycleConfig(),
+      config,
       {},
       {
         monitor,
@@ -145,6 +167,7 @@ describe("browser-first application lifecycle", () => {
         startOperational: (async () => {
           throw new Error("private startup detail");
         }) as never,
+        logger: createLogger(config.logging, (line) => logLines.push(line)),
       },
     );
     try {
@@ -157,6 +180,12 @@ describe("browser-first application lifecycle", () => {
       });
       expect(persistenceClose).toHaveBeenCalledTimes(1);
       expect(startSetup).toHaveBeenCalledTimes(2);
+      expect(logLines.map(logEvent).at(-1)).toMatchObject({
+        level: "error",
+        event: "setup.vault_handoff_failed",
+        failure_category: "operational_startup",
+      });
+      expect(logLines.join("\n")).not.toContain("private startup detail");
     } finally {
       await lifecycle.close();
     }
@@ -176,8 +205,10 @@ describe("browser-first application lifecycle", () => {
     }));
     const openPersistence = vi.fn();
     const startOperational = vi.fn();
+    const logLines: string[] = [];
+    const config = lifecycleConfig();
     const lifecycle = await startBrowserFirstApplication(
-      lifecycleConfig(),
+      config,
       {},
       {
         monitor,
@@ -187,6 +218,7 @@ describe("browser-first application lifecycle", () => {
         validateOperationalConfig: () => {
           throw new Error("private validation detail");
         },
+        logger: createLogger(config.logging, (line) => logLines.push(line)),
       },
     );
     try {
@@ -200,6 +232,12 @@ describe("browser-first application lifecycle", () => {
       expect(openPersistence).not.toHaveBeenCalled();
       expect(startOperational).not.toHaveBeenCalled();
       expect(startSetup).toHaveBeenCalledTimes(2);
+      expect(logLines.map(logEvent).at(-1)).toMatchObject({
+        level: "error",
+        event: "setup.vault_handoff_failed",
+        failure_category: "key_validation",
+      });
+      expect(logLines.join("\n")).not.toContain("private validation detail");
     } finally {
       await lifecycle.close();
     }
@@ -210,6 +248,10 @@ function dormantMonitor(): SetupStatusMonitor {
   return new SetupStatusMonitor(
     () => new Promise(() => undefined),
   );
+}
+
+function logEvent(line: string): Record<string, unknown> {
+  return JSON.parse(line) as Record<string, unknown>;
 }
 
 function lifecycleConfig() {

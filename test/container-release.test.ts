@@ -55,6 +55,12 @@ describe("release container deployment", () => {
     expect(compose.services["secretsauce-vault"].volumes).toContain(
       "vault-store:/var/lib/secretsauce/vault",
     );
+    for (const service of [gateway, compose.services["secretsauce-vault"]]) {
+      expect(service.logging).toEqual({
+        driver: "local",
+        options: { "max-size": "10m", "max-file": "3" },
+      });
+    }
     expect(source).toContain("gref_/sec_ capability state is intentionally ephemeral");
     expect(gateway.volumes.join("\n")).not.toMatch(/gref|sec-token|capability-state/);
     expect(gateway.environment).not.toHaveProperty("SECRETSAUCE_MCP_TOKEN");

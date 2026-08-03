@@ -27,6 +27,11 @@ services:
       SECRETSAUCE_VAULT_STATUS_SOCKET: /run/secretsauce-vault/status.sock
       SECRETSAUCE_VAULT_OWNER_UID: "1001"
       SECRETSAUCE_VAULT_HEALTH_MODE: liveness
+    logging:
+      driver: local
+      options:
+        max-size: "10m"
+        max-file: "3"
     healthcheck:
       test: ["CMD", "node", "dist/vault/healthCli.js"]
       interval: 30s
@@ -86,6 +91,11 @@ services:
       SECRETSAUCE_VAULT_RESOLVE_KEY_FILE: /var/lib/secretsauce/generated/shared/resolve-capability.key
       SECRETSAUCE_VAULT_BACKUP_KEY_FILE: /var/lib/secretsauce/generated/shared/backup.key
       SECRETSAUCE_VAULT_BACKUP_CAPABILITY_KEY_FILE: /var/lib/secretsauce/generated/shared/backup-capability.key
+    logging:
+      driver: local
+      options:
+        max-size: "10m"
+        max-file: "3"
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/health/live"]
       interval: 30s

@@ -182,6 +182,13 @@ volume targets, then run `docker compose -f docker-compose.local.yaml down
 vault store, OAuth state, and audit history; never run it against an installation
 whose state must be retained.
 
+Run the same clean enrollment and login journey used by CI with
+`npm run test:e2e:docker`. It requires Docker Engine, the Docker Compose plugin,
+and Playwright Chromium. The test owns a uniquely named disposable Compose
+project, retains sensitive enrollment material only in process memory, records
+no browser trace, screenshot, or video, and deletes only that project's volumes
+when it finishes.
+
 The following excerpt illustrates the same two-container boundary. The
 checked-in `docker-compose.local.yaml` is canonical for local execution.
 

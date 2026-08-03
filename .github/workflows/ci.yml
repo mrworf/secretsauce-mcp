@@ -35,7 +35,7 @@ jobs:
         run: npm test
 
   docker-image:
-    needs: quality-gates
+    needs: [quality-gates, docker-browser-e2e]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -82,3 +82,26 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=app-image
           cache-to: type=gha,mode=max,scope=app-image
+
+  docker-browser-e2e:
+    needs: quality-gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run local Docker browser journey
+        run: npm run test:e2e:docker

@@ -145,6 +145,12 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
             reply(403, { message: 'Reload this page before submitting.' });
             return;
         }
+        if(path==='/console/api/backups/acknowledge'){reply(200,consoleBackups(store).acknowledgeUnknown(session,data));return;}
+        if(path==='/console/api/backups/save'){reply(200,consoleBackups(store).save(session,data));return;}
+        if(path==='/console/api/backups/review'){reply(200,consoleBackups(store).review(session,data));return;}
+        if(path==='/console/api/backups/apply'){reply(200,consoleBackups(store).apply(session,data));return;}
+        if(path==='/console/api/backups/material-generate'){reply(200,consoleBackups(store).generateMaterial(session,data));return;}
+        if(path==='/console/api/backups/material-replace'){reply(200,consoleBackups(store).replaceMaterial(session,data));return;}
         if(path==='/console/api/backups/start'){reply(200,await consoleBackups(store).start(session,data));return;}
         if(path==='/console/api/backups/material'){reply(200,consoleBackups(store).initializeMaterial(session,data));return;}
         if(path==='/console/api/backups/download'){const r=consoleBackups(store).download(session,data);response.writeHead(200,{'content-type':'application/octet-stream','content-disposition':'attachment; filename="'+r.filename+'"','content-length':r.size});response.end(r.archive);return;}

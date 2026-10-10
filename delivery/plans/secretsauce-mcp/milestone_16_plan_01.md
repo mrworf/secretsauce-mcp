@@ -35,8 +35,8 @@ Excluded: M17 installation/reenrollment/maintenance, remote/cloud storage, selec
 ## Slice index
 | Slice | Plan | Outcome | Dependencies | Status | Commit | Evidence |
 |---|---|---|---|---|---|---|
-| 01 | milestone_16_plan_01_slice_01.md | Portable complete archive/manual job/download provider | M10–15 | completed (commit pending) | | |
-| 02 | milestone_16_plan_01_slice_02.md | Daily backups, reviewed retention and material lifecycle | 01 | pending | | |
+| 01 | milestone_16_plan_01_slice_01.md | Portable complete archive/manual job/download provider | M10–15 | completed | 1fca06a6ce0362e027cf241ad6be95ac6f16f43b | QA browser-report.json; 41 tests/5 files |
+| 02 | milestone_16_plan_01_slice_02.md | Daily backups, reviewed retention and material lifecycle | 01 | completed (commit pending) | | 27 tests/3 files; HTTPS browser5 groups |
 | 03 | milestone_16_plan_01_slice_03.md | Backups UX, health/evidence and isolated operational validation | 01,02 | pending | | |
 
 ## Cross-slice concerns

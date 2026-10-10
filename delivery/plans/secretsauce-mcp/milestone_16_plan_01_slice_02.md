@@ -38,4 +38,10 @@ The stated observable outcome and governing milestone clauses are implemented wi
 One coherent delivery: M16 slice 02 commit containing owned implementation/tests/docs and this plan. Preserve test-results/ and upstream authority. Record exact commit externally and in next slice/index provenance; never squash.
 
 ## Execution evidence
-Pending.
+Build passed. Focused/related validation passed 27 tests / 3 files, including actual local TLS SMTP and all publication fault phases. Actual HTTPS browser passed 5 groups with keyboard/320px schedule impact/recent apply and generated-material acknowledgement evidence. Global catalog/bytes capacity, 105 scheduled failures, fsynced retention, absent-output acknowledgement and independent old/new-material decryption validated.
+
+### Pre-implementation findings
+Slice01 delivered at 1fca06a6ce0362e027cf241ad6be95ac6f16f43b. Daily scheduler uses the existing maintenance tick with a persisted attempted-day fence; interrupted attempts are not silently retried. Settings review fingerprints retained catalog and effective revision, and reports exact archive deletion identifiers/count with last-good protection. Material replacement is generated once under recent Owner authentication and committed only after independent-save plus retained-material acknowledgement; retained archives keep their original public-key identifiers and hashes. Scheduling/retention/material controls belong to this slice's reachable Settings flow.
+
+### Bounded worker correction
+Expensive semantic/audit verification, encryption and round-trip integrity validation move to one bounded worker (256 MiB old-generation heap, 30-second deadline) per active job. The live single-job slot stays occupied through worker termination. Synchronous capture remains a five-second write-pause budget and is measured; publication uses checked ciphertext only and rechecks current authority. Docker operating evidence must measure 100-service/10k-audit archive size/job time and concurrent read responsiveness; no uninterrupted-execution claim.

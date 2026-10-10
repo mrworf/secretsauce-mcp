@@ -13,4 +13,4 @@ PRE-015 requires authorized real ChatGPT AND Codex: consent/discovery/reference/
 - 01: [Managed per-user consent and current MCP admission](milestone_14_plan_01_slice_01.md) — completed; commit: 1d990b22096479aab4336e36797b8b97b90ec83a.
 - 02: [Inspect and revoke connected clients](milestone_14_plan_01_slice_02.md) — completed; commit: 3972bbb37de62c3c03a35ad84a092695a18d5349.
 - 03: [Owner-reviewed authentication settings and explicit advanced modes](milestone_14_plan_01_slice_03.md) — completed; commit: 72bd873a46de1e4f772e67e4d979470b70ccfe7e.
-- 04: [Client setup, restart and local rendered verification](milestone_14_plan_01_slice_04.md) — completed locally; final SHA recorded by root; PRE-015 external acceptance pending.
+- 04: [Client setup, restart and local rendered verification](milestone_14_plan_01_slice_04.md) — completed locally; commit: 1eb00d117664858d81252543b46c53cb8b46638d; PRE-015 external acceptance pending.

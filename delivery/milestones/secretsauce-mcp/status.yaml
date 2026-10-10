@@ -154,13 +154,21 @@ milestones:
   - id: "14"
     title: Connect and govern MCP clients
     file: delivery/milestones/secretsauce-mcp/14-mcp-client-access.md
-    status: in_progress
+    status: blocked
     dependencies:
       - "12"
     completed_at: null
     commit_hash: null
-    notes: null
+    notes: "All four local M14 slices committed. 511 tests/53 files, build, actual
+      HTTPS keyboard/320px browser five groups/fourteen sanitized screens pass.
+      PRE-015 acceptance blocked: no authorized real ChatGPT AND Codex test
+      records. Procedure: docs/m14-real-client-verification.md. Local evidence:
+      evidence/qa/secretsauce-mcp/milestone14/local-coverage.md; acceptance
+      checkpoint: evidence/qa/secretsauce-mcp/milestone14/acceptance-status.md.
+      No M15–17 work started."
     started_at: 2026-10-10T05:59:52.467Z
+    implementation_commit_hash: 1eb00d117664858d81252543b46c53cb8b46638d
+    blocked_at: 2026-10-10T06:51:52.136Z
   - id: "15"
     title: Operate and inspect the managed instance
     file: delivery/milestones/secretsauce-mcp/15-operating-evidence-and-limits.md
@@ -191,7 +199,7 @@ milestones:
     notes: null
 delivery_goal:
   product_id: secretsauce-mcp
-  status: in_progress
+  status: blocked
   packet: delivery/milestones/secretsauce-mcp/status.yaml
   packet_revision: sha256:a262e7f9b7087b033e2708500b060576ba5adfec8dbc9dc98f2fa3a1f49f104d
   packet_contract_revisions:
@@ -238,8 +246,44 @@ delivery_goal:
   execution: autonomous
   current_milestone: "14"
   governing_plan: delivery/plans/secretsauce-mcp/milestone_14_plan_01.md
-  blockers: []
-  resume_point: Resume existing M14 governing plan at indexed incomplete slice, or
-    generate governing and all slice plans before production edits if absent.
-    M13 accepted. PRE-015 real ChatGPT/Codex authorized HTTPS evidence is
-    required before M14 acceptance; local development may proceed.
+  blockers:
+    - type: EXTERNAL_OR_USER_ACTION
+      evidence_id: PRE-015
+      source: delivery/readiness/secretsauce-mcp/prerequisite-manifest.md#external-completion-instructions
+      milestone: "14"
+      slice: 04 (external acceptance only)
+      requirement: Authorized tester and reachable isolated HTTPS synthetic service;
+        real consent/discovery/reference/request/denial/revoke/normal
+        restart/reconnect on BOTH ChatGPT and Codex.
+      expected_artifact: evidence/platform/secretsauce-mcp/milestone14/ dated
+        authorized sanitized client records
+      required_action: Run docs/m14-real-client-verification.md on an already
+        authorized isolated endpoint with synthetic identities/services. Provide
+        both dated records and safe screenshots/results; never share
+        credentials, tokens, cookies, opaque references or raw bodies.
+      unblock_condition: Both actual authorized platform records cover PRE-015 against
+        the delivered implementation revision and pass targeted acceptance
+        review.
+      implementation_commit: 1eb00d117664858d81252543b46c53cb8b46638d
+  resume_point: Review new PRE-015 records under
+    evidence/platform/secretsauce-mcp/milestone14/ against implementation
+    1eb00d117664858d81252543b46c53cb8b46638d. Retain existing M14 plan and
+    completed slice commits; do not rerun completed slices or full acceptance
+    merely to recheck an absent artifact. Any demonstrated local defect resumes
+    the same transaction with a narrow corrective slice. Once M14 acceptance
+    passes, select M15; fixed goal remains 10–17.
+  blocked_at: 2026-10-10T06:51:52.136Z
+  blocker_type: EXTERNAL_OR_USER_ACTION
+  blocker: "PRE-015: actual authorized ChatGPT AND Codex interoperability evidence
+    is absent; M14 cannot complete and M15–17 depend on it."
+  prerequisite_observations:
+    - evidence_id: PRE-016
+      checked_at: 2026-10-10T06:51:52.136Z
+      client_version: 29.9.0
+      server_version: 29.8.1
+      compose_version: 5.6.0
+      result: Docker daemon version available through narrowly approved docker version
+        escalation; default sandbox socket access is denied. No containers/host
+        configuration changed. Future authorized disposable runtime
+        smoke/recovery fixtures remain unverified and are assessed at M15–17
+        boundaries.

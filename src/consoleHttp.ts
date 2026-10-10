@@ -1,5 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import QRCode from 'qrcode';
+import { consoleEvidence, EvidenceError } from './consoleEvidence.js';
 import { consoleAuthentication, AuthenticationSettingsError } from './consoleAuthentication.js';
 import { connectedClients, revokeClient, ClientManagementError } from './consoleClients.js';
 import { configurationHistory,useConfigurationRevision } from './consoleHistory.js';
@@ -51,7 +52,8 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
         if(request.method==='GET'&&path==='/console/api/authentication'){if(!session){reply(401,{message:'Sign in again.'});return;}reply(200,consoleAuthentication(store).read(session));return;}
         if(request.method==='GET'&&path==='/console/api/clients'){if(!session){reply(401,{message:'Sign in again.'});return;}reply(200,connectedClients(store,session));return;}
         if(request.method==='GET'&&path==='/console/api/notifications'){if(!session){reply(401,{message:'Sign in again.'});return;}reply(200,consoleNotifications(store).read(session));return;}
-        if(request.method==='GET'&&path==='/console/api/activity'){if(!session){reply(401,{message:'Sign in again.'});return;}const user=store.authorize(session,'own');reply(200,{entries:store.journal.entries().filter(e=>user.role!=='Member'||e.actor===user.id||e.target===user.id).slice(-100).map(e=>({action:e.action,time:e.time,result:e.result,target:e.target,operation:e.id}))});return;}
+        if(request.method==='GET'&&path==='/console/api/activity'){if(!session){reply(401,{message:'Sign in again.'});return;}const values:Record<string,unknown>=Object.create(null);const query=new URL(request.url!,'https://console.example.org').searchParams;for(const [key,value] of query){if(Object.hasOwn(values,key))throw new EvidenceError('Duplicate activity filter.');values[key]=['from','to','offset','limit'].includes(key)?Number(value):value;}reply(200,consoleEvidence(store).query(session,values));return;}
+        if(request.method==='GET'&&path==='/console/api/retention'){if(!session){reply(401,{message:'Sign in again.'});return;}reply(200,consoleEvidence(store).readRetention(session));return;}
         if (request.method === 'GET' && path === '/console/api/people') { if(!session){reply(401,{message:'Sign in again.'});return;} reply(200,consolePeople(store).list(session));return; }
         if (request.method === 'GET' && path === '/console/api/instance') {
             if (!session) {
@@ -139,6 +141,11 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
             reply(403, { message: 'Reload this page before submitting.' });
             return;
         }
+        if(path==='/console/api/activity/detail'){reply(200,consoleEvidence(store).detail(session,data));return;}
+        if(path==='/console/api/evidence/export'){reply(200,consoleEvidence(store).export(session,data));return;}
+        if(path==='/console/api/retention/save'){reply(200,consoleEvidence(store).saveRetention(session,data));return;}
+        if(path==='/console/api/retention/review'){reply(200,consoleEvidence(store).reviewRetention(session,data));return;}
+        if(path==='/console/api/retention/apply'){reply(200,consoleEvidence(store).applyRetention(session,data));return;}
         if(path?.startsWith('/console/api/authentication/')){const a=consoleAuthentication(store);if(path==='/console/api/authentication/save'){reply(200,a.save(session,data));return;}if(path==='/console/api/authentication/import-proposal'){reply(200,a.importProposal(session,data));return;}if(path==='/console/api/authentication/review'){reply(200,a.review(session,data));return;}if(path==='/console/api/authentication/apply'){reply(200,a.apply(session,data));return;}}
         if(path==='/console/api/client/revoke'){reply(200,revokeClient(store,session,data));return;}
         if(path==='/console/api/configuration/history-draft'){reply(200,useConfigurationRevision(consoleServices(store),session,data));return;}
@@ -203,6 +210,7 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
         reply(404, { message: 'Not found.' });
     }
     catch (error) {
+        if (error instanceof EvidenceError) {reply(400,{message:error.message});return;}
         if (error instanceof AuthenticationSettingsError) {reply(400,{message:error.message});return;}
         if (error instanceof ClientManagementError) {reply(400,{message:error.message});return;}
         if (error instanceof NotificationError) {reply(400,{message:error.message});return;}

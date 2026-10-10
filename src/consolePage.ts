@@ -1,3 +1,4 @@
+import { consoleEvidenceScript } from './consoleEvidencePage.js';
 import { consoleAuthenticationScript } from './consoleAuthenticationPage.js';
 import { consolePeopleScript } from './consolePeoplePage.js';
 import { consoleServiceScript } from './consoleServicePage.js';
@@ -21,4 +22,5 @@ document.querySelector('#logout').onclick=async()=>{try{await api('logout',{});d
 ${consoleServiceScript}
 ${consolePeopleScript}
 ${consoleAuthenticationScript}
+${consoleEvidenceScript}
 start();`;

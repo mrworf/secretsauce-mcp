@@ -101,7 +101,7 @@ export class AuditSink {
     this.#logger = createLogger(config.logging);
     this.file = resolve(config.audit.file ?? join(process.env.AUDIT_STORAGE_DIR ?? "data", "gateway.jsonl"));
     this.initializeFile();
-    try { if (!this.#degraded) this.#writer = acquireAuditWriter(this.file); } catch { this.markDegraded("open"); }
+    try { if (!this.#degraded) { this.#writer = acquireAuditWriter(this.file); if(this.fileOperations===defaultFileOperations){this.fileOperations.close(this.#fd!);this.#fd=this.fileOperations.open(this.file);} } } catch { this.markDegraded("open"); }
   }
 
   get events(): readonly AuditEvent[] {
@@ -164,10 +164,29 @@ export class AuditSink {
   operationActor(id:string):string|undefined{return this.#writer?.journal.actorFor(id);}
   operationStatus(id:string):'unknown'|'uncertain'|'success'|'failed'{return this.#writer?.journal.status(id)??'unknown';}
 
+  evidence(): { operations: import('./consoleJournal.js').OperationRecord[]; events: AuditEvent[]; verified: boolean } {
+    const journal=this.#writer?.journal;
+    if(!journal) return {operations:[],events:[],verified:false};
+    let events:AuditEvent[]=[];let verified=journal.verify();
+    try { if(statSync(this.file).size>64*1024*1024)throw new Error('Audit capacity');const raw=readFileSync(this.file,'utf8');if(raw&&!raw.endsWith('\n'))throw new Error('Audit incomplete');const deadline=performance.now()+2000;for(const line of raw.trim().split('\n').filter(Boolean)){events.push(JSON.parse(line));if(events.length>100000||(events.length%256===0&&performance.now()>deadline))throw new Error('Audit query capacity');}verified=verified&&journal.verifyEventDigests(events.map(e=>digest(JSON.stringify(e))));if(!verified)this.markDegraded('write'); }
+    catch {this.markDegraded('write');verified=false;}
+    return {operations:journal.entries().filter(r=>r.action!=='audit.event'),events,verified};
+  }
+  retentionImpact(cutoff:number):number {return this.#writer?.journal.retentionCandidates(cutoff).length??0;}
+  retain(cutoff:number,actor:string):number {
+    if(this.degraded||this.fileOperations!==defaultFileOperations||!this.#writer||this.#writer.refs>1)throw new Error('Durable audit unavailable');
+    const evidence=this.evidence();if(!evidence.verified)throw new Error('Durable audit unavailable');
+    const remove=new Set(this.#writer.journal.retentionCandidates(cutoff).filter(r=>r.action==='audit.event').map(r=>r.target));
+    const raw=evidence.events.filter(e=>!remove.has(digest(JSON.stringify(e)))).map(e=>JSON.stringify(e)+'\n').join('');
+    this.fileOperations.close(this.#fd!);this.#fd=undefined;
+    try {const count=this.#writer.journal.compact(cutoff,actor,raw);this.#fd=this.fileOperations.open(this.file);return count;}
+    catch {this.markDegraded('write');throw new Error('Retention completion is uncertain.');}
+  }
   private initializeFile(): void {
     const path = this.file;
     try {
       this.fileOperations.ensureDirectory(dirname(path));
+      if(existsSync(path)&&statSync(path).size>64*1024*1024)throw new Error("Audit capacity exhausted");
       this.#fd = this.fileOperations.open(path);
       if (this.fileOperations === defaultFileOperations) { fsyncSync(this.#fd); const dir = openSync(dirname(path), "r"); try { fsyncSync(dir); } finally { closeSync(dir); } }
     } catch {
@@ -179,6 +198,7 @@ export class AuditSink {
     const fd = this.#fd;
     if (fd === undefined) return;
     try {
+      if(this.fileOperations===defaultFileOperations&&statSync(this.file).size+record.length>64*1024*1024)throw new Error("Audit capacity exhausted");
       let offset = 0;
       while (offset < record.length) {
         const written = this.fileOperations.write(fd, record, offset, record.length - offset);

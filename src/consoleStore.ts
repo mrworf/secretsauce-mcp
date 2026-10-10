@@ -38,6 +38,7 @@ export interface ConsoleSession {
     };
 }
 export interface ConsoleState {
+    retention?: import("./consoleEvidence.js").RetentionState;
     v: 1;
     id: string;
     revision: number;

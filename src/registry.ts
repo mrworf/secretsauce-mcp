@@ -54,7 +54,7 @@ export interface ServicePolicyDescription {
 
 export function listVisibleServices(config: GatewayConfig, auth: AuthContext): ServiceSummary[] {
   return Object.values(config.services)
-    .filter((service) => canAccessService(service, auth))
+    .filter((service) => { try { config.managedAdmission?.(auth.subject, service.id); return canAccessService(service, auth); } catch { return false; } })
     .map(serviceSummary);
 }
 
@@ -88,7 +88,8 @@ export function describeServicePolicy(config: GatewayConfig, auth: AuthContext, 
 }
 
 export function getService(config: GatewayConfig, serviceId: string, auth?: AuthContext): ServiceConfig {
-  const service = config.services[serviceId];
+  try { if (auth) config.managedAdmission?.(auth.subject, serviceId); } catch { throw new GatewayError("unauthorized_service", "Current service access unavailable."); }
+  const service = Object.hasOwn(config.services, serviceId) ? config.services[serviceId] : undefined;
   if (!service) throw new GatewayError("unknown_service", `Unknown service: ${serviceId}`);
   if (auth !== undefined && !canAccessService(service, auth)) {
     throw new GatewayError("unauthorized_service", `Not authorized for service: ${serviceId}`);

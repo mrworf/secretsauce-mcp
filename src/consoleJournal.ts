@@ -3,7 +3,9 @@ import { dirname } from 'node:path';
 import { createHmac } from 'node:crypto';
 import { atomicFile } from './consolePersistence.js';
 import { equal, randomSecret } from './consoleCrypto.js';
+export interface ManagementDetails { credential?: string; credentialVersion?: number; identity?: string }
 export interface OperationRecord {
+    details?: ManagementDetails;
     id: string;
     phase: 'start' | 'complete' | 'recovery';
     actor: string;
@@ -90,8 +92,8 @@ export class ConsoleJournal {
                 closeSync(fd);
         }
     }
-    start(actor: string, action: string, target: string, revision = 0): string { const id = randomSecret(); this.append({ id, actor, action, target, revision, time: Date.now(), phase: 'start' }); return id; }
-    finish(id: string, actor: string, action: string, target: string, revision = 0, result: 'success' | 'failed' = 'success'): void { this.append({ id, actor, action, target, revision, result, time: Date.now(), phase: 'complete' }); }
+    start(actor: string, action: string, target: string, revision = 0, details?: ManagementDetails): string { const id = randomSecret(); this.append({ id, actor, action, target, revision, time: Date.now(), phase: 'start', ...(details ? { details } : {}) }); return id; }
+    finish(id: string, actor: string, action: string, target: string, revision = 0, result: 'success' | 'failed' = 'success', details?: ManagementDetails): void { this.append({ id, actor, action, target, revision, result, time: Date.now(), phase: 'complete', ...(details ? { details } : {}) }); }
     status(id: string): 'unknown' | 'uncertain' | 'success' | 'failed' { const list = this.#records.filter(r => r.id === id); const done = list.findLast(r => r.phase === 'complete'); return done?.result ?? (list.length ? 'uncertain' : 'unknown'); }
     verifyEventDigests(values: string[]): boolean { return JSON.stringify(this.#records.filter(r => r.action === 'audit.event').map(r => r.target)) === JSON.stringify(values); }
     entries(): OperationRecord[] { return this.#records.map(r => ({ ...r })); }

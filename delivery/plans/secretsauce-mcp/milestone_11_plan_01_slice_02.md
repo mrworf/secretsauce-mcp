@@ -1,6 +1,6 @@
 # M11 slice 02: Immediate credentials, access and lifecycle
 
-Status: pending. Parent transaction `9a9f619b3901b256ea6ebe242211425b0c00f874`.
+Status: complete. Focused checks 52/52 and build passed; evidence `evidence/qa/secretsauce-mcp/milestone11/slice02.md`. Added own-record safety and existing-ID compatibility identified during review, with safe target credential/identity operation metadata. Parent transaction `9a9f619b3901b256ea6ebe242211425b0c00f874`.
 
 ## Goal and outcome
 Authorized write-only value changes and explicit access/lifecycle actions immediately affect admission and references while old dispatched responses stay protected.

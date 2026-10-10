@@ -11,3 +11,9 @@ If the response is lost, inspect the current service and actor-scoped operation 
 Administrators are trusted to configure destinations. Exact and pattern response scanning is best-effort defense and cannot guarantee against all reflections or invertible encodings. Review explicitly acknowledges cleartext HTTP, disabled TLS, broad destination matching, default allow and reduced scanning.
 
 Use stand-in destinations such as `https://api.example.org`. No service-specific templates are provided.
+
+Credential value create/replace/delete uses an explicit confirmation and changes value availability/version immediately. No value returns in a response; create or rotation advances version/last-change metadata and invalidates affected references. Remove placement from both applied configuration and saved draft before deleting a dependent value. Discarding a draft never undoes a value operation.
+
+Access grants/removals on an existing service act immediately and require explicit eligible enrolled identities for new grants. Existing external subjects remain compatible; they never authorize console management. Disable/archive immediately remove the service from admission and revoke references. Unarchive returns Disabled, and only a fresh configuration/dependency review can enable it. Already-dispatched work may complete; its captured credential response protection survives rotation. Any new placeholders from an old revoked completion remain unregistered and unusable. The existing reference broker and capacity counters survive publication.
+
+Immediate action evidence records the acting identity, target service, affected credential identity/version or assigned identity, admitted revision and outcome without secret bytes. Existing identifiers remain supported, including namespace-style identifiers; new identifiers use a simpler bounded format. Dictionary lookup never treats an inherited property as a configured object.

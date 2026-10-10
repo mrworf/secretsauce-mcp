@@ -8,14 +8,8 @@ import { TokenBroker } from '../src/tokens.js';
 import { AuditSink } from '../src/audit.js';
 import { ConsoleStore } from '../src/consoleStore.js';
 const draft = () => ({ name: 'Example service', no_auth: true, destinations: [{ id: 'primary', base_url: 'https://api.example.org', hosts: [{ exact: 'api.example.org' }] }], credentials: [], access: { users: [] }, policy: { mode: 'allow' as const, rules: [] } });
-export function managedFixture() {
-  const now = 1800000030000; const clock = vi.spyOn(Date, 'now').mockReturnValue(now);
-  const cfg = validateConfig({ auth: { mode: 'bearer', bearer: { token_env: 'SYNTHETIC' } }, services: { baseline: draft() } }, { SYNTHETIC: 'synthetic-bearer' });
-  const f = fixture({ config: cfg }); const e = setup(f, now - 30000);
-  const login = f.store.login('owner@example.org', 'A novel lengthy passphrase 2026', totp(e.seed, now));
-  const session = f.store.session(login.token)!; const manager = new ConsoleServices(f.store, cfg);
-  return { ...f, cfg, manager, session, clock, close() { clock.mockRestore(); f.close(); } };
-}
+import { managedFixture } from './consoleManagementFixtures.js';
+
 function save(f: ReturnType<typeof managedFixture>, service: unknown = draft(), settings?: unknown) { return f.manager.save(f.session, { id: 'new', base: f.manager.state.revision, generation: f.manager.state.services.new?.draft?.generation ?? 0, service, ...(settings ? { settings } : {}) }); }
 function apply(f: ReturnType<typeof managedFixture>) { const r = f.manager.review(f.session, { id: 'new' }); return f.manager.apply(f.session, { id: 'new', review: r.review, acknowledgments: r.exceptions }); }
 describe('managed service drafts and scoped publication', () => {

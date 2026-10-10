@@ -7,7 +7,7 @@ Use the existing encrypted, single-writer ConsoleStore commit as the serialized 
 
 ## Slice index
 1. [Scoped draft/review/apply](milestone_11_plan_01_slice_01.md): complete; evidence `evidence/qa/secretsauce-mcp/milestone11/slice01.md`; commit recorded in Git history/root handoff.
-2. [Immediate credentials, access and lifecycle](milestone_11_plan_01_slice_02.md): pending.
+2. [Immediate credentials, access and lifecycle](milestone_11_plan_01_slice_02.md): complete; evidence `evidence/qa/secretsauce-mcp/milestone11/slice02.md`; commit recorded in Git history/root handoff.
 3. [Service-first console and five-step setup](milestone_11_plan_01_slice_03.md): pending.
 
 ## Validation and evidence

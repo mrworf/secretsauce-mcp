@@ -69,6 +69,7 @@ export async function executeServiceRequest(
   input: ServiceRequestInput,
   dependencies: RequestDependencies = createRequestDependencies(config),
 ): Promise<ServiceResponse> {
+  const admittedRevision = config.admittedRevision;
   const logger = createLogger(config.logging);
   validateRequestInput(input);
   const service = getService(config, input.service, auth);
@@ -200,6 +201,7 @@ export async function executeServiceRequest(
     ...bodySubstitution.records,
   ];
 
+  const responseBroker = broker.responseContext(auth, service.id);
   const downstream = buildDownstreamRequest(config, target.url, input.method, substitutedHeaders, substitutedQuery, substitutedBody, target.tls.verify);
   logger.debug("service_request.downstream_ready", {
     subject: auth.subject,
@@ -240,7 +242,7 @@ export async function executeServiceRequest(
       ? new Set<string>(dependencies.secretRuntime.rules.map((rule) => rule.id))
       : new Set(matchedPolicyRule.secretlint.disabledRuleIds);
   const binaryPolicy = matchedPolicyRule?.binaryResponse ?? { scan: true, maxBytes: DEFAULT_BINARY_RESPONSE_MAX_BYTES };
-  const tokenizer = dependencies.secretRuntime.tokenizer;
+  const tokenizer = dependencies.secretRuntime.tokenizer.withBroker(responseBroker);
   let binaryScanBypassed = false;
   let tokenized: Awaited<ReturnType<typeof tokenizer.tokenizeBytes>>;
   if (classification.kind === "binary") {
@@ -258,7 +260,7 @@ export async function executeServiceRequest(
       throw new GatewayError("response_too_large", "Binary response exceeds its policy size limit.", requestId);
     }
     if (binaryPolicy.scan) {
-      const inspection = inspectBinaryBody(entityBody, broker, auth, service);
+      const inspection = inspectBinaryBody(entityBody, responseBroker, auth, service);
       if (inspection.ruleIds.length > 0) {
         logger.warn("service_request.binary_response_rejected", {
           request_id: requestId,
@@ -310,6 +312,7 @@ export async function executeServiceRequest(
     target_path: target.methodPath,
     policy_decision: "allow",
     ...(policy.matchedRule === undefined ? {} : { matched_policy_rule: policy.matchedRule }),
+    ...(admittedRevision === undefined ? {} : { admitted_revision: admittedRevision }),
     downstream_status_code: response.status,
     request_timestamp: new Date(started).toISOString(),
     request_duration_ms: Date.now() - started,

@@ -2,7 +2,8 @@ import { closeSync, existsSync, fsyncSync, mkdirSync, openSync, readFileSync, re
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { decrypt, digest, encrypt, equal, newSeed, passwordHash, passwordMatches, randomSecret, totp, validatePassword } from './consoleCrypto.js';
-import { ConsoleJournal } from './consoleJournal.js';
+import { sanitizeAuditText } from './auditSanitizer.js';
+import { ConsoleJournal, type ManagementDetails } from './consoleJournal.js';
 import type { AuditSink } from './audit.js';
 import type { GatewayConfig } from './types.js';
 import { hydrateManagedConfig } from './config.js';
@@ -139,17 +140,20 @@ export class ConsoleStore {
             throw new Error('Identity storage unavailable.');
         }
     }
-    commit(actor: string, action: string, target: string, change: (state: ConsoleState) => void): string {
+    commit(actor: string, action: string, target: string, change: (state: ConsoleState) => void, details?: ManagementDetails): string {
         if (this.externalAudit?.degraded)
             throw new Error('Durable audit unavailable');
-        const id = this.journal.start(actor, action, target, this.state.revision);
+        const secrets = [...Object.values(this.state.config?.services ?? {}).flatMap(s => s.credentials.map(c => c.secret)), ...Object.values(this.state.managed?.services ?? {}).flatMap(s => Object.values(s.values).map(v => v.value))].filter(Boolean);
+        const safeDetails = details ? Object.fromEntries(Object.entries(details).map(([key,value]) => [key, typeof value === 'string' ? sanitizeAuditText(value, secrets) : value])) : undefined;
+        target = sanitizeAuditText(target, secrets);
+        const id = this.journal.start(actor, action, target, this.state.revision, safeDetails);
         const next = structuredClone(this.state);
         try {
             change(next);
         }
         catch (error) {
             try {
-                this.journal.finish(id, actor, action, target, this.state.revision, 'failed');
+                this.journal.finish(id, actor, action, target, this.state.revision, 'failed', safeDetails);
             }
             catch {
                 throw new ConsoleOperationError(id, 'Operation completion is uncertain.');
@@ -159,7 +163,7 @@ export class ConsoleStore {
         next.revision++;
         try {
             this.save(next);
-            this.journal.finish(id, actor, action, target, next.revision);
+            this.journal.finish(id, actor, action, target, next.revision, 'success', safeDetails);
             return id;
         }
         catch {

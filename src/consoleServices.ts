@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { managedDraftSchema, normalizeManagedService, serviceDraft, type ManagedServiceDraft } from './config.js';
+import { sanitizeAuditText } from './auditSanitizer.js';
 import { digest } from './consoleCrypto.js';
 import { ConsoleStore, type ConsoleSession } from './consoleStore.js';
 import type { GatewayConfig, ServiceConfig } from './types.js';
@@ -16,7 +17,9 @@ export interface ManagedService {
   review?: { id: string; actor: string; fingerprint: string; candidate: ManagedServiceDraft; base: number; draftGeneration: number; settings?: { name: string }; exceptions: string[] };
 }
 export interface ManagedConfiguration { revision: number; services: Record<string, ManagedService> }
-const idSchema = z.string().regex(/^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,79}$/);
+function own<T>(values: Record<string, T>, key: string): T | undefined { return Object.hasOwn(values, key) ? values[key] : undefined; }
+const idSchema = z.string().min(1).max(1024).regex(/^[^\u0000-\u001f\u007f]+$/);
+const newIdSchema = z.string().regex(/^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,79}$/);
 const saveSchema = z.object({ id: idSchema, base: z.number().int().nonnegative(), generation: z.number().int().nonnegative(), service: managedDraftSchema, settings: z.object({ name: z.string().trim().min(1).max(100) }).strict().optional() }).strict();
 const reviewSchema = z.object({ id: idSchema }).strict();
 const applySchema = z.object({ id: idSchema, review: z.string().uuid(), acknowledgments: z.array(z.string()).max(200) }).strict();
@@ -28,6 +31,7 @@ export class ConsoleServices {
   invalidate: (service: string, subject?: string) => void = () => {};
   constructor(readonly store: ConsoleStore, readonly runtimeConfig: GatewayConfig = store.state.config!) {
     if (!runtimeConfig) throw new Error('Managed configuration missing');
+    if (!store.state.config || store.state.config === runtimeConfig) { const { managedAdmission: _admission, ...persisted } = runtimeConfig; store.state.config = structuredClone(persisted); }
     if (!store.state.managed) {
       store.state.managed = { revision: 0, services: Object.fromEntries(Object.values(runtimeConfig.services).map(s => [s.id, {
         lifecycle: 'Active', applied: serviceDraft(s), assignments: [...s.access.users],
@@ -43,7 +47,7 @@ export class ConsoleServices {
     return user;
   }
   fingerprint(id: string): string {
-    const s = this.state.services[id];
+    const s = own(this.state.services, id);
     return digest(JSON.stringify({ revision: this.state.revision, lifecycle: s?.lifecycle, assignments: s?.assignments,
       values: Object.entries(s?.values ?? {}).map(([key, v]) => [key, v.version]),
       users: this.store.state.users.map(u => ({ id: u.id, role: u.role, active: u.active })) }));
@@ -55,31 +59,32 @@ export class ConsoleServices {
       services: Object.entries(this.state.services).map(([id, s]) => ({ id, name: s.applied?.name ?? s.draft?.content.name ?? id, lifecycle: s.lifecycle, appliedRevision: this.state.revision, hasDraft: Boolean(s.draft), exceptions: s.applied ? exceptions(s.applied) : [] })) };
   }
   detail(session: ConsoleSession, id: unknown) {
-    this.actor(session); const key = this.parse(idSchema, id); const s = this.state.services[key];
+    this.actor(session); const key = this.parse(idSchema, id); const s = own(this.state.services, key);
     if (!s) throw new ServiceManagementError('Service unavailable. Reload Services.');
     return { id: key, revision: this.state.revision, lifecycle: s.lifecycle, applied: s.applied, draft: s.draft,
       assignments: s.assignments, credentials: Object.entries(s.values).map(([id, v]) => ({ id, available: true, version: v.version, changed: v.changed })),
-      exceptions: s.applied ? exceptions(s.applied) : [], activity: this.store.journal.entries().filter(e => e.target === key).map(e => ({ action: e.action, time: e.time, result: e.result, revision: e.revision })) };
+      exceptions: s.applied ? exceptions(s.applied) : [], activity: this.store.journal.entries().filter(e => e.target === key).map(e => ({ action: e.action, time: e.time, result: e.result, revision: e.revision, details: e.details })) };
   }
   private parse<T>(schema: z.ZodType<T>, value: unknown): T { const p = schema.safeParse(value); if (!p.success) throw new ServiceManagementError('Invalid service input. Check field types and supported settings.'); return p.data; }
   save(session: ConsoleSession, input: unknown) {
     const actor = this.actor(session, true); const data = this.parse(saveSchema, input);
-    const current = this.state.services[data.id];
+    const current = own(this.state.services, data.id);
+    if (!current && !newIdSchema.safeParse(data.id).success) throw new ServiceManagementError('Invalid new service identifier. Use 1–80 letters, numbers, dots, underscores or hyphens, starting with a letter or number.');
     if (data.base !== this.state.revision || data.generation !== (current?.draft?.generation ?? 0)) throw this.stale(session, data.id);
     // Field permissions are checked again at review/apply, even in mixed drafts.
     if (data.settings && actor.role !== 'Owner') throw new Error('Forbidden.');
     if (current?.lifecycle === 'Archived') throw new ServiceManagementError('Service archived. Unarchive to Disabled before editing.');
     const operation = this.store.commit(actor.id, 'service.draft_save', data.id, state => {
-      const m = state.managed!; const s = m.services[data.id] ??= { lifecycle: 'Draft', values: {}, assignments: [] };
+      const m = state.managed!; let s = own(m.services, data.id); if (!s) { s = { lifecycle: 'Draft', values: {}, assignments: [] }; Object.defineProperty(m.services, data.id, { value: s, enumerable: true, configurable: true, writable: true }); }
       s.draft = { content: data.service, base: data.base, generation: data.generation + 1, ...(data.settings ? { settings: data.settings } : {}) }; delete s.review;
     });
-    return { operation, status: 'saved', generation: this.state.services[data.id]!.draft!.generation, revision: this.state.revision };
+    return { operation, status: 'saved', generation: own(this.state.services, data.id)!.draft!.generation, revision: this.state.revision };
   }
   private stale(session: ConsoleSession, id: string): ServiceManagementError {
-    return new ServiceManagementError('Stale review or dependencies. Compare current and proposed configuration, reload, save and review again.', this.state.services[id] ? this.detail(session, id) : { revision: this.state.revision });
+    return new ServiceManagementError('Stale review or dependencies. Compare current and proposed configuration, reload, save and review again.', own(this.state.services, id) ? this.detail(session, id) : { revision: this.state.revision });
   }
   private candidate(session: ConsoleSession, id: string) {
-    const actor = this.actor(session, true); const s = this.state.services[id]; const draft = s?.draft;
+    const actor = this.actor(session, true); const s = own(this.state.services, id); const draft = s?.draft;
     if (!s || !draft) throw new ServiceManagementError('Save a service draft before review.');
     if (s.lifecycle === 'Archived') throw new ServiceManagementError('Service archived. Unarchive to Disabled before review.');
     if (draft.settings && actor.role !== 'Owner') throw new Error('Forbidden.');
@@ -119,12 +124,71 @@ export class ConsoleServices {
       s.applied.access = { users: s.assignments }; s.lifecycle = 'Active'; delete s.draft; delete s.review;
       state.config!.services = { ...state.config!.services, [data.id]: c.service }; m.revision++;
       if (review.settings) state.name = review.settings.name;
-    }); } finally { if (this.state.services[data.id]?.draft === undefined) { this.invalidate(data.id); this.publish(); } }
+    }); } finally { if (own(this.state.services, data.id)?.draft === undefined) { this.invalidate(data.id); this.publish(); } }
     return { operation, status: 'applied', revision: this.state.revision };
+  }
+  credential(session: ConsoleSession, input: unknown) {
+    const actor = this.actor(session, true);
+    const data = this.parse(z.object({ id: idSchema, credential: idSchema, action: z.enum(['create', 'replace', 'delete']), value: z.string().min(1).max(16384).optional(), confirmed: z.literal(true) }).strict(), input);
+    const s = own(this.state.services, data.id); if (!s) throw new ServiceManagementError('Service unavailable. Save a draft first.');
+    if (data.action === 'create' && !newIdSchema.safeParse(data.credential).success && ![s.applied, s.draft?.content].some(c => c?.credentials?.some(v => v.id === data.credential))) throw new ServiceManagementError('Invalid new credential identifier.');
+    if (data.action === 'create' ? Boolean(own(s.values, data.credential)) : !own(s.values, data.credential)) throw new ServiceManagementError('Credential availability changed. Reload its current metadata.');
+    if (data.action === 'delete') {
+      if (data.value !== undefined) throw new ServiceManagementError('Delete does not accept a value.');
+      if ([s.applied, s.draft?.content].some(c => c?.credentials?.some(v => v.id === data.credential))) throw new ServiceManagementError('Credential has configuration dependencies. Remove its placement from the draft, review and apply before deleting the value.');
+    } else if (!data.value || data.value.trim() !== data.value || /[\r\n\0]/.test(data.value) || /^(Bearer|Basic)\s/i.test(data.value)) throw new ServiceManagementError('Use a canonical credential value without protocol prefix, surrounding whitespace or control characters.');
+    let operation: string;
+    const base = this.state.revision;
+    try { operation = this.store.commit(actor.id, 'credential.' + data.action, data.id, state => {
+      const m = state.managed!, target = m.services[data.id]!;
+      if (data.action === 'delete') delete target.values[data.credential];
+      else Object.defineProperty(target.values, data.credential, { value: { value: data.value!, version: (own(target.values, data.credential)?.version ?? 0) + 1, changed: Date.now() }, enumerable: true, writable: true, configurable: true });
+      const active = state.config!.services[data.id];
+      if (active && data.action !== 'delete') for (const credential of active.credentials) if (credential.id === data.credential) credential.secret = data.value!;
+      m.revision++;
+    }, { credential: sanitizeAuditText(data.credential, data.value ? [data.value] : []), credentialVersion: data.action === 'delete' ? own(s.values, data.credential)!.version : (own(s.values, data.credential)?.version ?? 0) + 1 }); } finally { if (this.state.revision !== base) { this.invalidate(data.id); this.publish(); } }
+    return { operation, status: 'success', revision: this.state.revision };
+  }
+  access(session: ConsoleSession, input: unknown) {
+    const actor = this.actor(session, true);
+    const data = this.parse(z.object({ id: idSchema, user: z.string().min(1).max(254), action: z.enum(['grant', 'remove']), confirmed: z.literal(true) }).strict(), input);
+    const s = own(this.state.services, data.id); if (!s?.applied) throw new ServiceManagementError('Activate the service with reviewed initial grants first.');
+    const user = this.store.state.users.find(u => u.id === data.user);
+    if (data.action === 'grant' && (!user?.active || user.role === 'Auditor')) throw new ServiceManagementError('Access target no longer eligible. Select an active enrolled identity.');
+    if (data.action === 'grant' ? s.assignments.includes(data.user) : !s.assignments.includes(data.user)) throw new ServiceManagementError('Assignment changed. Reload current access.');
+    const base = this.state.revision; let operation: string;
+    try { operation = this.store.commit(actor.id, 'service.access_' + data.action, data.id, state => {
+      const m = state.managed!, target = m.services[data.id]!;
+      target.assignments = data.action === 'grant' ? [...target.assignments, data.user] : target.assignments.filter(v => v !== data.user);
+      target.applied!.access = { users: target.assignments };
+      if (state.config!.services[data.id]) state.config!.services[data.id]!.access = { users: target.assignments };
+      m.revision++;
+    }, { identity: data.user }); } finally { if (this.state.revision !== base) { if (data.action === 'remove') this.invalidate(data.id, data.user); this.publish(); } }
+    return { operation, status: 'success', revision: this.state.revision };
+  }
+  lifecycle(session: ConsoleSession, input: unknown) {
+    const actor = this.actor(session, true);
+    const data = this.parse(z.object({ id: idSchema, action: z.enum(['disable', 'archive', 'unarchive']), confirmed: z.literal(true) }).strict(), input);
+    const s = own(this.state.services, data.id); if (!s) throw new ServiceManagementError('Service unavailable. Reload Services.');
+    if (data.action === 'unarchive' && s.lifecycle !== 'Archived') throw new ServiceManagementError('Only an Archived service can be unarchived.');
+    if (data.action === 'disable' && s.lifecycle === 'Archived') throw new ServiceManagementError('Service archived. Unarchive returns it to Disabled.');
+    const base = this.state.revision; let operation: string;
+    try { operation = this.store.commit(actor.id, 'service.' + data.action, data.id, state => {
+      const m = state.managed!; m.services[data.id]!.lifecycle = data.action === 'archive' ? 'Archived' : 'Disabled';
+      delete state.config!.services[data.id]; m.revision++;
+    }); } finally { if (this.state.revision !== base) { this.invalidate(data.id); this.publish(); } }
+    return { operation, status: 'success', revision: this.state.revision };
+  }
+  admit(subject: string, id: string): void {
+    const service = own(this.state.services, id);
+    if (!service || service.lifecycle !== 'Active' || !service.assignments.includes(subject)) throw new Error('Current service access unavailable.');
+    const local = this.store.state.users.find(u => u.id === subject);
+    if (local && (!local.active || local.role === 'Auditor')) throw new Error('Current identity is not eligible.');
   }
   publish(): void {
     // One synchronous pointer swap; the existing broker/limiter/scanner resources survive.
     this.runtimeConfig.services = this.store.state.config!.services;
+    this.runtimeConfig.admittedRevision = this.state.revision;
   }
 }
 export function exceptions(draft: ManagedServiceDraft): string[] {

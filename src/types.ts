@@ -1,4 +1,6 @@
 export interface GatewayConfig {
+  managedAdmission?: (subject: string, service: string) => void;
+  admittedRevision?: number;
   server: ServerConfig;
   auth: AuthConfig;
   tokens: TokenConfig;

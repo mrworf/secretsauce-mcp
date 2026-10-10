@@ -76,6 +76,7 @@ export class TokenBroker {
   private readonly responseSecretIdsByIndex = new Map<string, string>();
   private readonly responseSecretsById = new Map<string, ResponseSecretTokenRecord>();
   private readonly tokenValuesById = new Map<string, string>();
+  private readonly generations = new Map<string, number>();
   private readonly secretIndexKey = randomBytes(32);
 
   constructor(
@@ -84,6 +85,28 @@ export class TokenBroker {
     private readonly auditSink: AuditSink = new AuditSink(config),
   ) {}
 
+  revoke(service: string, subject?: string): void {
+    const key = service + '\0' + (subject ?? '*'); this.generations.set(key, (this.generations.get(key) ?? 0) + 1);
+    for (const [hash, r] of this.recordsByHash) if (r.service === service && (subject === undefined || r.subject === subject)) this.deleteConfiguredToken(hash, r.id);
+    for (const r of [...this.responseSecretsById.values()]) if (r.service === service && (subject === undefined || r.subject === subject)) this.deleteResponseSecret(r.id, this.responseSecretIndex(r.subject, r.service, r.secret));
+  }
+  responseContext(auth: AuthContext, service: string): TokenBroker {
+    const epoch = () => (this.generations.get(service + '\0*') ?? 0) + ':' + (this.generations.get(service + '\0' + auth.subject) ?? 0);
+    const admitted = epoch();
+    const valid = () => { if (epoch() !== admitted) return false; try { this.config.managedAdmission?.(auth.subject, service); return true; } catch { return false; } };
+    // A completed response still substitutes protected bytes after revocation, but
+    // its new placeholders are never inserted into the live reference indexes.
+    return new Proxy(this, { get: (broker, property) => {
+      if (property === 'findConfiguredTokenForSecret') return (...args: Parameters<TokenBroker['findConfiguredTokenForSecret']>) => valid() ? broker.findConfiguredTokenForSecret(...args) : undefined;
+      if (property === 'assertResponseSecretCapacity') return (...args: Parameters<TokenBroker['assertResponseSecretCapacity']>) => { if (valid()) broker.assertResponseSecretCapacity(...args); };
+      if (property === 'issueOrReuseResponseSecret') return (...args: Parameters<TokenBroker['issueOrReuseResponseSecret']>) => {
+        if (valid()) return broker.issueOrReuseResponseSecret(...args);
+        const token = generateResponseSecretTokenValue(), now = this.now();
+        return { token, reused: false, record: { id: 'secrec_' + randomUUID(), tokenHash: hashToken(token), subject: auth.subject, service, secret: args[2], issuedAt: now, lastUsedAt: now, idleExpiresAt: now, maxExpiresAt: now } };
+      };
+      const value = Reflect.get(broker, property); return typeof value === 'function' ? value.bind(broker) : value;
+    } });
+  }
   issueTokens(auth: AuthContext, input: TokenRequestInput): TokenIssueResult {
     this.sweepExpired();
     if (!input.reason.trim()) {
@@ -158,6 +181,7 @@ export class TokenBroker {
   }
 
   validateTokenUse(auth: AuthContext, target: TokenUseTarget, tokenValue: string): TokenRecord {
+    try { this.config.managedAdmission?.(auth.subject, target.service); } catch { throw new GatewayError("reference_invalid", "Current service access unavailable."); }
     const hash = hashToken(tokenValue);
     const record = this.recordsByHash.get(hash);
     if (!record) throw new GatewayError("reference_invalid", "Unknown gateway reference.");
@@ -238,7 +262,7 @@ export class TokenBroker {
   }
 
   findConfiguredTokenForSecret(auth: AuthContext, service: string, secret: string): ConfiguredTokenMatch | undefined {
-    const configured = this.config.services[service];
+    const configured = Object.hasOwn(this.config.services, service) ? this.config.services[service] : undefined;
     if (!configured) return undefined;
     const credentialIds = new Set(configured.credentials.filter((credential) => credential.secret === secret).map((credential) => credential.id));
     if (credentialIds.size === 0) return undefined;

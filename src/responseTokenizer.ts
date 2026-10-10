@@ -62,6 +62,10 @@ export class ResponseTokenizer {
     private readonly sensitiveNames: SensitiveNameMatcher,
   ) {}
 
+  withBroker(broker: TokenBroker): ResponseTokenizer {
+    return new ResponseTokenizer(broker, this.scanner, this.rules, this.maxUniqueSecrets, this.timeoutMs, this.sensitiveNames);
+  }
+
   async tokenize(
     response: { headers: Record<string, string>; body: string },
     auth: AuthContext,

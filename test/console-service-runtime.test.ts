@@ -1,3 +1,5 @@
+import { bindConsoleOperations } from '../src/consoleOperations.js';
+import { SensitiveNameMatcher,DEFAULT_SENSITIVE_WORKER_BOUNDS,sensitiveNameWorkerUsage } from '../src/sensitiveNames.js';
 import { consoleProtection } from '../src/consoleProtection.js';
 import { once } from 'node:events';
 import { createServer, request } from 'node:http';
@@ -7,14 +9,14 @@ import { GatewayRuntime } from '../src/runtime.js';
 import { executeServiceRequest } from '../src/gateway.js';
 import { getService } from '../src/registry.js';
 import { createGatewayServer } from '../src/server.js';
-import { consoleServices } from '../src/consoleServices.js';
+import { consoleServices,bindConsoleServices } from '../src/consoleServices.js';
 import type { AuthContext } from '../src/types.js';
 async function downstream(secret: string) {
- let count = 0; let finish: (() => void) | undefined; let called: (() => void) | undefined;
+ let count = 0; let finish: ((body?:string) => void) | undefined; let called: (() => void) | undefined;
  const admitted = new Promise<void>(r => { called = r; });
- const server = createServer((_req,res) => { count++; finish = () => res.end(secret); called?.(); });
+ const server = createServer((_req,res) => { count++; finish = (body=secret) => res.end(body); called?.(); });
  server.listen(0,'127.0.0.1'); await once(server,'listening'); const a = server.address(); if (!a || typeof a === 'string') throw Error('Listener missing');
- return { url: 'http://127.0.0.1:'+a.port, admitted, finish: () => finish?.(), count: () => count, close: () => new Promise<void>(r => server.close(()=>r())) };
+ return { url: 'http://127.0.0.1:'+a.port, admitted, finish: (body?:string) => finish?.(body), count: () => count, close: () => new Promise<void>(r => server.close(()=>r())) };
 }
 function configure(f: ReturnType<typeof managedFixture>, url = 'https://api.example.org', credential = false, id = 'service') {
  const user = f.store.state.users[0]!.id;
@@ -77,6 +79,12 @@ describe('immediate managed credentials, access and lifecycle', () => {
  });
  it('shared catalog publication preserves occupied pool and admitted sensitive-name protection',async()=>{
   const f=managedFixture(),d=await downstream('{"bespoke":"synthetic-response-value"}');const user=configure(f,d.url,true);const p=consoleProtection(f.manager);const catalogs={secretlint:{version:1,mode:'replace',rules:[]},sensitiveNames:{version:1,mode:'replace',allow_patterns:[],patterns:[{id:'bespoke',regex:'^bespoke$'}]}};p.save(f.session,{base:f.manager.state.revision,generation:0,catalogs});let review=p.review(f.session,{});p.apply(f.session,{review:review.review,acknowledged:true});const r=runtime(f);try{const pool=r.secretRuntime.pool,broker=r.capabilities.tokenBroker,ref=broker.issueTokens(auth(user),{service:'service',access_ids:['key'],reason:'catalog admission'}).tokens[0]!.token;const pending=executeServiceRequest(f.cfg,auth(user),{service:'service',method:'GET',path:'/',headers:{'X-Api-Key':ref},reason:'catalog admission'},r);await d.admitted;catalogs.sensitiveNames.patterns=[];p.save(f.session,{base:f.manager.state.revision,generation:0,catalogs});review=p.review(f.session,{});p.apply(f.session,{review:review.review,acknowledged:true});expect(r.secretRuntime.pool).toBe(pool);d.finish();const result=await pending;expect(result.body).not.toContain('synthetic-response-value');expect(result.secret_tokenized).toBe(true);}finally{d.finish();await r.close();await d.close();f.close();}
+ });
+ it('preserves admitted name evaluation bounds across actual delayed downstream work while new contexts obey lower coverage',async()=>{
+  const f=managedFixture(),d=await downstream('{"bespoke":"synthetic-response-value"}');const user=configure(f,d.url,true);const p=consoleProtection(f.manager),catalogs={secretlint:{version:1,mode:'replace',rules:[]},sensitiveNames:{version:1,mode:'replace',allow_patterns:[],patterns:[{id:'bespoke',regex:'^bespoke$'}]}};p.save(f.session,{base:f.manager.state.revision,generation:0,catalogs});const review=p.review(f.session,{});p.apply(f.session,{review:review.review,acknowledged:true});const r=runtime(f);try{const pool=r.secretRuntime.pool,ref=r.capabilities.tokenBroker.issueTokens(auth(user),{service:'service',access_ids:['key'],reason:'admitted bounds'}).tokens[0]!.token,input={service:'service',method:'GET',path:'/',headers:{'X-Api-Key':ref},reason:'admitted bounds'},pending=executeServiceRequest(f.cfg,auth(user),input,r);await d.admitted;bindConsoleServices(f.store,f.cfg);const operations=bindConsoleOperations(f.store,r),settings=operations.current();settings.sensitiveNames.maxCandidateLength=1;settings.sensitiveNames.timeoutMs=900;settings.sensitiveNames.memoryMiB=24;operations.save(f.session,{base:0,generation:0,settings});const limits=operations.review(f.session,{});operations.apply(f.session,{review:limits.review,confirmed:true});expect(r.secretRuntime.pool).toBe(pool);d.finish();const result=await pending;expect(result.body).not.toContain('synthetic-response-value');expect(result.secret_tokenized).toBe(true);const next=executeServiceRequest(f.cfg,auth(user),input,r);await vi.waitFor(()=>expect(d.count()).toBe(2));d.finish('{"bespoke":"different-synthetic-value"}');expect((await next).body).toContain('different-synthetic-value');}finally{d.finish();await r.close();await d.close();f.close();}
+ });
+ it('snapshots evaluation while enforcing current lowered global name-worker capacity with shared occupancy',async()=>{
+  const bounds={...DEFAULT_SENSITIVE_WORKER_BOUNDS,timeoutMs:5000},matcher=new SensitiveNameMatcher({version:1,mode:'replace',patterns:[],allowPatterns:[]},bounds),captured=matcher.snapshot();bounds.maxInflight=1;bounds.maxCandidateLength=1;expect(captured.bounds.maxCandidateLength).toBe(256);expect(captured.bounds.timeoutMs).toBe(5000);const held=matcher.matchBatch(['a']);expect(sensitiveNameWorkerUsage()).toBe(1);await expect(captured.matchBatch(['bespoke'])).rejects.toThrow('capacity');await held;expect(sensitiveNameWorkerUsage()).toBe(0);expect((await captured.matchBatch(['bespoke'])).has('bespoke')).toBe(true);
  });
  it('revoke during dispatched work preserves protection and cannot allocate new usable response references',async()=>{
   const f=managedFixture();const d=await downstream('synthetic-original-secret');const user=configure(f,d.url,true);const r=runtime(f);try{

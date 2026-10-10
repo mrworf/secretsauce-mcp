@@ -1,38 +1,16 @@
-# M15 slice 03: Single-instance operating envelope and local deployment evidence
+# M15 corrective slice: admitted name-worker context
 
-## Goal and observable outcome
-Document persistent app/audit/backup/key mounts/private administration/public MCP HTTPS proxy; run50-user100-service retained evidence/quota/bounded background workload and browser field/role/task/reflow checks; actual isolated Docker smoke/restart.
+## Goal and scope
+Preserve the sensitive-name worker bounds captured when a gateway request is admitted, while new requests use applied bounds. Root post-commit review found the live mutable bounds survived ResponseTokenizer.withBroker; a delayed response could silently receive reduced name coverage. Keep catalogue, scanner pool, broker fencing and shared global occupied-worker count. No later milestone behavior.
 
-## Scope and non-scope
-Only the behavior above and tightly coupled tests/docs/evidence. No later milestone backup/restore implementation, product redesign, real LLM interoperability claim, service packs or upstream status/authority mutation.
+## Dependency and state
+Depends on committed slices01/02. Before production edits this plan is persisted and reviewed. Snapshot immutable bounds at tokenizer admission; existing matcher/catalogue arrays can be shared, and global worker count remains shared. No persisted state/schema or new external input. Limits apply still updates only future admitted contexts.
 
-## Dependencies and ordering
-Existing accepted M13/M14; prior M15 slices; governing milestone_15_plan_01.md and AGENTS/security/state/UX contracts apply.
+## Authorization and failures
+Existing gateway auth/destination/policy/admission and immutable broker generations remain authoritative. Worker allocation uses shared occupancy and captured bounds; timeout/termination release semantics remain. Do not log response bodies/secrets. No bypass or unbounded work.
 
-## Entry point and end-to-end behavior
-Console role-scoped API and visible Activity/Settings/service links lead to safe read/filter or scoped draft→review→explicit apply. Current permission is rechecked before mutation/export; unknown completion links operation status and never auto-retries. Slice03 exercises these actual entry points through HTTPS and disposable Docker.
-
-## State transitions
-Read preserves current state. Every sensitive action first admits durable audit. Reviewed scoped settings use current base/actor/fingerprint; only admitted committed settings publish. Retention preserves integrity/deletion attribution/security revocation evidence; limits preserve occupied counters. Browser state never stores secrets.
-
-## Authorization
-Member reads only own permitted activity, no global export/settings. Owner/Administrator/Auditor inspect non-secret authorized evidence; Owner alone writes limits/retention. Existing Administrator scanner editing remains. Audit outage/restricted sessions block every sensitive action and background work.
-
-## Validation, failure and recovery
-Strict bounded inputs, pagination/export/resource deadlines; no raw credentials/tokens/headers/cookies/bodies/proofs in errors/evidence. Storage/integrity failures fail closed with host repair and uncertain operation status. New external inputs have positive and negative cases.
-
-## Implementation surfaces
-Docker/proxy/runbook examples, disposable verification scripts and QA/platform reports/screenshots; no upstream authority changes.
-
-## Tests and required commands
-Actual Docker retained managed config/hash-only refresh/audit after restart and old reference invalidation; missing key/mount and second writer;50users100services activity/inventory/quota/scanner workload/resource measurements; HTTPS keyboard320px denial<=2min disable<=1min; npm test + npm run build.
-Focused `npm test -- <affected test files>` (pretest builds), related subsystem tests. Final slice additionally `npm test`, `npm run build`, actual browser/Docker scripts. If listen EPERM rerun identical command with loopback permission.
-
-## Acceptance criteria
-Milestone-required cases above pass; behavior/current role is exercised end-to-end; evidence has sanitized reproducible results and explicit pending M16 backup provider/NOT RUN realLLM boundary. No arbitrary50/100 hard cap or compliance claim.
-
-## Commit boundary
-One owned commit includes this plan, coupled code/tests/docs/evidence after required validation. Governing plan indexed status updated; exact resulting SHA reported to root externally. Exclude pre-existing test-results/ and upstream authority/status/goal files.
+## Validation and commit
+Add real loopback delayed-response positive regression: admit request with ordinary sensitive-name coverage, lower name length while downstream pending, release response, verify secret value is replaced. A subsequently admitted request obeys lowered coverage. Related response/scanner/protection/limits tests and build pass; final slice03 suite/browser/Docker remains required. Commit only corrective code/test/plan/evidence, preserving existing02commit. This fourth commit is justified by independent security review of an admission-context defect.
 
 ## Execution record
-Pending implementation.
+PASS43tests4files with pretestbuild: actual delayed downstream protects admitted value afterlowering coverage; newrequest obeyslowered bound; snapshot still enforces current maxInflight sharedoccupiedcounter. Matcherconfig/compiledregex/pool reused. Fixturecorrected tobindsame liveconfig asproduction and use newlydifferent responsevalue (existing learnedvalues independentlyprotected).

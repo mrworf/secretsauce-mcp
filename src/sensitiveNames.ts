@@ -80,14 +80,20 @@ export class SensitiveNameMatcher {
   private readonly allows: RegExp[];
   private readonly patterns: Array<{ id: string; regex: RegExp }>;
 
-  constructor(readonly config: SensitiveNameConfig,readonly bounds=DEFAULT_SENSITIVE_WORKER_BOUNDS) {
+  constructor(readonly config: SensitiveNameConfig,readonly bounds=DEFAULT_SENSITIVE_WORKER_BOUNDS,private readonly admissionBounds=bounds) {
     this.allows = config.allowPatterns.map((source) => compileRegex(source));
     this.patterns = config.patterns.map((pattern) => ({ id: pattern.id, regex: compileRegex(pattern.regex) }));
   }
 
+  snapshot():SensitiveNameMatcher {
+    const captured=Object.create(SensitiveNameMatcher.prototype) as SensitiveNameMatcher;
+    Object.assign(captured,this,{bounds:Object.freeze({...this.bounds})});
+    return captured;
+  }
+
   async matchBatch(names: string[]): Promise<Map<string,string[]>> {
     const bounds={...this.bounds};
-    if(names.length>bounds.maxNames||batchSlots>=bounds.maxInflight)throw new Error('Sensitive-name matching capacity exceeded');
+    if(names.length>bounds.maxNames||batchSlots>=this.admissionBounds.maxInflight)throw new Error('Sensitive-name matching capacity exceeded');
     const skipped=new Map(names.filter(name=>name.length===0||name.length>bounds.maxCandidateLength).map(name=>[name,[] as string[]]));
     const eligible=names.filter(name=>name.length>0&&name.length<=bounds.maxCandidateLength);if(!eligible.length)return skipped;
     batchSlots++;

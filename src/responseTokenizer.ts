@@ -63,7 +63,7 @@ export class ResponseTokenizer {
   ) {}
 
   withBroker(broker: TokenBroker): ResponseTokenizer {
-    return new ResponseTokenizer(broker, this.scanner, this.rules, this.maxUniqueSecrets, this.timeoutMs, this.sensitiveNames);
+    return new ResponseTokenizer(broker, this.scanner, this.rules, this.maxUniqueSecrets, this.timeoutMs, this.sensitiveNames.snapshot());
   }
 
   async tokenize(

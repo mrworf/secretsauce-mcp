@@ -20,7 +20,7 @@ Use native crypto (scrypt/AES256GCM/HMAC TOTP), encrypted atomic JSON snapshots 
 |---|---|---|---|---|---|
 | 01 | [Host-authorized first Owner enrollment](milestone_10_plan_01_slice_01.md) | none | completed | 42128e5 | setup11 tests/build |
 | 02 | [Durable MFA sessions and own account controls](milestone_10_plan_01_slice_02.md) | 01 | completed | 1c3f10f | auth+HTTP10 tests/build |
-| 03 | [Audit admission, safe diagnostics and operational acceptance](milestone_10_plan_01_slice_03.md) | 01,02 | completed | delivery: M10 slice 03 enforce durable audit admission and diagnostics | [406 tests/build/browser](../../../evidence/qa/secretsauce-mcp/milestone10/acceptance.md) |
+| 03 | [Audit admission, safe diagnostics and operational acceptance](milestone_10_plan_01_slice_03.md) | 01,02 | completed | 53bd2a4 | [406 tests/build/browser](../../../evidence/qa/secretsauce-mcp/milestone10/acceptance.md) |
 
 ## Cross-slice concerns
 Preserve destination/policy-before-substitution and MCP tools. Audit admission precedes effects; completion failure never rolls back downstream effects. One writable instance, protected key mounted separately from state; host control remains external trust. Account stores remain encrypted at rest, no secret browser persistence. Audit recovery requires durable recovery record and fresh normal login.

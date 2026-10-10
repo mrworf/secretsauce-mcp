@@ -94,21 +94,25 @@ milestones:
   - id: "10"
     title: Establish secure audited console access
     file: delivery/milestones/secretsauce-mcp/10-secure-audited-setup.md
-    status: in_progress
+    status: completed
     dependencies: []
-    completed_at: null
-    commit_hash: null
-    notes: null
+    completed_at: 2026-10-10T04:27:14.850Z
+    commit_hash: 53bd2a4
+    notes: "406 tests/37 files, build and diff check passed; actual HTTPS Chromium
+      keyboard/320px browser checks passed. Acceptance:
+      evidence/qa/secretsauce-mcp/milestone10/acceptance.md. Slice commits:
+      42128e5, 1c3f10f, 53bd2a4."
     started_at: 2026-10-10T03:43:12.099Z
   - id: "11"
     title: Configure and activate services safely
     file: delivery/milestones/secretsauce-mcp/11-managed-service-configuration.md
-    status: pending
+    status: in_progress
     dependencies:
       - "10"
     completed_at: null
     commit_hash: null
     notes: null
+    started_at: 2026-10-10T04:27:14.851Z
   - id: "12"
     title: Manage people and recover accounts
     file: delivery/milestones/secretsauce-mcp/12-people-and-account-recovery.md
@@ -211,8 +215,8 @@ delivery_goal:
     - "16"
     - "17"
   execution: autonomous
-  current_milestone: "10"
-  governing_plan: delivery/plans/secretsauce-mcp/milestone_10_plan_01.md
+  current_milestone: "11"
+  governing_plan: delivery/plans/secretsauce-mcp/milestone_11_plan_01.md
   blockers: []
-  resume_point: Generate milestone 10 governing plan and all slice plans before
-    production edits
+  resume_point: Generate milestone 11 governing plan and all slice plans before
+    production edits; milestone 10 acceptance is committed.

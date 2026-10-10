@@ -175,23 +175,30 @@ milestones:
   - id: "15"
     title: Operate and inspect the managed instance
     file: delivery/milestones/secretsauce-mcp/15-operating-evidence-and-limits.md
-    status: in_progress
+    status: completed
     dependencies:
       - "13"
       - "14"
-    completed_at: null
-    commit_hash: null
-    notes: null
+    completed_at: 2026-10-10T18:03:04.154Z
+    commit_hash: aa9405a10591838365de541845f1a49f4402aa79
+    notes: "All four acceptance criteria verified:558 tests/58 files and build;
+      actual HTTPS browser operations6/advanced6/clients5; actual
+      Docker/nginx12groups including crash restart and cross-container
+      leases;50users100services10411retained events. Root acceptance:
+      evidence/qa/secretsauce-mcp/milestone15/acceptance.md. Four independent
+      slice commits preserved; inherited dependency advisories recorded as
+      operational follow-up."
     started_at: 2026-10-10T17:07:13.336Z
   - id: "16"
     title: Create recoverable encrypted instance backups
     file: delivery/milestones/secretsauce-mcp/16-encrypted-instance-backups.md
-    status: pending
+    status: in_progress
     dependencies:
       - "15"
     completed_at: null
     commit_hash: null
     notes: null
+    started_at: 2026-10-10T18:03:04.154Z
   - id: "17"
     title: Restore and resume an instance safely
     file: delivery/milestones/secretsauce-mcp/17-safe-instance-recovery.md
@@ -248,24 +255,23 @@ delivery_goal:
     - "16"
     - "17"
   execution: autonomous
-  current_milestone: "15"
-  governing_plan: delivery/plans/secretsauce-mcp/milestone_15_plan_01.md
+  current_milestone: "16"
+  governing_plan: delivery/plans/secretsauce-mcp/milestone_16_plan_01.md
   blockers: []
-  resume_point: M14 accepted locally under explicit user instruction; actual LLM
-    client checks deferred NOT RUN. Generate governing and all slice plans for
-    M15 before production edits; run all local browser/Docker acceptance. Fixed
-    goal remains 10–17.
+  resume_point: M15 accepted with complete local operating evidence. Generate M16
+    governing and all slice plans before code; implement encrypted
+    whole-instance backups and independent clean-host verification. Fixed goal
+    remains10–17; actual LLM connections deferred under user exception.
   prerequisite_observations:
     - evidence_id: PRE-016
-      checked_at: 2026-10-10T06:51:52.136Z
+      checked_at: 2026-10-10T18:03:04.154Z
       client_version: 29.9.0
       server_version: 29.8.1
       compose_version: 5.6.0
-      result: Docker daemon version available through narrowly approved docker version
-        escalation; default sandbox socket access is denied. No containers/host
-        configuration changed. Future authorized disposable runtime
-        smoke/recovery fixtures remain unverified and are assessed at M15–17
-        boundaries.
+      result: Actual permitted Docker/nginx runtime validation passed12groups on
+        isolated loopback-only synthetic mounts; containers and temporary mounts
+        cleaned. M16/17 own remaining backup/recovery drills.
+      evidence: evidence/platform/secretsauce-mcp/milestone15/docker-report.json
   resolved_blockers:
     - type: EXTERNAL_OR_USER_ACTION
       evidence_id: PRE-015

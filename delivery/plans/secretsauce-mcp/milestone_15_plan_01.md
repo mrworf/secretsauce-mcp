@@ -31,7 +31,7 @@ Included: all M15 evidence/retention, limits/health, local browser and Docker op
 |01|[slice01](milestone_15_plan_01_slice_01.md)|Scoped evidence and reviewed retention|existing M13/14|complete|4fe08593a055c1d88c5cfac48589295416973952|evidence/qa/secretsauce-mcp/milestone15/|
 |02|[slice02](milestone_15_plan_01_slice_02.md)|Live limits and truthful health|01|complete|24062f23580c070d32f2790bd9e6afb0e5740686|evidence/qa/secretsauce-mcp/milestone15/|
 |03|[slice03](milestone_15_plan_01_slice_03.md)|Admitted name evaluation context correction|02|complete|28015e92c123ed7065037a30d9fc41d44feee7e3|evidence/qa/secretsauce-mcp/milestone15/|
-|04|[slice04](milestone_15_plan_01_slice_04.md)|Operating envelope and deployment verification|01,02,03|complete||evidence/platform/secretsauce-mcp/milestone15/|
+|04|[slice04](milestone_15_plan_01_slice_04.md)|Operating envelope and deployment verification|01,02,03|complete|aa9405a10591838365de541845f1a49f4402aa79|evidence/platform/secretsauce-mcp/milestone15/|
 
 ## Cross-slice concerns
 Compatibility: preserve all five tools/stateless POSTs/response protection/config surfaces. Authorization: Members own actor only; Owner/Admin/Auditor authorized instance reads/exports; Owner writes limits/retention. Sensitive operations require durable audit; diagnostic sessions never upgrade. Live broker/scanner/limiter stay shared. Audit data excludes raw secret/body/header/token/proof content. Bounds contain exports/regex/background work. Docker disposable loopback only, synthetic accounts/services, independent persistent mounts/stable keys and ephemeral references. No changes to downstream transport.

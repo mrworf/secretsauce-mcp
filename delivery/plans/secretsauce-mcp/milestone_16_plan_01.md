@@ -37,7 +37,7 @@ Excluded: M17 installation/reenrollment/maintenance, remote/cloud storage, selec
 |---|---|---|---|---|---|---|
 | 01 | milestone_16_plan_01_slice_01.md | Portable complete archive/manual job/download provider | M10–15 | completed | 1fca06a6ce0362e027cf241ad6be95ac6f16f43b | QA browser-report.json; 41 tests/5 files |
 | 02 | milestone_16_plan_01_slice_02.md | Daily backups, reviewed retention and material lifecycle | 01 | completed | ee29ef90afc8c6842c81aa6ad8b6928f2f4beb29 | 27 tests/3 files; HTTPS browser5 groups |
-| 03 | milestone_16_plan_01_slice_03.md | Backups UX, health/evidence and isolated operational validation | 01,02 | completed | recorded externally after commit |585tests/61files/build; HTTPS7+preservation17groups; Docker11groups; acceptance-coverage.md |
+| 03 | milestone_16_plan_01_slice_03.md | Backups UX, health/evidence and isolated operational validation | 01,02 | completed | 87a87f2fab8d5b5ea6e38c731414f78263e826c6 |585tests/61files/build; HTTPS7+preservation17groups; Docker11groups; acceptance-coverage.md |
 
 ## Cross-slice concerns
 Preserve live gateway/scanner/broker objects and mandatory audit. Recheck current Owner/session/security generation before asynchronous final publication/download. Never log or write plaintext secrets. Backup directory writes are constrained to validated mounted directory with fixed UUID filenames, no arbitrary extraction. Archive holders can decrypt included secrets; save material independently and copy ciphertext off-host. One active process with launcher leases remains mandatory. Bound jobs, snapshot, archive size, directory consumption and history. Retention never removes last good archive. Progress stages have no invented percentage.

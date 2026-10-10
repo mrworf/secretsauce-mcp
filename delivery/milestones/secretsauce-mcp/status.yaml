@@ -192,22 +192,28 @@ milestones:
   - id: "16"
     title: Create recoverable encrypted instance backups
     file: delivery/milestones/secretsauce-mcp/16-encrypted-instance-backups.md
-    status: in_progress
+    status: completed
     dependencies:
       - "15"
-    completed_at: null
-    commit_hash: null
-    notes: null
+    completed_at: 2026-10-10T18:53:12.145Z
+    commit_hash: 87a87f2fab8d5b5ea6e38c731414f78263e826c6
+    notes: All four acceptance criteria verified:585 tests/61 files and build; HTTPS
+      backup7 groups plus17 preserved-flow groups; Docker11 groups including
+      independent clean-container decryption and5 SIGKILL boundaries. Root
+      acceptance:evidence/qa/secretsauce-mcp/milestone16/acceptance.md. Three
+      independent slice commits preserved; actual LLM checks deferred under user
+      exception.
     started_at: 2026-10-10T18:03:04.154Z
   - id: "17"
     title: Restore and resume an instance safely
     file: delivery/milestones/secretsauce-mcp/17-safe-instance-recovery.md
-    status: pending
+    status: in_progress
     dependencies:
       - "16"
     completed_at: null
     commit_hash: null
     notes: null
+    started_at: 2026-10-10T18:53:12.145Z
 delivery_goal:
   product_id: secretsauce-mcp
   status: in_progress
@@ -255,13 +261,13 @@ delivery_goal:
     - "16"
     - "17"
   execution: autonomous
-  current_milestone: "16"
-  governing_plan: delivery/plans/secretsauce-mcp/milestone_16_plan_01.md
+  current_milestone: "17"
+  governing_plan: delivery/plans/secretsauce-mcp/milestone_17_plan_01.md
   blockers: []
-  resume_point: M15 accepted with complete local operating evidence. Generate M16
-    governing and all slice plans before code; implement encrypted
-    whole-instance backups and independent clean-host verification. Fixed goal
-    remains10–17; actual LLM connections deferred under user exception.
+  resume_point: M16 accepted. Generate M17 governing and all slice plans before
+    code; deliver safe installation/rollback, fresh enrollment, explicit
+    reactivation, local reconnect and truthful provenance. Fixed goal
+    remains10–17; only actual LLM connections deferred under user exception.
   prerequisite_observations:
     - evidence_id: PRE-016
       checked_at: 2026-10-10T18:03:04.154Z

@@ -1,0 +1,162 @@
+stage: prd-development-partner
+status: PASS
+mode: targeted_revalidation
+validated_inputs:
+- path: docs/web-console-prd.md
+  revision: sha256:cb8d09474431d3bdd082466beac07163051bd2cb00639433f8a87bf85b46c3d8
+- path: product/security/web-console-security-contract.md
+  revision: sha256:95e342c77316f1697540fa8da29c6dd6333d6b6d3356b326c4dde921bca4540d
+- path: product/architecture/web-console-state-contract.md
+  revision: sha256:54956edc26dbcebcb48ecca0697a4695012d61488fa2297e56b6c04c9cbaa858
+decision_provenance:
+- D-001
+- D-002
+- D-003
+- D-004
+- D-005
+- D-006
+- D-007
+- D-008
+- D-009
+- D-010
+- D-011
+- D-012
+- RES-PRD-SEC-01
+- RES-PRD-ARCH-01
+artifact_changes:
+- path: workflow/definition/results/prd-review.md
+  summary: Recorded targeted validation and closure of F-PRD-001 through F-PRD-004
+    without authority changes.
+- path: workflow/definition/results/prd.yaml
+  summary: Recorded exact normative revisions and PRD-stage PASS.
+changed_paths:
+- workflow/definition/results/prd-review.md
+- workflow/definition/results/prd.yaml
+findings:
+- id: F-PRD-001
+  significance: OBSERVATION
+  status: resolved
+  summary: Targeted revalidation confirms adopted correction.
+  affected_requirement: SEC-01
+  affected_artifact: docs/web-console-prd.md
+  evidence: 'SECRES-01: ordinary secrets prohibited; purpose-bound proof and OAuth
+    code exceptions preserve required flows and downstream query placement.'
+  why_it_matters: Established product intent now has a consistent testable contract
+    for this boundary.
+  local_correction_possible: false
+  reconciliation_required: false
+- id: F-PRD-002
+  significance: OBSERVATION
+  status: resolved
+  summary: Targeted revalidation confirms adopted correction.
+  affected_requirement: BACKUP-05
+  affected_artifact: docs/web-console-prd.md
+  evidence: 'SECRES-02 and STATE-04/05/06: host proof plus archive material or recent
+    current Owner authority, archived Owner nomination, fresh enrollment, coherent
+    failed-install recovery, and explicit activation.'
+  why_it_matters: Established product intent now has a consistent testable contract
+    for this boundary.
+  local_correction_possible: false
+  reconciliation_required: false
+- id: F-PRD-003
+  significance: OBSERVATION
+  status: resolved
+  summary: Targeted revalidation confirms adopted correction.
+  affected_requirement: AUDIT-04
+  affected_artifact: docs/web-console-prd.md
+  evidence: 'SECRES-04: every sensitive path fails closed, restricted diagnostic login
+    is an explicit bounded exception, host repair cannot become privileged web mutation,
+    and durable recovery event precedes admission.'
+  why_it_matters: Established product intent now has a consistent testable contract
+    for this boundary.
+  local_correction_possible: false
+  reconciliation_required: false
+- id: F-PRD-004
+  significance: OBSERVATION
+  status: resolved
+  summary: Targeted revalidation confirms adopted correction.
+  affected_requirement: CONFIG-03
+  affected_artifact: docs/web-console-prd.md
+  evidence: 'STATE-01/02/03: immediate security/lifecycle actions, current permissions
+    and dependencies at apply/admission, scoped history, and no implicit resurrection
+    of revoked access or credential values.'
+  why_it_matters: Established product intent now has a consistent testable contract
+    for this boundary.
+  local_correction_possible: false
+  reconciliation_required: false
+questions: []
+resolved_question_ids:
+- Q-PRD-001
+- Q-PRD-002
+- Q-PRD-003
+- Q-PRD-004
+affected_requirements:
+- AUDIT-01
+- AUDIT-04
+- AUTHZ-02
+- AUTHZ-03
+- BACKUP-02
+- BACKUP-03
+- BACKUP-04
+- BACKUP-05
+- BACKUP-06
+- BASE-01
+- CONFIG-02
+- CONFIG-03
+- CONFIG-04
+- CONFIG-05
+- IDENT-01
+- IDENT-02
+- IDENT-03
+- IDENT-05
+- IDENT-06
+- OPS-02
+- SEC-01
+- SEC-03
+affected_artifacts: &id001
+- docs/web-console-prd.md
+- product/security/web-console-security-contract.md
+- product/architecture/web-console-state-contract.md
+reconciliation_required: false
+change_impact:
+  product: false
+  user_journeys: false
+  ux: false
+  architecture: false
+  security: false
+validation:
+  requirement_ids_preserved: 53
+  local_links: pass
+  normative_source_hashes: verified unchanged during revalidation
+  settled_decisions: D-001 through D-012 preserved
+  implementation_tests_run: false
+  reason: Targeted definition validation; no executable code changed.
+targeted_revalidation:
+  finding_ids:
+  - F-PRD-001
+  - F-PRD-002
+  - F-PRD-003
+  - F-PRD-004
+  requirement_ids:
+  - AUDIT-01
+  - AUDIT-04
+  - AUTHZ-02
+  - AUTHZ-03
+  - BACKUP-03
+  - BACKUP-04
+  - BACKUP-05
+  - BASE-01
+  - CONFIG-02
+  - CONFIG-03
+  - CONFIG-04
+  - CONFIG-05
+  - IDENT-01
+  - IDENT-02
+  - IDENT-03
+  - IDENT-05
+  - OPS-02
+  - SEC-01
+  - SEC-03
+  artifact_paths: *id001
+prd_ready_for_downstream_review: true
+workflow_readiness: Determined by orchestrator; this result passes only the PRD stage.

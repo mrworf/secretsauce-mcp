@@ -6,6 +6,8 @@
 
 **Authority:** This document records the agreed web-console expansion. It preserves `docs/prd.md` as the original gateway MVP specification and distinguishes existing behavior from future requirements. It does not claim the console is implemented or that the product establishes SOC 2 compliance.
 
+The [security resolution contract](../product/security/web-console-security-contract.md) (SECRES-01–04) and [state and recovery contract](../product/architecture/web-console-state-contract.md) (STATE-01–06) are normative companion requirements for the bounded mechanics summarized below. They preserve this PRD's product intent; their acceptance scenarios supplement the acceptance table. They do not replace the full downstream reviews.
+
 ## 1. Product definition and scope
 
 **Purpose:** Make SecretSauce practical for a small organization to configure, operate, and audit through a modern web interface, while preserving its existing gateway capabilities.
@@ -97,21 +99,21 @@ There are four fixed human roles. A person has one role. Multiple Owners are sup
 
 **AUTHZ-01 — Explicit execution access.** Administrative status does not automatically authorize downstream calls. Execution requires an eligible role, an explicit service assignment, valid MCP authorization, and an allowed request policy.
 
-**AUTHZ-02 — Server enforcement.** Every management and MCP operation checks current permissions. Hiding controls in the UI is insufficient. Removing access or disabling an identity blocks subsequent requests, including requests using previously issued references.
+**AUTHZ-02 — Server enforcement.** Every management and MCP operation checks current permissions. Hiding controls in the UI is insufficient. Removing access or disabling an identity blocks subsequent requests, including requests using previously issued references. Admission immediately before credential substitution and dispatch rechecks current eligibility, service state, reference validity, coherent active configuration, and audit readiness. Queued work cannot rely on an earlier authorization; already-dispatched work may finish under its admitted revision and response protection, without reviving revoked references (STATE-02).
 
-**AUTHZ-03 — Owner continuity.** The final active Owner cannot be disabled, deleted, or demoted. Ownership transfer requires an already-enrolled replacement. The UI recommends a second Owner without requiring one.
+**AUTHZ-03 — Owner continuity.** The final active Owner cannot be disabled, deleted, or demoted. Ownership transfer requires an already-enrolled replacement. The UI recommends a second Owner without requiring one. During restore, the nominated recovery Owner is protected from removal until enrollment succeeds; this restricted recovery identity does not confer ordinary access before fresh enrollment (SECRES-02).
 
 **AUTHZ-04 — Administrative trust.** Owners and Administrators are trusted to configure credential destinations and policies. Write-only credential fields do not prevent a malicious administrator from configuring a credential-exfiltrating endpoint. The UI and security documentation must explain this boundary.
 
 ### Enrollment, authentication, and recovery
 
-**IDENT-01 — Initial setup.** An uninitialized instance requires a one-time operator bootstrap proof before creating its first Owner. The first person who discovers the web URL must not be able to claim the instance. Setup collects instance name, access URL, Owner credentials, MFA enrollment, and backup recovery material.
+**IDENT-01 — Initial setup.** An uninitialized instance requires a one-time operator bootstrap proof before creating its first Owner. The first person who discovers the web URL must not be able to claim the instance. Setup collects instance name, access URL, Owner credentials, MFA enrollment, and backup recovery material. Bootstrap proof is issued through a protected host-local action, expires after 30 minutes, is bound to this instance and operation, and never appears in general application logs. Successful password/MFA enrollment and durable recording precede normal access (SECRES-02).
 
 **IDENT-02 — Browser login.** All human users authenticate with a password and authenticator-app TOTP. MFA enrollment must finish before management access or built-in MCP authorization is granted.
 
 Passwords support password managers and paste, use a minimum of 15 characters, allow at least 64 characters, and reject common compromised values. No arbitrary composition rules or periodic password expiry are required.
 
-**IDENT-03 — Invitations.** Owners issue expiring, single-use invitations containing a predetermined role. Invitations expire after 72 hours and can be revoked or reissued. Users choose their own password and enroll MFA. Public self-registration is excluded.
+**IDENT-03 — Invitations.** Owners issue expiring, single-use invitations containing a predetermined role. Invitations expire after 72 hours and can be revoked or reissued. Users choose their own password and enroll MFA. Public self-registration is excluded. Invitation/recovery proofs are bound to the target identity, purpose, and instance security generation; reissue revokes the old proof. Opening or previewing a link neither consumes it nor changes account state. Deliberate completion permits only its bound enrollment/reset action, never direct ordinary access (SECRES-01).
 
 **IDENT-04 — Optional SMTP.** Owners configure SMTP, sender identity, encrypted SMTP credentials, and a test message through the UI. Email supports invitations, password resets, security notifications, and backup/audit failure alerts. Without SMTP, Owners share one-time links through an existing trusted channel.
 
@@ -119,7 +121,7 @@ Failed delivery must be visible and must not falsely mark an invitation as accep
 
 **IDENT-05 — Recovery.** Users receive single-use recovery codes, shown once and stored as hashes. Password reset does not remove MFA. Replacing MFA requires a valid existing factor, a recovery code with password verification, or an Owner-authorized recovery process.
 
-Owner-assisted recovery revokes sessions and MCP grants and requires fresh enrollment. Recovery links expire after 30 minutes. If every Owner is locked out, a documented host-local recovery procedure requires host administrative access and records the recovery before normal operation resumes.
+Owner-assisted recovery requires recent Owner authentication and verification through an existing trusted channel, revokes sessions and MCP grants immediately on authorization, and restricts the account until fresh enrollment. A session alone cannot authorize factor replacement. Recovery links expire after 30 minutes; normal reset uses the previously established contact channel and non-enumerating responses. Proof attempts, replay, reissue, and concurrent consumption follow SECRES-01/03. If every Owner is locked out, a documented host-local recovery procedure requires host administrative access and records the recovery before normal operation resumes. Recovery mutations wait for durable audit availability.
 
 **IDENT-06 — Sessions.** Browser sessions expire after 30 minutes idle or 12 hours overall. Users can revoke their other sessions; Owners can revoke a user's sessions and MCP grants. Password changes and recovery invalidate existing sessions.
 
@@ -133,15 +135,15 @@ TOTP replay protection, bounded login attempts, recovery safeguards, and secure 
 
 **CONFIG-02 — Managed credentials.** Owners and Administrators can create, replace, and delete credentials in the UI. Saved values are never revealed or copied back. The UI shows label, placement, availability, version, and last-change metadata.
 
-Rotation invalidates affected references. Referenced credentials cannot be deleted without resolving their dependencies. Configuration rollback must not silently restore an older credential value.
+Credential value creation, rotation, and deletion are explicit immediate actions; placement metadata follows draft/apply. Rotation invalidates affected references. Referenced credentials cannot be deleted without resolving their dependencies. Configuration rollback must not silently restore an older credential value.
 
-**CONFIG-03 — Configuration lifecycle.** Changes are saved as drafts and become effective only through **Review & apply**. The review shows a sanitized difference, affected services, security exceptions, and any expected client disruption.
+**CONFIG-03 — Configuration lifecycle.** Service details, destinations, credential placement, policies/scanning, and editable instance settings are saved as drafts and become effective through **Review & apply**. The review shows a sanitized difference, affected services, security exceptions, and expected client disruption. Identity/role changes, access grants/removals, revocations, credential-value operations, and service disable/archive are explicit immediate actions and do not wait for draft application; current permissions and mandatory audit still apply (STATE-01).
 
-Apply is atomic: validation or activation failure leaves the previous active configuration intact. Concurrent stale edits are rejected with a comparison and reload path.
+Apply includes only the reviewed changes and rechecks current actor permissions for each setting, the base revision, and affected identity, grant, lifecycle, and credential dependencies. It is atomic: validation or activation failure leaves the previous active configuration intact. Stale edits or dependencies are rejected with a sanitized comparison/reload path. Initial service review may apply explicitly reviewed new grants atomically with first activation; an old draft cannot recreate removed access. Requests observe one coherent active revision (STATE-01/02).
 
-**CONFIG-04 — History and rollback.** Retain the latest 50 applied configuration revisions. Owners and Administrators can restore an earlier permitted configuration as a new draft. Rollback must validate against current identities and available credentials; it cannot recover deleted secrets or bypass current permissions.
+**CONFIG-04 — History and rollback.** Retain the latest 50 applied configuration revisions. Owners and Administrators can restore an earlier permitted configuration as a new draft, limited to their current permissions. Sanitized history excludes secret values and live identity, assignment, lifecycle, session, and grant state. Rollback validates current dependencies; it cannot recover deleted/replaced secrets, restore revoked access, or enable disabled services. Intentional older policy/destination settings still require ordinary review and exception acknowledgement (STATE-03).
 
-**CONFIG-05 — Service lifecycle.** Services are Draft, Active, Disabled, or Archived. Draft, Disabled, and Archived services cannot execute requests. Disabling revokes their references. Archiving retains history and audit attribution; restoring an archived service returns it to Disabled for review.
+**CONFIG-05 — Service lifecycle.** Services are Draft, Active, Disabled, or Archived. Draft, Disabled, and Archived services cannot execute requests. Disabling or archiving immediately blocks new execution and revokes references. Archiving retains history and audit attribution; restoring an archived service returns it to Disabled. Activation/re-enabling requires explicit review of current configuration and dependencies; history alone cannot enable a service. An Active service with an unapplied edit continues using its previously applied configuration (STATE-01).
 
 **POLICY-01 — Preserve evaluation semantics.** The highest-priority matching rule wins; deny wins an equal-priority allow/deny tie. Equal-priority, same-effect ordering remains stable. If nothing matches, the service's default mode applies.
 
@@ -211,17 +213,21 @@ Events include timestamp, actor or system identity, action, target, result, requ
 
 Audit records are append-only through product interfaces and tamper-evident. No role can edit individual events. Retention-based deletion and evidence exports are themselves audited. Protection against a hostile host administrator requires independently protected external copies. [OWASP logging guidance](https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html)
 
-**AUDIT-04 — Audit outage behavior.** If durable audit recording becomes unavailable, block configuration changes, credential/reference issuance, and new downstream calls. Preserve read-only diagnostics and access needed to repair storage.
+**AUDIT-04 — Audit outage behavior.** If durable audit recording becomes unavailable, block all ordinary sensitive operations, including drafts/apply, identity/access/credential changes, enrollment/recovery, OAuth grants/token issuance or refresh, gateway reference issuance, downstream calls, evidence exports, backups/downloads, and restore, including scheduled work. No role bypasses this gate. Preserve existing role-scoped read-only access. New password/TOTP login may establish only a restricted diagnostic session if verification, throttling, and replay protection remain reliable; otherwise it fails closed (SECRES-04).
+
+Restricted diagnostic login is the explicit best-effort audit exception. Record available evidence and any unknown interval after repair without fabricating history. Repair is host-level storage/process repair, not an unaudited web configuration or account-recovery action. Local logout and expiry remain possible. Restricted diagnostic sessions require fresh normal authentication after repair; they never silently gain write authority.
 
 Do not execute a downstream action without first durably recording its authorization and start. If recording its completion fails, stop admitting further sensitive work and expose the operation as having an uncertain recorded outcome. Do not claim downstream side effects were rolled back.
 
 Resume only after durable recording is verified and the outage/recovery is recorded.
 
-**SEC-01 — Data protection.** Encrypt managed credentials, MFA secrets, and sensitive system material at rest. Store passwords and recovery codes as non-reversible verifiers. Protect browser sessions against theft, forgery, and cross-site request attacks. Never place secrets in URLs, analytics, or browser persistent storage.
+**SEC-01 — Data protection.** Encrypt managed credentials, MFA secrets, and sensitive system material at rest. Store passwords and recovery codes as non-reversible verifiers. Protect browser sessions against theft, forgery, and cross-site request attacks. Ordinary management secrets and reusable credentials must never appear in management URLs, logs, analytics, or browser persistent application storage. Fresh MFA seeds may appear only in the authorized non-cacheable enrollment step.
+
+Purpose-bound enrollment/recovery capability links and required single-use OAuth authorization-code redirects are narrow URL exceptions under SECRES-01, with trusted origins, no referrer/cache/telemetry leakage, and no direct ordinary access. Preserve approved downstream query credential substitution after all gateway checks; substituted outbound URLs must never appear in console previews, diagnostics, audit, or exports. This preserves existing gateway behavior and does not weaken the write-only credential or best-effort response-protection boundary.
 
 **SEC-02 — Outbound boundaries.** Preserve destination validation, canonical-path policy evaluation, and authorization before credential substitution. Private downstream services remain supported. OAuth client-metadata retrieval retains its separate restrictions against private/special-use addresses, redirects, and unbounded retrieval.
 
-**SEC-03 — Security-sensitive administration.** Changes to destinations, authentication, security exceptions, and credentials must be attributable. Account disabling and revocation apply before the next request is admitted; already-dispatched downstream work may finish and remains auditable.
+**SEC-03 — Security-sensitive administration.** Changes to destinations, authentication, security exceptions, and credentials must be attributable. Account disabling and revocation apply before the next request is admitted; already-dispatched downstream work may finish and remains auditable. Immediate actions bypass draft delay only, never current authorization, dependency checks, required recent authentication, or durable-audit admission.
 
 ### Backup and restore
 
@@ -239,30 +245,32 @@ Resume only after durable recording is verified and the outage/recovery is recor
 
 Owners receive recovery material during setup and must store it independently. An archive must be recoverable on a clean replacement host using that material, without depending on the lost instance's storage.
 
-Backup encryption is mandatory. Incomplete backups must never appear successful or replace the last valid backup. Only one backup or restore job runs at a time.
+Backup encryption is mandatory. Each completed archive represents one consistent recovery point across included state and an identified audit boundary, with recovery-point/completion time and format/software compatibility. Concurrent changes must appear wholly before or after that point. Incomplete backups must never appear successful or replace the last valid backup. Only one backup or restore job runs at a time (STATE-04).
 
 The operator is responsible for copying archives off-host. The UI states this clearly. Portainer provides useful inspiration for visible backup scope, manual actions, scheduling, and retention. [Portainer backup settings](https://docs.portainer.io/admin/settings/general)
 
 **BACKUP-03 — Restore preview.** Before replacement, validate decryption, integrity, version compatibility, available storage, and required deployment inputs. Show archive time, included objects, and the effect on existing configuration and access.
 
-Reject wrong keys, corrupt archives, unsafe archive entries, and unsupported versions before modifying the instance.
+Reject wrong keys, corrupt archives, unsafe archive entries, unsupported versions, or archives without a recoverable Owner before modifying the instance. Clean-host restore requires a protected host-local restore proof plus archive recovery material. In-place restore requires recent current-Owner password/TOTP authentication plus archive recovery material. Preview nominates an Owner from the verified archive and distinguishes that identity from the actual initiator (SECRES-02).
 
-**BACKUP-04 — Full replacement.** Restore is a maintenance operation, with sensitive activity paused and an automatic pre-restore backup when replacing a functioning instance. Restoration either succeeds completely or returns to the previous usable state.
+**BACKUP-04 — Full replacement.** Restore is a maintenance operation: stop new admissions and drain dispatched work within existing deadlines. Before replacing a functioning instance, validate the automatic encrypted pre-restore backup and retain a protected local installation rollback source; this temporary, non-downloadable source is distinct from the export backup that excludes MFA/live authentication state. Installation is atomic and crash-recoverable (STATE-05).
+
+Failed installation returns to the previous coherent usable state with preserved failure evidence and fresh login, without reviving invalidated sessions/references. If automatic rollback cannot complete, remain in maintenance with the prior store and a host recovery path. A clean-host failure stays restricted/uninitialized. After complete installation, enrollment difficulty uses recovery rather than automatically reactivating old state.
 
 Selective object merge, per-user restore, and downstream data restore are excluded.
 
 **BACKUP-05 — Safe resumption.** A restored instance starts in recovery mode:
 
-- An authenticated recovery Owner establishes fresh MFA.
+- The nominated archived Owner uses a purpose-bound restricted continuation to set a fresh password and MFA; an old password or archive alone cannot authorize enrollment. Expired/lost continuations leave the instance restricted with a protected host recovery path (SECRES-02).
 - All sessions, grants, bearer credentials, and opaque references are invalidated.
-- Other users require Owner review and fresh enrollment before activation.
+- Fresh recovery-Owner enrollment and durable audit readiness unlock management review only. Other users require explicit Owner review and a fresh bound enrollment authorization before activation; restored assignments confer no access by themselves.
 - Services remain disabled until an Owner reviews restored permissions and potentially stale credentials.
 - External OAuth and legacy bearer access require explicit reactivation.
 - Clients reconnect after the instance is resumed.
 
 Restored MFA and old recovery links must never become valid again.
 
-**BACKUP-06 — Evidence continuity.** In-place restore must preserve audit evidence created after the selected backup, including the restore operation. Imported audit history is labeled with its original instance and backup provenance. A clean-host restore must identify any unavoidable evidence gap after the backup timestamp.
+**BACKUP-06 — Evidence continuity.** In-place restore preserves its local audit sequence independently of snapshot replacement, including post-backup activity, installation, enrollment, and resume. Imported history retains original instance/backup provenance and overlapping copies must not appear as new activity. A clean-host restore identifies the unavailable interval after archived evidence and before the new installation's first event. Never fabricate continuity; audit failure blocks activation (STATE-06).
 
 ### Limits, health, and operator responsibilities
 
@@ -339,4 +347,4 @@ All new external inputs require positive and negative tests. This includes impor
 - **Data/API:** Stable identities, concurrency behavior, migration compatibility, backup versioning, and retention.
 - **Delivery:** Create implementation slices only after these reviews resolve findings.
 
-**Readiness:** Product scope and consequential behavior are defined for review. Technical mechanisms remain architecture decisions. This PRD does not authorize implementation or establish SOC 2 compliance.
+**Readiness boundary:** This PRD defines settled product intent and incorporates the bounded Security and Architecture contracts for F-PRD-001–004. Technical mechanisms remain architecture decisions. Coverage, journeys, UX, and full Architecture/Security review are required before delivery planning. Current PRD validation and downstream review status are recorded in [definition workflow state](../workflow/definition/state.yaml); a current validated definition package, when issued, establishes the delivery-planning handoff. The PRD alone neither authorizes implementation nor establishes SOC 2 compliance.

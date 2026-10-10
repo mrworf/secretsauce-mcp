@@ -1,0 +1,134 @@
+stage: prd-to-user-journey-audit
+status: PASS
+mode: full
+validated_inputs:
+- path: docs/web-console-prd.md
+  revision: sha256:cb8d09474431d3bdd082466beac07163051bd2cb00639433f8a87bf85b46c3d8
+- path: product/security/web-console-security-contract.md
+  revision: sha256:95e342c77316f1697540fa8da29c6dd6333d6b6d3356b326c4dde921bca4540d
+- path: product/architecture/web-console-state-contract.md
+  revision: sha256:54956edc26dbcebcb48ecca0697a4695012d61488fa2297e56b6c04c9cbaa858
+- path: docs/web-console-prd-coverage.md
+  revision: sha256:1cb9db8350470b5ddca5bc63e3005fb13df4900535b93db6541dc1f636b3598c
+decision_provenance:
+- D-001
+- D-002
+- D-003
+- D-004
+- D-005
+- D-006
+- D-007
+- D-008
+- D-009
+- D-010
+- D-011
+- D-012
+- RES-PRD-SEC-01
+- RES-PRD-ARCH-01
+artifact_changes:
+- path: docs/web-console-prd-user-journey-audit.md
+  summary: Audited actor-specific journeys, ingress, action chains, lifecycle, failure/recovery
+    and eight-surface coverage for all normative requirements.
+- path: workflow/definition/results/journeys.yaml
+  summary: Recorded exact-input journey PASS with preimplementation evidence limitations.
+changed_paths:
+- docs/web-console-prd-user-journey-audit.md
+- workflow/definition/results/journeys.yaml
+findings: []
+questions: []
+affected_requirements:
+- AUDIT-01
+- AUDIT-02
+- AUDIT-03
+- AUDIT-04
+- AUTHZ-01
+- AUTHZ-02
+- AUTHZ-03
+- AUTHZ-04
+- BACKUP-01
+- BACKUP-02
+- BACKUP-03
+- BACKUP-04
+- BACKUP-05
+- BACKUP-06
+- BASE-01
+- BASE-02
+- BASE-03
+- CONFIG-01
+- CONFIG-02
+- CONFIG-03
+- CONFIG-04
+- CONFIG-05
+- IDENT-01
+- IDENT-02
+- IDENT-03
+- IDENT-04
+- IDENT-05
+- IDENT-06
+- MCP-01
+- MCP-02
+- MCP-03
+- MCP-04
+- MIGRATE-01
+- MIGRATE-02
+- MIGRATE-03
+- MIGRATE-04
+- OPS-01
+- OPS-02
+- OPS-03
+- OPS-04
+- OPS-05
+- OPS-06
+- POLICY-01
+- POLICY-02
+- POLICY-03
+- POLICY-04
+- SEC-01
+- SEC-02
+- SEC-03
+- SECRES-01
+- SECRES-02
+- SECRES-03
+- SECRES-04
+- STATE-01
+- STATE-02
+- STATE-03
+- STATE-04
+- STATE-05
+- STATE-06
+- UX-01
+- UX-02
+- UX-03
+- UX-04
+affected_artifacts:
+- docs/web-console-prd-user-journey-audit.md
+reconciliation_required: false
+change_impact:
+  product: false
+  user_journeys: false
+  ux: false
+  architecture: false
+  security: false
+validation:
+  distinct_actors: 10
+  actor_context_rows: 21
+  unique_capability_families: 70
+  journeys: 47
+  specification_complete_journeys: 47
+  reachability_indeterminate_journeys: 47
+  entry_points: 23
+  action_mappings: 84
+  matrix_rows: 47
+  matrix_columns: 8
+  prd_ids_mapped: 53
+  normative_companion_ids_mapped: 10
+  derived_capability_ids: 7
+  blocker_gaps: 0
+  major_gaps: 0
+  minor_gaps: 0
+  unmapped_requirements: 0
+  implementation_tests_run: false
+  reason: Preimplementation PRD-only journey audit; backend/test implementation evidence
+    unverified and reachability indeterminate.
+workflow_readiness: Journey stage only; Product UX and full Architecture/Security
+  review remain orchestrator-owned.

@@ -53,7 +53,8 @@ For every downstream request, the gateway validates the authenticated client, re
 ## Documentation
 
 - [Configuration reference](docs/config-reference.md)
-- [Codex and ChatGPT setup](docs/codex-setup.md), including hosted ChatGPT web configuration
+- [Managed ChatGPT and Codex connection](docs/mcp-client-connection.md), including per-user consent, client revocation and restart
+- [Unmanaged Codex and ChatGPT setup](docs/codex-setup.md), including hosted ChatGPT web configuration
 - [Security notes](docs/security-notes.md)
 - [Branch protection](docs/branch-protection.md)
 - [Docker Compose example](docker-compose.example.yaml)

@@ -7,6 +7,8 @@
 
 # SecretSauce (MCP) Setup for Codex and ChatGPT
 
+Managed console users: follow [Connect ChatGPT or Codex](mcp-client-connection.md) for enrolled email/password/MFA consent, Owner-reviewed authentication settings, supported CIMD identification, restart and revocation. The legacy YAML/password-only configuration below applies to unmanaged deployments.
+
 ## OAuth Mode
 Add the MCP server to Codex config:
 

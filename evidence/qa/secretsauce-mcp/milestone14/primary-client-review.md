@@ -1,0 +1,11 @@
+# Primary client/protocol review
+
+Checked 2026-10-10 using OpenAI Docs skill and fetched official pages. Local existing client/setup/config/provider context was inspected; no direct documentation MCP search tool was available, so official-domain web fallback was used.
+
+- [Current Codex MCP documentation](https://learn.chatgpt.com/docs/extend/mcp?surface=cli): Codex selects CIMD with advertised client metadata support, public token exchange and supported loopback callback; explicit `--oauth-client-registration cimd` is available. Without issuer-bound authorization responses it uses callback-specific HTTPS metadata and a variable literal-loopback port. Our supported configuration leaves static client ID unset; arbitrary IDs/DCR are unsupported. Local full consent/code exchange confirms actual requested port binding, not platform execution.
+- [Current ChatGPT custom MCP setup](https://developers.openai.com/api/docs/guides/custom-mcp-server): full Server URL, OAuth CIMD, public-client exchange; current custom MCP surface described in user guidance. Account/workspace eligibility remains externally unverified.
+- [OpenAI authentication guidance](https://developers.openai.com/plugins/build/auth): HTTPS discovery/resource metadata, PKCE and CIMD client identification. Gateway retains settled origin resource and per-POST authentication semantics; no stronger mTLS/new protocol mode is inferred.
+- [RFC8252 sections 7.3/8.4](https://www.rfc-editor.org/rfc/rfc8252): native literal-loopback redirects may differ in port only. Exact registered/requested host/path/query remain bound; userinfo/fragments are rejected. Token exchange retains exact actual requested URI including port.
+- [Current MCP authorization specification](https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization): inspected current primary authorization/discovery/PKCE material alongside existing compatibility authority. No automatic architecture/spec migration was performed.
+
+Browser additionally demonstrated that consent form Origin requires same-origin referrer policy, and callback navigation needs its exact validated origin/selected port in form-action. Sensitive OAuth token/code redirect responses retain no-referrer. This review and synthetic fixtures do not satisfy PRE-015.

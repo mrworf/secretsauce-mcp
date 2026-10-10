@@ -189,8 +189,8 @@ describe("auth", () => {
       expect(response.status).toBe(200);
       expect(response.headers["content-type"]).toBe("text/html; charset=utf-8");
       expect(response.headers["cache-control"]).toBe("no-store");
-      expect(response.headers["content-security-policy"]).toBe("default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'");
-      expect(response.headers["referrer-policy"]).toBe("no-referrer");
+      expect(response.headers["content-security-policy"]).toBe("default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; form-action 'self' https://chatgpt.com; frame-ancestors 'none'; base-uri 'none'");
+      expect(response.headers["referrer-policy"]).toBe("same-origin");
       expect(response.headers["x-content-type-options"]).toBe("nosniff");
       expect(response.headers["x-frame-options"]).toBe("DENY");
       expect(response.body).toContain("Connect ChatGPT to SecretSauce");

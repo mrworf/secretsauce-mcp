@@ -1,6 +1,6 @@
 # M14 plan 01 slice 04: Client setup, restart and local rendered verification
 
-Status: planned. Previous commit: previous completed slice SHA, recorded before implementation.
+Status: completed locally; PRE-015 remains external acceptance gate. Previous commit: 72bd873a46de1e4f772e67e4d979470b70ccfe7e.
 
 Goal / observable outcome: Distinct secret-free ChatGPT/Codex guidance separates issuer/resource origins from full MCP URL, explains reachability, restart/reacquisition and mode/endpoint reconnect. Validate real local HTTPS, keyboard, 320px consent/clients/settings/errors/read-only states; full regression/build. Supply runnable real-client operator evidence procedure; PRE-015 remains externally unverified until authorized real platforms execute it.
 
@@ -23,3 +23,7 @@ Commands: focused vitest files and npm run build while stabilizing; related OAut
 Acceptance: described outcome demonstrated with current server enforcement and positive/negative evidence; no raw secrets in evidence. Real-client evidence never inferred from local tests.
 
 Commit boundary: one coherent owned commit including this plan, implementation, tests and supporting docs/evidence. Inspect status/staged diff before and after; exclude test-results/. Record completed status and exact previous slice SHA in next slice; root records final exact SHA.
+
+Delivered: distinct current official ChatGPT/Codex guidance and copyable secret-free origins/full URL with clipboard fallback; narrowly matched RFC8252 loopback port compatibility with actual requested code/exchange binding; real-browser consent Origin/CSP fixes and expired restart page; actual synthetic HTTPS keyboard/320px evidence; real-client runnable operator packet and sanitized template. No real-client proof claimed.
+
+Validation: npm test PASS, 511 tests/53 files with unchanged loopback-enabled command after EPERM; npm run build PASS. Browser PASS, five grouped UX checks/fourteen masked screenshots and no persistent application browser storage/traces. Primary source review and local contract coverage in evidence/qa/secretsauce-mcp/milestone14. Final exact SHA is recorded by root; preceding slice SHA above.

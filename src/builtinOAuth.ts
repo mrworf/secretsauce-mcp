@@ -1,3 +1,4 @@
+import { matchesOAuthRedirect } from './oauthRedirect.js';
 import { ConsoleStore, ConsoleOperationError } from "./consoleStore.js";
 import { atomicFile } from "./consolePersistence.js";
 import { join } from "node:path";
@@ -36,7 +37,7 @@ const AUTHORIZE_PAGE_HEADERS = {
   "cache-control": "no-store",
   "content-security-policy": "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'",
   "content-type": "text/html; charset=utf-8",
-  "referrer-policy": "no-referrer",
+  "referrer-policy": "same-origin",
   "x-content-type-options": "nosniff",
   "x-frame-options": "DENY",
 } as const;
@@ -321,7 +322,7 @@ function renderLoginPage(
   const error = errorMessage === undefined
     ? ""
     : `<div class="error" role="alert"><strong>Sign-in failed.</strong> ${escapeHtml(errorMessage)}</div>`;
-  response.writeHead(statusCode, AUTHORIZE_PAGE_HEADERS);
+  response.writeHead(statusCode, {...AUTHORIZE_PAGE_HEADERS, "content-security-policy": AUTHORIZE_PAGE_HEADERS["content-security-policy"].replace("form-action 'self'", "form-action 'self' "+new URL(client.redirectUri).origin)});
   response.end(`<!doctype html>
 <html lang="en">
 <head>
@@ -594,8 +595,8 @@ ${managed ? '<label for="code">Fresh authenticator code <input id="code" name="c
 </html>`);
 }
 
-function renderInvalidAuthorizationPage(response: ServerResponse): void {
-  response.writeHead(400, AUTHORIZE_PAGE_HEADERS);
+function renderInvalidAuthorizationPage(response: ServerResponse, restart=false, status=400): void {
+  response.writeHead(status, AUTHORIZE_PAGE_HEADERS);
   response.end(`<!doctype html>
 <html lang="en">
 <head>
@@ -619,8 +620,8 @@ p { margin: 0; color: var(--muted); }
 <main>
 <section class="panel" aria-labelledby="error-title">
 <img class="brand-lockup" src="${BRAND_LOCKUP_PATH}" alt="SecretSauce MCP">
-<h1 id="error-title">Connection request could not be verified</h1>
-<p>SecretSauce could not verify this client or its callback address. Return to your MCP client and try connecting again.</p>
+<h1 id="error-title">${restart ? "Connection must be restarted" : "Connection request could not be verified"}</h1>
+<p>${restart ? "This connection expired or its sign-in details were not accepted. Return to your MCP client and start a new connection." : "SecretSauce could not verify this client or its callback address. Return to your MCP client and try connecting again."}</p>
 </section>
 </main>
 </body>
@@ -691,7 +692,7 @@ async function handleAuthorizePost(config: GatewayConfig, request: IncomingMessa
     const challenge = body.get('consent_challenge') ?? '';
     const expected = runtime.consentChallenges.get(challenge);
     runtime.consentChallenges.delete(challenge);
-    if (request.headers.origin !== auth.issuer || !expected || expected.expires <= Date.now() || expected.fingerprint !== authorizationFingerprint(body)) { writeOAuthError(response,400,'invalid_request'); return; }
+    if (request.headers.origin !== auth.issuer || !expected || expected.expires <= Date.now() || expected.fingerprint !== authorizationFingerprint(body)) { renderInvalidAuthorizationPage(response,true); return; }
     if (body.get('decision') === 'deny') {
       const redirect = new URL(validation.redirectUri); redirect.searchParams.set('error','access_denied');
       const state = body.get('state'); if(state) redirect.searchParams.set('state',state);
@@ -713,7 +714,7 @@ async function handleAuthorizePost(config: GatewayConfig, request: IncomingMessa
     attemptLimiter.recordFailure(source,account);
     if (runtime.auditSink.degraded) { writeOAuthError(response,503,'temporarily_unavailable');return; }
     // A failed managed attempt consumes its challenge. Restart from the client.
-    if(runtime.managedStore) { writeOAuthError(response,401,'access_denied');return; }
+    if(runtime.managedStore) { renderInvalidAuthorizationPage(response,true,401);return; }
     renderLoginPage(config,response,body,validation,401,'Invalid username or password.');return;
   }
 
@@ -1183,7 +1184,7 @@ async function validateAuthorizationRequest(
   const redirectUri = body.get("redirect_uri");
   if (!redirectUri) return { ok: false, error: "invalid_request" };
   const clientMetadata = await runtime.clientMetadataFetcher.fetch(clientId);
-  if (clientMetadata === undefined || !clientMetadata.redirectUris.includes(redirectUri)) {
+  if (clientMetadata === undefined || !clientMetadata.redirectUris.some(registered=>matchesOAuthRedirect(registered,redirectUri))) {
     return { ok: false, error: "invalid_request" };
   }
 

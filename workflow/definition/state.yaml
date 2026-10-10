@@ -4,7 +4,7 @@ status: ready_for_delivery_planning
 scope: Self-hosted single-organization web console initial release
 transaction:
   parent_commit: 9889bfe1d17a5c326046421e40367077c4e45bf3
-  repository_commit: null
+  repository_commit: 06dd0ee59defd1a75db121f1d8133c7100238b80
   pre_existing_dirty_paths: &a1
     - test-results/
   owned_paths:

@@ -12,13 +12,15 @@ import { handleBrandAssetRequest, isBrandAssetRequest } from "./brandAssets.js";
 import { GatewayError, type ConfigDiagnostic } from "./errors.js";
 import type { AuditSink } from "./audit.js";
 import { GatewayRuntime } from "./runtime.js";
+import { ConsoleStore } from "./consoleStore.js";
+import { handleConsoleRequest, isConsoleRequest } from "./consoleHttp.js";
 import { requiredScopeForTool } from "./mcp/tools.js";
 
 type AuthenticatedRequest = IncomingMessage & { auth?: AuthContext };
 
 export function createGatewayServer(
   config: GatewayConfig,
-  options: { auditSink?: AuditSink; runtime?: GatewayRuntime; closeRuntimeOnServerClose?: boolean } = {},
+  options: { auditSink?: AuditSink; runtime?: GatewayRuntime; closeRuntimeOnServerClose?: boolean; consoleStore?: ConsoleStore } = {},
 ) {
   const logger = createLogger(config.logging);
   for (const message of config.warnings) {
@@ -34,6 +36,7 @@ export function createGatewayServer(
   const runtime = options.runtime ?? new GatewayRuntime(config, { ...(options.auditSink === undefined ? {} : { auditSink: options.auditSink }) });
   const auditSink = runtime.auditSink;
   const server = createServer(async (request, response) => {
+    if (options.consoleStore && isConsoleRequest(request)) { await handleConsoleRequest(options.consoleStore, request, response); return; }
     if (request.method === "GET" && request.url === "/health") {
       logger.debug("http.health", { method: request.method, path: "/health", service_count: Object.keys(config.services).length });
       writeJson(response, auditSink.degraded ? 503 : 200, {
@@ -210,11 +213,14 @@ export interface GatewayApplication {
 }
 
 export async function startServer(config: GatewayConfig): Promise<GatewayApplication> {
+  const consoleStore = process.env.CONSOLE_STORAGE_DIR && process.env.CONSOLE_KEY_FILE ? new ConsoleStore(process.env.CONSOLE_STORAGE_DIR, process.env.CONSOLE_KEY_FILE, { config }) : undefined;
+  if ((process.env.CONSOLE_STORAGE_DIR || process.env.CONSOLE_KEY_FILE) && !consoleStore) throw new Error("Protected console encryption material required.");
+  if (consoleStore) { if (!consoleStore.state.config) { consoleStore.close(); throw new Error("Managed configuration missing."); } config = consoleStore.state.config; }
   const runtime = new GatewayRuntime(config);
   let server: ReturnType<typeof createGatewayServer>;
   const logger = createLogger(config.logging);
   try {
-    server = createGatewayServer(config, { runtime, closeRuntimeOnServerClose: false });
+    server = createGatewayServer(config, { runtime, closeRuntimeOnServerClose: false, ...(consoleStore ? { consoleStore } : {}) });
     await new Promise<void>((resolve, reject) => {
       server.once("error", reject);
       server.listen(config.server.port, config.server.host, () => {
@@ -224,6 +230,7 @@ export async function startServer(config: GatewayConfig): Promise<GatewayApplica
     });
   } catch (error) {
     await runtime.close();
+    consoleStore?.close();
     throw error;
   }
   logger.info("server.started", {
@@ -238,6 +245,7 @@ export async function startServer(config: GatewayConfig): Promise<GatewayApplica
       closePromise ??= (async () => {
         await closeHttpServer(server);
         await runtime.close();
+        consoleStore?.close();
       })();
       return closePromise;
     },

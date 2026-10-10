@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, openSync, closeSync, unlinkSync } from 'node:fs'
 import { randomBytes } from 'node:crypto';
 import { dirname, join } from 'node:path';
 import { atomicFile } from './consolePersistence.js';
+import { consolePeople } from './consolePeople.js';
 import { ConsoleStore } from './consoleStore.js';
 import { AuditSink } from './audit.js';
 import { loadConfig } from './config.js';
@@ -26,6 +27,7 @@ export function prepareConsoleKey(directory: string, keyFile: string, statusMode
 if (import.meta.url === `file://${process.argv[1]}`) {
     const directory = process.env.CONSOLE_STORAGE_DIR, keyFile = process.env.CONSOLE_KEY_FILE, configPath = process.env.CONFIG_PATH, arg = process.argv[2], operation = process.argv[3];
     const statusMode = arg === '--status';
+    const recoveryMode = arg === '--recover-owner';
     if (!directory || !keyFile || !arg || !process.stdout.isTTY || (!statusMode && !configPath && !existsSync(join(directory, 'managed')))) {
         console.error('Run setup in a protected host terminal with CONSOLE_STORAGE_DIR, CONSOLE_KEY_FILE and an explicit initial CONFIG_PATH; supply a trusted HTTPS origin or --status <operation>.');
         process.exitCode = 1;
@@ -35,9 +37,10 @@ if (import.meta.url === `file://${process.argv[1]}`) {
         try {
             if (statusMode && (!operation || !/^[A-Za-z0-9_-]{1,80}$/.test(operation)))
                 throw new Error('Invalid operation');
-            prepareConsoleKey(directory, keyFile, statusMode);
+            prepareConsoleKey(directory, keyFile, statusMode || recoveryMode);
             store = new ConsoleStore(directory, keyFile, { ...(!existsSync(join(directory, 'managed')) && configPath ? { config: loadConfig(configPath) } : {}) });
-            if (statusMode) {
+            if(recoveryMode){if(!store.state.config)throw new Error('Managed configuration required');sink=new AuditSink(store.state.config);sink.bindConsole(store);if(sink.degraded)throw new Error('Repair audit storage first');const result=consolePeople(store).hostRecovery(operation);process.stdout.write('One-time Owner reenrollment link (30 minutes; keep private):\n'+result.link+'\n');}
+            else if (statusMode) {
                 let status = store.journal.status(operation!);
                 if (status === 'unknown' && store.state.config) {
                     sink = new AuditSink(store.state.config);

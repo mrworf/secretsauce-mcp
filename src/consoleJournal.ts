@@ -3,7 +3,8 @@ import { dirname } from 'node:path';
 import { createHmac } from 'node:crypto';
 import { atomicFile } from './consolePersistence.js';
 import { equal, randomSecret } from './consoleCrypto.js';
-export interface ManagementDetails { credential?: string; credentialVersion?: number; identity?: string }
+export interface ManagementDetails {
+    channel?: string; credential?: string; credentialVersion?: number; identity?: string }
 export interface OperationRecord {
     details?: ManagementDetails;
     id: string;

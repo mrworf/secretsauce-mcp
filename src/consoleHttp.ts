@@ -105,6 +105,10 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
             reply(200, { status: 'success', operation: id });
             return;
         }
+        if(path?.startsWith('/console/api/link/')||path==='/console/api/reset/request'||path==='/console/api/factor/recover')consolePeople(store).attempt(source,data.target??data.email,path!);
+        if(path === '/console/api/factor/recover'){reply(200,consolePeople(store).replaceFactor(undefined,data));return;}
+        if(path === '/console/api/reset/request'){reply(200,await consolePeople(store).requestPassword(data));return;}
+        if(path === '/console/api/link/password'){reply(200,consolePeople(store).resetPassword(data));return;}
         if(path === '/console/api/link/preview'){reply(200,consolePeople(store).preview(data));return;}
         if(path === '/console/api/link/begin'){const r=consolePeople(store).begin(data);reply(200,{...r,qr:await QRCode.toDataURL('otpauth://totp/SecretSauce?secret='+r.seed+'&issuer=SecretSauce')});return;}
         if(path === '/console/api/link/complete'){reply(200,consolePeople(store).complete(data));return;}
@@ -122,6 +126,8 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
             reply(403, { message: 'Reload this page before submitting.' });
             return;
         }
+        if(path==='/console/api/people/recovery'){reply(200,consolePeople(store).assist(session,data));return;}
+        if(path==='/console/api/factor/replace'){consolePeople(store).attempt(source,session.userId,'factor');reply(200,consolePeople(store).replaceFactor(session,data));return;}
         if(path==='/console/api/people/invite'){reply(200,consolePeople(store).invite(session,data));return;}
         if(path==='/console/api/people/invitation'){reply(200,consolePeople(store).invitation(session,data));return;}
         if(path==='/console/api/people/change'){reply(200,consolePeople(store).change(session,data));return;}

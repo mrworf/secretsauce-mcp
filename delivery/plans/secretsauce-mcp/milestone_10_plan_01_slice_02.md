@@ -1,6 +1,6 @@
 # Milestone10 slice02: Durable MFA sessions and own account controls
 
-Status: planned
+Status: completed; commit subject `delivery: M10 slice 02 add durable MFA account sessions` (exact SHA recorded in governing index after commit).
 
 ## Goal and observable outcome
 Owner signs in with password+TOTP, reaches permission-safe shell, inspects own sessions and signs out. Change password and revoke other sessions enforce own scope. Five-minute action-bound reauthentication supports future consumers.
@@ -27,3 +27,6 @@ src/consoleStore.ts, src/consoleHttp.ts, src/consolePage.ts, test/console-auth.t
 
 ## Acceptance and commit boundary
 All listed positive/negative/fault checks pass; behavior observable end-to-end. One reviewable commit with this plan, implementation, directly required support and evidence.
+
+## Delivered evidence
+`npm run build` passed; focused setup/auth/HTTP21 tests passed (11 setup,6auth,4HTTP). HTTP checks password+TOTP only, secure cookies, forged session, CSRF/trusted origin, current four-role direct requests and actor-scoped uncertain operation status. Auth checks replay/concurrency/restart, lockout, idle/absolute boundaries, own revocation, password invalidation and five-minute action binding. Body upload crossing absolute expiry is rejected using the current stored session. Restricted login never acquires sensitive authority after repair; unavailable replay/throttle storage fails closed. Factor replacement remains12.

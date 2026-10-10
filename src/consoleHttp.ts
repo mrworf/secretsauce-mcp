@@ -4,6 +4,7 @@ import { readBoundedBody } from './httpBody.js';
 import { consolePage, consoleScript, consoleStyle } from './consolePage.js';
 import { LoginAttemptLimiter } from './loginAttemptLimiter.js';
 const limiters = new WeakMap<ConsoleStore, LoginAttemptLimiter>();
+import { equal } from './consoleCrypto.js';
 import { ConsoleStore } from './consoleStore.js';
 export function isConsoleRequest(request: IncomingMessage): boolean { return request.url?.split('?')[0] === '/console' || Boolean(request.url?.startsWith('/console/')); }
 export async function handleConsoleRequest(store: ConsoleStore, request: IncomingMessage, response: ServerResponse): Promise<void> {
@@ -28,11 +29,37 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
         response.end(consoleScript);
         return;
     }
-    if (request.method === 'GET' && path === '/console/api/status') {
-        reply(200, { initialized: store.state.initialized, ...(!store.state.initialized ? { origin: store.state.origin } : {}) });
-        return;
-    }
     try {
+        const cookie = request.headers.cookie;
+        const matches = typeof cookie === 'string' ? cookie.split(';').map(c => c.trim()).filter(c => c.startsWith('__Host-ss-console=')) : [];
+        const token = matches.length === 1 ? matches[0]!.slice('__Host-ss-console='.length) : undefined;
+        const session = store.session(token);
+        if (request.method === 'GET' && path === '/console/api/status') {
+            const user = session ? store.authorize(session, 'own') : undefined;
+            reply(200, { initialized: store.state.initialized, ...(!store.state.initialized ? { origin: store.state.origin } : {}), ...(session && user ? { csrf: session.csrf, user: { id: user.id, email: user.email, role: user.role }, name: store.state.name, degraded: store.journal.degraded, restricted: session.restricted, sessions: store.ownSessions(session), mfa: 'Authenticator app enrolled', expires: Math.min(session.created + 43200000, session.lastSeen + 1800000) } : {}) });
+            return;
+        }
+        if (request.method === 'GET' && path === '/console/api/instance') {
+            if (!session) {
+                reply(401, { message: 'Sign in again.' });
+                return;
+            }
+            store.authorize(session, 'instance');
+            reply(200, { name: store.state.name, status: store.journal.degraded ? 'degraded' : 'ready', diagnostic: store.journal.degraded ? 'Durable audit unavailable. Repair host storage and restart.' : store.storageReliable ? 'Storage available.' : 'Identity storage unavailable.' });
+            return;
+        }
+        if (request.method === 'GET' && path?.startsWith('/console/api/operations/')) {
+            if (!session) {
+                reply(401, { message: 'Sign in again.' });
+                return;
+            }
+            store.authorize(session, 'own');
+            const id = path.slice('/console/api/operations/'.length);
+            if (!/^[A-Za-z0-9_-]{43}$/.test(id) || store.journal.actorFor(id) !== session.userId)
+                throw new Error('Forbidden.');
+            reply(200, { operation: id, status: store.journal.status(id) });
+            return;
+        }
         if (request.method !== 'POST') {
             reply(404, { message: 'Not found.' });
             return;
@@ -68,9 +95,48 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
             reply(200, { status: 'success', operation: id });
             return;
         }
+        if (path === '/console/api/login') {
+            const result = store.login(data.email, data.password, data.code);
+            response.setHeader('set-cookie', '__Host-ss-console=' + result.token + '; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=43200');
+            reply(200, { status: 'success', csrf: result.csrf, restricted: result.restricted });
+            return;
+        }
+        if (!session) {
+            reply(401, { message: 'Sign in again.' });
+            return;
+        }
+        if (typeof request.headers['x-console-csrf'] !== 'string' || !equal(request.headers['x-console-csrf'], session.csrf)) {
+            reply(403, { message: 'Reload this page before submitting.' });
+            return;
+        }
+        if (path === '/console/api/logout') {
+            try {
+                store.logout(session);
+            }
+            finally {
+                response.setHeader('set-cookie', '__Host-ss-console=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0');
+            }
+            reply(200, { status: 'success' });
+            return;
+        }
+        if (path === '/console/api/session/revoke') {
+            reply(200, { status: 'success', operation: store.revokeOther(session, data.id) });
+            return;
+        }
+        if (path === '/console/api/reauthenticate') {
+            store.recentCheck(session, data.action, data.password, data.code);
+            reply(200, { status: 'success', expires: Date.now() + 300000 });
+            return;
+        }
+        if (path === '/console/api/password') {
+            const operation = store.changePassword(session, data.password, data.code, data.replacement);
+            response.setHeader('set-cookie', '__Host-ss-console=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0');
+            reply(200, { status: 'success', operation });
+            return;
+        }
         reply(404, { message: 'Not found.' });
     }
     catch (error) {
-        reply(store.journal.degraded ? 503 : 400, { message: store.journal.degraded ? 'Durable audit unavailable. Ask the host operator to repair storage.' : error instanceof Error && /^(Use |Setup |Enrollment |Instance name |Enter a valid|Authenticator code |Save recovery)/.test(error.message) ? error.message : 'Request was not accepted.' });
+        reply(error instanceof Error && error.message === 'Forbidden.' ? 403 : store.journal.degraded || !store.storageReliable ? 503 : 400, { message: store.journal.degraded ? 'Durable audit unavailable. Ask the host operator to repair storage.' : error instanceof Error && /^(Use |Setup |Enrollment |Instance name |Enter a valid|Authenticator code |Save recovery|Sign-in |Sign in |Sensitive actions |Session limit |Confirm password|Forbidden)/.test(error.message) ? error.message : 'Request was not accepted.' });
     }
 }

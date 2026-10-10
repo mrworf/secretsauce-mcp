@@ -18,8 +18,8 @@ Use native crypto (scrypt/AES256GCM/HMAC TOTP), encrypted atomic JSON snapshots 
 ## Slice index
 | Slice | Plan/outcome | Depends | Status | Commit | Evidence |
 |---|---|---|---|---|---|
-| 01 | [Host-authorized first Owner enrollment](milestone_10_plan_01_slice_01.md) | none | completed | slice01 subject | setup11 tests/build |
-| 02 | [Durable MFA sessions and own account controls](milestone_10_plan_01_slice_02.md) | 01 | planned | | |
+| 01 | [Host-authorized first Owner enrollment](milestone_10_plan_01_slice_01.md) | none | completed | 42128e5 | setup11 tests/build |
+| 02 | [Durable MFA sessions and own account controls](milestone_10_plan_01_slice_02.md) | 01 | completed | slice02 subject | auth+HTTP10 tests/build |
 | 03 | [Audit admission, safe diagnostics and operational acceptance](milestone_10_plan_01_slice_03.md) | 01,02 | planned | | |
 
 ## Cross-slice concerns

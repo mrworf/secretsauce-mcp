@@ -1,10 +1,10 @@
 schema_version: 1
 workflow: delivery-planning
 product_id: secretsauce-mcp
-status: in_progress
+status: ready_with_external_dependencies
 transaction:
   parent_commit: bb6f29cd318b77c2cf70efa5b1f9adaf25fdf2cb
-  repository_commit: null
+  repository_commit: 865aa5710bcb9ff6c4641e177452ab9c50619a19
   pre_existing_dirty_paths:
     - test-results/
   owned_paths:
@@ -32,10 +32,9 @@ stages:
 blockers: []
 corrections: []
 resume:
-  stage: complete_after_provenance
+  stage: complete
 handoff:
-  status: pending_provenance
-  intended_status: ready_for_implementation
+  status: ready_for_implementation
   path: workflow/delivery-planning/handoff.yaml
   packet_revision: sha256:a262e7f9b7087b033e2708500b060576ba5adfec8dbc9dc98f2fa3a1f49f104d
 transaction_history:

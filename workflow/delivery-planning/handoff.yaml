@@ -1,8 +1,7 @@
 schema_version: 1
 workflow: delivery-planning
 product_id: secretsauce-mcp
-status: pending_provenance
-intended_status: ready_for_implementation
+status: ready_for_implementation
 source:
   mode: PRODUCT_BUILD
   type: definition-package
@@ -10,7 +9,7 @@ source:
   revision: sha256:44c2c2338ed74a26867fdd374988bb73c4bd6ed1179e99a7a329b26acf59f6e1
   repository_commit: 06dd0ee59defd1a75db121f1d8133c7100238b80
 planning:
-  repository_commit: null
+  repository_commit: 865aa5710bcb9ff6c4641e177452ab9c50619a19
 milestones:
   manifest: delivery/milestones/secretsauce-mcp/status.yaml
   packet_revision: sha256:a262e7f9b7087b033e2708500b060576ba5adfec8dbc9dc98f2fa3a1f49f104d

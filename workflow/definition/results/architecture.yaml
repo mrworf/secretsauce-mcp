@@ -1,0 +1,182 @@
+stage: software-architect-review
+status: PASS
+validated_inputs:
+  - path: docs/web-console-prd.md
+    revision: sha256:cb8d09474431d3bdd082466beac07163051bd2cb00639433f8a87bf85b46c3d8
+  - path: product/security/web-console-security-contract.md
+    revision: sha256:95e342c77316f1697540fa8da29c6dd6333d6b6d3356b326c4dde921bca4540d
+  - path: product/architecture/web-console-state-contract.md
+    revision: sha256:54956edc26dbcebcb48ecca0697a4695012d61488fa2297e56b6c04c9cbaa858
+  - path: docs/web-console-prd-coverage.md
+    revision: sha256:1cb9db8350470b5ddca5bc63e3005fb13df4900535b93db6541dc1f636b3598c
+  - path: docs/web-console-prd-user-journey-audit.md
+    revision: sha256:168c61f3b4e2223c14a1e706f36e6762dc2da23bf06a4f0b48cc0fffbb966987
+  - path: product/ux/manifest.yaml
+    revision: sha256:891610e063e21e46ed0f7400cd182a0efe901af4731b2b8a5ad0d59e2d07dbb5
+  - path: product/ux/experience-brief.yaml
+    revision: sha256:a47b0fdbd6ea02993a0bcc349b581620e0e4affd21f5ceab63f5d6f39a016ef7
+  - path: product/ux/00-overview.md
+    revision: sha256:80520dcbc864849814a34213389d2ff5f9193b3007621d446f32217e00de07ae
+  - path: product/ux/01-information-architecture.md
+    revision: sha256:a9efc597a9218098cb904728e7e6584ab8b2ac36253f52cbd4f436f321789046
+  - path: product/ux/02-interaction-patterns.md
+    revision: sha256:64385ad9998533bb63f6430aea5ed73176f2a2afb46684ac26caa571a240d56f
+  - path: product/ux/03-responsive-and-platform.md
+    revision: sha256:cd027549dbb9d62f4467c8988102599d20e5b1b1019776b51cac8216535d66dd
+  - path: product/ux/04-visual-system.md
+    revision: sha256:2345fc823bb63e0bafb418643a85b8bde8e757931d7e2c17de36f1297257afd9
+  - path: product/ux/05-accessibility.md
+    revision: sha256:7fdc573a9cfae385c31077bafdc46b302e30e3a8669aafda760f9bf3094e3642
+  - path: product/ux/06-feature-exceptions.md
+    revision: sha256:526d8799f78f23fef3b426e6d4a82f1a97c14ebf19a7f00cc8b7563436cc0df5
+  - path: product/ux/07-acceptance-checklist.md
+    revision: sha256:66b802e9327253abd5de128566f95025225c11adc4482d77fdcf9fd6a5cafb27
+artifact_changes:
+  - path: product/architecture/web-console-architecture-review.md
+    summary: Full architecture definition review with source evidence, pragmatic integration
+      recommendations, existing acceptance obligations and explicit scope limits.
+  - path: workflow/definition/results/architecture.yaml
+    summary: Architecture stage adapter with exact source revisions and resolved implementation
+      observations.
+changed_paths:
+  - product/architecture/web-console-architecture-review.md
+  - workflow/definition/results/architecture.yaml
+findings:
+  - id: ARCH-OBS-01
+    significance: OBSERVATION
+    summary: Configuration activation needs explicit runtime snapshot/resource lifecycle
+    affected_requirement: CONFIG-03
+    affected_artifact: docs/web-console-prd.md
+    evidence: src/runtime.ts:26; src/server.ts:34; STATE-02
+    why_it_matters: Mutable console state can mix configuration or retire protection resources too early
+      unless admitted operations retain their coherent context.
+    local_correction_possible: false
+    reconciliation_required: false
+    resolution: Already governed by the authoritative requirements and companion contracts; carry into
+      implementation validation. No source correction or new product decision required.
+  - id: ARCH-OBS-02
+    significance: OBSERVATION
+    summary: The current fail-open audit sink must gain durable admission semantics
+    affected_requirement: AUDIT-04
+    affected_artifact: docs/web-console-prd.md
+    evidence: src/audit.ts:110; test/audit.test.ts:222; BASE-02; SECRES-04
+    why_it_matters: A successful in-memory event or file write is insufficient proof for the new
+      mandatory durable-before-effect contract.
+    local_correction_possible: false
+    reconciliation_required: false
+    resolution: Already governed by the authoritative requirements and companion contracts; carry into
+      implementation validation. No source correction or new product decision required.
+  - id: ARCH-OBS-03
+    significance: OBSERVATION
+    summary: Persistence projections must distinguish live access, history, managed secrets and recovery
+    affected_requirement: BACKUP-01
+    affected_artifact: docs/web-console-prd.md
+    evidence: src/tokens.ts:73; src/builtinOAuth.ts:909; src/config.ts:233; STATE-03/04/06
+    why_it_matters: Serializing one runtime object would violate declared backup exclusions and could
+      revive revoked access.
+    local_correction_possible: false
+    reconciliation_required: false
+    resolution: Already governed by the authoritative requirements and companion contracts; carry into
+      implementation validation. No source correction or new product decision required.
+  - id: ARCH-OBS-04
+    significance: OBSERVATION
+    summary: Restore installation must preserve its independent rollback source and audit tail
+    affected_requirement: BACKUP-04
+    affected_artifact: docs/web-console-prd.md
+    evidence: STATE-05/06; J-HOST-RESTORE; J-OWNER-RESUME; UX-IN07
+    why_it_matters: Archive validity alone does not establish crash-safe replacement or evidence continuity.
+    local_correction_possible: false
+    reconciliation_required: false
+    resolution: Already governed by the authoritative requirements and companion contracts; carry into
+      implementation validation. No source correction or new product decision required.
+  - id: ARCH-OBS-05
+    significance: OBSERVATION
+    summary: Capacity validation must include audit and expensive configurable input workloads
+    affected_requirement: OPS-01
+    affected_artifact: docs/web-console-prd.md
+    evidence: src/policy.ts:48; src/serviceRequestLimiter.ts:4; OPS-02/04; external-input acceptance contract
+    why_it_matters: User/service counts alone do not bound retained audit data, regular-expression work
+      or archive processing.
+    local_correction_possible: false
+    reconciliation_required: false
+    resolution: Already governed by the authoritative requirements and companion contracts; carry into
+      implementation validation. No source correction or new product decision required.
+questions: []
+affected_requirements:
+  - BASE-01
+  - BASE-02
+  - BASE-03
+  - AUTHZ-01
+  - AUTHZ-02
+  - AUTHZ-03
+  - AUTHZ-04
+  - CONFIG-02
+  - CONFIG-03
+  - CONFIG-04
+  - CONFIG-05
+  - IDENT-01
+  - IDENT-05
+  - IDENT-06
+  - MCP-01
+  - MCP-02
+  - MCP-03
+  - MCP-04
+  - POLICY-01
+  - POLICY-02
+  - POLICY-03
+  - AUDIT-01
+  - AUDIT-02
+  - AUDIT-03
+  - AUDIT-04
+  - SEC-01
+  - SEC-02
+  - SEC-03
+  - BACKUP-01
+  - BACKUP-02
+  - BACKUP-03
+  - BACKUP-04
+  - BACKUP-05
+  - BACKUP-06
+  - OPS-01
+  - OPS-02
+  - OPS-03
+  - OPS-04
+  - OPS-05
+  - OPS-06
+  - MIGRATE-01
+  - MIGRATE-02
+  - MIGRATE-03
+  - MIGRATE-04
+  - STATE-01
+  - STATE-02
+  - STATE-03
+  - STATE-04
+  - STATE-05
+  - STATE-06
+  - SECRES-01
+  - SECRES-02
+  - SECRES-03
+  - SECRES-04
+  - UX-01
+  - UX-02
+  - UX-03
+  - UX-04
+affected_artifacts:
+  - product/architecture/web-console-architecture-review.md
+reconciliation_required: false
+change_impact:
+  product: false
+  user_journeys: false
+  ux: false
+  architecture: true
+  security: false
+validation:
+  scope: Full Product Definition architecture review; selective baseline implementation evidence, not
+    implementation acceptance.
+  checks:
+    - All fifteen supplied authoritative inputs match their exact SHA-256 revisions.
+    - Approved UX and state/security contracts checked for feasibility and consistency.
+    - Report links, adapter structure and whitespace checked.
+  application_tests: "Not run: documentation-only stage; no production or executable configuration changes."
+  upstream_authority_changes: false
+  commit_owner: product-definition-orchestrator

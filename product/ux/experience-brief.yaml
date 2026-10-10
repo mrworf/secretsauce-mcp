@@ -1,0 +1,75 @@
+status: approved
+product_id: secretsauce-mcp
+sources:
+  - path: docs/web-console-prd.md
+    revision: sha256:cb8d09474431d3bdd082466beac07163051bd2cb00639433f8a87bf85b46c3d8
+  - path: product/security/web-console-security-contract.md
+    revision: sha256:95e342c77316f1697540fa8da29c6dd6333d6b6d3356b326c4dde921bca4540d
+  - path: product/architecture/web-console-state-contract.md
+    revision: sha256:54956edc26dbcebcb48ecca0697a4695012d61488fa2297e56b6c04c9cbaa858
+  - path: docs/web-console-prd-coverage.md
+    revision: sha256:1cb9db8350470b5ddca5bc63e3005fb13df4900535b93db6541dc1f636b3598c
+  - path: docs/web-console-prd-user-journey-audit.md
+    revision: sha256:168c61f3b4e2223c14a1e706f36e6762dc2da23bf06a4f0b48cc0fffbb966987
+experience:
+  audience:
+    primary:
+      - Occasional technical Owners
+      - Administrators configuring agent access
+    secondary:
+      - Auditors reviewing evidence
+      - Members connecting clients
+  principles:
+    - Show current effective state before editable complexity
+    - Group controls around the service and task
+    - Make draft changes and immediate security actions visibly different
+    - Keep recovery instructions calm, concrete and reachable
+  product_character:
+    tone: Calm, precise and practical; restrained existing brand accent
+    density: Moderate density with aligned lists and generous form grouping
+    complexity_strategy: Guided default forms, in-context advanced disclosure and an
+      equivalent advanced editor
+    guidance_level: Short explanations at decision points; impact summaries before
+      consequential actions
+  information_priorities:
+    - Service identity, runtime status and draft status
+    - Effective access and security exceptions
+    - A clear next action and its consequences
+    - Audit/read-only/recovery state before ordinary controls
+  interaction_direction:
+    navigation: Established four-area service-first navigation; account controls
+      persistent; service tabs retain context
+    routine_actions: Direct links and inline status; separate save draft and
+      review/apply; ordinary editing does not use modal stacks
+    consequential_actions: Full-page review for complex changes and restore; concise
+      confirmation for immediate disable/revoke/rotation; recent authentication
+      only where required
+    progressive_disclosure: Keep effective summaries visible; reveal advanced
+      controls in place and through settings search
+  responsive_priority: Reflow to one column while retaining status, consequences
+    and next action; service rows become labeled stacks; no narrow-screen
+    removal of essential monitoring/recovery
+  explicit_po_preferences:
+    - statement: KISS modern initial offering preserving gateway capabilities
+      decision_refs:
+        - D-009
+        - D-010
+    - statement: Single-organization self-hosted product with four fixed roles
+      decision_refs:
+        - D-001
+        - D-002
+    - statement: Approved the recommended calm, moderately dense direction represented
+        by draft-1 service, edit, review and recovery concepts
+      decision_refs:
+        - UX-DESIGN-001
+  explicit_po_dislikes: []
+  designer_discretion:
+    - Detailed spacing and type scales
+    - Ordinary component geometry and icons
+    - Exact responsive breakpoints consistent with reflow
+    - Routine field-level layout and microcopy
+  approval:
+    approved: true
+    decision_refs:
+      - UX-DESIGN-001
+  revision: web-console-ux-1

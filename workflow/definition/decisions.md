@@ -285,8 +285,25 @@ proposal_paths:
 approval_consequence: Publish canonical UX system and observable conformance
   criteria; enables downstream architecture/security review without authorizing
   implementation.
-status: pending
-routing_status: awaiting_user
-ask_user: true
+status: accepted
+routing_status: resolved
+ask_user: false
 affected_artifact: workflow/definition/drafts/product-ux/web-console-initial/experience-brief.yaml
+resolution: "Product Owner: I approve of the current design"
+approval_scope: Current draft-1 experience brief and rendered design proposal
+approved_proposal_revisions:
+  - path: workflow/definition/drafts/product-ux/web-console-initial/experience-brief.yaml
+    revision: sha256:1f06ace4bfa0d7a64f15cf32adbe80ada89ebae427a73e3c3e9e860ad4ef5e6e
+  - path: workflow/definition/drafts/product-ux/web-console-initial/index.md
+    revision: sha256:aae30919180997b72f4b5c202ad1bf43f745c904e5d1936eb32d33b1c09a1233
+  - path: workflow/definition/drafts/product-ux/web-console-initial/edit-desktop.png
+    revision: sha256:c6951c8a2aaea3d519f28120ec2111d55a274d64a282e36c6416ec2bb683cb6c
+  - path: workflow/definition/drafts/product-ux/web-console-initial/recovery-desktop.png
+    revision: sha256:587fc00b71471d7d953192c8e9da6f4ebcdb74c3d3ca1cec47173222ba54a275
+  - path: workflow/definition/drafts/product-ux/web-console-initial/recovery-narrow.png
+    revision: sha256:3fb318cc988beb2a9bb4679ebee5b1ccd0a186768ddcd711b49c34e6d35cb9a3
+  - path: workflow/definition/drafts/product-ux/web-console-initial/review-desktop.png
+    revision: sha256:90b4bf895c7b1a0a89336d2388d94efe2c937495edb2764ae5f362d1ef33fd18
+  - path: workflow/definition/drafts/product-ux/web-console-initial/services-desktop.png
+    revision: sha256:407270942e6fbdd3fb67920becebfd5d4ac6f4fb75406a0f9ae47fbad297a42d
 ```

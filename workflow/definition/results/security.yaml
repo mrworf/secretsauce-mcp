@@ -1,0 +1,145 @@
+stage: security-code-reviewer
+status: PASS
+validated_inputs:
+  - path: docs/web-console-prd.md
+    revision: sha256:cb8d09474431d3bdd082466beac07163051bd2cb00639433f8a87bf85b46c3d8
+  - path: product/security/web-console-security-contract.md
+    revision: sha256:95e342c77316f1697540fa8da29c6dd6333d6b6d3356b326c4dde921bca4540d
+  - path: product/architecture/web-console-state-contract.md
+    revision: sha256:54956edc26dbcebcb48ecca0697a4695012d61488fa2297e56b6c04c9cbaa858
+  - path: docs/web-console-prd-coverage.md
+    revision: sha256:1cb9db8350470b5ddca5bc63e3005fb13df4900535b93db6541dc1f636b3598c
+  - path: docs/web-console-prd-user-journey-audit.md
+    revision: sha256:168c61f3b4e2223c14a1e706f36e6762dc2da23bf06a4f0b48cc0fffbb966987
+  - path: product/ux/manifest.yaml
+    revision: sha256:891610e063e21e46ed0f7400cd182a0efe901af4731b2b8a5ad0d59e2d07dbb5
+  - path: product/ux/experience-brief.yaml
+    revision: sha256:a47b0fdbd6ea02993a0bcc349b581620e0e4affd21f5ceab63f5d6f39a016ef7
+  - path: product/ux/00-overview.md
+    revision: sha256:80520dcbc864849814a34213389d2ff5f9193b3007621d446f32217e00de07ae
+  - path: product/ux/01-information-architecture.md
+    revision: sha256:a9efc597a9218098cb904728e7e6584ab8b2ac36253f52cbd4f436f321789046
+  - path: product/ux/02-interaction-patterns.md
+    revision: sha256:64385ad9998533bb63f6430aea5ed73176f2a2afb46684ac26caa571a240d56f
+  - path: product/ux/03-responsive-and-platform.md
+    revision: sha256:cd027549dbb9d62f4467c8988102599d20e5b1b1019776b51cac8216535d66dd
+  - path: product/ux/04-visual-system.md
+    revision: sha256:2345fc823bb63e0bafb418643a85b8bde8e757931d7e2c17de36f1297257afd9
+  - path: product/ux/05-accessibility.md
+    revision: sha256:7fdc573a9cfae385c31077bafdc46b302e30e3a8669aafda760f9bf3094e3642
+  - path: product/ux/06-feature-exceptions.md
+    revision: sha256:526d8799f78f23fef3b426e6d4a82f1a97c14ebf19a7f00cc8b7563436cc0df5
+  - path: product/ux/07-acceptance-checklist.md
+    revision: sha256:66b802e9327253abd5de128566f95025225c11adc4482d77fdcf9fd6a5cafb27
+artifact_changes:
+  - path: product/security/web-console-security-review.md
+    summary: Created full definition security review, threat model, boundary
+      assessment and implementation-verification obligations; no upstream
+      authority changed.
+  - path: workflow/definition/results/security.yaml
+    summary: Recorded exact-input security stage PASS and settled risk/observation
+      dispositions.
+changed_paths:
+  - product/security/web-console-security-review.md
+  - workflow/definition/results/security.yaml
+findings:
+  - id: SEC-DEF-001
+    significance: ACCEPTED_RISK
+    summary: Trusted destination authors and best-effort response scanning are not
+      universal credential non-exfiltration controls.
+    affected_requirement: AUTHZ-04
+    affected_artifact: docs/web-console-prd.md
+    evidence: D-012; AUTHZ-04, BASE-01, SEC-02; product/ux/04-visual-system.md
+      UX-V02; security review SEC-DEF-001.
+    why_it_matters: The write-only console must not misrepresent protection against
+      a malicious trusted administrator or approved endpoint.
+    local_correction_possible: false
+    reconciliation_required: false
+    status: accepted_existing_product_boundary
+    decision_refs:
+      - D-012
+  - id: SEC-DEF-002
+    significance: OBSERVATION
+    summary: Host integrity and independent off-host archive/evidence copies remain
+      operator responsibilities.
+    affected_requirement: OPS-06
+    affected_artifact: docs/web-console-prd.md
+    evidence: D-001/D-005; AUDIT-03, BACKUP-02, OPS-05/06; security review SEC-DEF-002.
+    why_it_matters: Product append-only evidence and local backups do not defeat a
+      hostile or lost host.
+    local_correction_possible: false
+    reconciliation_required: false
+  - id: SEC-DEF-003
+    significance: OBSERVATION
+    summary: Audit fail-closed availability cost and restricted diagnostic-login
+      exception are explicit settled behavior.
+    affected_requirement: AUDIT-04
+    affected_artifact: product/security/web-console-security-contract.md
+    evidence: D-004; SECRES-04; product/ux/06-feature-exceptions.md UX-EX01;
+      security review SEC-DEF-003.
+    why_it_matters: Repair and restore must not become unaudited privilege bypasses.
+    local_correction_possible: false
+    reconciliation_required: false
+  - id: SEC-DEF-004
+    significance: OBSERVATION
+    summary: Definition PASS is not implementation or SOC 2 acceptance.
+    affected_requirement: BASE-01
+    affected_artifact: docs/web-console-prd-coverage.md
+    evidence: PRD acceptance table; 194 unverified coverage backend/test cells;
+      canonical UX implementation status; security review SEC-DEF-004.
+    why_it_matters: Future tests must verify each new input and preserved gateway boundary.
+    local_correction_possible: false
+    reconciliation_required: false
+questions: []
+affected_requirements:
+  - AUTHZ-04
+  - BASE-01
+  - SEC-02
+  - AUDIT-03
+  - AUDIT-04
+  - BACKUP-02
+  - OPS-05
+  - OPS-06
+affected_artifacts:
+  - product/security/web-console-security-review.md
+  - docs/web-console-prd.md
+  - product/security/web-console-security-contract.md
+  - docs/web-console-prd-coverage.md
+  - product/ux/04-visual-system.md
+  - product/ux/06-feature-exceptions.md
+reconciliation_required: false
+change_impact:
+  product: false
+  user_journeys: false
+  ux: false
+  architecture: false
+  security: false
+native_report: product/security/web-console-security-review.md
+validation:
+  kind: product_definition_security_review
+  inputs_verified: 15
+  unresolved_material_findings: 0
+  source_evidence: Scoped read-only baseline inspection, not a full implementation audit
+  tests_run: []
+  limitations:
+    - Future console implementation, cryptographic mechanisms, browser
+      protections, crash behavior, dependency freshness and operational controls
+      are unverified.
+    - No application or SOC 2 acceptance is asserted.
+mode: full
+decision_provenance:
+  - D-001
+  - D-002
+  - D-003
+  - D-004
+  - D-005
+  - D-006
+  - D-007
+  - D-008
+  - D-009
+  - D-010
+  - D-011
+  - D-012
+  - UX-DESIGN-001
+  - RES-PRD-SEC-01
+  - RES-PRD-ARCH-01

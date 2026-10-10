@@ -11,7 +11,8 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "test": "vitest run",
-    "test:console:browser": "npm run build && node scripts/verify-console-browser.mjs"
+    "test:console:browser": "npm run build && node scripts/verify-console-browser.mjs",
+    "pretest": "npm run build"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.18.1",

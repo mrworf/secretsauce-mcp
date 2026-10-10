@@ -69,6 +69,7 @@ export class ConsoleServices {
   private parse<T>(schema: z.ZodType<T>, value: unknown): T { const p = schema.safeParse(value); if (!p.success) throw new ServiceManagementError('Invalid service input. Check field types and supported settings.'); return p.data; }
   save(session: ConsoleSession, input: unknown) {
     const actor = this.actor(session, true); const data = this.parse(saveSchema, input);
+    validateDraftBounds(data.service);
     const current = own(this.state.services, data.id);
     if (!current && !newIdSchema.safeParse(data.id).success) throw new ServiceManagementError('Invalid new service identifier. Use 1–80 letters, numbers, dots, underscores or hyphens, starting with a letter or number.');
     if (data.base !== this.state.revision || data.generation !== (current?.draft?.generation ?? 0)) throw this.stale(session, data.id);
@@ -208,3 +209,11 @@ export function exceptions(draft: ManagedServiceDraft): string[] {
 const managers = new WeakMap<ConsoleStore, ConsoleServices>();
 export function consoleServices(store: ConsoleStore): ConsoleServices { let m = managers.get(store); if (!m) { m = new ConsoleServices(store); managers.set(store, m); } return m; }
 export function bindConsoleServices(store: ConsoleStore, config: GatewayConfig): ConsoleServices { const m = new ConsoleServices(store, config); managers.set(store, m); return m; }
+
+export function validateDraftBounds(draft: ManagedServiceDraft): void {
+  if (JSON.stringify(draft).length > 262144 || (draft.policy?.rules.length ?? 0)>200) throw new ServiceManagementError('policy: Configuration exceeds bounded size or 200 rules.');
+  for (const r of draft.policy?.rules??[]) for (const field of ['hosts','paths'] as const) {
+    if(r[field].length>100) throw new ServiceManagementError('policy.'+field+': At most 100 expressions per rule.');
+    for(const pattern of r[field]) { if(pattern.length>2048) throw new ServiceManagementError('policy.'+field+': Expression exceeds 2048 characters.');try {new RegExp(pattern);}catch {throw new ServiceManagementError('policy.'+field+': Invalid regular expression.');} }
+  }
+}

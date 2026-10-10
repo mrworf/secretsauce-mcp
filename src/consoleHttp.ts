@@ -1,5 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import QRCode from 'qrcode';
+import { previewPolicy } from './policyPreview.js';
 import { consoleNotifications, NotificationError } from './consoleNotifications.js';
 import { consolePeople, PeopleError } from './consolePeople.js';
 import { readBoundedBody } from './httpBody.js';
@@ -143,6 +144,7 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
         if(path==='/console/api/people/external'){reply(200,consolePeople(store).register(session,data));return;}
         if (path?.startsWith('/console/api/service/')) {
             const manager = consoleServices(store);
+            if (path === '/console/api/service/preview') { reply(200, await previewPolicy(manager, session, data)); return; }
             if (path === '/console/api/service/credential') { reply(200, manager.credential(session, data)); return; }
             if (path === '/console/api/service/access') { reply(200, manager.access(session, data)); return; }
             if (path === '/console/api/service/lifecycle') { reply(200, manager.lifecycle(session, data)); return; }

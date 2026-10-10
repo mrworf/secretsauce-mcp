@@ -11,7 +11,7 @@ import {totp} from '../dist/consoleCrypto.js';
 import {validateConfig} from '../dist/config.js';
 import {createGatewayServer} from '../dist/server.js';
 import {consoleServices} from '../dist/consoleServices.js';
-const directory=mkdtempSync(join(tmpdir(),'backups-browser-')),evidence=resolve('evidence/qa/secretsauce-mcp/milestone16');mkdirSync(evidence,{recursive:true});
+const directory=mkdtempSync(join(tmpdir(),'backups-browser-')),evidence=resolve(process.env.CONSOLE_BROWSER_EVIDENCE_DIR??'evidence/qa/secretsauce-mcp/milestone16');mkdirSync(evidence,{recursive:true});
 const savedNow=Date.now;let clock=savedNow();Date.now=()=>clock;let store,gateway,server,browser,phase='setup';const checks=[],errors=[];const password='Synthetic browser long passphrase 2026';
 try{
  process.env.AUDIT_STORAGE_DIR=join(directory,'audit');mkdirSync(join(directory,'backup-mount'),{mode:0o700});const key=join(directory,'key');writeFileSync(key,'ab'.repeat(32),{mode:0o600});execFileSync('openssl',['req','-x509','-newkey','rsa:2048','-nodes','-keyout',join(directory,'tls.key'),'-out',join(directory,'tls.crt'),'-days','1','-subj','/CN=console.example.org'],{stdio:'ignore'});

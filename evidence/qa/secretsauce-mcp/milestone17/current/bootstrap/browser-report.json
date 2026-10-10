@@ -1,0 +1,15 @@
+{
+  "result": "PASS",
+  "browser": "Declared Playwright Chromium",
+  "transport": "Actual loopback HTTPS with synthetic example.org certificate and host mapping",
+  "clock": "Controlled server clock advances 30 seconds between TOTP uses",
+  "checks": [
+    "Actual HTTPS/Secure-cookie setup and MFA login completed using keyboard only",
+    "Desktop and 320px setup/login/account/diagnosis have no horizontal overflow",
+    "Enrollment screenshot masks synthetic seed, QR, codes and input controls",
+    "Invalid login focuses safe error; no credential value appears in screenshot",
+    "Restricted outage login exposes diagnosis without mutations; repaired storage does not upgrade old session",
+    "Secure HttpOnly SameSite=Strict cookie verified; no local/session storage or URL secret transport",
+    "Keyboard sign-out available during restricted diagnosis; no uncaught browser errors"
+  ]
+}

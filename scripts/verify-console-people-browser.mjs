@@ -12,7 +12,7 @@ import { createGatewayServer } from '../dist/server.js';
 import { consolePeople } from '../dist/consolePeople.js';
 import { consoleNotifications } from '../dist/consoleNotifications.js';
 import { consoleServices } from '../dist/consoleServices.js';
-const directory=mkdtempSync(join(tmpdir(),'people-browser-')),evidence=resolve('evidence/qa/secretsauce-mcp/milestone12');mkdirSync(evidence,{recursive:true});
+const directory=mkdtempSync(join(tmpdir(),'people-browser-')),evidence=resolve(process.env.CONSOLE_BROWSER_EVIDENCE_DIR??'evidence/qa/secretsauce-mcp/milestone12');mkdirSync(evidence,{recursive:true});
 const savedNow=Date.now;let clock=savedNow();Date.now=()=>clock;let store,gateway,server,browser;const checks=[],errors=[];const password='Synthetic browser long passphrase 2026';
 try{
 process.env.AUDIT_STORAGE_DIR=join(directory,'audit');const key=join(directory,'key');writeFileSync(key,'ab'.repeat(32),{mode:0o600});execFileSync('openssl',['req','-x509','-newkey','rsa:2048','-nodes','-keyout',join(directory,'tls.key'),'-out',join(directory,'tls.crt'),'-days','1','-subj','/CN=console.example.org'],{stdio:'ignore'});

@@ -10,9 +10,9 @@ export interface ImportedAudit {
 }
 export function recoverySecrets(s:ConsoleState|RecoveryPayload['state']):string[]{const cfg=s.config as ConsoleState['config'],managed=s.managed as ConsoleState['managed'],notifications=s.notifications as ConsoleState['notifications'];return [...Object.values(cfg?.services??{}).flatMap(v=>v.credentials.map(c=>c.secret)),...Object.values(managed?.services??{}).flatMap(v=>Object.values(v.values).map(c=>c.value)),notifications?.applied?.password??''].filter(Boolean);}
 export function importedAudit(payload:RecoveryPayload,archive:string,currentSecrets:string[]):ImportedAudit[]{
- const deadline=performance.now()+2000,secrets=[...currentSecrets,...recoverySecrets(payload.state)],result:ImportedAudit[]=[];
+ const deadline=performance.now()+2000,secrets=[...new Set([...currentSecrets,...recoverySecrets(payload.state)])],result:ImportedAudit[]=[];
  const sources=[...(payload.state.importedAudit??[]),...Object.entries(payload.audit).map(([domain,data])=>({instance:payload.state.id,archive,recoveryPoint:payload.manifest.recoveryPoint,domain:domain as 'management'|'gateway',data,secrets}))];
- for(const source of sources){const {domain,data}=source,sourceSecrets=[...source.secrets,...secrets],safe=(s:unknown)=>sanitizeAuditText(String(s??''),sourceSecrets).replace(/[\u0000-\u001f\u007f]/g,' ').slice(0,2048);if(performance.now()>deadline)throw Error('Imported audit work deadline');
+ for(const source of sources){const {domain,data}=source,sourceSecrets=[...new Set([...source.secrets,...secrets])],safe=(s:unknown)=>sanitizeAuditText(String(s??''),sourceSecrets).replace(/[\u0000-\u001f\u007f]/g,' ').slice(0,2048);if(performance.now()>deadline)throw Error('Imported audit work deadline');
   const prior=result.find(d=>d.domain===domain&&d.data.identity===data.identity&&d.data.chain.split('\n')[0]===data.chain.split('\n')[0]);
   if(prior&&prior.data.chain.startsWith(data.chain))continue;
   if(prior&&!data.chain.startsWith(prior.data.chain))throw Error('Conflicting imported audit ancestry; inspect source archive.');

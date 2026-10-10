@@ -1,0 +1,24 @@
+{
+  "result": "PASS",
+  "image": "sha256:f17901a8e5fcd59fae0cdee319e9b7d1492574c4cbdea07e8c3d021a081c2487",
+  "metrics": {
+    "backupAndDownloadMs": 5651.261474,
+    "archiveBytes": 12270470,
+    "services": 100,
+    "retainedAudit": 10000,
+    "restoreThroughFreshLoginMs": 23870.239443,
+    "snapshotAgeAtDrillMs": 5632,
+    "restoreThroughOneUsableServiceMs": 55969.935606
+  },
+  "checks": [
+    "Original host stopped and original synthetic master key physically deleted after encrypted archive plus independent material retained; new host mounts separate app/audit/key storage only",
+    "Wrong host proof and independent material leave new host unchanged; archive import establishes current new local audit binding, separate authenticated source provenance, all100servicesDisabled; old bearer/session/password/TOTP denied over real HTTP",
+    "Actual missing audit key blocks fresh enrollment; quiesced protectedTTY recover-restore reissues archive-bound continuation, old continuation denied; fresh password/TOTP/codes completion singleuse then freshlogin; real restart preserves enrolled Owner/review and disabled services rather than recopying staged unenrolled state",
+    "Recovered provenance and explicit last-source-to-first-local interval visible through authenticated activity; fresh Owner separately reactivates write-only bearer, reviews current credential/policy/access/destination for one service; actual new MCP reference+downstream request200 while99servicesDisabled and old bearer still401",
+    "Independent PID namespace with same app/audit mounts cannot steal running new-host writer leases"
+  ],
+  "transport": "Actual HTTP on host loopback behind configured HTTPS origin; HTTPS rendered browser independently exercised",
+  "recoveryTargets": "Observed conditional RTO4h/RPO24h under100service/10k-audit synthetic workload and intact independent material/archive/new deployment inputs; no unconditional disaster guarantee",
+  "realLLM": "NOT RUN under authorized local-validation exception",
+  "cleanup": "Only own ephemeral containers and synthetic mounts deleted; no original key copied into new host"
+}

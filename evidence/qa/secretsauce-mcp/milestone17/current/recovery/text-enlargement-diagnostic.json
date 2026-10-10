@@ -1,0 +1,61 @@
+{
+  "viewport": 320,
+  "scroll": 370,
+  "overflow": [
+    {
+      "tag": "HTML",
+      "id": "",
+      "right": 320,
+      "width": 320,
+      "scroll": 370,
+      "client": 320
+    },
+    {
+      "tag": "BODY",
+      "id": "",
+      "right": 320,
+      "width": 320,
+      "scroll": 370,
+      "client": 320
+    },
+    {
+      "tag": "DIV",
+      "id": "",
+      "right": 320,
+      "width": 320,
+      "scroll": 370,
+      "client": 320
+    },
+    {
+      "tag": "MAIN",
+      "id": "main",
+      "right": 320,
+      "width": 320,
+      "scroll": 370,
+      "client": 320
+    },
+    {
+      "tag": "SECTION",
+      "id": "content",
+      "right": 304,
+      "width": 288,
+      "scroll": 353,
+      "client": 286
+    },
+    {
+      "tag": "H2",
+      "id": "",
+      "right": 287,
+      "width": 254,
+      "scroll": 337,
+      "client": 254
+    }
+  ],
+  "textOverflow": [
+    {
+      "tag": "H2",
+      "id": "",
+      "right": 370.296875
+    }
+  ]
+}

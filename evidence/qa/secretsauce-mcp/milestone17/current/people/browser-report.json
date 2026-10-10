@@ -1,0 +1,16 @@
+{
+  "result": "PASS",
+  "transport": "Actual HTTPS loopback with example.org certificate/resolver mapping",
+  "browser": "Declared Playwright Chromium",
+  "disableMilliseconds": 243,
+  "checks": [
+    "UX-C01/C11/C12/C20/C21: Member keyboard invitation enrollment, immediate fragment removal, scoped shell/activity/account and 320px reflow",
+    "UX-C01/C11/C12/C20/C21: Administrator keyboard invitation enrollment, immediate fragment removal, scoped shell/activity/account and 320px reflow",
+    "UX-C01/C11/C12/C20/C21: Auditor keyboard invitation enrollment, immediate fragment removal, scoped shell/activity/account and 320px reflow",
+    "UX-C01/C11/C12/C20/C21: Owner keyboard invitation enrollment, immediate fragment removal, scoped shell/activity/account and 320px reflow",
+    "UX-C07/C08/C21/C25: explicit immediate disable, cancel focus return, recent confirmation and measured 243 ms; direct concurrency last-Owner safety in tests",
+    "UX-C11/C12/C15: verified Owner factor recovery immediately restricts, deliberate fresh seed/code enrollment restores account; no prior session survives",
+    "UX-C12/C15/C20/C22: distinct password reset and password-plus-factor recovery, clear labels/status, moderate-density account/recovery surfaces",
+    "UX-C11/C15/C20/C21: Owner keyboard SMTP draft/review/recent apply clears credential field; bounded synthetic failure reports Failed without enrollment claim or recovery rollback"
+  ]
+}

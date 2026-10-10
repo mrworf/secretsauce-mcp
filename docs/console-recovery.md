@@ -111,3 +111,41 @@ state, excluding preflight proof/preview activity. An unavailable endpoint remai
 clock skew is explicitly labeled instead of asserting impossible continuity. Activity and
 evidence exports state recovery status and source provenance. Independently retained
 external evidence remains necessary against host loss or hostile host alteration.
+
+
+The local acceptance drill uses only synthetic independent mounts and loopback ports:
+
+```sh
+npm run build
+docker build -t secretsauce-m17-local:acceptance .
+node scripts/verify-console-recovery-crashes-docker.mjs
+node scripts/verify-console-recovery-launcher-docker.mjs
+node scripts/verify-console-recovery-cleanhost-docker.mjs
+npm test
+```
+
+Run Docker commands with host-authorized daemon access. The crash drill executes every
+installation/rollback hook occurrence, including repeated names, with actual SIGKILL.
+The clean-host drill deletes its original synthetic master key, supplies ciphertext and
+independent material to a replacement with separate new key/app/audit mounts, issues the
+proof through a quiesced protected host terminal, handles audit-key loss and a lost
+continuation, and completes fresh Owner enrollment. It then explicitly reactivates MCP
+authentication, reviews one service's current credential placement, policy, destination and
+access, and makes a new authenticated reference and downstream request while the other
+99 services remain Disabled. Current image, archive size and elapsed times appear in
+[the operational report](../evidence/platform/secretsauce-mcp/milestone17/docker-cleanhost-report.json).
+
+The four-hour target begins once replacement infrastructure, a verified archive,
+independent material and required current deployment inputs are available, and ends at
+one explicitly reviewed usable service with current client authorization. Report management
+login time separately. The 24-hour RPO assumes a recent completed externally retained
+archive; source events since that archive are unavailable on a clean host. Local automation
+demonstrates the stated workload and dependencies; it is not an unconditional disaster
+or human-usability guarantee. Actual external ChatGPT/Codex testing remains explicitly
+NOT RUN under [local validation authorization](../workflow/delivery/local-validation-authorization.md).
+
+If a restart refuses a retained PID, never remove writer locks/leases to steal ownership.
+The launcher holds both kernel leases and advances bounded short-lived child PIDs before
+Node creates threads, then preserves exact ESRCH verification. Malformed, symlink,
+out-of-range or live-launcher ownership metadata requires quiesced protected inspection.
+The acceptance regression includes the observed old-PID/new-launcher-thread collision.

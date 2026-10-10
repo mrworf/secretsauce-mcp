@@ -1,3 +1,9 @@
+# Current M14 acceptance — local delivery approved
+
+On 2026-10-10 the Product Owner authorized headless browser/Docker tests and deferred actual LLM/MCP connections. M14 local acceptance passes under [the delivery exception](../../../../workflow/delivery/local-validation-authorization.md). Its four commits and 511-test/build/browser evidence remain current. Actual ChatGPT/Codex exercises are NOT RUN; the real-client procedure remains required before an interoperability claim. M15 may proceed.
+
+The original checkpoint below is historical and has been resolved by that instruction.
+
 # M14 acceptance checkpoint
 
 **BLOCKED — PRE-015 external acceptance evidence absent.** All local implementation slices are committed and reviewed. M14 is not accepted or completed; the fixed autonomous goal remains milestones 10–17. M10–13 are accepted. M15–17 remain pending because M15 depends on accepted M13 and M14; no independent remaining milestone is dependency-ready.

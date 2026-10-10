@@ -154,31 +154,35 @@ milestones:
   - id: "14"
     title: Connect and govern MCP clients
     file: delivery/milestones/secretsauce-mcp/14-mcp-client-access.md
-    status: blocked
+    status: completed
     dependencies:
       - "12"
-    completed_at: null
-    commit_hash: null
-    notes: "All four local M14 slices committed. 511 tests/53 files, build, actual
-      HTTPS keyboard/320px browser five groups/fourteen sanitized screens pass.
-      PRE-015 acceptance blocked: no authorized real ChatGPT AND Codex test
-      records. Procedure: docs/m14-real-client-verification.md. Local evidence:
-      evidence/qa/secretsauce-mcp/milestone14/local-coverage.md; acceptance
-      checkpoint: evidence/qa/secretsauce-mcp/milestone14/acceptance-status.md.
-      No M15–17 work started."
+    completed_at: 2026-10-10T17:07:13.336Z
+    commit_hash: 1eb00d117664858d81252543b46c53cb8b46638d
+    notes: "Local acceptance passed: four slice commits, 511 tests/53 files, build,
+      actual HTTPS headless browser five groups/fourteen sanitized screens. User
+      authorized local delivery and deferred actual LLM/MCP connections on
+      2026-10-10. PRE-015 real ChatGPT/Codex checks remain NOT RUN under
+      explicit goal-specific exception
+      workflow/delivery/local-validation-authorization.md. Evidence:
+      evidence/qa/secretsauce-mcp/milestone14/local-coverage.md and
+      acceptance-status.md."
     started_at: 2026-10-10T05:59:52.467Z
     implementation_commit_hash: 1eb00d117664858d81252543b46c53cb8b46638d
     blocked_at: 2026-10-10T06:51:52.136Z
+    acceptance_exception: workflow/delivery/local-validation-authorization.md
+    real_client_integration_status: deferred_NOT_RUN
   - id: "15"
     title: Operate and inspect the managed instance
     file: delivery/milestones/secretsauce-mcp/15-operating-evidence-and-limits.md
-    status: pending
+    status: in_progress
     dependencies:
       - "13"
       - "14"
     completed_at: null
     commit_hash: null
     notes: null
+    started_at: 2026-10-10T17:07:13.336Z
   - id: "16"
     title: Create recoverable encrypted instance backups
     file: delivery/milestones/secretsauce-mcp/16-encrypted-instance-backups.md
@@ -199,7 +203,7 @@ milestones:
     notes: null
 delivery_goal:
   product_id: secretsauce-mcp
-  status: blocked
+  status: in_progress
   packet: delivery/milestones/secretsauce-mcp/status.yaml
   packet_revision: sha256:a262e7f9b7087b033e2708500b060576ba5adfec8dbc9dc98f2fa3a1f49f104d
   packet_contract_revisions:
@@ -244,9 +248,25 @@ delivery_goal:
     - "16"
     - "17"
   execution: autonomous
-  current_milestone: "14"
-  governing_plan: delivery/plans/secretsauce-mcp/milestone_14_plan_01.md
-  blockers:
+  current_milestone: "15"
+  governing_plan: delivery/plans/secretsauce-mcp/milestone_15_plan_01.md
+  blockers: []
+  resume_point: M14 accepted locally under explicit user instruction; actual LLM
+    client checks deferred NOT RUN. Generate governing and all slice plans for
+    M15 before production edits; run all local browser/Docker acceptance. Fixed
+    goal remains 10–17.
+  prerequisite_observations:
+    - evidence_id: PRE-016
+      checked_at: 2026-10-10T06:51:52.136Z
+      client_version: 29.9.0
+      server_version: 29.8.1
+      compose_version: 5.6.0
+      result: Docker daemon version available through narrowly approved docker version
+        escalation; default sandbox socket access is denied. No containers/host
+        configuration changed. Future authorized disposable runtime
+        smoke/recovery fixtures remain unverified and are assessed at M15–17
+        boundaries.
+  resolved_blockers:
     - type: EXTERNAL_OR_USER_ACTION
       evidence_id: PRE-015
       source: delivery/readiness/secretsauce-mcp/prerequisite-manifest.md#external-completion-instructions
@@ -265,25 +285,16 @@ delivery_goal:
         the delivered implementation revision and pass targeted acceptance
         review.
       implementation_commit: 1eb00d117664858d81252543b46c53cb8b46638d
-  resume_point: Review new PRE-015 records under
-    evidence/platform/secretsauce-mcp/milestone14/ against implementation
-    1eb00d117664858d81252543b46c53cb8b46638d. Retain existing M14 plan and
-    completed slice commits; do not rerun completed slices or full acceptance
-    merely to recheck an absent artifact. Any demonstrated local defect resumes
-    the same transaction with a narrow corrective slice. Once M14 acceptance
-    passes, select M15; fixed goal remains 10–17.
-  blocked_at: 2026-10-10T06:51:52.136Z
-  blocker_type: EXTERNAL_OR_USER_ACTION
-  blocker: "PRE-015: actual authorized ChatGPT AND Codex interoperability evidence
-    is absent; M14 cannot complete and M15–17 depend on it."
-  prerequisite_observations:
-    - evidence_id: PRE-016
-      checked_at: 2026-10-10T06:51:52.136Z
-      client_version: 29.9.0
-      server_version: 29.8.1
-      compose_version: 5.6.0
-      result: Docker daemon version available through narrowly approved docker version
-        escalation; default sandbox socket access is denied. No containers/host
-        configuration changed. Future authorized disposable runtime
-        smoke/recovery fixtures remain unverified and are assessed at M15–17
-        boundaries.
+      resolved_at: 2026-10-10T17:07:13.336Z
+      resolution: User-authorized local-delivery exception; actual real-client checks
+        deferred NOT RUN.
+      authorization: workflow/delivery/local-validation-authorization.md
+  acceptance_exceptions:
+    - evidence_id: PRE-015
+      milestones:
+        - "14"
+        - "17"
+      status: deferred_NOT_RUN
+      authorization: workflow/delivery/local-validation-authorization.md
+      scope: Actual LLM system MCP connection/reconnect only; all local
+        protocol/browser/Docker tests remain required.

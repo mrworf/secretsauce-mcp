@@ -5,6 +5,8 @@ import { decrypt, digest, encrypt, equal, newSeed, passwordHash, passwordMatches
 import { ConsoleJournal } from './consoleJournal.js';
 import type { AuditSink } from './audit.js';
 import type { GatewayConfig } from './types.js';
+import { hydrateManagedConfig } from './config.js';
+import type { ManagedConfiguration } from './consoleServices.js';
 export type HumanRole = 'Owner' | 'Administrator' | 'Auditor' | 'Member';
 export interface ConsoleUser {
     id: string;
@@ -39,6 +41,7 @@ export interface ConsoleState {
     origin: string;
     name: string;
     config?: GatewayConfig;
+    managed?: ManagedConfiguration;
     users: ConsoleUser[];
     sessions: ConsoleSession[];
     proof?: {
@@ -110,6 +113,7 @@ export class ConsoleStore {
             this.state = existsSync(this.file) ? decrypt<ConsoleState>(readFileSync(this.file, 'utf8'), this.key) : { v: 1, id: randomUUID(), revision: 0, initialized: false, origin: '', name: '', users: [], sessions: [], ...(options.config ? { config: options.config } : {}) };
             if (this.state.v !== 1 || !Array.isArray(this.state.users) || !Array.isArray(this.state.sessions))
                 throw new Error('Invalid managed state');
+            if (this.state.config) hydrateManagedConfig(this.state.config);
             this.journal = new ConsoleJournal(join(directory, 'audit.chain'), this.key, options.faultAudit);
             this.faultState = options.faultState;
             if (!existsSync(this.file)) {
@@ -350,7 +354,7 @@ export function loadManagedConfig(directory: string, keyFile: string): GatewayCo
     const state = decrypt<ConsoleState>(readFileSync(join(directory, 'state.enc'), 'utf8'), readConsoleKey(keyFile));
     if (state.v !== 1 || !state.config)
         throw new Error('Managed configuration missing');
-    return state.config;
+    return hydrateManagedConfig(state.config);
 }
 catch {
     throw new Error('Managed storage unavailable; repair storage and key before restarting.');

@@ -599,7 +599,7 @@ function normalizeDestinations(
     const ports = raw.ports ?? [Number(base.port || defaultPortForScheme(base.protocol, [...destinationPath, "base_url"]))];
     const tls = raw.tls === undefined ? serviceTls : normalizeTls(raw.tls);
 
-    return { id, baseUrl: raw.base_url, schemes, hosts, ports, tls };
+    return { id, baseUrl: raw.base_url, schemes, hosts, ports, tls, tlsInherited: raw.tls === undefined };
   });
 }
 
@@ -779,4 +779,46 @@ function parseSize(value: string, label: string, path: ConfigPath = label.split(
   const multiplier = multipliers[unit];
   if (multiplier === undefined) throw configValidationError(`${label} has unsupported size unit`, path);
   return amount * multiplier;
+}
+
+// Console drafts reuse the gateway schema and normalizer without resolving host
+// files/environment. Credential values are supplied only by the encrypted store.
+export const managedDraftSchema = z.object(serviceSchema.shape).partial().extend({
+  name: z.string().max(200).optional(),
+  destinations: z.array(serviceSchema.shape.destinations.element.partial()).max(100).optional(),
+  credentials: z.array(z.object({ id: z.string().min(1).max(100), usage: credentialUsageSchema }).strict()).max(100).optional(),
+}).strict();
+export type ManagedServiceDraft = z.infer<typeof managedDraftSchema>;
+export function normalizeManagedService(id: string, draft: ManagedServiceDraft, values: Record<string, string>): ServiceConfig {
+  const env: NodeJS.ProcessEnv = {};
+  const credentials = (draft.credentials ?? []).map((c, i) => {
+    const key = 'MANAGED_' + i; env[key] = values[c.id];
+    return { ...c, source: { kind: 'env' as const, name: key } };
+  });
+  const parsed = serviceSchema.parse({ ...draft, credentials });
+  return normalizeServices({ [id]: parsed }, env, [], [])[id]!;
+}
+export function serviceDraft(service: ServiceConfig): ManagedServiceDraft {
+  return {
+    type: service.type, name: service.name,
+    ...(service.description === undefined ? {} : { description: service.description }),
+    ...(service.apiDocsUrl === undefined ? {} : { api_docs_url: service.apiDocsUrl }),
+    tls: service.tls, no_auth: service.credentials.length === 0,
+    destinations: service.destinations.map(d => ({ id: d.id, base_url: d.baseUrl, schemes: d.schemes,
+      hosts: d.hosts.map(h => ({ [h.type]: h.value } as { exact: string })), ports: d.ports,
+      ...(d.tlsInherited === true ? {} : { tls: d.tls }) })),
+    credentials: service.credentials.map(c => ({ id: c.id, usage: c.usage })),
+    access: service.access,
+    policy: { mode: service.policy.mode, rules: service.policy.rules.map(r => ({
+      id: r.id, effect: r.effect, priority: r.priority, methods: r.methods, hosts: r.hosts, paths: r.paths,
+      ...(r.reason === undefined ? {} : { reason: r.reason }),
+      ...(r.secretlint === undefined ? {} : { secretlint: 'enabled' in r.secretlint ? r.secretlint : { disabled_rules: r.secretlint.disabledRuleIds as typeof SECRET_RULE_IDS[number][] } }),
+      binary_response: { scan: r.binaryResponse.scan, max_size: r.binaryResponse.maxBytes === null ? 'unlimited' : r.binaryResponse.maxBytes + 'b' },
+    })) },
+  };
+}
+export function hydrateManagedConfig(config: GatewayConfig): GatewayConfig {
+  for (const s of Object.values(config.services)) for (const d of s.destinations)
+    for (const h of d.hosts) if (h.type === 'regex') h.regex = new RegExp(h.value);
+  return config;
 }

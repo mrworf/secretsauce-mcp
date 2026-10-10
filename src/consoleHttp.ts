@@ -5,6 +5,7 @@ import { consolePage, consoleScript, consoleStyle } from './consolePage.js';
 import { LoginAttemptLimiter } from './loginAttemptLimiter.js';
 const limiters = new WeakMap<ConsoleStore, LoginAttemptLimiter>();
 import { equal } from './consoleCrypto.js';
+import { consoleServices, ServiceManagementError } from './consoleServices.js';
 import { ConsoleOperationError, ConsoleStore } from './consoleStore.js';
 export function isConsoleRequest(request: IncomingMessage): boolean { return request.url?.split('?')[0] === '/console' || Boolean(request.url?.startsWith('/console/')); }
 export async function handleConsoleRequest(store: ConsoleStore, request: IncomingMessage, response: ServerResponse): Promise<void> {
@@ -62,6 +63,11 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
             reply(200, { operation: id, status: store.journal.status(id) === 'unknown' ? store.externalAudit?.operationStatus(id) ?? 'unknown' : store.journal.status(id) });
             return;
         }
+        if (request.method === 'GET' && (path === '/console/api/services' || path?.startsWith('/console/api/services/'))) {
+            if (!session) { reply(401, { message: 'Sign in again.' }); return; }
+            const manager = consoleServices(store);
+            reply(200, path === '/console/api/services' ? manager.list(session) : manager.detail(session, decodeURIComponent(path!.slice('/console/api/services/'.length)))); return;
+        }
         if (request.method !== 'POST') {
             reply(404, { message: 'Not found.' });
             return;
@@ -83,7 +89,7 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
         limiter.recordFailure(source, 'console');
         if (request.headers['content-type'] !== 'application/json')
             throw new Error('Use JSON input.');
-        const data = JSON.parse((await readBoundedBody(request, 16384, 5000)).toString());
+        const data = JSON.parse((await readBoundedBody(request, 131072, 5000)).toString());
         if (!data || Array.isArray(data) || typeof data !== 'object')
             throw new Error('Invalid input.');
         if (path === '/console/api/setup/begin') {
@@ -110,6 +116,12 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
         if (typeof request.headers['x-console-csrf'] !== 'string' || !equal(request.headers['x-console-csrf'], session.csrf)) {
             reply(403, { message: 'Reload this page before submitting.' });
             return;
+        }
+        if (path?.startsWith('/console/api/service/')) {
+            const manager = consoleServices(store);
+            if (path === '/console/api/service/save') { reply(200, manager.save(session, data)); return; }
+            if (path === '/console/api/service/review') { reply(200, manager.review(session, data)); return; }
+            if (path === '/console/api/service/apply') { reply(200, manager.apply(session, data)); return; }
         }
         if (path === '/console/api/logout') {
             try {
@@ -147,6 +159,9 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
         reply(404, { message: 'Not found.' });
     }
     catch (error) {
+        if (error instanceof ServiceManagementError) {
+            reply(error.comparison ? 409 : 400, { message: error.message, ...(error.comparison ? { comparison: error.comparison } : {}) }); return;
+        }
         if (error instanceof ConsoleOperationError) {
             reply(503, { message: error.message, operation: error.operation, status: 'uncertain' });
             return;

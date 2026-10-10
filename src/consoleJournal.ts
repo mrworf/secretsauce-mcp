@@ -94,5 +94,6 @@ export class ConsoleJournal {
     finish(id: string, actor: string, action: string, target: string, revision = 0, result: 'success' | 'failed' = 'success'): void { this.append({ id, actor, action, target, revision, result, time: Date.now(), phase: 'complete' }); }
     status(id: string): 'unknown' | 'uncertain' | 'success' | 'failed' { const list = this.#records.filter(r => r.id === id); const done = list.findLast(r => r.phase === 'complete'); return done?.result ?? (list.length ? 'uncertain' : 'unknown'); }
     verifyEventDigests(values: string[]): boolean { return JSON.stringify(this.#records.filter(r => r.action === 'audit.event').map(r => r.target)) === JSON.stringify(values); }
+    entries(): OperationRecord[] { return this.#records.map(r => ({ ...r })); }
     actorFor(id: string): string | undefined { return this.#records.find(r => r.id === id)?.actor; }
 }

@@ -135,6 +135,7 @@ export interface ServiceConfig {
 }
 
 export interface DestinationConfig {
+  tlsInherited?: boolean;
   id: string;
   baseUrl: string;
   schemes: string[];

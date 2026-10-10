@@ -16,6 +16,7 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { ConsoleStore, loadManagedConfig } from "./consoleStore.js";
 import { handleConsoleRequest, isConsoleRequest } from "./consoleHttp.js";
+import { bindConsoleServices } from "./consoleServices.js";
 import { requiredScopeForTool } from "./mcp/tools.js";
 
 type AuthenticatedRequest = IncomingMessage & { auth?: AuthContext };
@@ -37,7 +38,7 @@ export function createGatewayServer(
   }
   const runtime = options.runtime ?? new GatewayRuntime(config, { ...(options.auditSink === undefined ? {} : { auditSink: options.auditSink }) });
   const auditSink = runtime.auditSink;
-  if(options.consoleStore)auditSink.bindConsole(options.consoleStore);
+  if(options.consoleStore) { auditSink.bindConsole(options.consoleStore); bindConsoleServices(options.consoleStore, config); }
   const server = createServer(async (request, response) => {
     if (options.consoleStore && isConsoleRequest(request)) { await handleConsoleRequest(options.consoleStore, request, response); return; }
     if (request.method === "GET" && request.url === "/health") {

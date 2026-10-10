@@ -1,6 +1,6 @@
 # Milestone10 slice03: Audit admission, safe diagnostics and operational acceptance
 
-Status: planned
+Status: completed
 
 ## Goal and observable outcome
 Sensitive gateway/OAuth/console effects require durable tamper-evident admission before substitution/I/O; audit failure preserves safe diagnostics, restricted sessions never upgrade. Operation starts without durable completion stay uncertain across restart. Browser setup/login/account/diagnostics are usable at320px with keyboard.
@@ -28,4 +28,7 @@ src/audit.ts, src/gateway.ts, src/tokens.ts, src/server.ts, src/builtinOAuth.ts,
 Additional cumulative evidence: built-in OAuth authorization/token issuance/refresh, gateway reference issuance and dispatch fail closed; all four roles direct-request boundaries; bearer/external credentials cannot establish console authority; operation status checks actor scope. Browser artifacts omit all synthetic secrets.
 
 ## Acceptance and commit boundary
-All listed positive/negative/fault checks pass; behavior observable end-to-end. One reviewable commit with this plan, implementation, directly required support and evidence.
+All listed positive/negative/fault checks pass; behavior observable end-to-end. One reviewable commit with this plan, implementation, directly required support and evidence. Commit subject: `delivery: M10 slice 03 enforce durable audit admission and diagnostics`.
+
+## Delivered evidence
+Final `npm test`: 406 passed across37 files (loopback permission after initial EPERM); `npm run build` and `git diff --check` passed. Declared Playwright Chromium actual HTTPS keyboard/320px harness passed7 checks; secret-masked screenshots rendered and inspected. [Acceptance mapping](../../../evidence/qa/secretsauce-mcp/milestone10/acceptance.md) links per-criterion tests, browser evidence, security/UX contracts and operational limitations. Stable gateway journal/checkpoint/writer ownership is mandatory even in YAML mode; managed legacy built-in OAuth is blocked untilM14 including prior codes/refresh/access. Host missing-key and runtime failure/retry tests pass. No later-milestone features were added.

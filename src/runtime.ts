@@ -29,7 +29,7 @@ export class GatewayRuntime {
     try {
       const capabilities = options.capabilities ?? createCapabilityDependencies(config, auditSink);
       secretRuntime = options.secretRuntime ?? createSecretRuntime(config, capabilities.tokenBroker);
-      const builtinOAuth = options.builtinOAuth ?? new BuiltinOAuthRuntime(config);
+      const builtinOAuth = options.builtinOAuth ?? new BuiltinOAuthRuntime(config, auditSink);
       const maintenance = options.maintenance ?? new MaintenanceRegistry(config.limits.stateSweepIntervalMs);
       maintenance.register((now) => capabilities.tokenBroker.sweepExpired(now));
       maintenance.register((now) => capabilities.denialStore.sweep(now));

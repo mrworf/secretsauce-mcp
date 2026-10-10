@@ -1,5 +1,5 @@
 import { EventEmitter, once } from "node:events";
-import { existsSync, mkdtempSync } from "node:fs";
+import { existsSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
@@ -29,7 +29,7 @@ describe("health server", () => {
       const body = await response.json() as { status: string; service_count: number };
 
       expect(response.status).toBe(200);
-      expect(body).toEqual({ status: "ready", service_count: 1 });
+      expect(body).toEqual({ status: "ready" });
     } finally {
       server.close();
     }
@@ -141,7 +141,7 @@ describe("health server", () => {
     await once(server, "listening");
     const health = await fetchHealth(server);
     expect(health.response.status).toBe(200);
-    expect(health.body).toEqual({ status: "ready", service_count: 1 });
+    expect(health.body).toEqual({ status: "ready" });
     server.close();
     await once(server, "close");
     expect(sink.closed).toBe(true);
@@ -162,7 +162,7 @@ describe("health server", () => {
     try {
       const health = await fetchHealth(server);
       expect(health.response.status).toBe(503);
-      expect(health.body).toEqual({ status: "not_ready", service_count: 1, checks: { audit: "degraded" } });
+      expect(health.body).toEqual({ status: "not_ready" });
       expect(JSON.stringify(health.body)).not.toContain("raw-secret");
       expect(JSON.stringify(health.body)).not.toContain("/private");
     } finally {
@@ -170,9 +170,10 @@ describe("health server", () => {
     }
   });
 
-  it("keeps audit write degradation sticky while requests remain fail-open", async () => {
+  it("keeps audit write degradation sticky and sensitive admission fails closed", async () => {
     const config = serverConfig();
-    config.audit.file = "/not-used/audit.jsonl";
+    config.audit.file = join(mkdtempSync(join(tmpdir(), "audit-write-fault-")), "audit.jsonl");
+    writeFileSync(config.audit.file, "", { mode: 0o600 });
     let failWrite = true;
     const sink = new AuditSink(config, {
       ensureDirectory: () => undefined,
@@ -194,8 +195,9 @@ describe("health server", () => {
       failWrite = false;
       const degraded = await fetchHealth(server);
       expect(degraded.response.status).toBe(503);
-      expect(degraded.body).toEqual({ status: "not_ready", service_count: 1, checks: { audit: "degraded" } });
+      expect(degraded.body).toEqual({ status: "not_ready" });
       expect((await fetchHealth(server)).response.status).toBe(503);
+      expect(() => sink.admit("test", "actor", "instance")).toThrow("durable audit");
       expect(JSON.stringify(sink.events)).not.toContain("raw-secret");
     } finally {
       server.close();

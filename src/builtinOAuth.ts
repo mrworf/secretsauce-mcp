@@ -1,3 +1,5 @@
+import { AuditSink } from './audit.js';
+import { GatewayError } from './errors.js';
 import { createHash, pbkdf2, pbkdf2Sync, randomBytes, timingSafeEqual } from "node:crypto";
 import { chmodSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
@@ -84,13 +86,15 @@ const pbkdf2Async = promisify(pbkdf2);
 const PERMISSION_SCOPE_ORDER = ["gateway.read", "gateway.request", "gateway.references"] as const;
 
 export class BuiltinOAuthRuntime {
+  readonly auditSink: AuditSink;
   readonly state: BuiltinOAuthState;
   readonly bodyLimiter: InflightLimiter;
   readonly passwordLimiter: InflightLimiter;
   readonly loginAttemptLimiter: LoginAttemptLimiter;
   readonly clientMetadataFetcher: OAuthClientMetadataFetcher;
 
-  constructor(readonly config: GatewayConfig) {
+  constructor(readonly config: GatewayConfig, auditSink?: AuditSink) {
+    this.auditSink=auditSink??new AuditSink(config);
     this.state = config.auth.mode === "builtin_oauth" && config.auth.builtinOAuth.refreshTokenStoreFile !== undefined
       ? loadRefreshState(config)
       : emptyOAuthState();
@@ -117,7 +121,9 @@ export class BuiltinOAuthRuntime {
 
   sweep(now = Date.now()): void {
     sweepAuthorizationCodes(this.state, now);
-    if (sweepRefreshGrants(this.state, now)) persistRefreshStateSafely(this.config, this.state);
+    if (!this.auditSink.degraded && [...this.state.refreshGrants.values()].some(g=>g.expiresAt<=now||g.idleExpiresAt<=now)) {
+      try {const op=this.auditSink.admit("oauth.expiry_revoke","system","oauth_client");sweepRefreshGrants(this.state,now);if(persistRefreshStateForRequest(this.config,this.state,createLogger(this.config.logging)))this.auditSink.complete(op,"system","oauth.expiry_revoke","oauth_client");}catch{ /* Admission failure preserves state; completion failure remains uncertain. */ }
+    }
   }
 }
 
@@ -143,6 +149,8 @@ export async function handleBuiltinOAuthRequest(
   }
 
   const path = request.url?.split("?")[0];
+  if(request.method==="POST"&&runtime.auditSink.degraded){writeOAuthError(response,503,"temporarily_unavailable");return;}
+  try {
   if (request.method === "GET" && (path === AUTHORIZATION_SERVER_METADATA_PATH || path === OPENID_CONFIGURATION_PATH)) {
     writeJson(response, 200, authorizationServerMetadata(config));
     return;
@@ -166,6 +174,7 @@ export async function handleBuiltinOAuthRequest(
   }
 
   writeJson(response, 405, { error: "method_not_allowed" });
+  } catch(error) {if(error instanceof GatewayError&&error.code==="audit_unavailable"){writeOAuthError(response,503,"temporarily_unavailable");return;}throw error;}
 }
 
 export function hashBuiltinOAuthPassword(password: string, salt = randomBytes(16).toString("base64url"), iterations = 210_000): string {
@@ -639,6 +648,7 @@ async function handleAuthorizePost(config: GatewayConfig, request: IncomingMessa
     return;
   }
 
+  const operation=runtime.auditSink.admit("oauth.authorize",auth.adminUsername,"oauth_client");
   const code = randomBytes(32).toString("base64url");
   oauthState.authorizationCodes.set(code, {
     clientId: validation.clientId,
@@ -662,6 +672,7 @@ async function handleAuthorizePost(config: GatewayConfig, request: IncomingMessa
     resource_status: "match",
     scope_count: validation.scopes.length,
   });
+  runtime.auditSink.complete(operation,auth.adminUsername,"oauth.authorize","oauth_client");
   response.writeHead(302, { ...OAUTH_SENSITIVE_RESPONSE_HEADERS, location: redirect.toString() });
   response.end();
 }
@@ -716,42 +727,49 @@ async function exchangeAuthorizationCode(
     writeOAuthError(response, 400, "invalid_grant");
     return;
   }
+  const operation=runtime.auditSink.admit("oauth.issue",record.subject,"oauth_client");
   authorizationCodes.delete(code);
-
   if (body.get("client_id") !== record.clientId || body.get("redirect_uri") !== record.redirectUri) {
     logTokenOutcome(logger, "error", 400, "invalid_grant", resourceStatus(body.get("resource"), record.resource), record.scopes.length);
+    runtime.auditSink.complete(operation,record.subject,"oauth.issue","oauth_client","failed");
     writeOAuthError(response, 400, "invalid_grant");
     return;
   }
   const requestedResource = body.get("resource");
   if (requestedResource !== null && requestedResource !== record.resource) {
     logTokenOutcome(logger, "error", 400, "invalid_target", "mismatch", record.scopes.length);
+    runtime.auditSink.complete(operation,record.subject,"oauth.issue","oauth_client","failed");
     writeOAuthError(response, 400, "invalid_target");
     return;
   }
   const codeVerifier = body.get("code_verifier") ?? "";
   if (pkceChallenge(codeVerifier) !== record.codeChallenge) {
     logTokenOutcome(logger, "error", 400, "invalid_grant", resourceStatus(requestedResource, record.resource), record.scopes.length);
+    runtime.auditSink.complete(operation,record.subject,"oauth.issue","oauth_client","failed");
     writeOAuthError(response, 400, "invalid_grant");
     return;
   }
 
   const now = Date.now();
-  if (sweepRefreshGrants(oauthState, now)) persistRefreshStateSafely(config, oauthState);
+  // Expired grants are rejected below; durable mutation is admitted before issuance/refresh.
   if (oauthState.refreshTokens.size >= config.limits.maxRefreshTokenRecords) {
     logTokenOutcome(logger, "error", 503, "temporarily_unavailable", resourceStatus(requestedResource, record.resource), record.scopes.length);
+    runtime.auditSink.complete(operation,record.subject,"oauth.issue","oauth_client","failed");
     writeOAuthError(response, 503, "temporarily_unavailable");
     return;
   }
   const accessToken = await signAccessToken(auth, record.subject, record.resource, record.scopes, now);
+  runtime.auditSink.admit("oauth.issue",record.subject,"oauth_client",operation);
   const issuedRefresh = issueRefreshGrant(oauthState, auth, record, now);
   if (!persistRefreshStateForRequest(config, oauthState, logger)) {
     revokeRefreshGrant(oauthState, issuedRefresh.grantId);
     logTokenOutcome(logger, "error", 503, "temporarily_unavailable", resourceStatus(requestedResource, record.resource), record.scopes.length);
+    runtime.auditSink.complete(operation,record.subject,"oauth.issue","oauth_client","failed");
     writeOAuthError(response, 503, "temporarily_unavailable");
     return;
   }
 
+  runtime.auditSink.complete(operation,record.subject,"oauth.issue","oauth_client");
   logTokenOutcome(logger, "success", 200, undefined, resourceStatus(requestedResource, record.resource), record.scopes.length);
   writeJson(response, 200, {
     access_token: accessToken,
@@ -773,19 +791,20 @@ async function exchangeRefreshToken(
   if (auth === undefined) throw new Error("Expected built-in OAuth config");
   const oauthState = runtime.state;
   const now = Date.now();
-  if (sweepRefreshGrants(oauthState, now)) persistRefreshStateSafely(config, oauthState);
+  // Expired grants are rejected below; durable mutation is admitted before issuance/refresh.
 
   const tokenHash = hashRefreshToken(body.get("refresh_token") ?? "");
   const tokenRecord = oauthState.refreshTokens.get(tokenHash);
   const grant = tokenRecord === undefined ? undefined : oauthState.refreshGrants.get(tokenRecord.grantId);
-  if (tokenRecord === undefined || grant === undefined) {
+  if (tokenRecord === undefined || grant === undefined || grant.expiresAt<=now || grant.idleExpiresAt<=now) {
     logTokenOutcome(logger, "error", 400, "invalid_grant", "unavailable", "unavailable");
     writeOAuthError(response, 400, "invalid_grant");
     return;
   }
   if (tokenRecord.status !== "active") {
+    const replay=runtime.auditSink.admit("oauth.replay_revoke",grant.subject,"oauth_client");
     revokeRefreshGrant(oauthState, grant.id);
-    persistRefreshStateSafely(config, oauthState);
+    if(persistRefreshStateForRequest(config,oauthState,logger))runtime.auditSink.complete(replay,grant.subject,"oauth.replay_revoke","oauth_client");
     logger.warn("oauth.refresh_token_reuse_detected", { client_status: "bound", resource_status: "bound" });
     logTokenOutcome(logger, "error", 400, "invalid_grant", "unavailable", grant.scopes.length);
     writeOAuthError(response, 400, "invalid_grant");
@@ -814,6 +833,7 @@ async function exchangeRefreshToken(
     return;
   }
 
+  const operation=runtime.auditSink.admit("oauth.refresh",grant.subject,"oauth_client");
   tokenRecord.status = "rotating";
   const rotatedToken = randomBytes(32).toString("base64url");
   const rotatedHash = hashRefreshToken(rotatedToken);
@@ -829,6 +849,7 @@ async function exchangeRefreshToken(
     writeOAuthError(response, 400, "invalid_grant");
     return;
   }
+  runtime.auditSink.admit("oauth.refresh",grant.subject,"oauth_client",operation);
   tokenRecord.status = "used";
   oauthState.refreshTokens.set(rotatedHash, { grantId: grant.id, status: "active" });
   const previousIdleExpiresAt = grant.idleExpiresAt;
@@ -842,6 +863,7 @@ async function exchangeRefreshToken(
     return;
   }
 
+  runtime.auditSink.complete(operation,grant.subject,"oauth.refresh","oauth_client");
   logTokenOutcome(logger, "success", 200, undefined, resourceStatus(requestedResource, grant.resource), scopes.length);
   writeJson(response, 200, {
     access_token: accessToken,

@@ -14,6 +14,7 @@ import { createGatewayServer } from "../src/server.js";
 import { TokenBroker } from "../src/tokens.js";
 import type { GatewayConfig } from "../src/types.js";
 import { setOAuthClientMetadataTestFetch } from "../src/oauthClientMetadata.js";
+import { fixture as consoleFixture } from "./consoleFixtures.js";
 import { GatewayRuntime } from "../src/runtime.js";
 
 describe("auth", () => {
@@ -433,6 +434,44 @@ describe("auth", () => {
     } finally {
       await fixture.close();
     }
+  });
+
+  it("requires durable OAuth admission before code consumption and refresh effects, and blocks legacy grants in managed mode", async () => {
+    const config = await builtinOAuthConfig();
+    const runtime = new GatewayRuntime(config);
+    const server = createGatewayServer(config, { runtime, closeRuntimeOnServerClose: false });
+    server.listen(0, "127.0.0.1"); await once(server, "listening");
+    const address = server.address(); if (!address || typeof address === "string") throw Error("Expected listener");
+    const base = `http://127.0.0.1:${address.port}`;
+    const redirect = "https://chatgpt.com/oauth/callback";
+    vi.stubGlobal("fetch", async () => new Response(clientMetadataJson([redirect]), { status: 200 }));
+    const console = consoleFixture({ config });
+    let managed: ReturnType<typeof createGatewayServer> | undefined;
+    try {
+      const code = await authorizeCode(base, redirect, "synthetic-verifier");
+      const issued = await localRequest(base + "/oauth/token", { method: "POST", body: tokenBody(code, redirect, "synthetic-verifier") });
+      expect(issued.status).toBe(200);
+      const grants = JSON.parse(issued.body) as { access_token: string; refresh_token: string };
+      const pending = await authorizeCode(base, redirect, "another-verifier");
+      const admission = vi.spyOn(runtime.auditSink, "admit").mockImplementation(() => { throw new GatewayError("audit_unavailable", "Durable audit unavailable."); });
+      const refused = await localRequest(base + "/oauth/token", { method: "POST", body: tokenBody(pending, redirect, "another-verifier") });
+      expect(refused.status).toBe(503); expect(runtime.builtinOAuth.state.authorizationCodes.has(pending)).toBe(true);
+      const before = JSON.stringify([...runtime.builtinOAuth.state.refreshTokens.values()]);
+      expect((await localRequest(base + "/oauth/token", { method: "POST", body: refreshBody(grants.refresh_token) })).status).toBe(503);
+      expect(JSON.stringify([...runtime.builtinOAuth.state.refreshTokens.values()])).toBe(before);
+      const grant=[...runtime.builtinOAuth.state.refreshGrants.values()][0]!;const expiry=grant.expiresAt;grant.expiresAt=Date.now()-1;
+      const grantCount=runtime.builtinOAuth.state.refreshGrants.size;runtime.builtinOAuth.sweep();expect(runtime.builtinOAuth.state.refreshGrants.size).toBe(grantCount);grant.expiresAt=expiry;
+      admission.mockRestore();
+      managed = createGatewayServer(config, { runtime, consoleStore: console.store, closeRuntimeOnServerClose: false });
+      managed.listen(0, "127.0.0.1"); await once(managed, "listening"); const ma = managed.address(); if (!ma || typeof ma === "string") throw Error("Expected listener");
+      const mb = `http://127.0.0.1:${ma.port}`;
+      expect((await localRequest(mb + "/oauth/authorize", { method: "POST", body: authorizationBody() })).status).toBe(503);
+      expect((await localRequest(mb + "/oauth/token", { method: "POST", body: tokenBody(pending, redirect, "another-verifier") })).status).toBe(503);
+      expect((await localRequest(mb + "/oauth/token", { method: "POST", body: refreshBody(grants.refresh_token) })).status).toBe(503);
+      const mcp = await localRequest(mb + "/mcp", { method: "POST", headers: { authorization: "Bearer " + grants.access_token, "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list" }) });
+      expect(mcp.status).toBe(503); expect(mcp.body).not.toContain(grants.access_token);
+      expect(runtime.builtinOAuth.state.authorizationCodes.has(pending)).toBe(true);
+    } finally { await new Promise<void>(r => server.close(() => r())); if (managed) await new Promise<void>(r => managed!.close(() => r())); await runtime.close(); console.close(); }
   });
 
   it("rotates built-in OAuth refresh tokens and permits reduced access-token scopes", async () => {

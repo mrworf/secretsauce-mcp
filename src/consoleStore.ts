@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { decrypt, digest, encrypt, equal, newSeed, passwordHash, passwordMatches, randomSecret, totp, validatePassword } from './consoleCrypto.js';
 import { ConsoleJournal } from './consoleJournal.js';
+import type { AuditSink } from './audit.js';
 import type { GatewayConfig } from './types.js';
 export type HumanRole = 'Owner' | 'Administrator' | 'Auditor' | 'Member';
 export interface ConsoleUser {
@@ -59,29 +60,8 @@ export interface ConsoleState {
     };
     backupHash?: string;
 }
-export function atomicFile(path: string, value: string): void {
-    const temp = path + '.pending';
-    let fd: number | undefined;
-    try {
-        fd = openSync(temp, 'w', 0o600);
-        writeFileSync(fd, value);
-        fsyncSync(fd);
-        closeSync(fd);
-        fd = undefined;
-        renameSync(temp, path);
-        const directory = openSync(join(path, '..'), 'r');
-        try {
-            fsyncSync(directory);
-        }
-        finally {
-            closeSync(directory);
-        }
-    }
-    finally {
-        if (fd !== undefined)
-            closeSync(fd);
-    }
-}
+export { atomicFile } from './consolePersistence.js';
+import { atomicFile } from './consolePersistence.js';
 export function trustedOrigin(value: unknown): string {
     if (typeof value !== 'string')
         throw new Error('Use a trusted HTTPS origin.');
@@ -93,6 +73,7 @@ export function trustedOrigin(value: unknown): string {
 export class ConsoleStore {
     state: ConsoleState;
     storageReliable = true;
+    externalAudit: AuditSink | undefined;
     readonly journal: ConsoleJournal;
     readonly file: string;
     readonly key: Buffer;
@@ -101,11 +82,9 @@ export class ConsoleStore {
     constructor(readonly directory: string, keyFile: string, options: {
         config?: GatewayConfig;
         faultAudit?: () => void;
-        faultState?: () => void;
+        faultState?: (phase?: string) => void;
     } = {}) {
-        this.key = Buffer.from(readFileSync(keyFile, 'utf8').trim(), 'hex');
-        if (this.key.length !== 32 || statSync(keyFile).mode & 0o077)
-            throw new Error('Protected encryption material required');
+        this.key = readConsoleKey(keyFile);
         mkdirSync(directory, { recursive: true, mode: 0o700 });
         this.#lock = join(directory, 'writer.lock');
         if (existsSync(this.#lock)) {
@@ -143,13 +122,12 @@ export class ConsoleStore {
             throw new Error('Managed storage unavailable; repair storage and key before restarting.');
         }
     }
-    private faultState: (() => void) | undefined;
+    private faultState: ((phase?: string) => void) | undefined;
     save(next: ConsoleState): void {
         if (!this.storageReliable)
             throw new Error('Identity storage unavailable.');
         try {
-            this.faultState?.();
-            atomicFile(this.file, encrypt(next, this.key));
+            atomicFile(this.file, encrypt(next, this.key), this.faultState);
             this.state = next;
         }
         catch {
@@ -157,7 +135,33 @@ export class ConsoleStore {
             throw new Error('Identity storage unavailable.');
         }
     }
-    commit(actor: string, action: string, target: string, change: (state: ConsoleState) => void): string { const id = this.journal.start(actor, action, target, this.state.revision); const next = structuredClone(this.state); change(next); next.revision++; this.save(next); this.journal.finish(id, actor, action, target, next.revision); return id; }
+    commit(actor: string, action: string, target: string, change: (state: ConsoleState) => void): string {
+        if (this.externalAudit?.degraded)
+            throw new Error('Durable audit unavailable');
+        const id = this.journal.start(actor, action, target, this.state.revision);
+        const next = structuredClone(this.state);
+        try {
+            change(next);
+        }
+        catch (error) {
+            try {
+                this.journal.finish(id, actor, action, target, this.state.revision, 'failed');
+            }
+            catch {
+                throw new ConsoleOperationError(id, 'Operation completion is uncertain.');
+            }
+            throw error;
+        }
+        next.revision++;
+        try {
+            this.save(next);
+            this.journal.finish(id, actor, action, target, next.revision);
+            return id;
+        }
+        catch {
+            throw new ConsoleOperationError(id, this.storageReliable ? 'Operation completion is uncertain.' : 'Identity storage unavailable; operation completion is uncertain.');
+        }
+    }
     close(): void {
         if (!this.#closed) {
             this.#closed = true;
@@ -216,6 +220,8 @@ export class ConsoleStore {
     private verify(user: ConsoleUser | undefined, password: unknown, code: unknown, now: number): number {
         if (!this.storageReliable)
             throw new Error('Identity storage unavailable.');
+        if (user?.blockedUntil && user.blockedUntil > now)
+            throw new Error('Sign-in details were not accepted. Wait before trying again.');
         const validPassword = typeof password === 'string' && password.length <= 4096 && passwordMatches(password, user?.password ?? dummyPassword);
         let counter = -1;
         if (user && typeof code === 'string' && /^\d{6}$/.test(code))
@@ -249,9 +255,17 @@ export class ConsoleStore {
         const user = this.state.users.find(u => u.email === email.toLowerCase());
         const counter = this.verify(user, password, code, now);
         const token = randomSecret(), csrf = randomSecret();
-        const restricted = this.journal.degraded;
-        const update = (s: ConsoleState) => { const target = s.users.find(u => u.id === user!.id)!; target.lastCounter = counter; target.attempts = 0; target.blockedUntil = 0; s.sessions = s.sessions.filter(session => session.created + 43200000 > now && session.lastSeen + 1800000 > now); if (s.sessions.length >= 500 || s.sessions.filter(x => x.userId === target.id).length >= 10)
-            throw new Error('Session limit reached. Sign out of an existing session.'); s.sessions.push({ id: randomUUID(), userId: target.id, hash: digest(token), csrf, created: now, lastSeen: now, restricted }); };
+        const restricted = this.journal.degraded || this.externalAudit?.degraded === true;
+        const update = (s: ConsoleState) => {
+            const target = s.users.find(u => u.id === user!.id)!;
+            target.lastCounter = counter;
+            target.attempts = 0;
+            target.blockedUntil = 0;
+            s.sessions = s.sessions.filter(session => session.created + 43200000 > now && session.lastSeen + 1800000 > now);
+            if (s.sessions.length >= 500 || s.sessions.filter(x => x.userId === target.id).length >= 10)
+                throw new Error('Session limit reached. Sign out of an existing session.');
+            s.sessions.push({ id: randomUUID(), userId: target.id, hash: digest(token), csrf, created: now, lastSeen: now, restricted });
+        };
         if (restricted) {
             const next = structuredClone(this.state);
             update(next);
@@ -287,12 +301,12 @@ export class ConsoleStore {
     }
     requireSensitive(session: ConsoleSession): ConsoleUser {
         const user = this.authorize(session, 'own');
-        if (this.state.sessions.find(s => s.id === session.id)?.restricted || this.journal.degraded || !this.storageReliable)
+        if (this.state.sessions.find(s => s.id === session.id)?.restricted || this.journal.degraded || this.externalAudit?.degraded === true || !this.storageReliable)
             throw new Error('Sensitive actions unavailable. Sign in again after host storage repair.');
         return user;
     }
     logout(session: ConsoleSession): void { const next = structuredClone(this.state); next.sessions = next.sessions.filter(s => s.id !== session.id); this.save(next); }
-    ownSessions(session: ConsoleSession, now = Date.now()) { const user=this.authorize(session, 'own',now); return this.state.sessions.filter(s => s.userId === user.id && s.created + 43200000 > now && s.lastSeen + 1800000 > now).map(s => ({ id: s.id, current: s.id === session.id, created: s.created, lastSeen: s.lastSeen, restricted: s.restricted, expires: Math.min(s.created + 43200000, s.lastSeen + 1800000) })); }
+    ownSessions(session: ConsoleSession, now = Date.now()) { const user = this.authorize(session, 'own', now); return this.state.sessions.filter(s => s.userId === user.id && s.created + 43200000 > now && s.lastSeen + 1800000 > now).map(s => ({ id: s.id, current: s.id === session.id, created: s.created, lastSeen: s.lastSeen, restricted: s.restricted, expires: Math.min(s.created + 43200000, s.lastSeen + 1800000) })); }
     recentCheck(session: ConsoleSession, action: unknown, password: unknown, code: unknown, now = Date.now()): void {
         const user = this.requireSensitive(session);
         if (typeof action !== 'string' || !/^[a-z][a-z0-9_.-]{0,63}$/.test(action))
@@ -301,14 +315,43 @@ export class ConsoleStore {
         this.requireSensitive(session);
         this.commit(user.id, 'identity.reauthenticate', user.id, s => { const u = s.users.find(u => u.id === user.id)!; u.lastCounter = counter; u.attempts = 0; s.sessions.find(x => x.id === session.id)!.recent = { action, expires: now + 300000 }; });
     }
-    requireRecent(session: ConsoleSession, action: string, now = Date.now()): void { this.requireSensitive(session); const current = this.state.sessions.find(s => s.id === session.id); if (!current?.recent || current.recent.action !== action || current.recent.expires <= now)
-        throw new Error('Confirm password and a fresh authenticator code for this action.'); }
-    revokeOther(session: ConsoleSession, target: unknown): string { const user = this.requireSensitive(session); if (typeof target !== 'string')
-        throw new Error('Invalid session.'); const other = this.state.sessions.find(s => s.id === target); if (!other || other.userId !== user.id || other.id === session.id)
-        throw new Error('Forbidden.'); return this.commit(user.id, 'identity.session_revoke', target, s => { s.sessions = s.sessions.filter(x => x.id !== target); }); }
+    requireRecent(session: ConsoleSession, action: string, now = Date.now()): void {
+        this.requireSensitive(session);
+        const current = this.state.sessions.find(s => s.id === session.id);
+        if (!current?.recent || current.recent.action !== action || current.recent.expires <= now)
+            throw new Error('Confirm password and a fresh authenticator code for this action.');
+    }
+    revokeOther(session: ConsoleSession, target: unknown): string {
+        const user = this.requireSensitive(session);
+        if (typeof target !== 'string')
+            throw new Error('Invalid session.');
+        const other = this.state.sessions.find(s => s.id === target);
+        if (!other || other.userId !== user.id || other.id === session.id)
+            throw new Error('Forbidden.');
+        return this.commit(user.id, 'identity.session_revoke', target, s => { s.sessions = s.sessions.filter(x => x.id !== target); });
+    }
     changePassword(session: ConsoleSession, password: unknown, code: unknown, replacement: unknown, now = Date.now()): string { const user = this.requireSensitive(session); validatePassword(replacement); const counter = this.verify(user, password, code, now); const hash = passwordHash(replacement); this.requireSensitive(session); return this.commit(user.id, 'identity.password_change', user.id, s => { const u = s.users.find(u => u.id === user.id)!; u.password = hash; u.lastCounter = counter; u.attempts = 0; s.sessions = s.sessions.filter(x => x.userId !== user.id); }); }
-    assertUserChange(id: string, nextRole: HumanRole, active: boolean): void { const user = this.state.users.find(u => u.id === id); if (user?.active && user.role === 'Owner' && (!active || nextRole !== 'Owner') && this.state.users.filter(u => u.active && u.role === 'Owner').length <= 1)
-        throw new Error('The last active Owner must remain enrolled.'); }
+    assertUserChange(id: string, nextRole: HumanRole, active: boolean): void {
+        const user = this.state.users.find(u => u.id === id);
+        if (user?.active && user.role === 'Owner' && (!active || nextRole !== 'Owner') && this.state.users.filter(u => u.active && u.role === 'Owner').length <= 1)
+            throw new Error('The last active Owner must remain enrolled.');
+    }
 }
 const dummyPassword = passwordHash('Non-user timing mitigation credential');
 export function can(role: HumanRole, capability: 'own' | 'configuration' | 'identity' | 'instance'): boolean { return capability === 'own' || (capability === 'configuration' && ['Owner', 'Administrator', 'Auditor'].includes(role)) || (capability === 'identity' && role === 'Owner') || (capability === 'instance' && ['Owner', 'Administrator', 'Auditor'].includes(role)); }
+export class ConsoleOperationError extends Error {
+    constructor(readonly operation: string, message: string) { super(message + ' Inspect operation status before retrying.'); this.name = 'ConsoleOperationError'; }
+}
+export function readConsoleKey(keyFile: string): Buffer { const value = readFileSync(keyFile, 'utf8').trim(); if (!/^[a-fA-F0-9]{64}$/.test(value) || statSync(keyFile).mode & 0o077)
+    throw new Error('Protected encryption material required'); return Buffer.from(value, 'hex'); }
+export function loadManagedConfig(directory: string, keyFile: string): GatewayConfig { try {
+    if (!existsSync(join(directory, 'managed')))
+        throw new Error('Managed marker missing');
+    const state = decrypt<ConsoleState>(readFileSync(join(directory, 'state.enc'), 'utf8'), readConsoleKey(keyFile));
+    if (state.v !== 1 || !state.config)
+        throw new Error('Managed configuration missing');
+    return state.config;
+}
+catch {
+    throw new Error('Managed storage unavailable; repair storage and key before restarting.');
+} }

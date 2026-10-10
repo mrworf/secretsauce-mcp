@@ -12,7 +12,9 @@ import { handleBrandAssetRequest, isBrandAssetRequest } from "./brandAssets.js";
 import { GatewayError, type ConfigDiagnostic } from "./errors.js";
 import type { AuditSink } from "./audit.js";
 import { GatewayRuntime } from "./runtime.js";
-import { ConsoleStore } from "./consoleStore.js";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+import { ConsoleStore, loadManagedConfig } from "./consoleStore.js";
 import { handleConsoleRequest, isConsoleRequest } from "./consoleHttp.js";
 import { requiredScopeForTool } from "./mcp/tools.js";
 
@@ -35,14 +37,13 @@ export function createGatewayServer(
   }
   const runtime = options.runtime ?? new GatewayRuntime(config, { ...(options.auditSink === undefined ? {} : { auditSink: options.auditSink }) });
   const auditSink = runtime.auditSink;
+  if(options.consoleStore)auditSink.bindConsole(options.consoleStore);
   const server = createServer(async (request, response) => {
     if (options.consoleStore && isConsoleRequest(request)) { await handleConsoleRequest(options.consoleStore, request, response); return; }
     if (request.method === "GET" && request.url === "/health") {
       logger.debug("http.health", { method: request.method, path: "/health", service_count: Object.keys(config.services).length });
       writeJson(response, auditSink.degraded ? 503 : 200, {
         status: auditSink.degraded ? "not_ready" : "ready",
-        service_count: Object.keys(config.services).length,
-        ...(auditSink.degraded ? { checks: { audit: "degraded" } } : {}),
       });
       return;
     }
@@ -59,12 +60,14 @@ export function createGatewayServer(
     }
 
     if (isBuiltinOAuthRequest(config, request)) {
+      if (options.consoleStore && config.auth.mode === "builtin_oauth" && (request.method !== "GET" || request.url?.split("?")[0] === "/oauth/authorize")){writeJson(response,503,{error:"temporarily_unavailable"});return;}
       logger.debug("oauth.builtin_request", { method: request.method, path: request.url?.split("?")[0] });
       await handleBuiltinOAuthRequest(config, request, response, runtime.builtinOAuth);
       return;
     }
 
     if (isMcpPost(request, config.server.mcpPath)) {
+      if(options.consoleStore&&config.auth.mode==="builtin_oauth"){writeJson(response,503,{error:{code:"temporarily_unavailable",message:"Managed MCP authorization is not available yet."}});return;}
       let requiredScopes = configuredMcpScopes(config);
       try {
         const auth = await authenticateRequest(request, config);
@@ -216,7 +219,8 @@ export async function startServer(config: GatewayConfig): Promise<GatewayApplica
   const consoleStore = process.env.CONSOLE_STORAGE_DIR && process.env.CONSOLE_KEY_FILE ? new ConsoleStore(process.env.CONSOLE_STORAGE_DIR, process.env.CONSOLE_KEY_FILE, { config }) : undefined;
   if ((process.env.CONSOLE_STORAGE_DIR || process.env.CONSOLE_KEY_FILE) && !consoleStore) throw new Error("Protected console encryption material required.");
   if (consoleStore) { if (!consoleStore.state.config) { consoleStore.close(); throw new Error("Managed configuration missing."); } config = consoleStore.state.config; }
-  const runtime = new GatewayRuntime(config);
+  let runtime: GatewayRuntime;
+  try { runtime = new GatewayRuntime(config); } catch (error) { consoleStore?.close(); throw error; }
   let server: ReturnType<typeof createGatewayServer>;
   const logger = createLogger(config.logging);
   try {
@@ -332,7 +336,10 @@ function publicConfigDiagnostic(diagnostic: ConfigDiagnostic): Omit<ConfigDiagno
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const configPath = process.env.CONFIG_PATH;
-  if (!configPath) {
+  const managedDirectory = process.env.CONSOLE_STORAGE_DIR;
+  const managedKey = process.env.CONSOLE_KEY_FILE;
+  const hasManaged = managedDirectory !== undefined && existsSync(join(managedDirectory, "managed"));
+  if (!configPath && !hasManaged) {
     console.error(JSON.stringify({
       level: "error",
       error: {
@@ -344,7 +351,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   }
 
   try {
-    const config = loadConfig(configPath);
+    const config = hasManaged ? loadManagedConfig(managedDirectory!, managedKey ?? "") : loadConfig(configPath!);
     const application = await startServer(config);
     installShutdownSignalHandlers(application, createLogger(config.logging));
   } catch (error) {

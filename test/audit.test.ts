@@ -1,5 +1,5 @@
 import { once } from "node:events";
-import { closeSync, mkdirSync, mkdtempSync, openSync, readFileSync, statSync, writeSync } from "node:fs";
+import { closeSync, mkdirSync, mkdtempSync, openSync, readFileSync, statSync, writeFileSync, writeSync } from "node:fs";
 import { createServer } from "node:http";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
@@ -219,7 +219,7 @@ describe("audit logging", () => {
     expect(second.audit.internal_reference_ids[0]).toMatch(/^grefrec_/);
   });
 
-  it("does not fail tool execution when the audit file cannot be appended", () => {
+  it("fails closed before reference issuance when the audit file cannot be appended", () => {
     const auditDirectory = mkdtempSync(join(tmpdir(), "gateway-audit-dir-"));
     const config = auditConfig(auditDirectory, "http://127.0.0.1:1");
     clearAuditEvents(config);
@@ -229,9 +229,9 @@ describe("audit logging", () => {
       service: "demo-service",
       destination: "primary",
       access_ids: ["api_key"],
-      reason: "Audit file failure should not block issuance.",
-    })).not.toThrow();
-    expect(getAuditEvents(config).map((event) => event.type)).toContain("reference_issued");
+      reason: "Audit file failure must block issuance.",
+    })).toThrow("durable audit");
+    expect(getAuditEvents(config).map((event) => event.type)).not.toContain("reference_issued");
   });
 
   it("bounds memory history while preserving every file-backed event", () => {
@@ -265,7 +265,7 @@ describe("audit logging", () => {
   });
 
   it("marks open and write failures degraded without retaining sensitive diagnostics", () => {
-    const config = auditConfig("/not-used/audit.jsonl", "http://127.0.0.1:1", 1);
+    const config = auditConfig(join(mkdtempSync(join(tmpdir(), "audit-fault-")), "audit.jsonl"), "http://127.0.0.1:1", 1);
     const lines: string[] = [];
     const log = vi.spyOn(console, "log").mockImplementation((line) => lines.push(String(line)));
     try {
@@ -281,6 +281,7 @@ describe("audit logging", () => {
       expect(openFailure.events).toHaveLength(1);
       expect(JSON.stringify(openFailure.events)).not.toContain("raw-secret");
 
+      writeFileSync(config.audit.file!, "", { mode: 0o600 });
       const writeFailure = new AuditSink(config, {
         ensureDirectory: () => undefined,
         open: () => 42,

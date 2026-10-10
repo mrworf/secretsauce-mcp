@@ -186,6 +186,7 @@ export async function executeServiceRequest(
   const headers = enforceCredentialHeaderUsage(
     { headers: callerHeaders, query, body: input.body }, broker, auth, tokenTarget, service, logger,
   );
+  dependencies.auditSink.admit("service.dispatch",auth.subject,service.id,requestId);
   const headerSubstitution = substituteTokens(headers, broker, auth, tokenTarget, service);
   const querySubstitution = substituteTokens(query, broker, auth, tokenTarget, service);
   const bodySubstitution = substituteRequestBodyTokens(input.body, headerSubstitution.value, broker, auth, tokenTarget, service);
@@ -329,6 +330,7 @@ export async function executeServiceRequest(
       timestamp: new Date().toISOString(),
     }, dependencies.auditSink);
   }
+  dependencies.auditSink.complete(requestId,auth.subject,"service.dispatch",service.id);
   logger.debug("service_request.completed", {
     request_id: requestId,
     subject: auth.subject,

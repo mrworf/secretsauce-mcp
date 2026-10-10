@@ -5,7 +5,7 @@ import { consolePage, consoleScript, consoleStyle } from './consolePage.js';
 import { LoginAttemptLimiter } from './loginAttemptLimiter.js';
 const limiters = new WeakMap<ConsoleStore, LoginAttemptLimiter>();
 import { equal } from './consoleCrypto.js';
-import { ConsoleStore } from './consoleStore.js';
+import { ConsoleOperationError, ConsoleStore } from './consoleStore.js';
 export function isConsoleRequest(request: IncomingMessage): boolean { return request.url?.split('?')[0] === '/console' || Boolean(request.url?.startsWith('/console/')); }
 export async function handleConsoleRequest(store: ConsoleStore, request: IncomingMessage, response: ServerResponse): Promise<void> {
     response.setHeader('cache-control', 'no-store');
@@ -36,7 +36,7 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
         const session = store.session(token);
         if (request.method === 'GET' && path === '/console/api/status') {
             const user = session ? store.authorize(session, 'own') : undefined;
-            reply(200, { initialized: store.state.initialized, ...(!store.state.initialized ? { origin: store.state.origin } : {}), ...(session && user ? { csrf: session.csrf, user: { id: user.id, email: user.email, role: user.role }, name: store.state.name, degraded: store.journal.degraded, restricted: session.restricted, sessions: store.ownSessions(session), mfa: 'Authenticator app enrolled', expires: Math.min(session.created + 43200000, session.lastSeen + 1800000) } : {}) });
+            reply(200, { initialized: store.state.initialized, ...(!store.state.initialized ? { origin: store.state.origin } : {}), ...(session && user ? { csrf: session.csrf, user: { id: user.id, email: user.email, role: user.role }, name: store.state.name, degraded: store.journal.degraded || store.externalAudit?.degraded === true, restricted: session.restricted, sessions: store.ownSessions(session), mfa: 'Authenticator app enrolled', expires: Math.min(session.created + 43200000, session.lastSeen + 1800000) } : {}) });
             return;
         }
         if (request.method === 'GET' && path === '/console/api/instance') {
@@ -45,7 +45,7 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
                 return;
             }
             store.authorize(session, 'instance');
-            reply(200, { name: store.state.name, status: store.journal.degraded ? 'degraded' : 'ready', diagnostic: store.journal.degraded ? 'Durable audit unavailable. Repair host storage and restart.' : store.storageReliable ? 'Storage available.' : 'Identity storage unavailable.' });
+            reply(200, { name: store.state.name, status: (store.journal.degraded || store.externalAudit?.degraded) ? 'degraded' : 'ready', diagnostic: (store.journal.degraded || store.externalAudit?.degraded) ? 'Durable audit unavailable. Repair host storage and restart.' : store.storageReliable ? 'Storage available.' : 'Identity storage unavailable.' });
             return;
         }
         if (request.method === 'GET' && path?.startsWith('/console/api/operations/')) {
@@ -55,9 +55,11 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
             }
             store.authorize(session, 'own');
             const id = path.slice('/console/api/operations/'.length);
-            if (!/^[A-Za-z0-9_-]{43}$/.test(id) || store.journal.actorFor(id) !== session.userId)
+            const actor = store.journal.actorFor(id) ?? store.externalAudit?.operationActor(id);
+            const user = store.authorize(session, 'own');
+            if (!/^[A-Za-z0-9_-]{1,80}$/.test(id) || (actor !== user.id && actor !== user.email))
                 throw new Error('Forbidden.');
-            reply(200, { operation: id, status: store.journal.status(id) });
+            reply(200, { operation: id, status: store.journal.status(id) === 'unknown' ? store.externalAudit?.operationStatus(id) ?? 'unknown' : store.journal.status(id) });
             return;
         }
         if (request.method !== 'POST') {
@@ -129,7 +131,15 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
             return;
         }
         if (path === '/console/api/password') {
-            const operation = store.changePassword(session, data.password, data.code, data.replacement);
+            let operation: string;
+            try {
+                operation = store.changePassword(session, data.password, data.code, data.replacement);
+            }
+            catch (error) {
+                if (error instanceof ConsoleOperationError)
+                    response.setHeader('set-cookie', '__Host-ss-console=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0');
+                throw error;
+            }
             response.setHeader('set-cookie', '__Host-ss-console=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0');
             reply(200, { status: 'success', operation });
             return;
@@ -137,6 +147,10 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
         reply(404, { message: 'Not found.' });
     }
     catch (error) {
-        reply(error instanceof Error && error.message === 'Forbidden.' ? 403 : store.journal.degraded || !store.storageReliable ? 503 : 400, { message: store.journal.degraded ? 'Durable audit unavailable. Ask the host operator to repair storage.' : error instanceof Error && /^(Use |Setup |Enrollment |Instance name |Enter a valid|Authenticator code |Save recovery|Sign-in |Sign in |Sensitive actions |Session limit |Confirm password|Forbidden)/.test(error.message) ? error.message : 'Request was not accepted.' });
+        if (error instanceof ConsoleOperationError) {
+            reply(503, { message: error.message, operation: error.operation, status: 'uncertain' });
+            return;
+        }
+        reply(error instanceof Error && error.message === 'Forbidden.' ? 403 : (store.journal.degraded || store.externalAudit?.degraded || !store.storageReliable) ? 503 : 400, { message: (store.journal.degraded || store.externalAudit?.degraded) ? 'Durable audit unavailable. Ask the host operator to repair storage.' : error instanceof Error && /^(Use |Setup |Enrollment |Instance name |Enter a valid|Authenticator code |Save recovery|Sign-in |Sign in |Sensitive actions |Session limit |Confirm password|Forbidden)/.test(error.message) ? error.message : 'Request was not accepted.' });
     }
 }

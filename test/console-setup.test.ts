@@ -1,8 +1,9 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { describe, it, expect } from 'vitest';
 import { ConsoleStore } from '../src/consoleStore.js';
+import { prepareConsoleKey } from '../src/consoleSetup.js';
 import { ConsoleJournal } from '../src/consoleJournal.js';
 import { totp, validatePassword } from '../src/consoleCrypto.js';
 import { fixture, setup } from './consoleFixtures.js';
@@ -208,3 +209,53 @@ it('bounds source/global HTTP admissions before creating unbounded denial audit'
         f.close();
     }
 });
+it('detects complete-record suffix truncation or clearing against durable journal head', () => { for (const clear of [false, true]) {
+    const f = fixture();
+    try {
+        f.store.journal.start('actor', 'first', 'instance');
+        f.store.journal.start('actor', 'last', 'instance');
+        const path = f.store.journal.path;
+        const text = readFileSync(path, 'utf8');
+        writeFileSync(path, clear ? '' : text.trimEnd().split('\n').slice(0, -1).join('\n') + '\n');
+        expect(new ConsoleJournal(path, f.store.key).degraded).toBe(true);
+    }
+    finally {
+        f.close();
+    }
+} });
+it('interrupted encrypted writes preserve committed state before rename; after-rename failure stays closed and uncertain', () => { for (const phase of ['after-file-sync', 'before-rename', 'after-rename']) {
+    let fail = false;
+    const f = fixture({ faultState: (at) => { if (fail && at === phase)
+            throw new Error('Simulated interruption'); } });
+    try {
+        f.store.issueProof('https://console.example.org');
+        const previous = readFileSync(f.store.file, 'utf8');
+        fail = true;
+        expect(() => f.store.commit('host', 'test.mutation', 'instance', s => { s.name = 'New name'; })).toThrow('storage');
+        expect(f.store.storageReliable).toBe(false);
+        if (phase !== 'after-rename')
+            expect(readFileSync(f.store.file, 'utf8')).toBe(previous);
+        f.store.close();
+        const reopened = new ConsoleStore(f.directory, f.keyFile);
+        expect(reopened.state.name).toBe(phase === 'after-rename' ? 'New name' : '');
+        expect(reopened.journal.degraded).toBe(false);
+        reopened.close();
+    }
+    finally {
+        f.close();
+    }
+} });
+it('host bootstrap durably creates initial key but never replaces missing managed material', () => { const directory = mkdtempSync(join(tmpdir(), 'console-bootstrap-')); const key = join(directory, 'key'); try {
+    prepareConsoleKey(directory, key);
+    expect(readFileSync(key, 'utf8')).toMatch(/^[a-f0-9]{64}$/);
+    const original = readFileSync(key, 'utf8');
+    prepareConsoleKey(directory, key);
+    expect(readFileSync(key, 'utf8')).toBe(original);
+    writeFileSync(join(directory, 'managed'), '1');
+    rmSync(key);
+    expect(() => prepareConsoleKey(directory, key)).toThrow('Encryption material missing');
+    expect(existsSync(key)).toBe(false);
+}
+finally {
+    rmSync(directory, { recursive: true, force: true });
+} });

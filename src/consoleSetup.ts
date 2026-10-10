@@ -1,30 +1,61 @@
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, openSync, closeSync, unlinkSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { atomicFile } from './consolePersistence.js';
 import { ConsoleStore } from './consoleStore.js';
+import { AuditSink } from './audit.js';
 import { loadConfig } from './config.js';
-// Deliberate host-local command; never run from a web route or normal startup.
+export function prepareConsoleKey(directory: string, keyFile: string, statusMode = false): void {
+    if (existsSync(keyFile))
+        return;
+    if (statusMode || existsSync(join(directory, 'managed')))
+        throw new Error('Encryption material missing');
+    mkdirSync(dirname(keyFile), { recursive: true, mode: 0o700 });
+    const lock = keyFile + '.initializing';
+    const fd = openSync(lock, 'wx', 0o600);
+    try {
+        if (!existsSync(keyFile))
+            atomicFile(keyFile, randomBytes(32).toString('hex'));
+    }
+    finally {
+        closeSync(fd);
+        unlinkSync(lock);
+    }
+}
+// Deliberate host-local command, never a web route or normal startup log.
 if (import.meta.url === `file://${process.argv[1]}`) {
-    const directory = process.env.CONSOLE_STORAGE_DIR, keyFile = process.env.CONSOLE_KEY_FILE, configPath = process.env.CONFIG_PATH, origin = process.argv[2];
-    if (!directory || !keyFile || !configPath || !origin || !process.stdout.isTTY) {
-        console.error('Run setup in a protected host terminal with CONSOLE_STORAGE_DIR, CONSOLE_KEY_FILE, CONFIG_PATH and a trusted HTTPS origin.');
+    const directory = process.env.CONSOLE_STORAGE_DIR, keyFile = process.env.CONSOLE_KEY_FILE, configPath = process.env.CONFIG_PATH, arg = process.argv[2], operation = process.argv[3];
+    const statusMode = arg === '--status';
+    if (!directory || !keyFile || !arg || !process.stdout.isTTY || (!statusMode && !configPath && !existsSync(join(directory, 'managed')))) {
+        console.error('Run setup in a protected host terminal with CONSOLE_STORAGE_DIR, CONSOLE_KEY_FILE and an explicit initial CONFIG_PATH; supply a trusted HTTPS origin or --status <operation>.');
         process.exitCode = 1;
     }
     else {
-        let store: ConsoleStore | undefined;
+        let store: ConsoleStore | undefined, sink: AuditSink | undefined;
         try {
-            mkdirSync(join(keyFile, '..'), { recursive: true, mode: 0o700 });
-            if (!existsSync(keyFile))
-                writeFileSync(keyFile, randomBytes(32).toString('hex'), { flag: 'wx', mode: 0o600 });
-            store = new ConsoleStore(directory, keyFile, { config: loadConfig(configPath) });
-            const proof = store.issueProof(origin);
-            process.stdout.write(`One-time setup proof (expires in 30 minutes):\n${proof}\n`);
+            if (statusMode && (!operation || !/^[A-Za-z0-9_-]{1,80}$/.test(operation)))
+                throw new Error('Invalid operation');
+            prepareConsoleKey(directory, keyFile, statusMode);
+            store = new ConsoleStore(directory, keyFile, { ...(!existsSync(join(directory, 'managed')) && configPath ? { config: loadConfig(configPath) } : {}) });
+            if (statusMode) {
+                let status = store.journal.status(operation!);
+                if (status === 'unknown' && store.state.config) {
+                    sink = new AuditSink(store.state.config);
+                    status = sink.operationStatus(operation!);
+                }
+                process.stdout.write(JSON.stringify({ operation, status, initialized: store.state.initialized, audit: store.journal.degraded || sink?.degraded ? 'degraded' : 'ready' }) + '\n');
+            }
+            else {
+                const proof = store.issueProof(arg);
+                process.stdout.write('One-time setup proof (expires in 30 minutes):\n' + proof + '\n');
+            }
         }
         catch {
-            console.error('Host setup unavailable. Stop the running instance and check protected storage/key/configuration.');
+            console.error('Host setup/status unavailable. Stop the instance and check protected storage/key/configuration.');
             process.exitCode = 1;
         }
         finally {
+            sink?.close();
             store?.close();
         }
     }

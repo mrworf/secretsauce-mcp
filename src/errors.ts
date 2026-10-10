@@ -1,4 +1,5 @@
 export type GatewayErrorCode =
+  | "audit_unavailable"
   | "unauthenticated"
   | "unauthorized_service"
   | "unknown_service"

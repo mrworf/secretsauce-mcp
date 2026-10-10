@@ -1,8 +1,8 @@
 import { createHash, createHmac, randomBytes, randomUUID } from "node:crypto";
 import { GatewayError } from "./errors.js";
 import { GATEWAY_ACCESS_ID, GATEWAY_ACCESS_USAGE_HINT, getCredential, getService } from "./registry.js";
-import type { AuditSink, ReferenceIssuedAuditEvent } from "./audit.js";
-import { referenceIssuedAuditEvent } from "./audit.js";
+import type { ReferenceIssuedAuditEvent } from "./audit.js";
+import { AuditSink, referenceIssuedAuditEvent } from "./audit.js";
 import type { AuthContext, GatewayConfig } from "./types.js";
 import { credentialUsageHint } from "./credentialUsage.js";
 
@@ -81,7 +81,7 @@ export class TokenBroker {
   constructor(
     private readonly config: GatewayConfig,
     private readonly now: () => number = () => Date.now(),
-    private readonly auditSink?: AuditSink,
+    private readonly auditSink: AuditSink = new AuditSink(config),
   ) {}
 
   issueTokens(auth: AuthContext, input: TokenRequestInput): TokenIssueResult {
@@ -109,6 +109,7 @@ export class TokenBroker {
       };
     });
     this.ensureCapacity(auth.subject, accesses.length);
+    const operation=this.auditSink.admit("reference.issue",auth.subject,service.id);
     const now = this.now();
     const issued: TokenIssueResult["tokens"] = [];
     const internalReferenceIds: string[] = [];
@@ -152,6 +153,7 @@ export class TokenBroker {
       reason: input.reason,
       timestamp: new Date(now).toISOString(),
     }, this.auditSink);
+    this.auditSink.complete(operation,auth.subject,"reference.issue",service.id);
     return { tokens: issued, audit };
   }
 
@@ -201,6 +203,7 @@ export class TokenBroker {
 
     const now = this.now();
     this.ensureCapacity(auth.subject, 1);
+    const operation=this.auditSink.admit("response_reference.issue",auth.subject,service);
     const token = generateResponseSecretTokenValue();
     const record: ResponseSecretTokenRecord = {
       id: `secrec_${randomUUID()}`,
@@ -217,6 +220,7 @@ export class TokenBroker {
     this.responseSecretsById.set(record.id, record);
     this.responseSecretIdsByIndex.set(index, record.id);
     this.tokenValuesById.set(record.id, token);
+    this.auditSink.complete(operation,auth.subject,"response_reference.issue",service);
     return { token, record, reused: false };
   }
 

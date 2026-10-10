@@ -40,7 +40,7 @@ Completed restricted installation cannot roll back because enrollment is hard.
 | --- | --- | --- | --- | --- | --- |
 | 01 | Authorized bounded archive validation and impact preview, without replacement | [slice 01](milestone_17_plan_01_slice_01.md) | completed | 03cb353584303f1f13fcab8e5ff4f39f5c2ef645 | preview tests11/2 plus preservation15/4; HTTPS4groups |
 | 02 | Crash-safe installation, fresh restricted enrollment and explicit review/resumption with truthful provenance | [slice 02](milestone_17_plan_01_slice_02.md) | completed | c774c4f7fca5803ab3385425104fc0f1d23db0ad | [slice02 validation](../../../evidence/platform/secretsauce-mcp/milestone17/slice02-validation.md) · 79/9 tests/build · HTTPS4groups |
-| 03 | Operational recovery/runbook and final browser/Docker/protocol preservation acceptance | [slice 03](milestone_17_plan_01_slice_03.md) | completed | recorded by root after commit | [final validation](../../../evidence/platform/secretsauce-mcp/milestone17/final-validation.md) · 620/67 tests/build · Docker94+9+5 · HTTPS50groups |
+| 03 | Operational recovery/runbook and final browser/Docker/protocol preservation acceptance | [slice 03](milestone_17_plan_01_slice_03.md) | completed | 987b3996ab4e87eb365ac2df57edb6233dd3ade4 | [final validation](../../../evidence/platform/secretsauce-mcp/milestone17/final-validation.md) · 620/67 tests/build · Docker94+9+5 · HTTPS50groups |
 
 All slice plans exist before production edits. Inspect each before its slice. No readiness
 suite repetition: accepted baseline 585 tests/61 files and build. Focused tests per slice;

@@ -207,16 +207,24 @@ milestones:
   - id: "17"
     title: Restore and resume an instance safely
     file: delivery/milestones/secretsauce-mcp/17-safe-instance-recovery.md
-    status: in_progress
+    status: completed
     dependencies:
       - "16"
-    completed_at: null
-    commit_hash: null
-    notes: null
+    completed_at: 2026-10-10T20:27:28.440Z
+    commit_hash: 987b3996ab4e87eb365ac2df57edb6233dd3ade4
+    notes: All four acceptance criteria verified:620 tests/67 files and build;50
+      HTTPS browser groups with keyboard/320px/200% recovery text; final-image
+      Docker94 actual SIGKILL,9 launcher and5 clean-host groups. One reviewed
+      service usable in55.970s with99Disabled. Root
+      acceptance:evidence/qa/secretsauce-mcp/milestone17/acceptance.md. Three
+      independent slice commits preserved; actual LLM connections deferred under
+      user exception.
     started_at: 2026-10-10T18:53:12.145Z
+    acceptance_exception: workflow/delivery/local-validation-authorization.md
+    real_client_integration_status: deferred_NOT_RUN
 delivery_goal:
   product_id: secretsauce-mcp
-  status: in_progress
+  status: completed
   packet: delivery/milestones/secretsauce-mcp/status.yaml
   packet_revision: sha256:a262e7f9b7087b033e2708500b060576ba5adfec8dbc9dc98f2fa3a1f49f104d
   packet_contract_revisions:
@@ -261,13 +269,13 @@ delivery_goal:
     - "16"
     - "17"
   execution: autonomous
-  current_milestone: "17"
+  current_milestone: null
   governing_plan: delivery/plans/secretsauce-mcp/milestone_17_plan_01.md
   blockers: []
-  resume_point: M16 accepted. Generate M17 governing and all slice plans before
-    code; deliver safe installation/rollback, fresh enrollment, explicit
-    reactivation, local reconnect and truthful provenance. Fixed goal
-    remains10–17; only actual LLM connections deferred under user exception.
+  resume_point: Fixed M10–M17 goal completed with committed implementation and
+    local acceptance. Actual ChatGPT/Codex connection/reconnect remains NOT RUN
+    under the recorded user exception; inherited dependency advisories remain
+    separate follow-up.
   prerequisite_observations:
     - evidence_id: PRE-016
       checked_at: 2026-10-10T18:03:04.154Z
@@ -310,3 +318,4 @@ delivery_goal:
       authorization: workflow/delivery/local-validation-authorization.md
       scope: Actual LLM system MCP connection/reconnect only; all local
         protocol/browser/Docker tests remain required.
+  completed_at: 2026-10-10T20:27:28.440Z

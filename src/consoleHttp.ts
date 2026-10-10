@@ -1,5 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import QRCode from 'qrcode';
+import {consoleRestore,RestoreError} from './consoleRestore.js';
+import {MAX_ARCHIVE_BYTES} from './consoleBackupArchive.js';
 import {consoleBackups,BackupError} from './consoleBackups.js';
 import { consoleOperations,OperatingError } from './consoleOperations.js';
 import { consoleEvidence, EvidenceError } from './consoleEvidence.js';
@@ -48,7 +50,7 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
         const session = store.session(token);
         if (request.method === 'GET' && path === '/console/api/status') {
             const user = session ? store.authorize(session, 'own') : undefined;
-            reply(200, { initialized: store.state.initialized, ...(!store.state.initialized ? { origin: store.state.origin } : {}), ...(session && user ? { csrf: session.csrf, user: { id: user.id, email: user.email, role: user.role }, name: store.state.name, degraded: store.journal.degraded || store.externalAudit?.degraded === true, restricted: session.restricted, sessions: store.ownSessions(session), mfa: 'Authenticator app enrolled', expires: Math.min(session.created + 43200000, session.lastSeen + 1800000) } : {}) });
+            reply(200, { initialized: store.state.initialized, ...(!store.state.initialized&&store.state.restoreProof?{restoreAvailable:true}:{}), ...(!store.state.initialized ? { origin: store.state.origin } : {}), ...(session && user ? { csrf: session.csrf, user: { id: user.id, email: user.email, role: user.role }, name: store.state.name, degraded: store.journal.degraded || store.externalAudit?.degraded === true, restricted: session.restricted, sessions: store.ownSessions(session), mfa: 'Authenticator app enrolled', expires: Math.min(session.created + 43200000, session.lastSeen + 1800000) } : {}) });
             return;
         }
         if(request.method==='GET'&&path==='/console/api/backups'){if(!session){reply(401,{message:'Sign in again.'});return;}reply(200,consoleBackups(store).read(session));return;}
@@ -110,9 +112,15 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
         limiter.recordFailure(source, 'console');
         if (request.headers['content-type'] !== 'application/json')
             throw new Error('Use JSON input.');
+        if(path==='/console/api/restore/preview'){
+            if(store.state.initialized){if(!session){reply(401,{message:'Sign in again.'});return;}if(typeof request.headers['x-console-csrf']!=='string'||!equal(request.headers['x-console-csrf'],session.csrf)){reply(403,{message:'Reload this page before submitting.'});return;}const actor=store.requireSensitive(session);if(actor.role!=='Owner')throw new RestoreError('Forbidden.');store.requireRecent(session,'restore.start');}
+            else consoleRestore(store).admitHostUpload(request.headers['x-console-restore-proof']);
+            reply(200,await consoleRestore(store).preview(session,async()=>{const d=JSON.parse((await readBoundedBody(request,MAX_ARCHIVE_BYTES+65536,30000)).toString());if(!store.state.initialized){if(!d||typeof d!=='object'||Array.isArray(d)||Object.hasOwn(d,'proof'))throw new RestoreError('Host proof is supplied only through the protected upload header.');d.proof=request.headers['x-console-restore-proof'];}return d;}));return;
+        }
         const data = JSON.parse((await readBoundedBody(request, 131072, 5000)).toString());
         if (!data || Array.isArray(data) || typeof data !== 'object')
             throw new Error('Invalid input.');
+        if(path==='/console/api/restore/cancel'&&!store.state.initialized){reply(200,consoleRestore(store).cancel(undefined,data));return;}
         if (path === '/console/api/setup/begin') {
             const r = store.beginSetup(data);
             const uri = 'otpauth://totp/SecretSauce:' + encodeURIComponent(store.state.enrollment!.email) + '?secret=' + r.seed + '&issuer=SecretSauce';
@@ -145,6 +153,7 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
             reply(403, { message: 'Reload this page before submitting.' });
             return;
         }
+        if(path==='/console/api/restore/cancel'){reply(200,consoleRestore(store).cancel(session,data));return;}
         if(path==='/console/api/backups/acknowledge'){reply(200,consoleBackups(store).acknowledgeUnknown(session,data));return;}
         if(path==='/console/api/backups/save'){reply(200,consoleBackups(store).save(session,data));return;}
         if(path==='/console/api/backups/review'){reply(200,consoleBackups(store).review(session,data));return;}
@@ -226,6 +235,7 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
         reply(404, { message: 'Not found.' });
     }
     catch (error) {
+        if (error instanceof RestoreError) {reply(error.message==='Forbidden.'?403:400,{message:error.message});return;}
         if (error instanceof BackupError || error instanceof OperatingError) {reply(400,{message:error.message});return;}
         if (error instanceof EvidenceError) {reply(400,{message:error.message});return;}
         if (error instanceof AuthenticationSettingsError) {reply(400,{message:error.message});return;}

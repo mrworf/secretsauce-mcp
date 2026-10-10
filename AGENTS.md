@@ -35,3 +35,5 @@
 
 - Portable recovery projection must exclude live authority at explicit owned schema paths, not recursive property-name filters: valid service/credential IDs can be named review, constructor, or refreshTokenStoreFile. Preserve original audit dependency identity as encrypted provenance and validate its matching archived domain; recovery must establish local binding separately. Keep independent setup material distinct from MFA recovery codes.
 - Backup/restore expensive validation and crypto use a bounded worker with the shared job slot occupied through termination. Publish ciphertext with exclusive no-follow partial files and fsynced containing directories; interrupted output stays unknown. Health integrity caches must use same-descriptor stat stamps and bounded uncached request work, never synchronously rehash the full retained archive catalog on every read.
+
+- Restore preview upload must authenticate clean-host proof before reading its large body. Keep one fixed protected ciphertext staging reservation; a restart or cleanup uncertainty blocks reuse until protected host inspection rather than accumulating or adopting orphan output.

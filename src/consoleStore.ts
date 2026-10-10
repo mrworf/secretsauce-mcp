@@ -39,6 +39,7 @@ export interface ConsoleSession {
     };
 }
 export interface ConsoleState {
+    restoreProof?: {hash:string;instance:string;origin:string;expires:number;attempts:number};
     gatewayAuditIdentity?: string;
     operating?: import("./consoleOperations.js").OperatingState;
     retention?: import("./consoleEvidence.js").RetentionState;

@@ -1,5 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import QRCode from 'qrcode';
+import { consolePeople, PeopleError } from './consolePeople.js';
 import { readBoundedBody } from './httpBody.js';
 import { consolePage, consoleScript, consoleStyle } from './consolePage.js';
 import { LoginAttemptLimiter } from './loginAttemptLimiter.js';
@@ -40,6 +41,7 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
             reply(200, { initialized: store.state.initialized, ...(!store.state.initialized ? { origin: store.state.origin } : {}), ...(session && user ? { csrf: session.csrf, user: { id: user.id, email: user.email, role: user.role }, name: store.state.name, degraded: store.journal.degraded || store.externalAudit?.degraded === true, restricted: session.restricted, sessions: store.ownSessions(session), mfa: 'Authenticator app enrolled', expires: Math.min(session.created + 43200000, session.lastSeen + 1800000) } : {}) });
             return;
         }
+        if (request.method === 'GET' && path === '/console/api/people') { if(!session){reply(401,{message:'Sign in again.'});return;} reply(200,consolePeople(store).list(session));return; }
         if (request.method === 'GET' && path === '/console/api/instance') {
             if (!session) {
                 reply(401, { message: 'Sign in again.' });
@@ -103,6 +105,9 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
             reply(200, { status: 'success', operation: id });
             return;
         }
+        if(path === '/console/api/link/preview'){reply(200,consolePeople(store).preview(data));return;}
+        if(path === '/console/api/link/begin'){const r=consolePeople(store).begin(data);reply(200,{...r,qr:await QRCode.toDataURL('otpauth://totp/SecretSauce?secret='+r.seed+'&issuer=SecretSauce')});return;}
+        if(path === '/console/api/link/complete'){reply(200,consolePeople(store).complete(data));return;}
         if (path === '/console/api/login') {
             const result = store.login(data.email, data.password, data.code);
             response.setHeader('set-cookie', '__Host-ss-console=' + result.token + '; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=43200');
@@ -117,6 +122,11 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
             reply(403, { message: 'Reload this page before submitting.' });
             return;
         }
+        if(path==='/console/api/people/invite'){reply(200,consolePeople(store).invite(session,data));return;}
+        if(path==='/console/api/people/invitation'){reply(200,consolePeople(store).invitation(session,data));return;}
+        if(path==='/console/api/people/change'){reply(200,consolePeople(store).change(session,data));return;}
+        if(path==='/console/api/people/revoke'){reply(200,consolePeople(store).revoke(session,data));return;}
+        if(path==='/console/api/people/external'){reply(200,consolePeople(store).register(session,data));return;}
         if (path?.startsWith('/console/api/service/')) {
             const manager = consoleServices(store);
             if (path === '/console/api/service/credential') { reply(200, manager.credential(session, data)); return; }
@@ -162,6 +172,7 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
         reply(404, { message: 'Not found.' });
     }
     catch (error) {
+        if (error instanceof PeopleError) { reply(400,{message:error.message});return; }
         if (error instanceof ServiceManagementError) {
             reply(error.comparison ? 409 : 400, { message: error.message, ...(error.comparison ? { comparison: error.comparison } : {}) }); return;
         }

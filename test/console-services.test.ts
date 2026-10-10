@@ -37,7 +37,7 @@ describe('managed service drafts and scoped publication', () => {
    expect(() => save(f, draft(), { name: 'Smuggled' })).toThrow('Forbidden'); f.store.state.users[0]!.role = 'Owner';
    save(f); const prior = f.manager.review(f.session, { id: 'new' }); save(f, { ...draft(), name: 'Later' }); expect(() => f.manager.apply(f.session, { id: 'new', review: prior.review, acknowledgments: prior.exceptions })).toThrow('Stale');
    apply(f); expect(() => f.manager.save(f.session, { id: 'new', base: 0, generation: 0, service: draft() })).toThrow('Stale');
-   f.store.state.users[0]!.role = 'Member'; expect(() => f.manager.list(f.session)).toThrow('Forbidden');
+   f.store.state.users[0]!.role = 'Member'; expect(f.manager.list(f.session)).toMatchObject({ writable: false, eligible: [] });
   } finally { f.close(); }
  });
  it('preparation failure retains prior configuration; lost successful response reconciles status and state', () => {

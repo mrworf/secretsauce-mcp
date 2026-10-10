@@ -10,6 +10,7 @@ import { hydrateManagedConfig } from './config.js';
 import type { ManagedConfiguration } from './consoleServices.js';
 export type HumanRole = 'Owner' | 'Administrator' | 'Auditor' | 'Member';
 export interface ConsoleUser {
+    enrolled?: boolean;
     id: string;
     email: string;
     role: HumanRole;
@@ -62,6 +63,9 @@ export interface ConsoleState {
         recovery: string[];
         backup: string;
     };
+    securityGeneration?: number;
+    people?: import("./consolePeople.js").PeopleState;
+    notifications?: import("./consoleNotifications.js").NotificationState;
     backupHash?: string;
 }
 export { atomicFile } from './consolePersistence.js';
@@ -77,6 +81,7 @@ export function trustedOrigin(value: unknown): string {
 export class ConsoleStore {
     state: ConsoleState;
     storageReliable = true;
+    invalidateUser: (subject: string) => void = () => {};
     externalAudit: AuditSink | undefined;
     readonly journal: ConsoleJournal;
     readonly file: string;
@@ -238,7 +243,7 @@ export class ConsoleStore {
                 if (candidate > user.lastCounter && equal(totp(user.seed, candidate * 30000), code))
                     counter = candidate;
             }
-        if (!user?.active || user.blockedUntil > now || !validPassword || counter < 0) {
+        if (!user?.active || user.enrolled === false || user.blockedUntil > now || !validPassword || counter < 0) {
             if (user && user.blockedUntil <= now) {
                 const next = structuredClone(this.state);
                 const target = next.users.find(u => u.id === user.id)!;
@@ -288,7 +293,7 @@ export class ConsoleStore {
             return undefined;
         const session = this.state.sessions.find(s => equal(s.hash, digest(token)));
         const user = this.state.users.find(u => u.id === session?.userId);
-        if (!session || !user?.active || session.created + 43200000 <= now || session.lastSeen + 1800000 <= now)
+        if (!session || !user?.active || user.enrolled === false || session.created + 43200000 <= now || session.lastSeen + 1800000 <= now)
             return undefined;
         if (now - session.lastSeen >= 1000) {
             const next = structuredClone(this.state);
@@ -301,7 +306,7 @@ export class ConsoleStore {
     authorize(session: ConsoleSession, capability: 'own' | 'configuration' | 'identity' | 'instance', now = Date.now()): ConsoleUser {
         const current = this.state.sessions.find(s => s.id === session.id);
         const user = this.state.users.find(u => u.id === current?.userId);
-        if (!current || current.created + 43200000 <= now || current.lastSeen + 1800000 <= now || !user?.active)
+        if (!current || current.created + 43200000 <= now || current.lastSeen + 1800000 <= now || (!user?.active || user.enrolled === false))
             throw new Error('Sign in again.');
         if (!can(user.role, capability))
             throw new Error('Forbidden.');
@@ -338,10 +343,10 @@ export class ConsoleStore {
             throw new Error('Forbidden.');
         return this.commit(user.id, 'identity.session_revoke', target, s => { s.sessions = s.sessions.filter(x => x.id !== target); });
     }
-    changePassword(session: ConsoleSession, password: unknown, code: unknown, replacement: unknown, now = Date.now()): string { const user = this.requireSensitive(session); validatePassword(replacement); const counter = this.verify(user, password, code, now); const hash = passwordHash(replacement); this.requireSensitive(session); return this.commit(user.id, 'identity.password_change', user.id, s => { const u = s.users.find(u => u.id === user.id)!; u.password = hash; u.lastCounter = counter; u.attempts = 0; s.sessions = s.sessions.filter(x => x.userId !== user.id); }); }
+    changePassword(session: ConsoleSession, password: unknown, code: unknown, replacement: unknown, now = Date.now()): string { const user = this.requireSensitive(session); validatePassword(replacement); const counter = this.verify(user, password, code, now); const hash = passwordHash(replacement); this.requireSensitive(session); try { return this.commit(user.id, 'identity.password_change', user.id, s => { const u = s.users.find(u => u.id === user.id)!; u.password = hash; u.lastCounter = counter; u.attempts = 0; s.sessions = s.sessions.filter(x => x.userId !== user.id); }); } finally { if (this.state.users.find(u => u.id === user.id)?.password === hash) this.invalidateUser(user.id); } }
     assertUserChange(id: string, nextRole: HumanRole, active: boolean): void {
         const user = this.state.users.find(u => u.id === id);
-        if (user?.active && user.role === 'Owner' && (!active || nextRole !== 'Owner') && this.state.users.filter(u => u.active && u.role === 'Owner').length <= 1)
+        if (user?.active && user.role === 'Owner' && (!active || nextRole !== 'Owner') && this.state.users.filter(u => u.active && u.enrolled !== false && u.role === 'Owner').length <= 1)
             throw new Error('The last active Owner must remain enrolled.');
     }
 }

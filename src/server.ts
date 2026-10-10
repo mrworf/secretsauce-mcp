@@ -38,7 +38,7 @@ export function createGatewayServer(
   }
   const runtime = options.runtime ?? new GatewayRuntime(config, { ...(options.auditSink === undefined ? {} : { auditSink: options.auditSink }) });
   const auditSink = runtime.auditSink;
-  if(options.consoleStore) { auditSink.bindConsole(options.consoleStore); const manager = bindConsoleServices(options.consoleStore, config); manager.invalidate = (service, subject) => runtime.capabilities.tokenBroker.revoke(service, subject); config.managedAdmission = (subject, service) => manager.admit(subject, service); }
+  if(options.consoleStore) { auditSink.bindConsole(options.consoleStore); const manager = bindConsoleServices(options.consoleStore, config); manager.invalidate = (service, subject) => runtime.capabilities.tokenBroker.revoke(service, subject); options.consoleStore.invalidateUser = subject => { for (const service of Object.keys(manager.state.services)) manager.invalidate(service, subject); }; config.managedAdmission = (subject, service) => manager.admit(subject, service); }
   const server = createServer(async (request, response) => {
     if (options.consoleStore && isConsoleRequest(request)) { await handleConsoleRequest(options.consoleStore, request, response); return; }
     if (request.method === "GET" && request.url === "/health") {

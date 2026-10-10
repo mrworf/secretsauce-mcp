@@ -9,7 +9,7 @@ source:
   revision: sha256:cb8d09474431d3bdd082466beac07163051bd2cb00639433f8a87bf85b46c3d8
   repository_commit: 5128ac3b4cdf1a1a9f5af1d6f6d96d1dea0885f2
 planning:
-  repository_commit: null
+  repository_commit: 0600b849c1f1d1ec211a5cefca0f6a0be04a8b22
 packet_revision: null
 readiness:
   status: not_started

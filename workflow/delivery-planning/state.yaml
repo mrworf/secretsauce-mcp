@@ -4,7 +4,7 @@ product_id: secretsauce-mcp
 status: blocked_by_definition
 transaction:
   parent_commit: 7a102a4787585119130f9f00329d13cedeed8993
-  repository_commit: null
+  repository_commit: 0600b849c1f1d1ec211a5cefca0f6a0be04a8b22
   pre_existing_dirty_paths:
     - test-results/
   owned_paths:

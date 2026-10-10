@@ -122,22 +122,29 @@ milestones:
   - id: "12"
     title: Manage people and recover accounts
     file: delivery/milestones/secretsauce-mcp/12-people-and-account-recovery.md
-    status: in_progress
+    status: completed
     dependencies:
       - "11"
-    completed_at: null
-    commit_hash: null
-    notes: null
+    completed_at: 2026-10-10T05:29:02.951Z
+    commit_hash: fb89017fd3b6cec1cf01bc14f639b3eebc4680ca
+    notes: "All four acceptance criteria verified: 452 tests across45files, build, 8
+      actualHTTPS keyboard/320px browser checks, 6 protected host-recovery
+      checks and syntheticTLS SMTP. Evidence:
+      evidence/qa/secretsauce-mcp/milestone12/acceptance.md. Slice commits:
+      bb1281082c59273fc494c8575ef748c030af7e89,
+      c30dc9e7383ce722ed1b7082528d0a8071aec9ec,
+      fb89017fd3b6cec1cf01bc14f639b3eebc4680ca."
     started_at: 2026-10-10T04:58:27.685Z
   - id: "13"
     title: Author advanced policy and migrate configuration
     file: delivery/milestones/secretsauce-mcp/13-advanced-policy-and-migration.md
-    status: pending
+    status: in_progress
     dependencies:
       - "12"
     completed_at: null
     commit_hash: null
     notes: null
+    started_at: 2026-10-10T05:29:02.951Z
   - id: "14"
     title: Connect and govern MCP clients
     file: delivery/milestones/secretsauce-mcp/14-mcp-client-access.md
@@ -222,9 +229,9 @@ delivery_goal:
     - "16"
     - "17"
   execution: autonomous
-  current_milestone: "12"
-  governing_plan: delivery/plans/secretsauce-mcp/milestone_12_plan_01.md
+  current_milestone: "13"
+  governing_plan: delivery/plans/secretsauce-mcp/milestone_13_plan_01.md
   blockers: []
-  resume_point: Resume the existing M12 governing plan at the indexed incomplete
-    slice, or generate the governing and all slice plans before production edits
-    if absent. M11 acceptance is committed.
+  resume_point: Resume existing M13 governing plan at indexed incomplete slice, or
+    generate governing and all slice plans before production edits if absent.
+    M12 acceptance is committed.

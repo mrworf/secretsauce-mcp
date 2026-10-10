@@ -14,3 +14,9 @@ Validation: focused positive/negative input, authority, expiry, replay, outage a
 ## Implementation reconciliation
 
 Slice 01 committed bb12810; slice 02 c30dc9e. Slice 03 completes role UI, protected host nonsecret Owner selection, bounded implicit-TLS SMTP including explicit disable and credential deletion, runtime authorization generations and complete validation. [Acceptance mapping](../../../evidence/qa/secretsauce-mcp/milestone12/acceptance.md) and reports resolve all four criteria and required UX checks. Scope stays M12; root owns status/acceptance.
+
+## Completed slice index
+
+- Slice01 completed: bb1281082c59273fc494c8575ef748c030af7e89; evidence milestone12/slice01.md.
+- Slice02 completed: c30dc9e7383ce722ed1b7082528d0a8071aec9ec; evidence milestone12/slice02.md.
+- Slice03 completed: fb89017fd3b6cec1cf01bc14f639b3eebc4680ca; evidence milestone12/acceptance.md and validation.json.

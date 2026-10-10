@@ -6,6 +6,7 @@ import { sanitizeAuditText } from './auditSanitizer.js';
 import { ConsoleJournal, type ManagementDetails } from './consoleJournal.js';
 import type { AuditSink } from './audit.js';
 import type { GatewayConfig } from './types.js';
+import { validateProtection } from './consoleProtection.js';
 import { hydrateManagedConfig } from './config.js';
 import type { ManagedConfiguration } from './consoleServices.js';
 export type HumanRole = 'Owner' | 'Administrator' | 'Auditor' | 'Member';
@@ -120,7 +121,7 @@ export class ConsoleStore {
             this.state = existsSync(this.file) ? decrypt<ConsoleState>(readFileSync(this.file, 'utf8'), this.key) : { v: 1, id: randomUUID(), revision: 0, initialized: false, origin: '', name: '', users: [], sessions: [], ...(options.config ? { config: options.config } : {}) };
             if (this.state.v !== 1 || !Array.isArray(this.state.users) || !Array.isArray(this.state.sessions))
                 throw new Error('Invalid managed state');
-            if (this.state.config) hydrateManagedConfig(this.state.config);
+            if (this.state.config) { if(this.state.managed?.protection)this.state.config.responseProtection=validateProtection(this.state.managed.protection.applied).effective;hydrateManagedConfig(this.state.config); }
             this.journal = new ConsoleJournal(join(directory, 'audit.chain'), this.key, options.faultAudit);
             this.faultState = options.faultState;
             if (!existsSync(this.file)) {

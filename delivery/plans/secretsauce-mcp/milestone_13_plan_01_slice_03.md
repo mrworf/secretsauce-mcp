@@ -1,6 +1,6 @@
 # M13 slice 03: Explicit legacy migration and sanitized export
 
-Status: planned. Parent: prior slice commit (record before implementation). Commit: resolve from history by unique slice subject.
+Status: completed. Parent: b4a60344deccf11e8912b7de9a7ce442cfc157e1. Commit: resolve from history by unique slice subject.
 
 ## Goal and behavior
 
@@ -27,3 +27,5 @@ Focused command: npx vitest run test/console-advanced.test.ts (and affected subs
 ## Commit boundary
 
 One explicit owned-path commit including this plan, governing index, behavior, tests and direct docs/evidence. Subject: delivery: M13 slice 03 explicit legacy migration and sanitized export. Never stage test-results/. Exact previous SHA recorded in next slice; own SHA resolved through Git history/root checkpoint.
+
+Validation: build passed; migration suite 7 tests, advanced/config/config-diagnostics 66 tests passed (73 total). Import validates all nested unknowns and pure reserved-global semantics without host reads; changed Owner-only proposals reject Administrator input. Export distinguishes current applied globals from inactive proposals. Managed catalog authority restart regression passes after unrelated save and changed host catalog. Review fingerprint now includes enrollment and local/external security generations.

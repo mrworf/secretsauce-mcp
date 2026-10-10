@@ -11,12 +11,12 @@ export interface ManagedCredential { value: string; version: number; changed: nu
 export interface ManagedService {
   lifecycle: ServiceLifecycle;
   applied?: ManagedServiceDraft;
-  draft?: { content: ManagedServiceDraft; base: number; generation: number; settings?: { name: string } };
+  draft?: { content: ManagedServiceDraft; base: number; generation: number; missingMappings?: string[]; settings?: { name: string } };
   values: Record<string, ManagedCredential>;
   assignments: string[];
   review?: { id: string; actor: string; fingerprint: string; candidate: ManagedServiceDraft; base: number; draftGeneration: number; settings?: { name: string }; exceptions: string[] };
 }
-export interface ManagedConfiguration { protection?: import("./consoleProtection.js").ProtectionState; revision: number; services: Record<string, ManagedService> }
+export interface ManagedConfiguration { migrationGlobals?: Record<string,unknown>; protection?: import("./consoleProtection.js").ProtectionState; revision: number; services: Record<string, ManagedService> }
 function own<T>(values: Record<string, T>, key: string): T | undefined { return Object.hasOwn(values, key) ? values[key] : undefined; }
 const idSchema = z.string().min(1).max(1024).regex(/^[^\u0000-\u001f\u007f]+$/);
 const newIdSchema = z.string().regex(/^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,79}$/);
@@ -50,7 +50,7 @@ export class ConsoleServices {
     const s = own(this.state.services, id);
     return digest(JSON.stringify({ revision: this.state.revision, lifecycle: s?.lifecycle, assignments: s?.assignments,
       values: Object.entries(s?.values ?? {}).map(([key, v]) => [key, v.version]),
-      users: this.store.state.users.map(u => ({ id: u.id, role: u.role, active: u.active })) }));
+      users: this.store.state.users.map(u => ({ id: u.id, role: u.role, active: u.active, enrolled:u.enrolled, authorizationGeneration:u.authorizationGeneration??0 })), external:this.store.state.people?.external.map(e=>({id:e.id,issuer:e.issuer,subject:e.subject,active:e.active,authorizationGeneration:e.authorizationGeneration??0})) }));
   }
   list(session: ConsoleSession) {
     const user = this.store.authorize(session, 'own');
@@ -78,7 +78,7 @@ export class ConsoleServices {
     if (current?.lifecycle === 'Archived') throw new ServiceManagementError('Service archived. Unarchive to Disabled before editing.');
     const operation = this.store.commit(actor.id, 'service.draft_save', data.id, state => {
       const m = state.managed!; let s = own(m.services, data.id); if (!s) { s = { lifecycle: 'Draft', values: {}, assignments: [] }; Object.defineProperty(m.services, data.id, { value: s, enumerable: true, configurable: true, writable: true }); }
-      s.draft = { content: data.service, base: data.base, generation: data.generation + 1, ...(data.settings ? { settings: data.settings } : {}) }; delete s.review;
+      s.draft = { ...(s.draft?.missingMappings?.length?{missingMappings:s.draft.missingMappings}:{}), content: data.service, base: data.base, generation: data.generation + 1, ...(data.settings ? { settings: data.settings } : {}) }; delete s.review;
     });
     return { operation, status: 'saved', generation: own(this.state.services, data.id)!.draft!.generation, revision: this.state.revision };
   }
@@ -88,6 +88,7 @@ export class ConsoleServices {
   private candidate(session: ConsoleSession, id: string) {
     const actor = this.actor(session, true); const s = own(this.state.services, id); const draft = s?.draft;
     if (!s || !draft) throw new ServiceManagementError('Save a service draft before review.');
+    if(draft.missingMappings?.length)throw new ServiceManagementError('mappings: Import has unresolved identities. Supply explicit mappings and import again.');
     if (s.lifecycle === 'Archived') throw new ServiceManagementError('Service archived. Unarchive to Disabled before review.');
     if (draft.settings && actor.role !== 'Owner') throw new Error('Forbidden.');
     if (draft.base !== this.state.revision) throw this.stale(session, id);

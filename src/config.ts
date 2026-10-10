@@ -76,9 +76,9 @@ const serviceSchema = z.object({
     schemes: z.array(z.string().min(1)).optional(),
     hosts: z.array(hostMatcherSchema).optional(),
     ports: z.array(z.number().int().min(1).max(65535)).optional(),
-    tls: z.object({ verify: z.boolean().default(true) }).optional(),
+    tls: z.object({ verify: z.boolean().default(true) }).strict().optional(),
   }).strict()).min(1),
-  tls: z.object({ verify: z.boolean().default(true) }).default({ verify: true }),
+  tls: z.object({ verify: z.boolean().default(true) }).strict().default({ verify: true }),
   no_auth: z.boolean().default(false),
   credentials: z.array(z.object({
     id: z.string().min(1),
@@ -87,7 +87,7 @@ const serviceSchema = z.object({
   }).strict()).default([]),
   access: z.object({
     users: z.array(z.string().min(1)).default([]),
-  }).default({ users: [] }),
+  }).strict().default({ users: [] }),
   policy: z.object({
     mode: z.enum(["allow", "deny"]).default("deny"),
     rules: z.array(z.object({
@@ -107,7 +107,7 @@ const serviceSchema = z.object({
         max_size: z.string().min(1).default("100kb"),
       }).strict().optional(),
     }).strict()).default([]),
-  }).default({ mode: "deny", rules: [] }),
+  }).strict().default({ mode: "deny", rules: [] }),
 }).strict().superRefine((service, context) => {
   if (service.no_auth && service.credentials.length > 0) {
     context.addIssue({ code: "custom", path: ["credentials"], message: "credentials must be empty when no_auth is true" });
@@ -117,13 +117,13 @@ const serviceSchema = z.object({
   }
 });
 
-const rawConfigSchema = z.object({
+export const rawConfigSchema = z.object({
   server: z.object({
     listen: z.string().default("0.0.0.0:8080"),
     mcp_path: z.string().default("/mcp"),
     resource: z.string().url().optional(),
     allow_insecure_oauth_http: z.boolean().default(false),
-  }).default({ listen: "0.0.0.0:8080", mcp_path: "/mcp", allow_insecure_oauth_http: false }),
+  }).strict().default({ listen: "0.0.0.0:8080", mcp_path: "/mcp", allow_insecure_oauth_http: false }),
   auth: z.discriminatedUnion("mode", [
     z.object({
       mode: z.literal("oauth").default("oauth"),
@@ -159,7 +159,7 @@ const rawConfigSchema = z.object({
           initial_lockout: z.string().default("15m"),
           max_lockout: z.string().default("1h"),
           max_entries: z.number().int().positive().default(1000),
-        }).default({
+        }).strict().default({
           window: "15m", per_source: 10, per_account: 10, global: 100,
           initial_lockout: "15m", max_lockout: "1h", max_entries: 1000,
         }),
@@ -176,7 +176,7 @@ const rawConfigSchema = z.object({
   tokens: z.object({
     idle_ttl: z.string().default("10m"),
     max_ttl: z.string().default("1h"),
-  }).default({ idle_ttl: "10m", max_ttl: "1h" }),
+  }).strict().default({ idle_ttl: "10m", max_ttl: "1h" }),
   limits: z.object({
     max_inbound_body: z.string().default("1mb"),
     inbound_body_timeout: z.string().default("10s"),
@@ -199,7 +199,7 @@ const rawConfigSchema = z.object({
     max_request_body: z.string().default("1mb"),
     max_response_body: z.string().default("5mb"),
     timeout: z.string().default("30s"),
-  }).default({
+  }).strict().default({
     max_inbound_body: "1mb", inbound_body_timeout: "10s",
     max_unauthenticated_inflight: 32, max_unauthenticated_inflight_per_source: 4,
     max_password_verifications: 2, max_password_verifications_per_source: 1,
@@ -213,11 +213,11 @@ const rawConfigSchema = z.object({
   }),
   logging: z.object({
     level: z.enum(["info", "debug"]).default("info"),
-  }).default({ level: "info" }),
+  }).strict().default({ level: "info" }),
   audit: z.object({
     file: z.string().min(1).optional(),
     memory_events: z.number().int().positive().default(1000),
-  }).default({ memory_events: 1000 }),
+  }).strict().default({ memory_events: 1000 }),
   services: z.record(z.string().min(1), serviceSchema)
     .refine((services) => Object.keys(services).length > 0, "at least one service is required"),
 }).strict();
@@ -250,7 +250,7 @@ export function validateConfig(raw: unknown, env: NodeJS.ProcessEnv = process.en
   return { server, auth, tokens, limits, logging, audit, services, warnings, debugDiagnostics };
 }
 
-function parseRawConfig(raw: unknown): RawConfig {
+export function parseRawConfig(raw: unknown): RawConfig {
   rejectRemovedMcpTransportLimits(raw);
   const result = rawConfigSchema.safeParse(raw);
   if (!result.success) {
@@ -260,7 +260,7 @@ function parseRawConfig(raw: unknown): RawConfig {
   return result.data;
 }
 
-function validateOAuthTrustUrls(raw: RawConfig, warnings: string[]): void {
+export function validateOAuthTrustUrls(raw: RawConfig, warnings: string[]): void {
   const insecurePaths: ConfigPath[] = [];
   if (raw.server.resource !== undefined) {
     validateOAuthTrustUrl(raw.server.resource, ["server", "resource"]);
@@ -321,7 +321,7 @@ function rejectRemovedMcpTransportLimits(raw: unknown): void {
   }
 }
 
-function normalizeServer(raw: RawConfig["server"]): ServerConfig {
+export function normalizeServer(raw: RawConfig["server"]): ServerConfig {
   if (!raw.mcp_path.startsWith("/")) {
     throw configValidationError("server.mcp_path must start with /", ["server", "mcp_path"]);
   }
@@ -489,7 +489,7 @@ function keyIdForPublicKey(publicKeyPem: string): string {
   return createHash("sha256").update(publicKeyPem).digest("base64url").slice(0, 16);
 }
 
-function normalizeTokens(raw: RawConfig["tokens"]): TokenConfig {
+export function normalizeTokens(raw: RawConfig["tokens"]): TokenConfig {
   const idleTtlMs = parseDuration(raw.idle_ttl, "tokens.idle_ttl");
   const maxTtlMs = parseDuration(raw.max_ttl, "tokens.max_ttl");
   if (idleTtlMs <= 0 || maxTtlMs <= 0) throw configValidationError("token TTL values must be positive", ["tokens", "idle_ttl"]);
@@ -497,7 +497,7 @@ function normalizeTokens(raw: RawConfig["tokens"]): TokenConfig {
   return { idleTtlMs, maxTtlMs };
 }
 
-function normalizeLimits(raw: RawConfig["limits"]): LimitsConfig {
+export function normalizeLimits(raw: RawConfig["limits"]): LimitsConfig {
   const maxInboundBodyBytes = parseSize(raw.max_inbound_body, "limits.max_inbound_body");
   const inboundBodyTimeoutMs = parseDuration(raw.inbound_body_timeout, "limits.inbound_body_timeout");
   const maxRequestBodyBytes = parseSize(raw.max_request_body, "limits.max_request_body");
@@ -757,7 +757,7 @@ function defaultPortForScheme(protocol: string, path: ConfigPath): string {
   throw configValidationError("Unsupported URL scheme", path);
 }
 
-function parseDuration(value: string, label: string): number {
+export function parseDuration(value: string, label: string): number {
   const match = durationPattern.exec(value);
   if (!match) throw configValidationError(`${label} must be a duration like 500ms, 30s, 10m, 1h, or 1d`, label.split("."));
   const amount = Number(match[1] ?? 0);
@@ -821,4 +821,18 @@ export function hydrateManagedConfig(config: GatewayConfig): GatewayConfig {
   for (const s of Object.values(config.services)) for (const d of s.destinations)
     for (const h of d.hosts) if (h.type === 'regex') h.regex = new RegExp(h.value);
   return config;
+}
+
+/** Pure imported-global validation: never resolve authentication files or environment. */
+export function validateMigrationGlobals(raw: ReturnType<typeof parseRawConfig>): void {
+  normalizeServer(raw.server);normalizeTokens(raw.tokens);normalizeLimits(raw.limits);validateOAuthTrustUrls(raw,[]);
+  if(raw.auth.mode==='bearer'){if(Boolean(raw.auth.bearer.token_env)===Boolean(raw.auth.bearer.token_file))throw configValidationError('Exactly one bearer source required',['auth','bearer']);}
+  if(raw.auth.mode==='oauth'&&!raw.auth.oauth.audience&&!raw.auth.oauth.resource)throw configValidationError('OAuth audience or resource required',['auth','oauth']);
+  if(raw.auth.mode==='builtin_oauth'){const b=raw.auth.builtin_oauth;if(Boolean(b.admin_password_hash_env)===Boolean(b.admin_password_hash_file))throw configValidationError('Exactly one password hash source required',['auth','builtin_oauth']);
+    for(const key of ['access_token_ttl','authorization_code_ttl','refresh_token_idle_ttl','refresh_token_max_ttl'] as const)parseDuration(b[key],'auth.builtin_oauth.'+key);
+    if(parseDuration(b.refresh_token_idle_ttl,'auth.builtin_oauth.refresh_token_idle_ttl')>parseDuration(b.refresh_token_max_ttl,'auth.builtin_oauth.refresh_token_max_ttl'))throw configValidationError('Refresh TTL ordering invalid',['auth','builtin_oauth']);
+    for(const key of ['window','initial_lockout','max_lockout'] as const)parseDuration(b.login_rate_limit[key],'auth.builtin_oauth.login_rate_limit.'+key);
+  }
+  const urls=[raw.server.resource,...(raw.auth.mode==='oauth'?[raw.auth.oauth.issuer,raw.auth.oauth.resource,raw.auth.oauth.jwks_uri]:raw.auth.mode==='builtin_oauth'?[raw.auth.builtin_oauth.issuer]:[])];
+  for(const value of urls)if(value){const u=new URL(value);if(u.username||u.password||u.search||u.hash)throw configValidationError('Trust URL must not contain userinfo, query or fragment',['server','resource']);}
 }

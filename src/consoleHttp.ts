@@ -1,5 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import QRCode from 'qrcode';
+import { importConfiguration,exportConfiguration } from './consoleMigration.js';
 import { consoleProtection } from './consoleProtection.js';
 import { previewPolicy } from './policyPreview.js';
 import { consoleNotifications, NotificationError } from './consoleNotifications.js';
@@ -132,6 +133,8 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
             reply(403, { message: 'Reload this page before submitting.' });
             return;
         }
+        if(path==='/console/api/configuration/import'){reply(200,importConfiguration(consoleServices(store),session,data));return;}
+        if(path==='/console/api/configuration/export'){if(Object.keys(data).length)throw new ServiceManagementError('export: No input fields supported.');reply(200,exportConfiguration(consoleServices(store),session));return;}
         if(path?.startsWith('/console/api/protection/')){const p=consoleProtection(consoleServices(store));if(path.endsWith('/save')){reply(200,p.save(session,data));return;}if(path.endsWith('/review')){reply(200,p.review(session,data));return;}if(path.endsWith('/apply')){reply(200,p.apply(session,data));return;}}
         if(path==='/console/api/notifications/save'){reply(200,consoleNotifications(store).save(session,data));return;}
         if(path==='/console/api/notifications/review'){if(Object.keys(data).length)throw new NotificationError('Invalid SMTP input.');reply(200,consoleNotifications(store).review(session));return;}

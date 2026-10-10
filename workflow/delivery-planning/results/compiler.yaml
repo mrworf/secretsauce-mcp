@@ -2,97 +2,141 @@ schema_version: 1
 specialist: delivery-milestone-compiler
 product_id: secretsauce-mcp
 input_mode: PRODUCT_BUILD
-outcome: BLOCKED_BY_DEFINITION
-summary: The finalized-PRD fallback is ineligible because its explicit
-  delivery-planning boundary remains unmet. UX direction approval and canonical
-  UX synthesis are outstanding, followed by full Architecture and Security
-  reviews. No milestone packet was generated or changed.
+outcome: COMPILED
+summary: Eight complete outcome milestones preserve the gateway and deliver the approved
+  self-hosted console; full capability, journey and UX traceability. Ready for milestone-readiness,
+  not implementation.
 source:
-  path: docs/web-console-prd.md
-  revision: sha256:cb8d09474431d3bdd082466beac07163051bd2cb00639433f8a87bf85b46c3d8
-  repository_commit: 5128ac3b4cdf1a1a9f5af1d6f6d96d1dea0885f2
-  authority_class: accepted_product_requirements_with_unmet_readiness_boundary
+  path: workflow/definition/definition-package.yaml
+  revision: sha256:44c2c2338ed74a26867fdd374988bb73c4bd6ed1179e99a7a329b26acf59f6e1
+  repository_commit: 06dd0ee59defd1a75db121f1d8133c7100238b80
+  provenance_closeout_commit: bb6f29cd318b77c2cf70efa5b1f9adaf25fdf2cb
 eligibility:
-  definition_package_exists: false
-  finalized_prd_fallback_considered: true
-  finalized_prd_fallback_eligible: false
-  implementation_ready: false
-  evidence:
-    - path: docs/web-console-prd.md
-      section: 5. Migration, acceptance, and review readiness / Readiness boundary
-      observation: Requires coverage, journeys, UX, and full Architecture/Security
-        review before delivery planning; bounded contracts do not replace full
-        reviews.
-    - path: workflow/definition/state.yaml
-      observation: PRD, coverage and journeys passed; UX is decision_required with
-        UX-DESIGN-001 pending; architecture and security are pending.
-    - path: workflow/definition/results/ux.yaml
-      observation: DECISION_REQUIRED; approval pending; ux_handoff.manifest is null.
-        Concepts are explicitly unapproved proposals, not canonical UX
-        authority.
-  governing_rule:
-    skill: /home/ha/.codex/skills/delivery-milestone-compiler/SKILL.md
-    section: 2. Establish authority and eligibility
-    quote: "Never compile unresolved decisions, remediation marked
-      `implementation_ready: false`, `PROPOSED_AWAITING_DECISION` or other
-      proposed-but-unapproved authority, eligible-but-unwritten authority needed
-      by implementation, unresolved findings, or a partially ready whole scope."
-blockers:
-  - id: UX-DESIGN-001
-    kind: pending_product_owner_direction_approval
-    source: workflow/definition/results/ux.yaml
-    affected_requirements:
-      - UX-01
-      - UX-02
-      - UX-03
-      - UX-04
-      - CONFIG-03
-      - BACKUP-05
-    affected_milestones: []
-    milestone_impact: All future user-facing web-console milestones; none compiled.
-    required_resolution: Explicitly approve the proposed UX direction or request
-      concrete revisions, then complete canonical UX synthesis in Product
-      Definition.
-    proposal: workflow/definition/drafts/product-ux/web-console-initial/index.md
-  - id: DEFINITION-REVIEWS-PENDING
-    kind: unmet_source_readiness_boundary
-    source: workflow/definition/state.yaml
-    affected_milestones: []
-    milestone_impact: Complete web-console delivery packet; none compiled.
-    required_resolution: Complete full Architecture and Security reviews after
-      approved canonical UX, resolve any resulting blocking findings, and issue
-      a current committed definition-package.yaml with status
-      ready_for_delivery_planning.
-preserved_packet:
-  path: docs/milestones/status.yaml
-  revision: sha256:2e68d9b851b08e004c9bb72fc50852470793cded780dfdcce95596612efce5a7
-  status: unchanged
-  historical_completed_milestones: 10
+  definition_package_status: ready_for_delivery_planning
+  current_source_revisions_verified: true
+  producer_commit_in_history: true
+  passed_definition_validation_consumed: true
+  finalized_prd_fallback_used: false
+  unresolved_authority: []
 packet:
-  complete: false
-  path: null
-  new_milestone_count: 0
-  ready_for_milestone_readiness: false
+  complete: true
+  path: delivery/milestones/secretsauce-mcp
+  manifest: delivery/milestones/secretsauce-mcp/status.yaml
+  manifest_revision: sha256:166f8fa144f5208a991cc7f94e57cddcad5e7b4a6b1154287518f9d59db41b0b
+  revision: sha256:be71b3924591bc444b5da8b31ef0982f9e5e207024683c4c74806d2e13b8fe0d
+  revision_method: SHA-256 of sorted packet path + NUL + sha256:file-digest lines,
+    joined with newline; all packet files included.
+  index: delivery/milestones/secretsauce-mcp/index.md
+  traceability: delivery/milestones/secretsauce-mcp/traceability.md
+  milestone_count: 8
+  milestone_ids:
+  - '10'
+  - '11'
+  - '12'
+  - '13'
+  - '14'
+  - '15'
+  - '16'
+  - '17'
+  ready_for_milestone_readiness: true
+  artifacts:
+  - path: delivery/milestones/secretsauce-mcp/10-secure-audited-setup.md
+    revision: sha256:babc1847ded024db088e15edd512ce2c61b252ef1dca0d29d5f246d0d5e9a780
+  - path: delivery/milestones/secretsauce-mcp/11-managed-service-configuration.md
+    revision: sha256:c4751825f4eab3abc9069b291af75f9e08afa35b57f2a246092c4622f8b23c99
+  - path: delivery/milestones/secretsauce-mcp/12-people-and-account-recovery.md
+    revision: sha256:21b08f999f354b3ba1b584c458f5aede6b6d7849976d85b30d14f388cf5af101
+  - path: delivery/milestones/secretsauce-mcp/13-advanced-policy-and-migration.md
+    revision: sha256:8048f19099fb428524d71ae1aaa6ab21d7c13116e8d6a3f68ee7ada2565abb7f
+  - path: delivery/milestones/secretsauce-mcp/14-mcp-client-access.md
+    revision: sha256:f25283d28b62ff87a39170b9f8521b38319c2f08e08159a2f6101751ac5e4b18
+  - path: delivery/milestones/secretsauce-mcp/15-operating-evidence-and-limits.md
+    revision: sha256:b2f3022421ec423ddf83d1e91f71b9acbb9a437529e0ab5a75e79987d8c21c5f
+  - path: delivery/milestones/secretsauce-mcp/16-encrypted-instance-backups.md
+    revision: sha256:9432661c2f9b830542923b168f9473f0b2cbcb1661c1b434c1f7c9f40227b655
+  - path: delivery/milestones/secretsauce-mcp/17-safe-instance-recovery.md
+    revision: sha256:a69a88cb933cceb9cf8968cb811061239ff66a2a7c3acac23799995b317e1de0
+  - path: delivery/milestones/secretsauce-mcp/index.md
+    revision: sha256:4a9a331940ba3e77acf3ac0415e17c9c65842b2e5979303dcccdfd7237223088
+  - path: delivery/milestones/secretsauce-mcp/status.yaml
+    revision: sha256:166f8fa144f5208a991cc7f94e57cddcad5e7b4a6b1154287518f9d59db41b0b
+  - path: delivery/milestones/secretsauce-mcp/traceability.md
+    revision: sha256:f484408eba6c5b7b2256f97a95d8d6ffabdba9b58a1f2cfe6a03537806ac4553
+preservation:
+  historical_manifest: docs/milestones/status.yaml
+  historical_revision: sha256:2e68d9b851b08e004c9bb72fc50852470793cded780dfdcce95596612efce5a7
+  completed_ids:
+  - '00'
+  - '01'
+  - '02'
+  - '03'
+  - '04'
+  - '05'
+  - '06'
+  - '07'
+  - 08
+  - 09
+  historical_packet_unchanged: true
+  legacy_selector_unchanged: true
+  selection_guidance: Use new explicit canonical manifest via milestone-delivery-orchestrator
+    after readiness; historical next-MVP selector continues to target completed docs/milestones
+    scope.
+coverage:
+  prd_requirement_families: 53
+  normative_contract_families: 10
+  derived_families: 7
+  detailed_capability_rows: 97
+  actor_journeys: 47
+  ux_checks: 25
+  unmapped: []
+  blocked: []
+  deferred_required_work: []
 validation:
-  source_sha256_matches_caller: true
-  producer_commit_in_current_history: true
-  definition_package_absence_checked: true
-  definition_state_and_ux_result_inspected: true
-  historical_packet_inspected_and_preserved: true
-  application_tests: not_run_documentation_only_eligibility_result
+  installed_structural_validator: 'PASS: validated 8 milestone records and document
+    contracts'
+  source_revision_and_commit_checks: PASS
+  capability_journey_ux_mapping: PASS
+  backward_dependencies_and_pending_status: PASS
+  local_markdown_links: PASS
+  historical_packet_preservation: PASS
+  packet_readiness_checklist: PASS for compilation boundary only
+  application_tests: 'Not run: documentation-only planning; no executable tooling/configuration
+    changed.'
+blockers: []
 next_workflow:
-  skill: product-definition-orchestrator
-  action: RESUME
-  state: workflow/definition/state.yaml
-  first_step: Resolve UX-DESIGN-001 using the existing concrete proposal.
-  return_condition: Current committed definition package ready_for_delivery_planning.
+  skill: milestone-readiness
+  packet: delivery/milestones/secretsauce-mcp
+  manifest: delivery/milestones/secretsauce-mcp/status.yaml
+  owner: delivery-planning-orchestrator
+  implementation_authorized_by_this_result: false
 changed_paths:
-  - workflow/delivery-planning/results/compiler.yaml
+- delivery/milestones/secretsauce-mcp/10-secure-audited-setup.md
+- delivery/milestones/secretsauce-mcp/11-managed-service-configuration.md
+- delivery/milestones/secretsauce-mcp/12-people-and-account-recovery.md
+- delivery/milestones/secretsauce-mcp/13-advanced-policy-and-migration.md
+- delivery/milestones/secretsauce-mcp/14-mcp-client-access.md
+- delivery/milestones/secretsauce-mcp/15-operating-evidence-and-limits.md
+- delivery/milestones/secretsauce-mcp/16-encrypted-instance-backups.md
+- delivery/milestones/secretsauce-mcp/17-safe-instance-recovery.md
+- delivery/milestones/secretsauce-mcp/index.md
+- delivery/milestones/secretsauce-mcp/status.yaml
+- delivery/milestones/secretsauce-mcp/traceability.md
+- workflow/delivery-planning/results/compiler.yaml
+readiness_notes:
+- Real ChatGPT/Codex authorized test accounts and reachability, Docker execution and
+  recovery drill environment remain implementation evidence obligations for prerequisite
+  classification; compiler makes no readiness availability claim.
+- Database/frontend/cryptography selections are explicitly delegated implementation
+  choices; no architecture-selection milestone or M0 was added.
+- No source behavior or approved UX was changed; optional mechanism recommendations
+  remain distinct from requirements.
 transaction:
   owner: delivery-planning-orchestrator
-  parent_commit: 7a102a4787585119130f9f00329d13cedeed8993
+  parent_commit: bb6f29cd318b77c2cf70efa5b1f9adaf25fdf2cb
   child_commit: false
   pre_existing_dirty_paths:
-    - test-results/
-  child_owned_paths:
-    - workflow/delivery-planning/results/compiler.yaml
+  - test-results/
+  parent_owned_in_progress_paths:
+  - workflow/delivery-planning/state.yaml
+  - workflow/delivery-planning/handoff.yaml
+  - workflow/delivery-planning/results/history/

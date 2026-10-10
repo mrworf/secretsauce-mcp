@@ -1,0 +1,98 @@
+schema_version: 1
+specialist: delivery-milestone-compiler
+product_id: secretsauce-mcp
+input_mode: PRODUCT_BUILD
+outcome: BLOCKED_BY_DEFINITION
+summary: The finalized-PRD fallback is ineligible because its explicit
+  delivery-planning boundary remains unmet. UX direction approval and canonical
+  UX synthesis are outstanding, followed by full Architecture and Security
+  reviews. No milestone packet was generated or changed.
+source:
+  path: docs/web-console-prd.md
+  revision: sha256:cb8d09474431d3bdd082466beac07163051bd2cb00639433f8a87bf85b46c3d8
+  repository_commit: 5128ac3b4cdf1a1a9f5af1d6f6d96d1dea0885f2
+  authority_class: accepted_product_requirements_with_unmet_readiness_boundary
+eligibility:
+  definition_package_exists: false
+  finalized_prd_fallback_considered: true
+  finalized_prd_fallback_eligible: false
+  implementation_ready: false
+  evidence:
+    - path: docs/web-console-prd.md
+      section: 5. Migration, acceptance, and review readiness / Readiness boundary
+      observation: Requires coverage, journeys, UX, and full Architecture/Security
+        review before delivery planning; bounded contracts do not replace full
+        reviews.
+    - path: workflow/definition/state.yaml
+      observation: PRD, coverage and journeys passed; UX is decision_required with
+        UX-DESIGN-001 pending; architecture and security are pending.
+    - path: workflow/definition/results/ux.yaml
+      observation: DECISION_REQUIRED; approval pending; ux_handoff.manifest is null.
+        Concepts are explicitly unapproved proposals, not canonical UX
+        authority.
+  governing_rule:
+    skill: /home/ha/.codex/skills/delivery-milestone-compiler/SKILL.md
+    section: 2. Establish authority and eligibility
+    quote: "Never compile unresolved decisions, remediation marked
+      `implementation_ready: false`, `PROPOSED_AWAITING_DECISION` or other
+      proposed-but-unapproved authority, eligible-but-unwritten authority needed
+      by implementation, unresolved findings, or a partially ready whole scope."
+blockers:
+  - id: UX-DESIGN-001
+    kind: pending_product_owner_direction_approval
+    source: workflow/definition/results/ux.yaml
+    affected_requirements:
+      - UX-01
+      - UX-02
+      - UX-03
+      - UX-04
+      - CONFIG-03
+      - BACKUP-05
+    affected_milestones: []
+    milestone_impact: All future user-facing web-console milestones; none compiled.
+    required_resolution: Explicitly approve the proposed UX direction or request
+      concrete revisions, then complete canonical UX synthesis in Product
+      Definition.
+    proposal: workflow/definition/drafts/product-ux/web-console-initial/index.md
+  - id: DEFINITION-REVIEWS-PENDING
+    kind: unmet_source_readiness_boundary
+    source: workflow/definition/state.yaml
+    affected_milestones: []
+    milestone_impact: Complete web-console delivery packet; none compiled.
+    required_resolution: Complete full Architecture and Security reviews after
+      approved canonical UX, resolve any resulting blocking findings, and issue
+      a current committed definition-package.yaml with status
+      ready_for_delivery_planning.
+preserved_packet:
+  path: docs/milestones/status.yaml
+  revision: sha256:2e68d9b851b08e004c9bb72fc50852470793cded780dfdcce95596612efce5a7
+  status: unchanged
+  historical_completed_milestones: 10
+packet:
+  complete: false
+  path: null
+  new_milestone_count: 0
+  ready_for_milestone_readiness: false
+validation:
+  source_sha256_matches_caller: true
+  producer_commit_in_current_history: true
+  definition_package_absence_checked: true
+  definition_state_and_ux_result_inspected: true
+  historical_packet_inspected_and_preserved: true
+  application_tests: not_run_documentation_only_eligibility_result
+next_workflow:
+  skill: product-definition-orchestrator
+  action: RESUME
+  state: workflow/definition/state.yaml
+  first_step: Resolve UX-DESIGN-001 using the existing concrete proposal.
+  return_condition: Current committed definition package ready_for_delivery_planning.
+changed_paths:
+  - workflow/delivery-planning/results/compiler.yaml
+transaction:
+  owner: delivery-planning-orchestrator
+  parent_commit: 7a102a4787585119130f9f00329d13cedeed8993
+  child_commit: false
+  pre_existing_dirty_paths:
+    - test-results/
+  child_owned_paths:
+    - workflow/delivery-planning/results/compiler.yaml

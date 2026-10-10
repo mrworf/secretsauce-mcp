@@ -1,46 +1,47 @@
 schema_version: 1
 workflow: delivery-planning
 product_id: secretsauce-mcp
-status: blocked_by_definition
+status: in_progress
 transaction:
-  parent_commit: 7a102a4787585119130f9f00329d13cedeed8993
-  repository_commit: 0600b849c1f1d1ec211a5cefca0f6a0be04a8b22
+  parent_commit: bb6f29cd318b77c2cf70efa5b1f9adaf25fdf2cb
+  repository_commit: null
   pre_existing_dirty_paths:
     - test-results/
   owned_paths:
     - workflow/delivery-planning/
+    - delivery/milestones/secretsauce-mcp/
+    - delivery/readiness/secretsauce-mcp/
 source:
   mode: PRODUCT_BUILD
-  type: finalized-prd-fallback-candidate
-  path: docs/web-console-prd.md
-  revision: sha256:cb8d09474431d3bdd082466beac07163051bd2cb00639433f8a87bf85b46c3d8
-  repository_commit: 5128ac3b4cdf1a1a9f5af1d6f6d96d1dea0885f2
+  type: definition-package
+  path: workflow/definition/definition-package.yaml
+  revision: sha256:44c2c2338ed74a26867fdd374988bb73c4bd6ed1179e99a7a329b26acf59f6e1
+  repository_commit: 06dd0ee59defd1a75db121f1d8133c7100238b80
 stages:
   compilation:
-    status: BLOCKED_BY_DEFINITION
+    status: passed
+    packet_manifest: delivery/milestones/secretsauce-mcp/status.yaml
+    packet_revision: sha256:be71b3924591bc444b5da8b31ef0982f9e5e207024683c4c74806d2e13b8fe0d
     result: workflow/delivery-planning/results/compiler.yaml
   readiness:
-    status: not_started
-blockers:
-  - id: UX-DESIGN-001
-    class: DEFINITION
-    summary: Explicitly approve the proposed UX direction or request concrete
-      revisions, then complete canonical UX synthesis in Product Definition.
-    affected_milestones: []
-    source: workflow/definition/results/ux.yaml
-  - id: DEFINITION-REVIEWS-PENDING
-    class: DEFINITION
-    summary: Complete full Architecture and Security reviews after approved
-      canonical UX, resolve any resulting blocking findings, and issue a current
-      committed definition-package.yaml with status ready_for_delivery_planning.
-    affected_milestones: []
-    source: workflow/definition/state.yaml
+    status: READY_WITH_EXTERNAL_DEPENDENCIES
+    prerequisite_manifest: delivery/readiness/secretsauce-mcp/prerequisite-manifest.md
+    result: delivery/readiness/secretsauce-mcp/readiness-report.md
+    adapter: workflow/delivery-planning/results/readiness.yaml
+    packet_revision: sha256:a262e7f9b7087b033e2708500b060576ba5adfec8dbc9dc98f2fa3a1f49f104d
+blockers: []
 corrections: []
 resume:
-  stage: compilation
-  prerequisite: Committed definition package with status ready_for_delivery_planning
-  next_workflow: product-definition-orchestrator
-  action: RESUME
+  stage: complete_after_provenance
 handoff:
-  status: blocked_by_definition
+  status: pending_provenance
+  intended_status: ready_for_implementation
   path: workflow/delivery-planning/handoff.yaml
+  packet_revision: sha256:a262e7f9b7087b033e2708500b060576ba5adfec8dbc9dc98f2fa3a1f49f104d
+transaction_history:
+  - parent_commit: 7a102a4787585119130f9f00329d13cedeed8993
+    repository_commit: 0600b849c1f1d1ec211a5cefca0f6a0be04a8b22
+    pre_existing_dirty_paths:
+      - test-results/
+    owned_paths:
+      - workflow/delivery-planning/

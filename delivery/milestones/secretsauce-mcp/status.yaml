@@ -1,0 +1,165 @@
+product_id: secretsauce-mcp
+scope: Self-hosted single-organization web console initial release
+status_values:
+- pending
+- in_progress
+- completed
+- blocked
+compiled_from:
+  product_id: secretsauce-mcp
+  input_mode: PRODUCT_BUILD
+  definition_package:
+    path: workflow/definition/definition-package.yaml
+    revision: sha256:44c2c2338ed74a26867fdd374988bb73c4bd6ed1179e99a7a329b26acf59f6e1
+    repository_commit: 06dd0ee59defd1a75db121f1d8133c7100238b80
+  authoritative_artifacts:
+    security_contract:
+      path: product/security/web-console-security-contract.md
+      revision: sha256:95e342c77316f1697540fa8da29c6dd6333d6b6d3356b326c4dde921bca4540d
+    architecture_contract:
+      path: product/architecture/web-console-state-contract.md
+      revision: sha256:54956edc26dbcebcb48ecca0697a4695012d61488fa2297e56b6c04c9cbaa858
+    coverage:
+      path: docs/web-console-prd-coverage.md
+      revision: sha256:1cb9db8350470b5ddca5bc63e3005fb13df4900535b93db6541dc1f636b3598c
+    journeys:
+      path: docs/web-console-prd-user-journey-audit.md
+      revision: sha256:168c61f3b4e2223c14a1e706f36e6762dc2da23bf06a4f0b48cc0fffbb966987
+    ux:
+      path: product/ux/manifest.yaml
+      revision: sha256:891610e063e21e46ed0f7400cd182a0efe901af4731b2b8a5ad0d59e2d07dbb5
+      declared_revision: web-console-ux-1
+      manifest: product/ux/manifest.yaml
+    ux_experience_brief:
+      path: product/ux/experience-brief.yaml
+      revision: sha256:a47b0fdbd6ea02993a0bcc349b581620e0e4affd21f5ceab63f5d6f39a016ef7
+    ux_overview:
+      path: product/ux/00-overview.md
+      revision: sha256:80520dcbc864849814a34213389d2ff5f9193b3007621d446f32217e00de07ae
+    ux_information_architecture:
+      path: product/ux/01-information-architecture.md
+      revision: sha256:a9efc597a9218098cb904728e7e6584ab8b2ac36253f52cbd4f436f321789046
+    ux_interaction_patterns:
+      path: product/ux/02-interaction-patterns.md
+      revision: sha256:64385ad9998533bb63f6430aea5ed73176f2a2afb46684ac26caa571a240d56f
+    ux_responsive_and_platform:
+      path: product/ux/03-responsive-and-platform.md
+      revision: sha256:cd027549dbb9d62f4467c8988102599d20e5b1b1019776b51cac8216535d66dd
+    ux_visual_system:
+      path: product/ux/04-visual-system.md
+      revision: sha256:2345fc823bb63e0bafb418643a85b8bde8e757931d7e2c17de36f1297257afd9
+    ux_accessibility:
+      path: product/ux/05-accessibility.md
+      revision: sha256:7fdc573a9cfae385c31077bafdc46b302e30e3a8669aafda760f9bf3094e3642
+    ux_feature_exceptions:
+      path: product/ux/06-feature-exceptions.md
+      revision: sha256:526d8799f78f23fef3b426e6d4a82f1a97c14ebf19a7f00cc8b7563436cc0df5
+    ux_acceptance_checklist:
+      path: product/ux/07-acceptance-checklist.md
+      revision: sha256:66b802e9327253abd5de128566f95025225c11adc4482d77fdcf9fd6a5cafb27
+    security:
+      path: product/security/web-console-security-review.md
+      revision: sha256:90e199dfaf3c54c5194dae7f52aa0bb7ca030c0f8e94a6eb36d364e00bb0135f
+    architecture:
+      path: product/architecture/web-console-architecture-review.md
+      revision: sha256:36f712fb07c861588bd228b36acd09b2b31fceb78044c27e26e1dd919caab3a0
+    prd:
+      path: docs/web-console-prd.md
+      revision: sha256:cb8d09474431d3bdd082466beac07163051bd2cb00639433f8a87bf85b46c3d8
+  decisions:
+    path: workflow/definition/decisions.md
+    revision: sha256:e01485496c7d0fa914f1349967f0b2e819f4a32bc5f33001c92e8f8af22cdf7e
+  accepted_risks:
+  - id: SEC-DEF-001
+    summary: Trusted destination authors and best-effort response scanning are not
+      universal credential non-exfiltration controls.
+    decision_refs:
+    - D-012
+    result: workflow/definition/results/security.yaml
+  preservation_baseline:
+    milestone_manifest: docs/milestones/status.yaml
+    revision: sha256:2e68d9b851b08e004c9bb72fc50852470793cded780dfdcce95596612efce5a7
+    completed_ids:
+    - '00'
+    - '01'
+    - '02'
+    - '03'
+    - '04'
+    - '05'
+    - '06'
+    - '07'
+    - 08
+    - 09
+milestones:
+- id: '10'
+  title: Establish secure audited console access
+  file: delivery/milestones/secretsauce-mcp/10-secure-audited-setup.md
+  status: pending
+  dependencies: []
+  completed_at: null
+  commit_hash: null
+  notes: null
+- id: '11'
+  title: Configure and activate services safely
+  file: delivery/milestones/secretsauce-mcp/11-managed-service-configuration.md
+  status: pending
+  dependencies:
+  - '10'
+  completed_at: null
+  commit_hash: null
+  notes: null
+- id: '12'
+  title: Manage people and recover accounts
+  file: delivery/milestones/secretsauce-mcp/12-people-and-account-recovery.md
+  status: pending
+  dependencies:
+  - '11'
+  completed_at: null
+  commit_hash: null
+  notes: null
+- id: '13'
+  title: Author advanced policy and migrate configuration
+  file: delivery/milestones/secretsauce-mcp/13-advanced-policy-and-migration.md
+  status: pending
+  dependencies:
+  - '12'
+  completed_at: null
+  commit_hash: null
+  notes: null
+- id: '14'
+  title: Connect and govern MCP clients
+  file: delivery/milestones/secretsauce-mcp/14-mcp-client-access.md
+  status: pending
+  dependencies:
+  - '12'
+  completed_at: null
+  commit_hash: null
+  notes: null
+- id: '15'
+  title: Operate and inspect the managed instance
+  file: delivery/milestones/secretsauce-mcp/15-operating-evidence-and-limits.md
+  status: pending
+  dependencies:
+  - '13'
+  - '14'
+  completed_at: null
+  commit_hash: null
+  notes: null
+- id: '16'
+  title: Create recoverable encrypted instance backups
+  file: delivery/milestones/secretsauce-mcp/16-encrypted-instance-backups.md
+  status: pending
+  dependencies:
+  - '15'
+  completed_at: null
+  commit_hash: null
+  notes: null
+- id: '17'
+  title: Restore and resume an instance safely
+  file: delivery/milestones/secretsauce-mcp/17-safe-instance-recovery.md
+  status: pending
+  dependencies:
+  - '16'
+  completed_at: null
+  commit_hash: null
+  notes: null

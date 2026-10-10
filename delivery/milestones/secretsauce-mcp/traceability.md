@@ -1,0 +1,218 @@
+# Web console delivery traceability
+
+Mode: PRODUCT_BUILD. The committed validated [definition package](../../../workflow/definition/definition-package.yaml) is authority; [coverage](../../../docs/web-console-prd-coverage.md) and [journeys](../../../docs/web-console-prd-user-journey-audit.md) enumerate required surfaces and validation. Mapping is an implementation obligation, not evidence of completed code. Repeated IDs deliberately carry foundation plus consuming feature/integration obligations; each milestone records its actual behavior boundary.
+
+## Capability and constraint coverage
+
+All 97 coverage rows are retained below: 53 PRD requirement families, 10 normative companion contracts and seven derived configuration/acceptance families (70 families total). BASE-01 maps preservation/integration work, not a rewrite of the existing tools. Cross-cutting audit, secret protection, feedback and accessibility apply to every introduced surface. The final milestone repeats full UX conformance after recovery; earlier owners still deliver their own checks.
+
+| Source row | Milestones |
+| --- | --- |
+| BASE-01.a — Discover services | [14](14-mcp-client-access.md) |
+| BASE-01.b — Inspect policy | [13](13-advanced-policy-and-migration.md), [14](14-mcp-client-access.md) |
+| BASE-01.c — Obtain references | [11](11-managed-service-configuration.md), [14](14-mcp-client-access.md) |
+| BASE-01.d — Execute downstream request | [11](11-managed-service-configuration.md), [14](14-mcp-client-access.md) |
+| BASE-01.e — Explain a denial | [14](14-mcp-client-access.md), [15](15-operating-evidence-and-limits.md) |
+| BASE-02 — Managed console expansion | [10](10-secure-audited-setup.md), [11](11-managed-service-configuration.md), [12](12-people-and-account-recovery.md), [14](14-mcp-client-access.md), [15](15-operating-evidence-and-limits.md) |
+| BASE-03 — Migrate credential sources | [13](13-advanced-policy-and-migration.md) |
+| AUTHZ-01 — Explicit execution grants | [11](11-managed-service-configuration.md), [12](12-people-and-account-recovery.md), [14](14-mcp-client-access.md) |
+| AUTHZ-02.a — Manage users and roles | [12](12-people-and-account-recovery.md) |
+| AUTHZ-02.b — Assign service access | [11](11-managed-service-configuration.md), [12](12-people-and-account-recovery.md), [14](14-mcp-client-access.md) |
+| AUTHZ-02.c — Read non-secret configuration | [12](12-people-and-account-recovery.md), [15](15-operating-evidence-and-limits.md) |
+| AUTHZ-02.d — Enforce admission order | [11](11-managed-service-configuration.md), [14](14-mcp-client-access.md) |
+| AUTHZ-03 — Preserve Owner continuity | [10](10-secure-audited-setup.md), [12](12-people-and-account-recovery.md), [17](17-safe-instance-recovery.md) |
+| AUTHZ-04 — Explain administrative trust | [11](11-managed-service-configuration.md), [13](13-advanced-policy-and-migration.md) |
+| IDENT-01 — Bootstrap first Owner | [10](10-secure-audited-setup.md), [17](17-safe-instance-recovery.md) |
+| IDENT-02 — Password and authenticator login | [10](10-secure-audited-setup.md), [12](12-people-and-account-recovery.md), [14](14-mcp-client-access.md) |
+| IDENT-03.a — Issue/revoke/reissue invitation | [12](12-people-and-account-recovery.md) |
+| IDENT-03.b — Accept invitation | [12](12-people-and-account-recovery.md) |
+| IDENT-04.a — Configure SMTP | [12](12-people-and-account-recovery.md) |
+| IDENT-04.b — Deliver notices or manual links | [12](12-people-and-account-recovery.md), [16](16-encrypted-instance-backups.md) |
+| IDENT-05.a — Self-service reset and MFA replacement | [12](12-people-and-account-recovery.md) |
+| IDENT-05.b — Assisted account recovery | [12](12-people-and-account-recovery.md) |
+| IDENT-05.c — All Owners locked out | [12](12-people-and-account-recovery.md) |
+| IDENT-06.a — Own sessions, password and MFA | [10](10-secure-audited-setup.md), [12](12-people-and-account-recovery.md) |
+| IDENT-06.b — Revoke another user’s access | [12](12-people-and-account-recovery.md), [14](14-mcp-client-access.md) |
+| CONFIG-01 — Add service wizard | [11](11-managed-service-configuration.md) |
+| CONFIG-02 — Write-only credential lifecycle | [11](11-managed-service-configuration.md) |
+| CONFIG-03.a — Service draft and apply | [11](11-managed-service-configuration.md), [13](13-advanced-policy-and-migration.md) |
+| CONFIG-03.b — Instance settings draft and apply | [11](11-managed-service-configuration.md), [12](12-people-and-account-recovery.md), [14](14-mcp-client-access.md), [15](15-operating-evidence-and-limits.md), [16](16-encrypted-instance-backups.md) |
+| CONFIG-04 — Configuration history and rollback | [13](13-advanced-policy-and-migration.md) |
+| CONFIG-05 — Disable/archive/reactivate service | [11](11-managed-service-configuration.md), [17](17-safe-instance-recovery.md) |
+| POLICY-01 — Deterministic policy order | [11](11-managed-service-configuration.md), [13](13-advanced-policy-and-migration.md) |
+| POLICY-02 — Simple and advanced editing | [13](13-advanced-policy-and-migration.md) |
+| POLICY-03 — Safe policy preview | [13](13-advanced-policy-and-migration.md) |
+| POLICY-04 — Review security exceptions | [11](11-managed-service-configuration.md), [13](13-advanced-policy-and-migration.md) |
+| MCP-01.a — Connect and consent | [14](14-mcp-client-access.md) |
+| MCP-01.b — Refresh and revoke connected client | [14](14-mcp-client-access.md) |
+| MCP-02.a — Configure advanced MCP modes | [12](12-people-and-account-recovery.md), [14](14-mcp-client-access.md) |
+| MCP-02.b — Use external/legacy authentication | [14](14-mcp-client-access.md), [17](17-safe-instance-recovery.md) |
+| MCP-03 — Client setup guidance | [14](14-mcp-client-access.md) |
+| MCP-04 — Stateless transport and restart | [10](10-secure-audited-setup.md), [14](14-mcp-client-access.md), [15](15-operating-evidence-and-limits.md), [17](17-safe-instance-recovery.md) |
+| UX-01.a — Service administration navigation | [10](10-secure-audited-setup.md), [11](11-managed-service-configuration.md) |
+| UX-01.b — Read-only console navigation | [12](12-people-and-account-recovery.md), [15](15-operating-evidence-and-limits.md) |
+| UX-01.c — Own permitted activity | [15](15-operating-evidence-and-limits.md) |
+| UX-02 — Progressive disclosure | [11](11-managed-service-configuration.md), [13](13-advanced-policy-and-migration.md), [15](15-operating-evidence-and-limits.md) |
+| UX-03 — Errors and status | [10](10-secure-audited-setup.md), [11](11-managed-service-configuration.md), [12](12-people-and-account-recovery.md), [13](13-advanced-policy-and-migration.md), [14](14-mcp-client-access.md), [15](15-operating-evidence-and-limits.md), [16](16-encrypted-instance-backups.md), [17](17-safe-instance-recovery.md) |
+| UX-04 — Accessible responsive tasks | [10](10-secure-audited-setup.md), [11](11-managed-service-configuration.md), [12](12-people-and-account-recovery.md), [13](13-advanced-policy-and-migration.md), [14](14-mcp-client-access.md), [15](15-operating-evidence-and-limits.md), [16](16-encrypted-instance-backups.md), [17](17-safe-instance-recovery.md) |
+| AUDIT-01 — Record sensitive activity | [10](10-secure-audited-setup.md), [11](11-managed-service-configuration.md), [12](12-people-and-account-recovery.md), [13](13-advanced-policy-and-migration.md), [14](14-mcp-client-access.md), [15](15-operating-evidence-and-limits.md), [16](16-encrypted-instance-backups.md), [17](17-safe-instance-recovery.md) |
+| AUDIT-02.a — Search and export instance evidence | [15](15-operating-evidence-and-limits.md) |
+| AUDIT-02.b — Inspect own activity | [15](15-operating-evidence-and-limits.md) |
+| AUDIT-03 — Integrity and confidentiality | [10](10-secure-audited-setup.md), [15](15-operating-evidence-and-limits.md), [16](16-encrypted-instance-backups.md), [17](17-safe-instance-recovery.md) |
+| AUDIT-04.a — Fail closed on durable outage | [10](10-secure-audited-setup.md), [11](11-managed-service-configuration.md), [12](12-people-and-account-recovery.md), [13](13-advanced-policy-and-migration.md), [14](14-mcp-client-access.md), [15](15-operating-evidence-and-limits.md), [16](16-encrypted-instance-backups.md), [17](17-safe-instance-recovery.md) |
+| AUDIT-04.b — Diagnose and repair | [10](10-secure-audited-setup.md), [15](15-operating-evidence-and-limits.md) |
+| SEC-01 — Protect stored and displayed secrets | [10](10-secure-audited-setup.md), [11](11-managed-service-configuration.md), [12](12-people-and-account-recovery.md), [13](13-advanced-policy-and-migration.md), [14](14-mcp-client-access.md), [15](15-operating-evidence-and-limits.md), [16](16-encrypted-instance-backups.md), [17](17-safe-instance-recovery.md) |
+| SEC-02.a — Downstream destination boundary | [11](11-managed-service-configuration.md), [13](13-advanced-policy-and-migration.md) |
+| SEC-02.b — OAuth metadata retrieval | [14](14-mcp-client-access.md) |
+| SEC-03 — Attribute immediate security changes | [11](11-managed-service-configuration.md), [12](12-people-and-account-recovery.md), [14](14-mcp-client-access.md), [15](15-operating-evidence-and-limits.md), [16](16-encrypted-instance-backups.md), [17](17-safe-instance-recovery.md) |
+| BACKUP-01 — Whole-instance encrypted scope | [16](16-encrypted-instance-backups.md) |
+| BACKUP-02.a — Manual backup/download/recovery material | [16](16-encrypted-instance-backups.md) |
+| BACKUP-02.b — Scheduled backup and off-host copy | [16](16-encrypted-instance-backups.md) |
+| BACKUP-03.a — Preview in-place restore | [17](17-safe-instance-recovery.md) |
+| BACKUP-03.b — Preview clean-host restore | [17](17-safe-instance-recovery.md) |
+| BACKUP-04.a — Replace existing installation | [17](17-safe-instance-recovery.md) |
+| BACKUP-04.b — Install on clean host | [17](17-safe-instance-recovery.md) |
+| BACKUP-05.a — Recover nominated Owner | [17](17-safe-instance-recovery.md) |
+| BACKUP-05.b — Review users and resume services | [17](17-safe-instance-recovery.md) |
+| BACKUP-06 — Preserve evidence across restore | [17](17-safe-instance-recovery.md) |
+| OPS-01 — Tested operating envelope | [15](15-operating-evidence-and-limits.md) |
+| OPS-02.a — Configure limits | [15](15-operating-evidence-and-limits.md) |
+| OPS-02.b — Enforce quotas and bounded work | [15](15-operating-evidence-and-limits.md) |
+| OPS-03.a — Diagnose operational health | [10](10-secure-audited-setup.md), [15](15-operating-evidence-and-limits.md), [16](16-encrypted-instance-backups.md) |
+| OPS-03.b — Public health | [10](10-secure-audited-setup.md), [15](15-operating-evidence-and-limits.md) |
+| OPS-04.a — Retention configuration | [15](15-operating-evidence-and-limits.md), [16](16-encrypted-instance-backups.md) |
+| OPS-04.b — Recovery targets | [16](16-encrypted-instance-backups.md), [17](17-safe-instance-recovery.md) |
+| OPS-05 — Deploy single instance and proxy | [10](10-secure-audited-setup.md), [15](15-operating-evidence-and-limits.md) |
+| OPS-06 — Export operational evidence | [15](15-operating-evidence-and-limits.md), [16](16-encrypted-instance-backups.md), [17](17-safe-instance-recovery.md) |
+| MIGRATE-01 — Import gateway and scanner configuration | [13](13-advanced-policy-and-migration.md), [14](14-mcp-client-access.md) |
+| MIGRATE-02 — Resolve imported credential requirements | [13](13-advanced-policy-and-migration.md) |
+| MIGRATE-03 — Establish managed authority and export | [13](13-advanced-policy-and-migration.md) |
+| MIGRATE-04 — Preserve contracts during changes | [11](11-managed-service-configuration.md), [13](13-advanced-policy-and-migration.md), [14](14-mcp-client-access.md) |
+| CAP-CFG-01 — Service identity and documentation (configuration table) | [11](11-managed-service-configuration.md) |
+| CAP-CFG-02 — Multiple destinations and host matching (configuration table) | [11](11-managed-service-configuration.md) |
+| CAP-CFG-03 — Authentication placement and no-auth services (configuration table) | [11](11-managed-service-configuration.md) |
+| CAP-CFG-04 — Secretlint and sensitive-name catalogs (configuration table) | [13](13-advanced-policy-and-migration.md) |
+| CAP-CFG-05 — Per-rule scanning and binary settings (configuration table) | [13](13-advanced-policy-and-migration.md) |
+| CAP-CFG-06 — Token/authentication/scanner limits (configuration table) | [14](14-mcp-client-access.md), [15](15-operating-evidence-and-limits.md) |
+| SECRES-01 — Capability proof leakage and binding | [10](10-secure-audited-setup.md), [12](12-people-and-account-recovery.md), [14](14-mcp-client-access.md), [17](17-safe-instance-recovery.md) |
+| SECRES-02 — Recovery authority contexts | [10](10-secure-audited-setup.md), [12](12-people-and-account-recovery.md), [17](17-safe-instance-recovery.md) |
+| SECRES-03 — Verify recovery and bound attempts | [12](12-people-and-account-recovery.md) |
+| SECRES-04 — Audit repair exception | [10](10-secure-audited-setup.md), [11](11-managed-service-configuration.md), [12](12-people-and-account-recovery.md), [13](13-advanced-policy-and-migration.md), [14](14-mcp-client-access.md), [15](15-operating-evidence-and-limits.md), [16](16-encrypted-instance-backups.md), [17](17-safe-instance-recovery.md) |
+| STATE-01 — Separate draft and immediate transitions | [11](11-managed-service-configuration.md), [12](12-people-and-account-recovery.md), [13](13-advanced-policy-and-migration.md), [14](14-mcp-client-access.md), [15](15-operating-evidence-and-limits.md), [16](16-encrypted-instance-backups.md) |
+| STATE-02 — Coherent apply and dispatch | [11](11-managed-service-configuration.md), [13](13-advanced-policy-and-migration.md), [14](14-mcp-client-access.md) |
+| STATE-03 — Safe history projection | [13](13-advanced-policy-and-migration.md) |
+| STATE-04 — Consistent recovery point | [16](16-encrypted-instance-backups.md) |
+| STATE-05 — Installation failure boundary | [17](17-safe-instance-recovery.md) |
+| STATE-06 — Recovery activation and provenance | [17](17-safe-instance-recovery.md) |
+| CAP-ACCEPT-01 — Usability and documentation acceptance (section5) | [11](11-managed-service-configuration.md), [12](12-people-and-account-recovery.md), [13](13-advanced-policy-and-migration.md), [14](14-mcp-client-access.md), [15](15-operating-evidence-and-limits.md), [16](16-encrypted-instance-backups.md), [17](17-safe-instance-recovery.md) |
+
+## Actor journeys
+
+All 47 reviewed journeys map below. Shared journeys repeat only where distinct required lifecycle/operation stages consume earlier contracts.
+
+| Journey | Milestones |
+| --- | --- |
+| J-ADMIN-ACCESS | [11](11-managed-service-configuration.md) |
+| J-ADMIN-ACCOUNT | [10](10-secure-audited-setup.md), [12](12-people-and-account-recovery.md) |
+| J-ADMIN-ACTIVITY | [15](15-operating-evidence-and-limits.md) |
+| J-ADMIN-CLIENT | [14](14-mcp-client-access.md) |
+| J-ADMIN-CONFIG | [11](11-managed-service-configuration.md), [13](13-advanced-policy-and-migration.md) |
+| J-ADMIN-CREDENTIAL | [11](11-managed-service-configuration.md) |
+| J-ADMIN-DIAG | [10](10-secure-audited-setup.md) |
+| J-ADMIN-ENROLL | [12](12-people-and-account-recovery.md) |
+| J-ADMIN-HISTORY | [13](13-advanced-policy-and-migration.md) |
+| J-ADMIN-POLICY | [13](13-advanced-policy-and-migration.md) |
+| J-AUDITOR-ACCOUNT | [10](10-secure-audited-setup.md), [12](12-people-and-account-recovery.md) |
+| J-AUDITOR-ACTIVITY | [15](15-operating-evidence-and-limits.md) |
+| J-AUDITOR-CONFIG | [11](11-managed-service-configuration.md) |
+| J-AUDITOR-DIAG | [10](10-secure-audited-setup.md) |
+| J-AUDITOR-ENROLL | [12](12-people-and-account-recovery.md) |
+| J-EXTERNAL-01 | [14](14-mcp-client-access.md) |
+| J-HOST-01 | [10](10-secure-audited-setup.md), [15](15-operating-evidence-and-limits.md) |
+| J-HOST-RECOVERY | [12](12-people-and-account-recovery.md), [17](17-safe-instance-recovery.md) |
+| J-HOST-RESTORE | [17](17-safe-instance-recovery.md) |
+| J-LEGACY-01 | [14](14-mcp-client-access.md) |
+| J-MCP-01 | [14](14-mcp-client-access.md) |
+| J-MCP-RESTART | [14](14-mcp-client-access.md) |
+| J-MEMBER-ACCOUNT | [10](10-secure-audited-setup.md), [12](12-people-and-account-recovery.md) |
+| J-MEMBER-ACTIVITY | [15](15-operating-evidence-and-limits.md) |
+| J-MEMBER-CLIENT | [14](14-mcp-client-access.md) |
+| J-MEMBER-DIAG | [10](10-secure-audited-setup.md) |
+| J-MEMBER-ENROLL | [12](12-people-and-account-recovery.md) |
+| J-OWNER-01 | [10](10-secure-audited-setup.md) |
+| J-OWNER-ACCESS | [11](11-managed-service-configuration.md) |
+| J-OWNER-ACCOUNT | [10](10-secure-audited-setup.md), [12](12-people-and-account-recovery.md) |
+| J-OWNER-ACTIVITY | [15](15-operating-evidence-and-limits.md) |
+| J-OWNER-BACKUP | [16](16-encrypted-instance-backups.md) |
+| J-OWNER-CLIENT | [14](14-mcp-client-access.md) |
+| J-OWNER-CONFIG | [11](11-managed-service-configuration.md), [13](13-advanced-policy-and-migration.md) |
+| J-OWNER-CREDENTIAL | [11](11-managed-service-configuration.md) |
+| J-OWNER-DIAG | [10](10-secure-audited-setup.md) |
+| J-OWNER-ENROLL | [12](12-people-and-account-recovery.md) |
+| J-OWNER-HISTORY | [13](13-advanced-policy-and-migration.md) |
+| J-OWNER-PEOPLE | [12](12-people-and-account-recovery.md) |
+| J-OWNER-POLICY | [13](13-advanced-policy-and-migration.md) |
+| J-OWNER-RECOVERY | [12](12-people-and-account-recovery.md) |
+| J-OWNER-RESTORE | [17](17-safe-instance-recovery.md) |
+| J-OWNER-RESUME | [17](17-safe-instance-recovery.md) |
+| J-OWNER-SETTINGS | [15](15-operating-evidence-and-limits.md), [16](16-encrypted-instance-backups.md) |
+| J-PUBLIC-01 | [10](10-secure-audited-setup.md), [15](15-operating-evidence-and-limits.md) |
+| J-SYSTEM-ADMISSION | [15](15-operating-evidence-and-limits.md) |
+| J-SYSTEM-BACKUP | [16](16-encrypted-instance-backups.md) |
+
+## Approved UX checks
+
+Shared responsive/visual/accessibility rules govern every user-facing milestone. These per-check owners propagate the approved experience, not prototype omissions.
+
+| UX check | Milestones |
+| --- | --- |
+| UX-C01 | [10](10-secure-audited-setup.md), [12](12-people-and-account-recovery.md), [14](14-mcp-client-access.md), [15](15-operating-evidence-and-limits.md) |
+| UX-C02 | [11](11-managed-service-configuration.md) |
+| UX-C03 | [11](11-managed-service-configuration.md) |
+| UX-C04 | [13](13-advanced-policy-and-migration.md), [15](15-operating-evidence-and-limits.md) |
+| UX-C05 | [11](11-managed-service-configuration.md), [13](13-advanced-policy-and-migration.md) |
+| UX-C06 | [11](11-managed-service-configuration.md), [13](13-advanced-policy-and-migration.md) |
+| UX-C07 | [11](11-managed-service-configuration.md), [12](12-people-and-account-recovery.md), [14](14-mcp-client-access.md) |
+| UX-C08 | [11](11-managed-service-configuration.md), [12](12-people-and-account-recovery.md), [17](17-safe-instance-recovery.md) |
+| UX-C09 | [13](13-advanced-policy-and-migration.md) |
+| UX-C10 | [11](11-managed-service-configuration.md), [13](13-advanced-policy-and-migration.md), [16](16-encrypted-instance-backups.md) |
+| UX-C11 | [12](12-people-and-account-recovery.md) |
+| UX-C12 | [10](10-secure-audited-setup.md), [12](12-people-and-account-recovery.md), [17](17-safe-instance-recovery.md) |
+| UX-C13 | [14](14-mcp-client-access.md) |
+| UX-C14 | [15](15-operating-evidence-and-limits.md), [17](17-safe-instance-recovery.md) |
+| UX-C15 | [10](10-secure-audited-setup.md), [11](11-managed-service-configuration.md), [12](12-people-and-account-recovery.md), [13](13-advanced-policy-and-migration.md), [14](14-mcp-client-access.md), [15](15-operating-evidence-and-limits.md), [16](16-encrypted-instance-backups.md), [17](17-safe-instance-recovery.md) |
+| UX-C16 | [10](10-secure-audited-setup.md), [15](15-operating-evidence-and-limits.md), [17](17-safe-instance-recovery.md) |
+| UX-C17 | [16](16-encrypted-instance-backups.md) |
+| UX-C18 | [17](17-safe-instance-recovery.md) |
+| UX-C19 | [17](17-safe-instance-recovery.md) |
+| UX-C20 | [10](10-secure-audited-setup.md), [11](11-managed-service-configuration.md), [12](12-people-and-account-recovery.md), [13](13-advanced-policy-and-migration.md), [14](14-mcp-client-access.md), [15](15-operating-evidence-and-limits.md), [16](16-encrypted-instance-backups.md), [17](17-safe-instance-recovery.md) |
+| UX-C21 | [10](10-secure-audited-setup.md), [11](11-managed-service-configuration.md), [12](12-people-and-account-recovery.md), [13](13-advanced-policy-and-migration.md), [14](14-mcp-client-access.md), [15](15-operating-evidence-and-limits.md), [16](16-encrypted-instance-backups.md), [17](17-safe-instance-recovery.md) |
+| UX-C22 | [10](10-secure-audited-setup.md), [11](11-managed-service-configuration.md), [12](12-people-and-account-recovery.md), [13](13-advanced-policy-and-migration.md), [14](14-mcp-client-access.md), [15](15-operating-evidence-and-limits.md), [16](16-encrypted-instance-backups.md), [17](17-safe-instance-recovery.md) |
+| UX-C23 | [13](13-advanced-policy-and-migration.md) |
+| UX-C24 | [15](15-operating-evidence-and-limits.md), [16](16-encrypted-instance-backups.md) |
+| UX-C25 | [11](11-managed-service-configuration.md), [12](12-people-and-account-recovery.md), [13](13-advanced-policy-and-migration.md), [15](15-operating-evidence-and-limits.md), [17](17-safe-instance-recovery.md) |
+
+## Review evidence and acceptance propagation
+
+| Evidence / governing section | Disposition and milestone contract |
+| --- | --- |
+| Security SECRES-T01–07 | Positive/negative proof, seed/link handling, recovery and outage scenarios are assigned to 10/12/14/17 as applicable. Audit failure/start-uncertainty checks apply at each new sensitive boundary. |
+| Architecture STATE acceptance scenarios; ARCH-OBS-01 | Coherent runtime/apply/admission and in-flight protection: 11, 13, 14. Observation itself creates no independent milestone. |
+| ARCH-OBS-02 | Durable gate replaces existing fail-open audit in 10; each feature consumes it; search/integrity/retention in 15. |
+| ARCH-OBS-03 | Explicit state projections across 10–17; no shared snapshot may leak live authentication into history/backup. |
+| ARCH-OBS-04 | Consistent snapshot in 16; crash installation, separate rollback and provenance in 17. |
+| ARCH-OBS-05 | Bounded policy/import in 13, capacity/audit operating envelope in 15 and bounded archives/jobs in 16/17. |
+| Security review “Security review by domain” and “Attack-chain review” | Existing required negative cases propagate to each corresponding milestone's validation; observations do not create a new feature or approval. |
+| PRD section 5 acceptance and usability/documentation | Per-boundary checks in 10–17; all permission cells in 12/14, all fields and imports in 13/15, real clients in 14 and post-restore 17, operational load in 15, recovery drills in 16/17. Setup ≤15 minutes (11), denial ≤2 minutes (13/15), disable ≤1 minute (12/15). |
+| Decision ledger D-001–D-012 and accepted UX-DESIGN-001 | Governing scope/authority in all milestones; no reopening of approved product or visual direction. |
+
+## Excluded, deferred, blocked and unmapped
+
+- **Excluded by product:** Multi-tenancy/SaaS control plane, SAML/browser OIDC/SCIM, custom roles/groups, approval chains, billing, service-specific tools/packs, automatic downstream credential rotation, remote backup integrations, active-active/HA, general secrets vault, selective/per-user/downstream restore. None creates a milestone.
+- **Accepted limitation:** SEC-DEF-001 / D-012 trusted destination authors and best-effort scanning remain disclosed in 11/13/15; no universal non-exfiltration project is implied.
+- **Operator context:** SEC-DEF-002 host security, independent evidence copies and off-host backup copying remain documented responsibilities, not new managed integrations. SEC-DEF-003 audit availability tradeoff is already required behavior in 10 onward. SEC-DEF-004 is future implementation evidence, not a definition defect.
+- **Delegated mechanisms:** Database (including SQLite suggestion), frontend framework, cryptographic library, module layout, archive internals and test tooling are implementation choices under the validated contracts. They do not justify separate selection/architecture milestones or new product approval.
+- **Preserved historical work:** Completed gateway milestones 00–09 and existing tested algorithms remain baseline; only explicit BASE-02 changes and necessary integration are new work. No historical status or file is rewritten.
+- **Deferred required scope:** None outside this packet. Intermediate milestones name later providers explicitly; the initial release requires all eight.
+- **Blocked source requirements:** None. Implementation-environment prerequisites and external client evidence are classified by milestone-readiness after compilation.
+- **Unmapped required capability families/rows, actor journeys, UX checks:** None (70/97, 47, 25 mapped respectively).

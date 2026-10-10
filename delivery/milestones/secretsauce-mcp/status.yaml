@@ -1,10 +1,10 @@
 product_id: secretsauce-mcp
 scope: Self-hosted single-organization web console initial release
 status_values:
-- pending
-- in_progress
-- completed
-- blocked
+  - pending
+  - in_progress
+  - completed
+  - blocked
 compiled_from:
   product_id: secretsauce-mcp
   input_mode: PRODUCT_BUILD
@@ -70,96 +70,149 @@ compiled_from:
     path: workflow/definition/decisions.md
     revision: sha256:e01485496c7d0fa914f1349967f0b2e819f4a32bc5f33001c92e8f8af22cdf7e
   accepted_risks:
-  - id: SEC-DEF-001
-    summary: Trusted destination authors and best-effort response scanning are not
-      universal credential non-exfiltration controls.
-    decision_refs:
-    - D-012
-    result: workflow/definition/results/security.yaml
+    - id: SEC-DEF-001
+      summary: Trusted destination authors and best-effort response scanning are not
+        universal credential non-exfiltration controls.
+      decision_refs:
+        - D-012
+      result: workflow/definition/results/security.yaml
   preservation_baseline:
     milestone_manifest: docs/milestones/status.yaml
     revision: sha256:2e68d9b851b08e004c9bb72fc50852470793cded780dfdcce95596612efce5a7
     completed_ids:
-    - '00'
-    - '01'
-    - '02'
-    - '03'
-    - '04'
-    - '05'
-    - '06'
-    - '07'
-    - 08
-    - 09
+      - "00"
+      - "01"
+      - "02"
+      - "03"
+      - "04"
+      - "05"
+      - "06"
+      - "07"
+      - 8
+      - 9
 milestones:
-- id: '10'
-  title: Establish secure audited console access
-  file: delivery/milestones/secretsauce-mcp/10-secure-audited-setup.md
-  status: pending
-  dependencies: []
-  completed_at: null
-  commit_hash: null
-  notes: null
-- id: '11'
-  title: Configure and activate services safely
-  file: delivery/milestones/secretsauce-mcp/11-managed-service-configuration.md
-  status: pending
-  dependencies:
-  - '10'
-  completed_at: null
-  commit_hash: null
-  notes: null
-- id: '12'
-  title: Manage people and recover accounts
-  file: delivery/milestones/secretsauce-mcp/12-people-and-account-recovery.md
-  status: pending
-  dependencies:
-  - '11'
-  completed_at: null
-  commit_hash: null
-  notes: null
-- id: '13'
-  title: Author advanced policy and migrate configuration
-  file: delivery/milestones/secretsauce-mcp/13-advanced-policy-and-migration.md
-  status: pending
-  dependencies:
-  - '12'
-  completed_at: null
-  commit_hash: null
-  notes: null
-- id: '14'
-  title: Connect and govern MCP clients
-  file: delivery/milestones/secretsauce-mcp/14-mcp-client-access.md
-  status: pending
-  dependencies:
-  - '12'
-  completed_at: null
-  commit_hash: null
-  notes: null
-- id: '15'
-  title: Operate and inspect the managed instance
-  file: delivery/milestones/secretsauce-mcp/15-operating-evidence-and-limits.md
-  status: pending
-  dependencies:
-  - '13'
-  - '14'
-  completed_at: null
-  commit_hash: null
-  notes: null
-- id: '16'
-  title: Create recoverable encrypted instance backups
-  file: delivery/milestones/secretsauce-mcp/16-encrypted-instance-backups.md
-  status: pending
-  dependencies:
-  - '15'
-  completed_at: null
-  commit_hash: null
-  notes: null
-- id: '17'
-  title: Restore and resume an instance safely
-  file: delivery/milestones/secretsauce-mcp/17-safe-instance-recovery.md
-  status: pending
-  dependencies:
-  - '16'
-  completed_at: null
-  commit_hash: null
-  notes: null
+  - id: "10"
+    title: Establish secure audited console access
+    file: delivery/milestones/secretsauce-mcp/10-secure-audited-setup.md
+    status: in_progress
+    dependencies: []
+    completed_at: null
+    commit_hash: null
+    notes: null
+    started_at: 2026-10-10T03:43:12.099Z
+  - id: "11"
+    title: Configure and activate services safely
+    file: delivery/milestones/secretsauce-mcp/11-managed-service-configuration.md
+    status: pending
+    dependencies:
+      - "10"
+    completed_at: null
+    commit_hash: null
+    notes: null
+  - id: "12"
+    title: Manage people and recover accounts
+    file: delivery/milestones/secretsauce-mcp/12-people-and-account-recovery.md
+    status: pending
+    dependencies:
+      - "11"
+    completed_at: null
+    commit_hash: null
+    notes: null
+  - id: "13"
+    title: Author advanced policy and migrate configuration
+    file: delivery/milestones/secretsauce-mcp/13-advanced-policy-and-migration.md
+    status: pending
+    dependencies:
+      - "12"
+    completed_at: null
+    commit_hash: null
+    notes: null
+  - id: "14"
+    title: Connect and govern MCP clients
+    file: delivery/milestones/secretsauce-mcp/14-mcp-client-access.md
+    status: pending
+    dependencies:
+      - "12"
+    completed_at: null
+    commit_hash: null
+    notes: null
+  - id: "15"
+    title: Operate and inspect the managed instance
+    file: delivery/milestones/secretsauce-mcp/15-operating-evidence-and-limits.md
+    status: pending
+    dependencies:
+      - "13"
+      - "14"
+    completed_at: null
+    commit_hash: null
+    notes: null
+  - id: "16"
+    title: Create recoverable encrypted instance backups
+    file: delivery/milestones/secretsauce-mcp/16-encrypted-instance-backups.md
+    status: pending
+    dependencies:
+      - "15"
+    completed_at: null
+    commit_hash: null
+    notes: null
+  - id: "17"
+    title: Restore and resume an instance safely
+    file: delivery/milestones/secretsauce-mcp/17-safe-instance-recovery.md
+    status: pending
+    dependencies:
+      - "16"
+    completed_at: null
+    commit_hash: null
+    notes: null
+delivery_goal:
+  product_id: secretsauce-mcp
+  status: in_progress
+  packet: delivery/milestones/secretsauce-mcp/status.yaml
+  packet_revision: sha256:a262e7f9b7087b033e2708500b060576ba5adfec8dbc9dc98f2fa3a1f49f104d
+  packet_contract_revisions:
+    - path: delivery/milestones/secretsauce-mcp/10-secure-audited-setup.md
+      revision: sha256:75dfd4caf24033efbc4ab14117b3245bf73439d34ed448c1c75a3700dafaa450
+    - path: delivery/milestones/secretsauce-mcp/11-managed-service-configuration.md
+      revision: sha256:0974e1d0fc81faf4ae5f4377ca7fce379e46ae18b4a414cba5140d1f8f255d46
+    - path: delivery/milestones/secretsauce-mcp/12-people-and-account-recovery.md
+      revision: sha256:57194362bc790482574d6d431b2eeb13a9884b12635bcb601bbe76b8e665e6b6
+    - path: delivery/milestones/secretsauce-mcp/13-advanced-policy-and-migration.md
+      revision: sha256:31df199c8c7e8b0c1841fd46c5db92a1a46e72a7e6ace1eda707db4c710b5576
+    - path: delivery/milestones/secretsauce-mcp/14-mcp-client-access.md
+      revision: sha256:76083d3d4e6aa6ca3c117c4f85ba7058bec36cc1091da5333adee74bc12963fc
+    - path: delivery/milestones/secretsauce-mcp/15-operating-evidence-and-limits.md
+      revision: sha256:e97bae18495226b48f04cc8d22f083fab302077d272a060f18eeaaa63cab4f85
+    - path: delivery/milestones/secretsauce-mcp/16-encrypted-instance-backups.md
+      revision: sha256:e61b86ca883a0f8c00a3747f1a85a8f5bdf5abe60c27c9c4184843ccebeaeacf
+    - path: delivery/milestones/secretsauce-mcp/17-safe-instance-recovery.md
+      revision: sha256:397eefccf9a35158fa20ed5fb9b474c3ceb2760f6127a50f07d7537e99f52b1d
+    - path: delivery/milestones/secretsauce-mcp/index.md
+      revision: sha256:4a9a331940ba3e77acf3ac0415e17c9c65842b2e5979303dcccdfd7237223088
+    - path: delivery/milestones/secretsauce-mcp/traceability.md
+      revision: sha256:f484408eba6c5b7b2256f97a95d8d6ffabdba9b58a1f2cfe6a03537806ac4553
+  compiled_from_revision: sha256:8fabbc634d279f3be9a6c8590580a6b12bad891ea4b821aa805aeeb331dfe312
+  source_path: workflow/definition/definition-package.yaml
+  source_revision: sha256:44c2c2338ed74a26867fdd374988bb73c4bd6ed1179e99a7a329b26acf59f6e1
+  source_commit: 06dd0ee59defd1a75db121f1d8133c7100238b80
+  planning_commit: 865aa5710bcb9ff6c4641e177452ab9c50619a19
+  transaction_start_commit: 2a69a215fe4c7ec605684f32a333b1ccfb40b22d
+  pre_existing_dirty_paths:
+    - test-results/
+  scope: remaining
+  start: null
+  end: null
+  milestone_ids:
+    - "10"
+    - "11"
+    - "12"
+    - "13"
+    - "14"
+    - "15"
+    - "16"
+    - "17"
+  execution: autonomous
+  current_milestone: "10"
+  governing_plan: delivery/plans/secretsauce-mcp/milestone_10_plan_01.md
+  blockers: []
+  resume_point: Generate milestone 10 governing plan and all slice plans before
+    production edits

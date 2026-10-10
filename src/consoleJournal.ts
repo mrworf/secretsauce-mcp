@@ -125,6 +125,10 @@ export class ConsoleJournal {
             return true;
         } catch { this.degraded = true; return false; }
     }
+    recoverySnapshot(): import('./consoleBackupArchive.js').AuditRecoveryDomain {
+        if (!this.verify() || !this.materialAvailable()) throw new Error('Durable audit unavailable');
+        return {chain:readFileSync(this.path,'utf8'),head:this.#head,key:this.key.toString('hex'),identity:this.identity()};
+    }
     retentionCandidates(cutoff: number): OperationRecord[] {
         const finished = new Set(this.#records.filter(r => r.phase === 'complete').map(r => r.id));
         const unfinished = new Set(this.#records.filter(r => r.phase === 'start' && !finished.has(r.id)).map(r => r.id));

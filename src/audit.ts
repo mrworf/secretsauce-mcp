@@ -185,6 +185,10 @@ export class AuditSink {
     catch {this.markDegraded('write');verified=false;}
     return {operations:journal.entries().filter(r=>r.action!=='audit.event'),events,verified};
   }
+  recoverySnapshot(): import('./consoleBackupArchive.js').AuditRecoveryDomain {
+    if(this.degraded || !this.#writer || !this.evidence().verified)throw new Error('Durable audit unavailable');
+    return {...this.#writer.journal.recoverySnapshot(),events:readFileSync(this.file,'utf8')};
+  }
   retentionImpact(cutoff:number):number {return this.#writer?.journal.retentionCandidates(cutoff).length??0;}
   retain(cutoff:number,actor:string):number {
     if(this.degraded||this.fileOperations!==defaultFileOperations||!this.#writer||this.#writer.refs>1)throw new Error('Durable audit unavailable');

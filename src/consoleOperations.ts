@@ -45,3 +45,5 @@ function getPath(value:unknown,path:string):unknown {let current=value as Record
 const managers=new WeakMap<ConsoleStore,ConsoleOperations>();
 export function bindConsoleOperations(store:ConsoleStore,runtime:GatewayRuntime){const o=new ConsoleOperations(store,runtime);managers.set(store,o);return o;}
 export function consoleOperations(store:ConsoleStore){let o=managers.get(store);if(!o){o=new ConsoleOperations(store);managers.set(store,o);}return o;}
+
+export { settings as operatingSettingsSchema };

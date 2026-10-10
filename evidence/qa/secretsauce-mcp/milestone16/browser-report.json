@@ -1,0 +1,16 @@
+{
+  "result": "PASS",
+  "transport": "Actual HTTPS with synthetic example.org certificate/loopback resolver",
+  "checks": [
+    {
+      "check": "Owner creates portable encrypted manual archive; distinct recovery/completion times, scope, compatibility and off-host obligation; keyboard320px"
+    },
+    {
+      "check": "Recent password/freshTOTP gates actual binary download; archive/material alone verifies retained management+gateway audit and dependencies"
+    },
+    {
+      "check": "Missing archive reports failed download and retains safe action context; no false success"
+    }
+  ],
+  "realLLM": "NOT RUN: authorized local-validation exception"
+}

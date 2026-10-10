@@ -1,6 +1,7 @@
 import { closeSync, existsSync, fsyncSync, mkdirSync, openSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { backupPublicKey } from './consoleBackupArchive.js';
 import { decrypt, digest, encrypt, equal, newSeed, passwordHash, passwordMatches, randomSecret, totp, validatePassword } from './consoleCrypto.js';
 import { sanitizeAuditText } from './auditSanitizer.js';
 import { ConsoleJournal, type ManagementDetails } from './consoleJournal.js';
@@ -74,6 +75,8 @@ export interface ConsoleState {
     notifications?: import("./consoleNotifications.js").NotificationState;
     authentication?: import("./consoleAuthentication.js").AuthenticationState;
     backupHash?: string;
+    backupPublicKey?: string;
+    backups?: import("./consoleBackups.js").BackupState;
 }
 export { atomicFile } from './consolePersistence.js';
 import { atomicFile } from './consolePersistence.js';
@@ -236,7 +239,7 @@ export class ConsoleStore {
             this.commit('host', 'setup.code_rejected', 'instance', s => { s.enrollment!.attempts++; });
             throw new Error('Authenticator code was not accepted.');
         }
-        return this.commit('host', 'setup.complete', 'instance', s => { s.users = [{ id: randomUUID(), email: e.email, role: 'Owner', active: true, password: e.password, seed: e.seed, lastCounter: Math.floor(now / 30000), recoveryHashes: e.recovery.map(digest), attempts: 0, blockedUntil: 0 }]; s.name = e.name; s.origin = e.origin; s.backupHash = digest(e.backup); s.initialized = true; delete s.enrollment; delete s.proof; });
+        return this.commit('host', 'setup.complete', 'instance', s => { s.users = [{ id: randomUUID(), email: e.email, role: 'Owner', active: true, password: e.password, seed: e.seed, lastCounter: Math.floor(now / 30000), recoveryHashes: e.recovery.map(digest), attempts: 0, blockedUntil: 0 }]; s.name = e.name; s.origin = e.origin; s.backupHash = digest(e.backup); s.backupPublicKey = backupPublicKey(e.backup); s.initialized = true; delete s.enrollment; delete s.proof; });
     }
     private verify(user: ConsoleUser | undefined, password: unknown, code: unknown, now: number): number {
         if (!this.storageReliable)

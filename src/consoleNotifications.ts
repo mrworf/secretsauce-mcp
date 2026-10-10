@@ -143,3 +143,5 @@ export function consoleNotifications(store: ConsoleStore) { let n = managers.get
     n = new ConsoleNotifications(store);
     managers.set(store, n);
 } return n; }
+
+export { settings as smtpSettingsSchema };

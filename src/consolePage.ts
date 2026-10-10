@@ -1,3 +1,4 @@
+import { consoleBackupsScript } from './consoleBackupsPage.js';
 import { consoleOperationsScript } from './consoleOperationsPage.js';
 import { consoleEvidenceScript } from './consoleEvidencePage.js';
 import { consoleAuthenticationScript } from './consoleAuthenticationPage.js';
@@ -25,4 +26,5 @@ ${consolePeopleScript}
 ${consoleAuthenticationScript}
 ${consoleEvidenceScript}
 ${consoleOperationsScript}
+${consoleBackupsScript}
 start();`;

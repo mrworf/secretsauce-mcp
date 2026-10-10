@@ -72,3 +72,5 @@ export class ConsoleAuthentication {
  }
  builtinDefaults(){return {mode:'builtin_oauth' as const,issuer:this.current().resource,allowedClients:['https://chatgpt.com'],requiredScopes:['gateway.read','gateway.references','gateway.request'],accessTokenTtlMs:3600000,authorizationCodeTtlMs:300000,refreshTokenIdleTtlMs:2592000000,refreshTokenMaxTtlMs:7776000000,loginRateLimit:defaults};}
 }
+
+export { settings as authenticationSettingsSchema };

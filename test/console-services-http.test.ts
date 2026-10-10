@@ -1,0 +1,23 @@
+import { once } from 'node:events';
+import { describe, it, expect } from 'vitest';
+import { managedFixture } from './consoleManagementFixtures.js';
+import { createGatewayServer } from '../src/server.js';
+const service={name:'HTTP managed example',no_auth:true,destinations:[{id:'primary',base_url:'https://api.example.org'}],access:{users:[]},policy:{mode:'deny',rules:[]}};
+async function httpFixture(){const f=managedFixture(cfg=>{cfg.services['_existing/service:v1']={...structuredClone(cfg.services.baseline!),id:'_existing/service:v1'};});const server=createGatewayServer(f.cfg,{consoleStore:f.store});server.listen(0,'127.0.0.1');await once(server,'listening');const a=server.address();if(!a||typeof a==='string')throw Error('listener');const base='http://127.0.0.1:'+a.port;const headers={cookie:'__Host-ss-console='+f.token,origin:'https://console.example.org','content-type':'application/json','x-console-csrf':f.csrf};return {...f,server,base,headers,post:(path:string,data:unknown,extra={})=>fetch(base+'/console/api/'+path,{method:'POST',headers:{...headers,...extra},body:JSON.stringify(data)}),async close(){await new Promise<void>(r=>server.close(()=>r()));f.close();}};}
+describe('protected managed HTTP service boundary',()=>{
+ it('exposes scoped sanitized list/detail, decodes existing IDs and saves/reviews/applies exact actor scope',async()=>{
+  const f=await httpFixture();try{
+   expect((await fetch(f.base+'/console/api/services')).status).toBe(401);expect((await fetch(f.base+'/console/api/services/'+encodeURIComponent('_existing/service:v1'),{headers:f.headers})).status).toBe(200);expect((await fetch(f.base+'/console/api/services/%ZZ',{headers:f.headers})).status).toBe(400);
+   expect((await f.post('service/save',{id:'new',base:0,generation:0,service})).status).toBe(200);const reviewed=await (await f.post('service/review',{id:'new'})).json();expect(reviewed.scope.services).toEqual(['new']);const applied=await (await f.post('service/apply',{id:'new',review:reviewed.review,acknowledgments:[]})).json();expect(applied.status).toBe('applied');
+   const status=await (await fetch(f.base+'/console/api/operations/'+applied.operation,{headers:f.headers})).json();expect(status.status).toBe('success');const list=await (await fetch(f.base+'/console/api/services',{headers:f.headers})).json();expect(list.services.find((s:any)=>s.id==='new')).toMatchObject({lifecycle:'Active',assignmentCount:0});
+   const stale=await f.post('service/save',{id:'new',base:0,generation:0,service});expect(stale.status).toBe(409);const body=await stale.json();expect(body.comparison.applied.name).toBe(service.name);expect(JSON.stringify(body)).not.toContain('synthetic-bearer');
+  }finally{await f.close();}
+ });
+ it('rejects Origin/CSRF/content types/oversize/unknown paths and role changes before effects; secrets never return',async()=>{
+  const f=await httpFixture();try{
+   const save={id:'new',base:0,generation:0,service};expect((await f.post('service/save',save,{origin:'https://untrusted.example.org'})).status).toBe(403);expect((await f.post('service/save',save,{'x-console-csrf':'invalid'})).status).toBe(403);expect((await f.post('service/save',save,{'content-type':'text/plain'})).status).toBe(400);expect((await f.post('service/missing',{})).status).toBe(404);expect((await f.post('service/save',{...save,service:{...service,description:'x'.repeat(140000)}})).status).toBe(400);expect(f.cfg.services.new).toBeUndefined();
+   expect((await f.post('service/save',save)).status).toBe(200);const secret='synthetic-console-http-value';const response=await f.post('service/credential',{id:'new',credential:'key',action:'create',value:secret,confirmed:true});expect(response.status).toBe(200);expect(await response.text()).not.toContain(secret);const detail=await (await fetch(f.base+'/console/api/services/new',{headers:f.headers})).text();expect(detail).not.toContain(secret);
+   f.store.state.users[0]!.role='Administrator';expect((await f.post('service/save',{...save,base:1,generation:1,settings:{name:'Owner-only'}})).status).toBe(403);f.store.state.users[0]!.role='Auditor';expect((await fetch(f.base+'/console/api/services',{headers:f.headers})).status).toBe(200);expect((await f.post('service/lifecycle',{id:'new',action:'disable',confirmed:true})).status).toBe(403);f.store.state.users[0]!.role='Member';expect((await fetch(f.base+'/console/api/services',{headers:f.headers})).status).toBe(403);
+  }finally{await f.close();}
+ });
+});

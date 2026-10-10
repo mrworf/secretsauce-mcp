@@ -1,6 +1,6 @@
 # M11 slice 03: Service-first console and five-step setup
 
-Status: pending. Parent transaction `9a9f619b3901b256ea6ebe242211425b0c00f874`.
+Status: complete. Full suite 427/427 across41 files; build and both actual HTTPS browser harnesses pass. Evidence `evidence/qa/secretsauce-mcp/milestone11/slice03.md` and `acceptance.md`. Review corrections included own-safe disabled runtime lookups, positive partial-body fixture, literal-prefix policy escaping, direct grouped editing and compact desktop summaries. Parent transaction `9a9f619b3901b256ea6ebe242211425b0c00f874`.
 
 ## Goal and outcome
 First Owner completes Details → Destination → Authentication → Access & policy → Review with keyboard, safe Back/draft behavior and readable applied state at 320px.

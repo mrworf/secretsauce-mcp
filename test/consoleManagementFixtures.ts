@@ -11,5 +11,5 @@ export function managedFixture(transform?: (config: ReturnType<typeof validateCo
   const f = fixture({ config: cfg }); const e = setup(f, now - 30000);
   const login = f.store.login('owner@example.org', 'A novel lengthy passphrase 2026', totp(e.seed, now));
   const session = f.store.session(login.token)!; const manager = new ConsoleServices(f.store, cfg);
-  return { ...f, cfg, manager, session, clock, close() { clock.mockRestore(); f.close(); } };
+  return { ...f, cfg, manager, session, clock, token: login.token, csrf: login.csrf, close() { clock.mockRestore(); f.close(); } };
 }

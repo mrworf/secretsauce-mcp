@@ -56,7 +56,7 @@ export class ConsoleServices {
     const user = this.actor(session);
     return { revision: this.state.revision, writable: ['Owner', 'Administrator'].includes(user.role) && !session.restricted && !this.store.journal.degraded && !this.store.externalAudit?.degraded,
       eligible: this.store.state.users.filter(u => u.active && u.role !== 'Auditor').map(u => ({ id: u.id, email: u.email, role: u.role })),
-      services: Object.entries(this.state.services).map(([id, s]) => ({ id, name: s.applied?.name ?? s.draft?.content.name ?? id, lifecycle: s.lifecycle, appliedRevision: this.state.revision, hasDraft: Boolean(s.draft), exceptions: s.applied ? exceptions(s.applied) : [] })) };
+      services: Object.entries(this.state.services).map(([id, s]) => ({ id, name: s.applied?.name ?? s.draft?.content.name ?? id, description: s.applied?.description ?? s.draft?.content.description ?? '', assignmentCount: s.assignments.length, lifecycle: s.lifecycle, appliedRevision: this.state.revision, hasDraft: Boolean(s.draft), exceptions: s.applied ? exceptions(s.applied) : [] })) };
   }
   detail(session: ConsoleSession, id: unknown) {
     this.actor(session); const key = this.parse(idSchema, id); const s = own(this.state.services, key);
@@ -143,7 +143,7 @@ export class ConsoleServices {
       const m = state.managed!, target = m.services[data.id]!;
       if (data.action === 'delete') delete target.values[data.credential];
       else Object.defineProperty(target.values, data.credential, { value: { value: data.value!, version: (own(target.values, data.credential)?.version ?? 0) + 1, changed: Date.now() }, enumerable: true, writable: true, configurable: true });
-      const active = state.config!.services[data.id];
+      const active = own(state.config!.services, data.id);
       if (active && data.action !== 'delete') for (const credential of active.credentials) if (credential.id === data.credential) credential.secret = data.value!;
       m.revision++;
     }, { credential: sanitizeAuditText(data.credential, data.value ? [data.value] : []), credentialVersion: data.action === 'delete' ? own(s.values, data.credential)!.version : (own(s.values, data.credential)?.version ?? 0) + 1 }); } finally { if (this.state.revision !== base) { this.invalidate(data.id); this.publish(); } }
@@ -161,7 +161,7 @@ export class ConsoleServices {
       const m = state.managed!, target = m.services[data.id]!;
       target.assignments = data.action === 'grant' ? [...target.assignments, data.user] : target.assignments.filter(v => v !== data.user);
       target.applied!.access = { users: target.assignments };
-      if (state.config!.services[data.id]) state.config!.services[data.id]!.access = { users: target.assignments };
+      const active = own(state.config!.services, data.id); if (active) active.access = { users: target.assignments };
       m.revision++;
     }, { identity: data.user }); } finally { if (this.state.revision !== base) { if (data.action === 'remove') this.invalidate(data.id, data.user); this.publish(); } }
     return { operation, status: 'success', revision: this.state.revision };

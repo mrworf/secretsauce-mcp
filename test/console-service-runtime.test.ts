@@ -81,7 +81,7 @@ describe('immediate managed credentials, access and lifecycle', () => {
    f.manager.access(f.session,{id:'service',user,action:'remove',confirmed:true});d.finish();const result=await pending;expect(result.body).not.toContain('synthetic-original-secret');expect(broker.stats().configured).toBe(0);expect(broker.stats().responseSecrets).toBe(0);await expect(executeServiceRequest(f.cfg,auth(user),{service:'service',method:'GET',path:'/',headers:{'X-Api-Key':ref},reason:'check'},r)).rejects.toThrow();expect(d.count()).toBe(1);
   }finally{d.finish();await r.close();await d.close();f.close();}
  });
- it.each(['rotate','revoke','apply'] as const)('a valid POST waiting for body bytes rechecks %s before downstream dispatch',async action=>{
+ it.each(['unchanged','rotate','revoke','apply'] as const)('a valid POST waiting for body bytes rechecks %s before downstream dispatch',async action=>{
   const f=managedFixture();const d=await downstream('safe');configure(f,d.url,true);
   // Explicit existing external subject fixture: bearer compatibility carries no console authority.
   f.manager.state.services.service!.assignments.push('bearer-dev');f.manager.state.services.service!.applied!.access!.users=[...f.manager.state.services.service!.assignments];f.store.state.config!.services.service!.access.users=[...f.manager.state.services.service!.assignments];
@@ -95,14 +95,14 @@ describe('immediate managed credentials, access and lifecycle', () => {
    if(action==='rotate')m.credential(f.session,{id:'service',credential:'key',action:'replace',value:'synthetic-replaced',confirmed:true});
    if(action==='revoke')m.access(f.session,{id:'service',user:'bearer-dev',action:'remove',confirmed:true});
    if(action==='apply'){const next=structuredClone(m.state.services.service!.applied!);next.policy={mode:'deny',rules:[]};m.save(f.session,{id:'service',base:m.state.revision,generation:0,service:next});const review=m.review(f.session,{id:'service'});m.apply(f.session,{id:'service',review:review.review,acknowledgments:review.exceptions});}
-   outgoing!.end(payload.slice(20));const body=await completion;expect(body).toContain('isError');expect(body).toMatch(/(reference|Current service access unavailable|policy)/i);expect(d.count()).toBe(0);
+   outgoing!.end(payload.slice(20));if(action==='unchanged'){await d.admitted;d.finish();}const body=await completion;if(action==='unchanged'){expect(body).toContain('status_code');expect(d.count()).toBe(1);}else{expect(body).toContain('isError');expect(body).toMatch(/(reference|Current service access unavailable|policy)/i);expect(d.count()).toBe(0);}
   }finally{await new Promise<void>(resolve=>server.close(()=>resolve()));await rt.close();await d.close();f.close();}
  });
  it('prototype-like identifiers are own records and forged lookups never select inherited services or credentials',()=>{
   const f=managedFixture();try{
    expect(()=>f.manager.detail(f.session,'constructor')).toThrow('unavailable');expect(()=>getService(f.cfg,'toString')).toThrow('Unknown');expect(()=>f.manager.credential(f.session,{id:'constructor',credential:'toString',action:'replace',value:'synthetic',confirmed:true})).toThrow('unavailable');
    for(const id of ['constructor','toString']){configure(f,'https://api.example.org',false,id);expect(Object.hasOwn(f.manager.state.services,id)).toBe(true);expect(f.manager.detail(f.session,id).lifecycle).toBe('Active');}
-   f.manager.credential(f.session,{id:'constructor',credential:'toString',action:'create',value:'synthetic-prototype-safe',confirmed:true});expect(f.manager.detail(f.session,'constructor').credentials).toMatchObject([{id:'toString',version:1}]);expect(()=>f.manager.credential(f.session,{id:'constructor',credential:'valueOf',action:'replace',value:'synthetic',confirmed:true})).toThrow('availability');
+   f.manager.credential(f.session,{id:'constructor',credential:'toString',action:'create',value:'synthetic-prototype-safe',confirmed:true});expect(f.manager.detail(f.session,'constructor').credentials).toMatchObject([{id:'toString',version:1}]);expect(()=>f.manager.credential(f.session,{id:'constructor',credential:'valueOf',action:'replace',value:'synthetic',confirmed:true})).toThrow('availability');f.manager.lifecycle(f.session,{id:'constructor',action:'disable',confirmed:true});f.manager.credential(f.session,{id:'constructor',credential:'toString',action:'replace',value:'synthetic-disabled-value',confirmed:true});expect(f.manager.detail(f.session,'constructor').credentials[0]!.version).toBe(2);f.manager.access(f.session,{id:'constructor',user:f.store.state.users[0]!.id,action:'remove',confirmed:true});expect(f.cfg.services.constructor).toBe(Object.prototype.constructor);expect(Object.hasOwn(f.cfg.services,'constructor')).toBe(false);
   }finally{f.close();}
  });
  it('preserves existing namespace and underscore identifiers through detail, draft apply and credential rotation',()=>{

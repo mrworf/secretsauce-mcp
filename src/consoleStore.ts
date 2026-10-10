@@ -1,6 +1,7 @@
 import { closeSync, existsSync, fsyncSync, mkdirSync, openSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
+import {pendingRecoveryState,recoverPendingInstallation} from './consoleRestoreInstall.js';
 import { backupPublicKey } from './consoleBackupArchive.js';
 import { decrypt, digest, encrypt, equal, newSeed, passwordHash, passwordMatches, randomSecret, totp, validatePassword } from './consoleCrypto.js';
 import { sanitizeAuditText } from './auditSanitizer.js';
@@ -39,6 +40,8 @@ export interface ConsoleSession {
     };
 }
 export interface ConsoleState {
+    importedAudit?: import("./consoleRestoreProvenance.js").ImportedAudit[];
+    recovery?: import("./consoleRestore.js").InstanceRecovery;
     restoreProof?: {hash:string;instance:string;origin:string;expires:number;attempts:number};
     gatewayAuditIdentity?: string;
     operating?: import("./consoleOperations.js").OperatingState;
@@ -125,6 +128,7 @@ export class ConsoleStore {
         writeFileSync(this.#lock, String(process.pid), { flag: 'wx', mode: 0o600 });
         this.file = join(directory, 'state.enc');
         try {
+            const recovered=recoverPendingInstallation(directory,this.key);
             if (existsSync(join(directory, 'managed')) && !existsSync(this.file))
                 throw new Error('Managed state missing');
             this.state = existsSync(this.file) ? decrypt<ConsoleState>(readFileSync(this.file, 'utf8'), this.key) : { v: 1, id: randomUUID(), revision: 0, initialized: false, origin: '', name: '', users: [], sessions: [], ...(options.config ? { config: options.config } : {}) };
@@ -132,6 +136,7 @@ export class ConsoleStore {
                 throw new Error('Invalid managed state');
             if (this.state.config) { if(this.state.managed?.protection)this.state.config.responseProtection=validateProtection(this.state.managed.protection.applied).effective;hydrateManagedConfig(this.state.config);normalizeManagedOAuthPath(this.state.config,this.directory); }
             this.journal = new ConsoleJournal(join(directory, 'audit.chain'), this.key, options.faultAudit);
+            if(recovered)this.journal.append({id:randomSecret(),phase:'recovery',actor:'host',action:'restore.restart_'+recovered,target:'Crash recovery selected coherent '+recovered+' installation; prior sessions and grants remain invalid.',time:Date.now(),revision:this.state.revision});
             this.faultState = options.faultState;
             if (!existsSync(this.file)) {
                 this.save(this.state);
@@ -157,7 +162,9 @@ export class ConsoleStore {
             throw new Error('Identity storage unavailable.');
         }
     }
+    mutationsBlocked():boolean{return Boolean(this.state.recovery&&['maintenance','maintenance_failed','enrollment'].includes(this.state.recovery.phase));}
     commit(actor: string, action: string, target: string, change: (state: ConsoleState) => void, details?: ManagementDetails): string {
+        if(this.mutationsBlocked()&&!action.startsWith('restore.'))throw new Error('Recovery maintenance: ordinary sensitive actions unavailable.');
         if (this.externalAudit?.degraded || !this.materialAvailable())
             throw new Error('Durable audit unavailable');
         const secrets = [...Object.values(this.state.config?.services ?? {}).flatMap(s => s.credentials.map(c => c.secret)), ...Object.values(this.state.managed?.services ?? {}).flatMap(s => Object.values(s.values).map(v => v.value))].filter(Boolean);
@@ -271,7 +278,7 @@ export class ConsoleStore {
         return counter;
     }
     consentIdentity(email: unknown, password: unknown, code: unknown, now = Date.now()): { subject: string; generation: number } {
-        if (!this.state.initialized || !this.storageReliable || this.journal.degraded || this.externalAudit?.degraded || typeof email !== 'string' || email.length > 254) throw new Error('Sign-in details were not accepted.');
+        if (this.mutationsBlocked() || !this.state.initialized || !this.storageReliable || this.journal.degraded || this.externalAudit?.degraded || typeof email !== 'string' || email.length > 254) throw new Error('Sign-in details were not accepted.');
         const user = this.state.users.find(u => u.email === email.toLowerCase());
         const counter = this.verify(user, password, code, now);
         if (user!.role === 'Auditor') throw new Error('This role cannot connect MCP clients.');
@@ -286,7 +293,7 @@ export class ConsoleStore {
         csrf: string;
         restricted: boolean;
     } {
-        if (!this.state.initialized || typeof email !== 'string' || email.length > 254)
+        if (this.mutationsBlocked() || !this.state.initialized || typeof email !== 'string' || email.length > 254)
             throw new Error('Sign-in details were not accepted.');
         const user = this.state.users.find(u => u.email === email.toLowerCase());
         const counter = this.verify(user, password, code, now);
@@ -318,7 +325,7 @@ export class ConsoleStore {
         const user = this.state.users.find(u => u.id === session?.userId);
         if (!session || !user?.active || user.enrolled === false || session.created + 43200000 <= now || session.lastSeen + 1800000 <= now)
             return undefined;
-        if (now - session.lastSeen >= 1000) {
+        if (!this.mutationsBlocked() && now - session.lastSeen >= 1000) {
             const next = structuredClone(this.state);
             next.sessions.find(s => s.id === session.id)!.lastSeen = now;
             this.save(next);
@@ -337,7 +344,7 @@ export class ConsoleStore {
     }
     requireSensitive(session: ConsoleSession): ConsoleUser {
         const user = this.authorize(session, 'own');
-        if (this.state.sessions.find(s => s.id === session.id)?.restricted || this.journal.degraded || this.externalAudit?.degraded === true || !this.storageReliable || !this.materialAvailable())
+        if (this.mutationsBlocked() || this.state.sessions.find(s => s.id === session.id)?.restricted || this.journal.degraded || this.externalAudit?.degraded === true || !this.storageReliable || !this.materialAvailable())
             throw new Error('Sensitive actions unavailable. Sign in again after host storage repair.');
         return user;
     }
@@ -368,6 +375,7 @@ export class ConsoleStore {
     }
     changePassword(session: ConsoleSession, password: unknown, code: unknown, replacement: unknown, now = Date.now()): string { const user = this.requireSensitive(session); validatePassword(replacement); const counter = this.verify(user, password, code, now); const hash = passwordHash(replacement); this.requireSensitive(session); try { return this.commit(user.id, 'identity.password_change', user.id, s => { const u = s.users.find(u => u.id === user.id)!; u.authorizationGeneration = (u.authorizationGeneration ?? 0) + 1; u.password = hash; u.lastCounter = counter; u.attempts = 0; s.sessions = s.sessions.filter(x => x.userId !== user.id); if(s.people)s.people.proofs=s.people.proofs.filter(p=>p.target!==user.id); }); } finally { if (this.state.users.find(u => u.id === user.id)?.password === hash) this.invalidateUser(user.id); } }
     assertUserChange(id: string, nextRole: HumanRole, active: boolean): void {
+        if(this.state.recovery?.phase==='enrollment'&&this.state.recovery.nominee===id)throw new Error('Nominated recovery Owner must complete fresh enrollment first.');
         const user = this.state.users.find(u => u.id === id);
         if (user?.active && user.role === 'Owner' && (!active || nextRole !== 'Owner') && this.state.users.filter(u => u.active && u.enrolled !== false && u.role === 'Owner').length <= 1)
             throw new Error('The last active Owner must remain enrolled.');
@@ -383,7 +391,7 @@ export function readConsoleKey(keyFile: string): Buffer { const value = readFile
 export function loadManagedConfig(directory: string, keyFile: string): GatewayConfig { try {
     if (!existsSync(join(directory, 'managed')))
         throw new Error('Managed marker missing');
-    const state = decrypt<ConsoleState>(readFileSync(join(directory, 'state.enc'), 'utf8'), readConsoleKey(keyFile));
+    const key=readConsoleKey(keyFile);const state = pendingRecoveryState(directory,key)??decrypt<ConsoleState>(readFileSync(join(directory, 'state.enc'), 'utf8'),key);
     if (state.v !== 1 || !state.config)
         throw new Error('Managed configuration missing');
     const config=hydrateManagedConfig(state.config);

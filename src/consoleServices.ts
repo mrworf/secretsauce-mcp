@@ -10,6 +10,7 @@ import type { GatewayConfig, ServiceConfig } from './types.js';
 export type ServiceLifecycle = 'Draft' | 'Active' | 'Disabled' | 'Archived';
 export interface ManagedCredential { value: string; version: number; changed: number }
 export interface ManagedService {
+  recoveryReviewRequired?:boolean;
   lifecycle: ServiceLifecycle;
   applied?: ManagedServiceDraft;
   draft?: { content: ManagedServiceDraft; base: number; generation: number; missingMappings?: string[]; settings?: { name: string } };
@@ -96,7 +97,7 @@ export class ConsoleServices {
     const grants = draft.content.access?.users ?? [];
     // Existing services never replay draft assignment snapshots.
     if (s.applied && JSON.stringify(grants) !== JSON.stringify(s.assignments)) throw new ServiceManagementError('Access changed. Reload current assignments; use the immediate Access action.');
-    if (!s.applied) for (const grant of grants) {
+    if (!s.applied||s.recoveryReviewRequired) for (const grant of grants) {
       if (!this.store.state.users.some(u => u.id === grant && u.active && u.enrolled !== false && u.role !== 'Auditor') && !this.store.state.people?.external.some(e=>e.id===grant&&e.active) && !(grant==='bearer-dev'&&this.runtimeConfig.auth.mode==='bearer')) throw new ServiceManagementError('Access target no longer eligible. Select an active enrolled identity and review again.');
     }
     let normalized: ServiceConfig;
@@ -111,7 +112,8 @@ export class ConsoleServices {
   }
   review(session: ConsoleSession, input: unknown) {
     const { id } = this.parse(reviewSchema, input); const c = this.candidate(session, id);
-    const risks = exceptions(c.draft.content); const review = { id: randomUUID(), actor: c.actor.id, fingerprint: this.fingerprint(id), candidate: c.draft.content, base: this.state.revision, draftGeneration: c.draft.generation, exceptions: risks, ...(c.draft.settings ? { settings: c.draft.settings } : {}) };
+    if(c.s.recoveryReviewRequired&&c.actor.role!=='Owner')throw new ServiceManagementError('Only an Owner may review a recovered service before its first reactivation.');
+    const risks = exceptions(c.draft.content);if(c.s.recoveryReviewRequired)risks.push('Recovered service: reviewed current credentials, policy and access'); const review = { id: randomUUID(), actor: c.actor.id, fingerprint: this.fingerprint(id), candidate: c.draft.content, base: this.state.revision, draftGeneration: c.draft.generation, exceptions: risks, ...(c.draft.settings ? { settings: c.draft.settings } : {}) };
     const operation = this.store.commit(c.actor.id, 'service.review', id, state => { state.managed!.services[id]!.review = review; });
     return { operation, review: review.id, scope: { services: [id], settings: c.draft.settings ? ['instance.name'] : [] }, base: review.base,
       current: c.s.applied ?? null, proposed: review.candidate, settings: review.settings, grants: c.s.applied ? [] : c.draft.content.access?.users ?? [], exceptions: risks,
@@ -123,7 +125,7 @@ export class ConsoleServices {
     if (review.exceptions.some(r => !data.acknowledgments.includes(r)) || data.acknowledgments.some(r => !review.exceptions.includes(r))) throw new ServiceManagementError('Acknowledge each listed security exception before apply.');
     let operation: string;
     try { operation = this.store.commit(c.actor.id, 'service.apply', data.id, state => {
-      const m = state.managed!, s = m.services[data.id]!;
+      const m = state.managed!, s = m.services[data.id]!;delete s.recoveryReviewRequired;
       s.applied = structuredClone(review.candidate); s.assignments = [...(c.s.applied ? c.s.assignments : review.candidate.access?.users ?? [])];
       s.applied.access = { users: s.assignments }; s.lifecycle = 'Active'; delete s.draft; delete s.review;
       state.config!.services = { ...state.config!.services, [data.id]: c.service }; m.revision++;
@@ -165,7 +167,7 @@ export class ConsoleServices {
     try { operation = this.store.commit(actor.id, 'service.access_' + data.action, data.id, state => {
       const m = state.managed!, target = m.services[data.id]!;
       target.assignments = data.action === 'grant' ? [...target.assignments, data.user] : target.assignments.filter(v => v !== data.user);
-      target.applied!.access = { users: target.assignments };
+      target.applied!.access = { users: target.assignments };if(target.recoveryReviewRequired&&target.draft){target.draft.content.access={users:[...target.assignments]};target.draft.missingMappings=(target.draft.missingMappings??[]).filter(v=>target.assignments.includes(v));target.draft.base=m.revision+1;target.draft.generation++;delete target.review;}
       const active = own(state.config!.services, data.id); if (active) active.access = { users: target.assignments };
       m.revision++;
     }, { identity: data.user }); } finally { if (this.state.revision !== base) { if (data.action === 'remove') this.invalidate(data.id, data.user); this.publish(); } }
@@ -185,6 +187,7 @@ export class ConsoleServices {
     return { operation, status: 'success', revision: this.state.revision };
   }
   admit(subject: string, id: string): void {
+    if(this.store.mutationsBlocked())throw new Error('Instance recovery maintenance.');
     const service = own(this.state.services, id);
     if (!service || service.lifecycle !== 'Active' || !service.assignments.includes(subject)) throw new Error('Current service access unavailable.');
     const external = this.store.state.people?.external.find(e=>e.id===subject);if(external&&!external.active)throw new Error('Current identity is not eligible.');

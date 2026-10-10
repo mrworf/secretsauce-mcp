@@ -38,8 +38,8 @@ Completed restricted installation cannot roll back because enrollment is hard.
 
 | Slice | Independently observable behavior | Plan | Status | Commit | Evidence |
 | --- | --- | --- | --- | --- | --- |
-| 01 | Authorized bounded archive validation and impact preview, without replacement | [slice 01](milestone_17_plan_01_slice_01.md) | completed | recorded externally after commit | preview tests11/2 plus preservation15/4; HTTPS4groups |
-| 02 | Crash-safe installation, fresh restricted enrollment and explicit review/resumption with truthful provenance | [slice 02](milestone_17_plan_01_slice_02.md) | planned | pending | pending |
+| 01 | Authorized bounded archive validation and impact preview, without replacement | [slice 01](milestone_17_plan_01_slice_01.md) | completed | 03cb353584303f1f13fcab8e5ff4f39f5c2ef645 | preview tests11/2 plus preservation15/4; HTTPS4groups |
+| 02 | Crash-safe installation, fresh restricted enrollment and explicit review/resumption with truthful provenance | [slice 02](milestone_17_plan_01_slice_02.md) | completed | recorded externally after commit | [slice02 validation](../../../evidence/platform/secretsauce-mcp/milestone17/slice02-validation.md) · 79/9 tests/build · HTTPS4groups |
 | 03 | Operational recovery/runbook and final browser/Docker/protocol preservation acceptance | [slice 03](milestone_17_plan_01_slice_03.md) | planned | pending | pending |
 
 All slice plans exist before production edits. Inspect each before its slice. No readiness

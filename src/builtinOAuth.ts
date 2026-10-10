@@ -116,7 +116,7 @@ export class BuiltinOAuthRuntime {
   eligible(subject: string, generation: number | undefined, authenticationGeneration?: number): boolean {
     if (!this.managedStore) return true;
     const u = this.managedStore.state.users.find(u => u.id === subject);
-    return this.managedStore.storageReliable && Boolean(u?.active && u.enrolled !== false && u.role !== 'Auditor' && generation !== undefined && generation === (u.authorizationGeneration ?? 0) && authenticationGeneration === this.authenticationGeneration);
+    return !this.managedStore.mutationsBlocked() && this.managedStore.storageReliable && Boolean(u?.active && u.enrolled !== false && u.role !== 'Auditor' && generation !== undefined && generation === (u.authorizationGeneration ?? 0) && authenticationGeneration === this.authenticationGeneration);
   }
   revoked(id: string): boolean { return (this.revocationIntents.get(id)??0)>Date.now() || Boolean(this.managedStore?.state.revokedOAuthGrants?.some(r=>r.id===id && r.expires>Date.now())); }
   revocationCount(): number { for(const [id,expiry] of this.revocationIntents)if(expiry<=Date.now())this.revocationIntents.delete(id); const ids=new Set([...this.revocationIntents].filter(([,expiry])=>expiry>Date.now()).map(([id])=>id)); for(const r of this.managedStore?.state.revokedOAuthGrants??[]) if(r.expires>Date.now())ids.add(r.id); return ids.size; }

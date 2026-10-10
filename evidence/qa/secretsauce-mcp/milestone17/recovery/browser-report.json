@@ -1,0 +1,19 @@
+{
+  "result": "PASS",
+  "transport": "Actual HTTPS example.org synthetic certificate and loopback resolver",
+  "checks": [
+    {
+      "check": "Invalid independent material rejects before replacement and focuses safe error; no secret echo"
+    },
+    {
+      "check": "ActualHTTPS Owner recentTOTP upload validates archive/capacity; source/point/counts/initiator/nominee and access impact visible keyboard320px"
+    },
+    {
+      "check": "Actual HTTPS atomic in-place restore, restricted continuation, fresh password/TOTP/codes, fresh login and persistent review checklist keyboard/desktop/320px; old sessions absent and services Disabled"
+    },
+    {
+      "check": "Fresh authorized recovered Owner retains keyboard-reachable account and explicit logout; auth material masked and excluded from browser storage"
+    }
+  ],
+  "realLLM": "NOT RUN under authorized local-validation exception"
+}

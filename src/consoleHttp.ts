@@ -44,13 +44,14 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
         return;
     }
     try {
+        if(store.mutationsBlocked()&&!['/console/api/status','/console/api/logout','/console/api/restore/status','/console/api/restore/enroll-begin','/console/api/restore/enroll-complete'].includes(path??'')){reply(503,{message:'Instance recovery maintenance. Ordinary sensitive actions are unavailable; inspect restricted recovery status or use protected host repair.'});return;}
         const cookie = request.headers.cookie;
         const matches = typeof cookie === 'string' ? cookie.split(';').map(c => c.trim()).filter(c => c.startsWith('__Host-ss-console=')) : [];
         const token = matches.length === 1 ? matches[0]!.slice('__Host-ss-console='.length) : undefined;
         const session = store.session(token);
         if (request.method === 'GET' && path === '/console/api/status') {
             const user = session ? store.authorize(session, 'own') : undefined;
-            reply(200, { initialized: store.state.initialized, ...(!store.state.initialized&&store.state.restoreProof?{restoreAvailable:true}:{}), ...(!store.state.initialized ? { origin: store.state.origin } : {}), ...(session && user ? { csrf: session.csrf, user: { id: user.id, email: user.email, role: user.role }, name: store.state.name, degraded: store.journal.degraded || store.externalAudit?.degraded === true, restricted: session.restricted, sessions: store.ownSessions(session), mfa: 'Authenticator app enrolled', expires: Math.min(session.created + 43200000, session.lastSeen + 1800000) } : {}) });
+            reply(200, { initialized: store.state.initialized, ...(store.state.recovery?{recovery:{phase:store.state.recovery.phase,notice:store.state.recovery.notice,...(session&&user?{initiatorLabel:store.state.recovery.initiatorLabel,nominee:store.state.users.filter(u=>u.id===store.state.recovery!.nominee).map(u=>({id:u.id,email:u.email,role:u.role}))[0],authenticationReactivationRequired:store.state.recovery.authenticationReactivationRequired}: {})}}:{}), ...(!store.state.initialized&&store.state.restoreProof?{restoreAvailable:true}:{}), ...(!store.state.initialized ? { origin: store.state.origin } : {}), ...(session && user ? { csrf: session.csrf, user: { id: user.id, email: user.email, role: user.role }, name: store.state.name, degraded: store.journal.degraded || store.externalAudit?.degraded === true, restricted: session.restricted, sessions: store.ownSessions(session), mfa: 'Authenticator app enrolled', expires: Math.min(session.created + 43200000, session.lastSeen + 1800000) } : {}) });
             return;
         }
         if(request.method==='GET'&&path==='/console/api/backups'){if(!session){reply(401,{message:'Sign in again.'});return;}reply(200,consoleBackups(store).read(session));return;}
@@ -133,6 +134,10 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
             return;
         }
         if(path?.startsWith('/console/api/link/')||path==='/console/api/reset/request'||path==='/console/api/factor/recover')consolePeople(store).attempt(source,data.target??data.email,path!);
+        if(path==='/console/api/restore/status'){reply(200,consoleRestore(store).status(data));return;}
+        if(path==='/console/api/restore/enroll-begin'){const r=consoleRestore(store).beginEnrollment(data),qr=await QRCode.toDataURL('otpauth://totp/SecretSauce?secret='+r.seed+'&issuer=SecretSauce');consoleRestore(store).confirmEnrollmentAuthority(data.continuation);reply(200,{...r,qr});return;}
+        if(path==='/console/api/restore/enroll-complete'){reply(200,consoleRestore(store).completeEnrollment(data));return;}
+        if(path==='/console/api/restore/start'&&!store.state.initialized){reply(200,await consoleRestore(store).start(undefined,data));return;}
         if(path === '/console/api/factor/recover'){reply(200,consolePeople(store).replaceFactor(undefined,data));return;}
         if(path === '/console/api/reset/request'){reply(200,await consolePeople(store).requestPassword(data));return;}
         if(path === '/console/api/link/password'){reply(200,consolePeople(store).resetPassword(data));return;}
@@ -153,6 +158,7 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
             reply(403, { message: 'Reload this page before submitting.' });
             return;
         }
+        if(path==='/console/api/restore/start'){reply(200,await consoleRestore(store).start(session,data));return;}
         if(path==='/console/api/restore/cancel'){reply(200,consoleRestore(store).cancel(session,data));return;}
         if(path==='/console/api/backups/acknowledge'){reply(200,consoleBackups(store).acknowledgeUnknown(session,data));return;}
         if(path==='/console/api/backups/save'){reply(200,consoleBackups(store).save(session,data));return;}

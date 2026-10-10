@@ -50,3 +50,17 @@ complete usable recovery behavior, tests and docs after focused/related validati
 Only whole-instance local recovery, no remote data rollback/selective merge/HA/new auth protocols.
 No changes to authoritative Product Definition or prior evidence. Parent transaction and
 unrelated work are recorded in governing plan. This slice owns only its listed surfaces.
+
+Implementation decisions confirmed in parent review: fixed authenticated selection/cleanup-only
+namespace prevents completed recovery from reverting after cleanup interruption or later
+Owner enrollment. Completed rollback and completed new install have separate durable outcomes.
+Daily schedule is imported Disabled; current host backup mount/catalog stays local, and
+retained archive key IDs explicitly require their original independent material. Flat imported
+source segments and encrypted exact-redaction context survive subsequent backups; cached
+display rows are excluded and rebuilt under bounded worker admission before maintenance.
+Retention removes wholly expired resolved imported segments with durable source/head receipts.
+Legacy opaque access subjects remain Disabled missing-mapping review data; duplicate and
+unknown UUID identity references reject. Existing explicitly reviewed bearer-dev shared
+principal semantics remain available after bearer reactivation. Unknown clean-host evidence
+interval starts at last verified archived evidence and ends at the first durable local
+installation operation. Current initiator label survives independently of archived users.

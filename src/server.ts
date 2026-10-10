@@ -22,6 +22,7 @@ import { consoleNotifications } from './consoleNotifications.js';
 import { bindConsoleServices } from "./consoleServices.js";
 import { bindConsoleAuthentication } from "./consoleAuthentication.js";
 import { bindConsoleClients } from "./consoleClients.js";
+import {bindConsoleRestore} from './consoleRestore.js';
 import { consoleBackups } from './consoleBackups.js';
 import { requiredScopeForTool } from "./mcp/tools.js";
 
@@ -45,12 +46,12 @@ export function createGatewayServer(
   if(options.consoleStore)normalizeManagedOAuthPath(config,options.consoleStore.directory);
   const runtime = options.runtime ?? new GatewayRuntime(config, { ...(options.auditSink === undefined ? {} : { auditSink: options.auditSink }) });
   const auditSink = runtime.auditSink;
-  if(options.consoleStore) { auditSink.bindConsole(options.consoleStore);const backups=consoleBackups(options.consoleStore);runtime.maintenance.register(now=>{void backups.tick(now);}); let lastRetention=0;runtime.maintenance.register(now=>{if(now-lastRetention<3600000)return;lastRetention=now;try{consoleEvidence(options.consoleStore!).sweep();}catch{/* Fail closed; authenticated health exposes audit degradation. */}}); runtime.builtinOAuth.bindManaged(options.consoleStore); bindConsoleClients(options.consoleStore,runtime.builtinOAuth); const manager = bindConsoleServices(options.consoleStore, config); bindConsoleOperations(options.consoleStore,runtime); bindConsoleAuthentication(options.consoleStore,runtime.builtinOAuth); manager.invalidate = (service, subject) => runtime.capabilities.tokenBroker.revoke(service, subject); runtime.builtinOAuth.invalidateSubject = subject => { for (const service of Object.keys(manager.state.services)) manager.invalidate(service,subject); }; options.consoleStore.invalidateUser = subject => { runtime.builtinOAuth.revokeSubject(subject); for (const service of Object.keys(manager.state.services)) manager.invalidate(service, subject); const user=options.consoleStore!.state.users.find(u=>u.id===subject);if(user)void consoleNotifications(options.consoleStore!).send('security',user.email,'Account security or access changed. Previous sessions and client grants were revoked; contact your Owner if unexpected.').catch(()=>{}); }; config.managedAdmission = (subject, service) => manager.admit(subject, service); }
+  if(options.consoleStore) { auditSink.bindConsole(options.consoleStore);const backups=consoleBackups(options.consoleStore);runtime.maintenance.register(now=>{void backups.tick(now);}); let lastRetention=0;runtime.maintenance.register(now=>{if(now-lastRetention<3600000)return;lastRetention=now;try{consoleEvidence(options.consoleStore!).sweep();}catch{/* Fail closed; authenticated health exposes audit degradation. */}}); runtime.builtinOAuth.bindManaged(options.consoleStore); bindConsoleClients(options.consoleStore,runtime.builtinOAuth); const manager = bindConsoleServices(options.consoleStore, config); bindConsoleOperations(options.consoleStore,runtime); bindConsoleAuthentication(options.consoleStore,runtime.builtinOAuth);bindConsoleRestore(options.consoleStore,runtime); manager.invalidate = (service, subject) => runtime.capabilities.tokenBroker.revoke(service, subject); runtime.builtinOAuth.invalidateSubject = subject => { for (const service of Object.keys(manager.state.services)) manager.invalidate(service,subject); }; options.consoleStore.invalidateUser = subject => { runtime.builtinOAuth.revokeSubject(subject); for (const service of Object.keys(manager.state.services)) manager.invalidate(service, subject); const user=options.consoleStore!.state.users.find(u=>u.id===subject);if(user)void consoleNotifications(options.consoleStore!).send('security',user.email,'Account security or access changed. Previous sessions and client grants were revoked; contact your Owner if unexpected.').catch(()=>{}); }; config.managedAdmission = (subject, service) => manager.admit(subject, service); }
   const server = createServer(async (request, response) => {
     if (options.consoleStore && isConsoleRequest(request)) { await handleConsoleRequest(options.consoleStore, request, response); return; }
     if (request.method === "GET" && request.url === "/health") {
       logger.debug("http.health", { method: request.method, path: "/health", service_count: Object.keys(config.services).length });
-      const degraded=auditSink.degraded||(options.consoleStore!==undefined&&!options.consoleStore.materialAvailable());
+      const degraded=options.consoleStore?.mutationsBlocked()||auditSink.degraded||(options.consoleStore!==undefined&&!options.consoleStore.materialAvailable());
       writeJson(response, degraded ? 503 : 200, {
         status: degraded ? "not_ready" : "ready",
       });
@@ -69,6 +70,7 @@ export function createGatewayServer(
     }
 
     if (isBuiltinOAuthRequest(config, request)) {
+      if(options.consoleStore?.mutationsBlocked()){writeJson(response,503,{error:'recovery_maintenance'});return;}
       logger.debug("oauth.builtin_request", { method: request.method, path: request.url?.split("?")[0] });
       await handleBuiltinOAuthRequest(config, request, response, runtime.builtinOAuth);
       return;
@@ -86,6 +88,7 @@ export function createGatewayServer(
           const externalGeneration=external?.authorizationGeneration??0;
           if(external)auth.subject=external.id;
           auth.assertCurrent = () => {
+            if(options.consoleStore!.mutationsBlocked()||options.consoleStore!.state.recovery?.authenticationReactivationRequired)throw new GatewayError('unauthenticated','Instance recovery requires explicit current authorization.');
             if(!options.consoleStore!.storageReliable)throw new GatewayError('unauthenticated','Identity storage unavailable.');
             if (config.auth !== authenticatedConfiguration || config.server.resource !== authenticatedResource || config.server.mcpPath !== authenticatedPath) throw new GatewayError('unauthenticated','Authentication settings changed. Reconnect your client.');
             if(external){const current=options.consoleStore!.state.people?.external.find(e=>e.id===external.id);if(!current?.active || current.issuer!==external.issuer || current.subject!==external.subject || (current.authorizationGeneration??0)!==externalGeneration)throw new GatewayError('unauthenticated','Current external identity unavailable.');}
@@ -150,6 +153,7 @@ export function createGatewayServer(
           const externalGeneration=external?.authorizationGeneration??0;
           if(external)auth.subject=external.id;
           auth.assertCurrent = () => {
+            if(options.consoleStore!.mutationsBlocked()||options.consoleStore!.state.recovery?.authenticationReactivationRequired)throw new GatewayError('unauthenticated','Instance recovery requires explicit current authorization.');
             if(!options.consoleStore!.storageReliable)throw new GatewayError('unauthenticated','Identity storage unavailable.');
             if (config.auth !== authenticatedConfiguration || config.server.resource !== authenticatedResource || config.server.mcpPath !== authenticatedPath) throw new GatewayError('unauthenticated','Authentication settings changed. Reconnect your client.');
             if(external){const current=options.consoleStore!.state.people?.external.find(e=>e.id===external.id);if(!current?.active || current.issuer!==external.issuer || current.subject!==external.subject || (current.authorizationGeneration??0)!==externalGeneration)throw new GatewayError('unauthenticated','Current external identity unavailable.');}

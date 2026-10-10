@@ -47,6 +47,7 @@ const OAUTH_SENSITIVE_RESPONSE_HEADERS = {
 } as const;
 
 interface AuthorizationCode {
+  authenticationGeneration?: number;
   authorizationGeneration?: number;
   grantId?: string;
   clientId: string;
@@ -59,6 +60,7 @@ interface AuthorizationCode {
 }
 
 interface RefreshGrant {
+  authenticationGeneration?: number;
   authorizationGeneration?: number;
   id: string;
   clientId: string;
@@ -99,6 +101,7 @@ export class BuiltinOAuthRuntime {
   readonly consentChallenges = new Map<string, { fingerprint: string; expires: number }>();
   bindManaged(store: ConsoleStore): void {
     this.managedStore = store;
+    this.authenticationGeneration=store.state.authentication?.revision??0;
     for(const entry of store.journal.entries()) {
       if(entry.phase==='start' && entry.action==='oauth.grant_revoke' && typeof entry.details?.grant==='string' && /^[A-Za-z0-9_-]{22}$/.test(entry.details.grant) && typeof entry.details.grantExpires==='number' && entry.details.grantExpires>Date.now() && store.journal.status(entry.id)!=='failed') this.revocationIntents.set(entry.details.grant,entry.details.grantExpires);
     }
@@ -109,10 +112,10 @@ export class BuiltinOAuthRuntime {
       this.state.refreshGrants = loaded.refreshGrants; this.state.refreshTokens = loaded.refreshTokens;
     }
   }
-  eligible(subject: string, generation: number | undefined): boolean {
+  eligible(subject: string, generation: number | undefined, authenticationGeneration?: number): boolean {
     if (!this.managedStore) return true;
     const u = this.managedStore.state.users.find(u => u.id === subject);
-    return this.managedStore.storageReliable && Boolean(u?.active && u.enrolled !== false && u.role !== 'Auditor' && generation !== undefined && generation === (u.authorizationGeneration ?? 0));
+    return this.managedStore.storageReliable && Boolean(u?.active && u.enrolled !== false && u.role !== 'Auditor' && generation !== undefined && generation === (u.authorizationGeneration ?? 0) && authenticationGeneration === this.authenticationGeneration);
   }
   revoked(id: string): boolean { return (this.revocationIntents.get(id)??0)>Date.now() || Boolean(this.managedStore?.state.revokedOAuthGrants?.some(r=>r.id===id && r.expires>Date.now())); }
   revocationCount(): number { for(const [id,expiry] of this.revocationIntents)if(expiry<=Date.now())this.revocationIntents.delete(id); const ids=new Set([...this.revocationIntents].filter(([,expiry])=>expiry>Date.now()).map(([id])=>id)); for(const r of this.managedStore?.state.revokedOAuthGrants??[]) if(r.expires>Date.now())ids.add(r.id); return ids.size; }
@@ -134,15 +137,21 @@ export class BuiltinOAuthRuntime {
     for(const [code,record] of this.state.authorizationCodes) if(record.subject===subject)this.state.authorizationCodes.delete(code);
     this.invalidateSubject(subject); persistRefreshStateForRequest(this.config,this.state,createLogger(this.config.logging));
   }
+  revokeAllClients(): void {
+    const subjects=new Set([...this.state.refreshGrants.values()].map(g=>g.subject));
+    this.state.authorizationCodes.clear();this.state.refreshGrants.clear();this.state.refreshTokens.clear();this.consentChallenges.clear();
+    for(const subject of subjects)this.invalidateSubject(subject);
+    persistRefreshStateForRequest(this.config,this.state,createLogger(this.config.logging));
+  }
   assertGrant(subject: string, grantId: unknown, generation: unknown): void {
     const grant = typeof grantId === 'string' ? this.state.refreshGrants.get(grantId) : undefined;
-    if (this.managedStore && (!grant || this.revoked(grant.id) || grant.subject !== subject || !this.eligible(subject, grant.authorizationGeneration) || generation !== grant.authorizationGeneration || grant.expiresAt <= Date.now() || grant.idleExpiresAt <= Date.now() || this.config.auth.mode !== 'builtin_oauth')) throw new GatewayError('unauthenticated', 'Current client authorization unavailable.');
+    if (this.managedStore && (!grant || this.revoked(grant.id) || grant.subject !== subject || !this.eligible(subject, grant.authorizationGeneration,grant.authenticationGeneration) || generation !== grant.authorizationGeneration || grant.expiresAt <= Date.now() || grant.idleExpiresAt <= Date.now() || this.config.auth.mode !== 'builtin_oauth')) throw new GatewayError('unauthenticated', 'Current client authorization unavailable.');
   }
   readonly auditSink: AuditSink;
   readonly state: BuiltinOAuthState;
   readonly bodyLimiter: InflightLimiter;
   readonly passwordLimiter: InflightLimiter;
-  readonly loginAttemptLimiter: LoginAttemptLimiter;
+  loginAttemptLimiter: LoginAttemptLimiter;
   readonly clientMetadataFetcher: OAuthClientMetadataFetcher;
 
   constructor(readonly config: GatewayConfig, auditSink?: AuditSink) {
@@ -727,7 +736,7 @@ async function handleAuthorizePost(config: GatewayConfig, request: IncomingMessa
     scopes: validation.scopes,
     codeChallenge: validation.codeChallenge,
     subject: identity.subject,
-    ...(identity.generation === undefined ? {} : { authorizationGeneration: identity.generation }),
+    ...(identity.generation === undefined ? {} : { authorizationGeneration: identity.generation, authenticationGeneration: runtime.authenticationGeneration }),
     expiresAt: Date.now() + auth.authorizationCodeTtlMs,
   });
 
@@ -792,7 +801,7 @@ async function exchangeAuthorizationCode(
   const oauthState = runtime.state;
   const authorizationCodes = oauthState.authorizationCodes;
   const record = authorizationCodes.get(code);
-  if (record === undefined || record.expiresAt <= Date.now() || !runtime.eligible(record.subject,record.authorizationGeneration)) {
+  if (record === undefined || record.expiresAt <= Date.now() || !runtime.eligible(record.subject,record.authorizationGeneration,record.authenticationGeneration)) {
     authorizationCodes.delete(code);
     logTokenOutcome(logger, "error", 400, "invalid_grant", "unavailable", "unavailable");
     writeOAuthError(response, 400, "invalid_grant");
@@ -832,7 +841,7 @@ async function exchangeAuthorizationCode(
   const authenticationGeneration = runtime.authenticationGeneration;
   const issuedRefresh = issueRefreshGrant(oauthState, auth, record, now);
   const accessToken = await signAccessToken(auth, record.subject, record.resource, record.scopes, now, issuedRefresh.grantId, record.authorizationGeneration);
-  if (!runtime.eligible(record.subject, record.authorizationGeneration) || !oauthState.refreshGrants.has(issuedRefresh.grantId) || runtime.revoked(issuedRefresh.grantId) || authenticationGeneration !== runtime.authenticationGeneration || config.auth.mode !== "builtin_oauth" || config.auth.builtinOAuth !== auth) { revokeRefreshGrant(oauthState,issuedRefresh.grantId);writeOAuthError(response,400,'invalid_grant');return; }
+  if (!runtime.eligible(record.subject, record.authorizationGeneration,record.authenticationGeneration) || !oauthState.refreshGrants.has(issuedRefresh.grantId) || runtime.revoked(issuedRefresh.grantId) || authenticationGeneration !== runtime.authenticationGeneration || config.auth.mode !== "builtin_oauth" || config.auth.builtinOAuth !== auth) { revokeRefreshGrant(oauthState,issuedRefresh.grantId);writeOAuthError(response,400,'invalid_grant');return; }
   runtime.auditSink.admit("oauth.issue",record.subject,"oauth_client",operation);
   if (!persistRefreshStateForRequest(config, oauthState, logger)) {
     revokeRefreshGrant(oauthState, issuedRefresh.grantId);
@@ -869,7 +878,7 @@ async function exchangeRefreshToken(
   const tokenHash = hashRefreshToken(body.get("refresh_token") ?? "");
   const tokenRecord = oauthState.refreshTokens.get(tokenHash);
   const grant = tokenRecord === undefined ? undefined : oauthState.refreshGrants.get(tokenRecord.grantId);
-  if (tokenRecord === undefined || grant === undefined || grant.expiresAt<=now || grant.idleExpiresAt<=now || runtime.revoked(grant.id) || !runtime.eligible(grant.subject,grant.authorizationGeneration)) {
+  if (tokenRecord === undefined || grant === undefined || grant.expiresAt<=now || grant.idleExpiresAt<=now || runtime.revoked(grant.id) || !runtime.eligible(grant.subject,grant.authorizationGeneration,grant.authenticationGeneration)) {
     logTokenOutcome(logger, "error", 400, "invalid_grant", "unavailable", "unavailable");
     writeOAuthError(response, 400, "invalid_grant");
     return;
@@ -919,7 +928,7 @@ async function exchangeRefreshToken(
     if (oauthState.refreshGrants.has(grant.id) && tokenRecord.status === "rotating") tokenRecord.status = "active";
     throw error;
   }
-  if (!oauthState.refreshGrants.has(grant.id) || tokenRecord.status !== "rotating" || runtime.revoked(grant.id) || !runtime.eligible(grant.subject,grant.authorizationGeneration) || authenticationGeneration !== runtime.authenticationGeneration || config.auth.mode !== "builtin_oauth" || config.auth.builtinOAuth !== auth) {
+  if (!oauthState.refreshGrants.has(grant.id) || tokenRecord.status !== "rotating" || runtime.revoked(grant.id) || !runtime.eligible(grant.subject,grant.authorizationGeneration,grant.authenticationGeneration) || authenticationGeneration !== runtime.authenticationGeneration || config.auth.mode !== "builtin_oauth" || config.auth.builtinOAuth !== auth) {
     logTokenOutcome(logger, "error", 400, "invalid_grant", "unavailable", scopes.length);
     writeOAuthError(response, 400, "invalid_grant");
     return;
@@ -972,7 +981,7 @@ function issueRefreshGrant(
     resource: authorizationCode.resource,
     scopes: [...authorizationCode.scopes],
     subject: authorizationCode.subject,
-    ...(authorizationCode.authorizationGeneration === undefined ? {} : { authorizationGeneration: authorizationCode.authorizationGeneration }),
+    ...(authorizationCode.authorizationGeneration === undefined ? {} : { authorizationGeneration: authorizationCode.authorizationGeneration,authenticationGeneration:authorizationCode.authenticationGeneration }),
     createdAt: now,
     idleExpiresAt: Math.min(now + auth.refreshTokenIdleTtlMs, expiresAt),
     expiresAt,
@@ -1067,6 +1076,7 @@ function isRefreshGrant(value: unknown): value is RefreshGrant {
   return nonEmptyString(value.id) && nonEmptyString(value.clientId) && nonEmptyString(value.resource)
     && Array.isArray(value.scopes) && value.scopes.every(nonEmptyString) && nonEmptyString(value.subject)
     && finiteTimestamp(value.createdAt) && finiteTimestamp(value.idleExpiresAt) && finiteTimestamp(value.expiresAt)
+    && (value.authenticationGeneration === undefined || (Number.isSafeInteger(value.authenticationGeneration) && Number(value.authenticationGeneration) >= 0))
     && (value.authorizationGeneration === undefined || (Number.isSafeInteger(value.authorizationGeneration) && Number(value.authorizationGeneration) >= 0))
     && value.createdAt <= value.idleExpiresAt && value.idleExpiresAt <= value.expiresAt;
 }

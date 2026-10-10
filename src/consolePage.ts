@@ -1,3 +1,4 @@
+import { consoleAuthenticationScript } from './consoleAuthenticationPage.js';
 import { consolePeopleScript } from './consolePeoplePage.js';
 import { consoleServiceScript } from './consoleServicePage.js';
 export const consolePage = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SecretSauce console</title><link rel="stylesheet" href="/console/style.css"></head><body><a class="skip" href="#main">Skip to content</a><header><strong>SecretSauce</strong><span>Instance console</span></header><div class="workspace"><nav aria-label="Primary"><button id="services-nav" class="secondary" hidden>Services</button><button id="people-nav" class="secondary" hidden>People &amp; Access</button><button id="activity-nav" class="secondary" hidden>Activity</button><button id="settings-nav" class="secondary" hidden>Settings</button><button id="account-nav" class="secondary" hidden>My account</button><button id="logout" hidden>Sign out</button></nav><main id="main" tabindex="-1"><h1 tabindex="-1">Instance access</h1><div id="banner" role="status"></div><div id="errors" role="alert" tabindex="-1"></div><section id="content">Loading instance status…</section></main></div><script src="/console/app.js" defer></script></body></html>`;
@@ -19,4 +20,5 @@ function account(state){document.querySelector('#account-nav').setAttribute('ari
 document.querySelector('#logout').onclick=async()=>{try{await api('logout',{});document.querySelector('#logout').hidden=true;document.querySelector('#account-nav').hidden=true;document.querySelector('#services-nav').hidden=true;serviceEditor=null;editorDirty=false;csrf='';await start();}catch(e){showError(e.message,e.operation);}};
 ${consoleServiceScript}
 ${consolePeopleScript}
+${consoleAuthenticationScript}
 start();`;

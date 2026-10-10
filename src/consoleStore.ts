@@ -69,6 +69,7 @@ export interface ConsoleState {
     securityGeneration?: number;
     people?: import("./consolePeople.js").PeopleState;
     notifications?: import("./consoleNotifications.js").NotificationState;
+    authentication?: import("./consoleAuthentication.js").AuthenticationState;
     backupHash?: string;
 }
 export { atomicFile } from './consolePersistence.js';
@@ -122,7 +123,7 @@ export class ConsoleStore {
             this.state = existsSync(this.file) ? decrypt<ConsoleState>(readFileSync(this.file, 'utf8'), this.key) : { v: 1, id: randomUUID(), revision: 0, initialized: false, origin: '', name: '', users: [], sessions: [], ...(options.config ? { config: options.config } : {}) };
             if (this.state.v !== 1 || !Array.isArray(this.state.users) || !Array.isArray(this.state.sessions))
                 throw new Error('Invalid managed state');
-            if (this.state.config) { if(this.state.managed?.protection)this.state.config.responseProtection=validateProtection(this.state.managed.protection.applied).effective;hydrateManagedConfig(this.state.config); }
+            if (this.state.config) { if(this.state.managed?.protection)this.state.config.responseProtection=validateProtection(this.state.managed.protection.applied).effective;hydrateManagedConfig(this.state.config);normalizeManagedOAuthPath(this.state.config,this.directory); }
             this.journal = new ConsoleJournal(join(directory, 'audit.chain'), this.key, options.faultAudit);
             this.faultState = options.faultState;
             if (!existsSync(this.file)) {
@@ -377,8 +378,14 @@ export function loadManagedConfig(directory: string, keyFile: string): GatewayCo
     const state = decrypt<ConsoleState>(readFileSync(join(directory, 'state.enc'), 'utf8'), readConsoleKey(keyFile));
     if (state.v !== 1 || !state.config)
         throw new Error('Managed configuration missing');
-    return hydrateManagedConfig(state.config);
+    const config=hydrateManagedConfig(state.config);
+    normalizeManagedOAuthPath(config,directory);
+    return config;
 }
 catch {
     throw new Error('Managed storage unavailable; repair storage and key before restarting.');
 } }
+
+export function normalizeManagedOAuthPath(config: GatewayConfig, directory: string): void {
+    if(config.auth.mode==='builtin_oauth')config.auth.builtinOAuth.refreshTokenStoreFile=join(directory,'oauth-refresh.json');
+}

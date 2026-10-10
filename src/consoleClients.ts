@@ -7,7 +7,7 @@ export class ClientManagementError extends Error {}
 export function connectedClients(store:ConsoleStore,session:ConsoleSession) {
  const user=store.authorize(session,'own'), runtime=runtimes.get(store);
  const writable=user.role!=='Auditor'&&store.storageReliable&&!session.restricted&&!store.journal.degraded&&!store.externalAudit?.degraded;
- return {writable,mode:store.state.config?.auth.mode??'builtin_oauth',clients:runtime?[...runtime.state.refreshGrants.values()].filter(g=>g.subject===user.id&&runtime.eligible(g.subject,g.authorizationGeneration)&&!runtime.revoked(g.id)&&g.expiresAt>Date.now()&&g.idleExpiresAt>Date.now()).map(g=>({id:g.id,client:g.clientId,scopes:g.scopes,created:g.createdAt,expires:Math.min(g.idleExpiresAt,g.expiresAt)})):[]};
+ return {writable,mode:store.state.config?.auth.mode??'builtin_oauth',clients:runtime?[...runtime.state.refreshGrants.values()].filter(g=>g.subject===user.id&&runtime.eligible(g.subject,g.authorizationGeneration,g.authenticationGeneration)&&!runtime.revoked(g.id)&&g.expiresAt>Date.now()&&g.idleExpiresAt>Date.now()).map(g=>({id:g.id,client:g.clientId,scopes:g.scopes,created:g.createdAt,expires:Math.min(g.idleExpiresAt,g.expiresAt)})):[]};
 }
 export function revokeClient(store:ConsoleStore,session:ConsoleSession,input:unknown) {
  const user=store.requireSensitive(session);if(user.role==='Auditor')throw new Error('Forbidden.');

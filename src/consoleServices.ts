@@ -57,7 +57,7 @@ export class ConsoleServices {
     const user = this.store.authorize(session, 'own');
     if (user.role === 'Member') return { revision: this.state.revision, writable: false, eligible: [], services: Object.entries(this.state.services).filter(([,s]) => s.lifecycle === 'Active' && s.assignments.includes(user.id)).map(([id,s]) => ({ id, name: s.applied?.name ?? id, description: s.applied?.description ?? '', lifecycle: s.lifecycle, assignmentCount: 1, appliedRevision: this.state.revision, hasDraft: false, exceptions: [] })) };
     return { revision: this.state.revision, writable: ['Owner', 'Administrator'].includes(user.role) && !session.restricted && !this.store.journal.degraded && !this.store.externalAudit?.degraded,
-      eligible: this.store.state.users.filter(u => u.active && u.enrolled !== false && u.role !== 'Auditor').map(u => ({ id: u.id, email: u.email, role: u.role })).concat((this.store.state.people?.external??[]).filter(e=>e.active).map(e=>({id:e.id,email:e.label,role:'External' as typeof user.role}))),
+      eligible: this.store.state.users.filter(u => u.active && u.enrolled !== false && u.role !== 'Auditor').map(u => ({ id: u.id, email: u.email, role: u.role })).concat((this.store.state.people?.external??[]).filter(e=>e.active).map(e=>({id:e.id,email:e.label,role:'External' as typeof user.role}))).concat(this.runtimeConfig.auth.mode==='bearer'?[{id:'bearer-dev',email:'Shared legacy bearer (no console access)',role:'External' as typeof user.role}]:[]),
       services: Object.entries(this.state.services).map(([id, s]) => ({ id, name: s.applied?.name ?? s.draft?.content.name ?? id, description: s.applied?.description ?? s.draft?.content.description ?? '', assignmentCount: s.assignments.length, lifecycle: s.lifecycle, appliedRevision: this.state.revision, hasDraft: Boolean(s.draft), exceptions: s.applied ? exceptions(s.applied) : [] })) };
   }
   detail(session: ConsoleSession, id: unknown) {
@@ -97,7 +97,7 @@ export class ConsoleServices {
     // Existing services never replay draft assignment snapshots.
     if (s.applied && JSON.stringify(grants) !== JSON.stringify(s.assignments)) throw new ServiceManagementError('Access changed. Reload current assignments; use the immediate Access action.');
     if (!s.applied) for (const grant of grants) {
-      if (!this.store.state.users.some(u => u.id === grant && u.active && u.enrolled !== false && u.role !== 'Auditor') && !this.store.state.people?.external.some(e=>e.id===grant&&e.active)) throw new ServiceManagementError('Access target no longer eligible. Select an active enrolled identity and review again.');
+      if (!this.store.state.users.some(u => u.id === grant && u.active && u.enrolled !== false && u.role !== 'Auditor') && !this.store.state.people?.external.some(e=>e.id===grant&&e.active) && !(grant==='bearer-dev'&&this.runtimeConfig.auth.mode==='bearer')) throw new ServiceManagementError('Access target no longer eligible. Select an active enrolled identity and review again.');
     }
     let normalized: ServiceConfig;
     try { normalized = normalizeManagedService(id, draft.content, Object.fromEntries(Object.entries(s.values).map(([key, v]) => [key, v.value]))); }
@@ -159,7 +159,7 @@ export class ConsoleServices {
     const data = this.parse(z.object({ id: idSchema, user: z.string().min(1).max(254), action: z.enum(['grant', 'remove']), confirmed: z.literal(true) }).strict(), input);
     const s = own(this.state.services, data.id); if (!s?.applied) throw new ServiceManagementError('Activate the service with reviewed initial grants first.');
     const user = this.store.state.users.find(u => u.id === data.user);
-    if (data.action === 'grant' && (!user?.active || user.enrolled === false || user.role === 'Auditor') && !this.store.state.people?.external.some(e=>e.id===data.user&&e.active)) throw new ServiceManagementError('Access target no longer eligible. Select an active enrolled identity.');
+    if (data.action === 'grant' && (!user?.active || user.enrolled === false || user.role === 'Auditor') && !this.store.state.people?.external.some(e=>e.id===data.user&&e.active) && !(data.user==='bearer-dev'&&this.runtimeConfig.auth.mode==='bearer')) throw new ServiceManagementError('Access target no longer eligible. Select an active enrolled identity.');
     if (data.action === 'grant' ? s.assignments.includes(data.user) : !s.assignments.includes(data.user)) throw new ServiceManagementError('Assignment changed. Reload current access.');
     const base = this.state.revision; let operation: string;
     try { operation = this.store.commit(actor.id, 'service.access_' + data.action, data.id, state => {

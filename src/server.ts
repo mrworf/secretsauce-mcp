@@ -14,10 +14,11 @@ import type { AuditSink } from "./audit.js";
 import { GatewayRuntime } from "./runtime.js";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { ConsoleStore, loadManagedConfig } from "./consoleStore.js";
+import { ConsoleStore, loadManagedConfig, normalizeManagedOAuthPath } from "./consoleStore.js";
 import { handleConsoleRequest, isConsoleRequest } from "./consoleHttp.js";
 import { consoleNotifications } from './consoleNotifications.js';
 import { bindConsoleServices } from "./consoleServices.js";
+import { bindConsoleAuthentication } from "./consoleAuthentication.js";
 import { bindConsoleClients } from "./consoleClients.js";
 import { requiredScopeForTool } from "./mcp/tools.js";
 
@@ -38,9 +39,10 @@ export function createGatewayServer(
       suggestion: "Store only the credential value and describe static request syntax with usage prefix or suffix.",
     });
   }
+  if(options.consoleStore)normalizeManagedOAuthPath(config,options.consoleStore.directory);
   const runtime = options.runtime ?? new GatewayRuntime(config, { ...(options.auditSink === undefined ? {} : { auditSink: options.auditSink }) });
   const auditSink = runtime.auditSink;
-  if(options.consoleStore) { auditSink.bindConsole(options.consoleStore); runtime.builtinOAuth.bindManaged(options.consoleStore); bindConsoleClients(options.consoleStore,runtime.builtinOAuth); const manager = bindConsoleServices(options.consoleStore, config); manager.invalidate = (service, subject) => runtime.capabilities.tokenBroker.revoke(service, subject); runtime.builtinOAuth.invalidateSubject = subject => { for (const service of Object.keys(manager.state.services)) manager.invalidate(service,subject); }; options.consoleStore.invalidateUser = subject => { runtime.builtinOAuth.revokeSubject(subject); for (const service of Object.keys(manager.state.services)) manager.invalidate(service, subject); const user=options.consoleStore!.state.users.find(u=>u.id===subject);if(user)void consoleNotifications(options.consoleStore!).send('security',user.email,'Account security or access changed. Previous sessions and client grants were revoked; contact your Owner if unexpected.').catch(()=>{}); }; config.managedAdmission = (subject, service) => manager.admit(subject, service); }
+  if(options.consoleStore) { auditSink.bindConsole(options.consoleStore); runtime.builtinOAuth.bindManaged(options.consoleStore); bindConsoleClients(options.consoleStore,runtime.builtinOAuth); const manager = bindConsoleServices(options.consoleStore, config); bindConsoleAuthentication(options.consoleStore,runtime.builtinOAuth); manager.invalidate = (service, subject) => runtime.capabilities.tokenBroker.revoke(service, subject); runtime.builtinOAuth.invalidateSubject = subject => { for (const service of Object.keys(manager.state.services)) manager.invalidate(service,subject); }; options.consoleStore.invalidateUser = subject => { runtime.builtinOAuth.revokeSubject(subject); for (const service of Object.keys(manager.state.services)) manager.invalidate(service, subject); const user=options.consoleStore!.state.users.find(u=>u.id===subject);if(user)void consoleNotifications(options.consoleStore!).send('security',user.email,'Account security or access changed. Previous sessions and client grants were revoked; contact your Owner if unexpected.').catch(()=>{}); }; config.managedAdmission = (subject, service) => manager.admit(subject, service); }
   const server = createServer(async (request, response) => {
     if (options.consoleStore && isConsoleRequest(request)) { await handleConsoleRequest(options.consoleStore, request, response); return; }
     if (request.method === "GET" && request.url === "/health") {
@@ -72,10 +74,17 @@ export function createGatewayServer(
       let requiredScopes = configuredMcpScopes(config);
       try {
         const authenticatedConfiguration = config.auth, authenticatedResource = config.server.resource, authenticatedPath = config.server.mcpPath;
+        const registeredExternalSnapshot=options.consoleStore?.state.people?.external.map(e=>({...e}));
         const auth = await authenticateRequest(request, config);
         if (options.consoleStore) {
+          const external = auth.mode==='oauth' && authenticatedConfiguration.mode==='oauth' ? registeredExternalSnapshot?.find(e=>e.issuer===authenticatedConfiguration.oauth.issuer && e.subject===auth.subject && e.active) : undefined;
+          if(auth.mode==='oauth' && !external) throw new GatewayError('unauthenticated','External identity is not registered and eligible.');
+          const externalGeneration=external?.authorizationGeneration??0;
+          if(external)auth.subject=external.id;
           auth.assertCurrent = () => {
+            if(!options.consoleStore!.storageReliable)throw new GatewayError('unauthenticated','Identity storage unavailable.');
             if (config.auth !== authenticatedConfiguration || config.server.resource !== authenticatedResource || config.server.mcpPath !== authenticatedPath) throw new GatewayError('unauthenticated','Authentication settings changed. Reconnect your client.');
+            if(external){const current=options.consoleStore!.state.people?.external.find(e=>e.id===external.id);if(!current?.active || current.issuer!==external.issuer || current.subject!==external.subject || (current.authorizationGeneration??0)!==externalGeneration)throw new GatewayError('unauthenticated','Current external identity unavailable.');}
             if (auth.mode === 'builtin_oauth') runtime.builtinOAuth.assertGrant(auth.subject,auth.grantId,auth.authorizationGeneration);
           };
           auth.assertCurrent();
@@ -129,10 +138,17 @@ export function createGatewayServer(
     if (isMcpGet(request, config.server.mcpPath) || isMcpDelete(request, config.server.mcpPath)) {
       try {
         const authenticatedConfiguration = config.auth, authenticatedResource = config.server.resource, authenticatedPath = config.server.mcpPath;
+        const registeredExternalSnapshot=options.consoleStore?.state.people?.external.map(e=>({...e}));
         const auth = await authenticateRequest(request, config);
         if (options.consoleStore) {
+          const external = auth.mode==='oauth' && authenticatedConfiguration.mode==='oauth' ? registeredExternalSnapshot?.find(e=>e.issuer===authenticatedConfiguration.oauth.issuer && e.subject===auth.subject && e.active) : undefined;
+          if(auth.mode==='oauth' && !external) throw new GatewayError('unauthenticated','External identity is not registered and eligible.');
+          const externalGeneration=external?.authorizationGeneration??0;
+          if(external)auth.subject=external.id;
           auth.assertCurrent = () => {
+            if(!options.consoleStore!.storageReliable)throw new GatewayError('unauthenticated','Identity storage unavailable.');
             if (config.auth !== authenticatedConfiguration || config.server.resource !== authenticatedResource || config.server.mcpPath !== authenticatedPath) throw new GatewayError('unauthenticated','Authentication settings changed. Reconnect your client.');
+            if(external){const current=options.consoleStore!.state.people?.external.find(e=>e.id===external.id);if(!current?.active || current.issuer!==external.issuer || current.subject!==external.subject || (current.authorizationGeneration??0)!==externalGeneration)throw new GatewayError('unauthenticated','Current external identity unavailable.');}
             if (auth.mode === 'builtin_oauth') runtime.builtinOAuth.assertGrant(auth.subject,auth.grantId,auth.authorizationGeneration);
           };
           auth.assertCurrent();

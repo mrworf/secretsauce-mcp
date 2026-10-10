@@ -1,6 +1,6 @@
 # M14 plan 01 slice 03: Owner-reviewed authentication settings and explicit advanced modes
 
-Status: planned. Previous commit: previous completed slice SHA, recorded before implementation.
+Status: completed. Previous commit: 3972bbb37de62c3c03a35ad84a092695a18d5349.
 
 Goal / observable outcome: Owner saves scoped authentication draft, reviews sanitized impact, confirms password/TOTP and atomically applies only reviewed auth/endpoint fields. Stable signing keys and hash-only state persist. External exact issuer/subject registry and explicit legacy shared attribution never authorize console. Imported M13 proposals stay inactive until deliberately selected/reviewed.
 
@@ -23,3 +23,9 @@ Commands: focused vitest files and npm run build while stabilizing; related OAut
 Acceptance: described outcome demonstrated with current server enforcement and positive/negative evidence; no raw secrets in evidence. Real-client evidence never inferred from local tests.
 
 Commit boundary: one coherent owned commit including this plan, implementation, tests and supporting docs/evidence. Inspect status/staged diff before and after; exclude test-results/. Record completed status and exact previous slice SHA in next slice; root records final exact SHA.
+
+Investigation resolution: built-in settings retain/generate stable encrypted signing material and use managed refresh directory; advanced bearer retains shared subject bearer-dev with explicit assignments. External issuer-owned JWTs map exact issuer/principal pair to registered UUID, capturing/rechecking registry authorizationGeneration for each admission/queued operation. Disable/re-enable does not perpetually revoke issuer-owned JWTs; old gateway references remain invalid. No third-party token verifiers or additional claim requirements. Imported global auth proposals are converted without reading source files/environment and must be explicitly selected before Owner review/recent apply.
+
+Delivered: Owner-only scoped draft/review/recent-MFA apply; write-only bearer, exact external UUID admission with pre-verification registry snapshot; immutable mode/endpoint fencing; stable signing across modes; store-owned startup refresh path and durable authentication revision in grants; human duration inputs; explicit inactive imported proposals. Existing broker/scanner/limiter resources survive publication.
+
+Validation: npm run build PASS. Related six-file suite PASS, 49 tests. Queued bearer body and external verification fences pass. Sanitized evidence: evidence/qa/secretsauce-mcp/milestone14/slice03-validation.md. New settings HTTP CSRF/Origin, malformed/unauthorized/stale/audit/error cases and committed uncertain completion covered. Real client PRE-015 remains unverified, owned by root acceptance.

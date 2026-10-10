@@ -138,22 +138,29 @@ milestones:
   - id: "13"
     title: Author advanced policy and migrate configuration
     file: delivery/milestones/secretsauce-mcp/13-advanced-policy-and-migration.md
+    status: completed
+    dependencies:
+      - "12"
+    completed_at: 2026-10-10T05:59:52.467Z
+    commit_hash: 851bda679771d4b3d9bfa7decc7f60adcff8166f
+    notes: "All four acceptance criteria verified: 481 tests across48files, build, 6
+      actualHTTPS browser taskgroups/eight320px screenshots. Evidence:
+      evidence/qa/secretsauce-mcp/milestone13/acceptance.md. Slice commits:
+      698b051634fb156679defbed85793296447ab2f3,
+      b4a60344deccf11e8912b7de9a7ce442cfc157e1,
+      5e3f0eb6efe4edb1dc0131e4120f0de05db266e6,
+      851bda679771d4b3d9bfa7decc7f60adcff8166f."
+    started_at: 2026-10-10T05:29:02.951Z
+  - id: "14"
+    title: Connect and govern MCP clients
+    file: delivery/milestones/secretsauce-mcp/14-mcp-client-access.md
     status: in_progress
     dependencies:
       - "12"
     completed_at: null
     commit_hash: null
     notes: null
-    started_at: 2026-10-10T05:29:02.951Z
-  - id: "14"
-    title: Connect and govern MCP clients
-    file: delivery/milestones/secretsauce-mcp/14-mcp-client-access.md
-    status: pending
-    dependencies:
-      - "12"
-    completed_at: null
-    commit_hash: null
-    notes: null
+    started_at: 2026-10-10T05:59:52.467Z
   - id: "15"
     title: Operate and inspect the managed instance
     file: delivery/milestones/secretsauce-mcp/15-operating-evidence-and-limits.md
@@ -229,9 +236,10 @@ delivery_goal:
     - "16"
     - "17"
   execution: autonomous
-  current_milestone: "13"
-  governing_plan: delivery/plans/secretsauce-mcp/milestone_13_plan_01.md
+  current_milestone: "14"
+  governing_plan: delivery/plans/secretsauce-mcp/milestone_14_plan_01.md
   blockers: []
-  resume_point: Resume existing M13 governing plan at indexed incomplete slice, or
+  resume_point: Resume existing M14 governing plan at indexed incomplete slice, or
     generate governing and all slice plans before production edits if absent.
-    M12 acceptance is committed.
+    M13 accepted. PRE-015 real ChatGPT/Codex authorized HTTPS evidence is
+    required before M14 acceptance; local development may proceed.

@@ -32,9 +32,9 @@ export async function previewPolicy(manager: ConsoleServices, session: ConsoleSe
   try {
     const result = await new Promise<Record<string,unknown>>((resolve,reject)=>{
       const worker=new Worker(new URL('../dist/policyPreviewWorker.js',import.meta.url),{workerData:{service,input:data},resourceLimits:{maxOldGenerationSizeMb:32,maxYoungGenerationSizeMb:8}});
-      const timer=setTimeout(()=>{void worker.terminate();reject(new ServiceManagementError('preview: Regex evaluation exceeded its bounded deadline. Shorten target or review expressions.'));},1000);
-      worker.once('message',result=>{clearTimeout(timer);void worker.terminate();result.error?reject(new ServiceManagementError(result.error)):resolve(result);});
-      worker.once('error',()=>{clearTimeout(timer);void worker.terminate();reject(new ServiceManagementError('preview: Evaluation unavailable. Reload and retry.'));});
+      const timer=setTimeout(async()=>{await worker.terminate();reject(new ServiceManagementError('preview: Regex evaluation exceeded its bounded deadline. Shorten target or review expressions.'));},1000);
+      worker.once('message',async result=>{clearTimeout(timer);await worker.terminate();result.error?reject(new ServiceManagementError(result.error)):resolve(result);});
+      worker.once('error',async()=>{clearTimeout(timer);await worker.terminate();reject(new ServiceManagementError('preview: Evaluation unavailable. Reload and retry.'));});
     });
     if(manager.fingerprint(data.id)!==fingerprint||sourceFingerprint()!==admittedSource)throw new ServiceManagementError('source: Configuration or dependencies changed. Reload and preview again.');
     manager.actor(session); // Role/session and eligibility may change during the bounded work.

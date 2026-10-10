@@ -1,5 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import QRCode from 'qrcode';
+import { configurationHistory,useConfigurationRevision } from './consoleHistory.js';
 import { importConfiguration,exportConfiguration } from './consoleMigration.js';
 import { consoleProtection } from './consoleProtection.js';
 import { previewPolicy } from './policyPreview.js';
@@ -71,6 +72,7 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
             reply(200, { operation: id, status: store.journal.status(id) === 'unknown' ? store.externalAudit?.operationStatus(id) ?? 'unknown' : store.journal.status(id) });
             return;
         }
+        if(request.method==='GET'&&path==='/console/api/configuration/history'){if(!session){reply(401,{message:'Sign in again.'});return;}reply(200,configurationHistory(consoleServices(store),session));return;}
         if(request.method==='GET'&&path==='/console/api/protection'){if(!session){reply(401,{message:'Sign in again.'});return;}reply(200,consoleProtection(consoleServices(store)).read(session));return;}
         if (request.method === 'GET' && (path === '/console/api/services' || path?.startsWith('/console/api/services/'))) {
             if (!session) { reply(401, { message: 'Sign in again.' }); return; }
@@ -133,6 +135,7 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
             reply(403, { message: 'Reload this page before submitting.' });
             return;
         }
+        if(path==='/console/api/configuration/history-draft'){reply(200,useConfigurationRevision(consoleServices(store),session,data));return;}
         if(path==='/console/api/configuration/import'){reply(200,importConfiguration(consoleServices(store),session,data));return;}
         if(path==='/console/api/configuration/export'){if(Object.keys(data).length)throw new ServiceManagementError('export: No input fields supported.');reply(200,exportConfiguration(consoleServices(store),session));return;}
         if(path?.startsWith('/console/api/protection/')){const p=consoleProtection(consoleServices(store));if(path.endsWith('/save')){reply(200,p.save(session,data));return;}if(path.endsWith('/review')){reply(200,p.review(session,data));return;}if(path.endsWith('/apply')){reply(200,p.apply(session,data));return;}}

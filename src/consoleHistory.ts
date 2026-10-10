@@ -1,0 +1,26 @@
+import { z } from 'zod';
+import { normalizeManagedService, type ManagedServiceDraft } from './config.js';
+import { sanitizeAuditText } from './auditSanitizer.js';
+import { ConsoleServices,ServiceManagementError } from './consoleServices.js';
+import { validateProtection,type ProtectionCatalogs } from './consoleProtection.js';
+import type { ConsoleState,ConsoleSession } from './consoleStore.js';
+export interface ConfigurationRevision {requiresCorrection?:boolean; revision:number;actor:string;time:number;change:string;services:Record<string,ManagedServiceDraft>;protection?:ProtectionCatalogs}
+export function configurationProjection(state:ConsoleState):Record<string,ManagedServiceDraft>{return Object.fromEntries(Object.entries(state.managed!.services).filter(([,s])=>s.applied).map(([id,s])=>{const {access:_access,...content}=structuredClone(s.applied!);return [id,content];}));}
+export function captureConfigurationRevision(state:ConsoleState,actor:string,change:string):void {
+ const secrets=Object.values(state.managed!.services).flatMap(s=>Object.values(s.values).map(v=>v.value));
+ function sanitize(value:unknown):unknown {if(typeof value==='string')return sanitizeAuditText(value,secrets);if(Array.isArray(value))return value.map(sanitize);if(value&&typeof value==='object')return Object.fromEntries(Object.entries(value).map(([k,v])=>[k,sanitize(v)]));return value;}
+ const record:ConfigurationRevision={revision:state.managed!.revision,actor,time:Date.now(),change,services:configurationProjection(state),...(state.managed!.protection?{protection:structuredClone(state.managed!.protection!.applied)}:{})};
+ const safe=sanitize(record) as ConfigurationRevision;if(JSON.stringify(record)!==JSON.stringify(safe))safe.requiresCorrection=true;state.managed!.history=[...(state.managed!.history??[]),safe].slice(-50);
+}
+export function configurationHistory(manager:ConsoleServices,session:ConsoleSession){manager.actor(session);return {revisions:manager.state.history??[],notice:'Latest 50 applied configuration revisions. Use as draft never restores secrets, access, identities, lifecycle, sessions or grants.'};}
+export function useConfigurationRevision(manager:ConsoleServices,session:ConsoleSession,input:unknown){
+ const actor=manager.actor(session,true),p=z.object({revision:z.number().int().nonnegative(),base:z.number().int().nonnegative(),services:z.array(z.string().min(1).max(1024)).max(100),includeProtection:z.boolean()}).strict().refine(v=>v.services.length>0||v.includeProtection).safeParse(input);
+ if(!p.success)throw new ServiceManagementError('history: Select a retained revision, current base and explicit service scope.');const d=p.data;if(d.base!==manager.state.revision)throw new ServiceManagementError('Stale history draft. Reload current revision.');const revision=manager.state.history?.find(r=>r.revision===d.revision);if(!revision)throw new ServiceManagementError('history: Revision no longer retained.');if(revision.requiresCorrection)throw new ServiceManagementError('history.configuration: Snapshot contains redacted fields requiring explicit correction. Recreate a draft from current configuration; redacted policy/catalog/destination syntax cannot be restored.');
+ const drafts=d.services.map(id=>{const content=Object.hasOwn(revision.services,id)?revision.services[id]:undefined,current=Object.hasOwn(manager.state.services,id)?manager.state.services[id]:undefined;
+  if(!content||!current?.applied)throw new ServiceManagementError('history.services: Current service dependency is missing.');if(current.lifecycle!=='Active')throw new ServiceManagementError('history.services: Disabled or Archived services cannot be enabled from history. Review current configuration separately.');
+  const draft={...structuredClone(content),access:{users:[...current.assignments]}};try{normalizeManagedService(id,draft,Object.fromEntries(Object.entries(current.values).map(([id,v])=>[id,v.value])));}catch{throw new ServiceManagementError('history.credentials: Current credential dependencies are missing. Supply current values separately; old values are never recovered.');}return{id,content:draft};});
+ if(new Set(d.services).size!==d.services.length)throw new ServiceManagementError('history.services: Select each service once.');
+ const protection=d.includeProtection?revision.protection:undefined;if(d.includeProtection&&!protection)throw new ServiceManagementError('history.responseProtection: Current revision has no shared catalog snapshot.');if(protection)validateProtection(protection);
+ const operation=manager.store.commit(actor.id,'configuration.history_draft','configuration',state=>{for(const draft of drafts){const current=state.managed!.services[draft.id]!;current.draft={content:draft.content,base:state.managed!.revision,generation:(current.draft?.generation??0)+1};delete current.review;}if(protection){state.managed!.protection!.draft={content:protection,base:state.managed!.revision,generation:(state.managed!.protection!.draft?.generation??0)+1};delete state.managed!.protection!.review;}});
+ return {operation,status:'saved as new draft',notice:'Current access and credential values are retained. Review old destinations, policy and security exceptions before applying.'};
+}

@@ -83,7 +83,7 @@ function rawAbsolutePath(input: string): string {
   return match?.[1] ?? "/";
 }
 
-function assertUnambiguousPathEncoding(pathname: string): void {
+export function assertUnambiguousPathEncoding(pathname: string): void {
   for (let index = 0; index < pathname.length; index += 1) {
     if (pathname[index] !== "%") continue;
     const escape = pathname.slice(index + 1, index + 3);
@@ -129,7 +129,7 @@ function validateBaseUrl(destination: DestinationConfig, url: URL): void {
   }
 }
 
-function normalizePath(path: string): string {
+export function normalizePath(path: string): string {
   const segments: string[] = [];
   for (const segment of path.split("/")) {
     if (segment === "" || segment === ".") continue;

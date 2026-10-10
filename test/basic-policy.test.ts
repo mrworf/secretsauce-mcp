@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { literalPathPrefix } from '../src/basicPolicy.js';
+import { literalPathPrefix,canonicalPathPattern } from '../src/basicPolicy.js';
 import { normalizeManagedService } from '../src/config.js';
 import { resolveDestinationTarget } from '../src/urlValidation.js';
 import { evaluatePolicy } from '../src/policy.js';
@@ -13,3 +13,5 @@ describe('guided literal path prefix with canonical backend policy',()=>{
   for(const prefix of ['/a+b','/a(b)','/a{2}','/a|b','/a$','/a^b','/a?b','/a*b']){const regex=new RegExp(literalPathPrefix(prefix));expect(regex.test(prefix+'/next')).toBe(true);expect(regex.test('/unrelated')).toBe(false);}
  });
 });
+
+it('guided exact/prefix reject paths that differ from canonical runtime routing',()=>{expect(canonicalPathPattern('/api','exact')).toBe('^/api$');expect(canonicalPathPattern('/api','prefix')).toBe('^/api');for(const path of ['/api/','/a/../b','/a//b','/%2f','/%61','/a?secret=x','//api.example.org/x','/a\\b'])expect(()=>canonicalPathPattern(path,'exact')).toThrow();});

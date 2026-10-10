@@ -1,3 +1,4 @@
+import { Worker } from "node:worker_threads";
 import { z } from "zod";
 import { configError, configValidationError, type ConfigPath } from "./errors.js";
 import { loadYamlConfig, validationDiagnostics } from "./yamlConfig.js";
@@ -72,13 +73,28 @@ export function resolveSensitiveNameConfig(
   };
 }
 
+let batchSlots=0;
 export class SensitiveNameMatcher {
   private readonly allows: RegExp[];
   private readonly patterns: Array<{ id: string; regex: RegExp }>;
 
-  constructor(config: SensitiveNameConfig) {
+  constructor(readonly config: SensitiveNameConfig) {
     this.allows = config.allowPatterns.map((source) => compileRegex(source));
     this.patterns = config.patterns.map((pattern) => ({ id: pattern.id, regex: compileRegex(pattern.regex) }));
+  }
+
+  async matchBatch(names: string[]): Promise<Map<string,string[]>> {
+    if(names.length>10000||batchSlots>=4)throw new Error('Sensitive-name matching capacity exceeded');
+    const skipped=new Map(names.filter(name=>name.length===0||name.length>MAX_CANDIDATE_LENGTH).map(name=>[name,[] as string[]]));
+    const eligible=names.filter(name=>name.length>0&&name.length<=MAX_CANDIDATE_LENGTH);if(!eligible.length)return skipped;
+    batchSlots++;
+    try{return await new Promise<Map<string,string[]>>((resolve,reject)=>{
+      const source=`const {parentPort,workerData}=require('node:worker_threads');const normalizeSensitiveName=${normalizeSensitiveName.toString()};try{const allows=workerData.config.allowPatterns.map(s=>new RegExp(s,'i')),patterns=workerData.config.patterns.map(p=>({id:p.id,regex:new RegExp(p.regex,'i')}));parentPort.postMessage(workerData.names.map(name=>{if(name.length===0||name.length>${MAX_CANDIDATE_LENGTH})return [name,[]];const n=normalizeSensitiveName(name);return [name, n.length===0||allows.some(p=>p.test(n))?[]:patterns.filter(p=>p.regex.test(n)).map(p=>'gateway:sensitive-name:'+p.id)];}));}catch{parentPort.postMessage({error:true});}`;
+      const worker=new Worker(source,{eval:true,workerData:{config:this.config,names:eligible},resourceLimits:{maxOldGenerationSizeMb:32,maxYoungGenerationSizeMb:8}});
+      const timer=setTimeout(async()=>{await worker.terminate();reject(new Error('Sensitive-name matching deadline exceeded'));},1000);
+      worker.once('message',async result=>{clearTimeout(timer);await worker.terminate();if(!Array.isArray(result)){reject(new Error('Sensitive-name matching failed'));return;}resolve(new Map([...skipped,...result]));});
+      worker.once('error',async()=>{clearTimeout(timer);await worker.terminate();reject(new Error('Sensitive-name matching failed'));});
+    });}finally{batchSlots--;}
   }
 
   match(name: string): string[] {

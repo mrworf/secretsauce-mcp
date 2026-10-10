@@ -1,3 +1,4 @@
+import { bundledProtection } from '../src/consoleProtection.js';
 import { once } from 'node:events';
 import { describe, it, expect } from 'vitest';
 import { managedFixture } from './consoleManagementFixtures.js';
@@ -21,3 +22,5 @@ describe('protected managed HTTP service boundary',()=>{
   }finally{await f.close();}
  });
 });
+
+it('protects new advanced endpoints with session origin CSRF current role and strict input',async()=>{const f=await httpFixture();try{for(const path of ['protection','configuration/history']){expect((await fetch(f.base+'/console/api/'+path)).status).toBe(401);expect((await fetch(f.base+'/console/api/'+path,{headers:f.headers})).status).toBe(200);}expect((await f.post('protection/save',{base:0,generation:0,catalogs:bundledProtection()})).status).toBe(200);const reviewed=await(await f.post('protection/review',{})).json();expect((await f.post('protection/apply',{review:reviewed.review,acknowledged:true})).status).toBe(200);expect((await f.post('configuration/export',{})).status).toBe(200);expect((await f.post('configuration/export',{unknown:'synthetic-private'})).status).toBe(400);for(const path of ['configuration/import','configuration/history-draft','service/preview']){expect((await f.post(path,{}, {origin:'https://untrusted.example.org'})).status).toBe(403);expect((await f.post(path,{}, {'x-console-csrf':'invalid'})).status).toBe(403);expect((await f.post(path,{})).status).toBe(400);}f.store.state.users[0]!.role='Auditor';expect((await f.post('protection/save',{base:1,generation:0,catalogs:bundledProtection()})).status).toBe(403);f.store.state.users[0]!.role='Member';expect((await fetch(f.base+'/console/api/configuration/history',{headers:f.headers})).status).toBe(403);}finally{await f.close();}});

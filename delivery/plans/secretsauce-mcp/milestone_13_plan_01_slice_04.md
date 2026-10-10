@@ -1,6 +1,6 @@
 # M13 slice 04: Last-50 configuration history and rendered acceptance
 
-Status: planned. Parent: prior slice commit (record before implementation). Commit: resolve from history by unique slice subject.
+Status: completed. Parent: 5e3f0eb6efe4edb1dc0131e4120f0de05db266e6. Commit: resolve from history by unique slice subject.
 
 ## Goal and behavior
 
@@ -27,3 +27,7 @@ Focused command: npx vitest run test/console-advanced.test.ts (and affected subs
 ## Commit boundary
 
 One explicit owned-path commit including this plan, governing index, behavior, tests and direct docs/evidence. Subject: delivery: M13 slice 04 last-50 configuration history and rendered acceptance. Never stage test-results/. Exact previous SHA recorded in next slice; own SHA resolved through Git history/root checkpoint.
+
+Delivered history retention50 and scoped current-dependency drafts; catalog-only history, redacted structural snapshot rejection, identity/credential generation races. Added guided canonical exact/prefix input guards, advanced HTTP authorization fixtures, and bounded asynchronous sensitive-name batches while preserving tolerant source offsets. Actual delayed-response admission and restart authority remain covered. Global Settings search matches nonsecret DOM labels/help and opens containing disclosures.
+
+Validation: full npm test481tests/48files passed with loopback permission after original same-command EPERM; npm run build passed. Actual HTTPS Playwright6 task groups/eight320px screenshots pass; denial161ms (functional automation, not human study). Full acceptance mapping: evidence/qa/secretsauce-mcp/milestone13/acceptance.md. Field coverage and migration/export/precedence guide: docs/console-advanced-configuration.md.

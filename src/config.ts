@@ -466,7 +466,7 @@ function isLoopbackHost(hostname: string): boolean {
   return normalized.split(".")[0] === "127";
 }
 
-function normalizeLoginRateLimit(raw: {
+export function normalizeLoginRateLimit(raw: {
   window: string; per_source: number; per_account: number; global: number;
   initial_lockout: string; max_lockout: string; max_entries: number;
 }) {
@@ -831,8 +831,8 @@ export function validateMigrationGlobals(raw: ReturnType<typeof parseRawConfig>)
   if(raw.auth.mode==='builtin_oauth'){const b=raw.auth.builtin_oauth;if(Boolean(b.admin_password_hash_env)===Boolean(b.admin_password_hash_file))throw configValidationError('Exactly one password hash source required',['auth','builtin_oauth']);
     for(const key of ['access_token_ttl','authorization_code_ttl','refresh_token_idle_ttl','refresh_token_max_ttl'] as const)parseDuration(b[key],'auth.builtin_oauth.'+key);
     if(parseDuration(b.refresh_token_idle_ttl,'auth.builtin_oauth.refresh_token_idle_ttl')>parseDuration(b.refresh_token_max_ttl,'auth.builtin_oauth.refresh_token_max_ttl'))throw configValidationError('Refresh TTL ordering invalid',['auth','builtin_oauth']);
-    for(const key of ['window','initial_lockout','max_lockout'] as const)parseDuration(b.login_rate_limit[key],'auth.builtin_oauth.login_rate_limit.'+key);
+    normalizeLoginRateLimit(b.login_rate_limit);
   }
-  const urls=[raw.server.resource,...(raw.auth.mode==='oauth'?[raw.auth.oauth.issuer,raw.auth.oauth.resource,raw.auth.oauth.jwks_uri]:raw.auth.mode==='builtin_oauth'?[raw.auth.builtin_oauth.issuer]:[])];
-  for(const value of urls)if(value){const u=new URL(value);if(u.username||u.password||u.search||u.hash)throw configValidationError('Trust URL must not contain userinfo, query or fragment',['server','resource']);}
+  const urls:Array<[string|undefined,ConfigPath]>=[[raw.server.resource,['server','resource']],...(raw.auth.mode==='oauth'?[[raw.auth.oauth.issuer,['auth','oauth','issuer']],[raw.auth.oauth.resource,['auth','oauth','resource']],[raw.auth.oauth.jwks_uri,['auth','oauth','jwks_uri']]] as Array<[string|undefined,ConfigPath]>:raw.auth.mode==='builtin_oauth'?[[raw.auth.builtin_oauth.issuer,['auth','builtin_oauth','issuer']]] as Array<[string|undefined,ConfigPath]>:[])];
+  for(const [value,path] of urls)if(value){const u=new URL(value);if(u.username||u.password||u.search||u.hash)throw configValidationError('Trust URL must not contain userinfo, query or fragment',path);}
 }

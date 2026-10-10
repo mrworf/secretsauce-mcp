@@ -110,16 +110,20 @@ export class ResponseTokenizer {
     service: ServiceConfig,
     disabledRuleIds: ReadonlySet<string>,
   ): Promise<TokenizedResponseText & { bodyReplacements: TextReplacement[] }> {
+    const jsonLike=isJsonLikeText(response.headers,response.body),names=new Set(Object.keys(response.headers));
+    if(jsonLike)findSensitiveJsonValues(response.body,{match:(name:string)=>{names.add(name);return [];}} as unknown as SensitiveNameMatcher);
+    let matches:Map<string,string[]>;try{matches=await this.sensitiveNames.matchBatch([...names]);}catch{throw new GatewayError('secret_scan_failed','Response sensitive-name matching failed within its resource bounds.');}
+    const matcher={match:(name:string)=>matches.get(name)??[]} as unknown as SensitiveNameMatcher;
     const headerEntries: Array<readonly [string, CollectedText]> = [];
     for (const [name, value] of Object.entries(response.headers)) {
-      const ruleIds = this.sensitiveNames.match(name);
+      const ruleIds = matcher.match(name);
       const sensitive = value.length > 0 && ruleIds.length > 0
         ? [{ start: 0, end: value.length, secretValue: value, ruleIds: new Set(ruleIds) }]
         : [];
       headerEntries.push([name, await this.collect(value, auth, service, disabledRuleIds, sensitive)] as const);
     }
     const bodyRanges = isJsonLikeText(response.headers, response.body)
-      ? findSensitiveJsonValues(response.body, this.sensitiveNames).map((finding) => ({
+      ? findSensitiveJsonValues(response.body, matcher).map((finding) => ({
         start: finding.start, end: finding.end, secretValue: finding.secretValue, ruleIds: new Set(finding.ruleIds),
       }))
       : [];

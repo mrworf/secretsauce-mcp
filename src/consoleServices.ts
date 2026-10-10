@@ -1,3 +1,4 @@
+import { captureConfigurationRevision } from './consoleHistory.js';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { managedDraftSchema, normalizeManagedService, serviceDraft, type ManagedServiceDraft } from './config.js';
@@ -16,7 +17,7 @@ export interface ManagedService {
   assignments: string[];
   review?: { id: string; actor: string; fingerprint: string; candidate: ManagedServiceDraft; base: number; draftGeneration: number; settings?: { name: string }; exceptions: string[] };
 }
-export interface ManagedConfiguration { migrationGlobals?: Record<string,unknown>; protection?: import("./consoleProtection.js").ProtectionState; revision: number; services: Record<string, ManagedService> }
+export interface ManagedConfiguration { history?: import("./consoleHistory.js").ConfigurationRevision[]; migrationGlobals?: Record<string,unknown>; protection?: import("./consoleProtection.js").ProtectionState; revision: number; services: Record<string, ManagedService> }
 function own<T>(values: Record<string, T>, key: string): T | undefined { return Object.hasOwn(values, key) ? values[key] : undefined; }
 const idSchema = z.string().min(1).max(1024).regex(/^[^\u0000-\u001f\u007f]+$/);
 const newIdSchema = z.string().regex(/^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,79}$/);
@@ -127,6 +128,7 @@ export class ConsoleServices {
       s.applied.access = { users: s.assignments }; s.lifecycle = 'Active'; delete s.draft; delete s.review;
       state.config!.services = { ...state.config!.services, [data.id]: c.service }; m.revision++;
       if (review.settings) state.name = review.settings.name;
+      captureConfigurationRevision(state,c.actor.id,'Service configuration applied');
     }); } finally { if (own(this.state.services, data.id)?.draft === undefined) { this.invalidate(data.id); this.publish(); } }
     return { operation, status: 'applied', revision: this.state.revision };
   }

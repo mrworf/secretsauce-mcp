@@ -1,0 +1,28 @@
+{
+  "result": "PASS",
+  "image": "sha256:de535a12ada9a76ac50377ea0259666a666fe0bac99bd1f24ffd0f63d776f938",
+  "metrics": {
+    "services": 100,
+    "retainedAudit": 10000,
+    "jobMs": 2383.231588,
+    "archiveBytes": 12270470,
+    "gatewaySamples": 106,
+    "maxGatewayReadMs": 349.7226989999999,
+    "meanGatewayReadMs": 7.317672886792496
+  },
+  "checks": [
+    "Actual100service/10k synthetic retained audit backup with measured authenticated MCP tools/list read responsiveness during worker encryption and bounded snapshot/publication pauses",
+    "Network-isolated clean container mounts ciphertext only; independent material stdin alone decrypts all100credential/audit-key dependencies; source master/app/audit/OAuth mounts absent; wrong material rejected",
+    "Clean host rejects truncated/corrupt ciphertext without extraction or imported installation",
+    "Actual SIGKILL before-publication: restart unknown, no interrupted download, retained good archive remains downloadable; leases/PID recovery preserved",
+    "Actual SIGKILL publish-after-file-sync: restart unknown, no interrupted download, retained good archive remains downloadable; leases/PID recovery preserved",
+    "Actual SIGKILL publish-after-rename: restart unknown, no interrupted download, retained good archive remains downloadable; leases/PID recovery preserved",
+    "Actual SIGKILL publish-after-directory-sync: restart unknown, no interrupted download, retained good archive remains downloadable; leases/PID recovery preserved",
+    "Actual SIGKILL after-publication: restart unknown, no interrupted download, retained good archive remains downloadable; leases/PID recovery preserved",
+    "Actual nonwritable backup storage rejects creation while retaining downloadable last-good archive",
+    "Actual missing stable audit key blocks sensitive backup before effects and reports503",
+    "Independent PID namespace same app/audit mounts cannot steal active writer leases"
+  ],
+  "realLLM": "NOT RUN: authorized local-validation exception",
+  "cleanup": "Only owned ephemeral containers and mounts removed; acceptance image retained"
+}

@@ -1,0 +1,13 @@
+{
+  "result": "PASS",
+  "transport": "Actual synthetic HTTPS example.org certificate and loopback resolver",
+  "browser": "Declared Playwright Chromium",
+  "checks": [
+    "UX-C01/C13/C15/C20/C21/C22: own client empty state and separate ChatGPT/Codex disclosures; resource/issuer origins versus full URL, consent versus assignment, reconnect/ephemeral reference instructions; keyboard and 320px.",
+    "UX-C07/C13/C15/C20/C21/C22: enrolled password/MFA deliberate consent, safe client/scopes/callback, own metadata, explicit immediate revoke and empty recovery; old JWT denied. Local synthetic browser is not a real ChatGPT/Codex client.",
+    "UX-C15/C20/C21/C22: expired one-use consent and invalid redirect show safe restart instructions without false completion.",
+    "UX-C07/C15/C20/C21/C22: Owner scoped draft/error preserves safe context, advanced durations human-readable/collapsed, sanitized comparison/recent MFA apply and reconnect warning.",
+    "UX-C01/C13/C15/C20/C21/C22: Auditor settings/client guidance read-only, Member only own clients, no privileged configuration controls."
+  ],
+  "platformEvidence": "PRE-015 unverified; no real platform execution"
+}

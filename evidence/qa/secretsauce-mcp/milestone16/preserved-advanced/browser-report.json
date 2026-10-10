@@ -1,0 +1,15 @@
+{
+  "result": "PASS",
+  "transport": "Actual HTTPS loopback with example.org certificate/resolver mapping",
+  "browser": "Declared Playwright Chromium",
+  "denialMilliseconds": 161,
+  "timingKind": "Functional automation, not human usability study",
+  "checks": [
+    "UX-C09/C10/C25: keyboard safe preview explains applied denial/canonical target/winning rule/effective protection with no downstream I/O; automation 161 ms (not a human study).",
+    "UX-C04/C05/C20/C21/C22: advanced/guided switches preserve same draft and exact imported regex source; draft/applied status distinct, keyboard and320px views.",
+    "UX-C04/C05/C10/C15: non-secret settings search reveals catalogs; shared defaults edit/review/apply has visible impact, separate draft/effective inheritance.",
+    "UX-C23/C05: retained actor/revision history opens permitted current-dependency draft; no access/lifecycle/secret restoration.",
+    "UX-C23/C10/C15/C20/C21: import source-linked failure preserves safe context; write-only values cleared; export states missing material/not restore archive.",
+    "UX-C06/C15: concurrent lifecycle change defeats reviewed apply; current/proposed comparison and reload path shown without partial success."
+  ]
+}

@@ -5,9 +5,12 @@ import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { ConsoleNotifications, sendSmtp } from '../src/consoleNotifications.js';
+import { ConsoleNotifications, consoleNotifications, sendSmtp } from '../src/consoleNotifications.js';
 import { ConsolePeople } from '../src/consolePeople.js';
 import { managedFixture } from './consoleManagementFixtures.js';
+import {consoleBackups} from '../src/consoleBackups.js';
+import {backupPublicKey} from '../src/consoleBackupArchive.js';
+import {randomSecret} from '../src/consoleCrypto.js';
 const config = { host: 'smtp.example.org', port: 465, sender: 'console@example.org', username: 'synthetic-user', password: 'synthetic-mail-secret' };
 function recent(f: ReturnType<typeof managedFixture>, action: string) { f.store.state.sessions[0]!.recent = { action, expires: Date.now() + 300000 }; }
 function apply(f: ReturnType<typeof managedFixture>, n: ConsoleNotifications, c = config, clearCredential = false) { n.save(f.session, { base: n.state.revision, generation: n.state.draft?.generation ?? 0, settings: c, clearCredential }); const r = n.review(f.session); recent(f, 'notifications.apply'); n.apply(f.session, { review: r.review, confirmed: true }); }
@@ -113,6 +116,7 @@ describe('bounded optional SMTP', () => {
         await once(server, 'listening');
         const local = { ...config, host: 'localhost', port: (server.address() as import('node:net').AddressInfo).port };
         await expect(sendSmtp(local, 'person@example.org', 'manual synthetic link https://console.example.org/console#synthetic', { ca: cert })).resolves.toBeUndefined();
+        const f=managedFixture();try{const backups=consoleBackups(f.store),notifications=consoleNotifications(f.store);f.store.state.backupPublicKey=backupPublicKey(randomSecret());const good=await backups.start(f.session,{confirmed:true});f.store.state.backups!.settings.alerts=true;f.store.state.notifications={revision:0,applied:local,deliveries:[]};notifications.transport=(settings,recipient,body)=>sendSmtp(settings,recipient,body,{ca:cert});backups.fault=()=>{throw Error('synthetic archive capture failure');};await expect(backups.start(f.session,{confirmed:true})).rejects.toThrow();for(let i=0;i<100&&!notifications.state.deliveries.some(d=>d.status==='delivered');i++)await new Promise(r=>setTimeout(r,10));expect(notifications.state.deliveries.at(-1)).toHaveProperty('status','delivered');mode='bad';await expect(backups.start(f.session,{confirmed:true})).rejects.toThrow();for(let i=0;i<100&&notifications.state.deliveries.at(-1)?.status==='queued';i++)await new Promise(r=>setTimeout(r,10));expect(notifications.state.deliveries.at(-1)).toHaveProperty('status','failed');expect(backups.state.jobs.find(j=>j.id===good.job)).toHaveProperty('status','completed');expect(f.store.state.users[0]!.enrolled).not.toBe(false);}finally{f.close();}
         mode = 'bad';
         await expect(sendSmtp(local, 'person@example.org', 'safe', { ca: cert })).rejects.toThrow(/Delivery failed/);
         mode = 'slow';

@@ -6,7 +6,7 @@ This plan governs exactly M16.
 Owners create and download complete portable encrypted recovery points, configure daily mounted-directory backups and reviewed retention, and see truthful bounded job health. Independent saved material decrypts every included dependency on a clean host. Installation and reenrollment are M17.
 
 ## Delivery-goal context
-- Goal status: workflow/delivery/secretsauce-mcp/delivery-goal.yaml (root-owned)
+- Goal status: delivery/milestones/secretsauce-mcp/status.yaml → delivery_goal (root-owned)
 - Product ID: secretsauce-mcp
 - Packet: delivery/milestones/secretsauce-mcp; planning payload 865aa5710bcb9ff6c4641e177452ab9c50619a19
 - Definition payload: 06dd0ee59defd1a75db121f1d8133c7100238b80
@@ -36,8 +36,8 @@ Excluded: M17 installation/reenrollment/maintenance, remote/cloud storage, selec
 | Slice | Plan | Outcome | Dependencies | Status | Commit | Evidence |
 |---|---|---|---|---|---|---|
 | 01 | milestone_16_plan_01_slice_01.md | Portable complete archive/manual job/download provider | M10–15 | completed | 1fca06a6ce0362e027cf241ad6be95ac6f16f43b | QA browser-report.json; 41 tests/5 files |
-| 02 | milestone_16_plan_01_slice_02.md | Daily backups, reviewed retention and material lifecycle | 01 | completed (commit pending) | | 27 tests/3 files; HTTPS browser5 groups |
-| 03 | milestone_16_plan_01_slice_03.md | Backups UX, health/evidence and isolated operational validation | 01,02 | pending | | |
+| 02 | milestone_16_plan_01_slice_02.md | Daily backups, reviewed retention and material lifecycle | 01 | completed | ee29ef90afc8c6842c81aa6ad8b6928f2f4beb29 | 27 tests/3 files; HTTPS browser5 groups |
+| 03 | milestone_16_plan_01_slice_03.md | Backups UX, health/evidence and isolated operational validation | 01,02 | completed | recorded externally after commit |585tests/61files/build; HTTPS7+preservation17groups; Docker11groups; acceptance-coverage.md |
 
 ## Cross-slice concerns
 Preserve live gateway/scanner/broker objects and mandatory audit. Recheck current Owner/session/security generation before asynchronous final publication/download. Never log or write plaintext secrets. Backup directory writes are constrained to validated mounted directory with fixed UUID filenames, no arbitrary extraction. Archive holders can decrypt included secrets; save material independently and copy ciphertext off-host. One active process with launcher leases remains mandatory. Bound jobs, snapshot, archive size, directory consumption and history. Retention never removes last good archive. Progress stages have no invented percentage.
@@ -53,3 +53,5 @@ Plans persisted before production edits. Root owns authoritative freshness, goal
 
 ## Deferred follow-ups
 M17 restore installation and recovery activation; inherited dependency triage in evidence/platform/secretsauce-mcp/milestone15/dependency-triage.md; real LLM integrations deferred by explicit user exception.
+
+Final slice payload records current test/build/browser/Docker evidence and requirement coverage. Root receives exact final commit SHA externally and owns milestone acceptance/status. All three indexed slices are complete; no M17 installation or actual LLM verification is claimed.

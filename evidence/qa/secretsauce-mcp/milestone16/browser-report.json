@@ -16,6 +16,12 @@
     },
     {
       "check": "Missing archive reports failed download and retains safe action context; no false success"
+    },
+    {
+      "check": "Owner keyboard confirmation acknowledges inspected absent interrupted outputs; history remains unknown with no success/download"
+    },
+    {
+      "check": "Degraded audit backup controls read-only/blocked; keyboard320px account and sign-out remain reachable"
     }
   ],
   "realLLM": "NOT RUN: authorized local-validation exception"

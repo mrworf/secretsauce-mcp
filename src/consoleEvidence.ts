@@ -1,3 +1,4 @@
+import {consoleBackups} from './consoleBackups.js';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { sanitizeAuditText } from './auditSanitizer.js';
@@ -57,8 +58,8 @@ export class ConsoleEvidence {
   let report:unknown;
   if(data.kind==='activity'){const q=this.select(session,data.filters);report={entries:this.sanitize(q.matches.slice(data.filters.offset,data.filters.offset+500),safe),bounded:true,maximumRows:500,truncated:q.matches.length>data.filters.offset+500,filters:Object.fromEntries(Object.entries(data.filters).map(([key,value])=>[key,typeof value==='string'?safe(value):value]))};}
   else if(data.kind==='access'){report={users:this.store.state.users.map(u=>({id:safe(u.id),contact:safe(u.email),role:u.role,active:u.active,enrolled:u.enrolled!==false})),external:(this.store.state.people?.external??[]).map(e=>({id:safe(e.id),label:safe(e.label),active:e.active})),services:Object.entries(this.store.state.managed?.services??{}).map(([id,s])=>({id:safe(id),lifecycle:s.lifecycle,assignments:s.assignments.map(safe)}))};}
-  else if(data.kind==='configuration'){const manager=consoleServices(this.store);report={revision:manager.state.revision,services:manager.list(session).services.map(s=>({id:safe(s.id),name:safe(s.name),lifecycle:s.lifecycle,exceptions:s.exceptions.map(e=>safe(e))})),limits:this.store.state.config?.limits,retentionDays:this.retention.days,authenticationMode:this.store.state.config?.auth.mode,responseProtectionSource:'Settings',backup:{status:'pending capability'},restore:{status:'pending capability'}};}
-  else report={version:PACKAGE_VERSION,instance:this.store.state.id,backup:'pending capability',restore:'pending capability'};
+  else if(data.kind==='configuration'){const manager=consoleServices(this.store);report={revision:manager.state.revision,services:manager.list(session).services.map(s=>({id:safe(s.id),name:safe(s.name),lifecycle:s.lifecycle,exceptions:s.exceptions.map(e=>safe(e))})),limits:this.store.state.config?.limits,retentionDays:this.retention.days,authenticationMode:this.store.state.config?.auth.mode,responseProtectionSource:'Settings',backup:consoleBackups(this.store).health(),restore:{status:'pending capability'}};}
+  else report={version:PACKAGE_VERSION,instance:this.store.state.id,backup:consoleBackups(this.store).health(),restore:'pending capability'};
   const result={operation,kind:data.kind,report};if(Buffer.byteLength(JSON.stringify(result))>2*1024*1024){this.store.journal.finish(operation,actor.id,'evidence.export',data.kind,this.store.state.revision,'failed');throw new EvidenceError('Export exceeds 2 MiB. Narrow the scope.');}
   this.store.requireSensitive(session);this.store.journal.finish(operation,actor.id,'evidence.export',data.kind,this.store.state.revision);return result;
  }

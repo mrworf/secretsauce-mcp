@@ -1,5 +1,3 @@
 import {parentPort,workerData} from 'node:worker_threads';
-import {createRecoveryPayload,sealRecoveryArchive,verifySealedArchive} from './consoleBackupArchive.js';
-const {state,audit,key,recoveryPoint,hostTime}=workerData;
-const started=performance.now();
-try{const assembledAt=hostTime+Math.floor(performance.now()-started),payload=createRecoveryPayload(state,audit,workerData.keyId,recoveryPoint,assembledAt),archive=sealRecoveryArchive(payload,key);verifySealedArchive(archive,key);parentPort!.postMessage({archive});}catch{parentPort!.postMessage({failed:true});}
+import {createRecoveryPayload,openRecoveryArchive,sealRecoveryArchive,verifySealedArchive} from './consoleBackupArchive.js';
+try{if(workerData.kind==='open')parentPort!.postMessage({payload:openRecoveryArchive(workerData.archive,workerData.material)});else{const {state,audit,key,recoveryPoint,hostTime}=workerData,payload=createRecoveryPayload(state,audit,workerData.keyId,recoveryPoint,hostTime),archive=sealRecoveryArchive(payload,key);verifySealedArchive(archive,key);parentPort!.postMessage({archive});}}catch{parentPort!.postMessage({failed:true});}

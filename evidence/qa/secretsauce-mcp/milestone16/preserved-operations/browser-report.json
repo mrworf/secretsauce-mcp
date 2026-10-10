@@ -1,0 +1,28 @@
+{
+  "result": "PASS",
+  "transport": "Actual HTTPS with synthetic example.org certificate/loopback resolver",
+  "checks": [
+    {
+      "check": "Scoped filters, details, admitted revision, uncertain outcome, audited filtered export; keyboard320px",
+      "denialSeconds": 0.3536924899999999
+    },
+    {
+      "check": "365day default→scoped draft/review/deletion impact/apply; keyboard320px"
+    },
+    {
+      "check": "All39 limit fields have visible labels/effective human units; invalid combination preserves input, imported1001ms unchanged scoped review/apply, health not-yet-backed-up/manual email, keyboard320px",
+      "fieldCount": 39
+    },
+    {
+      "check": "Keyboard user disable with explicit confirmation and recent password/freshTOTP; no safeguard bypass",
+      "disableSeconds": 0.3349397149999995
+    },
+    {
+      "check": "Auditor evidence export/read-only retention; Member own evidence/no global export/settings"
+    },
+    {
+      "check": "Audit outage role-scoped retained reads and blocked export"
+    }
+  ],
+  "realLLM": "NOT RUN: authorized local-validation exception"
+}

@@ -1,0 +1,82 @@
+{
+  "result": "PASS",
+  "recordedAt": "2026-10-10T18:48:00.046073+00:00",
+  "parent": "9dbdda74a44eb7a93b6184d055a0159f28ba2ac5",
+  "slice01": "1fca06a6ce0362e027cf241ad6be95ac6f16f43b",
+  "slice02": "ee29ef90afc8c6842c81aa6ad8b6928f2f4beb29",
+  "finalSlice": "SHA recorded externally by root after commit; payload cannot include its own commit SHA",
+  "checks": [
+    {
+      "command": "npm test",
+      "result": "PASS",
+      "tests": 585,
+      "files": 61,
+      "durationSeconds": 18.12,
+      "permission": "authorized loopback; identical rerun after sandbox listen EPERM; final current-production run includes cold-cache regression"
+    },
+    {
+      "command": "npm run build",
+      "result": "PASS",
+      "scope": "final production state"
+    },
+    {
+      "command": "npx vitest run test/console-backup-domains.test.ts test/console-backups.test.ts test/console-backups-http.test.ts test/console-operations.test.ts",
+      "result": "PASS",
+      "tests": 48,
+      "files": 4
+    },
+    {
+      "command": "npx vitest run test/console-backup-domains.test.ts",
+      "result": "PASS",
+      "tests": 4,
+      "files": 1,
+      "scope": "final same-FD cache plus cold-catalog and rich-state inputs"
+    },
+    {
+      "command": "npx vitest run test/console-notifications.test.ts",
+      "result": "PASS",
+      "tests": 4,
+      "files": 1,
+      "scope": "actual local TLS backup alert delivered then failed unsafe reply; existing absolute slow-drip deadline"
+    },
+    {
+      "command": "PLAYWRIGHT_BROWSERS_PATH=/tmp/secretsauce-m10-browsers node scripts/verify-console-backups-browser.mjs",
+      "result": "PASS",
+      "groups": 7,
+      "artifact": "evidence/qa/secretsauce-mcp/milestone16/browser-report.json"
+    },
+    {
+      "command": "CONSOLE_BROWSER_EVIDENCE_DIR=evidence/qa/secretsauce-mcp/milestone16/preserved-operations PLAYWRIGHT_BROWSERS_PATH=/tmp/secretsauce-m10-browsers node scripts/verify-console-operations-browser.mjs",
+      "result": "PASS",
+      "groups": 6
+    },
+    {
+      "command": "CONSOLE_BROWSER_EVIDENCE_DIR=evidence/qa/secretsauce-mcp/milestone16/preserved-advanced PLAYWRIGHT_BROWSERS_PATH=/tmp/secretsauce-m10-browsers node scripts/verify-console-advanced-browser.mjs",
+      "result": "PASS",
+      "groups": 6,
+      "denialMilliseconds": 161,
+      "harnessCorrection": "wait for fresh saved-draft response/settled state, rather than stale banner; no product behavior change"
+    },
+    {
+      "command": "CONSOLE_BROWSER_EVIDENCE_DIR=evidence/qa/secretsauce-mcp/milestone16/preserved-clients PLAYWRIGHT_BROWSERS_PATH=/tmp/secretsauce-m10-browsers node scripts/verify-console-clients-browser.mjs",
+      "result": "PASS",
+      "groups": 5
+    },
+    {
+      "command": "docker build -t secretsauce-m16-local:acceptance .",
+      "result": "PASS",
+      "image": "sha256:de535a12ada9a76ac50377ea0259666a666fe0bac99bd1f24ffd0f63d776f938"
+    },
+    {
+      "command": "node scripts/verify-console-backups-docker.mjs",
+      "result": "PASS",
+      "groups": 11,
+      "artifact": "docker-report.json",
+      "attemptNote": "One final-image attempt while full-suite/browser work also ran failed before the expected before-publication crash marker; no root cause was proven. An isolated rerun passed all11 groups with unchanged strict worker/job deadlines. No failed attempt was claimed successful."
+    }
+  ],
+  "safety": "Synthetic fixtures only; ciphertext-only clean mount and independent material stdin; no plaintext temporary backup/evidence, credential/proof/header/cookie/body logs, traces/HAR/browser persistent state; source managed launcher leases retained; host HTTP readiness before docker exec",
+  "cleanup": "Only owned containers/temp directories removed; M16 acceptance image retained locally, historic evidence untouched and pre-existing test-results/ excluded/preserved",
+  "deferred": "Actual ChatGPT/Codex integration NOT RUN under explicit user exception; M17 owns restore installation/reenrollment/imported projection",
+  "dependencyFollowup": "Inherited11advisories incl unused Express-path proxy-addr critical; see milestone15/dependency-triage.md; no unplanned package changes or certification/public-release claim"
+}

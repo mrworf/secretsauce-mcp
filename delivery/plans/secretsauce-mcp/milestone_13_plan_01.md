@@ -10,7 +10,7 @@ Pre-existing untracked test-results/ is unrelated and excluded. Commit explicit 
 
 ## Slice index
 
-- 01: [Lossless service policy authoring and safe explanation](milestone_13_plan_01_slice_01.md) — completed; commit: resolve unique slice01 subject from history.
-- 02: [Shared inherited response protection settings](milestone_13_plan_01_slice_02.md) — planned; commit: pending.
+- 01: [Lossless service policy authoring and safe explanation](milestone_13_plan_01_slice_01.md) — completed; commit: 698b051634fb156679defbed85793296447ab2f3.
+- 02: [Shared inherited response protection settings](milestone_13_plan_01_slice_02.md) — completed; commit: resolve unique slice02 subject from history.
 - 03: [Explicit legacy migration and sanitized export](milestone_13_plan_01_slice_03.md) — planned; commit: pending.
 - 04: [Last-50 configuration history and rendered acceptance](milestone_13_plan_01_slice_04.md) — planned; commit: pending.

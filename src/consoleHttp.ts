@@ -1,5 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import QRCode from 'qrcode';
+import { consoleProtection } from './consoleProtection.js';
 import { previewPolicy } from './policyPreview.js';
 import { consoleNotifications, NotificationError } from './consoleNotifications.js';
 import { consolePeople, PeopleError } from './consolePeople.js';
@@ -69,6 +70,7 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
             reply(200, { operation: id, status: store.journal.status(id) === 'unknown' ? store.externalAudit?.operationStatus(id) ?? 'unknown' : store.journal.status(id) });
             return;
         }
+        if(request.method==='GET'&&path==='/console/api/protection'){if(!session){reply(401,{message:'Sign in again.'});return;}reply(200,consoleProtection(consoleServices(store)).read(session));return;}
         if (request.method === 'GET' && (path === '/console/api/services' || path?.startsWith('/console/api/services/'))) {
             if (!session) { reply(401, { message: 'Sign in again.' }); return; }
             const manager = consoleServices(store);
@@ -130,6 +132,7 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
             reply(403, { message: 'Reload this page before submitting.' });
             return;
         }
+        if(path?.startsWith('/console/api/protection/')){const p=consoleProtection(consoleServices(store));if(path.endsWith('/save')){reply(200,p.save(session,data));return;}if(path.endsWith('/review')){reply(200,p.review(session,data));return;}if(path.endsWith('/apply')){reply(200,p.apply(session,data));return;}}
         if(path==='/console/api/notifications/save'){reply(200,consoleNotifications(store).save(session,data));return;}
         if(path==='/console/api/notifications/review'){if(Object.keys(data).length)throw new NotificationError('Invalid SMTP input.');reply(200,consoleNotifications(store).review(session));return;}
         if(path==='/console/api/notifications/apply'){reply(200,consoleNotifications(store).apply(session,data));return;}

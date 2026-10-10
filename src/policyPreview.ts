@@ -1,6 +1,8 @@
+import { digest } from './consoleCrypto.js';
 import { Worker } from 'node:worker_threads';
 import { z } from 'zod';
 import { normalizeManagedService } from './config.js';
+import { consoleProtection } from './consoleProtection.js';
 import { ConsoleServices, ServiceManagementError } from './consoleServices.js';
 import type { ConsoleSession } from './consoleStore.js';
 const schema = z.object({ id: z.string().min(1).max(1024), identity: z.string().min(1).max(1024), source: z.enum(['applied','draft']),
@@ -13,6 +15,8 @@ export async function previewPolicy(manager: ConsoleServices, session: ConsoleSe
   if (!parsed.success) throw new ServiceManagementError('preview: Select service, identity, applied/draft source, method and exactly one path or URL.');
   const data = parsed.data, entry = Object.hasOwn(manager.state.services,data.id) ? manager.state.services[data.id] : undefined;
   const fingerprint=manager.fingerprint(data.id);
+  const sourceFingerprint=()=>digest(JSON.stringify({source:data.source==='draft'?manager.state.services[data.id]?.draft:manager.state.services[data.id]?.applied,protection:manager.runtimeConfig.responseProtection}));
+  const admittedSource=sourceFingerprint();
   if(data.url){try{const url=new URL(data.url);if(url.username||url.password||url.hash)throw Error();}catch{throw new ServiceManagementError('destination: Use a valid URL without userinfo or fragment.');}}
   const draft = data.source === 'draft' ? entry?.draft?.content : entry?.applied;
   if (!draft) throw new ServiceManagementError('source: Selected configuration is unavailable.');
@@ -32,8 +36,11 @@ export async function previewPolicy(manager: ConsoleServices, session: ConsoleSe
       worker.once('message',result=>{clearTimeout(timer);void worker.terminate();result.error?reject(new ServiceManagementError(result.error)):resolve(result);});
       worker.once('error',()=>{clearTimeout(timer);void worker.terminate();reject(new ServiceManagementError('preview: Evaluation unavailable. Reload and retry.'));});
     });
-    if(manager.fingerprint(data.id)!==fingerprint)throw new ServiceManagementError('source: Configuration or dependencies changed. Reload and preview again.');
+    if(manager.fingerprint(data.id)!==fingerprint||sourceFingerprint()!==admittedSource)throw new ServiceManagementError('source: Configuration or dependencies changed. Reload and preview again.');
     manager.actor(session); // Role/session and eligibility may change during the bounded work.
+    const protection=consoleProtection(manager).read(session).effective;
+    const rule=service.policy.rules.find(r=>r.id===result.matchedRule),disabled=rule?.secretlint;
+    result.protection={...(result.protection as object),secretlint:{...protection.secretlint,rules:protection.secretlint.rules.filter(r=>!disabled||!('enabled' in disabled)&&!disabled.disabledRuleIds.includes(r.id)),source:disabled?'Rule exception + Settings':'Settings'},sensitiveNames:{...protection.sensitiveNames,source:'Settings'}};
     return { ...result, eligible: eligible(), allowed: eligible() && result.allowed===true, policyAllowed: result.allowed,
       source: data.source, reason: eligible()?result.reason:'Current identity or service access is not eligible.', notice:'No downstream request is sent. Preview is not an execution grant.' };
   } finally { occupied--; }

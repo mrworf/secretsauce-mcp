@@ -1,6 +1,6 @@
 # M13 slice 02: Shared inherited response protection settings
 
-Status: planned. Parent: prior slice commit (record before implementation). Commit: resolve from history by unique slice subject.
+Status: completed. Parent: 698b051634fb156679defbed85793296447ab2f3. Commit: resolve from history by unique slice subject.
 
 ## Goal and behavior
 
@@ -27,3 +27,5 @@ Focused command: npx vitest run test/console-advanced.test.ts (and affected subs
 ## Commit boundary
 
 One explicit owned-path commit including this plan, governing index, behavior, tests and direct docs/evidence. Subject: delivery: M13 slice 02 shared inherited response protection settings. Never stage test-results/. Exact previous SHA recorded in next slice; own SHA resolved through Git history/root checkpoint.
+
+Validation: build passed; 43 tests/5 affected files passed with loopback permission after same-suite EPERM. Added actual dispatched-response test: changing global sensitive-name matcher retained old response protection and pool identity. Pending preview draft-save/access-remove/disable tests reject changed source. Effective preview contains resolved catalogs/source and rule exceptions.

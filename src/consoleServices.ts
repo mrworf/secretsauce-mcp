@@ -16,7 +16,7 @@ export interface ManagedService {
   assignments: string[];
   review?: { id: string; actor: string; fingerprint: string; candidate: ManagedServiceDraft; base: number; draftGeneration: number; settings?: { name: string }; exceptions: string[] };
 }
-export interface ManagedConfiguration { revision: number; services: Record<string, ManagedService> }
+export interface ManagedConfiguration { protection?: import("./consoleProtection.js").ProtectionState; revision: number; services: Record<string, ManagedService> }
 function own<T>(values: Record<string, T>, key: string): T | undefined { return Object.hasOwn(values, key) ? values[key] : undefined; }
 const idSchema = z.string().min(1).max(1024).regex(/^[^\u0000-\u001f\u007f]+$/);
 const newIdSchema = z.string().regex(/^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,79}$/);
@@ -191,6 +191,7 @@ export class ConsoleServices {
   publish(): void {
     // One synchronous pointer swap; the existing broker/limiter/scanner resources survive.
     this.runtimeConfig.services = this.store.state.config!.services;
+    if(this.store.state.config!.responseProtection)this.runtimeConfig.responseProtection=this.store.state.config!.responseProtection;
     this.runtimeConfig.admittedRevision = this.state.revision;
   }
 }

@@ -202,6 +202,8 @@ export async function executeServiceRequest(
   ];
 
   const responseBroker = broker.responseContext(auth, service.id);
+  const admittedRules=dependencies.secretRuntime.rules;
+  const admittedTokenizer=dependencies.secretRuntime.tokenizer.withBroker(responseBroker);
   const downstream = buildDownstreamRequest(config, target.url, input.method, substitutedHeaders, substitutedQuery, substitutedBody, target.tls.verify);
   logger.debug("service_request.downstream_ready", {
     subject: auth.subject,
@@ -239,10 +241,10 @@ export async function executeServiceRequest(
   const disabledSecretlintRules = matchedPolicyRule?.secretlint === undefined
     ? new Set<string>()
     : "enabled" in matchedPolicyRule.secretlint
-      ? new Set<string>(dependencies.secretRuntime.rules.map((rule) => rule.id))
+      ? new Set<string>(admittedRules.map((rule) => rule.id))
       : new Set(matchedPolicyRule.secretlint.disabledRuleIds);
   const binaryPolicy = matchedPolicyRule?.binaryResponse ?? { scan: true, maxBytes: DEFAULT_BINARY_RESPONSE_MAX_BYTES };
-  const tokenizer = dependencies.secretRuntime.tokenizer.withBroker(responseBroker);
+  const tokenizer = admittedTokenizer;
   let binaryScanBypassed = false;
   let tokenized: Awaited<ReturnType<typeof tokenizer.tokenizeBytes>>;
   if (classification.kind === "binary") {

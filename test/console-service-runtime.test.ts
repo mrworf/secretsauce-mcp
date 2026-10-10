@@ -1,3 +1,4 @@
+import { consoleProtection } from '../src/consoleProtection.js';
 import { once } from 'node:events';
 import { createServer, request } from 'node:http';
 import { describe, it, expect, vi } from 'vitest';
@@ -73,6 +74,9 @@ describe('immediate managed credentials, access and lifecycle', () => {
    const before=broker.stats();d.finish();const response=await pending;expect(response.body).not.toContain('synthetic-original-secret');expect(response.secret_tokenized).toBe(true);expect(broker.stats()).toEqual(before);expect(()=>broker.validateResponseSecretUse(auth(user),'service',response.body!)).toThrow();
    expect(r.auditSink.events.some(e=>e.type==='service_request'&&'admitted_revision' in e)).toBe(true);
   }finally{d.finish();await r.close();await d.close();f.close();}
+ });
+ it('shared catalog publication preserves occupied pool and admitted sensitive-name protection',async()=>{
+  const f=managedFixture(),d=await downstream('{"bespoke":"synthetic-response-value"}');const user=configure(f,d.url,true);const p=consoleProtection(f.manager);const catalogs={secretlint:{version:1,mode:'replace',rules:[]},sensitiveNames:{version:1,mode:'replace',allow_patterns:[],patterns:[{id:'bespoke',regex:'^bespoke$'}]}};p.save(f.session,{base:f.manager.state.revision,generation:0,catalogs});let review=p.review(f.session,{});p.apply(f.session,{review:review.review,acknowledged:true});const r=runtime(f);try{const pool=r.secretRuntime.pool,broker=r.capabilities.tokenBroker,ref=broker.issueTokens(auth(user),{service:'service',access_ids:['key'],reason:'catalog admission'}).tokens[0]!.token;const pending=executeServiceRequest(f.cfg,auth(user),{service:'service',method:'GET',path:'/',headers:{'X-Api-Key':ref},reason:'catalog admission'},r);await d.admitted;catalogs.sensitiveNames.patterns=[];p.save(f.session,{base:f.manager.state.revision,generation:0,catalogs});review=p.review(f.session,{});p.apply(f.session,{review:review.review,acknowledged:true});expect(r.secretRuntime.pool).toBe(pool);d.finish();const result=await pending;expect(result.body).not.toContain('synthetic-response-value');expect(result.secret_tokenized).toBe(true);}finally{d.finish();await r.close();await d.close();f.close();}
  });
  it('revoke during dispatched work preserves protection and cannot allocate new usable response references',async()=>{
   const f=managedFixture();const d=await downstream('synthetic-original-secret');const user=configure(f,d.url,true);const r=runtime(f);try{

@@ -1,4 +1,5 @@
 export interface GatewayConfig {
+  responseProtection?: import("./consoleProtection.js").EffectiveProtection;
   managedAdmission?: (subject: string, service: string) => void;
   admittedRevision?: number;
   server: ServerConfig;

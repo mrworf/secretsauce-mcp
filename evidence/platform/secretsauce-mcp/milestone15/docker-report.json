@@ -1,0 +1,21 @@
+{
+  "result": "PASS",
+  "image": "sha256:45fe8e9c75b17d3e67da6fb23c78c51544804078dced61a46f831311f7730902",
+  "checks": [
+    "Unsupported launcher invocation rejected without managed bypass",
+    "Actual nginx synthetic HTTPS: public authenticated MCP/OAuth origins, public console denied, allowed private console, spoofed forwarded headers cannot bypass Origin/private boundary",
+    "Real OAuth consent/code/PKCE exchange, five MCP tools, hash-only refresh, no transport session",
+    "Persistent encrypted configuration/stable signing/refresh/audit; real refresh rotation; ephemeral reference rejected after restart; missing auth rejects eachPOST",
+    "Second active application writer refused",
+    "Second container with independent PID namespace and shared app/audit mounts refused by kernel-held leases",
+    "Removing stable key after startup produces bounded503 not_ready",
+    "Missing stable key at restart fails closed without regeneration/YAML fallback",
+    "Removing key inside actual audit mount after startup reports degraded503",
+    "Cold empty replacement audit mount with preserved encrypted app state cannot reset audit identity; degraded503",
+    "SIGKILL crash restart verifies retained audit/checkpoints and returns ready",
+    "Existing unmanaged/headless YAML image starts without console environment/mount and preserves durable audit"
+  ],
+  "backup": "Pending provider; mount does not claim job success",
+  "realLLM": "NOT RUN: authorized local-validation exception",
+  "cleanup": "Only created acceptance container/temp mounts removed; local acceptance image retained for review"
+}

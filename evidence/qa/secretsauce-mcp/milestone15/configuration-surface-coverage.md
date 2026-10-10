@@ -1,0 +1,18 @@
+# M15 complete configuration surface preservation
+
+Local synthetic evidence only; no LLM interoperability, throughput/SLA, or human usability study claim. Final regression suite covers every existing backend contract. Actual HTTPS keyboard320px browser evidence revisits new operations plus inherited shared Settings/authentication paths after M15 source changes. Fresh inherited screenshots/reports are copied under preserved-m13-browser and preserved-m14-browser; original earlier milestone artifacts are retained.
+
+| Surface | Configuration/entry point and role | Verification |
+|---|---|---|
+| Service identity/lifecycle/access | Services draft/review/apply, enable/disable/archive and explicit users; Owner/Admin, Auditor reads | console-services/service-runtime/http tests; M11 accepted actual browser; final fullsuite retains behavior |
+| Destinations/credential sources/placement/TLS | Service editors, write-only values/version/rotation, exact host/canonical path, header/query/body hints | complete config/gateway/header/substitution/rotation regressions including actual self-signed HTTPS |
+| Guided/advanced policies and binary bounds | Service policy, preview, inherited catalogues, history/import/export | actual advanced HTTPS6checks/keyboard320px + console-advanced/protection/history/migration tests |
+| Shared scanners | Settings search/Response protection JSON scoped editor and effective limits; Owner/Admin writes/Auditor reads | actual advanced browser Settings/search/catalogue traversal; sensitive-name/pool/preview tests including retained admitted context and current capacity |
+| People/accounts/external identities | People & Access, invitations/recovery/roles/MFA/disable/assignment | account/people/security tests; actual recent-MFA account-disable measured under60seconds |
+| SMTP | Settings email delivery grouped editor/test and bounded delivery outcomes | SMTP integration actual TLS/sanitized failure tests; current M15health320render retains complete editor reachable; advanced inheritance screenshots preserve Settings |
+| Authentication/client grants | Settings MCPauthentication issuer/resource/PKCE/lifetimes/login bounds, connected clients/revoke | actual clients HTTPS5groups with complete authfield/unit/role checks and consent/revoke; managedOAuth/client/auth tests |
+| All39 instance limit fields | Limits and capacity:21HTTP/request/reference/auth fields,2reference TTLs, memory audit,5pool,3preview,5name workers,2scan fields | actual M15browser allfields/labels/human units/defaults/invalid combinations/exact1001ms save/review/apply; occupied counters and real metadata/code/grant regressions |
+| Evidence/inventory/retention | Activity filters/details/export; service Activity reuse; access/config/version exports; Owner retention | scope/role/prototype/secret injection/admission/bounds/chain/partial compaction/restart tests; actual HTTPS investigation/export/review320px |
+| Health/deployment | scoped Settings health, bounded publichealth, durable app/audit identity, proxy boundary/leases | key/permission/tamper/missing mount negatives, actual Docker/nginxHTTPS/restart/crash/second-container fixture |
+
+M15 requirements AUTHZ02/AUDIT01–04/OPS01–06/CONFIG03/CAP-CFG06/CAP-ACCEPT01/SEC01/03/MCP04/UX01–04/SECRES04 are covered through these same surfaces and concrete milestone15 artifacts. Final fullsuite and build results are recorded in slice04-validation.md. Existing restrictions and safeguards remain active; backup/restore provider health is pending M16/M17. Real LLM connection/reconnect remains NOT RUN under explicit local-validation authorization.

@@ -152,7 +152,13 @@ export class AuditSink {
     }
   }
 
-  bindConsole(store: ConsoleStore): void { this.#console=store; store.externalAudit=this; }
+  bindConsole(store: ConsoleStore): void {
+    this.#console=store;store.externalAudit=this;
+    const identity=this.#writer?.journal.identity();
+    if(store.state.gatewayAuditIdentity){if(identity!==store.state.gatewayAuditIdentity)this.markDegraded('open');return;}
+    if(this.degraded||!identity)return;
+    try{const operation=this.admit('audit.storage_bind','host','instance');store.commit('host','audit.storage_bind','instance',state=>{state.gatewayAuditIdentity=identity;});this.complete(operation,'host','audit.storage_bind','instance');}catch{this.markDegraded('write');}
+  }
 
   admit(action: string, actor: string, target: string, operation?: string): string {
     if(this.degraded || this.#closed || !this.#writer || !this.fileOperations.sync) throw new GatewayError('audit_unavailable','Sensitive action unavailable: durable audit could not be recorded.',operation);

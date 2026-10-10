@@ -4,7 +4,7 @@
   "checks": [
     {
       "check": "Scoped filters, details, admitted revision, uncertain outcome, audited filtered export; keyboard320px",
-      "denialSeconds": 0.332827317
+      "denialSeconds": 1.391360949
     },
     {
       "check": "365day default→scoped draft/review/deletion impact/apply; keyboard320px"
@@ -15,7 +15,7 @@
     },
     {
       "check": "Keyboard user disable with explicit confirmation and recent password/freshTOTP; no safeguard bypass",
-      "disableSeconds": 0.35196812000000044
+      "disableSeconds": 0.39268110999999956
     },
     {
       "check": "Auditor evidence export/read-only retention; Member own evidence/no global export/settings"

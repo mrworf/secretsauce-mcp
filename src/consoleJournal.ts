@@ -105,6 +105,7 @@ export class ConsoleJournal {
     verifyEventDigests(values: string[]): boolean { return JSON.stringify(this.#records.filter(r => r.action === 'audit.event').map(r => r.target)) === JSON.stringify(values); }
     entries(): OperationRecord[] { return this.#records.map(r => ({ ...r })); }
     materialAvailable():boolean {try {return !this.degraded&&this.diskStamp()===this.#stamp&&statSync(this.path+'.head').size<=128&&readFileSync(this.path+'.head','utf8')===this.#head;}catch{return false;}}
+    identity():string{return createHmac('sha256',this.key).update('gateway-audit-storage-v1').digest('hex');}
     keyMatches(key:Buffer):boolean{return this.key.equals(key);}
     verify(): boolean {
         try {

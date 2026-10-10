@@ -38,6 +38,7 @@ export interface ConsoleSession {
     };
 }
 export interface ConsoleState {
+    gatewayAuditIdentity?: string;
     operating?: import("./consoleOperations.js").OperatingState;
     retention?: import("./consoleEvidence.js").RetentionState;
     v: 1;

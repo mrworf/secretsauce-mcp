@@ -1,0 +1,44 @@
+{
+  "users": 50,
+  "services": 100,
+  "realLLM": "NOT RUN: local-validation exception",
+  "checks": [
+    {
+      "check": "Authenticated assigned gateway requests over actual loopback downstream; every service and identity",
+      "completed": 100,
+      "durationMs": 18409.887521
+    },
+    {
+      "check": "Noisy identity reaches per-subject4 while another identity remains admitted; shared usage returns tozero"
+    },
+    {
+      "check": "Real retained raw/chain/HMAC verification and scoped 100-row Activity scan",
+      "durationMs": 192.00136000000202
+    },
+    {
+      "check": "Single-snapshot verified retained export (500-row cap)",
+      "durationMs": 257.78539300000193
+    },
+    {
+      "check": "Bounded role-scoped health after workload",
+      "durationMs": 11.14934699999867
+    },
+    {
+      "check": "Bounded shared maintenance sweep and retained integrity remain healthy; no50user/100service tier cap"
+    }
+  ],
+  "retained": {
+    "records": 10411,
+    "writeMs": 1291.0814180000016,
+    "rawBytes": 4441747,
+    "chainBytes": 4259916
+  },
+  "memory": {
+    "rss": 322523136,
+    "heapTotal": 116019200,
+    "heapUsed": 52550888,
+    "external": 22968647,
+    "arrayBuffers": 1122671
+  },
+  "result": "PASS"
+}

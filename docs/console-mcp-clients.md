@@ -9,3 +9,7 @@ Managed refresh state is an atomic hash-only snapshot in `oauth-refresh.json` wi
 Response protection remains best-effort. Trusted downstream destinations may observe their requests; scanning cannot guarantee that every encoding or reflection of a credential will be removed.
 
 Real ChatGPT and Codex interoperability requires authorized platform exercises against a reachable synthetic test service. Local protocol tests do not provide that evidence.
+
+Open **My account → Inspect my connected clients** or **People & Access → My connected clients** to inspect your current grants. Revoke confirms the selected client and acts immediately. Its access and refresh tokens stop authorizing new admissions. Other clients retain their grants, but temporary references for the identity are invalidated and must be reacquired. The Owner's existing **Revoke sessions and clients** action revokes all target authority and advances its authorization generation.
+
+A revocation verifier in encrypted managed state remains until that grant's original maximum expiry. The durable audit start also records the non-secret grant selector and original expiry; unresolved revocation intents fence older state and refresh snapshots after uncertain writes. A normal restart cannot revive revoked client authority. Audit outages block consent, issuance, refresh and revocation; uncertain outcomes require operation-status inspection instead of blind retry.

@@ -1,6 +1,6 @@
 # M14 plan 01 slice 02: Inspect and revoke connected clients
 
-Status: planned. Previous commit: previous completed slice SHA, recorded before implementation.
+Status: completed; commit identified by unique subject `delivery: M14 slice 02 govern connected clients`. Previous commit: 1d990b22096479aab4336e36797b8b97b90ec83a.
 
 Goal / observable outcome: Users inspect only their own non-secret grant metadata and confirm immediate revoke; Owner existing target revocation invalidates all grants. Revocation survives restart and invalidates subject references, including uncertain completion. Read-only roles/sessions cannot mutate.
 
@@ -23,3 +23,11 @@ Commands: focused vitest files and npm run build while stabilizing; related OAut
 Acceptance: described outcome demonstrated with current server enforcement and positive/negative evidence; no raw secrets in evidence. Real-client evidence never inferred from local tests.
 
 Commit boundary: one coherent owned commit including this plan, implementation, tests and supporting docs/evidence. Inspect status/staged diff before and after; exclude test-results/. Record completed status and exact previous slice SHA in next slice; root records final exact SHA.
+
+Investigation decision: persist bounded, expiry-pruned grant revocation verifiers in encrypted console state before removing refresh snapshots. These contain grant identifiers and expiry, never reusable tokens; they fence restart after uncertain snapshot completion. Issuance bounds combined active refresh records and unexpired revocations. Replay and own/Owner revocation consume the same durable authority; role/security generation still fences all older account grants.
+
+Delivered: own-only non-secret connected-client list and confirmed revoke API/UI; fixed-role/current-session/Origin/CSRF server enforcement. Owner target security callback clears codes/grants and preserves generation fence. Bounded original-max-expiry encrypted tombstones govern refresh/JWT and pending signing; replay uses identical durable revocation. Capacity validation has no side effects; actual save/completion uncertainty fences live references and durable tombstones prevent old-snapshot resurrection.
+
+Validation: npm run build passed; 85 tests across connected-client/managed OAuth/auth/people HTTP/domain passed. Includes own/foreign/malformed/unconfirmed/extra inputs, two independent grants, Origin/CSRF/Auditor/restricted/audit outage, capacity no-mutation, issue/refresh revoke races and uncertain-completion reload. Actual keyboard/320px rendered evidence remains slice04.
+
+Additional persistence fault coverage: original-expiry grant selectors in the durable journal's revocation start fence admission on reload even when pre-rename encrypted-state save and secondary snapshot write both fail. Runtime intent map loads only unexpired selectors and prunes during maintenance/capacity checks. Combined active/snapshot and unique verifier counts bound issuance. Added targeted simultaneous-write-failure/reload case; 18 new/related client and managed tests pass, final 8 client tests rechecked after capacity adjustment.

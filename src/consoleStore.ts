@@ -65,6 +65,7 @@ export interface ConsoleState {
         recovery: string[];
         backup: string;
     };
+    revokedOAuthGrants?: { id: string; expires: number }[];
     securityGeneration?: number;
     people?: import("./consolePeople.js").PeopleState;
     notifications?: import("./consoleNotifications.js").NotificationState;

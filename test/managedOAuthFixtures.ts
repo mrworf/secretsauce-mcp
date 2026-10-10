@@ -12,6 +12,7 @@ import { fixture, setup } from './consoleFixtures.js';
 import { totp } from '../src/consoleCrypto.js';
 export async function managedOAuthFixture() {
   const f=fixture();const enrolled=setup(f,Date.now()-60000);
+  const login=f.store.login('owner@example.org','A novel lengthy passphrase 2026',totp(enrolled.seed,Date.now()-30000),Date.now()-30000);const session=f.store.session(login.token)!;
   const keys=await generateKeyPair('RS256',{extractable:true});const keyFile=join(f.directory,'signing.pem');writeFileSync(keyFile,await exportPKCS8(keys.privateKey));
   const config=validateConfig({server:{resource:'https://mcp.example.org',listen:'127.0.0.1:8080'},auth:{mode:'builtin_oauth',builtin_oauth:{issuer:'https://mcp.example.org',admin_username_env:'NAME',admin_password_hash_env:'HASH',signing_key_file:keyFile,allowed_clients:['https://client.example.org'],required_scopes:['gateway.read','gateway.references','gateway.request']}},services:{synthetic:{name:"Synthetic assigned service",no_auth:true,destinations:[{id:"primary",base_url:"https://api.example.org"}],credentials:[],access:{users:[]},policy:{mode:"allow",rules:[]}}}},{NAME:'legacy',HASH:hashBuiltinOAuthPassword('synthetic unused legacy',undefined,1000)});
   f.store.commit('host','test.config','instance',s=>{s.config=config;});
@@ -24,5 +25,5 @@ export async function managedOAuthFixture() {
   const exchange=(c:string)=>request('/oauth/token',{grant_type:'authorization_code',code:c,client_id:authorization.client_id,redirect_uri:authorization.redirect_uri,code_verifier:verifier});
   const refresh=(token:string)=>request('/oauth/token',{grant_type:'refresh_token',refresh_token:token,client_id:authorization.client_id});
   const mcp=(token:string)=>fetch(base+'/mcp',{method:'POST',headers:{authorization:'Bearer '+token,accept:'application/json, text/event-stream','content-type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'tools/list'})});
-  return {...f,config,runtime,server,base,enrolled,authorization,request,authorize,code,exchange,refresh,mcp,async close(){setOAuthClientMetadataTestFetch(undefined);await new Promise<void>(r=>server.close(()=>r()));await runtime.close();f.close();}};
+  return {...f,session,login,config,runtime,server,base,enrolled,authorization,request,authorize,code,exchange,refresh,mcp,async close(){setOAuthClientMetadataTestFetch(undefined);await new Promise<void>(r=>server.close(()=>r()));await runtime.close();f.close();}};
 }

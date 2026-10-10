@@ -1,4 +1,4 @@
-import { ConsoleStore } from "./consoleStore.js";
+import { ConsoleStore, ConsoleOperationError } from "./consoleStore.js";
 import { atomicFile } from "./consolePersistence.js";
 import { join } from "node:path";
 import { AuditSink } from './audit.js';
@@ -95,9 +95,13 @@ export class BuiltinOAuthRuntime {
   managedStore?: ConsoleStore;
   invalidateSubject: (subject: string) => void = () => {};
   authenticationGeneration = 0;
+  readonly revocationIntents = new Map<string,number>();
   readonly consentChallenges = new Map<string, { fingerprint: string; expires: number }>();
   bindManaged(store: ConsoleStore): void {
     this.managedStore = store;
+    for(const entry of store.journal.entries()) {
+      if(entry.phase==='start' && entry.action==='oauth.grant_revoke' && typeof entry.details?.grant==='string' && /^[A-Za-z0-9_-]{22}$/.test(entry.details.grant) && typeof entry.details.grantExpires==='number' && entry.details.grantExpires>Date.now() && store.journal.status(entry.id)!=='failed') this.revocationIntents.set(entry.details.grant,entry.details.grantExpires);
+    }
     if (this.config.auth.mode === 'builtin_oauth') {
       const path = join(store.directory, 'oauth-refresh.json');
       this.config.auth.builtinOAuth.refreshTokenStoreFile = path;
@@ -110,9 +114,29 @@ export class BuiltinOAuthRuntime {
     const u = this.managedStore.state.users.find(u => u.id === subject);
     return this.managedStore.storageReliable && Boolean(u?.active && u.enrolled !== false && u.role !== 'Auditor' && generation !== undefined && generation === (u.authorizationGeneration ?? 0));
   }
+  revoked(id: string): boolean { return (this.revocationIntents.get(id)??0)>Date.now() || Boolean(this.managedStore?.state.revokedOAuthGrants?.some(r=>r.id===id && r.expires>Date.now())); }
+  revocationCount(): number { for(const [id,expiry] of this.revocationIntents)if(expiry<=Date.now())this.revocationIntents.delete(id); const ids=new Set([...this.revocationIntents].filter(([,expiry])=>expiry>Date.now()).map(([id])=>id)); for(const r of this.managedStore?.state.revokedOAuthGrants??[]) if(r.expires>Date.now())ids.add(r.id); return ids.size; }
+  revokeManagedGrant(actor: string, id: string): string {
+    const store=this.managedStore, grant=this.state.refreshGrants.get(id);
+    if(!store || !grant) throw new Error('Client grant unavailable.');
+    if(this.revocationCount()>=this.config.limits.maxRefreshTokenRecords && !this.revoked(id)) throw new Error('Client revocation capacity unavailable.');
+    let admitted=false;
+    try { return store.commit(actor,'oauth.grant_revoke','oauth_client',s=>{
+      s.revokedOAuthGrants=(s.revokedOAuthGrants??[]).filter(r=>r.expires>Date.now()&&r.id!==id);
+      if(s.revokedOAuthGrants.length>=this.config.limits.maxRefreshTokenRecords) throw new Error('Client revocation capacity unavailable.');
+      s.revokedOAuthGrants.push({id,expires:grant.expiresAt}); admitted=true;
+    },{grant:id,grantExpires:grant.expiresAt,identity:grant.subject}); } finally {
+      if(admitted) { this.revocationIntents.set(id,grant.expiresAt); revokeRefreshGrant(this.state,id); this.invalidateSubject(grant.subject); persistRefreshStateForRequest(this.config,this.state,createLogger(this.config.logging)); }
+    }
+  }
+  revokeSubject(subject: string): void {
+    for(const grant of [...this.state.refreshGrants.values()]) if(grant.subject===subject) revokeRefreshGrant(this.state,grant.id);
+    for(const [code,record] of this.state.authorizationCodes) if(record.subject===subject)this.state.authorizationCodes.delete(code);
+    this.invalidateSubject(subject); persistRefreshStateForRequest(this.config,this.state,createLogger(this.config.logging));
+  }
   assertGrant(subject: string, grantId: unknown, generation: unknown): void {
     const grant = typeof grantId === 'string' ? this.state.refreshGrants.get(grantId) : undefined;
-    if (this.managedStore && (!grant || grant.subject !== subject || !this.eligible(subject, grant.authorizationGeneration) || generation !== grant.authorizationGeneration || grant.expiresAt <= Date.now() || grant.idleExpiresAt <= Date.now() || this.config.auth.mode !== 'builtin_oauth')) throw new GatewayError('unauthenticated', 'Current client authorization unavailable.');
+    if (this.managedStore && (!grant || this.revoked(grant.id) || grant.subject !== subject || !this.eligible(subject, grant.authorizationGeneration) || generation !== grant.authorizationGeneration || grant.expiresAt <= Date.now() || grant.idleExpiresAt <= Date.now() || this.config.auth.mode !== 'builtin_oauth')) throw new GatewayError('unauthenticated', 'Current client authorization unavailable.');
   }
   readonly auditSink: AuditSink;
   readonly state: BuiltinOAuthState;
@@ -148,6 +172,7 @@ export class BuiltinOAuthRuntime {
   }
 
   sweep(now = Date.now()): void {
+    for(const [id,expiry] of this.revocationIntents) if(expiry<=now)this.revocationIntents.delete(id);
     sweepAuthorizationCodes(this.state, now);
     if (!this.auditSink.degraded && [...this.state.refreshGrants.values()].some(g=>g.expiresAt<=now||g.idleExpiresAt<=now)) {
       try {const op=this.auditSink.admit("oauth.expiry_revoke","system","oauth_client");sweepRefreshGrants(this.state,now);if(persistRefreshStateForRequest(this.config,this.state,createLogger(this.config.logging)))this.auditSink.complete(op,"system","oauth.expiry_revoke","oauth_client");}catch{ /* Admission failure preserves state; completion failure remains uncertain. */ }
@@ -202,7 +227,7 @@ export async function handleBuiltinOAuthRequest(
   }
 
   writeJson(response, 405, { error: "method_not_allowed" });
-  } catch(error) {if(error instanceof GatewayError&&error.code==="audit_unavailable"){writeOAuthError(response,503,"temporarily_unavailable");return;}throw error;}
+  } catch(error) {if(error instanceof ConsoleOperationError) {writeOAuthError(response,503,"temporarily_unavailable");return;}if(error instanceof GatewayError&&error.code==="audit_unavailable"){writeOAuthError(response,503,"temporarily_unavailable");return;}throw error;}
 }
 
 export function hashBuiltinOAuthPassword(password: string, salt = randomBytes(16).toString("base64url"), iterations = 210_000): string {
@@ -798,7 +823,7 @@ async function exchangeAuthorizationCode(
 
   const now = Date.now();
   // Expired grants are rejected below; durable mutation is admitted before issuance/refresh.
-  if (oauthState.refreshTokens.size >= config.limits.maxRefreshTokenRecords) {
+  if (oauthState.refreshTokens.size + runtime.revocationCount() >= config.limits.maxRefreshTokenRecords) {
     logTokenOutcome(logger, "error", 503, "temporarily_unavailable", resourceStatus(requestedResource, record.resource), record.scopes.length);
     runtime.auditSink.complete(operation,record.subject,"oauth.issue","oauth_client","failed");
     writeOAuthError(response, 503, "temporarily_unavailable");
@@ -807,7 +832,7 @@ async function exchangeAuthorizationCode(
   const authenticationGeneration = runtime.authenticationGeneration;
   const issuedRefresh = issueRefreshGrant(oauthState, auth, record, now);
   const accessToken = await signAccessToken(auth, record.subject, record.resource, record.scopes, now, issuedRefresh.grantId, record.authorizationGeneration);
-  if (!runtime.eligible(record.subject, record.authorizationGeneration) || !oauthState.refreshGrants.has(issuedRefresh.grantId) || authenticationGeneration !== runtime.authenticationGeneration || config.auth.mode !== "builtin_oauth" || config.auth.builtinOAuth !== auth) { revokeRefreshGrant(oauthState,issuedRefresh.grantId);writeOAuthError(response,400,'invalid_grant');return; }
+  if (!runtime.eligible(record.subject, record.authorizationGeneration) || !oauthState.refreshGrants.has(issuedRefresh.grantId) || runtime.revoked(issuedRefresh.grantId) || authenticationGeneration !== runtime.authenticationGeneration || config.auth.mode !== "builtin_oauth" || config.auth.builtinOAuth !== auth) { revokeRefreshGrant(oauthState,issuedRefresh.grantId);writeOAuthError(response,400,'invalid_grant');return; }
   runtime.auditSink.admit("oauth.issue",record.subject,"oauth_client",operation);
   if (!persistRefreshStateForRequest(config, oauthState, logger)) {
     revokeRefreshGrant(oauthState, issuedRefresh.grantId);
@@ -844,15 +869,15 @@ async function exchangeRefreshToken(
   const tokenHash = hashRefreshToken(body.get("refresh_token") ?? "");
   const tokenRecord = oauthState.refreshTokens.get(tokenHash);
   const grant = tokenRecord === undefined ? undefined : oauthState.refreshGrants.get(tokenRecord.grantId);
-  if (tokenRecord === undefined || grant === undefined || grant.expiresAt<=now || grant.idleExpiresAt<=now || !runtime.eligible(grant.subject,grant.authorizationGeneration)) {
+  if (tokenRecord === undefined || grant === undefined || grant.expiresAt<=now || grant.idleExpiresAt<=now || runtime.revoked(grant.id) || !runtime.eligible(grant.subject,grant.authorizationGeneration)) {
     logTokenOutcome(logger, "error", 400, "invalid_grant", "unavailable", "unavailable");
     writeOAuthError(response, 400, "invalid_grant");
     return;
   }
   if (tokenRecord.status !== "active") {
     const replay=runtime.auditSink.admit("oauth.replay_revoke",grant.subject,"oauth_client");
-    revokeRefreshGrant(oauthState, grant.id);
-    runtime.invalidateSubject(grant.subject);
+    if(runtime.managedStore) runtime.revokeManagedGrant(grant.subject,grant.id);
+    else { revokeRefreshGrant(oauthState, grant.id); runtime.invalidateSubject(grant.subject); }
     if(persistRefreshStateForRequest(config,oauthState,logger))runtime.auditSink.complete(replay,grant.subject,"oauth.replay_revoke","oauth_client");
     logger.warn("oauth.refresh_token_reuse_detected", { client_status: "bound", resource_status: "bound" });
     logTokenOutcome(logger, "error", 400, "invalid_grant", "unavailable", grant.scopes.length);
@@ -876,7 +901,7 @@ async function exchangeRefreshToken(
     writeOAuthError(response, 400, "invalid_scope");
     return;
   }
-  if (oauthState.refreshTokens.size >= config.limits.maxRefreshTokenRecords) {
+  if (oauthState.refreshTokens.size + runtime.revocationCount() >= config.limits.maxRefreshTokenRecords) {
     logTokenOutcome(logger, "error", 503, "temporarily_unavailable", resourceStatus(requestedResource, grant.resource), scopes.length);
     writeOAuthError(response, 503, "temporarily_unavailable");
     return;
@@ -894,7 +919,7 @@ async function exchangeRefreshToken(
     if (oauthState.refreshGrants.has(grant.id) && tokenRecord.status === "rotating") tokenRecord.status = "active";
     throw error;
   }
-  if (!oauthState.refreshGrants.has(grant.id) || tokenRecord.status !== "rotating" || !runtime.eligible(grant.subject,grant.authorizationGeneration) || authenticationGeneration !== runtime.authenticationGeneration || config.auth.mode !== "builtin_oauth" || config.auth.builtinOAuth !== auth) {
+  if (!oauthState.refreshGrants.has(grant.id) || tokenRecord.status !== "rotating" || runtime.revoked(grant.id) || !runtime.eligible(grant.subject,grant.authorizationGeneration) || authenticationGeneration !== runtime.authenticationGeneration || config.auth.mode !== "builtin_oauth" || config.auth.builtinOAuth !== auth) {
     logTokenOutcome(logger, "error", 400, "invalid_grant", "unavailable", scopes.length);
     writeOAuthError(response, 400, "invalid_grant");
     return;

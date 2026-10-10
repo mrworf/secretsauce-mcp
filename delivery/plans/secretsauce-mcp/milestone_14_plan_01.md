@@ -10,7 +10,7 @@ PRE-015 requires authorized real ChatGPT AND Codex: consent/discovery/reference/
 
 ## Slice index
 
-- 01: [Managed per-user consent and current MCP admission](milestone_14_plan_01_slice_01.md) — planned.
+- 01: [Managed per-user consent and current MCP admission](milestone_14_plan_01_slice_01.md) — completed; commit: 1d990b22096479aab4336e36797b8b97b90ec83a.
 - 02: [Inspect and revoke connected clients](milestone_14_plan_01_slice_02.md) — planned.
 - 03: [Owner-reviewed authentication settings and explicit advanced modes](milestone_14_plan_01_slice_03.md) — planned.
 - 04: [Client setup, restart and local rendered verification](milestone_14_plan_01_slice_04.md) — planned.

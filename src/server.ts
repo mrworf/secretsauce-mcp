@@ -18,6 +18,7 @@ import { ConsoleStore, loadManagedConfig } from "./consoleStore.js";
 import { handleConsoleRequest, isConsoleRequest } from "./consoleHttp.js";
 import { consoleNotifications } from './consoleNotifications.js';
 import { bindConsoleServices } from "./consoleServices.js";
+import { bindConsoleClients } from "./consoleClients.js";
 import { requiredScopeForTool } from "./mcp/tools.js";
 
 type AuthenticatedRequest = IncomingMessage & { auth?: AuthContext };
@@ -39,7 +40,7 @@ export function createGatewayServer(
   }
   const runtime = options.runtime ?? new GatewayRuntime(config, { ...(options.auditSink === undefined ? {} : { auditSink: options.auditSink }) });
   const auditSink = runtime.auditSink;
-  if(options.consoleStore) { auditSink.bindConsole(options.consoleStore); runtime.builtinOAuth.bindManaged(options.consoleStore); const manager = bindConsoleServices(options.consoleStore, config); manager.invalidate = (service, subject) => runtime.capabilities.tokenBroker.revoke(service, subject); runtime.builtinOAuth.invalidateSubject = subject => { for (const service of Object.keys(manager.state.services)) manager.invalidate(service,subject); }; options.consoleStore.invalidateUser = subject => { for (const service of Object.keys(manager.state.services)) manager.invalidate(service, subject); const user=options.consoleStore!.state.users.find(u=>u.id===subject);if(user)void consoleNotifications(options.consoleStore!).send('security',user.email,'Account security or access changed. Previous sessions and client grants were revoked; contact your Owner if unexpected.').catch(()=>{}); }; config.managedAdmission = (subject, service) => manager.admit(subject, service); }
+  if(options.consoleStore) { auditSink.bindConsole(options.consoleStore); runtime.builtinOAuth.bindManaged(options.consoleStore); bindConsoleClients(options.consoleStore,runtime.builtinOAuth); const manager = bindConsoleServices(options.consoleStore, config); manager.invalidate = (service, subject) => runtime.capabilities.tokenBroker.revoke(service, subject); runtime.builtinOAuth.invalidateSubject = subject => { for (const service of Object.keys(manager.state.services)) manager.invalidate(service,subject); }; options.consoleStore.invalidateUser = subject => { runtime.builtinOAuth.revokeSubject(subject); for (const service of Object.keys(manager.state.services)) manager.invalidate(service, subject); const user=options.consoleStore!.state.users.find(u=>u.id===subject);if(user)void consoleNotifications(options.consoleStore!).send('security',user.email,'Account security or access changed. Previous sessions and client grants were revoked; contact your Owner if unexpected.').catch(()=>{}); }; config.managedAdmission = (subject, service) => manager.admit(subject, service); }
   const server = createServer(async (request, response) => {
     if (options.consoleStore && isConsoleRequest(request)) { await handleConsoleRequest(options.consoleStore, request, response); return; }
     if (request.method === "GET" && request.url === "/health") {

@@ -1,0 +1,31 @@
+{
+  "result": "PASS",
+  "fullSuite": {
+    "command": "npm test",
+    "tests": 452,
+    "files": 45,
+    "permission": "Identical suite rerun with loopback/network permission after listen EPERM; final complete suite passed after last production change"
+  },
+  "build": {
+    "command": "npm run build",
+    "result": "PASS"
+  },
+  "browser": {
+    "command": "PLAYWRIGHT_BROWSERS_PATH=/tmp/secretsauce-m10-browsers node scripts/verify-console-people-browser.mjs",
+    "result": "PASS",
+    "checks": 8,
+    "disableMilliseconds": 246,
+    "transport": "Actual synthetic HTTPS; keyboard and 320 CSS px"
+  },
+  "host": {
+    "command": "node scripts/verify-console-host-recovery.mjs",
+    "result": "PASS",
+    "checks": 6
+  },
+  "smtp": {
+    "fixture": "test/console-notifications.test.ts",
+    "result": "PASS",
+    "transport": "Actual local TLS SMTP with validated certificate; unsafe reply and slow-drip absolute deadline; no real messages"
+  },
+  "checkedAt": "2026-10-10T05:27:08.881Z"
+}

@@ -39,7 +39,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
                 throw new Error('Invalid operation');
             prepareConsoleKey(directory, keyFile, statusMode || recoveryMode);
             store = new ConsoleStore(directory, keyFile, { ...(!existsSync(join(directory, 'managed')) && configPath ? { config: loadConfig(configPath) } : {}) });
-            if(recoveryMode){if(!store.state.config)throw new Error('Managed configuration required');sink=new AuditSink(store.state.config);sink.bindConsole(store);if(sink.degraded)throw new Error('Repair audit storage first');const result=consolePeople(store).hostRecovery(operation);process.stdout.write('One-time Owner reenrollment link (30 minutes; keep private):\n'+result.link+'\n');}
+            if(recoveryMode){if(!store.state.config)throw new Error('Managed configuration required');sink=new AuditSink(store.state.config);sink.bindConsole(store);if(sink.degraded)throw new Error('Repair audit storage first');if(!operation){store.commit('host','identity.host_owner_list','instance',()=>{});process.stdout.write('Select an existing Owner ID for --recover-owner <id>:\n'+store.state.users.filter(u=>u.role==='Owner'&&u.password!=='').slice(0,1000).map(u=>u.id+'  '+u.email+'  '+(u.enrolled===false?'Restricted':'Enrolled')+'  '+(u.active?'Active':'Disabled')).join('\n')+'\n');}else{const result=consolePeople(store).hostRecovery(operation);process.stdout.write('One-time Owner reenrollment link (30 minutes; keep private):\n'+result.link+'\n');}}
             else if (statusMode) {
                 let status = store.journal.status(operation!);
                 if (status === 'unknown' && store.state.config) {

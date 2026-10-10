@@ -1,0 +1,12 @@
+{
+  "result": "PASS",
+  "checks": [
+    "Protected nonsecret Owner listing selects ID without encrypted-state inspection",
+    "Noninteractive command and unknown selected Owner rejected",
+    "Durable audit outage rejected before identity mutation",
+    "Protected host terminal after storage repair issues restricted proof using existing key",
+    "Host reissue invalidates lost proof",
+    "Selected Owner completes fresh password/TOTP enrollment; old factor replaced"
+  ],
+  "secrets": "Terminal links captured only in transient harness memory; no proofs/factors in evidence"
+}

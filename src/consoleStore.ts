@@ -10,6 +10,7 @@ import { hydrateManagedConfig } from './config.js';
 import type { ManagedConfiguration } from './consoleServices.js';
 export type HumanRole = 'Owner' | 'Administrator' | 'Auditor' | 'Member';
 export interface ConsoleUser {
+    authorizationGeneration?: number;
     enrolled?: boolean;
     id: string;
     email: string;
@@ -343,7 +344,7 @@ export class ConsoleStore {
             throw new Error('Forbidden.');
         return this.commit(user.id, 'identity.session_revoke', target, s => { s.sessions = s.sessions.filter(x => x.id !== target); });
     }
-    changePassword(session: ConsoleSession, password: unknown, code: unknown, replacement: unknown, now = Date.now()): string { const user = this.requireSensitive(session); validatePassword(replacement); const counter = this.verify(user, password, code, now); const hash = passwordHash(replacement); this.requireSensitive(session); try { return this.commit(user.id, 'identity.password_change', user.id, s => { const u = s.users.find(u => u.id === user.id)!; u.password = hash; u.lastCounter = counter; u.attempts = 0; s.sessions = s.sessions.filter(x => x.userId !== user.id); }); } finally { if (this.state.users.find(u => u.id === user.id)?.password === hash) this.invalidateUser(user.id); } }
+    changePassword(session: ConsoleSession, password: unknown, code: unknown, replacement: unknown, now = Date.now()): string { const user = this.requireSensitive(session); validatePassword(replacement); const counter = this.verify(user, password, code, now); const hash = passwordHash(replacement); this.requireSensitive(session); try { return this.commit(user.id, 'identity.password_change', user.id, s => { const u = s.users.find(u => u.id === user.id)!; u.authorizationGeneration = (u.authorizationGeneration ?? 0) + 1; u.password = hash; u.lastCounter = counter; u.attempts = 0; s.sessions = s.sessions.filter(x => x.userId !== user.id); if(s.people)s.people.proofs=s.people.proofs.filter(p=>p.target!==user.id); }); } finally { if (this.state.users.find(u => u.id === user.id)?.password === hash) this.invalidateUser(user.id); } }
     assertUserChange(id: string, nextRole: HumanRole, active: boolean): void {
         const user = this.state.users.find(u => u.id === id);
         if (user?.active && user.role === 'Owner' && (!active || nextRole !== 'Owner') && this.state.users.filter(u => u.active && u.enrolled !== false && u.role === 'Owner').length <= 1)

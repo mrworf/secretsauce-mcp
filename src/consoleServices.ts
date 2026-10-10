@@ -183,6 +183,7 @@ export class ConsoleServices {
   admit(subject: string, id: string): void {
     const service = own(this.state.services, id);
     if (!service || service.lifecycle !== 'Active' || !service.assignments.includes(subject)) throw new Error('Current service access unavailable.');
+    const external = this.store.state.people?.external.find(e=>e.id===subject);if(external&&!external.active)throw new Error('Current identity is not eligible.');
     const local = this.store.state.users.find(u => u.id === subject);
     if (local && (!local.active || local.enrolled === false || local.role === 'Auditor')) throw new Error('Current identity is not eligible.');
   }

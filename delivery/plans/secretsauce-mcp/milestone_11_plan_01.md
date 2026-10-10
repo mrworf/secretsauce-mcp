@@ -12,3 +12,9 @@ Use the existing encrypted, single-writer ConsoleStore commit as the serialized 
 
 ## Validation and evidence
 Focused positive/negative management and runtime tests per slice; preparation faults, stale/mixed-role/dependency changes and operation reconciliation; concurrent dispatch/rotation/revoke and body-await overlap; preserved TLS/path/JSON/binary/Base64/cookie/header regressions. End `npm test`, `npm run build`, declared Playwright actual HTTPS keyboard and 320px checks. Evidence under `evidence/qa/secretsauce-mcp/milestone11/`. Root owns milestone acceptance/status. Stage only owned explicit paths. Each completed slice commits its plan, implementation, tests and evidence; commit IDs recorded in root handoff/history (avoid self-referential SHA).
+
+## Committed slices
+
+- Slice 01: cd3872440b060a726ff129e83a409989048fda68
+- Slice 02: 419e42e6784e09151a305275701aacbfad7bc87d
+- Slice 03: d038170a7c0ab5d7bfe3d1a93c28743cb15f1183

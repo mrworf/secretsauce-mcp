@@ -106,22 +106,29 @@ milestones:
   - id: "11"
     title: Configure and activate services safely
     file: delivery/milestones/secretsauce-mcp/11-managed-service-configuration.md
-    status: in_progress
+    status: completed
     dependencies:
       - "10"
-    completed_at: null
-    commit_hash: null
-    notes: null
+    completed_at: 2026-10-10T04:58:27.684Z
+    commit_hash: d038170a7c0ab5d7bfe3d1a93c28743cb15f1183
+    notes: "All four acceptance criteria verified: 427 tests across 41 files, build,
+      7 service browser groups and 7 retained authentication browser groups;
+      keyboard and 320px checks. Evidence:
+      evidence/qa/secretsauce-mcp/milestone11/acceptance.md. Slice commits:
+      cd3872440b060a726ff129e83a409989048fda68,
+      419e42e6784e09151a305275701aacbfad7bc87d,
+      d038170a7c0ab5d7bfe3d1a93c28743cb15f1183."
     started_at: 2026-10-10T04:27:14.851Z
   - id: "12"
     title: Manage people and recover accounts
     file: delivery/milestones/secretsauce-mcp/12-people-and-account-recovery.md
-    status: pending
+    status: in_progress
     dependencies:
       - "11"
     completed_at: null
     commit_hash: null
     notes: null
+    started_at: 2026-10-10T04:58:27.685Z
   - id: "13"
     title: Author advanced policy and migrate configuration
     file: delivery/milestones/secretsauce-mcp/13-advanced-policy-and-migration.md
@@ -215,8 +222,9 @@ delivery_goal:
     - "16"
     - "17"
   execution: autonomous
-  current_milestone: "11"
-  governing_plan: delivery/plans/secretsauce-mcp/milestone_11_plan_01.md
+  current_milestone: "12"
+  governing_plan: delivery/plans/secretsauce-mcp/milestone_12_plan_01.md
   blockers: []
-  resume_point: Generate milestone 11 governing plan and all slice plans before
-    production edits; milestone 10 acceptance is committed.
+  resume_point: Resume the existing M12 governing plan at the indexed incomplete
+    slice, or generate the governing and all slice plans before production edits
+    if absent. M11 acceptance is committed.

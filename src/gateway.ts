@@ -69,6 +69,7 @@ export async function executeServiceRequest(
   input: ServiceRequestInput,
   dependencies: RequestDependencies = createRequestDependencies(config),
 ): Promise<ServiceResponse> {
+  auth.assertCurrent?.();
   const admittedRevision = config.admittedRevision;
   const logger = createLogger(config.logging);
   validateRequestInput(input);
@@ -187,6 +188,8 @@ export async function executeServiceRequest(
   const headers = enforceCredentialHeaderUsage(
     { headers: callerHeaders, query, body: input.body }, broker, auth, tokenTarget, service, logger,
   );
+  auth.assertCurrent?.();
+  getService(config,input.service,auth);
   dependencies.auditSink.admit("service.dispatch",auth.subject,service.id,requestId);
   const headerSubstitution = substituteTokens(headers, broker, auth, tokenTarget, service);
   const querySubstitution = substituteTokens(query, broker, auth, tokenTarget, service);

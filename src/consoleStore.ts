@@ -260,6 +260,17 @@ export class ConsoleStore {
         }
         return counter;
     }
+    consentIdentity(email: unknown, password: unknown, code: unknown, now = Date.now()): { subject: string; generation: number } {
+        if (!this.state.initialized || !this.storageReliable || this.journal.degraded || this.externalAudit?.degraded || typeof email !== 'string' || email.length > 254) throw new Error('Sign-in details were not accepted.');
+        const user = this.state.users.find(u => u.email === email.toLowerCase());
+        const counter = this.verify(user, password, code, now);
+        if (user!.role === 'Auditor') throw new Error('This role cannot connect MCP clients.');
+        this.commit(user!.id, 'oauth.consent_identity', user!.id, s => {
+            const current = s.users.find(u => u.id === user!.id)!;
+            current.lastCounter = counter; current.attempts = 0; current.blockedUntil = 0;
+        });
+        return { subject: user!.id, generation: user!.authorizationGeneration ?? 0 };
+    }
     login(email: unknown, password: unknown, code: unknown, now = Date.now()): {
         token: string;
         csrf: string;

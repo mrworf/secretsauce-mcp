@@ -93,7 +93,7 @@ export class TokenBroker {
   responseContext(auth: AuthContext, service: string): TokenBroker {
     const epoch = () => (this.generations.get(service + '\0*') ?? 0) + ':' + (this.generations.get(service + '\0' + auth.subject) ?? 0);
     const admitted = epoch();
-    const valid = () => { if (epoch() !== admitted) return false; try { this.config.managedAdmission?.(auth.subject, service); return true; } catch { return false; } };
+    const valid = () => { if (epoch() !== admitted) return false; try { auth.assertCurrent?.(); this.config.managedAdmission?.(auth.subject, service); return true; } catch { return false; } };
     // A completed response still substitutes protected bytes after revocation, but
     // its new placeholders are never inserted into the live reference indexes.
     return new Proxy(this, { get: (broker, property) => {
@@ -108,6 +108,7 @@ export class TokenBroker {
     } });
   }
   issueTokens(auth: AuthContext, input: TokenRequestInput): TokenIssueResult {
+    auth.assertCurrent?.();
     this.sweepExpired();
     if (!input.reason.trim()) {
       throw new GatewayError("reference_invalid", "Reference request reason is required.");

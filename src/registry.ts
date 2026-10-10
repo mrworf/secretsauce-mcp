@@ -88,6 +88,7 @@ export function describeServicePolicy(config: GatewayConfig, auth: AuthContext, 
 }
 
 export function getService(config: GatewayConfig, serviceId: string, auth?: AuthContext): ServiceConfig {
+  auth?.assertCurrent?.();
   try { if (auth) config.managedAdmission?.(auth.subject, serviceId); } catch { throw new GatewayError("unauthorized_service", "Current service access unavailable."); }
   const service = Object.hasOwn(config.services, serviceId) ? config.services[serviceId] : undefined;
   if (!service) throw new GatewayError("unknown_service", `Unknown service: ${serviceId}`);

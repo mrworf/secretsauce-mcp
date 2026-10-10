@@ -213,6 +213,7 @@ export async function callTool(
     return toolError("not_implemented", `Tool ${name} is not available.`);
   }
   try {
+    auth.assertCurrent?.();
     return await contract.handler(args, config, auth, dependencies);
   } catch (error) {
     if (error instanceof GatewayError) {

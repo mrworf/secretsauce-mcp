@@ -1,7 +1,10 @@
+import { ConsoleStore } from "./consoleStore.js";
+import { atomicFile } from "./consolePersistence.js";
+import { join } from "node:path";
 import { AuditSink } from './audit.js';
 import { GatewayError } from './errors.js';
 import { createHash, pbkdf2, pbkdf2Sync, randomBytes, timingSafeEqual } from "node:crypto";
-import { chmodSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, readFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { promisify } from "node:util";
 import type { IncomingMessage, ServerResponse } from "node:http";
@@ -44,6 +47,8 @@ const OAUTH_SENSITIVE_RESPONSE_HEADERS = {
 } as const;
 
 interface AuthorizationCode {
+  authorizationGeneration?: number;
+  grantId?: string;
   clientId: string;
   redirectUri: string;
   resource: string;
@@ -54,6 +59,7 @@ interface AuthorizationCode {
 }
 
 interface RefreshGrant {
+  authorizationGeneration?: number;
   id: string;
   clientId: string;
   resource: string;
@@ -86,6 +92,28 @@ const pbkdf2Async = promisify(pbkdf2);
 const PERMISSION_SCOPE_ORDER = ["gateway.read", "gateway.request", "gateway.references"] as const;
 
 export class BuiltinOAuthRuntime {
+  managedStore?: ConsoleStore;
+  invalidateSubject: (subject: string) => void = () => {};
+  authenticationGeneration = 0;
+  readonly consentChallenges = new Map<string, { fingerprint: string; expires: number }>();
+  bindManaged(store: ConsoleStore): void {
+    this.managedStore = store;
+    if (this.config.auth.mode === 'builtin_oauth') {
+      const path = join(store.directory, 'oauth-refresh.json');
+      this.config.auth.builtinOAuth.refreshTokenStoreFile = path;
+      const loaded = loadRefreshState(this.config);
+      this.state.refreshGrants = loaded.refreshGrants; this.state.refreshTokens = loaded.refreshTokens;
+    }
+  }
+  eligible(subject: string, generation: number | undefined): boolean {
+    if (!this.managedStore) return true;
+    const u = this.managedStore.state.users.find(u => u.id === subject);
+    return this.managedStore.storageReliable && Boolean(u?.active && u.enrolled !== false && u.role !== 'Auditor' && generation !== undefined && generation === (u.authorizationGeneration ?? 0));
+  }
+  assertGrant(subject: string, grantId: unknown, generation: unknown): void {
+    const grant = typeof grantId === 'string' ? this.state.refreshGrants.get(grantId) : undefined;
+    if (this.managedStore && (!grant || grant.subject !== subject || !this.eligible(subject, grant.authorizationGeneration) || generation !== grant.authorizationGeneration || grant.expiresAt <= Date.now() || grant.idleExpiresAt <= Date.now() || this.config.auth.mode !== 'builtin_oauth')) throw new GatewayError('unauthenticated', 'Current client authorization unavailable.');
+  }
   readonly auditSink: AuditSink;
   readonly state: BuiltinOAuthState;
   readonly bodyLimiter: InflightLimiter;
@@ -219,7 +247,15 @@ async function renderLoginForm(config: GatewayConfig, request: IncomingMessage, 
     renderInvalidAuthorizationPage(response);
     return;
   }
-  renderLoginPage(config, response, params, validation);
+  if (runtime.managedStore) {
+    const now = Date.now();
+    for (const [key,c] of runtime.consentChallenges) if (c.expires <= now) runtime.consentChallenges.delete(key);
+    if (runtime.consentChallenges.size >= config.limits.maxAuthorizationCodes) { writeOAuthError(response,429,'temporarily_unavailable'); return; }
+    const challenge = randomBytes(32).toString('base64url');
+    runtime.consentChallenges.set(challenge, { fingerprint: authorizationFingerprint(params), expires: now + (config.auth.mode === "builtin_oauth" ? config.auth.builtinOAuth.authorizationCodeTtlMs : 0) });
+    params.set('consent_challenge', challenge);
+  }
+  renderLoginPage(config, response, params, validation,200,undefined,Boolean(runtime.managedStore));
 }
 
 function renderLoginPage(
@@ -229,6 +265,7 @@ function renderLoginPage(
   client: Extract<Awaited<ReturnType<typeof validateAuthorizationRequest>>, { ok: true }>,
   statusCode = 200,
   errorMessage?: string,
+  managed = false,
 ): void {
   const hidden = AUTHORIZE_FORM_PARAMETER_NAMES
     .flatMap((key) => {
@@ -481,7 +518,7 @@ button:focus-visible {
 <div class="intro">
 <img class="brand-lockup" src="${BRAND_LOCKUP_PATH}" alt="SecretSauce MCP">
 <h1 id="authorize-title">Connect ${connectClientName} to SecretSauce</h1>
-<p class="description"><strong>${sentenceClientName}</strong> is requesting access to use services configured in this gateway. Stored service credentials will not be shared with ${definiteClientName}.</p>
+<p class="description"><strong>${sentenceClientName}</strong> is requesting access to use services configured in this gateway. The gateway uses stored credentials only after current access and policy checks.</p>
 <div class="trust-summary" aria-label="Connection summary">
 <div class="trust-row"><strong>Client</strong><span>${escapedClientName}</span></div>
 <div class="trust-row"><strong>Gateway</strong><span>${escapeHtml(gateway)}</span></div>
@@ -491,7 +528,7 @@ button:focus-visible {
 <h2 id="permissions-title">What ${definiteClientName} will be able to do</h2>
 <ul>${permissions}</ul>
 </div>
-<div class="info-box" role="note">The gateway authenticates ${definiteClientName}, validates each destination and request against gateway policy, and uses stored service credentials on ${possessiveClientName} behalf. Credential values are never shared with ${definiteClientName}.</div>
+<div class="info-box" role="note">The gateway authenticates ${definiteClientName}, validates each destination and request against gateway policy, and uses stored service credentials on ${possessiveClientName} behalf. Response scanning is best-effort; trusted downstream services can observe their own requests.</div>
 <details>
 <summary>Connection details</summary>
 <div class="connection-details" aria-label="OAuth request details">
@@ -504,16 +541,18 @@ button:focus-visible {
 </div>
 <form method="post" action="${AUTHORIZE_PATH}">
 ${hidden}
+${managed ? `<input type="hidden" name="consent_challenge" value="${escapeHtml(params.get("consent_challenge") ?? "")}">` : ""}
 <div class="sign-in">
 <h2>Sign in to this gateway</h2>
 <p>These credentials are sent only to ${escapeHtml(gateway)} and are not shared with ${definiteClientName}.</p>
 </div>
 ${error}
 <div class="field-grid">
-<label for="username">Username <input id="username" name="username" autocomplete="username" required></label>
+<label for="username">${managed ? "Email" : "Username"} <input id="username" name="username" autocomplete="username" required></label>
 <label for="password">Password <input id="password" name="password" type="password" autocomplete="current-password" required></label>
 </div>
-<div class="actions"><button type="submit">Sign in and connect</button></div>
+${managed ? '<label for="code">Fresh authenticator code <input id="code" name="code" inputmode="numeric" autocomplete="one-time-code" required pattern="[0-9]{6}"></label><p>Acting identity: your enrolled account. Only current explicit service assignments are available; consent adds no assignment.</p><label for="consent"><input style="width:auto" id="consent" name="consent" type="checkbox" value="yes" required> I authorize this client for the requested scopes using my identity.</label>' : ''}
+<div class="actions"><button type="submit">Sign in and connect</button>${managed ? '<button type="submit" name="decision" value="deny" formnovalidate>Deny connection</button>' : ''}</div>
 </form>
 </section>
 </main>
@@ -584,7 +623,9 @@ async function handleAuthorizePost(config: GatewayConfig, request: IncomingMessa
     }
     throw error;
   }
+  const authenticationGeneration = runtime.authenticationGeneration;
   const validation = await validateAuthorizationRequest(config, body, runtime);
+  if (runtime.authenticationGeneration !== authenticationGeneration || config.auth.mode !== "builtin_oauth" || config.auth.builtinOAuth !== auth) { writeOAuthError(response,400,"invalid_request");return; }
   if (!validation.ok) {
     logger.debug("oauth.authorize.completed", {
       endpoint: AUTHORIZE_PATH,
@@ -609,33 +650,37 @@ async function handleAuthorizePost(config: GatewayConfig, request: IncomingMessa
     return;
   }
 
+  let identity = { subject: auth.adminUsername, generation: undefined as number | undefined };
   let passwordValid = false;
-  if (body.get("username") === auth.adminUsername) {
-    const release = runtime.passwordLimiter.acquire(request.socket.remoteAddress ?? "unknown");
-    if (release === undefined) {
-      response.setHeader("retry-after", "1");
-      writeOAuthError(response, 429, "temporarily_unavailable");
-      return;
+  if (runtime.managedStore) {
+    if ([...body.keys()].some(k => body.getAll(k).length !== 1) || !/^[A-Za-z0-9_-]{43}$/.test(validation.codeChallenge)) { writeOAuthError(response,400,'invalid_request');return; }
+    const challenge = body.get('consent_challenge') ?? '';
+    const expected = runtime.consentChallenges.get(challenge);
+    runtime.consentChallenges.delete(challenge);
+    if (request.headers.origin !== auth.issuer || !expected || expected.expires <= Date.now() || expected.fingerprint !== authorizationFingerprint(body)) { writeOAuthError(response,400,'invalid_request'); return; }
+    if (body.get('decision') === 'deny') {
+      const redirect = new URL(validation.redirectUri); redirect.searchParams.set('error','access_denied');
+      const state = body.get('state'); if(state) redirect.searchParams.set('state',state);
+      response.writeHead(302,{...OAUTH_SENSITIVE_RESPONSE_HEADERS,location:redirect.toString()});response.end();return;
     }
+    if (body.get('consent') !== 'yes') { writeOAuthError(response,400,'invalid_request'); return; }
+    const release = runtime.passwordLimiter.acquire(source);
+    if (!release) { response.setHeader('retry-after','1'); writeOAuthError(response,429,'temporarily_unavailable');return; }
     try {
-      passwordValid = await verifyPassword(body.get("password") ?? "", auth.adminPasswordHash);
-    } finally {
-      release();
-    }
+      const verified = runtime.managedStore.consentIdentity(body.get('username'),body.get('password'),body.get('code'));
+      identity = { subject: verified.subject, generation: verified.generation }; passwordValid = true;
+    } catch { passwordValid = false; } finally { release(); }
+  } else if (body.get("username") === auth.adminUsername) {
+    const release = runtime.passwordLimiter.acquire(source);
+    if (!release) { response.setHeader('retry-after','1'); writeOAuthError(response,429,'temporarily_unavailable');return; }
+    try { passwordValid = await verifyPassword(body.get("password") ?? "", auth.adminPasswordHash); } finally { release(); }
   }
   if (!passwordValid) {
-    attemptLimiter.recordFailure(source, account);
-    logger.debug("oauth.authorize.completed", {
-      endpoint: AUTHORIZE_PATH,
-      status: "error",
-      status_code: 401,
-      error_code: "invalid_login",
-      client_status: "allowed",
-      resource_status: "match",
-      scope_count: validation.scopes.length,
-    });
-    renderLoginPage(config, response, body, validation, 401, "Invalid username or password.");
-    return;
+    attemptLimiter.recordFailure(source,account);
+    if (runtime.auditSink.degraded) { writeOAuthError(response,503,'temporarily_unavailable');return; }
+    // A failed managed attempt consumes its challenge. Restart from the client.
+    if(runtime.managedStore) { writeOAuthError(response,401,'access_denied');return; }
+    renderLoginPage(config,response,body,validation,401,'Invalid username or password.');return;
   }
 
   attemptLimiter.recordSuccess(source, account);
@@ -648,7 +693,7 @@ async function handleAuthorizePost(config: GatewayConfig, request: IncomingMessa
     return;
   }
 
-  const operation=runtime.auditSink.admit("oauth.authorize",auth.adminUsername,"oauth_client");
+  const operation=runtime.auditSink.admit("oauth.authorize",identity.subject,"oauth_client");
   const code = randomBytes(32).toString("base64url");
   oauthState.authorizationCodes.set(code, {
     clientId: validation.clientId,
@@ -656,7 +701,8 @@ async function handleAuthorizePost(config: GatewayConfig, request: IncomingMessa
     resource: validation.resource,
     scopes: validation.scopes,
     codeChallenge: validation.codeChallenge,
-    subject: auth.adminUsername,
+    subject: identity.subject,
+    ...(identity.generation === undefined ? {} : { authorizationGeneration: identity.generation }),
     expiresAt: Date.now() + auth.authorizationCodeTtlMs,
   });
 
@@ -672,7 +718,7 @@ async function handleAuthorizePost(config: GatewayConfig, request: IncomingMessa
     resource_status: "match",
     scope_count: validation.scopes.length,
   });
-  runtime.auditSink.complete(operation,auth.adminUsername,"oauth.authorize","oauth_client");
+  runtime.auditSink.complete(operation,identity.subject,"oauth.authorize","oauth_client");
   response.writeHead(302, { ...OAUTH_SENSITIVE_RESPONSE_HEADERS, location: redirect.toString() });
   response.end();
 }
@@ -721,7 +767,7 @@ async function exchangeAuthorizationCode(
   const oauthState = runtime.state;
   const authorizationCodes = oauthState.authorizationCodes;
   const record = authorizationCodes.get(code);
-  if (record === undefined || record.expiresAt <= Date.now()) {
+  if (record === undefined || record.expiresAt <= Date.now() || !runtime.eligible(record.subject,record.authorizationGeneration)) {
     authorizationCodes.delete(code);
     logTokenOutcome(logger, "error", 400, "invalid_grant", "unavailable", "unavailable");
     writeOAuthError(response, 400, "invalid_grant");
@@ -743,7 +789,7 @@ async function exchangeAuthorizationCode(
     return;
   }
   const codeVerifier = body.get("code_verifier") ?? "";
-  if (pkceChallenge(codeVerifier) !== record.codeChallenge) {
+  if ((runtime.managedStore && !/^[A-Za-z0-9._~-]{43,128}$/.test(codeVerifier)) || pkceChallenge(codeVerifier) !== record.codeChallenge) {
     logTokenOutcome(logger, "error", 400, "invalid_grant", resourceStatus(requestedResource, record.resource), record.scopes.length);
     runtime.auditSink.complete(operation,record.subject,"oauth.issue","oauth_client","failed");
     writeOAuthError(response, 400, "invalid_grant");
@@ -758,9 +804,11 @@ async function exchangeAuthorizationCode(
     writeOAuthError(response, 503, "temporarily_unavailable");
     return;
   }
-  const accessToken = await signAccessToken(auth, record.subject, record.resource, record.scopes, now);
-  runtime.auditSink.admit("oauth.issue",record.subject,"oauth_client",operation);
+  const authenticationGeneration = runtime.authenticationGeneration;
   const issuedRefresh = issueRefreshGrant(oauthState, auth, record, now);
+  const accessToken = await signAccessToken(auth, record.subject, record.resource, record.scopes, now, issuedRefresh.grantId, record.authorizationGeneration);
+  if (!runtime.eligible(record.subject, record.authorizationGeneration) || !oauthState.refreshGrants.has(issuedRefresh.grantId) || authenticationGeneration !== runtime.authenticationGeneration || config.auth.mode !== "builtin_oauth" || config.auth.builtinOAuth !== auth) { revokeRefreshGrant(oauthState,issuedRefresh.grantId);writeOAuthError(response,400,'invalid_grant');return; }
+  runtime.auditSink.admit("oauth.issue",record.subject,"oauth_client",operation);
   if (!persistRefreshStateForRequest(config, oauthState, logger)) {
     revokeRefreshGrant(oauthState, issuedRefresh.grantId);
     logTokenOutcome(logger, "error", 503, "temporarily_unavailable", resourceStatus(requestedResource, record.resource), record.scopes.length);
@@ -796,7 +844,7 @@ async function exchangeRefreshToken(
   const tokenHash = hashRefreshToken(body.get("refresh_token") ?? "");
   const tokenRecord = oauthState.refreshTokens.get(tokenHash);
   const grant = tokenRecord === undefined ? undefined : oauthState.refreshGrants.get(tokenRecord.grantId);
-  if (tokenRecord === undefined || grant === undefined || grant.expiresAt<=now || grant.idleExpiresAt<=now) {
+  if (tokenRecord === undefined || grant === undefined || grant.expiresAt<=now || grant.idleExpiresAt<=now || !runtime.eligible(grant.subject,grant.authorizationGeneration)) {
     logTokenOutcome(logger, "error", 400, "invalid_grant", "unavailable", "unavailable");
     writeOAuthError(response, 400, "invalid_grant");
     return;
@@ -804,6 +852,7 @@ async function exchangeRefreshToken(
   if (tokenRecord.status !== "active") {
     const replay=runtime.auditSink.admit("oauth.replay_revoke",grant.subject,"oauth_client");
     revokeRefreshGrant(oauthState, grant.id);
+    runtime.invalidateSubject(grant.subject);
     if(persistRefreshStateForRequest(config,oauthState,logger))runtime.auditSink.complete(replay,grant.subject,"oauth.replay_revoke","oauth_client");
     logger.warn("oauth.refresh_token_reuse_detected", { client_status: "bound", resource_status: "bound" });
     logTokenOutcome(logger, "error", 400, "invalid_grant", "unavailable", grant.scopes.length);
@@ -833,18 +882,19 @@ async function exchangeRefreshToken(
     return;
   }
 
+  const authenticationGeneration = runtime.authenticationGeneration;
   const operation=runtime.auditSink.admit("oauth.refresh",grant.subject,"oauth_client");
   tokenRecord.status = "rotating";
   const rotatedToken = randomBytes(32).toString("base64url");
   const rotatedHash = hashRefreshToken(rotatedToken);
   let accessToken: string;
   try {
-    accessToken = await signAccessToken(auth, grant.subject, grant.resource, scopes, now);
+    accessToken = await signAccessToken(auth, grant.subject, grant.resource, scopes, now, grant.id, grant.authorizationGeneration);
   } catch (error) {
     if (oauthState.refreshGrants.has(grant.id) && tokenRecord.status === "rotating") tokenRecord.status = "active";
     throw error;
   }
-  if (!oauthState.refreshGrants.has(grant.id) || tokenRecord.status !== "rotating") {
+  if (!oauthState.refreshGrants.has(grant.id) || tokenRecord.status !== "rotating" || !runtime.eligible(grant.subject,grant.authorizationGeneration) || authenticationGeneration !== runtime.authenticationGeneration || config.auth.mode !== "builtin_oauth" || config.auth.builtinOAuth !== auth) {
     logTokenOutcome(logger, "error", 400, "invalid_grant", "unavailable", scopes.length);
     writeOAuthError(response, 400, "invalid_grant");
     return;
@@ -897,6 +947,7 @@ function issueRefreshGrant(
     resource: authorizationCode.resource,
     scopes: [...authorizationCode.scopes],
     subject: authorizationCode.subject,
+    ...(authorizationCode.authorizationGeneration === undefined ? {} : { authorizationGeneration: authorizationCode.authorizationGeneration }),
     createdAt: now,
     idleExpiresAt: Math.min(now + auth.refreshTokenIdleTtlMs, expiresAt),
     expiresAt,
@@ -991,6 +1042,7 @@ function isRefreshGrant(value: unknown): value is RefreshGrant {
   return nonEmptyString(value.id) && nonEmptyString(value.clientId) && nonEmptyString(value.resource)
     && Array.isArray(value.scopes) && value.scopes.every(nonEmptyString) && nonEmptyString(value.subject)
     && finiteTimestamp(value.createdAt) && finiteTimestamp(value.idleExpiresAt) && finiteTimestamp(value.expiresAt)
+    && (value.authorizationGeneration === undefined || (Number.isSafeInteger(value.authorizationGeneration) && Number(value.authorizationGeneration) >= 0))
     && value.createdAt <= value.idleExpiresAt && value.idleExpiresAt <= value.expiresAt;
 }
 
@@ -1020,14 +1072,7 @@ function persistRefreshState(config: GatewayConfig, state: BuiltinOAuthState): v
     refreshTokens: [...state.refreshTokens.entries()].map(([hash, record]) => ({ hash, ...record, status: record.status === "rotating" ? "active" : record.status })),
   };
   mkdirSync(dirname(path), { recursive: true, mode: 0o700 });
-  const temporaryPath = `${path}.${process.pid}.${randomBytes(8).toString("hex")}.tmp`;
-  try {
-    writeFileSync(temporaryPath, `${JSON.stringify(persisted)}\n`, { encoding: "utf8", flag: "wx", mode: 0o600 });
-    renameSync(temporaryPath, path);
-  } catch (error) {
-    try { unlinkSync(temporaryPath); } catch { /* no temporary file to remove */ }
-    throw error;
-  }
+  atomicFile(path, `${JSON.stringify(persisted)}\n`);
 }
 
 function persistRefreshStateSafely(config: GatewayConfig, state: BuiltinOAuthState): void {
@@ -1058,9 +1103,11 @@ async function signAccessToken(
   resource: string,
   scopes: string[],
   nowMs: number,
+  grantId?: string,
+  authorizationGeneration?: number,
 ): Promise<string> {
   const now = Math.floor(nowMs / 1000);
-  return new SignJWT({ scope: scopes.join(" ") })
+  return new SignJWT({ scope: scopes.join(" "), ...(authorizationGeneration === undefined ? {} : { authorizationGeneration, grantId }) })
     .setProtectedHeader({ alg: "RS256", kid: auth.signingKeyId })
     .setSubject(subject)
     .setIssuer(auth.issuer)
@@ -1257,4 +1304,8 @@ function escapeHtml(value: string): string {
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
     .replaceAll("\"", "&quot;");
+}
+
+function authorizationFingerprint(params: URLSearchParams): string {
+  return createHash('sha256').update(JSON.stringify(AUTHORIZE_FORM_PARAMETER_NAMES.map(k=>[k,params.get(k)]))).digest('hex');
 }

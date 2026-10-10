@@ -31,6 +31,9 @@ export interface ServerConfig {
 export type AuthConfig = OAuthAuthConfig | BuiltinOAuthAuthConfig | BearerAuthConfig;
 
 export interface AuthContext {
+  assertCurrent?: () => void;
+  grantId?: unknown;
+  authorizationGeneration?: unknown;
   subject: string;
   scopes: string[];
   mode: AuthConfig["mode"];

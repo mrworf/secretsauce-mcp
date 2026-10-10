@@ -39,7 +39,7 @@ export function createGatewayServer(
   }
   const runtime = options.runtime ?? new GatewayRuntime(config, { ...(options.auditSink === undefined ? {} : { auditSink: options.auditSink }) });
   const auditSink = runtime.auditSink;
-  if(options.consoleStore) { auditSink.bindConsole(options.consoleStore); const manager = bindConsoleServices(options.consoleStore, config); manager.invalidate = (service, subject) => runtime.capabilities.tokenBroker.revoke(service, subject); options.consoleStore.invalidateUser = subject => { for (const service of Object.keys(manager.state.services)) manager.invalidate(service, subject); const user=options.consoleStore!.state.users.find(u=>u.id===subject);if(user)void consoleNotifications(options.consoleStore!).send('security',user.email,'Account security or access changed. Previous sessions and client grants were revoked; contact your Owner if unexpected.').catch(()=>{}); }; config.managedAdmission = (subject, service) => manager.admit(subject, service); }
+  if(options.consoleStore) { auditSink.bindConsole(options.consoleStore); runtime.builtinOAuth.bindManaged(options.consoleStore); const manager = bindConsoleServices(options.consoleStore, config); manager.invalidate = (service, subject) => runtime.capabilities.tokenBroker.revoke(service, subject); runtime.builtinOAuth.invalidateSubject = subject => { for (const service of Object.keys(manager.state.services)) manager.invalidate(service,subject); }; options.consoleStore.invalidateUser = subject => { for (const service of Object.keys(manager.state.services)) manager.invalidate(service, subject); const user=options.consoleStore!.state.users.find(u=>u.id===subject);if(user)void consoleNotifications(options.consoleStore!).send('security',user.email,'Account security or access changed. Previous sessions and client grants were revoked; contact your Owner if unexpected.').catch(()=>{}); }; config.managedAdmission = (subject, service) => manager.admit(subject, service); }
   const server = createServer(async (request, response) => {
     if (options.consoleStore && isConsoleRequest(request)) { await handleConsoleRequest(options.consoleStore, request, response); return; }
     if (request.method === "GET" && request.url === "/health") {
@@ -62,19 +62,26 @@ export function createGatewayServer(
     }
 
     if (isBuiltinOAuthRequest(config, request)) {
-      if (options.consoleStore && config.auth.mode === "builtin_oauth" && (request.method !== "GET" || request.url?.split("?")[0] === "/oauth/authorize")){writeJson(response,503,{error:"temporarily_unavailable"});return;}
       logger.debug("oauth.builtin_request", { method: request.method, path: request.url?.split("?")[0] });
       await handleBuiltinOAuthRequest(config, request, response, runtime.builtinOAuth);
       return;
     }
 
     if (isMcpPost(request, config.server.mcpPath)) {
-      if(options.consoleStore&&config.auth.mode==="builtin_oauth"){writeJson(response,503,{error:{code:"temporarily_unavailable",message:"Managed MCP authorization is not available yet."}});return;}
       let requiredScopes = configuredMcpScopes(config);
       try {
+        const authenticatedConfiguration = config.auth, authenticatedResource = config.server.resource, authenticatedPath = config.server.mcpPath;
         const auth = await authenticateRequest(request, config);
+        if (options.consoleStore) {
+          auth.assertCurrent = () => {
+            if (config.auth !== authenticatedConfiguration || config.server.resource !== authenticatedResource || config.server.mcpPath !== authenticatedPath) throw new GatewayError('unauthenticated','Authentication settings changed. Reconnect your client.');
+            if (auth.mode === 'builtin_oauth') runtime.builtinOAuth.assertGrant(auth.subject,auth.grantId,auth.authorizationGeneration);
+          };
+          auth.assertCurrent();
+        }
         const body = await readJsonBody(request, config.limits.maxInboundBodyBytes, config.limits.inboundBodyTimeoutMs);
         requiredScopes = requiredScopesForMcpBody(body);
+        auth.assertCurrent?.();
         requireScopes(auth, requiredScopes);
         (request as AuthenticatedRequest).auth = auth;
         logger.debug("mcp.request_authenticated", {
@@ -120,7 +127,15 @@ export function createGatewayServer(
 
     if (isMcpGet(request, config.server.mcpPath) || isMcpDelete(request, config.server.mcpPath)) {
       try {
+        const authenticatedConfiguration = config.auth, authenticatedResource = config.server.resource, authenticatedPath = config.server.mcpPath;
         const auth = await authenticateRequest(request, config);
+        if (options.consoleStore) {
+          auth.assertCurrent = () => {
+            if (config.auth !== authenticatedConfiguration || config.server.resource !== authenticatedResource || config.server.mcpPath !== authenticatedPath) throw new GatewayError('unauthenticated','Authentication settings changed. Reconnect your client.');
+            if (auth.mode === 'builtin_oauth') runtime.builtinOAuth.assertGrant(auth.subject,auth.grantId,auth.authorizationGeneration);
+          };
+          auth.assertCurrent();
+        }
         (request as AuthenticatedRequest).auth = auth;
         logger.debug("mcp.request_authenticated", {
           method: request.method,

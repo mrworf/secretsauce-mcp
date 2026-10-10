@@ -51,6 +51,8 @@ export async function authenticateRequest(
       subject: subjectFromPayload(payload, "sub"),
       scopes,
       mode: "builtin_oauth",
+      ...(payload.grantId === undefined ? {} : { grantId: payload.grantId }),
+      ...(payload.authorizationGeneration === undefined ? {} : { authorizationGeneration: payload.authorizationGeneration }),
     };
   }
 

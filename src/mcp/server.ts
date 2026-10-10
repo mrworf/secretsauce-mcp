@@ -33,9 +33,10 @@ export function createMcpServer(config: GatewayConfig, iconUrl: string, dependen
     },
   );
 
-  server.setRequestHandler(ListToolsRequestSchema, () => ({
-    tools: toolDescriptors,
-  }));
+  server.setRequestHandler(ListToolsRequestSchema, (_request, extra) => {
+    (extra.authInfo as AuthContext | undefined)?.assertCurrent?.();
+    return { tools: toolDescriptors };
+  });
 
   server.setRequestHandler(CallToolRequestSchema, (request, extra) => {
     const auth = extra.authInfo as AuthContext | undefined;

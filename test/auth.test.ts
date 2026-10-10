@@ -14,6 +14,8 @@ import { createGatewayServer } from "../src/server.js";
 import { TokenBroker } from "../src/tokens.js";
 import type { GatewayConfig } from "../src/types.js";
 import { setOAuthClientMetadataTestFetch } from "../src/oauthClientMetadata.js";
+import { totp } from "../src/consoleCrypto.js";
+import { setup } from "./consoleFixtures.js";
 import { fixture as consoleFixture } from "./consoleFixtures.js";
 import { GatewayRuntime } from "../src/runtime.js";
 
@@ -196,14 +198,14 @@ describe("auth", () => {
       expect(response.body).toContain('<img class="brand-lockup" src="/assets/brand/secretsauce-lockup.png" alt="SecretSauce MCP">');
       expect(response.body).toContain("--paprika: #e44d26");
       expect(response.body).not.toContain("Secretsauce");
-      expect(response.body).toContain("Stored service credentials will not be shared with ChatGPT");
+      expect(response.body).toContain("The gateway uses stored credentials only after current access and policy checks.");
       expect(response.body).toContain("What ChatGPT will be able to do");
       expect(response.body).toContain("View available services");
       expect(response.body).toContain("Make requests permitted by gateway policy");
       expect(response.body).toContain("Use temporary references returned by the gateway");
       expect(response.body.indexOf("View available services")).toBeLessThan(response.body.indexOf("Make requests permitted by gateway policy"));
       expect(response.body.indexOf("Make requests permitted by gateway policy")).toBeLessThan(response.body.indexOf("Use temporary references returned by the gateway"));
-      expect(response.body).toContain("The gateway authenticates ChatGPT, validates each destination and request against gateway policy, and uses stored service credentials on ChatGPT&rsquo;s behalf. Credential values are never shared with ChatGPT.");
+      expect(response.body).toContain("The gateway authenticates ChatGPT, validates each destination and request against gateway policy, and uses stored service credentials on ChatGPT&rsquo;s behalf. Response scanning is best-effort; trusted downstream services can observe their own requests.");
       expect(response.body).toContain("<strong>Gateway</strong><span>mcp.example.org</span>");
       expect(response.body).toContain("<strong>You will sign in to</strong><span>SecretSauce</span>");
       expect(response.body).toContain("Sign in to this gateway");
@@ -245,7 +247,7 @@ describe("auth", () => {
       expect(response.status).toBe(200);
       expect(response.body).toContain("Connect an MCP client to SecretSauce");
       expect(response.body).toContain("What the MCP client will be able to do");
-      expect(response.body).toContain("The gateway authenticates the MCP client, validates each destination and request against gateway policy, and uses stored service credentials on the MCP client&rsquo;s behalf. Credential values are never shared with the MCP client.");
+      expect(response.body).toContain("The gateway authenticates the MCP client, validates each destination and request against gateway policy, and uses stored service credentials on the MCP client&rsquo;s behalf. Response scanning is best-effort; trusted downstream services can observe their own requests.");
       expect(response.body).toContain("not shared with the MCP client");
       expect(response.body).toContain('label for="username"');
     } finally {
@@ -465,12 +467,12 @@ describe("auth", () => {
       managed = createGatewayServer(config, { runtime, consoleStore: console.store, closeRuntimeOnServerClose: false });
       managed.listen(0, "127.0.0.1"); await once(managed, "listening"); const ma = managed.address(); if (!ma || typeof ma === "string") throw Error("Expected listener");
       const mb = `http://127.0.0.1:${ma.port}`;
-      expect((await localRequest(mb + "/oauth/authorize", { method: "POST", body: authorizationBody() })).status).toBe(503);
-      expect((await localRequest(mb + "/oauth/token", { method: "POST", body: tokenBody(pending, redirect, "another-verifier") })).status).toBe(503);
-      expect((await localRequest(mb + "/oauth/token", { method: "POST", body: refreshBody(grants.refresh_token) })).status).toBe(503);
+      expect((await localRequest(mb + "/oauth/authorize", { method: "POST", body: authorizationBody() })).status).toBe(400);
+      expect((await localRequest(mb + "/oauth/token", { method: "POST", body: tokenBody(pending, redirect, "another-verifier") })).status).toBe(400);
+      expect((await localRequest(mb + "/oauth/token", { method: "POST", body: refreshBody(grants.refresh_token) })).status).toBe(400);
       const mcp = await localRequest(mb + "/mcp", { method: "POST", headers: { authorization: "Bearer " + grants.access_token, "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list" }) });
-      expect(mcp.status).toBe(503); expect(mcp.body).not.toContain(grants.access_token);
-      expect(runtime.builtinOAuth.state.authorizationCodes.has(pending)).toBe(true);
+      expect(mcp.status).toBe(401); expect(mcp.body).not.toContain(grants.access_token);
+      expect(runtime.builtinOAuth.state.authorizationCodes.has(pending)).toBe(false);
     } finally { await new Promise<void>(r => server.close(() => r())); if (managed) await new Promise<void>(r => managed!.close(() => r())); await runtime.close(); console.close(); }
   });
 
@@ -1356,6 +1358,43 @@ describe("auth", () => {
       await jwks.close();
     }
   });
+  it('requires deliberate fresh MFA consent, current user eligibility and generation on each managed MCP POST and refresh', async () => {
+    const config = await builtinOAuthConfig();
+    const f = consoleFixture({config}); const enrolled = setup(f, Date.now()-60000);
+    const runtime = new GatewayRuntime(config); const server=createGatewayServer(config,{runtime,consoleStore:f.store,closeRuntimeOnServerClose:false});
+    server.listen(0,'127.0.0.1'); await once(server,'listening'); const address=server.address();if(!address||typeof address==='string')throw Error('listener');const base=`http://127.0.0.1:${address.port}`;
+    setOAuthClientMetadataTestFetch(async()=>new Response(clientMetadataJson(['https://chatgpt.com/oauth/callback']),{status:200}));
+    const verifier='a'.repeat(43);
+    const consent = async (overrides:Record<string,string>={}) => {
+      const query=authorizationQuery({code_challenge:pkceChallenge(verifier)});
+      const page=await localRequest(base+'/oauth/authorize?'+query,{method:'GET'});
+      expect(page.status).toBe(200); expect(page.body).toContain('Fresh authenticator code'); expect(page.body).toContain('consent adds no assignment');
+      const challenge=/name="consent_challenge" value="([^"]+)"/.exec(page.body)![1]!;
+      const body=authorizationBody({code_challenge:pkceChallenge(verifier),username:'owner@example.org',password:'A novel lengthy passphrase 2026',code:totp(enrolled.seed),consent:'yes',consent_challenge:challenge,...overrides});
+      return localRequest(base+'/oauth/authorize',{method:'POST',headers:{origin:'https://mcp.example.org'},body});
+    };
+    try {
+      expect((await consent({password:'incorrect'})).status).toBe(401);
+      expect((await consent({code:'invalid'})).status).toBe(401);
+      expect((await consent({consent:'no'})).status).toBe(400);
+      const denied=await consent({decision:'deny'});expect(denied.status).toBe(302);expect(denied.headers.location).toContain('error=access_denied');
+      f.store.state.users[0]!.role='Auditor';expect((await consent()).status).toBe(401);
+      f.store.state.users[0]!.role='Owner';f.store.state.users[0]!.enrolled=false;expect((await consent()).status).toBe(401);
+      f.store.state.users[0]!.enrolled=true;f.store.state.users[0]!.active=false;expect((await consent()).status).toBe(401);
+      f.store.state.users[0]!.active=true;f.store.state.users[0]!.blockedUntil=0;f.store.state.users[0]!.attempts=0;
+      const authorized=await consent();expect(authorized.status).toBe(302);
+      const code=new URL(authorized.headers.location!).searchParams.get('code')!;
+      const issued=await localRequest(base+'/oauth/token',{method:'POST',body:tokenBody(code,'https://chatgpt.com/oauth/callback',verifier)});expect(issued.status).toBe(200);
+      const tokens=JSON.parse(issued.body);
+      const mcp=()=>localRequest(base+'/mcp',{method:'POST',headers:{authorization:'Bearer '+tokens.access_token,'content-type':'application/json','mcp-session-id':'untrusted',accept:'application/json, text/event-stream'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'tools/list'})});
+      const allowed=await mcp();expect(allowed.status).toBe(200);expect(allowed.headers['mcp-session-id']).toBeUndefined();
+      expect((await consent()).status).toBe(401); // consumed TOTP counter
+      const user=f.store.state.users[0]!;f.store.commit(user.id,'test.security','identity',s=>{s.users[0]!.authorizationGeneration=1;});
+      expect((await mcp()).status).toBe(401);expect((await localRequest(base+'/oauth/token',{method:'POST',body:refreshBody(tokens.refresh_token)})).status).toBe(400);
+      const snapshot=readFileSync(join(f.directory,'oauth-refresh.json'),'utf8');expect(snapshot).not.toContain(tokens.refresh_token);expect(snapshot).not.toContain(tokens.access_token);
+    } finally {await new Promise<void>(r=>server.close(()=>r()));await runtime.close();f.close();setOAuthClientMetadataTestFetch(undefined);}
+  });
+
 });
 
 function bearerConfig(): GatewayConfig {

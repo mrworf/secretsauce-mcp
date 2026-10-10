@@ -21,6 +21,7 @@ export interface ReferenceIssuedAuditEvent {
 }
 
 export interface ServiceRequestAuditEvent {
+  admitted_revision?:number;
   type: "service_request";
   request_id: string;
   subject: string;
@@ -90,6 +91,8 @@ export class AuditSink {
   #fd: number | undefined;
   #degraded = false;
   #closed = false;
+  #rawStamp = "";
+  private rawStamp():string {const value=statSync(this.file);return [value.size,value.mtimeMs,value.ctimeMs,value.ino].join(":");}
   #writer: SharedAuditWriter | undefined;
   #console: ConsoleStore | undefined;
   readonly file: string;
@@ -101,7 +104,7 @@ export class AuditSink {
     this.#logger = createLogger(config.logging);
     this.file = resolve(config.audit.file ?? join(process.env.AUDIT_STORAGE_DIR ?? "data", "gateway.jsonl"));
     this.initializeFile();
-    try { if (!this.#degraded) { this.#writer = acquireAuditWriter(this.file); if(this.fileOperations===defaultFileOperations){this.fileOperations.close(this.#fd!);this.#fd=this.fileOperations.open(this.file);} } } catch { this.markDegraded("open"); }
+    try { if (!this.#degraded) { this.#writer = acquireAuditWriter(this.file); if(this.fileOperations===defaultFileOperations){this.fileOperations.close(this.#fd!);this.#fd=this.fileOperations.open(this.file);this.#rawStamp=this.rawStamp();} } } catch { this.markDegraded("open"); }
   }
 
   get events(): readonly AuditEvent[] {
@@ -109,9 +112,13 @@ export class AuditSink {
   }
 
   get degraded(): boolean {
-    return this.#closed || this.#degraded || this.#writer?.journal.degraded === true || this.#console?.journal.degraded === true || this.#console?.storageReliable === false;
+    if(this.#writer&&this.fileOperations===defaultFileOperations&&!this.materialAvailable())this.#degraded=true;
+    return this.#closed || this.#degraded || this.#writer?.journal.degraded === true || this.#console?.journal.degraded === true || (this.#console!==undefined&&!this.#console.materialAvailable()) || this.#console?.storageReliable === false;
   }
 
+  materialAvailable():boolean {
+    try {const keyFile=this.file+'.key';return Boolean(this.#writer?.journal.materialAvailable()&&!(statSync(keyFile).mode&0o077)&&statSync(keyFile).size<=128&&this.#writer.journal.keyMatches(Buffer.from(readFileSync(keyFile,'utf8').trim(),'hex'))&&this.rawStamp()===this.#writer.rawStamp&&existsSync(this.file+'.managed'));}catch{return false;}
+  }
   get closed(): boolean {
     return this.#closed;
   }
@@ -179,7 +186,7 @@ export class AuditSink {
     const remove=new Set(this.#writer.journal.retentionCandidates(cutoff).filter(r=>r.action==='audit.event').map(r=>r.target));
     const raw=evidence.events.filter(e=>!remove.has(digest(JSON.stringify(e)))).map(e=>JSON.stringify(e)+'\n').join('');
     this.fileOperations.close(this.#fd!);this.#fd=undefined;
-    try {const count=this.#writer.journal.compact(cutoff,actor,raw);this.#fd=this.fileOperations.open(this.file);return count;}
+    try {const count=this.#writer.journal.compact(cutoff,actor,raw);this.#fd=this.fileOperations.open(this.file);this.#rawStamp=this.rawStamp();this.#writer.rawStamp=this.#rawStamp;return count;}
     catch {this.markDegraded('write');throw new Error('Retention completion is uncertain.');}
   }
   private initializeFile(): void {
@@ -206,6 +213,7 @@ export class AuditSink {
         offset += written;
       }
       this.fileOperations.sync?.(fd);
+      if(this.fileOperations===defaultFileOperations){this.#rawStamp=this.rawStamp();if(this.#writer)this.#writer.rawStamp=this.#rawStamp;}
     } catch {
       this.markDegraded("write");
     }
@@ -240,7 +248,7 @@ export function referenceIssuedAuditEvent(input: ReferenceIssuedAuditEvent, sink
   return audit(input, sink) as ReferenceIssuedAuditEvent;
 }
 
-interface SharedAuditWriter {journal:ConsoleJournal;refs:number;lock:string;}
+interface SharedAuditWriter {rawStamp:string;journal:ConsoleJournal;refs:number;lock:string;}
 const writers=new Map<string,SharedAuditWriter>();
 function acquireAuditWriter(file:string):SharedAuditWriter {
   const existing=writers.get(file);if(existing){existing.refs++;return existing;}
@@ -256,7 +264,7 @@ function acquireAuditWriter(file:string):SharedAuditWriter {
     const raw=readFileSync(file,'utf8');const lines=raw.trim().split('\n').filter(Boolean);
     if(!existsSync(marker)) {journal.start('host','audit.initialize','instance');for(const line of lines){JSON.parse(line);journal.append({id:randomSecret(),phase:'complete',actor:'system',action:'audit.event',target:digest(JSON.stringify(JSON.parse(line))),time:Date.now(),revision:0,result:'success'});}atomicFile(marker,'1');}
     else if(!journal.verifyEventDigests(lines.map(line=>digest(JSON.stringify(JSON.parse(line))))))throw new Error('Audit event integrity failure');
-    const writer={journal,refs:1,lock};writers.set(file,writer);return writer;
+    const stamp=statSync(file);const writer={journal,refs:1,lock,rawStamp:[stamp.size,stamp.mtimeMs,stamp.ctimeMs,stamp.ino].join(":")};writers.set(file,writer);return writer;
   } catch(error){rmSync(lock,{force:true});throw error;}
 }
 function releaseAuditWriter(file:string,writer:SharedAuditWriter):void {writer.refs--;if(writer.refs<=0){writers.delete(file);rmSync(writer.lock,{force:true});}}

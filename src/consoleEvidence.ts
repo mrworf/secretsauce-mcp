@@ -30,7 +30,7 @@ export class ConsoleEvidence {
   });
   for(const [index,event] of (gateway?.events??[]).entries()){
    const e=event as unknown as Record<string,unknown>;
-   entries.push({id:'gateway:'+index,time:Date.parse(String(e.timestamp??e.request_timestamp)),actor:String(e.subject??''),service:String(e.service??''),action:String(e.tool??e.type),result:String(e.outcome??e.policy_decision??'success'),...(typeof e.request_id==='string'?{requestId:e.request_id}:{}),revision:typeof e.admitted_revision==='number'?e.admitted_revision:0,reason:String(e.error_message??e.error_code??e.matched_policy_rule??e.reason??''),provenance:'local'});
+   entries.push({id:'gateway:'+index,time:Date.parse(String(e.timestamp??e.request_timestamp)),actor:String(e.subject??''),service:String(e.service??''),action:String(e.tool??e.type),result:String(e.error_code?(e.policy_decision==='deny'?'deny':'error'):e.outcome??e.policy_decision??'success'),...(typeof e.request_id==='string'?{requestId:e.request_id}:{}),revision:typeof e.admitted_revision==='number'?e.admitted_revision:0,reason:String(e.error_message??e.error_code??e.matched_policy_rule??e.reason??''),provenance:'local'});
   }
   if(entries.length>100000||performance.now()>deadline)throw new EvidenceError('Evidence scan reached its bounded work limit. Narrow retained storage with reviewed retention.');
   return {entries:entries.sort((a,b)=>b.time-a.time),verified};

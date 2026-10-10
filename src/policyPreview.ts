@@ -8,7 +8,9 @@ import type { ConsoleSession } from './consoleStore.js';
 const schema = z.object({ id: z.string().min(1).max(1024), identity: z.string().min(1).max(1024), source: z.enum(['applied','draft']),
   destination: z.string().min(1).max(1024).optional(), method: z.string().regex(/^[A-Za-z]{1,24}$/), path: z.string().max(8192).optional(), url: z.string().max(8192).optional(),
 }).strict().refine(v => (v.path === undefined) !== (v.url === undefined));
+export const DEFAULT_PREVIEW_WORKER_BOUNDS={maxInflight:4,timeoutMs:1000,memoryMiB:32};
 let occupied = 0;
+export function policyPreviewUsage(){return occupied;}
 export async function previewPolicy(manager: ConsoleServices, session: ConsoleSession, input: unknown) {
   manager.actor(session);
   const parsed = schema.safeParse(input);
@@ -27,12 +29,13 @@ export async function previewPolicy(manager: ConsoleServices, session: ConsoleSe
   const eligible = () => { const local=manager.store.state.users.find(u=>u.id===data.identity), external=manager.store.state.people?.external.find(e=>e.id===data.identity);
     const current=Object.hasOwn(manager.state.services,data.id)?manager.state.services[data.id]:undefined;
     return Boolean((local?.active && local.enrolled!==false && local.role!=='Auditor' || external?.active) && current?.lifecycle==='Active' && current.assignments.includes(data.identity)); };
-  if (occupied>=4) throw new ServiceManagementError('preview: Busy. Try again after current previews finish.');
+  const bounds={...(manager.runtimeConfig.workerBounds?.preview??DEFAULT_PREVIEW_WORKER_BOUNDS)};
+  if (occupied>=bounds.maxInflight) throw new ServiceManagementError('preview: Busy. Try again after current previews finish.');
   occupied++;
   try {
     const result = await new Promise<Record<string,unknown>>((resolve,reject)=>{
-      const worker=new Worker(new URL('../dist/policyPreviewWorker.js',import.meta.url),{workerData:{service,input:data},resourceLimits:{maxOldGenerationSizeMb:32,maxYoungGenerationSizeMb:8}});
-      const timer=setTimeout(async()=>{await worker.terminate();reject(new ServiceManagementError('preview: Regex evaluation exceeded its bounded deadline. Shorten target or review expressions.'));},1000);
+      const worker=new Worker(new URL('../dist/policyPreviewWorker.js',import.meta.url),{workerData:{service,input:data},resourceLimits:{maxOldGenerationSizeMb:bounds.memoryMiB,maxYoungGenerationSizeMb:Math.min(8,bounds.memoryMiB)}});
+      const timer=setTimeout(async()=>{await worker.terminate();reject(new ServiceManagementError('preview: Regex evaluation exceeded its bounded deadline. Shorten target or review expressions.'));},bounds.timeoutMs);
       worker.once('message',async result=>{clearTimeout(timer);await worker.terminate();result.error?reject(new ServiceManagementError(result.error)):resolve(result);});
       worker.once('error',async()=>{clearTimeout(timer);await worker.terminate();reject(new ServiceManagementError('preview: Evaluation unavailable. Reload and retry.'));});
     });

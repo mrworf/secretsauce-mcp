@@ -21,17 +21,22 @@ export class LoginAttemptLimiter {
   private readonly accounts = new Map<string, Counter>();
   private readonly globalCounter: Counter;
 
-  constructor(private readonly limits: LoginAttemptLimits, private readonly now: () => number = () => Date.now()) {
+  constructor(private limits: LoginAttemptLimits, private readonly now: () => number = () => Date.now()) {
     this.globalCounter = this.newCounter(this.now());
   }
 
+  private loweredBelowUsage=false;
+  updateLimits(limits:LoginAttemptLimits){this.limits={...limits};this.loweredBelowUsage=this.sources.size>=limits.maxEntries||this.accounts.size>=limits.maxEntries;}
+  stats(){return {sources:this.sources.size,accounts:this.accounts.size,globalAttempts:this.globalCounter.count};}
   check(source: string, account: string): { allowed: true } | { allowed: false; retryAfterMs: number } {
     const now = this.now();
     this.sweep(now);
+    if(this.loweredBelowUsage){if((!this.sources.has(source)&&this.sources.size>=this.limits.maxEntries)||(!this.accounts.has(account)&&this.accounts.size>=this.limits.maxEntries))return {allowed:false,retryAfterMs:this.limits.windowMs+this.limits.maxLockoutMs};if(this.sources.size<this.limits.maxEntries&&this.accounts.size<this.limits.maxEntries)this.loweredBelowUsage=false;}
     const blockedUntil = Math.max(
       this.sources.get(source)?.lockoutUntil ?? 0,
       this.accounts.get(account)?.lockoutUntil ?? 0,
       this.globalCounter.lockoutUntil,
+      ...[[this.sources.get(source),this.limits.perSource],[this.accounts.get(account),this.limits.perAccount],[this.globalCounter,this.limits.global]].map(([counter,threshold])=>{const c=counter as Counter|undefined;return c&&c.count>=Number(threshold)?c.windowStartedAt+this.limits.windowMs:0;}),
     );
     return blockedUntil > now ? { allowed: false, retryAfterMs: blockedUntil - now } : { allowed: true };
   }
@@ -51,6 +56,7 @@ export class LoginAttemptLimiter {
   private getCounter(store: Map<string, Counter>, key: string, now: number): Counter {
     const existing = store.get(key);
     if (existing !== undefined) return existing;
+    if(this.loweredBelowUsage&&store.size>=this.limits.maxEntries)return this.newCounter(now);
     if (store.size >= this.limits.maxEntries) {
       const oldest = [...store.entries()].sort((left, right) => left[1].lastSeenAt - right[1].lastSeenAt)[0];
       if (oldest !== undefined) store.delete(oldest[0]);

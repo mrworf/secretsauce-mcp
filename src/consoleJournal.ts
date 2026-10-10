@@ -18,6 +18,8 @@ export interface OperationRecord {
 }
 export class ConsoleJournal {
     #head = '';
+    #stamp = '';
+    private diskStamp():string {const value=statSync(this.path);return [value.size,value.mtimeMs,value.ctimeMs,value.ino].join(':');}
     #records: OperationRecord[] = [];
     degraded = false;
     readonly path: string;
@@ -86,6 +88,7 @@ export class ConsoleJournal {
             atomicFile(this.path + '.head', mac);
             this.#head = mac;
             this.#records.push(record);
+            this.#stamp=this.diskStamp();
         }
         catch {
             this.degraded = true;
@@ -101,6 +104,8 @@ export class ConsoleJournal {
     status(id: string): 'unknown' | 'uncertain' | 'success' | 'failed' { const list = this.#records.filter(r => r.id === id); const done = list.findLast(r => r.phase === 'complete'); return done?.result ?? (list.length ? 'uncertain' : 'unknown'); }
     verifyEventDigests(values: string[]): boolean { return JSON.stringify(this.#records.filter(r => r.action === 'audit.event').map(r => r.target)) === JSON.stringify(values); }
     entries(): OperationRecord[] { return this.#records.map(r => ({ ...r })); }
+    materialAvailable():boolean {try {return !this.degraded&&this.diskStamp()===this.#stamp&&statSync(this.path+'.head').size<=128&&readFileSync(this.path+'.head','utf8')===this.#head;}catch{return false;}}
+    keyMatches(key:Buffer):boolean{return this.key.equals(key);}
     verify(): boolean {
         try {
             if (this.degraded || statSync(this.path).size > 64 * 1024 * 1024) return false;
@@ -135,7 +140,7 @@ export class ConsoleJournal {
         // An authenticated, fsynced redo record makes all chain/checkpoint/raw replacements recoverable.
         const data = JSON.stringify({chain,head,...(gatewayRaw === undefined ? {} : {gatewayRaw})});
         const mac = createHmac('sha256',this.key).update(data).digest('hex');
-        try { atomicFile(this.path+'.retention',JSON.stringify({data,mac})); this.fault?.('retention-prepared'); this.recoverRetention(); this.#records=kept;this.#head=head; }
+        try { atomicFile(this.path+'.retention',JSON.stringify({data,mac})); this.fault?.('retention-prepared'); this.recoverRetention(); this.#records=kept;this.#head=head;this.#stamp=this.diskStamp(); }
         catch { this.degraded=true;throw new Error('Retention completion is uncertain; repair host storage and restart.'); }
         return candidates.length;
     }

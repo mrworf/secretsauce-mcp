@@ -38,6 +38,7 @@ export interface ConsoleSession {
     };
 }
 export interface ConsoleState {
+    operating?: import("./consoleOperations.js").OperatingState;
     retention?: import("./consoleEvidence.js").RetentionState;
     v: 1;
     id: string;
@@ -93,7 +94,7 @@ export class ConsoleStore {
     readonly key: Buffer;
     #lock: string;
     #closed = false;
-    constructor(readonly directory: string, keyFile: string, options: {
+    constructor(readonly directory: string, readonly keyFile: string, options: {
         config?: GatewayConfig;
         faultAudit?: () => void;
         faultState?: (phase?: string) => void;
@@ -138,6 +139,7 @@ export class ConsoleStore {
         }
     }
     private faultState: ((phase?: string) => void) | undefined;
+    materialAvailable():boolean {try{return this.key.equals(readConsoleKey(this.keyFile))&&existsSync(this.file)&&!(statSync(this.file).mode&0o077)&&existsSync(join(this.directory,'managed'))&&this.journal.materialAvailable();}catch{return false;}}
     save(next: ConsoleState): void {
         if (!this.storageReliable)
             throw new Error('Identity storage unavailable.');
@@ -151,7 +153,7 @@ export class ConsoleStore {
         }
     }
     commit(actor: string, action: string, target: string, change: (state: ConsoleState) => void, details?: ManagementDetails): string {
-        if (this.externalAudit?.degraded)
+        if (this.externalAudit?.degraded || !this.materialAvailable())
             throw new Error('Durable audit unavailable');
         const secrets = [...Object.values(this.state.config?.services ?? {}).flatMap(s => s.credentials.map(c => c.secret)), ...Object.values(this.state.managed?.services ?? {}).flatMap(s => Object.values(s.values).map(v => v.value))].filter(Boolean);
         const safeDetails = details ? Object.fromEntries(Object.entries(details).map(([key,value]) => [key, typeof value === 'string' ? sanitizeAuditText(value, secrets) : value])) : undefined;
@@ -284,7 +286,7 @@ export class ConsoleStore {
         const user = this.state.users.find(u => u.email === email.toLowerCase());
         const counter = this.verify(user, password, code, now);
         const token = randomSecret(), csrf = randomSecret();
-        const restricted = this.journal.degraded || this.externalAudit?.degraded === true;
+        const restricted = this.journal.degraded || this.externalAudit?.degraded === true || !this.materialAvailable();
         const update = (s: ConsoleState) => {
             const target = s.users.find(u => u.id === user!.id)!;
             target.lastCounter = counter;
@@ -330,7 +332,7 @@ export class ConsoleStore {
     }
     requireSensitive(session: ConsoleSession): ConsoleUser {
         const user = this.authorize(session, 'own');
-        if (this.state.sessions.find(s => s.id === session.id)?.restricted || this.journal.degraded || this.externalAudit?.degraded === true || !this.storageReliable)
+        if (this.state.sessions.find(s => s.id === session.id)?.restricted || this.journal.degraded || this.externalAudit?.degraded === true || !this.storageReliable || !this.materialAvailable())
             throw new Error('Sensitive actions unavailable. Sign in again after host storage repair.');
         return user;
     }

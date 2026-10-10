@@ -28,8 +28,8 @@ Included: all M15 evidence/retention, limits/health, local browser and Docker op
 ## Slice index
 | Slice | Plan | Outcome | Dependencies | Status | Commit | Evidence |
 |---|---|---|---|---|---|---|
-|01|[slice01](milestone_15_plan_01_slice_01.md)|Scoped evidence and reviewed retention|existing M13/14|complete||evidence/qa/secretsauce-mcp/milestone15/|
-|02|[slice02](milestone_15_plan_01_slice_02.md)|Live limits and truthful health|01|pending||evidence/qa/secretsauce-mcp/milestone15/|
+|01|[slice01](milestone_15_plan_01_slice_01.md)|Scoped evidence and reviewed retention|existing M13/14|complete|4fe08593a055c1d88c5cfac48589295416973952|evidence/qa/secretsauce-mcp/milestone15/|
+|02|[slice02](milestone_15_plan_01_slice_02.md)|Live limits and truthful health|01|complete||evidence/qa/secretsauce-mcp/milestone15/|
 |03|[slice03](milestone_15_plan_01_slice_03.md)|Operating envelope and deployment verification|01,02|pending||evidence/platform/secretsauce-mcp/milestone15/|
 
 ## Cross-slice concerns

@@ -4,10 +4,18 @@
   "checks": [
     {
       "check": "Scoped filters, details, admitted revision, uncertain outcome, audited filtered export; keyboard320px",
-      "denialSeconds": 0.3738132840000001
+      "denialSeconds": 0.332827317
     },
     {
       "check": "365day default→scoped draft/review/deletion impact/apply; keyboard320px"
+    },
+    {
+      "check": "All39 limit fields have visible labels/effective human units; invalid combination preserves input, imported1001ms unchanged scoped review/apply, health pending backup/manual email, keyboard320px",
+      "fieldCount": 39
+    },
+    {
+      "check": "Keyboard user disable with explicit confirmation and recent password/freshTOTP; no safeguard bypass",
+      "disableSeconds": 0.35196812000000044
     },
     {
       "check": "Auditor evidence export/read-only retention; Member own evidence/no global export/settings"

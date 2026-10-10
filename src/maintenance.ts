@@ -4,8 +4,9 @@ export class MaintenanceRegistry {
   readonly #tasks = new Set<MaintenanceTask>();
   #timer: NodeJS.Timeout | undefined;
 
-  constructor(private readonly intervalMs: number) {}
+  constructor(private intervalMs: number) {}
 
+  updateInterval(intervalMs:number){if(!Number.isInteger(intervalMs)||intervalMs<1)throw new Error('Invalid maintenance interval');const running=this.#timer!==undefined;this.stop();this.intervalMs=intervalMs;if(running)this.start();}
   register(task: MaintenanceTask): void {
     this.#tasks.add(task);
   }

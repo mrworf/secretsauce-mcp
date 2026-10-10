@@ -56,6 +56,8 @@ export class OAuthClientMetadataFetcher {
     this.limiter = new InflightLimiter(maxInflight, maxInflightPerOrigin);
   }
 
+  updateLimits(total:number,perOrigin:number){this.limiter.updateLimits(total,perOrigin);}
+  stats(){return {...this.limiter.stats(),cached:this.cache.size,pending:this.pending.size};}
   async fetch(clientId: string): Promise<VerifiedClientMetadata | undefined> {
     const cached = this.cache.get(clientId);
     if (cached !== undefined) {

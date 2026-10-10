@@ -1,3 +1,4 @@
+import { GatewayError } from "./errors.js";
 import { createRequestId } from "./requestId.js";
 
 export interface DenialRecord {
@@ -13,13 +14,17 @@ export class DenialStore {
   private readonly records = new Map<string, DenialRecord & { expiresAt: number }>();
 
   constructor(
-    private readonly capacity = 1000,
-    private readonly ttlMs = 15 * 60_000,
+    private capacity = 1000,
+    private ttlMs = 15 * 60_000,
     private readonly now: () => number = () => Date.now(),
   ) {}
 
+  private loweredBelowUsage=false;
+  updateLimits(capacity:number,ttlMs:number){if(!Number.isInteger(capacity)||capacity<1||!Number.isInteger(ttlMs)||ttlMs<1)throw new Error('Invalid denial limits');this.capacity=capacity;this.ttlMs=ttlMs;this.loweredBelowUsage=this.records.size>=capacity;}
+  stats(){return {records:this.records.size};}
   record(input: Omit<DenialRecord, "request_id">, requestId = createRequestId()): DenialRecord {
     this.sweep(this.now());
+    if(this.loweredBelowUsage){if(this.records.size>=this.capacity)throw new GatewayError("capacity_exceeded","Denial record capacity reached; wait for expiry.");this.loweredBelowUsage=false;}
     if (this.records.size >= this.capacity) {
       const oldest = this.records.keys().next().value as string | undefined;
       if (oldest !== undefined) this.records.delete(oldest);

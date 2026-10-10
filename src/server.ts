@@ -16,6 +16,7 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { ConsoleStore, loadManagedConfig, normalizeManagedOAuthPath } from "./consoleStore.js";
 import { handleConsoleRequest, isConsoleRequest } from "./consoleHttp.js";
+import { bindConsoleOperations } from './consoleOperations.js';
 import { consoleEvidence } from './consoleEvidence.js';
 import { consoleNotifications } from './consoleNotifications.js';
 import { bindConsoleServices } from "./consoleServices.js";
@@ -43,13 +44,14 @@ export function createGatewayServer(
   if(options.consoleStore)normalizeManagedOAuthPath(config,options.consoleStore.directory);
   const runtime = options.runtime ?? new GatewayRuntime(config, { ...(options.auditSink === undefined ? {} : { auditSink: options.auditSink }) });
   const auditSink = runtime.auditSink;
-  if(options.consoleStore) { auditSink.bindConsole(options.consoleStore); let lastRetention=0;runtime.maintenance.register(now=>{if(now-lastRetention<3600000)return;lastRetention=now;try{consoleEvidence(options.consoleStore!).sweep();}catch{/* Fail closed; authenticated health exposes audit degradation. */}}); runtime.builtinOAuth.bindManaged(options.consoleStore); bindConsoleClients(options.consoleStore,runtime.builtinOAuth); const manager = bindConsoleServices(options.consoleStore, config); bindConsoleAuthentication(options.consoleStore,runtime.builtinOAuth); manager.invalidate = (service, subject) => runtime.capabilities.tokenBroker.revoke(service, subject); runtime.builtinOAuth.invalidateSubject = subject => { for (const service of Object.keys(manager.state.services)) manager.invalidate(service,subject); }; options.consoleStore.invalidateUser = subject => { runtime.builtinOAuth.revokeSubject(subject); for (const service of Object.keys(manager.state.services)) manager.invalidate(service, subject); const user=options.consoleStore!.state.users.find(u=>u.id===subject);if(user)void consoleNotifications(options.consoleStore!).send('security',user.email,'Account security or access changed. Previous sessions and client grants were revoked; contact your Owner if unexpected.').catch(()=>{}); }; config.managedAdmission = (subject, service) => manager.admit(subject, service); }
+  if(options.consoleStore) { auditSink.bindConsole(options.consoleStore); let lastRetention=0;runtime.maintenance.register(now=>{if(now-lastRetention<3600000)return;lastRetention=now;try{consoleEvidence(options.consoleStore!).sweep();}catch{/* Fail closed; authenticated health exposes audit degradation. */}}); runtime.builtinOAuth.bindManaged(options.consoleStore); bindConsoleClients(options.consoleStore,runtime.builtinOAuth); const manager = bindConsoleServices(options.consoleStore, config); bindConsoleOperations(options.consoleStore,runtime); bindConsoleAuthentication(options.consoleStore,runtime.builtinOAuth); manager.invalidate = (service, subject) => runtime.capabilities.tokenBroker.revoke(service, subject); runtime.builtinOAuth.invalidateSubject = subject => { for (const service of Object.keys(manager.state.services)) manager.invalidate(service,subject); }; options.consoleStore.invalidateUser = subject => { runtime.builtinOAuth.revokeSubject(subject); for (const service of Object.keys(manager.state.services)) manager.invalidate(service, subject); const user=options.consoleStore!.state.users.find(u=>u.id===subject);if(user)void consoleNotifications(options.consoleStore!).send('security',user.email,'Account security or access changed. Previous sessions and client grants were revoked; contact your Owner if unexpected.').catch(()=>{}); }; config.managedAdmission = (subject, service) => manager.admit(subject, service); }
   const server = createServer(async (request, response) => {
     if (options.consoleStore && isConsoleRequest(request)) { await handleConsoleRequest(options.consoleStore, request, response); return; }
     if (request.method === "GET" && request.url === "/health") {
       logger.debug("http.health", { method: request.method, path: "/health", service_count: Object.keys(config.services).length });
-      writeJson(response, auditSink.degraded ? 503 : 200, {
-        status: auditSink.degraded ? "not_ready" : "ready",
+      const degraded=auditSink.degraded||(options.consoleStore!==undefined&&!options.consoleStore.materialAvailable());
+      writeJson(response, degraded ? 503 : 200, {
+        status: degraded ? "not_ready" : "ready",
       });
       return;
     }

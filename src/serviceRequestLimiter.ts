@@ -5,10 +5,12 @@ export class ServiceRequestLimiter {
   private readonly overall: InflightLimiter;
   private readonly byService = new Map<string, number>();
 
-  constructor(maxTotal: number, maxPerSubject: number, private readonly maxPerService: number) {
+  constructor(maxTotal: number, maxPerSubject: number, private maxPerService: number) {
     this.overall = new InflightLimiter(maxTotal, maxPerSubject);
   }
 
+  updateLimits(total:number,subject:number,service:number):void {if(!Number.isInteger(service)||service<1||service>total)throw new Error('Invalid service limit');this.overall.updateLimits(total,subject);this.maxPerService=service;}
+  stats(){return {...this.overall.stats(),largestService:Math.max(0,...this.byService.values()),services:this.byService.size};}
   acquire(subject: string, service: string): (() => void) | undefined {
     const serviceCount = this.byService.get(service) ?? 0;
     if (serviceCount >= this.maxPerService) return undefined;

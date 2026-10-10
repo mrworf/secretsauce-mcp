@@ -325,6 +325,7 @@ export class TokenBroker {
     }
   }
 
+  largestSubjectUsage():number {const counts=new Map<string,number>();for(const r of [...this.recordsByHash.values(),...this.responseSecretsById.values()])counts.set(r.subject,(counts.get(r.subject)??0)+1);return Math.max(0,...counts.values());}
   stats(): { configured: number; responseSecrets: number; tokenValues: number } {
     return {
       configured: this.recordsByHash.size,

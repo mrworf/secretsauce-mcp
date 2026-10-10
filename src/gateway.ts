@@ -91,6 +91,7 @@ export async function executeServiceRequest(
     }, requestId);
     audit({
       type: "service_request",
+      ...(admittedRevision === undefined ? {} : {admitted_revision:admittedRevision}),
       request_id: denial.request_id,
       subject: auth.subject,
       service: service.id,
@@ -132,6 +133,7 @@ export async function executeServiceRequest(
     if (!(error instanceof GatewayError) || error.code !== "capacity_exceeded") throw error;
     audit({
       type: "service_request",
+      ...(admittedRevision === undefined ? {} : {admitted_revision:admittedRevision}),
       request_id: requestId,
       subject: auth.subject,
       service: service.id,

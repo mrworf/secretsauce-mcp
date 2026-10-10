@@ -33,6 +33,7 @@ interface Job {
 interface PoolWorker {
   worker: Worker;
   job: Job | undefined;
+  recycling?: boolean;
 }
 
 export class SecretScanBusyError extends Error {
@@ -53,12 +54,25 @@ export class SecretScannerPool {
     for (let index = 0; index < config.workers; index += 1) this.workers.push(this.createWorker());
   }
 
+  prepareLimits(config:Omit<SecretScannerPoolConfig,'secretlintDebug'>):{publish:()=>void;abort:()=>Promise<void>} {
+    for(const [key,value] of Object.entries(config))if(!Number.isInteger(value)||value<1)throw new Error('Invalid scanner limit');
+    if(config.workers>32||config.subjectActiveMax>config.workers||config.subjectQueueMax>config.queueMax)throw new Error('Invalid scanner limits');
+    const prepared:PoolWorker[]=[];
+    try{for(let i=this.workers.length;i<config.workers;i++)prepared.push(this.createWorker());}catch(error){for(const entry of prepared)void entry.worker.terminate();throw error;}
+    let done=false;return {publish:()=>{if(done)return;done=true;Object.assign(this.config,config);this.workers.push(...prepared);this.retireIdle();this.dispatch();},abort:async()=>{if(done)return;done=true;await Promise.all(prepared.map(w=>w.worker.terminate()));}};
+  }
+  updateLimits(config:Omit<SecretScannerPoolConfig,'secretlintDebug'>){this.prepareLimits(config).publish();}
+  private retireIdle():void {
+    let excess=this.workers.filter(w=>!w.recycling).length-this.config.workers;
+    for(const entry of this.workers){if(excess<=0)return;if(entry.job||entry.recycling)continue;entry.recycling=true;excess--;void entry.worker.terminate().finally(()=>{const index=this.workers.indexOf(entry);if(index>=0)this.workers.splice(index,1);if(!this.closed){while(this.workers.length<this.config.workers)this.workers.push(this.createWorker());this.dispatch();}});}
+  }
+  private canAdmit():boolean{return this.workers.filter(w=>w.job!==undefined||w.recycling).length<this.config.workers;}
   async scan(subject: string, text: string, rules: SecretlintRuleConfig[], timeoutMs: number): Promise<SecretFinding[]> {
     if (this.closed) throw new SecretScanBusyError("Secret scanner is closed");
     const subjectActive = this.activeBySubject.get(subject) ?? 0;
     const subjectQueued = this.queue.filter((job) => job.subject === subject).length;
-    const free = this.workers.find((entry) => entry.job === undefined);
-    const canStart = free !== undefined && subjectActive < this.config.subjectActiveMax;
+    const free = this.workers.find((entry) => entry.job === undefined && !entry.recycling);
+    const canStart = this.canAdmit() && free !== undefined && subjectActive < this.config.subjectActiveMax;
     if (!canStart && (this.queue.length >= this.config.queueMax || subjectQueued >= this.config.subjectQueueMax)) {
       throw new SecretScanBusyError();
     }
@@ -85,9 +99,10 @@ export class SecretScannerPool {
     await Promise.all(this.workers.map((entry) => entry.worker.terminate()));
   }
 
-  stats(): { workers: number; active: number; queued: number; activeSubjects: number } {
+  stats(): { workers: number; physicalWorkers?: number; closed?: boolean; active: number; queued: number; activeSubjects: number } {
     return {
-      workers: this.workers.length,
+      workers: this.config.workers,
+      physicalWorkers:this.workers.length,closed:this.closed,
       active: this.workers.filter((entry) => entry.job !== undefined).length,
       queued: this.queue.length,
       activeSubjects: this.activeBySubject.size,
@@ -129,7 +144,7 @@ export class SecretScannerPool {
 
   private finish(entry: PoolWorker, error?: Error, findings?: SecretFinding[]): void {
     const job = entry.job;
-    if (!job) return;
+    if (!job || entry.recycling) return;
     if (job.scanTimer) clearTimeout(job.scanTimer);
     entry.job = undefined;
     this.decrementSubject(job.subject);
@@ -139,17 +154,15 @@ export class SecretScannerPool {
   }
 
   private recycle(entry: PoolWorker, error: Error): void {
-    const index = this.workers.indexOf(entry);
-    const job = entry.job;
-    if (job?.scanTimer) clearTimeout(job.scanTimer);
-    if (job) {
-      entry.job = undefined;
-      this.decrementSubject(job.subject);
-      job.reject(error);
-    }
-    void entry.worker.terminate();
-    if (!this.closed) this.workers[index] = this.createWorker();
-    this.dispatch();
+    if(entry.recycling)return;entry.recycling=true;
+    const job=entry.job;if(job?.scanTimer)clearTimeout(job.scanTimer);
+    // A timed-out worker still occupies capacity until its process has terminated.
+    void entry.worker.terminate().finally(()=>{
+      if(job){entry.job=undefined;this.decrementSubject(job.subject);job.reject(error);}
+      const index=this.workers.indexOf(entry);if(index>=0)this.workers.splice(index,1);
+      while(!this.closed&&this.workers.length<this.config.workers)this.workers.push(this.createWorker());
+      this.dispatch();
+    });
   }
 
   private decrementSubject(subject: string): void {
@@ -159,8 +172,10 @@ export class SecretScannerPool {
   }
 
   private dispatch(): void {
+    this.retireIdle();
     for (const entry of this.workers) {
-      if (entry.job) continue;
+      if(!this.canAdmit())return;
+      if (entry.job||entry.recycling) continue;
       const index = this.queue.findIndex((job) => (this.activeBySubject.get(job.subject) ?? 0) < this.config.subjectActiveMax);
       if (index < 0) return;
       const [job] = this.queue.splice(index, 1);

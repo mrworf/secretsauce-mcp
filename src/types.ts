@@ -1,4 +1,8 @@
+export interface WorkerBounds {maxInflight:number;timeoutMs:number;memoryMiB:number;}
+export interface SensitiveWorkerBounds extends WorkerBounds {maxNames:number;maxCandidateLength:number;}
 export interface GatewayConfig {
+  scannerPool?: Omit<import("./secretScannerPool.js").SecretScannerPoolConfig,"secretlintDebug">;
+  workerBounds?: {preview:WorkerBounds;sensitiveNames:SensitiveWorkerBounds};
   responseProtection?: import("./consoleProtection.js").EffectiveProtection;
   managedAdmission?: (subject: string, service: string) => void;
   admittedRevision?: number;

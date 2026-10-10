@@ -1034,7 +1034,7 @@ function loadRefreshState(config: GatewayConfig): BuiltinOAuthState {
   } catch {
     throw new Error("Invalid built-in OAuth refresh state: expected valid JSON");
   }
-  const persisted = validatePersistedRefreshState(parsed, config.limits.maxRefreshTokenRecords);
+  const persisted = validatePersistedRefreshState(parsed, Math.max(config.limits.maxRefreshTokenRecords,1000000));
   const state = emptyOAuthState();
   for (const grant of persisted.refreshGrants) state.refreshGrants.set(grant.id, { ...grant, scopes: [...grant.scopes] });
   for (const record of persisted.refreshTokens) state.refreshTokens.set(record.hash, { grantId: record.grantId, status: record.status });

@@ -1,5 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import QRCode from 'qrcode';
+import { consoleOperations,OperatingError } from './consoleOperations.js';
 import { consoleEvidence, EvidenceError } from './consoleEvidence.js';
 import { consoleAuthentication, AuthenticationSettingsError } from './consoleAuthentication.js';
 import { connectedClients, revokeClient, ClientManagementError } from './consoleClients.js';
@@ -49,6 +50,7 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
             reply(200, { initialized: store.state.initialized, ...(!store.state.initialized ? { origin: store.state.origin } : {}), ...(session && user ? { csrf: session.csrf, user: { id: user.id, email: user.email, role: user.role }, name: store.state.name, degraded: store.journal.degraded || store.externalAudit?.degraded === true, restricted: session.restricted, sessions: store.ownSessions(session), mfa: 'Authenticator app enrolled', expires: Math.min(session.created + 43200000, session.lastSeen + 1800000) } : {}) });
             return;
         }
+        if(request.method==='GET'&&(path==='/console/api/limits'||path==='/console/api/health')){if(!session){reply(401,{message:'Sign in again.'});return;}reply(200,path==='/console/api/limits'?consoleOperations(store).read(session):consoleOperations(store).health(session));return;}
         if(request.method==='GET'&&path==='/console/api/authentication'){if(!session){reply(401,{message:'Sign in again.'});return;}reply(200,consoleAuthentication(store).read(session));return;}
         if(request.method==='GET'&&path==='/console/api/clients'){if(!session){reply(401,{message:'Sign in again.'});return;}reply(200,connectedClients(store,session));return;}
         if(request.method==='GET'&&path==='/console/api/notifications'){if(!session){reply(401,{message:'Sign in again.'});return;}reply(200,consoleNotifications(store).read(session));return;}
@@ -141,6 +143,9 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
             reply(403, { message: 'Reload this page before submitting.' });
             return;
         }
+        if(path==='/console/api/limits/save'){reply(200,consoleOperations(store).save(session,data));return;}
+        if(path==='/console/api/limits/review'){reply(200,consoleOperations(store).review(session,data));return;}
+        if(path==='/console/api/limits/apply'){reply(200,consoleOperations(store).apply(session,data));return;}
         if(path==='/console/api/activity/detail'){reply(200,consoleEvidence(store).detail(session,data));return;}
         if(path==='/console/api/evidence/export'){reply(200,consoleEvidence(store).export(session,data));return;}
         if(path==='/console/api/retention/save'){reply(200,consoleEvidence(store).saveRetention(session,data));return;}
@@ -210,6 +215,7 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
         reply(404, { message: 'Not found.' });
     }
     catch (error) {
+        if (error instanceof OperatingError) {reply(400,{message:error.message});return;}
         if (error instanceof EvidenceError) {reply(400,{message:error.message});return;}
         if (error instanceof AuthenticationSettingsError) {reply(400,{message:error.message});return;}
         if (error instanceof ClientManagementError) {reply(400,{message:error.message});return;}

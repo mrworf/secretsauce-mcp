@@ -1,0 +1,38 @@
+schema_version: 1
+workflow: delivery-planning
+product_id: secretsauce-mcp
+status: blocked_by_definition
+source:
+  mode: PRODUCT_BUILD
+  type: finalized-prd-fallback-candidate
+  path: docs/web-console-prd.md
+  revision: sha256:cb8d09474431d3bdd082466beac07163051bd2cb00639433f8a87bf85b46c3d8
+  repository_commit: 5128ac3b4cdf1a1a9f5af1d6f6d96d1dea0885f2
+planning:
+  repository_commit: null
+packet_revision: null
+readiness:
+  status: not_started
+  reason: No eligible complete packet
+blocker:
+  id: DEFINITION-INCOMPLETE
+  class: DEFINITION
+  summary: The finalized-PRD fallback is ineligible because its explicit
+    delivery-planning boundary remains unmet. UX direction approval and
+    canonical UX synthesis are outstanding, followed by full Architecture and
+    Security reviews. No milestone packet was generated or changed.
+  result: workflow/delivery-planning/results/compiler.yaml
+  decision_ids:
+    - UX-DESIGN-001
+  completion_evidence: Committed current
+    workflow/definition/definition-package.yaml with status
+    ready_for_delivery_planning
+next:
+  workflow: product-definition-orchestrator
+  action: RESUME
+  state: workflow/definition/state.yaml
+  first_step: Resolve UX-DESIGN-001 against the existing UX proposal; then finish
+    canonical UX and full architecture/security review.
+resume:
+  stage: compilation
+  state: workflow/delivery-planning/state.yaml

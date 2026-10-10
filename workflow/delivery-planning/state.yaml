@@ -1,0 +1,46 @@
+schema_version: 1
+workflow: delivery-planning
+product_id: secretsauce-mcp
+status: blocked_by_definition
+transaction:
+  parent_commit: 7a102a4787585119130f9f00329d13cedeed8993
+  repository_commit: null
+  pre_existing_dirty_paths:
+    - test-results/
+  owned_paths:
+    - workflow/delivery-planning/
+source:
+  mode: PRODUCT_BUILD
+  type: finalized-prd-fallback-candidate
+  path: docs/web-console-prd.md
+  revision: sha256:cb8d09474431d3bdd082466beac07163051bd2cb00639433f8a87bf85b46c3d8
+  repository_commit: 5128ac3b4cdf1a1a9f5af1d6f6d96d1dea0885f2
+stages:
+  compilation:
+    status: BLOCKED_BY_DEFINITION
+    result: workflow/delivery-planning/results/compiler.yaml
+  readiness:
+    status: not_started
+blockers:
+  - id: UX-DESIGN-001
+    class: DEFINITION
+    summary: Explicitly approve the proposed UX direction or request concrete
+      revisions, then complete canonical UX synthesis in Product Definition.
+    affected_milestones: []
+    source: workflow/definition/results/ux.yaml
+  - id: DEFINITION-REVIEWS-PENDING
+    class: DEFINITION
+    summary: Complete full Architecture and Security reviews after approved
+      canonical UX, resolve any resulting blocking findings, and issue a current
+      committed definition-package.yaml with status ready_for_delivery_planning.
+    affected_milestones: []
+    source: workflow/definition/state.yaml
+corrections: []
+resume:
+  stage: compilation
+  prerequisite: Committed definition package with status ready_for_delivery_planning
+  next_workflow: product-definition-orchestrator
+  action: RESUME
+handoff:
+  status: blocked_by_definition
+  path: workflow/delivery-planning/handoff.yaml

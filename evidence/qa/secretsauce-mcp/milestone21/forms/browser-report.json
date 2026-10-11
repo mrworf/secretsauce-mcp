@@ -1,0 +1,7 @@
+{
+  "result": "PASS",
+  "checks": [
+    "Friendly catalog mode, pattern name/expression/exclusion, name regex and allow rows persist exact values; unusual nested options preserved; invalid regex rejected without draft.",
+    "Named method/host/path rows, priority, scanner disabled-rule checklist and binary scan/unlimited override persist without JSON."
+  ]
+}

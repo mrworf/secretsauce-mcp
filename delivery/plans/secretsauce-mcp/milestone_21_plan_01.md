@@ -12,8 +12,8 @@ Existing encrypted drafts, bounded schemas, importer and reviews remain authorit
 ## Slice index
 | Slice | Plan | Outcome | Dependencies | Status | Commit |
 | --- | --- | --- | --- | --- | --- |
-| 01 | milestone_21_plan_01_slice_01.md | Guided lossless import | M20 | complete | pending SHA | |
-| 02 | milestone_21_plan_01_slice_02.md | Catalog and policy friendly editors | 01 | pending | |
+| 01 | milestone_21_plan_01_slice_01.md | Guided lossless import | M20 | complete | a2f42ab | |
+| 02 | milestone_21_plan_01_slice_02.md | Catalog and policy friendly editors | 01 | complete | pending SHA | |
 | 03 | milestone_21_plan_01_slice_03.md | Remaining capability summaries and browser acceptance | 02 | pending | |
 
 ## Cross-slice concerns

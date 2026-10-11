@@ -21,3 +21,6 @@ positive nested types, regex literals, ordering and inheritance; negative invali
 
 ## Acceptance and commit boundary
 Deliver complete stated behavior with tests, documentation and evidence. One reviewable commit for this slice; exclude test-results and root status. Status pending.
+
+## Delivered evidence
+Secretlint rules/status, Extend/Replace, custom pattern/name/exclusion/allow rows, sensitive-name catalog and bounded typed nested options now edit the same draft. Policy method/host/path rows, source reordering, priority, disabled-rule checklist and binary controls preserve exact semantics. Optional expert JSON remains available. Actual HTTPS forms harness verifies invalid regex rejection, exact persisted regex/nested options (including boolean/number edits), policy overrides, keyboard and 320px. 24 targeted advanced/migration tests and build pass. Evidence: evidence/qa/secretsauce-mcp/milestone21/forms/browser-report.json. Complete; SHA in next checkpoint.

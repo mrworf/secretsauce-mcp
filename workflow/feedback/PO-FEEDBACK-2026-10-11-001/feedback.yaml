@@ -1,0 +1,223 @@
+schema_version: 1
+feedback_id: PO-FEEDBACK-2026-10-11-001
+product_id: secretsauce-mcp
+source:
+  type: product_owner
+  captured_from: prompt
+  references: []
+  original_prompt: 'There''s a number of things we need to fix, here''s the list in no particular order:
+
+    - Password cannot be reset by admin, nor can 2FA be reset
+
+    - The active tab isn''t highlighted on the menu bar
+
+    - The settings page is too long, you need to split it into sections, probably sub tabs (I don''t want
+    a long scrolling page with all settings, group them)
+
+    - The settings are too much JSON. The reason for a web ux is to hide the technical babble behind userfriendly
+    UX, this isn''t the case here
+
+    - Odd "Delete X on apply" behaviors. This is a far cry from best practices
+
+    - We need support to import the old YAML configuration into this new system
+
+
+    Use the $product-owner-debrief for this feedback'
+  clarifications:
+  - question: Which console roles should be able to initiate password and Authenticator MFA resets for
+      other users?
+    selected_answer: Owner and Administrator (Recommended)
+    selected_meaning: Both roles need reset controls; detailed safeguards and target restrictions remain
+      for downstream review.
+    item_ids:
+    - PO-FB-002
+    - PO-FB-004
+  - question: For “Delete X on apply,” what change are you directing?
+    selected_answer: Separate delete action (Recommended)
+    selected_meaning: Deletion should be an explicit, confirmed action independent of applying configuration
+      edits.
+    item_ids:
+    - PO-FB-013
+status: CONFIRMED
+transaction:
+  parent_commit: 8ce4a80413f21f472af8ece8906d1b64eea3aee6
+  repository_commit: null
+items:
+- id: PO-FB-001
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: Password cannot be reset by admin, nor can 2FA be reset
+  normalized: The Product Owner could not reset passwords through admin controls.
+  scope:
+  - identity-password-reset
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-002
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: Password cannot be reset by admin, nor can 2FA be reset
+  normalized: Owner and Administrator can initiate password resets for other users.
+  scope:
+  - identity-password-reset
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-003
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: Password cannot be reset by admin, nor can 2FA be reset
+  normalized: The Product Owner could not reset Authenticator MFA through admin controls.
+  scope:
+  - identity-mfa-reset
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-004
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: Password cannot be reset by admin, nor can 2FA be reset
+  normalized: Owner and Administrator can initiate Authenticator MFA resets for other users.
+  scope:
+  - identity-mfa-reset
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-005
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: The active tab isn't highlighted on the menu bar
+  normalized: The active tab is not highlighted in the menu bar.
+  scope:
+  - navigation
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-006
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: The active tab isn't highlighted on the menu bar
+  normalized: Highlight the active tab in the menu bar.
+  scope:
+  - navigation
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-007
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: The settings page is too long, you need to split it into sections, probably sub tabs (I don't
+    want a long scrolling page with all settings, group them)
+  normalized: The Settings page is too long.
+  scope:
+  - settings-organization
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-008
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: The settings page is too long, you need to split it into sections, probably sub tabs (I don't
+    want a long scrolling page with all settings, group them)
+  normalized: Group settings into focused sections instead of one long scrolling page containing all settings.
+  scope:
+  - settings-organization
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-009
+  classification: IDEA_OR_QUESTION
+  confirmation: CONFIRMED
+  original: The settings page is too long, you need to split it into sections, probably sub tabs (I don't
+    want a long scrolling page with all settings, group them)
+  normalized: Sub tabs are a possible way to organize Settings sections.
+  scope:
+  - settings-organization
+  tags: []
+  authority:
+    product_intent: exploratory
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-010
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: The settings are too much JSON. The reason for a web ux is to hide the technical babble behind
+    userfriendly UX, this isn't the case here
+  normalized: Settings expose too much JSON and technical configuration detail.
+  scope:
+  - configuration-ux
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-011
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: The settings are too much JSON. The reason for a web ux is to hide the technical babble behind
+    userfriendly UX, this isn't the case here
+  normalized: Provide user-friendly configuration controls that hide technical configuration detail.
+  scope:
+  - configuration-ux
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-012
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: Odd "Delete X on apply" behaviors. This is a far cry from best practices
+  normalized: The Product Owner finds the "Delete X on apply" behavior odd and inconsistent with best
+    practices.
+  scope:
+  - configuration-deletion
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-013
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: Odd "Delete X on apply" behaviors. This is a far cry from best practices
+  normalized: Use an explicit, confirmed delete action independent of applying configuration edits.
+  scope:
+  - configuration-deletion
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-014
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: We need support to import the old YAML configuration into this new system
+  normalized: Support importing legacy YAML configuration into the new system.
+  scope:
+  - legacy-yaml-import
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+unresolved: []
+handoff:
+  reconciliation_ready: false
+  next_workflow: null

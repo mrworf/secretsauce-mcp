@@ -4,7 +4,7 @@ status: in_progress
 scope: Self-hosted single-organization web console initial release
 transaction:
   parent_commit: f799dc5675aff16975653d76f8fdf61e0efe7dc7
-  repository_commit: null
+  repository_commit: 59e8b562e6fafb13bfd37a4e744ba19a06fab3d0
   pre_existing_dirty_paths:
   - test-results/
   owned_paths:

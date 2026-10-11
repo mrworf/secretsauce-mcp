@@ -24,7 +24,7 @@ source:
     - REC-RM-005
     - REC-RM-006
 planning:
-  repository_commit: null
+  repository_commit: 84445451c18c5e32f92dc0978beed635d4d5edbf
 milestones:
   manifest: delivery/milestones/secretsauce-mcp/status.yaml
   packet_revision: sha256:6379e6627db6d1b723948386f90b01c421229fad5b3f77af8586a5379e47a36c

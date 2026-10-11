@@ -19,8 +19,8 @@ Retain existing domain models and validators. Add a focused presentation shell a
 | Slice | Plan | Outcome | Dependencies | Status | Commit | Evidence |
 |---|---|---|---|---|---|---|
 | 01 | [plan](milestone_20_plan_01_slice_01.md) | Selected navigation and focused sections | none | completed | 74b1140 | focused-settings-browser-report.json |
-| 02 | [plan](milestone_20_plan_01_slice_02.md) | Guarded edits, search and error focus | 01 | completed | recorded next checkpoint | focused-settings-browser-report.json |
-| 03 | [plan](milestone_20_plan_01_slice_03.md) | Exact atomic Settings review | 01,02 | pending | | |
+| 02 | [plan](milestone_20_plan_01_slice_02.md) | Guarded edits, search and error focus | 01 | completed | b17c0cf | focused-settings-browser-report.json |
+| 03 | [plan](milestone_20_plan_01_slice_03.md) | Exact atomic Settings review | 01,02 | completed | final slice SHA in orchestrator checkpoint | [acceptance](../../../evidence/qa/secretsauce-mcp/milestone20/acceptance.md) |
 
 ## Cross-slice concerns
 Server authorization remains authoritative. Settings navigation changes no applied state. Draft dependency versions/current roles must be rechecked at final apply. Audit admission precedes mutation; uncertain completion reports unknown. No persistent browser secret state. Preserve runtime pools and generations. Use only disposable HTTPS/browser fixtures.
@@ -33,3 +33,6 @@ Presentation rollback does not remove saved drafts. Additive review coordination
 
 ## Execution notes
 Planning gate complete before production edits. No current baseline failures reported by preceding milestones. No required scope deferred.
+
+## Completed validation
+Three planned slices delivered; final suite 71 files/662 tests and build PASS. Exact acceptance mappings and retained actual HTTPS regressions are in evidence/qa/secretsauce-mcp/milestone20/acceptance.md. No product/authority changes, deployment or live-user instance mutation. User-visible saved drafts survive section navigation; whole reviewed configuration applies atomically. Two earlier implementation commits: 74b1140 and b17c0cf; final slice commit reference is supplied to the root status checkpoint.

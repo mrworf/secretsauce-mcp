@@ -1,3 +1,4 @@
+import {reviewSettings,applySettings,SettingsError} from './consoleSettings.js';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import QRCode from 'qrcode';
 import {consoleRestore,RestoreError} from './consoleRestore.js';
@@ -177,6 +178,8 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
         if(path==='/console/api/retention/save'){reply(200,consoleEvidence(store).saveRetention(session,data));return;}
         if(path==='/console/api/retention/review'){reply(200,consoleEvidence(store).reviewRetention(session,data));return;}
         if(path==='/console/api/retention/apply'){reply(200,consoleEvidence(store).applyRetention(session,data));return;}
+        if(path==='/console/api/settings/review'){reply(200,reviewSettings(store,session,data));return;}
+        if(path==='/console/api/settings/apply'){reply(200,applySettings(store,session,data));return;}
         if(path?.startsWith('/console/api/authentication/')){const a=consoleAuthentication(store);if(path==='/console/api/authentication/save'){reply(200,a.save(session,data));return;}if(path==='/console/api/authentication/import-proposal'){reply(200,a.importProposal(session,data));return;}if(path==='/console/api/authentication/review'){reply(200,a.review(session,data));return;}if(path==='/console/api/authentication/apply'){reply(200,a.apply(session,data));return;}}
         if(path==='/console/api/client/revoke'){reply(200,revokeClient(store,session,data));return;}
         if(path==='/console/api/configuration/history-draft'){reply(200,useConfigurationRevision(consoleServices(store),session,data));return;}
@@ -248,7 +251,7 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
         if (error instanceof EvidenceError) {reply(400,{message:error.message});return;}
         if (error instanceof AuthenticationSettingsError) {reply(400,{message:error.message});return;}
         if (error instanceof ClientManagementError) {reply(400,{message:error.message});return;}
-        if (error instanceof NotificationError) {reply(400,{message:error.message});return;}
+        if (error instanceof SettingsError || error instanceof NotificationError) {reply(400,{message:error.message});return;}
         if (error instanceof PeopleError) { reply(400,{message:error.message});return; }
         if (error instanceof ServiceManagementError) {
             reply(error.comparison ? 409 : 400, { message: error.message, ...(error.comparison ? { comparison: error.comparison } : {}) }); return;

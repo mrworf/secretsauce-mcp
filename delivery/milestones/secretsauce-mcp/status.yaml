@@ -1,5 +1,5 @@
 product_id: secretsauce-mcp
-scope: Approved web console feedback delta; completed M10–17 preserved
+scope: "Approved web console feedback delta; completed M10\u201317 preserved"
 status_values:
 - pending
 - in_progress
@@ -239,22 +239,25 @@ milestones:
 - id: '18'
   title: Separate assisted password and Authenticator resets
   file: delivery/milestones/secretsauce-mcp/18-assisted-identity-resets.md
-  status: pending
+  status: completed
   dependencies:
   - '12'
   - '14'
-  completed_at: null
-  commit_hash: null
-  notes: null
+  completed_at: '2026-10-11T23:08:28.346693+00:00'
+  commit_hash: eb25cb3621fca84d76341d74d29b5327921267b3
+  notes: Two committed slices; 641 tests/69 files and build pass; actual HTTPS 33
+    reset + 8 retained people checks; all acceptance criteria mapped in evidence/qa/secretsauce-mcp/milestone18/acceptance.md.
+  started_at: '2026-10-11T22:51:08.355105+00:00'
 - id: '19'
   title: Delete SMTP credentials independently
   file: delivery/milestones/secretsauce-mcp/19-independent-smtp-deletion.md
-  status: pending
+  status: in_progress
   dependencies:
   - '12'
   completed_at: null
   commit_hash: null
   notes: null
+  started_at: '2026-10-11T23:08:28.346717+00:00'
 - id: '20'
   title: Navigate focused Settings with exact draft review
   file: delivery/milestones/secretsauce-mcp/20-focused-settings-and-navigation.md
@@ -276,9 +279,9 @@ milestones:
   notes: null
 delivery_goal:
   product_id: secretsauce-mcp
-  status: completed
+  status: in_progress
   packet: delivery/milestones/secretsauce-mcp/status.yaml
-  packet_revision: sha256:a262e7f9b7087b033e2708500b060576ba5adfec8dbc9dc98f2fa3a1f49f104d
+  packet_revision: sha256:6379e6627db6d1b723948386f90b01c421229fad5b3f77af8586a5379e47a36c
   packet_contract_revisions:
   - path: delivery/milestones/secretsauce-mcp/10-secure-audited-setup.md
     revision: sha256:75dfd4caf24033efbc4ab14117b3245bf73439d34ed448c1c75a3700dafaa450
@@ -296,79 +299,39 @@ delivery_goal:
     revision: sha256:e61b86ca883a0f8c00a3747f1a85a8f5bdf5abe60c27c9c4184843ccebeaeacf
   - path: delivery/milestones/secretsauce-mcp/17-safe-instance-recovery.md
     revision: sha256:397eefccf9a35158fa20ed5fb9b474c3ceb2760f6127a50f07d7537e99f52b1d
+  - path: delivery/milestones/secretsauce-mcp/18-assisted-identity-resets.md
+    revision: sha256:058282a2f57040e6d907714380c0bd3dc822bac5ae22163bde4f0e50c21869d3
+  - path: delivery/milestones/secretsauce-mcp/19-independent-smtp-deletion.md
+    revision: sha256:75391b813f07ef093ad984bbd128688371098c6213222a83e080e7dc3c254e65
+  - path: delivery/milestones/secretsauce-mcp/20-focused-settings-and-navigation.md
+    revision: sha256:ba3abebf8cc2d5f0ca224aa09528a01eb115b97b259d9f4c85ecffba2d5b51d4
+  - path: delivery/milestones/secretsauce-mcp/21-friendly-configuration-and-import.md
+    revision: sha256:3c798a833efec4ca41eeccad00c59f940bb8489eef91c10b36403a52ce90858c
   - path: delivery/milestones/secretsauce-mcp/index.md
-    revision: sha256:4a9a331940ba3e77acf3ac0415e17c9c65842b2e5979303dcccdfd7237223088
+    revision: sha256:3fbd9ac0f73c62bdfb750c8a0983f36d5a77f74c2c0deb9f36033005685a19a8
   - path: delivery/milestones/secretsauce-mcp/traceability.md
-    revision: sha256:f484408eba6c5b7b2256f97a95d8d6ffabdba9b58a1f2cfe6a03537806ac4553
-  compiled_from_revision: sha256:8fabbc634d279f3be9a6c8590580a6b12bad891ea4b821aa805aeeb331dfe312
+    revision: sha256:2544355abae98decaa4fe92e08c78dcac2de5ece760006c68e985efb03395eef
+  compiled_from_revision: sha256:377818781a4f5dfb54a8a25f870482f5168e2b6e21af7129adf84112a20377c7
   source_path: workflow/definition/definition-package.yaml
-  source_revision: sha256:44c2c2338ed74a26867fdd374988bb73c4bd6ed1179e99a7a329b26acf59f6e1
-  source_commit: 06dd0ee59defd1a75db121f1d8133c7100238b80
-  planning_commit: 865aa5710bcb9ff6c4641e177452ab9c50619a19
-  transaction_start_commit: 2a69a215fe4c7ec605684f32a333b1ccfb40b22d
+  source_revision: sha256:f60ab3efcfca9d95991c023058ee81e61838121275ec482b549fed55a87618f9
+  source_commit: 4d46db3fa08a25df52b8d7b0aa2357cf8446b2fd
+  planning_commit: 84445451c18c5e32f92dc0978beed635d4d5edbf
+  transaction_start_commit: 7ca137fee85d669dfb591ca49beeac36640252a9
   pre_existing_dirty_paths:
   - test-results/
   scope: remaining
-  start: null
+  start: '18'
   end: null
   milestone_ids:
-  - '10'
-  - '11'
-  - '12'
-  - '13'
-  - '14'
-  - '15'
-  - '16'
-  - '17'
+  - '18'
+  - '19'
+  - '20'
+  - '21'
   execution: autonomous
-  current_milestone: null
-  governing_plan: delivery/plans/secretsauce-mcp/milestone_17_plan_01.md
+  current_milestone: '19'
+  governing_plan: delivery/plans/secretsauce-mcp/milestone_19_plan_01.md
   blockers: []
-  resume_point: Fixed M10–M17 goal completed with committed implementation and local
-    acceptance. Actual ChatGPT/Codex connection/reconnect remains NOT RUN under the
-    recorded user exception; inherited dependency advisories remain separate follow-up.
-  prerequisite_observations:
-  - evidence_id: PRE-016
-    checked_at: 2026-10-10 18:03:04.154000+00:00
-    client_version: 29.9.0
-    server_version: 29.8.1
-    compose_version: 5.6.0
-    result: Actual permitted Docker/nginx runtime validation passed12groups on isolated
-      loopback-only synthetic mounts; containers and temporary mounts cleaned. M16/17
-      own remaining backup/recovery drills.
-    evidence: evidence/platform/secretsauce-mcp/milestone15/docker-report.json
-  resolved_blockers:
-  - type: EXTERNAL_OR_USER_ACTION
-    evidence_id: PRE-015
-    source: delivery/readiness/secretsauce-mcp/prerequisite-manifest.md#external-completion-instructions
-    milestone: '14'
-    slice: 04 (external acceptance only)
-    requirement: Authorized tester and reachable isolated HTTPS synthetic service;
-      real consent/discovery/reference/request/denial/revoke/normal restart/reconnect
-      on BOTH ChatGPT and Codex.
-    expected_artifact: evidence/platform/secretsauce-mcp/milestone14/ dated authorized
-      sanitized client records
-    required_action: Run docs/m14-real-client-verification.md on an already authorized
-      isolated endpoint with synthetic identities/services. Provide both dated records
-      and safe screenshots/results; never share credentials, tokens, cookies, opaque
-      references or raw bodies.
-    unblock_condition: Both actual authorized platform records cover PRE-015 against
-      the delivered implementation revision and pass targeted acceptance review.
-    implementation_commit: 1eb00d117664858d81252543b46c53cb8b46638d
-    resolved_at: 2026-10-10 17:07:13.336000+00:00
-    resolution: User-authorized local-delivery exception; actual real-client checks
-      deferred NOT RUN.
-    authorization: workflow/delivery/local-validation-authorization.md
-  acceptance_exceptions:
-  - evidence_id: PRE-015
-    milestones:
-    - '14'
-    - '17'
-    status: deferred_NOT_RUN
-    authorization: workflow/delivery/local-validation-authorization.md
-    scope: Actual LLM system MCP connection/reconnect only; all local protocol/browser/Docker
-      tests remain required.
-  completed_at: 2026-10-10 20:27:28.440000+00:00
+  resume_point: Plan and deliver M19 using one minimal-slice-delivery transaction.
 compiled_from_history:
 - product_id: secretsauce-mcp
   input_mode: PRODUCT_BUILD
@@ -454,3 +417,99 @@ compiled_from_history:
     - '07'
     - 8
     - 9
+delivery_goal_history:
+- product_id: secretsauce-mcp
+  status: completed
+  packet: delivery/milestones/secretsauce-mcp/status.yaml
+  packet_revision: sha256:a262e7f9b7087b033e2708500b060576ba5adfec8dbc9dc98f2fa3a1f49f104d
+  packet_contract_revisions:
+  - path: delivery/milestones/secretsauce-mcp/10-secure-audited-setup.md
+    revision: sha256:75dfd4caf24033efbc4ab14117b3245bf73439d34ed448c1c75a3700dafaa450
+  - path: delivery/milestones/secretsauce-mcp/11-managed-service-configuration.md
+    revision: sha256:0974e1d0fc81faf4ae5f4377ca7fce379e46ae18b4a414cba5140d1f8f255d46
+  - path: delivery/milestones/secretsauce-mcp/12-people-and-account-recovery.md
+    revision: sha256:57194362bc790482574d6d431b2eeb13a9884b12635bcb601bbe76b8e665e6b6
+  - path: delivery/milestones/secretsauce-mcp/13-advanced-policy-and-migration.md
+    revision: sha256:31df199c8c7e8b0c1841fd46c5db92a1a46e72a7e6ace1eda707db4c710b5576
+  - path: delivery/milestones/secretsauce-mcp/14-mcp-client-access.md
+    revision: sha256:76083d3d4e6aa6ca3c117c4f85ba7058bec36cc1091da5333adee74bc12963fc
+  - path: delivery/milestones/secretsauce-mcp/15-operating-evidence-and-limits.md
+    revision: sha256:e97bae18495226b48f04cc8d22f083fab302077d272a060f18eeaaa63cab4f85
+  - path: delivery/milestones/secretsauce-mcp/16-encrypted-instance-backups.md
+    revision: sha256:e61b86ca883a0f8c00a3747f1a85a8f5bdf5abe60c27c9c4184843ccebeaeacf
+  - path: delivery/milestones/secretsauce-mcp/17-safe-instance-recovery.md
+    revision: sha256:397eefccf9a35158fa20ed5fb9b474c3ceb2760f6127a50f07d7537e99f52b1d
+  - path: delivery/milestones/secretsauce-mcp/index.md
+    revision: sha256:4a9a331940ba3e77acf3ac0415e17c9c65842b2e5979303dcccdfd7237223088
+  - path: delivery/milestones/secretsauce-mcp/traceability.md
+    revision: sha256:f484408eba6c5b7b2256f97a95d8d6ffabdba9b58a1f2cfe6a03537806ac4553
+  compiled_from_revision: sha256:8fabbc634d279f3be9a6c8590580a6b12bad891ea4b821aa805aeeb331dfe312
+  source_path: workflow/definition/definition-package.yaml
+  source_revision: sha256:44c2c2338ed74a26867fdd374988bb73c4bd6ed1179e99a7a329b26acf59f6e1
+  source_commit: 06dd0ee59defd1a75db121f1d8133c7100238b80
+  planning_commit: 865aa5710bcb9ff6c4641e177452ab9c50619a19
+  transaction_start_commit: 2a69a215fe4c7ec605684f32a333b1ccfb40b22d
+  pre_existing_dirty_paths:
+  - test-results/
+  scope: remaining
+  start: null
+  end: null
+  milestone_ids:
+  - '10'
+  - '11'
+  - '12'
+  - '13'
+  - '14'
+  - '15'
+  - '16'
+  - '17'
+  execution: autonomous
+  current_milestone: null
+  governing_plan: delivery/plans/secretsauce-mcp/milestone_17_plan_01.md
+  blockers: []
+  resume_point: "Fixed M10\u2013M17 goal completed with committed implementation and\
+    \ local acceptance. Actual ChatGPT/Codex connection/reconnect remains NOT RUN\
+    \ under the recorded user exception; inherited dependency advisories remain separate\
+    \ follow-up."
+  prerequisite_observations:
+  - evidence_id: PRE-016
+    checked_at: 2026-10-10 18:03:04.154000+00:00
+    client_version: 29.9.0
+    server_version: 29.8.1
+    compose_version: 5.6.0
+    result: Actual permitted Docker/nginx runtime validation passed12groups on isolated
+      loopback-only synthetic mounts; containers and temporary mounts cleaned. M16/17
+      own remaining backup/recovery drills.
+    evidence: evidence/platform/secretsauce-mcp/milestone15/docker-report.json
+  resolved_blockers:
+  - type: EXTERNAL_OR_USER_ACTION
+    evidence_id: PRE-015
+    source: delivery/readiness/secretsauce-mcp/prerequisite-manifest.md#external-completion-instructions
+    milestone: '14'
+    slice: 04 (external acceptance only)
+    requirement: Authorized tester and reachable isolated HTTPS synthetic service;
+      real consent/discovery/reference/request/denial/revoke/normal restart/reconnect
+      on BOTH ChatGPT and Codex.
+    expected_artifact: evidence/platform/secretsauce-mcp/milestone14/ dated authorized
+      sanitized client records
+    required_action: Run docs/m14-real-client-verification.md on an already authorized
+      isolated endpoint with synthetic identities/services. Provide both dated records
+      and safe screenshots/results; never share credentials, tokens, cookies, opaque
+      references or raw bodies.
+    unblock_condition: Both actual authorized platform records cover PRE-015 against
+      the delivered implementation revision and pass targeted acceptance review.
+    implementation_commit: 1eb00d117664858d81252543b46c53cb8b46638d
+    resolved_at: 2026-10-10 17:07:13.336000+00:00
+    resolution: User-authorized local-delivery exception; actual real-client checks
+      deferred NOT RUN.
+    authorization: workflow/delivery/local-validation-authorization.md
+  acceptance_exceptions:
+  - evidence_id: PRE-015
+    milestones:
+    - '14'
+    - '17'
+    status: deferred_NOT_RUN
+    authorization: workflow/delivery/local-validation-authorization.md
+    scope: Actual LLM system MCP connection/reconnect only; all local protocol/browser/Docker
+      tests remain required.
+  completed_at: 2026-10-10 20:27:28.440000+00:00

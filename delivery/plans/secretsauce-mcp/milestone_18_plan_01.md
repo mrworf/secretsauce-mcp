@@ -16,7 +16,7 @@ Include distinct recovery authority, lifecycle, recipient forms, minimal Adminis
 | Slice | Plan | Outcome | Dependencies | Status | Commit | Evidence |
 |---|---|---|---|---|---|---|
 |01|[Password reset](milestone_18_plan_01_slice_01.md)|Factor-confirmed password-only reset and bounded administrative authority|none|completed|22418b7|6 new tests + 21 related regressions; build|
-|02|[Authenticator reset](milestone_18_plan_01_slice_02.md)|Independent factor recovery, continuity, both-lost UX and cumulative acceptance|01|completed; commit pending||[Acceptance](../../../evidence/qa/secretsauce-mcp/milestone18/acceptance.md)|
+|02|[Authenticator reset](milestone_18_plan_01_slice_02.md)|Independent factor recovery, continuity, both-lost UX and cumulative acceptance|01|completed|eb25cb3621fca84d76341d74d29b5327921267b3|[Acceptance](../../../evidence/qa/secretsauce-mcp/milestone18/acceptance.md)|
 
 ## Cross-slice concerns
 Proofs carry explicit semantic version and issuer/target generations. Synchronous mutation preserves atomic last-Owner decisions; current store commit uncertainty fences live authority. Retain generation-backed OAuth/reference checks and verifier-only encrypted state. Audit stores bounded identifiers and channel only. Isolated synthetic HTTPS/SMTP fixtures, never running user instance.

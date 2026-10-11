@@ -21,3 +21,5 @@ All scoped behavior passes positive/negative tests; no authority expansion or li
 
 ## Status
 Completed and validated; implementation commit pending. The companion retained this plan and two-slice structure. Supporting persistence work is required by the existing uncertainty/downgrade acceptance contract: format v2 prerequisite, generation-bearing reset intents, restart restriction, compatible config/recovery readers. No other milestone implemented. Final `npm test`: 69 files / 641 tests PASS; build PASS. Actual HTTPS dedicated reset browser: 33 checks PASS; retained people browser: 8 checks PASS. Exact acceptance mapping: evidence/qa/secretsauce-mcp/milestone18/acceptance.md.
+
+Committed as `eb25cb3621fca84d76341d74d29b5327921267b3`; parent verified acceptance mapping and packet freshness.

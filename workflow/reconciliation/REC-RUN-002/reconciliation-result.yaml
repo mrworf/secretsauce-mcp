@@ -4,7 +4,7 @@
 "status": "PARTIALLY_RESOLVED"
 "transaction":
   "parent_commit": "f799dc5675aff16975653d76f8fdf61e0efe7dc7"
-  "repository_commit": null
+  "repository_commit": "095bbcd927dfe8160b1c91aed147bd6357bec7b2"
 "source":
   "invocation": "product-definition-orchestrator"
   "originating_stage": "bounded-feedback-resolution"

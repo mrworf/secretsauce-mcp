@@ -20,7 +20,7 @@ Retain existing domain models and validators. Add a focused presentation shell a
 |---|---|---|---|---|---|---|
 | 01 | [plan](milestone_20_plan_01_slice_01.md) | Selected navigation and focused sections | none | completed | 74b1140 | focused-settings-browser-report.json |
 | 02 | [plan](milestone_20_plan_01_slice_02.md) | Guarded edits, search and error focus | 01 | completed | b17c0cf | focused-settings-browser-report.json |
-| 03 | [plan](milestone_20_plan_01_slice_03.md) | Exact atomic Settings review | 01,02 | completed | final slice SHA in orchestrator checkpoint | [acceptance](../../../evidence/qa/secretsauce-mcp/milestone20/acceptance.md) |
+| 03 | [plan](milestone_20_plan_01_slice_03.md) | Exact atomic Settings review | 01,02 | completed | abf03d02746922ce5a524ff105e13595acd7b999 | [acceptance](../../../evidence/qa/secretsauce-mcp/milestone20/acceptance.md) |
 
 ## Cross-slice concerns
 Server authorization remains authoritative. Settings navigation changes no applied state. Draft dependency versions/current roles must be rechecked at final apply. Audit admission precedes mutation; uncertain completion reports unknown. No persistent browser secret state. Preserve runtime pools and generations. Use only disposable HTTPS/browser fixtures.

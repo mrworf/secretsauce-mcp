@@ -262,23 +262,25 @@ milestones:
 - id: '20'
   title: Navigate focused Settings with exact draft review
   file: delivery/milestones/secretsauce-mcp/20-focused-settings-and-navigation.md
-  status: in_progress
+  status: completed
   dependencies:
   - '15'
   - '17'
-  completed_at: null
-  commit_hash: null
-  notes: null
+  completed_at: '2026-10-11T23:38:05.308529+00:00'
+  commit_hash: abf03d02746922ce5a524ff105e13595acd7b999
+  notes: Three committed slices; 662 tests/71 files and build pass; nine acceptance
+    clauses mapped with focused HTTPS and retained regressions in evidence/qa/secretsauce-mcp/milestone20/acceptance.md.
   started_at: '2026-10-11T23:15:18.518804+00:00'
 - id: '21'
   title: Configure all capabilities with forms and lossless import
   file: delivery/milestones/secretsauce-mcp/21-friendly-configuration-and-import.md
-  status: pending
+  status: in_progress
   dependencies:
   - '20'
   completed_at: null
   commit_hash: null
   notes: null
+  started_at: '2026-10-11T23:38:05.308547+00:00'
 delivery_goal:
   product_id: secretsauce-mcp
   status: in_progress
@@ -330,10 +332,10 @@ delivery_goal:
   - '20'
   - '21'
   execution: autonomous
-  current_milestone: '20'
-  governing_plan: delivery/plans/secretsauce-mcp/milestone_20_plan_01.md
+  current_milestone: '21'
+  governing_plan: delivery/plans/secretsauce-mcp/milestone_21_plan_01.md
   blockers: []
-  resume_point: Plan and deliver M20 using one minimal-slice-delivery transaction.
+  resume_point: Plan and deliver M21 using one minimal-slice-delivery transaction.
 compiled_from_history:
 - product_id: secretsauce-mcp
   input_mode: PRODUCT_BUILD

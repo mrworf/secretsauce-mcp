@@ -1,0 +1,672 @@
+"schema_version": 1
+"reconciliation_id": "REC-RUN-003"
+"product_id": "secretsauce-mcp"
+"status": "RESOLVED"
+"transaction":
+  "parent_commit": "1cbc57766e76b4cd4de8f35e9a7dc39b7b1214e3"
+  "repository_commit": null
+"source":
+  "invocation": "product-definition-orchestrator"
+  "originating_stage": "approved-feedback-ux-adoption"
+  "triggering_findings":
+  - "REC-004"
+  - "REC-005"
+  "affected_requirements":
+  - "AUTHZ-02"
+  - "AUTHZ-03"
+  - "CONFIG-01"
+  - "CONFIG-02"
+  - "CONFIG-03"
+  - "IDENT-04"
+  - "IDENT-05"
+  - "MIGRATE-01"
+  - "MIGRATE-02"
+  - "MIGRATE-03"
+  - "MIGRATE-04"
+  - "SECRES-03"
+  - "STATE-01"
+  - "STATE-02"
+  - "STATE-03"
+  - "UX-01"
+  - "UX-02"
+  - "UX-04"
+  - "UX-IA01"
+  - "UX-IA02"
+  - "UX-IA03"
+  - "UX-IA04"
+  - "UX-IN01"
+  "artifact_revisions":
+  - "artifact": "docs/web-console-prd-coverage.md"
+    "revision": "sha256:ee1f5e26989ba653c007b67ef5b36d3d06922cc24db49b3c2eb8b4959620bb7e"
+  - "artifact": "docs/web-console-prd-user-journey-audit.md"
+    "revision": "sha256:22f0693cdda9a055ed8013a4a23ccf8710918a89a3417e6a0d902df4a7bef9a2"
+  - "artifact": "docs/web-console-prd.md"
+    "revision": "sha256:bc908afcb8c40184dfcccdf296672bc559f5499236ed37f351a82f34ad0e9843"
+  - "artifact": "product/architecture/web-console-state-contract.md"
+    "revision": "sha256:c685c7fc9539f878986ccd906878808395fb13ae8ae2261fad9fd667107cbc80"
+  - "artifact": "product/security/web-console-security-contract.md"
+    "revision": "sha256:27df73fc50b4ef71e6d4434db62f09da7e018acc13dfa5a305c4d0da0654a94d"
+  - "artifact": "product/ux/00-overview.md"
+    "revision": "sha256:2ef8da7f945e6aec97ff1e57f58f41ea89fb677f97e71fff3e983141efca4f6a"
+  - "artifact": "product/ux/01-information-architecture.md"
+    "revision": "sha256:2f7bc646c1f518e424378a4b47df945d5b7eb8c72f1c2aef7f07879929a40ddf"
+  - "artifact": "product/ux/02-interaction-patterns.md"
+    "revision": "sha256:0346e83574043bcac2927c197c5639624d6d405961e9226e4a5f15b02908f331"
+  - "artifact": "product/ux/03-responsive-and-platform.md"
+    "revision": "sha256:0f4128d57beaf0ad2bf82fe0f66ca6ecd65e47d680847fc11ae082010f32f16c"
+  - "artifact": "product/ux/04-visual-system.md"
+    "revision": "sha256:8ecf109ee9a61de31a205bd746727433afac135a9a2d061a93bba8f6fd9209d7"
+  - "artifact": "product/ux/05-accessibility.md"
+    "revision": "sha256:96a81f4275b0c747026f7f77c4f57935c5abe5fd824a657b16997e397a514795"
+  - "artifact": "product/ux/06-feature-exceptions.md"
+    "revision": "sha256:6347b8162f4b4987db9ef3cf7030f8930a42594988cf48dbe7ed6021e0b82569"
+  - "artifact": "product/ux/07-acceptance-checklist.md"
+    "revision": "sha256:c47b51b4a4f6f9d73d644f67e125c3e7b0118174a6f2a9ccfdc6b44abdb6e4f5"
+  - "artifact": "product/ux/experience-brief.yaml"
+    "revision": "sha256:b8371e8d77f398cd44c205320b7d73f860b0e48c152d0ad2425b5bdc9902121f"
+  - "artifact": "product/ux/manifest.yaml"
+    "revision": "sha256:8c2881d271b7ca836fbf9ca28e2687e2c049004fdca9093b7f9f3f6c80f43132"
+  - "artifact": "src/config.ts"
+    "revision": "sha256:1fb86cd20be29160e5dd1de12fcc97dfb57d6769672f3abd641727610da466c9"
+  - "artifact": "src/consoleAuthenticationPage.ts"
+    "revision": "sha256:4f7f4edfa8c4ec959f695f268a05686db9d29b0d83d05c8325c1b001a6e0b689"
+  - "artifact": "src/consoleMigration.ts"
+    "revision": "sha256:225be55df0b716839de26e92c764648fd714a363bff7839b2c1d3fe318797746"
+  - "artifact": "src/consoleNotifications.ts"
+    "revision": "sha256:ece5af811941e16fbaf4114776a34ad8517fcbf9ee7e2604359f775e06827b51"
+  - "artifact": "src/consolePage.ts"
+    "revision": "sha256:b8c1e3f14fb4884358ab2b7f297dfff080e8d66cb5f78ccee273799988bcc78b"
+  - "artifact": "src/consolePeople.ts"
+    "revision": "sha256:45354bc91c03d93d1313c98da627f55205d7255bf744443e6fbc89b3e7f79ea2"
+  - "artifact": "src/consolePeoplePage.ts"
+    "revision": "sha256:c98d79d5413ec76a87e6cb3855cc5a78f212d694b98da664b3082dd73c913be0"
+  - "artifact": "src/consoleServicePage.ts"
+    "revision": "sha256:782e0de318889df27e1a01528902fe5548a2a9a7424934ff240e432a5045cf01"
+  - "artifact": "test/console-migration.test.ts"
+    "revision": "sha256:b8d9819db0996d1d5edeb47d99cc302445bfbdab2c21c3afaf9467567a1263e6"
+  - "artifact": "workflow/definition/decisions.md"
+    "revision": "sha256:4970ac570ca45afcd860aa7e1966fb54719456429410703e694963fb12ba573a"
+  - "artifact": "workflow/definition/definition-package.yaml"
+    "revision": "sha256:44c2c2338ed74a26867fdd374988bb73c4bd6ed1179e99a7a329b26acf59f6e1"
+  - "artifact": "workflow/definition/open-questions.md"
+    "revision": "sha256:a6596cf76815a763a9a95376baf02099015125ebe588d1277e5eb8f3b94ef8e3"
+  - "artifact": "workflow/definition/results/coverage.yaml"
+    "revision": "sha256:06585119416d8ebf060be8bffc68cce1432cdb5cb937bc6d12127840345716c4"
+  - "artifact": "workflow/definition/results/feedback-architecture-resolution.yaml"
+    "revision": "sha256:df693e8b5434d4f41edfa2d0fb895ffd2f201b5650a964602036cae5d5c83df0"
+  - "artifact": "workflow/definition/results/feedback-security-resolution.yaml"
+    "revision": "sha256:c70faf2cce2df602a58451a3b7b0c2da7ae834d0dbf0ec14f54c428e26c2154f"
+  - "artifact": "workflow/definition/results/feedback-ux-resolution.yaml"
+    "revision": "sha256:1bf69b23bcea3826f7662e10837ff527ca2d31f75dd675ff9e9a338df3c17e69"
+  - "artifact": "workflow/definition/results/journeys.yaml"
+    "revision": "sha256:28282eed9f0663cc05ab373450c3e63d0f915055f3ce7e9cec923803a1f7b1a0"
+  - "artifact": "workflow/definition/results/prd.yaml"
+    "revision": "sha256:5e20ba9f3efc04754118741affee93079d606d83bfa4063f6cda12dc240cda97"
+  - "artifact": "workflow/definition/results/ux.yaml"
+    "revision": "sha256:e1b8d71b067853a809336f9b67ace050e1c47bca4bef2886d262f029f96a500d"
+  - "artifact": "workflow/feedback/PO-FEEDBACK-2026-10-11-001/feedback.yaml"
+    "revision": "sha256:2a66ade78b37b971d5cf0f62ff5042564089d4482ed46bb3cce68c68299ae6d9"
+  - "artifact": "workflow/reconciliation/REC-RUN-001/reconciliation-result.yaml"
+    "revision": "sha256:0fe9e8f2f2b8679b63f17e4466c43a2ecfcf7fc01d5f028262d9581bd109f579"
+  - "artifact": "workflow/reconciliation/REC-RUN-002/reconciliation-result.yaml"
+    "revision": "sha256:c6b695bd86f0ebcf526f188b7faf4bfac183761b0b2fd79631b0e121adb96e1e"
+  "product_owner_feedback":
+  - "feedback_id": "PO-FEEDBACK-2026-10-11-001"
+    "path": "workflow/feedback/PO-FEEDBACK-2026-10-11-001/feedback.yaml"
+    "schema_version": 1
+    "status": "CONFIRMED"
+    "transaction":
+      "parent_commit": "8ce4a80413f21f472af8ece8906d1b64eea3aee6"
+      "repository_commit": "e6ac6da455f9874a171fc3846d1dac29f6014243"
+    "provenance":
+      "type": "product_owner"
+      "captured_from": "prompt"
+      "references": []
+      "original_prompt": "There's a number of things we need to fix, here's the list in no particular order:\n-\
+        \ Password cannot be reset by admin, nor can 2FA be reset\n- The active tab isn't highlighted on the menu\
+        \ bar\n- The settings page is too long, you need to split it into sections, probably sub tabs (I don't want\
+        \ a long scrolling page with all settings, group them)\n- The settings are too much JSON. The reason for\
+        \ a web ux is to hide the technical babble behind userfriendly UX, this isn't the case here\n- Odd \"Delete\
+        \ X on apply\" behaviors. This is a far cry from best practices\n- We need support to import the old YAML\
+        \ configuration into this new system\n\nUse the $product-owner-debrief for this feedback"
+      "clarifications":
+      - "question": "Which console roles should be able to initiate password and Authenticator MFA resets for other\
+          \ users?"
+        "selected_answer": "Owner and Administrator (Recommended)"
+        "selected_meaning": "Both roles need reset controls; detailed safeguards and target restrictions remain\
+          \ for downstream review."
+        "item_ids":
+        - "PO-FB-002"
+        - "PO-FB-004"
+      - "question": "For \u201CDelete X on apply,\u201D what change are you directing?"
+        "selected_answer": "Separate delete action (Recommended)"
+        "selected_meaning": "Deletion should be an explicit, confirmed action independent of applying configuration\
+          \ edits."
+        "item_ids":
+        - "PO-FB-013"
+  "prior_result": "workflow/reconciliation/REC-RUN-002/reconciliation-result.yaml"
+  "input_transaction_note": "Approved canonical UX-2 and approval ledgers/results are current orchestrator-owned\
+    \ working inputs fingerprinted here. Reconciliation commits only REC-RUN-003. Final definition readiness requires\
+    \ enclosing canonical UX/approval transaction closeout and remaining bounded validation."
+"findings":
+  "resolved":
+  - "REC-001"
+  - "REC-002"
+  - "REC-003"
+  - "REC-004"
+  - "REC-005"
+  - "REC-006"
+  - "REC-007"
+  "unresolved": []
+"feedback_dispositions":
+- "feedback_id": "PO-FEEDBACK-2026-10-11-001"
+  "item_id": "PO-FB-001"
+  "classification": "OBSERVATION"
+  "confirmation": "CONFIRMED"
+  "product_intent_authority": "evidence"
+  "original": "Password cannot be reset by admin, nor can 2FA be reset"
+  "normalized": "The Product Owner could not reset passwords through admin controls."
+  "scope":
+  - "identity-password-reset"
+  "tags": []
+  "suggestions": []
+  "ambiguity": []
+  "disposition": "EVIDENCE_CORRELATED"
+  "source_findings":
+  - "REC-001"
+  "source_changes":
+  - "REC-CHANGE-001"
+  "remediation":
+  - "REC-RM-003"
+  "decisions_required": []
+  "affected_artifacts": &id001
+  - "docs/web-console-prd.md"
+  - "product/ux/01-information-architecture.md"
+  - "product/ux/02-interaction-patterns.md"
+  - "product/security/web-console-security-contract.md"
+  - "product/architecture/web-console-state-contract.md"
+  - "docs/web-console-prd-user-journey-audit.md"
+  - "docs/web-console-prd-coverage.md"
+  "rationale": "Desired outcome is resolved against current PRD and approved UX-2; implementation remains to be\
+    \ delivered after bounded definition validation. Original evidence and all prior applied source changes remain\
+    \ in immutable REC-RUN-001/002; no authority edit occurs in REC-RUN-003."
+- "feedback_id": "PO-FEEDBACK-2026-10-11-001"
+  "item_id": "PO-FB-002"
+  "classification": "DIRECTIVE"
+  "confirmation": "CONFIRMED"
+  "product_intent_authority": "authoritative"
+  "original": "Password cannot be reset by admin, nor can 2FA be reset"
+  "normalized": "Owner and Administrator can initiate password resets for other users."
+  "scope":
+  - "identity-password-reset"
+  "tags": []
+  "suggestions": []
+  "ambiguity": []
+  "disposition": "FULLY_RESOLVED"
+  "source_findings":
+  - "REC-001"
+  "source_changes":
+  - "REC-CHANGE-001"
+  "remediation":
+  - "REC-RM-003"
+  "decisions_required": []
+  "affected_artifacts": *id001
+  "rationale": "Desired outcome is resolved against current PRD and approved UX-2; implementation remains to be\
+    \ delivered after bounded definition validation. Original evidence and all prior applied source changes remain\
+    \ in immutable REC-RUN-001/002; no authority edit occurs in REC-RUN-003."
+- "feedback_id": "PO-FEEDBACK-2026-10-11-001"
+  "item_id": "PO-FB-003"
+  "classification": "OBSERVATION"
+  "confirmation": "CONFIRMED"
+  "product_intent_authority": "evidence"
+  "original": "Password cannot be reset by admin, nor can 2FA be reset"
+  "normalized": "The Product Owner could not reset Authenticator MFA through admin controls."
+  "scope":
+  - "identity-mfa-reset"
+  "tags": []
+  "suggestions": []
+  "ambiguity": []
+  "disposition": "EVIDENCE_CORRELATED"
+  "source_findings":
+  - "REC-002"
+  "source_changes":
+  - "REC-CHANGE-002"
+  "remediation":
+  - "REC-RM-003"
+  "decisions_required": []
+  "affected_artifacts": &id002
+  - "docs/web-console-prd.md"
+  - "product/ux/01-information-architecture.md"
+  - "product/ux/02-interaction-patterns.md"
+  - "product/security/web-console-security-contract.md"
+  - "product/architecture/web-console-state-contract.md"
+  - "docs/web-console-prd-user-journey-audit.md"
+  - "docs/web-console-prd-coverage.md"
+  "rationale": "Desired outcome is resolved against current PRD and approved UX-2; implementation remains to be\
+    \ delivered after bounded definition validation. Original evidence and all prior applied source changes remain\
+    \ in immutable REC-RUN-001/002; no authority edit occurs in REC-RUN-003."
+- "feedback_id": "PO-FEEDBACK-2026-10-11-001"
+  "item_id": "PO-FB-004"
+  "classification": "DIRECTIVE"
+  "confirmation": "CONFIRMED"
+  "product_intent_authority": "authoritative"
+  "original": "Password cannot be reset by admin, nor can 2FA be reset"
+  "normalized": "Owner and Administrator can initiate Authenticator MFA resets for other users."
+  "scope":
+  - "identity-mfa-reset"
+  "tags": []
+  "suggestions": []
+  "ambiguity": []
+  "disposition": "FULLY_RESOLVED"
+  "source_findings":
+  - "REC-002"
+  "source_changes":
+  - "REC-CHANGE-002"
+  "remediation":
+  - "REC-RM-003"
+  "decisions_required": []
+  "affected_artifacts": *id002
+  "rationale": "Desired outcome is resolved against current PRD and approved UX-2; implementation remains to be\
+    \ delivered after bounded definition validation. Original evidence and all prior applied source changes remain\
+    \ in immutable REC-RUN-001/002; no authority edit occurs in REC-RUN-003."
+- "feedback_id": "PO-FEEDBACK-2026-10-11-001"
+  "item_id": "PO-FB-005"
+  "classification": "OBSERVATION"
+  "confirmation": "CONFIRMED"
+  "product_intent_authority": "evidence"
+  "original": "The active tab isn't highlighted on the menu bar"
+  "normalized": "The active tab is not highlighted in the menu bar."
+  "scope":
+  - "navigation"
+  "tags": []
+  "suggestions": []
+  "ambiguity": []
+  "disposition": "EVIDENCE_CORRELATED"
+  "source_findings":
+  - "REC-003"
+  "source_changes":
+  - "REC-CHANGE-003"
+  "remediation":
+  - "REC-RM-001"
+  "decisions_required": []
+  "affected_artifacts": &id003
+  - "product/ux/01-information-architecture.md"
+  - "product/ux/05-accessibility.md"
+  - "product/ux/04-visual-system.md"
+  "rationale": "Desired outcome is resolved against current PRD and approved UX-2; implementation remains to be\
+    \ delivered after bounded definition validation. Original evidence and all prior applied source changes remain\
+    \ in immutable REC-RUN-001/002; no authority edit occurs in REC-RUN-003."
+- "feedback_id": "PO-FEEDBACK-2026-10-11-001"
+  "item_id": "PO-FB-006"
+  "classification": "DIRECTIVE"
+  "confirmation": "CONFIRMED"
+  "product_intent_authority": "authoritative"
+  "original": "The active tab isn't highlighted on the menu bar"
+  "normalized": "Highlight the active tab in the menu bar."
+  "scope":
+  - "navigation"
+  "tags": []
+  "suggestions": []
+  "ambiguity": []
+  "disposition": "FULLY_RESOLVED"
+  "source_findings":
+  - "REC-003"
+  "source_changes":
+  - "REC-CHANGE-003"
+  "remediation":
+  - "REC-RM-001"
+  "decisions_required": []
+  "affected_artifacts": *id003
+  "rationale": "Desired outcome is resolved against current PRD and approved UX-2; implementation remains to be\
+    \ delivered after bounded definition validation. Original evidence and all prior applied source changes remain\
+    \ in immutable REC-RUN-001/002; no authority edit occurs in REC-RUN-003."
+- "feedback_id": "PO-FEEDBACK-2026-10-11-001"
+  "item_id": "PO-FB-007"
+  "classification": "OBSERVATION"
+  "confirmation": "CONFIRMED"
+  "product_intent_authority": "evidence"
+  "original": "The settings page is too long, you need to split it into sections, probably sub tabs (I don't want\
+    \ a long scrolling page with all settings, group them)"
+  "normalized": "The Settings page is too long."
+  "scope":
+  - "settings-organization"
+  "tags": []
+  "suggestions": []
+  "ambiguity": []
+  "disposition": "EVIDENCE_CORRELATED"
+  "source_findings":
+  - "REC-004"
+  "source_changes":
+  - "REC-CHANGE-004"
+  "remediation":
+  - "REC-RM-005"
+  "decisions_required": []
+  "affected_artifacts":
+  - "product/ux/01-information-architecture.md"
+  - "product/ux/03-responsive-and-platform.md"
+  - "product/ux/04-visual-system.md"
+  - "product/ux/05-accessibility.md"
+  - "product/ux/07-acceptance-checklist.md"
+  "rationale": "Desired outcome is resolved against current PRD and approved UX-2; implementation remains to be\
+    \ delivered after bounded definition validation. Original evidence and all prior applied source changes remain\
+    \ in immutable REC-RUN-001/002; no authority edit occurs in REC-RUN-003."
+- "feedback_id": "PO-FEEDBACK-2026-10-11-001"
+  "item_id": "PO-FB-008"
+  "classification": "DIRECTIVE"
+  "confirmation": "CONFIRMED"
+  "product_intent_authority": "authoritative"
+  "original": "The settings page is too long, you need to split it into sections, probably sub tabs (I don't want\
+    \ a long scrolling page with all settings, group them)"
+  "normalized": "Group settings into focused sections instead of one long scrolling page containing all settings."
+  "scope":
+  - "settings-organization"
+  "tags": []
+  "suggestions": []
+  "ambiguity": []
+  "disposition": "FULLY_RESOLVED"
+  "source_findings":
+  - "REC-004"
+  "source_changes":
+  - "REC-CHANGE-004"
+  "remediation":
+  - "REC-RM-005"
+  "decisions_required": []
+  "affected_artifacts":
+  - "product/ux/01-information-architecture.md"
+  - "product/ux/03-responsive-and-platform.md"
+  - "product/ux/04-visual-system.md"
+  - "product/ux/05-accessibility.md"
+  - "product/ux/07-acceptance-checklist.md"
+  "rationale": "Desired outcome is resolved against current PRD and approved UX-2; implementation remains to be\
+    \ delivered after bounded definition validation. Original evidence and all prior applied source changes remain\
+    \ in immutable REC-RUN-001/002; no authority edit occurs in REC-RUN-003."
+- "feedback_id": "PO-FEEDBACK-2026-10-11-001"
+  "item_id": "PO-FB-009"
+  "classification": "IDEA_OR_QUESTION"
+  "confirmation": "CONFIRMED"
+  "product_intent_authority": "exploratory"
+  "original": "The settings page is too long, you need to split it into sections, probably sub tabs (I don't want\
+    \ a long scrolling page with all settings, group them)"
+  "normalized": "Sub tabs are a possible way to organize Settings sections."
+  "scope":
+  - "settings-organization"
+  "tags": []
+  "suggestions": []
+  "ambiguity": []
+  "disposition": "EXPLORATORY_RECORDED"
+  "source_findings":
+  - "REC-004"
+  "source_changes":
+  - "REC-CHANGE-004"
+  "remediation":
+  - "REC-RM-005"
+  "decisions_required": []
+  "affected_artifacts":
+  - "product/ux/01-information-architecture.md"
+  - "product/ux/03-responsive-and-platform.md"
+  - "product/ux/04-visual-system.md"
+  - "product/ux/05-accessibility.md"
+  - "product/ux/07-acceptance-checklist.md"
+  "rationale": "Original subtabs suggestion stays exploratory. The subsequently approved UX-DESIGN-002 selects secondary\
+    \ navigation links and a narrow select; the original idea was not retroactively promoted. It is correlated to\
+    \ REC-004/REC-RM-005 with no open decision."
+- "feedback_id": "PO-FEEDBACK-2026-10-11-001"
+  "item_id": "PO-FB-010"
+  "classification": "OBSERVATION"
+  "confirmation": "CONFIRMED"
+  "product_intent_authority": "evidence"
+  "original": "The settings are too much JSON. The reason for a web ux is to hide the technical babble behind userfriendly\
+    \ UX, this isn't the case here"
+  "normalized": "Settings expose too much JSON and technical configuration detail."
+  "scope":
+  - "configuration-ux"
+  "tags": []
+  "suggestions": []
+  "ambiguity": []
+  "disposition": "EVIDENCE_CORRELATED"
+  "source_findings":
+  - "REC-005"
+  "source_changes":
+  - "REC-CHANGE-005"
+  "remediation":
+  - "REC-RM-006"
+  "decisions_required": []
+  "affected_artifacts":
+  - "product/ux/01-information-architecture.md"
+  - "product/ux/07-acceptance-checklist.md"
+  "rationale": "Desired outcome is resolved against current PRD and approved UX-2; implementation remains to be\
+    \ delivered after bounded definition validation. Original evidence and all prior applied source changes remain\
+    \ in immutable REC-RUN-001/002; no authority edit occurs in REC-RUN-003."
+- "feedback_id": "PO-FEEDBACK-2026-10-11-001"
+  "item_id": "PO-FB-011"
+  "classification": "DIRECTIVE"
+  "confirmation": "CONFIRMED"
+  "product_intent_authority": "authoritative"
+  "original": "The settings are too much JSON. The reason for a web ux is to hide the technical babble behind userfriendly\
+    \ UX, this isn't the case here"
+  "normalized": "Provide user-friendly configuration controls that hide technical configuration detail."
+  "scope":
+  - "configuration-ux"
+  "tags": []
+  "suggestions": []
+  "ambiguity": []
+  "disposition": "FULLY_RESOLVED"
+  "source_findings":
+  - "REC-005"
+  "source_changes":
+  - "REC-CHANGE-005"
+  "remediation":
+  - "REC-RM-006"
+  "decisions_required": []
+  "affected_artifacts":
+  - "product/ux/01-information-architecture.md"
+  - "product/ux/07-acceptance-checklist.md"
+  "rationale": "Desired outcome is resolved against current PRD and approved UX-2; implementation remains to be\
+    \ delivered after bounded definition validation. Original evidence and all prior applied source changes remain\
+    \ in immutable REC-RUN-001/002; no authority edit occurs in REC-RUN-003."
+- "feedback_id": "PO-FEEDBACK-2026-10-11-001"
+  "item_id": "PO-FB-012"
+  "classification": "OBSERVATION"
+  "confirmation": "CONFIRMED"
+  "product_intent_authority": "evidence"
+  "original": "Odd \"Delete X on apply\" behaviors. This is a far cry from best practices"
+  "normalized": "The Product Owner finds the \"Delete X on apply\" behavior odd and inconsistent with best practices."
+  "scope":
+  - "configuration-deletion"
+  "tags": []
+  "suggestions": []
+  "ambiguity": []
+  "disposition": "EVIDENCE_CORRELATED"
+  "source_findings":
+  - "REC-006"
+  "source_changes":
+  - "REC-CHANGE-006"
+  "remediation":
+  - "REC-RM-004"
+  "decisions_required": []
+  "affected_artifacts": &id004
+  - "docs/web-console-prd.md"
+  - "product/ux/02-interaction-patterns.md"
+  - "product/architecture/web-console-state-contract.md"
+  - "product/security/web-console-security-contract.md"
+  - "docs/web-console-prd-user-journey-audit.md"
+  - "docs/web-console-prd-coverage.md"
+  "rationale": "Desired outcome is resolved against current PRD and approved UX-2; implementation remains to be\
+    \ delivered after bounded definition validation. Original evidence and all prior applied source changes remain\
+    \ in immutable REC-RUN-001/002; no authority edit occurs in REC-RUN-003."
+- "feedback_id": "PO-FEEDBACK-2026-10-11-001"
+  "item_id": "PO-FB-013"
+  "classification": "DIRECTIVE"
+  "confirmation": "CONFIRMED"
+  "product_intent_authority": "authoritative"
+  "original": "Odd \"Delete X on apply\" behaviors. This is a far cry from best practices"
+  "normalized": "Use an explicit, confirmed delete action independent of applying configuration edits."
+  "scope":
+  - "configuration-deletion"
+  "tags": []
+  "suggestions": []
+  "ambiguity": []
+  "disposition": "FULLY_RESOLVED"
+  "source_findings":
+  - "REC-006"
+  "source_changes":
+  - "REC-CHANGE-006"
+  "remediation":
+  - "REC-RM-004"
+  "decisions_required": []
+  "affected_artifacts": *id004
+  "rationale": "Desired outcome is resolved against current PRD and approved UX-2; implementation remains to be\
+    \ delivered after bounded definition validation. Original evidence and all prior applied source changes remain\
+    \ in immutable REC-RUN-001/002; no authority edit occurs in REC-RUN-003."
+- "feedback_id": "PO-FEEDBACK-2026-10-11-001"
+  "item_id": "PO-FB-014"
+  "classification": "DIRECTIVE"
+  "confirmation": "CONFIRMED"
+  "product_intent_authority": "authoritative"
+  "original": "We need support to import the old YAML configuration into this new system"
+  "normalized": "Support importing legacy YAML configuration into the new system."
+  "scope":
+  - "legacy-yaml-import"
+  "tags": []
+  "suggestions": []
+  "ambiguity": []
+  "disposition": "FULLY_RESOLVED"
+  "source_findings":
+  - "REC-007"
+  "source_changes":
+  - "REC-CHANGE-007"
+  "remediation":
+  - "REC-RM-002"
+  "decisions_required": []
+  "affected_artifacts":
+  - "docs/web-console-prd.md"
+  - "product/ux/01-information-architecture.md"
+  "rationale": "Desired outcome is resolved against current PRD and approved UX-2; implementation remains to be\
+    \ delivered after bounded definition validation. Original evidence and all prior applied source changes remain\
+    \ in immutable REC-RUN-001/002; no authority edit occurs in REC-RUN-003."
+"authoritative_changes":
+  "changed": false
+  "entries":
+  - "change_id": "REC-CHANGE-001"
+    "source_findings":
+    - "REC-001"
+    "path": "docs/web-console-prd.md"
+    "requirements":
+    - "IDENT-05"
+    - "AUTHZ-02"
+    "status": "NO_SOURCE_MUTATION"
+  - "change_id": "REC-CHANGE-002"
+    "source_findings":
+    - "REC-002"
+    "path": "docs/web-console-prd.md"
+    "requirements":
+    - "IDENT-05"
+    - "AUTHZ-03"
+    - "SECRES-03"
+    "status": "NO_SOURCE_MUTATION"
+  - "change_id": "REC-CHANGE-003"
+    "source_findings":
+    - "REC-003"
+    "path": "product/ux/01-information-architecture.md"
+    "requirements":
+    - "UX-01"
+    - "UX-04"
+    - "UX-IA01"
+    "status": "NO_SOURCE_MUTATION"
+  - "change_id": "REC-CHANGE-004"
+    "source_findings":
+    - "REC-004"
+    "path": "product/ux/01-information-architecture.md"
+    "requirements":
+    - "UX-02"
+    - "UX-IA03"
+    - "UX-IN01"
+    "status": "NO_SOURCE_MUTATION"
+  - "change_id": "REC-CHANGE-005"
+    "source_findings":
+    - "REC-005"
+    "path": "product/ux/01-information-architecture.md"
+    "requirements":
+    - "UX-02"
+    - "CONFIG-01"
+    - "UX-IA03"
+    - "UX-IN01"
+    "status": "NO_SOURCE_MUTATION"
+  - "change_id": "REC-CHANGE-006"
+    "source_findings":
+    - "REC-006"
+    "path": "docs/web-console-prd.md"
+    "requirements":
+    - "CONFIG-02"
+    - "CONFIG-03"
+    - "IDENT-04"
+    - "STATE-01"
+    - "STATE-02"
+    - "STATE-03"
+    "status": "NO_SOURCE_MUTATION"
+  - "change_id": "REC-CHANGE-007"
+    "source_findings":
+    - "REC-007"
+    "path": "docs/web-console-prd.md"
+    "requirements":
+    - "MIGRATE-01"
+    - "MIGRATE-02"
+    - "MIGRATE-03"
+    - "MIGRATE-04"
+    - "UX-IA02"
+    - "UX-IA03"
+    - "UX-IA04"
+    "status": "NO_SOURCE_MUTATION"
+"definition_changed": false
+"implementation_required": true
+"implementation_ready": true
+"decisions_required": []
+"change_impact":
+  "change_id": "REC-IMPACT-003"
+  "source_findings":
+  - "REC-001"
+  - "REC-002"
+  - "REC-003"
+  - "REC-004"
+  - "REC-005"
+  - "REC-006"
+  - "REC-007"
+  "changed_artifacts": []
+  "changed_requirements": []
+  "change_types":
+  - "permissions"
+  - "user_behavior"
+  - "ux_interaction"
+  - "security_control"
+  - "documentation"
+  "affected_domains":
+    "product": false
+    "user_journeys": false
+    "ux": false
+    "architecture": true
+    "security": true
+  "potentially_stale":
+  - "product/architecture/web-console-architecture-review.md"
+  - "product/security/web-console-security-review.md"
+  "revalidation_required": true
+"handoff":
+  "category": "DEFINITION_REVALIDATION"
+  "definition_revalidation_required": true
+  "delivery_planning_ready": false
+  "next_workflow": "product-definition-orchestrator"
+"resolved_decisions":
+- "id": "REC-DEC-001"
+  "resolution": "SECRES-05 adopted into PRD; bounded semantics resolved; derived UX/journey/coverage and full reviews\
+    \ remain."
+  "source_result": "workflow/definition/results/feedback-security-resolution.yaml"
+- "id": "REC-DEC-003"
+  "resolution": "STATE-01/02/03 SMTP deletion amendment adopted; creation/replacement retain draft/review/apply."
+  "source_result": "workflow/definition/results/feedback-architecture-resolution.yaml"
+- "id": "REC-DEC-002"
+  "resolution": "Approved UX-2 establishes focused sections, friendly control/read-summary coverage, search and\
+    \ exact-draft review semantics."
+  "source_result": "workflow/definition/results/ux.yaml"
+- "id": "UX-DESIGN-002"
+  "resolution": "Product Owner approved the proposal; canonical UX-2 synthesized against approved feedback-draft-1\
+    \ and exact PRD/domain sources."
+  "source_result": "workflow/definition/decisions.md"

@@ -41,3 +41,5 @@ SMTP credentials have a separate **Delete SMTP credential** action for a recentl
 ### Focused Settings navigation
 
 Settings opens Response protection. Use the section links (or the labeled Settings section selector on narrow screens) to reach MCP authentication, Limits, Email, Backups & restore, and Health & retention. Only the selected section appears. Applied summaries precede the authorized Edit action; selecting a section does not apply configuration. Backups and restore remain Owner-only. Settings links preserve a non-secret section name and browser Back returns to that destination.
+
+Settings search matches permitted field labels, help and technical aliases, never stored values. A result opens its section and disclosure and focuses the field. Unsaved section changes offer Stay, Save draft and continue, or Discard unsaved edits and continue. Discard affects only current unsaved input; saved drafts in other sections remain. The draft summary distinguishes unsaved input from saved sections. Saving never activates configuration; no browser storage or hidden autosave is used.

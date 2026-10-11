@@ -18,8 +18,8 @@ Retain existing domain models and validators. Add a focused presentation shell a
 ## Slice index
 | Slice | Plan | Outcome | Dependencies | Status | Commit | Evidence |
 |---|---|---|---|---|---|---|
-| 01 | [plan](milestone_20_plan_01_slice_01.md) | Selected navigation and focused sections | none | completed | recorded next checkpoint | focused-settings-browser-report.json |
-| 02 | [plan](milestone_20_plan_01_slice_02.md) | Guarded edits, search and error focus | 01 | pending | | |
+| 01 | [plan](milestone_20_plan_01_slice_01.md) | Selected navigation and focused sections | none | completed | 74b1140 | focused-settings-browser-report.json |
+| 02 | [plan](milestone_20_plan_01_slice_02.md) | Guarded edits, search and error focus | 01 | completed | recorded next checkpoint | focused-settings-browser-report.json |
 | 03 | [plan](milestone_20_plan_01_slice_03.md) | Exact atomic Settings review | 01,02 | pending | | |
 
 ## Cross-slice concerns

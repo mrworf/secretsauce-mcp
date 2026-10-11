@@ -4,7 +4,7 @@
 "status": "RESOLVED"
 "transaction":
   "parent_commit": "1cbc57766e76b4cd4de8f35e9a7dc39b7b1214e3"
-  "repository_commit": null
+  "repository_commit": "fb901edc2d5d226a9685c16ecbc5bbb5e85dfb97"
 "source":
   "invocation": "product-definition-orchestrator"
   "originating_stage": "approved-feedback-ux-adoption"

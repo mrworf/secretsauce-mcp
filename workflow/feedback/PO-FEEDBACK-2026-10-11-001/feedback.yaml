@@ -41,7 +41,7 @@ source:
 status: CONFIRMED
 transaction:
   parent_commit: 8ce4a80413f21f472af8ece8906d1b64eea3aee6
-  repository_commit: null
+  repository_commit: e6ac6da455f9874a171fc3846d1dac29f6014243
 items:
 - id: PO-FB-001
   classification: OBSERVATION
@@ -219,5 +219,5 @@ items:
   ambiguity: []
 unresolved: []
 handoff:
-  reconciliation_ready: false
-  next_workflow: null
+  reconciliation_ready: true
+  next_workflow: product-reconciliation

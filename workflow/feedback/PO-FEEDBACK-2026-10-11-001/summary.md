@@ -38,6 +38,8 @@ Product: `secretsauce-mcp`. Source: product_owner / prompt. Status: **CONFIRMED*
 - OBSERVATION: evidence of reported experience or inference.
 - IDEA_OR_QUESTION: exploratory option; not selected product intent.
 
-Reconciliation ready: **false**.
+Reconciliation ready: **true**.
 Transaction parent: `8ce4a80413f21f472af8ece8906d1b64eea3aee6`.
-Payload commit: pending producer transaction closeout.
+Payload commit: `e6ac6da455f9874a171fc3846d1dac29f6014243`.
+
+Run product-reconciliation using `workflow/feedback/PO-FEEDBACK-2026-10-11-001/feedback.yaml`.

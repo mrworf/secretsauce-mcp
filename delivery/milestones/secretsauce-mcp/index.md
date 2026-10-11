@@ -1,37 +1,33 @@
 # SecretSauce web console delivery packet
 
-**Mode:** PRODUCT_BUILD. **Product:** `secretsauce-mcp`. **State:** compiled contracts, all implementation pending; readiness is a separate downstream audit. This packet delivers the approved single-organization self-hosted console while preserving the existing gateway. It does not restore the earlier superseded multi-tenant SaaS direction.
+**Mode:** CHANGE_PLAN. **Product:** `secretsauce-mcp`. M10–17 remain completed; new M18–21 are pending. This approved feedback delta preserves the single-organization self-hosted console and gateway. No implementation has begun.
 
 ## Authority and provenance
 
-The [definition package](../../../workflow/definition/definition-package.yaml) is `ready_for_delivery_planning`, revision `sha256:44c2c2338ed74a26867fdd374988bb73c4bd6ed1179e99a7a329b26acf59f6e1`, producer commit `06dd0ee59defd1a75db121f1d8133c7100238b80` (provenance closeout `bb6f29cd318b77c2cf70efa5b1f9adaf25fdf2cb`). Its six passed definition stages are consumed, not rerun. [Status](status.yaml) pins all detailed source revisions under `compiled_from`; the package remains the authoritative locator.
+The [validated definition package](../../../workflow/definition/definition-package.yaml), revision `sha256:f60ab3efcfca9d95991c023058ee81e61838121275ec482b549fed55a87618f9`, producer `4d46db3fa08a25df52b8d7b0aa2357cf8446b2fd`, and committed [definition handoff](../../../workflow/definition/state.yaml) establish eligibility. All six definition stages passed; their validation is consumed, not rerun. REC-RUN-003/REC-IMPACT-003 is immutable provenance and its six [resolved remediation items](../../../workflow/reconciliation/REC-RUN-003/03-remediation-backlog.md) define the delta. Its historical false readiness concerned definition revalidation, explicitly satisfied in the later definition handoff. [Status](status.yaml) pins exact revisions and retains initial compilation provenance/history.
 
-| Source class | Sources and use |
-| --- | --- |
-| Implementation required | PRD BASE/AUTHZ/IDENT/CONFIG/POLICY/MCP/UX/AUDIT/SEC/BACKUP/OPS/MIGRATE requirements and configuration/acceptance tables; normative SECRES-01–04 and STATE-01–06; approved UX rules/checklist. |
-| Governing constraints | Security/state contracts, accepted D-001–D-012 and UX-DESIGN-001, approved UX manifest `web-console-ux-1`, architecture/security review interpretations, AGENTS.md gateway invariants. |
-| Context/evidence | Coverage and journey audits organize traceability; review observations and source samples establish risks/preservation baseline. They do not independently authorize new features. |
-| Excluded | Explicit non-goals, accepted trust limitations and optional technology recommendations; see traceability dispositions. |
-| Blocked | No unresolved authoritative product/UX/security/architecture decision. Environment readiness remains unassessed here. |
+Implementation obligations: REC-RM-001–006 as adopted by PRD, SECRES-05, STATE SMTP amendment and approved UX2. Governing constraints: full indexed current UX/architecture/security, decisions, accepted risks and AGENTS.md. Evidence: findings, coverage and journey audits. Excluded: original exploratory subtabs mechanism, optional suggestions and already-completed behavior. Blocked required sources: none.
 
-## Milestones and dependency contracts
+## Milestones and dependencies
 
-IDs continue after the existing completed 00–09 to avoid ambiguity. The historical packet `docs/milestones/status.yaml` remains unchanged. No active web-console packet existed, so this new scope uses canonical `delivery/milestones/secretsauce-mcp/`. The project-local next-MVP selector is hard-coded to the historical packet; use the explicit new manifest through milestone-delivery-orchestrator after readiness. Do not retarget or rewrite completed history merely to select this scope.
-
-| ID | Outcome / contract | Direct prerequisites | Status |
+| ID | Outcome | Direct prerequisites | Status |
 | --- | --- | --- | --- |
-| 10 | [Establish secure audited console access](10-secure-audited-setup.md) | Existing gateway baseline | pending |
-| 11 | [Configure and activate services safely](11-managed-service-configuration.md) | 10 | pending |
-| 12 | [Manage people and recover accounts](12-people-and-account-recovery.md) | 11 | pending |
-| 13 | [Author advanced policy and migrate configuration](13-advanced-policy-and-migration.md) | 12 | pending |
-| 14 | [Connect and govern MCP clients](14-mcp-client-access.md) | 12 | pending |
-| 15 | [Operate and inspect the managed instance](15-operating-evidence-and-limits.md) | 13, 14 | pending |
-| 16 | [Create recoverable encrypted instance backups](16-encrypted-instance-backups.md) | 15 | pending |
-| 17 | [Restore and resume an instance safely](17-safe-instance-recovery.md) | 16 | pending |
+| 10 | [Establish secure audited console access](10-secure-audited-setup.md) | Existing gateway | completed |
+| 11 | [Configure and activate services safely](11-managed-service-configuration.md) | 10 | completed |
+| 12 | [Manage people and recover accounts](12-people-and-account-recovery.md) | 11 | completed |
+| 13 | [Author advanced policy and migrate configuration](13-advanced-policy-and-migration.md) | 12 | completed |
+| 14 | [Connect and govern MCP clients](14-mcp-client-access.md) | 12 | completed |
+| 15 | [Operate and inspect the managed instance](15-operating-evidence-and-limits.md) | 13, 14 | completed |
+| 16 | [Create recoverable encrypted instance backups](16-encrypted-instance-backups.md) | 15 | completed |
+| 17 | [Restore and resume an instance safely](17-safe-instance-recovery.md) | 16 | completed |
+| 18 | [Separate assisted password and Authenticator resets](18-assisted-identity-resets.md) | 12, 14 | pending |
+| 19 | [Delete SMTP credentials independently](19-independent-smtp-deletion.md) | 12 | pending |
+| 20 | [Navigate focused Settings with exact draft review](20-focused-settings-and-navigation.md) | 15, 17 | pending |
+| 21 | [Configure all capabilities with forms and lossless import](21-friendly-configuration-and-import.md) | 20 | pending |
 
-The dependency graph is **10 → 11 → 12 → {13, 14} → 15 → 16 → 17**. Secure durable admission precedes mutations; the shared configuration transaction precedes SMTP/authentication settings; people/assignments precede complete migration and client flows. Policy/import (13) and MCP clients (14) are independent after 12; each consumes the explicit identity registry from 12; their combined imported-client integration is checked once both exist. Operations (15) consumes all configuration/client state before backups capture the complete persisted product (16), then restore consumes that archive contract (17).
+M18 consumes completed identity recovery plus durable grant revocation. M19 consumes existing SMTP/draft infrastructure. M20 consumes completed operating and recovery surfaces so their actions remain reachable. M21 consumes M20 section/draft navigation and existing M13 import semantics. Only M20 → M21 is a new inter-milestone dependency; no artificial sequencing of resets, SMTP deletion and navigation. Import and friendly configuration consolidate one lossless authoring/round-trip outcome. No M0 or implementation slices are generated.
 
-Each milestone is a usable vertical outcome including persistence, authorization, UI/interfaces, failure states and evidence. Shared foundations are observable setup/admission and live configuration, not generic infrastructure phases. Closely related findings are folded into their owning outcome; no standalone database, API, UI, technology-choice, M0 or implementation-slice milestone is introduced.
+Completed M10–17 contract files and records, historical docs/milestones, and completed delivery_goal remain unchanged. The old goal is historical and must not be mistaken for completion of M18–21. The legacy next-MVP selector still targets the historical packet; downstream uses this explicit manifest.
 
 ## Shared preservation and delivery rules
 
@@ -43,10 +39,9 @@ Each milestone is a usable vertical outcome including persistence, authorization
 6. Every new external input has positive and negative tests. At milestone completion run `npm test`, `npm run build`, applicable browser/accessibility and named operational/client evidence. Per-slice planning/commits belong to subsequent minimal-slice-delivery, not this packet. Documentation generation is not runtime validation or release acceptance.
 7. Finish relevant runbook/docs with each outcome; use `example.org` examples. Separate OAuth origin from full ChatGPT MCP URL. Keep Docker metadata generation local and tested. Operator responsibilities include off-host copies, patching, access review, incident response and host security; software does not establish SOC 2 compliance.
 
+
 ## Coverage and handoff
 
-[Traceability](traceability.md) maps 53 PRD IDs, 10 companion contracts, seven derived families (97 detailed coverage rows), 47 actor journeys and all 25 UX checks. Repeated audit/authorization/UX IDs are consuming-boundary requirements, not duplicate independent features. There is no unmapped or deferred required source work and no source blocker.
+[Traceability](traceability.md) maps all six remediation items and retains the original build map as historical evidence. Every required directive is covered; no blocked, deferred or unmapped required work remains. Canonical UX2 includes exact per-field capabilities and UX-C26–33; each contract carries relevant constraints and positive/negative/browser validation.
 
-Compilation validation checks current committed source provenance, schema/paths, all mandatory milestone sections, backward dependencies, exact traceability, approved UX propagation, local links and preservation of historical milestones. No application code or configuration changes here; no application test/build is run for this planning-only packet. The compiler result in `workflow/delivery-planning/results/compiler.yaml` records exact checks and artifact revisions.
-
-**Next:** milestone-readiness audits prerequisites and clean-environment executability, performs authorized local readiness work and records any external dependencies. Delivery Planning owns the combined commit/handoff. Do not start implementation from this compilation checkpoint alone. No M0 is presumed; only readiness may justify one.
+Compiler structural, source/provenance, preservation and link checks are recorded in `workflow/delivery-planning/results/compiler.yaml`. This documentation-only compilation does not run application acceptance or declare implementation readiness. **Next: milestone-readiness**, automatically invoked by Delivery Planning, owns prerequisites and executable environment audit. Root owns the combined planning commit.

@@ -1,3 +1,24 @@
+# Approved feedback delta traceability
+
+Mode: CHANGE_PLAN. Primary authority is the current validated definition package and committed definition `next_handoff`; REC-RUN-003 backlog is the adopted resolved delta. Its historical pending-definition gate has been satisfied without mutating reconciliation. All 7 directives map through 6 remediation items; observations are evidence and the original subtabs suggestion remains exploratory (approved UX independently chooses section links/select).
+
+| Required remediation | Milestone | Governing authority / checks |
+| --- | --- | --- |
+| REC-RM-003 | [18](18-assisted-identity-resets.md) | IDENT-05; SECRES-05/T08–11; UX-C29–31 |
+| REC-RM-004 | [19](19-independent-smtp-deletion.md) | STATE-01/02/03; UX-IN09; UX-C32 |
+| REC-RM-001 | [20](20-focused-settings-and-navigation.md) | UX-IA01; UX-C01/20/21 |
+| REC-RM-005 | [20](20-focused-settings-and-navigation.md) | UX-IA05; UX-C26/27 |
+| REC-RM-002 | [21](21-friendly-configuration-and-import.md) | MIGRATE-01–04; UX-IA04/06; UX-C23/33 |
+| REC-RM-006 | [21](21-friendly-configuration-and-import.md) | UX-IA06 all capability rows; UX-C04/28 |
+
+Shared constraints: current RBAC, durable audit, version/generation safety, secret handling and UX-C15/20/21/22 apply to M18–21. SEC-DEF-001 is accepted risk, not new work. Friendly import controls deliberately satisfy REC-RM-002 and REC-RM-006 once in M21; full-scope draft semantics are owned by M20 and consumed by M21. SMTP deletion integrates into the Email section without forcing the independent security mutation to wait on presentation.
+
+Excluded: SaaS/multi-tenancy, SAML/OIDC/SCIM, new feature/profile packs, broad rewrites, optional architecture recommendations, accepted non-exfiltration limitation and already-conforming completed behavior. Actual external LLM connections remain recorded NOT RUN under the existing authorization; no new blanket waiver. Deferred required feedback, blocked items and unmapped obligations: none. All UX-IA06 rows are mandatory in M21, including nested typed options and import mappings; exact capability proof is required there.
+
+## Historical initial-build mapping (preserved)
+
+The following is the original PRODUCT_BUILD allocation for completed M10–17. Historical counts/revisions describe that scope, not the current feedback inventory.
+
 # Web console delivery traceability
 
 Mode: PRODUCT_BUILD. The committed validated [definition package](../../../workflow/definition/definition-package.yaml) is authority; [coverage](../../../docs/web-console-prd-coverage.md) and [journeys](../../../docs/web-console-prd-user-journey-audit.md) enumerate required surfaces and validation. Mapping is an implementation obligation, not evidence of completed code. Repeated IDs deliberately carry foundation plus consuming feature/integration obligations; each milestone records its actual behavior boundary.

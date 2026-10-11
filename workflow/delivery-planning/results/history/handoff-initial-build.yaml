@@ -1,0 +1,65 @@
+schema_version: 1
+workflow: delivery-planning
+product_id: secretsauce-mcp
+status: ready_for_implementation
+source:
+  mode: PRODUCT_BUILD
+  type: definition-package
+  path: workflow/definition/definition-package.yaml
+  revision: sha256:44c2c2338ed74a26867fdd374988bb73c4bd6ed1179e99a7a329b26acf59f6e1
+  repository_commit: 06dd0ee59defd1a75db121f1d8133c7100238b80
+planning:
+  repository_commit: 865aa5710bcb9ff6c4641e177452ab9c50619a19
+milestones:
+  manifest: delivery/milestones/secretsauce-mcp/status.yaml
+  packet_revision: sha256:a262e7f9b7087b033e2708500b060576ba5adfec8dbc9dc98f2fa3a1f49f104d
+  manifest_revision: sha256:166f8fa144f5208a991cc7f94e57cddcad5e7b4a6b1154287518f9d59db41b0b
+  start_milestone: "10"
+readiness:
+  status: READY_WITH_EXTERNAL_DEPENDENCIES
+  prerequisite_manifest: delivery/readiness/secretsauce-mcp/prerequisite-manifest.md
+  result: delivery/readiness/secretsauce-mcp/readiness-report.md
+  adapter: workflow/delivery-planning/results/readiness.yaml
+m0:
+  present: false
+  milestone: null
+  rationale: Existing repository baseline is sufficient; console/browser/storage
+    setup belongs to10, fixtures to their outcomes, external actions cannot be
+    M0.
+external_dependencies:
+  - id: PRE-015
+    description: Authorized real ChatGPT and Codex test accounts/access and isolated
+      reachable MCP endpoint
+    owner: Product Owner / authorized interoperability tester
+    status: unverified
+    first_consuming_milestone: "14"
+    first_consuming_boundary: acceptance
+    repeat_at:
+      - 17 post-restore reconnect
+    blocking_next_milestone: false
+    completion_instructions: delivery/readiness/secretsauce-mcp/prerequisite-manifest.md#external-completion-instructions
+    evidence_required: Tester authorization and dated sanitized real-client
+      consent/discovery/reference/request/denial/revoke/restart/reconnect
+      evidence for both clients; repeat fresh authorization/reconnect after
+      restore
+    evidence_destination: evidence/platform/
+  - id: PRE-016
+    description: Permitted Docker daemon and isolated proxy/mounts/disposable recovery host
+    owner: Host operator / CI maintainer
+    status: unverified; current sandbox daemon access denied
+    first_consuming_milestone: "15"
+    first_consuming_boundary: Docker/proxy validation
+    repeat_at:
+      - 16 operational backup evidence
+      - 17 clean-host/crash/recovery drill
+    blocking_next_milestone: false
+    completion_instructions: delivery/readiness/secretsauce-mcp/prerequisite-manifest.md#external-completion-instructions
+    evidence_required: Successful docker client/server and Compose checks;
+      authorized isolated mounts/capacity/target; implemented smoke/restart and
+      backup/restore drill records, conditional RTO timing
+    evidence_destination: evidence/platform/
+next:
+  workflow: implementation
+  recommended_skill: milestone-delivery-orchestrator
+  manifest: delivery/milestones/secretsauce-mcp/status.yaml
+  start_milestone: "10"

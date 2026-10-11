@@ -1,0 +1,165 @@
+schema_version: 1
+specialist: milestone-readiness
+product_id: secretsauce-mcp
+status: READY_WITH_EXTERNAL_DEPENDENCIES
+summary: Eight milestones are internally ordered; next milestone10 has verified
+  start facilities. Real clients and Docker/recovery environment are explicit
+  owned future acceptance gates. No M0 or bootstrap changes.
+source:
+  path: workflow/definition/definition-package.yaml
+  revision: sha256:44c2c2338ed74a26867fdd374988bb73c4bd6ed1179e99a7a329b26acf59f6e1
+  repository_commit: 06dd0ee59defd1a75db121f1d8133c7100238b80
+  provenance_closeout_commit: bb6f29cd318b77c2cf70efa5b1f9adaf25fdf2cb
+packet:
+  path: delivery/milestones/secretsauce-mcp
+  manifest: delivery/milestones/secretsauce-mcp/status.yaml
+  manifest_revision: sha256:166f8fa144f5208a991cc7f94e57cddcad5e7b4a6b1154287518f9d59db41b0b
+  compiler_revision: sha256:be71b3924591bc444b5da8b31ef0982f9e5e207024683c4c74806d2e13b8fe0d
+  revision: sha256:a262e7f9b7087b033e2708500b060576ba5adfec8dbc9dc98f2fa3a1f49f104d
+  revision_method: SHA-256 of sorted packet path + NUL + sha256:file-digest lines,
+    joined with newline; all packet files included.
+  artifacts:
+    - path: delivery/milestones/secretsauce-mcp/10-secure-audited-setup.md
+      revision: sha256:75dfd4caf24033efbc4ab14117b3245bf73439d34ed448c1c75a3700dafaa450
+    - path: delivery/milestones/secretsauce-mcp/11-managed-service-configuration.md
+      revision: sha256:0974e1d0fc81faf4ae5f4377ca7fce379e46ae18b4a414cba5140d1f8f255d46
+    - path: delivery/milestones/secretsauce-mcp/12-people-and-account-recovery.md
+      revision: sha256:57194362bc790482574d6d431b2eeb13a9884b12635bcb601bbe76b8e665e6b6
+    - path: delivery/milestones/secretsauce-mcp/13-advanced-policy-and-migration.md
+      revision: sha256:31df199c8c7e8b0c1841fd46c5db92a1a46e72a7e6ace1eda707db4c710b5576
+    - path: delivery/milestones/secretsauce-mcp/14-mcp-client-access.md
+      revision: sha256:76083d3d4e6aa6ca3c117c4f85ba7058bec36cc1091da5333adee74bc12963fc
+    - path: delivery/milestones/secretsauce-mcp/15-operating-evidence-and-limits.md
+      revision: sha256:e97bae18495226b48f04cc8d22f083fab302077d272a060f18eeaaa63cab4f85
+    - path: delivery/milestones/secretsauce-mcp/16-encrypted-instance-backups.md
+      revision: sha256:e61b86ca883a0f8c00a3747f1a85a8f5bdf5abe60c27c9c4184843ccebeaeacf
+    - path: delivery/milestones/secretsauce-mcp/17-safe-instance-recovery.md
+      revision: sha256:397eefccf9a35158fa20ed5fb9b474c3ceb2760f6127a50f07d7537e99f52b1d
+    - path: delivery/milestones/secretsauce-mcp/index.md
+      revision: sha256:4a9a331940ba3e77acf3ac0415e17c9c65842b2e5979303dcccdfd7237223088
+    - path: delivery/milestones/secretsauce-mcp/status.yaml
+      revision: sha256:166f8fa144f5208a991cc7f94e57cddcad5e7b4a6b1154287518f9d59db41b0b
+    - path: delivery/milestones/secretsauce-mcp/traceability.md
+      revision: sha256:f484408eba6c5b7b2256f97a95d8d6ffabdba9b58a1f2cfe6a03537806ac4553
+  order:
+    - "10"
+    - "11"
+    - "12"
+    - "13"
+    - "14"
+    - "15"
+    - "16"
+    - "17"
+  dependencies_unchanged: true
+artifacts:
+  prerequisite_manifest:
+    path: delivery/readiness/secretsauce-mcp/prerequisite-manifest.md
+    revision: sha256:2bae9b188244f5f37946b5f93c6ab18926aaaa0b273c875c29ae5851faa2b0d8
+  readiness_report:
+    path: delivery/readiness/secretsauce-mcp/readiness-report.md
+    revision: sha256:1156670d7946e941111c24f8038850f984efc1ec410ce15284cfcea9054e399a
+prerequisite_count: 18
+automatic_changes: Readiness-only documentation and facility verification; no
+  source/bootstrap/package changes
+confirmation_requests: []
+user_actions: &a1
+  - id: PRE-015
+    description: Authorized real ChatGPT and Codex test accounts/access and isolated
+      reachable MCP endpoint
+    owner: Product Owner / authorized interoperability tester
+    status: unverified
+    first_consuming_milestone: "14"
+    first_consuming_boundary: acceptance
+    repeat_at:
+      - 17 post-restore reconnect
+    blocking_next_milestone: false
+    completion_instructions: delivery/readiness/secretsauce-mcp/prerequisite-manifest.md#external-completion-instructions
+    evidence_required: Tester authorization and dated sanitized real-client
+      consent/discovery/reference/request/denial/revoke/restart/reconnect
+      evidence for both clients; repeat fresh authorization/reconnect after
+      restore
+    evidence_destination: evidence/platform/
+  - id: PRE-016
+    description: Permitted Docker daemon and isolated proxy/mounts/disposable recovery host
+    owner: Host operator / CI maintainer
+    status: unverified; current sandbox daemon access denied
+    first_consuming_milestone: "15"
+    first_consuming_boundary: Docker/proxy validation
+    repeat_at:
+      - 16 operational backup evidence
+      - 17 clean-host/crash/recovery drill
+    blocking_next_milestone: false
+    completion_instructions: delivery/readiness/secretsauce-mcp/prerequisite-manifest.md#external-completion-instructions
+    evidence_required: Successful docker client/server and Compose checks;
+      authorized isolated mounts/capacity/target; implemented smoke/restart and
+      backup/restore drill records, conditional RTO timing
+    evidence_destination: evidence/platform/
+external_dependencies: *a1
+unresolved_internal_prerequisites: []
+blockers: []
+next_milestone: "10"
+affected_milestones:
+  - "14"
+  - "15"
+  - "16"
+  - "17"
+m0:
+  disposition: Not required
+  reason: Existing repository baseline is sufficient; console/browser/storage
+    setup belongs to10, fixtures to their outcomes, external actions cannot be
+    M0.
+corrections:
+  required: false
+  issue_ids: []
+  attempts: 0
+checks:
+  dependency_order: "PASS: all eight milestones, no forward edges/cycles/missing provider"
+  scope_preservation: "PASS: stripping only readiness additions reproduces all
+    eight compiler artifact hashes exactly"
+  local_links: PASS
+  preconditions_and_readiness_sections: "PASS: all eight milestones, normalized PRE-001–018"
+  clean_environment_simulation: PASS internally with explicit PRE-015/016 future external gates
+  baseline_install: PASS isolated lockfile install; cached offline source, no
+    original node_modules
+  baseline_build: PASS
+  baseline_tests: PASS 33 files / 372 tests with loopback permission after sandbox EPERM
+  current_browser: Installed Chrome154 verified; future UI acceptance pending
+  docker: CLI and Compose available; daemon access permission denied, external PRE-016
+  history_preserved: PASS
+  diff_check: "PASS: direct git diff --check; child-process invocation sandbox-denied"
+changed_paths:
+  - delivery/milestones/secretsauce-mcp/10-secure-audited-setup.md
+  - delivery/milestones/secretsauce-mcp/11-managed-service-configuration.md
+  - delivery/milestones/secretsauce-mcp/12-people-and-account-recovery.md
+  - delivery/milestones/secretsauce-mcp/13-advanced-policy-and-migration.md
+  - delivery/milestones/secretsauce-mcp/14-mcp-client-access.md
+  - delivery/milestones/secretsauce-mcp/15-operating-evidence-and-limits.md
+  - delivery/milestones/secretsauce-mcp/16-encrypted-instance-backups.md
+  - delivery/milestones/secretsauce-mcp/17-safe-instance-recovery.md
+  - delivery/readiness/secretsauce-mcp/prerequisite-manifest.md
+  - delivery/readiness/secretsauce-mcp/readiness-report.md
+  - workflow/delivery-planning/results/readiness.yaml
+transaction:
+  owner: delivery-planning-orchestrator
+  parent_commit: bb6f29cd318b77c2cf70efa5b1f9adaf25fdf2cb
+  repository_commit: null
+  child_commit: false
+  pre_existing_unrelated_paths:
+    - test-results/
+  parent_owned_in_progress_paths:
+    - workflow/delivery-planning/state.yaml
+    - workflow/delivery-planning/handoff.yaml
+    - workflow/delivery-planning/results/compiler.yaml
+    - workflow/delivery-planning/results/history/
+    - delivery/milestones/secretsauce-mcp/
+handoff:
+  parent_action: Validate and commit combined planning transaction, finalize
+    provenance, then publish implementation handoff
+  next_skill: milestone-delivery-orchestrator
+  manifest: delivery/milestones/secretsauce-mcp/status.yaml
+  start_milestone: "10"
+  retain_external_dependency_ids:
+    - PRE-015
+    - PRE-016
+  implementation_started: false
+  ready_handoff_requires_parent_commit: true

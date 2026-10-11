@@ -1,3 +1,60 @@
+# Milestone prerequisite manifest — approved feedback
+
+- Packet: `delivery/milestones/secretsauce-mcp/status.yaml`
+- Product ID: `secretsauce-mcp`
+- Audited revision: compiler packet `sha256:ef5ac5285860c20f70df161413849909f4ff06f1ca80fa295d8f7fb68e6e6611`; exact post-readiness packet pinned in `workflow/delivery-planning/results/readiness.yaml`.
+- Source transaction: `4d46db3fa08a25df52b8d7b0aa2357cf8446b2fd`
+- Planning transaction: parent-owned, pending finalization in `workflow/delivery-planning/handoff.yaml`; start `9ff135f3299fa36d773c243b72c0185a5fbd7fb5`.
+- Intended pending order: M18, M19, M20, M21; only M20 → M21 is a new dependency.
+- Order evidence: packet `status.yaml` dependencies and `index.md#milestones-and-dependencies`.
+- Last audit: 2026-10-11.
+
+## Active feedback prerequisites
+
+These rows govern M18–21. The original PRE-001–018 manifest is retained below as historical initial-build evidence, including its then-pending providers and external gates. Its old status is not the current delta status; completed M10–17 records and the explicit local-validation exception remain intact.
+
+| ID | Description | Consumers | Classification | Current status | Proposed provider | Class | Verification | Commands executed | Files changed | Blocking | Evidence |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| PRE-019 | Committed current definition, approved UX2, resolved remediation and planned packet | M18–21 | Already satisfied | Compiler verified source hashes/history; final planning commit remains parent closeout | Repository definition package and parent transaction | AUTO | Inspect source hashes and finalized parent handoff before delivery | Compiler result consumed; Git HEAD/status inspection | None | Yes before delivery handoff | FACT: workflow/definition/definition-package.yaml; compiler.yaml eligibility and source |
+| PRE-020 | Declared runtime, lockfile dependencies, compiler and HTTPS fixture tools | M18–21 | Already satisfied | Node26.11.1/npm12.2.0/OpenSSL3.6.5; isolated locked install and build pass | package.json, package-lock.json, CI Node22, Dockerfile | AUTO | npm ci; npm run build; node/npm/openssl versions | Isolated npm ci --offline --no-audit --no-fund:215 packages; npm run build PASS | None | Yes before implementation/build | FACT: package.json engines/scripts; .github/workflows/ci.yml; scripts/verify-console-people-browser.mjs |
+| PRE-021 | Matching declared Playwright Chromium for actual HTTPS/keyboard/reflow checks | M18–21 | Already satisfied | Missing current browser remediated using documented download to disposable /tmp; headless launch/focus PASS | Locked @playwright/test and documented install | AUTO | Same PLAYWRIGHT_BROWSERS_PATH for install and harness execution; launch current browser | Documented install completed with network permission; synthetic headless page/focus PASS Chromium156.0.8078.4 | None; temporary browser files only | Yes before UI acceptance | FACT: docs/console-operations.md browser procedure; current scripts import declared Playwright |
+| PRE-022 | Writable synthetic temp state and loopback/network execution permission | M18–21 | Already satisfied | Disposable checkout/storage and loopback request verified; restricted default fails EPERM | Authorized execution runner and isolated test facilities | AUTO | Ephemeral 127.0.0.1 listener/fetch; permission-preserving rerun on EPERM | Default EPERM; identical permitted probe PASS | None | Yes before local validation | FACT: AGENTS.md; test/setupAudit.ts; existing HTTP/HTTPS fixtures |
+| PRE-023 | Docker/Compose and isolated mounts for any affected container regression | M18–21 when container checks are required | Already satisfied | Client/server29.9.0 and Compose5.6.0 available through narrow permission; no container started | Existing local Docker and committed launcher/drill scripts | AUTO | docker version; docker compose version; inspect target isolation before each drill | Socket denied by default; permitted read-only version PASS | None | Conditional before required container validation, not source-work start | FACT: Dockerfile; scripts/docker-launcher.mjs; scripts/verify-console-*-docker.mjs; prior M17 acceptance |
+| PRE-024 | Delivered encrypted state, audit, identity/grants, settings/import, operating and recovery infrastructure | M18–21 | Already satisfied | M10–17 completed with committed local acceptance; known real-client NOT RUN preserved | Existing repository M10–17 | AUTO | Inspect completed records and source/harness/acceptance artifacts, retain working behavior | Records, source facilities and M17 cumulative acceptance inspected | None | Yes before dependent work | FACT: status.yaml records; evidence/qa/secretsauce-mcp/milestone17/acceptance.md; src and test console/OAuth modules |
+| PRE-025 | Delta-specific fixtures, migrations, failure/race tests and capability/browser coverage | M18–21 | Owned by the consuming milestone | Pending implementation by each outcome; credible reusable local facilities verified | Each consuming milestone | AUTO | Required Validation and slice plan identify test data, safe output and exact executable commands before acceptance | Not run: future feature acceptance; existing harness/test files inspected | None | Yes before owning milestone acceptance | FACT: M18–21 Required Validation; test/console-people*, console-notifications, console-advanced, managed-oauth; scripts/verify-console-* |
+| PRE-026 | Focused Settings shell, authorized field navigation and exact settings draft review | M21 | Provided by an earlier milestone | Pending M20, ordered before M21 | M20 | AUTO | M20 completed with current committed acceptance and preserved full-console routes | Not run: future implementation | None | Yes before M21 starts | FACT: status.yaml M21 dependencies; M20 Scope and M21 Preconditions |
+
+No newly required real external account, SMTP provider, production secret, database, hosted endpoint or OS installation. Actual LLM platform connection evidence remains historical NOT RUN; this delta's reset revocation, configuration and import checks use actual local HTTPS plus synthetic OAuth/MCP clients. This does not extend the old waiver to a new release/interoperability claim. Any such claim still needs the existing real-client procedure. No external node consumes a new milestone in the audited graph.
+
+## Active dependency graph
+
+```mermaid
+flowchart LR
+  R[Declared repository and execution facilities] -->|PRE-019–023| M18[18]
+  R -->|PRE-019–023| M19[19]
+  R -->|PRE-019–023| M20[20]
+  R -->|PRE-019–023| M21[21]
+  C12[Completed12] -->|PRE-024 identity and SMTP| M18
+  C14[Completed14] -->|PRE-024 current durable grants| M18
+  C12 -->|PRE-024 SMTP and drafts| M19
+  C15[Completed15] -->|PRE-024 settings and operations| M20
+  C17[Completed17] -->|PRE-024 recovery surfaces| M20
+  C13[Completed13] -->|PRE-024 importer and catalogs| M21
+  M20 -->|PRE-026| M21
+```
+
+Each milestone owns PRE-025. Completed baseline providers have all transitive dependencies in the preserved manifest. M13 is already completed and is available transitively through M20's M15 dependency. Shared files do not require new feature ordering: M18/19 can deliver in the current shell; M20 must preserve whichever completed actions exist. Sequential M18, M19, M20, M21 minimizes concurrent editing without inventing dependencies.
+
+## Clean-environment setup and verification
+
+From a clean checkout, provide declared Node>=22/npm, OpenSSL, writable temporary storage and permitted loopback execution. `npm ci` uses the lockfile; `npm run build` compiles. Use `PLAYWRIGHT_BROWSERS_PATH=/tmp/secretsauce-feedback-browsers npx playwright install chromium` and pass the same variable to browser commands. Network/browser execution needs normal narrow sandbox permission here. If OS libraries are missing on a different host, that host must supply them; this host's launch succeeded without OS changes. The `/tmp` browser cache is disposable and not an undeclared permanent provider.
+
+All synthetic keys/users/SMTP/downstreams/archives derive from existing fixture code; no running application or real account is assumed. M18 consumes completed identity/grant providers; M19 consumes SMTP/store/review providers; M20 consumes delivered settings/backup/recovery routes; M21 consumes completed M20 plus existing M13. Implementing each new behavior and updating affected fixtures is PRE-025, not missing bootstrap.
+
+Current evidence separates facility checks from feature acceptance. Clean lockfile installation used available npm cache, not a cold registry or CI Node22 run. npm12 blocked esbuild postinstall under its existing allowScripts policy; build nevertheless succeeded, and no policy was weakened. Baseline620-test/67-file evidence is historical M17 acceptance, not a newly executed suite. Run required new/related tests, full suite and browser tasks during delivery. No application test or acceptance is claimed by this document-only readiness transaction.
+
+## Historical initial-build manifest (preserved)
+
 # Milestone Prerequisite Manifest
 
 - Packet: `delivery/milestones/secretsauce-mcp/status.yaml`

@@ -15,3 +15,8 @@ Use appropriate URL/email/numeric input affordances while preserving paste and p
 ## UX-R03 — Platform invariants
 
 Browser refresh/back cannot repeat an apply, consume enrollment proof by GET, reveal stale secrets, or restart an in-flight restore. Navigate back through safe non-secret state; after authentication/recovery transitions reload current permissions. No offline execution or local secret persistence. Across desktop and narrow layout, status, review scope, audit restrictions and auth requirements are identical. Standalone client instructions distinguish console origin from the full MCP URL and explain network reachability without assuming public hosting.
+
+
+## UX-R04 — Focused Settings reflow
+
+Use the approved secondary section rail on desktop and an ordinary labeled Settings section selector on narrow layouts. Preserve the same six destinations, selected scope, search, draft summary and full-scope review action. Only current-section content is rendered; section content may scroll as needed. Do not make navigation require horizontal scrolling or clip headings/actions. Labels, status badges and long technical text wrap; verify document scroll width and visible text ranges at 320 CSS px and enlarged text, not component bounds alone. Review groups stack without losing section/current/proposed labels. All fields and advanced disclosures retain keyboard reachability and the same safety checks.

@@ -1,6 +1,6 @@
 # SecretSauce web console UX system
 
-**Authority:** Approved UX revision `web-console-ux-1`, synthesized from draft-1 under accepted **UX-DESIGN-001** (“I approve of the current design”). [Manifest](manifest.yaml) routes this system and exact source revisions; [experience brief](experience-brief.yaml) records approved direction. The [decision ledger](../../workflow/definition/decisions.md) is the approval record. The [preserved concepts](../../workflow/definition/drafts/product-ux/web-console-initial/index.md) are representative evidence, not an implementation or exhaustive screen specification. Their original unapproved labels document their pre-approval provenance; approval is recorded here and in the ledger without rewriting them.
+**Authority:** Approved UX revision `web-console-ux-2`, preserving draft-1 under **UX-DESIGN-001** and adopting feedback-draft-1 under accepted **UX-DESIGN-002** (“i approve of the proposal”). [Manifest](manifest.yaml) routes this system and exact source revisions; [experience brief](experience-brief.yaml) records approved direction. The [decision ledger](../../workflow/definition/decisions.md) is the approval record. The [preserved concepts](../../workflow/definition/drafts/product-ux/web-console-initial/index.md) are representative evidence, not an implementation or exhaustive screen specification. Their original unapproved labels document their pre-approval provenance; approval is recorded here and in the ledger without rewriting them.
 
 ## UX-G01 — Product and audience
 
@@ -14,7 +14,7 @@ Desktop is the primary authoring surface; narrow screens support essential monit
 
 ## UX-G03 — Authority and responsibilities
 
-The PRD, normative security/state contracts and 47 actor journeys define required behavior. This system defines observable composition, interaction, disclosure and accessibility. The source contracts prevail for permissions and security transitions; a demonstrated conflict must be surfaced rather than silently implemented. No new cryptography, route/schema, storage, authentication mode, integration or release guarantee is introduced.
+The PRD, normative security/state contracts and 59 actor journeys define required behavior. This system defines observable composition, interaction, disclosure and accessibility. The source contracts prevail for permissions and security transitions; a demonstrated conflict must be surfaced rather than silently implemented. No new cryptography, route/schema, storage, authentication mode, integration or release guarantee is introduced.
 
 Implementation must preserve all supported gateway configuration, including advanced controls. A missing field in a representative concept is not permission to remove it. Prototype controls that illustrate structure without working behavior must become real, permission-appropriate interactions in implementation.
 
@@ -35,3 +35,5 @@ Implementation must preserve all supported gateway configuration, including adva
 Consulted 2026-10-09. [IBM Carbon table guidance](https://www.carbondesignsystem.com/building-blocks/core/components/data-table/guidelines) informs aligned data, search/filter grouping and primary-action placement. [GOV.UK check answers](https://design-system.service.gov.uk/patterns/check-answers/) informs grouped review with deliberate submission. [W3C reflow guidance](https://www.w3.org/WAI/WCAG22/Understanding/reflow.html) informs retaining task content as width decreases. These conventions informed the approved recommendation; none adds product scope or substitutes for Owner approval.
 
 The prior [visual inspection record](../../workflow/definition/drafts/product-ux/web-console-initial/index.md) covers five rendered concepts, including 390px recovery. This synthesis checks rule coherence and source traceability. Runtime usability, assistive-technology and full accessibility evidence remain future implementation work.
+
+The approved [Settings concepts](../../workflow/definition/drafts/product-ux/web-console-feedback-001/index.md) establish focused sections, friendly controls, applied summaries and explicit whole-draft review. Their proposal labels and bytes are preserved as approval evidence. UX-DESIGN-002 covers the bounded Settings direction; current PRD/SECRES-05/STATE authority supplies the separate reset and deletion semantics. Unaffected visual direction remains UX-DESIGN-001. No production conformance is claimed by this revision.

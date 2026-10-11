@@ -21,3 +21,8 @@ Support text resize/zoom and reflow, reduced-motion preferences, readable long i
 Authenticator setup provides a manual seed alternative to the QR code in the same protected enrollment step; clear accessible instructions explain code confirmation and recovery-code storage. Never require QR scanning as the only setup route. Inputs support appropriate autocomplete and code paste while security controls remain authoritative. Warn of an approaching session/action expiry when it is known and actionable; do not silently extend security lifetimes. Expiry messages preserve safe task context and give the authorized sign-in/reissue/recovery route. Secret proof, codes and seeds never enter announcements, error logs or general notifications.
 
 These are observable requirements for implementation and later audit. Static prototypes and this definition pass do not certify assistive-technology or WCAG conformance.
+
+
+## UX-A05 — Settings and assisted-reset focus
+
+Settings destinations are navigation links with current-page semantics, not ARIA tabs for separate pages. The narrow selector has a visible label and current value. Search results name section/field; selection follows the unsaved-work guard, opens the required disclosure and focuses the target field or readable value. Linked cross-section error summaries follow the same safe transition. Preserve focus and safe draft work after stale-state errors. Distinct password/factor reset confirmations and restricted enrollment announce the correct consequence and status without secret proof/factor contents. Return cancelled confirmations to their invoking control; forbidden or removed targets use a safe successor.

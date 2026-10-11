@@ -13,9 +13,11 @@ validated_inputs:
 - path: workflow/reconciliation/REC-RUN-002/reconciliation-result.yaml
   revision: sha256:c6b695bd86f0ebcf526f188b7faf4bfac183761b0b2fd79631b0e121adb96e1e
 - path: product/ux/01-information-architecture.md
-  revision: sha256:a9efc597a9218098cb904728e7e6584ab8b2ac36253f52cbd4f436f321789046
+  revision: sha256:2f7bc646c1f518e424378a4b47df945d5b7eb8c72f1c2aef7f07879929a40ddf
 - path: docs/web-console-prd-coverage.md
   revision: sha256:ee1f5e26989ba653c007b67ef5b36d3d06922cc24db49b3c2eb8b4959620bb7e
+- path: product/ux/02-interaction-patterns.md
+  revision: sha256:0346e83574043bcac2927c197c5639624d6d405961e9226e4a5f15b02908f331
 decision_provenance:
 - D-001
 - D-002
@@ -35,16 +37,12 @@ decision_provenance:
 - REC-DEC-003
 - PO-FB-008
 - PO-FB-011
+- UX-DESIGN-002
 artifact_changes:
-- path: docs/web-console-prd-coverage.md
-  summary: Updated bounded affected coverage rows with separate reset role/lifecycle paths, independent SMTP deletion,
-    Settings scopes, navigation and legacy import obligations; preserved unaffected IDs and pending UX-DESIGN-002
-    boundary.
 - path: workflow/definition/results/coverage.yaml
-  summary: Recorded successful bounded correction recheck, exact normative and coverage revisions, and explicit
-    implementation limitation.
+  summary: Adapter-only compatibility recheck against approved web-console-ux-2 IA and interaction patterns; prior
+    coverage bytes and validated PRD/security/state revisions preserved.
 changed_paths:
-- docs/web-console-prd-coverage.md
 - workflow/definition/results/coverage.yaml
 findings: []
 questions: []
@@ -138,8 +136,12 @@ validation:
     gateway evidence retained, not refreshed.
   targeted_correction_recheck: PASS against exact recorded source and corrected coverage hashes; no implementation
     tests or current implementation audit.
-workflow_readiness: Coverage-stage PASS only; UX-DESIGN-002 and downstream reviews remain orchestrator-owned; no
-  global implementation readiness claim.
+  approved_ux_compatibility_recheck: 'PASS: exact approved IA/pattern hashes recorded; canonical UX adds specific
+    interaction composition within already mapped PRD capabilities. No new capability, lost role/state/test obligation
+    or normative conflict found. Prior coverage revision unchanged; REC-RUN-002 remains historical reconciliation
+    evidence.'
+workflow_readiness: Coverage-stage PASS against approved web-console-ux-2. UX-DESIGN-002 is approved; downstream
+  domain reviews and reconciliation convergence remain orchestrator-owned. No implementation readiness claim.
 targeted_revalidation:
   finding_ids:
   - REC-001
@@ -149,7 +151,23 @@ targeted_revalidation:
   - REC-005
   - REC-006
   - REC-007
-  pending_external_decision: UX-DESIGN-002 remains centrally tracked; no proposed mechanism adopted.
+  pending_external_decision: None for coverage. UX-DESIGN-002 approved and canonical UX published; coverage Markdown
+    pending-design wording records the earlier review checkpoint and is superseded for current workflow status by
+    this adapter, not current authority.
   local_corrections: 'Completed targeted recheck: corrected coverage faithfully maps unchanged normative input revisions;
     109 unique rows, all 53 PRD IDs and 11 companion IDs, eight populated status-prefixed columns, separate role/state/error/test
     obligations. No remaining local correction.'
+  approved_ux_compatibility:
+    UX-IA01: UX-01.d and UX-04 cover selected navigation including programmatic state and non-color indication;
+      existing row acceptance remains required.
+    UX-IA05: UX-02 and UX-02.a/b/c cover focused role-scoped Settings, search and friendly summaries. CONFIG-03.b
+      and UX-03 cover shared saved draft, exact whole-reviewed-set atomic apply, unsaved-edit navigation guards,
+      stale authority and preserved safe work. Approved six-destination navigation, initial Response protection,
+      narrow selector and search/error focus specialize these existing obligations without conflicting product semantics.
+    UX-IA06: CAP-CFG-01 through CAP-CFG-06, OPS-02, IDENT-04 and migration rows retain full configuration inventory.
+      Typed option/list controls and readable summaries specialize UX-02 lossless friendly editing; expert syntax
+      remains optional and host-only inputs remain excluded.
+    UX-IN08: IDENT-05.b/d/e/f/g/h and SECRES-05 explicitly cover separate initiators, target hierarchy, retained-factor
+      password completion, restrictive MFA issuance, issuer/target generations and final Owner continuity.
+    UX-IN09: IDENT-04.c and STATE-01/02/03 cover separate SMTP deletion, retained create/replace draft workflow,
+      dependencies, pending-copy removal, revision races, uncertain persistence and delivery admission.

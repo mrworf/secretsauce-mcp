@@ -1,8 +1,8 @@
 stage: product-ux
-status: DECISION_REQUIRED
+status: PASS
 mode: targeted_revalidation
-scope: Forward UX stage after current PRD, coverage and journeys PASS; bounded REC-001 through REC-007 integration.
-  Pending existing UX-DESIGN-002 only.
+scope: Approved bounded web-console feedback synthesis for REC-001 through REC-007, preserving unaffected UX-DESIGN-001
+  authority.
 validated_inputs:
 - path: docs/web-console-prd.md
   revision: sha256:bc908afcb8c40184dfcccdf296672bc559f5499236ed37f351a82f34ad0e9843
@@ -18,46 +18,36 @@ validated_inputs:
   revision: sha256:2a66ade78b37b971d5cf0f62ff5042564089d4482ed46bb3cce68c68299ae6d9
 - path: workflow/reconciliation/REC-RUN-002/reconciliation-result.yaml
   revision: sha256:c6b695bd86f0ebcf526f188b7faf4bfac183761b0b2fd79631b0e121adb96e1e
-- path: product/ux/00-overview.md
-  revision: sha256:80520dcbc864849814a34213389d2ff5f9193b3007621d446f32217e00de07ae
-- path: product/ux/01-information-architecture.md
-  revision: sha256:a9efc597a9218098cb904728e7e6584ab8b2ac36253f52cbd4f436f321789046
-- path: product/ux/02-interaction-patterns.md
-  revision: sha256:64385ad9998533bb63f6430aea5ed73176f2a2afb46684ac26caa571a240d56f
-- path: product/ux/03-responsive-and-platform.md
-  revision: sha256:cd027549dbb9d62f4467c8988102599d20e5b1b1019776b51cac8216535d66dd
-- path: product/ux/04-visual-system.md
-  revision: sha256:2345fc823bb63e0bafb418643a85b8bde8e757931d7e2c17de36f1297257afd9
-- path: product/ux/05-accessibility.md
-  revision: sha256:7fdc573a9cfae385c31077bafdc46b302e30e3a8669aafda760f9bf3094e3642
-- path: product/ux/06-feature-exceptions.md
-  revision: sha256:526d8799f78f23fef3b426e6d4a82f1a97c14ebf19a7f00cc8b7563436cc0df5
-- path: product/ux/07-acceptance-checklist.md
-  revision: sha256:66b802e9327253abd5de128566f95025225c11adc4482d77fdcf9fd6a5cafb27
-- path: product/ux/experience-brief.yaml
-  revision: sha256:a47b0fdbd6ea02993a0bcc349b581620e0e4affd21f5ceab63f5d6f39a016ef7
-- path: product/ux/manifest.yaml
-  revision: sha256:891610e063e21e46ed0f7400cd182a0efe901af4731b2b8a5ad0d59e2d07dbb5
-- path: workflow/definition/drafts/product-ux/web-console-feedback-001/design-contract.md
+- &id001
+  path: workflow/definition/drafts/product-ux/web-console-feedback-001/design-contract.md
   revision: sha256:626f6a5c5b65f9965d98642e1e906823fd186fccbed7daaab4cb5379061fb3bb
-- path: workflow/definition/drafts/product-ux/web-console-feedback-001/email-desktop.png
+- &id002
+  path: workflow/definition/drafts/product-ux/web-console-feedback-001/email-desktop.png
   revision: sha256:7807ee626e1180e7810a00c83f23e40e45a0fd5e6278c30563f8276dd7774377
-- path: workflow/definition/drafts/product-ux/web-console-feedback-001/experience-brief.yaml
+- &id003
+  path: workflow/definition/drafts/product-ux/web-console-feedback-001/experience-brief.yaml
   revision: sha256:f512bbc5726f914bf53127217d3d3e215340a36752df1c786264dda5549cbd85
-- path: workflow/definition/drafts/product-ux/web-console-feedback-001/index.md
+- &id004
+  path: workflow/definition/drafts/product-ux/web-console-feedback-001/index.md
   revision: sha256:c42697e3e9460e052835e8474ec4f729daaff3078b6d2653d16bdfbe998a8349
-- path: workflow/definition/drafts/product-ux/web-console-feedback-001/render-checks.json
+- &id005
+  path: workflow/definition/drafts/product-ux/web-console-feedback-001/render-checks.json
   revision: sha256:e316bec7287d36dd1b8d7d4ceff88daec9f40e348469a3217a7364e202815f38
-- path: workflow/definition/drafts/product-ux/web-console-feedback-001/settings-desktop.png
+- &id006
+  path: workflow/definition/drafts/product-ux/web-console-feedback-001/settings-desktop.png
   revision: sha256:3655babf82cde5849e55a9a8b73e3042617dc37cc78bfc45440c10df73d2183f
-- path: workflow/definition/drafts/product-ux/web-console-feedback-001/settings-narrow.png
+- &id007
+  path: workflow/definition/drafts/product-ux/web-console-feedback-001/settings-narrow.png
   revision: sha256:ee10a30ef701e84cf10c181ea4281f263fabfbd7e1da339554b313648ed26012
-- path: workflow/definition/drafts/product-ux/web-console-feedback-001/settings-review.png
+- &id008
+  path: workflow/definition/drafts/product-ux/web-console-feedback-001/settings-review.png
   revision: sha256:e7c29bdf7b6a12eff35494c2d9e8185fca99d9ef4aa21c30249fefde33d41625
-- path: workflow/definition/drafts/product-ux/web-console-feedback-001/settings.html
+- &id009
+  path: workflow/definition/drafts/product-ux/web-console-feedback-001/settings.html
   revision: sha256:7863026c89cdb18f6d481ab95043f6315e1b191d5cfb0befb67aba36909b828e
 decision_provenance:
 - UX-DESIGN-001
+- UX-DESIGN-002
 - REC-DEC-001
 - REC-DEC-003
 - PO-FB-002
@@ -68,60 +58,73 @@ decision_provenance:
 - PO-FB-013
 - PO-FB-014
 artifact_changes:
+- path: product/ux/00-overview.md
+  summary: Published coherent approved web-console-ux-2 bounded authority; preserved unaffected rules and stable
+    IDs.
+  revision: sha256:2ef8da7f945e6aec97ff1e57f58f41ea89fb677f97e71fff3e983141efca4f6a
+- path: product/ux/01-information-architecture.md
+  summary: Published coherent approved web-console-ux-2 bounded authority; preserved unaffected rules and stable
+    IDs.
+  revision: sha256:2f7bc646c1f518e424378a4b47df945d5b7eb8c72f1c2aef7f07879929a40ddf
+- path: product/ux/02-interaction-patterns.md
+  summary: Published coherent approved web-console-ux-2 bounded authority; preserved unaffected rules and stable
+    IDs.
+  revision: sha256:0346e83574043bcac2927c197c5639624d6d405961e9226e4a5f15b02908f331
+- path: product/ux/03-responsive-and-platform.md
+  summary: Published coherent approved web-console-ux-2 bounded authority; preserved unaffected rules and stable
+    IDs.
+  revision: sha256:0f4128d57beaf0ad2bf82fe0f66ca6ecd65e47d680847fc11ae082010f32f16c
+- path: product/ux/04-visual-system.md
+  summary: Published coherent approved web-console-ux-2 bounded authority; preserved unaffected rules and stable
+    IDs.
+  revision: sha256:8ecf109ee9a61de31a205bd746727433afac135a9a2d061a93bba8f6fd9209d7
+- path: product/ux/05-accessibility.md
+  summary: Published coherent approved web-console-ux-2 bounded authority; preserved unaffected rules and stable
+    IDs.
+  revision: sha256:96a81f4275b0c747026f7f77c4f57935c5abe5fd824a657b16997e397a514795
+- path: product/ux/06-feature-exceptions.md
+  summary: Published coherent approved web-console-ux-2 bounded authority; preserved unaffected rules and stable
+    IDs.
+  revision: sha256:6347b8162f4b4987db9ef3cf7030f8930a42594988cf48dbe7ed6021e0b82569
+- path: product/ux/07-acceptance-checklist.md
+  summary: Published coherent approved web-console-ux-2 bounded authority; preserved unaffected rules and stable
+    IDs.
+  revision: sha256:c47b51b4a4f6f9d73d644f67e125c3e7b0118174a6f2a9ccfdc6b44abdb6e4f5
+- path: product/ux/experience-brief.yaml
+  summary: Published coherent approved web-console-ux-2 bounded authority; preserved unaffected rules and stable
+    IDs.
+  revision: sha256:b8371e8d77f398cd44c205320b7d73f860b0e48c152d0ad2425b5bdc9902121f
+- path: product/ux/manifest.yaml
+  summary: Published coherent approved web-console-ux-2 bounded authority; preserved unaffected rules and stable
+    IDs.
+  revision: sha256:8c2881d271b7ca836fbf9ca28e2687e2c049004fdca9093b7f9f3f6c80f43132
 - path: workflow/definition/results/ux.yaml
-  summary: Recorded current-input UX-stage review, preserved same pending approval and exact concept bytes, and
-    bounded canonical adoption requirements.
+  summary: Final bounded UX PASS with exact sources, approval evidence and canonical artifact hashes.
 changed_paths:
+- product/ux/00-overview.md
+- product/ux/01-information-architecture.md
+- product/ux/02-interaction-patterns.md
+- product/ux/03-responsive-and-platform.md
+- product/ux/04-visual-system.md
+- product/ux/05-accessibility.md
+- product/ux/06-feature-exceptions.md
+- product/ux/07-acceptance-checklist.md
+- product/ux/experience-brief.yaml
+- product/ux/manifest.yaml
 - workflow/definition/results/ux.yaml
 findings: []
-questions:
-- id: UX-DESIGN-002
-  kind: UX_DIRECTION_APPROVAL
-  blocking: true
-  origin_stage: product-ux
-  resolution_category: PRODUCT_DECISION
-  resolution_owner: user
-  depends_on: []
-  affected_requirement: UX-02
-  affected_requirements:
-  - UX-02
-  - UX-03
-  - UX-04
-  - CONFIG-03
-  affected_surfaces:
-  - settings-sections
-  - settings-search
-  - settings-draft-review
-  - configuration-forms
-  question: 'Approve the focused Settings direction shown in the concepts: six named sections, one visible at a
-    time, readable summaries and friendly forms, with all draft changes shown together before applying?'
-  reason: Existing feedback establishes focused sections and friendly controls; the proposed secondary navigation,
-    responsive selection and cross-section review composition are consequential experience choices not explicitly
-    covered by UX-DESIGN-001.
-  recommendation: Approve this bounded direction; retain the existing calm visual language and all advanced capabilities.
-  options:
-  - Approve this direction
-  - Refine this direction
-  alternatives:
-  - option: Refine this direction
-    tradeoff: Identify a material concern with section navigation, disclosure or review; revise only this bounded
-      proposal.
-  proposal_paths:
-  - workflow/definition/drafts/product-ux/web-console-feedback-001/index.md
-  - workflow/definition/drafts/product-ux/web-console-feedback-001/experience-brief.yaml
-  - workflow/definition/drafts/product-ux/web-console-feedback-001/settings-desktop.png
-  - workflow/definition/drafts/product-ux/web-console-feedback-001/email-desktop.png
-  - workflow/definition/drafts/product-ux/web-console-feedback-001/settings-narrow.png
-  - workflow/definition/drafts/product-ux/web-console-feedback-001/settings-review.png
-  - workflow/definition/drafts/product-ux/web-console-feedback-001/design-contract.md
-  approval_consequence: Allows synthesis of this Settings direction into canonical UX after current product reconciliation
-    is adopted; does not approve new roles, reset semantics or deletion mechanisms beyond their authoritative contracts.
+questions: []
+resolved_question_ids:
+- UX-DESIGN-002
+resolved_resolution_ids:
+- REC-DEC-002
 affected_requirements:
 - AUTHZ-02
 - AUTHZ-03
 - IDENT-04
 - IDENT-05
 - IDENT-06
+- CONFIG-01
 - CONFIG-02
 - CONFIG-03
 - CONFIG-04
@@ -148,157 +151,109 @@ affected_artifacts:
 - product/ux/07-acceptance-checklist.md
 - product/ux/experience-brief.yaml
 - product/ux/manifest.yaml
+- docs/web-console-prd-coverage.md
+- docs/web-console-prd-user-journey-audit.md
 reconciliation_required: false
 change_impact:
   product: false
   user_journeys: false
-  ux: false
+  ux: true
   architecture: false
   security: false
 ux_handoff:
   manifest:
     path: product/ux/manifest.yaml
-    revision: web-console-ux-1
+    revision: web-console-ux-2
+    content_revision: sha256:8c2881d271b7ca836fbf9ca28e2687e2c049004fdca9093b7f9f3f6c80f43132
   experience_brief:
-    path: workflow/definition/drafts/product-ux/web-console-feedback-001/experience-brief.yaml
-    revision: feedback-draft-1
+    path: product/ux/experience-brief.yaml
+    revision: web-console-ux-2
+    content_revision: sha256:b8371e8d77f398cd44c205320b7d73f860b0e48c152d0ad2425b5bdc9902121f
   approval:
-    status: pending
+    status: approved
     decision_refs:
     - UX-DESIGN-001
-    pending_question: UX-DESIGN-002
-    question_reused: true
-    proposal_revisions:
-    - path: workflow/definition/drafts/product-ux/web-console-feedback-001/design-contract.md
-      revision: sha256:626f6a5c5b65f9965d98642e1e906823fd186fccbed7daaab4cb5379061fb3bb
-    - path: workflow/definition/drafts/product-ux/web-console-feedback-001/email-desktop.png
-      revision: sha256:7807ee626e1180e7810a00c83f23e40e45a0fd5e6278c30563f8276dd7774377
-    - path: workflow/definition/drafts/product-ux/web-console-feedback-001/experience-brief.yaml
-      revision: sha256:f512bbc5726f914bf53127217d3d3e215340a36752df1c786264dda5549cbd85
-    - path: workflow/definition/drafts/product-ux/web-console-feedback-001/index.md
-      revision: sha256:c42697e3e9460e052835e8474ec4f729daaff3078b6d2653d16bdfbe998a8349
-    - path: workflow/definition/drafts/product-ux/web-console-feedback-001/render-checks.json
-      revision: sha256:e316bec7287d36dd1b8d7d4ceff88daec9f40e348469a3217a7364e202815f38
-    - path: workflow/definition/drafts/product-ux/web-console-feedback-001/settings-desktop.png
-      revision: sha256:3655babf82cde5849e55a9a8b73e3042617dc37cc78bfc45440c10df73d2183f
-    - path: workflow/definition/drafts/product-ux/web-console-feedback-001/settings-narrow.png
-      revision: sha256:ee10a30ef701e84cf10c181ea4281f263fabfbd7e1da339554b313648ed26012
-    - path: workflow/definition/drafts/product-ux/web-console-feedback-001/settings-review.png
-      revision: sha256:e7c29bdf7b6a12eff35494c2d9e8185fca99d9ef4aa21c30249fefde33d41625
-    - path: workflow/definition/drafts/product-ux/web-console-feedback-001/settings.html
-      revision: sha256:7863026c89cdb18f6d481ab95043f6315e1b191d5cfb0befb67aba36909b828e
-  authoritative_artifacts_changed: []
-  consumer: product-definition-orchestrator
-  canonical_adoption_scope_after_approval:
-  - scope: People and assisted reset visibility
-    targets:
-    - product/ux/01-information-architecture.md
-    - product/ux/07-acceptance-checklist.md
-    source: AUTHZ-02/03, IDENT-05, SECRES-05; REC-RM-003
-    required_rules: Owner can target other eligible human users including Owners. Administrator sees only the non-secret
-      list/detail needed for non-Owner reset targets. Expose distinct Reset password and Reset Authenticator actions;
-      no invitation, role/contact changes, disable/reactivate, restore-review or general grant-revocation expansion.
-  - scope: Separate reset ceremonies and feedback
-    targets:
-    - product/ux/02-interaction-patterns.md
-    - product/ux/05-accessibility.md
-    - product/ux/07-acceptance-checklist.md
-    source: IDENT-04/05/06, SECRES-05; REC-RM-003
-    required_rules: Both assisted actions use recent initiator password/TOTP, trusted-channel verification-category
-      confirmation and named target/action confirmation. Password issuance does not lock out; completion needs proof
-      plus retained TOTP/recovery code and new password, then revokes old access. MFA issuance immediately restricts
-      and revokes; fresh factor/codes completion keeps password and requires normal login. Explain both-lost sequence,
-      last-enrolled-Owner protection/host route, 30-minute expiry, manual or SMTP delivery, safe reissue and uncertain-state
-      recovery. Never expose target secrets or generalize expired issuer browser session into proof invalidation.
-  - scope: Independent SMTP deletion
-    targets:
-    - product/ux/02-interaction-patterns.md
-    - product/ux/06-feature-exceptions.md
-    - product/ux/07-acceptance-checklist.md
-    source: IDENT-04/06, CONFIG-03/04, STATE-01/02/03 SMTP amendment; REC-RM-004
-    required_rules: Keep SMTP value creation/replacement in draft/review/apply. Owner-only Delete SMTP credential
-      is separate from Save/Apply, recent-authenticated, version-bound and confirmed. Explain enabled dependency
-      and link to disable through review/apply before deletion. Preserve non-secret settings, distinguish missing/already-absent
-      and uncertain outcome, require draft refresh and fresh secret entry after deletion, never imply history recovers
-      the value. Service value actions retain existing immediate semantics.
-  - scope: Settings sections and friendly controls
-    targets:
-    - product/ux/01-information-architecture.md
-    - product/ux/02-interaction-patterns.md
-    - product/ux/03-responsive-and-platform.md
-    - product/ux/07-acceptance-checklist.md
-    source: UX-02, PO-FB-008/011; REC-DEC-002 plus pending UX-DESIGN-002
-    required_rules: After approval only, synthesize exact proposed six-section navigation, selected state, search/unsaved-navigation
-      guard, same-draft complete-scope review, readable summaries and capability-to-control map. Preserve advanced
-      literal values and role scope; no JSON default, no lossy form conversion, no invented per-section partial
-      apply. Narrow selector and wrap/reflow follow reviewed concepts.
-  - scope: Active navigation
-    targets:
-    - product/ux/01-information-architecture.md
-    - product/ux/04-visual-system.md
-    - product/ux/05-accessibility.md
-    - product/ux/07-acceptance-checklist.md
-    source: UX-01/04, PO-FB-006; REC-RM-001
-    required_rules: Existing current-location and selected-state rules already establish active navigation. Retain
-      them and clarify visible non-color plus programmatic selection at global/section/service-tab scope; no new
-      redesign approval or alternate shell.
-  - scope: Legacy import discoverability and preservation
-    targets:
-    - product/ux/01-information-architecture.md
-    - product/ux/02-interaction-patterns.md
-    - product/ux/07-acceptance-checklist.md
-    source: MIGRATE-01 through MIGRATE-04, PO-FB-014; REC-RM-002
-    required_rules: Retain import from Services and Configuration tools, main legacy YAML and both optional catalog
-      inputs, role-scoped draft validation, field/source errors, explicit credential/identity resolution, sanitized
-      review and no silent activation or host source reads. Preserve original semantics, identifiers and exceptions;
-      friendly imported summaries do not replace source validation.
-  - scope: UX authority publication after direction
-    targets:
-    - product/ux/manifest.yaml
-    - product/ux/experience-brief.yaml
-    - product/ux/00-overview.md
-    source: Product UX approval and artifact contracts
-    required_rules: After existing UX-DESIGN-002 is approved, publish one coherent bounded revision with exact current
-      authority hashes and decision provenance. Preserve UX-DESIGN-001 character and unaffected rules. No active
-      manifest/source revision change while approval is pending.
-  independent_resolved_work:
-  - Current PRD explicitly settles focused Settings and friendly controls; proposal matches these outcomes without
-    claiming selected layout authority.
-  - SECRES-05 settles reset hierarchy, distinct ceremonies and minimal Administrator target visibility; derive routine
-    controls from these rules without another product choice.
-  - STATE SMTP amendment settles independent deletion and preserved create/replace draft flow; proposal agrees.
-  - Active navigation and legacy import already have authoritative UX/product rules; their implementation remediation
-    adds no independent design decision.
-  - Existing UX-DESIGN-001 character, fixed global areas, roles, KISS and full capability preservation remain constraints.
-  approval_requirement:
-    skill: /home/ha/.codex/skills/product-ux/SKILL.md
-    quote: Seek Product Owner direction when a choice materially affects comprehension, task structure, navigation,
-      information priority, risk perception, workflow friction, disclosure, actor expectations, responsive capability,
-      accessibility behavior, consequential interaction, or overall product character.
-    application: This is a newly selected Settings section-navigation and disclosure composition. Existing UX-DESIGN-001
-      visual approval does not explicitly cover it. All concrete proposal work is complete before asking.
+    - UX-DESIGN-002
+    decision_ledger: workflow/definition/decisions.md
+    approved_proposal_revisions:
+    - *id001
+    - *id002
+    - *id003
+    - *id004
+    - *id005
+    - *id006
+    - *id007
+    - *id008
+    - *id009
+    approval_scope: Explicit approval of feedback-draft-1 Settings direction; prior visual character remains UX-DESIGN-001;
+      settled PRD/domain semantics supply resets/deletion.
+  authoritative_artifacts_changed:
+  - product/ux/00-overview.md
+  - product/ux/01-information-architecture.md
+  - product/ux/02-interaction-patterns.md
+  - product/ux/03-responsive-and-platform.md
+  - product/ux/04-visual-system.md
+  - product/ux/05-accessibility.md
+  - product/ux/06-feature-exceptions.md
+  - product/ux/07-acceptance-checklist.md
+  - product/ux/experience-brief.yaml
+  - product/ux/manifest.yaml
+  source_authorities_unchanged:
+  - docs/web-console-prd.md
+  - docs/web-console-prd-coverage.md
+  - docs/web-console-prd-user-journey-audit.md
+  - product/security/web-console-security-contract.md
+  - product/architecture/web-console-state-contract.md
+  - workflow/feedback/PO-FEEDBACK-2026-10-11-001/feedback.yaml
+  - workflow/reconciliation/REC-RUN-002/reconciliation-result.yaml
   downstream_freshness:
     affected_domains: []
     potentially_stale_artifacts: []
+  impact_hints:
+    coverage_journeys: IA input changed. Bounded input recheck recommended; no derived artifact edits made by UX.
+    architecture_security: Review current approved UX against their unchanged domain authority; no freshness decision
+      made here.
+  consumer: product-definition-orchestrator
+  canonical_rules:
+    settings: UX-IA05/06, UX-R04, UX-V04, UX-A05
+    resets: UX-IA04, UX-IN08
+    smtp_deletion: UX-IN09, UX-EX03
+    navigation_import: UX-IA01/04/06
+    conformance: "Existing UX-C01\u201325 retained; UX-C26\u201333 added."
 validation:
-  upstream_status: Current PRD/coverage/journey PASS and every recorded input hash verified against current bytes.
-  proposal_conformance: No contradiction requiring proposal/concept changes was found. Exact previously surfaced
-    proposal files, screenshots and question remain unchanged.
-  canonical_boundary: Older Owner-only assisted recovery wording awaits stated SECRES-05 adoption; this is known
-    authorized synthesis work, not a new conflict or user decision. No canonical PASS is claimed.
-  checks:
-  - Distinct reset controls and minimum Administrator target visibility derived from current settled semantics.
-  - SMTP deletion separate from apply, creation/replacement draft flow preserved.
-  - Same draft and full-scope review fit CONFIG-03; no partial application invented.
-  - Friendly control map preserves destination, credential, policy, scanner, OAuth, limits, SMTP, backup, health
-    and import capability.
-  - Narrow/200 percent concept evidence remains valid because concept bytes did not change.
-  canonical_bytes_preserved: true
-  proposal_bytes_preserved: true
-  production_tests_run: false
-  reason: Bounded definition-stage current-input validation; no executable implementation changes.
+  canonical_artifacts: 10
+  conformance_criteria: 33
+  unresolved_questions: 0
+  approved_proposal_bytes_preserved: true
+  source_hashes_verified: 7
+  approved_proposal_hashes_verified: 9
+  canonical_manifest_hashes_verified: 9
+  stable_rule_ids_unique: true
+  correction_recheck: 'PASS after synthesis: duplicate proposed reflow ID corrected to new UX-R04; backup-recovery
+    Owner-only wording explicitly distinguishes assisted account resets. All manifest hashes recomputed after final
+    edits.'
+  scope_checks:
+  - Six approved Settings destinations, one-section composition, readable summaries and typed controls preserve
+    full existing capability.
+  - Same-draft search/navigation guards and exact complete-scope review do not introduce partial apply.
+  - Reset target hierarchy, recent verification, issuance/completion distinctions, issuer/target proof checks and
+    last enrolled Owner continuity agree with SECRES-05.
+  - SMTP deletion is independent while creation/replacement retain draft/apply; dependency, stale-value, audit and
+    uncertainty rules match STATE amendment.
+  - Navigation and guided legacy/catalog import remain discoverable with role scope and no implicit activation.
+  - Approved visual character and proposal bytes retained; current canonical brief/manifest reflect explicit accepted
+    approval.
+  implementation_tests_run: false
+  limitations: Definition-only synthesis. Existing rendered proposal evidence was inspected previously and bytes
+    are unchanged. No new runtime conformance, assistive-technology, release or compliance certification.
 transaction:
+  parent_commit: 1cbc57766e76b4cd4de8f35e9a7dc39b7b1214e3
   owner: product-definition-orchestrator
   child_commit: false
-workflow_readiness: UX-stage DECISION_REQUIRED on existing UX-DESIGN-002 only. Canonical synthesis and downstream
-  reviews await approved direction; no delivery readiness claim.
+  pre_existing_dirty_paths:
+  - workflow/definition/decisions.md
+  - workflow/definition/open-questions.md
+  - workflow/definition/state.yaml
+  - test-results/
+workflow_readiness: UX-stage PASS for exact current sources only. Parent owns downstream revalidation, reconciliation
+  closeout, package and transaction.

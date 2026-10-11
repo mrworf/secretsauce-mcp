@@ -1,75 +1,88 @@
 status: approved
 product_id: secretsauce-mcp
 sources:
-  - path: docs/web-console-prd.md
-    revision: sha256:cb8d09474431d3bdd082466beac07163051bd2cb00639433f8a87bf85b46c3d8
-  - path: product/security/web-console-security-contract.md
-    revision: sha256:95e342c77316f1697540fa8da29c6dd6333d6b6d3356b326c4dde921bca4540d
-  - path: product/architecture/web-console-state-contract.md
-    revision: sha256:54956edc26dbcebcb48ecca0697a4695012d61488fa2297e56b6c04c9cbaa858
-  - path: docs/web-console-prd-coverage.md
-    revision: sha256:1cb9db8350470b5ddca5bc63e3005fb13df4900535b93db6541dc1f636b3598c
-  - path: docs/web-console-prd-user-journey-audit.md
-    revision: sha256:168c61f3b4e2223c14a1e706f36e6762dc2da23bf06a4f0b48cc0fffbb966987
+- path: docs/web-console-prd.md
+  revision: sha256:bc908afcb8c40184dfcccdf296672bc559f5499236ed37f351a82f34ad0e9843
+- path: docs/web-console-prd-coverage.md
+  revision: sha256:ee1f5e26989ba653c007b67ef5b36d3d06922cc24db49b3c2eb8b4959620bb7e
+- path: docs/web-console-prd-user-journey-audit.md
+  revision: sha256:22f0693cdda9a055ed8013a4a23ccf8710918a89a3417e6a0d902df4a7bef9a2
+- path: product/security/web-console-security-contract.md
+  revision: sha256:27df73fc50b4ef71e6d4434db62f09da7e018acc13dfa5a305c4d0da0654a94d
+- path: product/architecture/web-console-state-contract.md
+  revision: sha256:c685c7fc9539f878986ccd906878808395fb13ae8ae2261fad9fd667107cbc80
+- path: workflow/feedback/PO-FEEDBACK-2026-10-11-001/feedback.yaml
+  revision: sha256:2a66ade78b37b971d5cf0f62ff5042564089d4482ed46bb3cce68c68299ae6d9
+- path: workflow/reconciliation/REC-RUN-002/reconciliation-result.yaml
+  revision: sha256:c6b695bd86f0ebcf526f188b7faf4bfac183761b0b2fd79631b0e121adb96e1e
 experience:
   audience:
     primary:
-      - Occasional technical Owners
-      - Administrators configuring agent access
+    - Occasional technical Owners
+    - Administrators configuring agent access
     secondary:
-      - Auditors reviewing evidence
-      - Members connecting clients
+    - Auditors reviewing evidence
+    - Members connecting clients
   principles:
-    - Show current effective state before editable complexity
-    - Group controls around the service and task
-    - Make draft changes and immediate security actions visibly different
-    - Keep recovery instructions calm, concrete and reachable
+  - Show current effective state before editable complexity
+  - Group controls around the service and task
+  - Make draft changes and immediate security actions visibly different
+  - Keep recovery instructions calm, concrete and reachable
   product_character:
     tone: Calm, precise and practical; restrained existing brand accent
     density: Moderate density with aligned lists and generous form grouping
-    complexity_strategy: Guided default forms, in-context advanced disclosure and an
-      equivalent advanced editor
-    guidance_level: Short explanations at decision points; impact summaries before
-      consequential actions
+    complexity_strategy: Guided default forms, in-context advanced disclosure and an equivalent advanced editor
+    guidance_level: Short explanations at decision points; impact summaries before consequential actions
   information_priorities:
-    - Service identity, runtime status and draft status
-    - Effective access and security exceptions
-    - A clear next action and its consequences
-    - Audit/read-only/recovery state before ordinary controls
+  - Service identity, runtime status and draft status
+  - Effective access and security exceptions
+  - A clear next action and its consequences
+  - Audit/read-only/recovery state before ordinary controls
   interaction_direction:
-    navigation: Established four-area service-first navigation; account controls
-      persistent; service tabs retain context
-    routine_actions: Direct links and inline status; separate save draft and
-      review/apply; ordinary editing does not use modal stacks
-    consequential_actions: Full-page review for complex changes and restore; concise
-      confirmation for immediate disable/revoke/rotation; recent authentication
-      only where required
-    progressive_disclosure: Keep effective summaries visible; reveal advanced
-      controls in place and through settings search
-  responsive_priority: Reflow to one column while retaining status, consequences
-    and next action; service rows become labeled stacks; no narrow-screen
-    removal of essential monitoring/recovery
+    navigation: Established four-area service-first shell; six focused Settings destinations with secondary section
+      rail on desktop and labeled selector on narrow screens; account controls persistent
+    routine_actions: Readable applied summaries and friendly controls; same draft across Settings sections, explicit
+      save and complete-scope review/apply; ordinary editing avoids modal stacks
+    consequential_actions: Full-page review for complex changes and restore; concise confirmation for immediate
+      disable/revoke/rotation; recent authentication only where required
+    progressive_disclosure: Named advanced controls and settings search preserve every supported value; optional
+      lossless advanced editor; raw JSON is not the ordinary read/edit surface
+  responsive_priority: Reflow to one column while retaining status, consequences and next action; service rows become
+    labeled stacks; no narrow-screen removal of essential monitoring/recovery
   explicit_po_preferences:
-    - statement: KISS modern initial offering preserving gateway capabilities
-      decision_refs:
-        - D-009
-        - D-010
-    - statement: Single-organization self-hosted product with four fixed roles
-      decision_refs:
-        - D-001
-        - D-002
-    - statement: Approved the recommended calm, moderately dense direction represented
-        by draft-1 service, edit, review and recovery concepts
-      decision_refs:
-        - UX-DESIGN-001
-  explicit_po_dislikes: []
+  - statement: KISS modern initial offering preserving gateway capabilities
+    decision_refs:
+    - D-009
+    - D-010
+  - statement: Single-organization self-hosted product with four fixed roles
+    decision_refs:
+    - D-001
+    - D-002
+  - statement: Approved the recommended calm, moderately dense direction represented by draft-1 service, edit, review
+      and recovery concepts
+    decision_refs:
+    - UX-DESIGN-001
+  - statement: Focused Settings sections with readable summaries, friendly forms and full-draft review as represented
+      by feedback-draft-1
+    decision_refs:
+    - PO-FB-008
+    - PO-FB-011
+    - UX-DESIGN-002
+  explicit_po_dislikes:
+  - statement: One long page containing all Settings and JSON-heavy routine configuration
+    decision_refs:
+    - PO-FB-007
+    - PO-FB-008
+    - PO-FB-010
+    - PO-FB-011
   designer_discretion:
-    - Detailed spacing and type scales
-    - Ordinary component geometry and icons
-    - Exact responsive breakpoints consistent with reflow
-    - Routine field-level layout and microcopy
+  - Detailed spacing and type scales
+  - Ordinary component geometry and icons
+  - Exact responsive breakpoints consistent with reflow
+  - Routine field-level layout and microcopy
   approval:
     approved: true
     decision_refs:
-      - UX-DESIGN-001
-  revision: web-console-ux-1
+    - UX-DESIGN-001
+    - UX-DESIGN-002
+  revision: web-console-ux-2

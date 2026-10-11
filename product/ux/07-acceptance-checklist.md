@@ -31,3 +31,19 @@ These criteria specify the approved experience; they are not release certificati
 | UX-C25 | Representative task evaluation measures first straightforward service within 15 minutes, denial investigation within 2 minutes and user disable within 1 minute without bypassing safeguards. | UX-IA02/04, UX-IN02/03/04 | PRD usability targets |
 
 Definition validation confirms these criteria trace to approved rules and requirements; it does not mark them runtime-passed. Full-suite gateway preservation, operational recovery drills, platform support, cryptographic assurance and release ownership belong to implementation/security/operations validation rather than this UX checklist.
+
+
+## Bounded feedback conformance additions
+
+| ID | Observable check | Governing UX rules | Product trace |
+| --- | --- | --- | --- |
+| UX-C26 | One of six named Settings destinations is visible, selection is clear globally and locally, and the narrow selector preserves section/account/action reachability. | UX-IA01/05, UX-R04, UX-V04, UX-A05 | UX-01/02/04 |
+| UX-C27 | Authorized search reaches advanced fields; section/search/error navigation protects unsaved input; saved changes across sections remain visible in exact full-scope review without partial apply. | UX-IA05, UX-IN01/02, UX-A05 | CONFIG-03, UX-02/03 |
+| UX-C28 | Every UX-IA06 capability has friendly edit controls and readable effective summaries; advanced editor/import round trips preserve exact values, regexes, nested rule options, IDs and role scopes. | UX-IA03/06, UX-IN01/04 | BASE-01, CONFIG-01, POLICY-02, MIGRATE-01 |
+| UX-C29 | Owner and Administrator see separate permitted reset actions with minimum target visibility; prohibited targets and unrelated administration stay unavailable; final enrolled Owner protection remains explained. | UX-IA04, UX-IN08 | AUTHZ-02/03, IDENT-05, SECRES-05 |
+| UX-C30 | Password issuance preserves access; proof-plus-factor completion changes password only and revokes access. MFA issuance restricts immediately; fresh factor completion preserves password. Both require ordinary login; both-lost sequence is explicit. | UX-IN08, UX-A04/05, UX-EX02 | IDENT-05/06, SECRES-05 |
+| UX-C31 | Reset expiry/replay, revoked issuer, target change, audit outage, failed delivery and uncertainty expose safe outcomes/reissue without secret disclosure, false activation or requiring an open issuer browser. | UX-IN05/08 | AUDIT-04, SECRES-01/05 |
+| UX-C32 | SMTP deletion is independently confirmed and recent-authenticated; enabled dependency blocks with a disable/apply path; creation/replacement stay draft-based; stale drafts/history cannot restore deleted values. | UX-IN09, UX-EX03 | IDENT-04/06, CONFIG-03/04, STATE-01/02/03 |
+| UX-C33 | Legacy gateway YAML and both scanner catalogs enter a permitted draft with field/source errors and explicit credential/identity resolution; no silent dropping, arbitrary host read or activation. | UX-IA04/06, UX-IN02 | MIGRATE-01–04, BASE-03 |
+
+These additions supplement stable UX-C01–25 and inherit their authorization, error, accessibility and evidence boundaries. Canonical synthesis validates requirements; it does not claim runtime passage.

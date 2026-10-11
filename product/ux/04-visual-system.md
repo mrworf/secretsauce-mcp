@@ -17,3 +17,8 @@ Use sentence case and concrete action verbs. State actual consequence: “Disabl
 ## UX-V03 — Coherence with approved evidence
 
 Match the approved service-list hierarchy, grouped edit sections, explicit impact review and recovery checklist character. Prototype header labels and illustrative sample counts are not production fixtures. Treat proposal navigation, inert controls and truncated screen coverage as design-evidence scaffolding. No exact pixel-match requirement supersedes accessibility or functional completeness. New screens extend these shared rules rather than inventing another design language.
+
+
+## UX-V04 — Settings and location state
+
+Extend UX-DESIGN-001 with UX-DESIGN-002: compact secondary section navigation, readable applied summaries, clearly labeled editing state and a single prominent full-draft review action. Global and section selection use restrained accent plus weight/shape, not color alone. Keep raw JSON/YAML behind an explicitly optional advanced editor. Friendly repeated rows, selectors, units and typed option controls replace object dumps in ordinary editing and read-only views. Immediate deletion/reset controls remain secondary until their specific confirmation.

@@ -352,18 +352,22 @@ reason: No-long-page and friendly controls are settled; subtabs are exploratory.
   bounded UX within the approved calm grouped design, without adding features or assuming
   a new global redesign.
 resolution_category: SPECIALIST_RESOLUTION
-implementation_ready: false
+implementation_ready: true
 affected_requirements:
 - UX-02
 - UX-IA03
 - UX-IN01
-status: pending
+status: resolved
 resolution_owner:
 - ux
-routing_status: delegated
+routing_status: resolved
 depends_on: []
 ask_user: false
 result: workflow/definition/results/feedback-ux-resolution.yaml
+adopted_by: workflow/reconciliation/REC-RUN-003/reconciliation-result.yaml
+resolution_result: workflow/definition/results/ux.yaml
+resolution: Approved UX-DESIGN-002 synthesized as web-console-ux-2; REC-RUN-003 resolves
+  focused Settings and friendly control coverage.
 ```
 
 ## REC-DEC-003
@@ -451,11 +455,11 @@ approval_consequence: Allows synthesis of this Settings direction into canonical
   after current product reconciliation is adopted; does not approve new roles, reset
   semantics or deletion mechanisms beyond their authoritative contracts.
 derived_from: REC-DEC-002
-status: pending
+status: resolved
 stage: ux
-routing_status: awaiting_user
-ask_user: true
-proposal_revisions:
+routing_status: resolved
+ask_user: false
+proposal_revisions: &id001
 - path: workflow/definition/drafts/product-ux/web-console-feedback-001/index.md
   revision: sha256:c42697e3e9460e052835e8474ec4f729daaff3078b6d2653d16bdfbe998a8349
 - path: workflow/definition/drafts/product-ux/web-console-feedback-001/experience-brief.yaml
@@ -470,4 +474,8 @@ proposal_revisions:
   revision: sha256:e7c29bdf7b6a12eff35494c2d9e8185fca99d9ef4aa21c30249fefde33d41625
 - path: workflow/definition/drafts/product-ux/web-console-feedback-001/design-contract.md
   revision: sha256:626f6a5c5b65f9965d98642e1e906823fd186fccbed7daaab4cb5379061fb3bb
+resolution: 'Product Owner: i approve of the proposal'
+approval_scope: feedback-draft-1 focused Settings direction and the recorded representative
+  concepts
+approved_proposal_revisions: *id001
 ```

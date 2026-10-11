@@ -1,0 +1,100 @@
+stage: security-code-reviewer
+status: RECONCILIATION_REQUIRED
+scope: bounded_specialist_resolution
+resolution_id: REC-DEC-001
+source_finding_ids:
+- REC-001
+- REC-002
+decision_provenance:
+- PO-FB-002
+- PO-FB-004
+- D-002
+- D-004
+- D-006
+- D-010
+validated_inputs:
+- path: docs/web-console-prd.md
+  revision: sha256:cb8d09474431d3bdd082466beac07163051bd2cb00639433f8a87bf85b46c3d8
+- path: workflow/feedback/PO-FEEDBACK-2026-10-11-001/feedback.yaml
+  revision: sha256:2a66ade78b37b971d5cf0f62ff5042564089d4482ed46bb3cce68c68299ae6d9
+- path: workflow/reconciliation/REC-RUN-001/reconciliation-result.yaml
+  revision: sha256:0fe9e8f2f2b8679b63f17e4466c43a2ecfcf7fc01d5f028262d9581bd109f579
+- path: workflow/definition/decisions.md
+  revision: sha256:efa40bbc12b138a479ea1cea1c063f10c53e1dc575298a5eedb4ed6781d55ac4
+- path: workflow/definition/open-questions.md
+  revision: sha256:638d9287436a4427723527f0252c05cf9f5e6a8638a23dd9bada3ee57d95cbfd
+- path: product/architecture/web-console-state-contract.md
+  revision: sha256:6cca4e9888090495a122e7250eca22d93f9ce4ed123ce7a82d695d47b27232b1
+- path: AGENTS.md
+  revision: sha256:ec1c55f16250220f0768f2dfc93b0b2475373b5e3419e47c1923e5003af74141
+artifact_changes:
+- path: product/security/web-console-security-contract.md
+  summary: Scoped SECRES-03 assisted reset language and added SECRES-05 target matrix,
+    factor/password transitions, Owner continuity, issuer-generation revalidation,
+    audit/revocation, acceptance cases and precise PRD adoption text.
+- path: workflow/definition/results/feedback-security-resolution.yaml
+  summary: Bounded REC-DEC-001 resolution with cross-authority adoption remaining;
+    not full security-stage validation.
+changed_paths:
+- product/security/web-console-security-contract.md
+- workflow/definition/results/feedback-security-resolution.yaml
+findings:
+- id: REC-001
+  significance: MATERIAL
+  summary: Password reset authority requires PRD/UX adoption of SECRES-05; delegated
+    security semantics resolved.
+  affected_requirement: IDENT-05
+  affected_artifact: docs/web-console-prd.md
+  evidence: Current role matrix Owner-only recovery and IDENT-05; confirmed PO-FB-002;
+    SECRES-05 Precise PRD adoption text.
+  why_it_matters: Implementer must distinguish password-only issuance/completion from
+    factor recovery and enforce current target/issuer permissions.
+  local_correction_possible: false
+  reconciliation_required: true
+- id: REC-002
+  significance: MATERIAL
+  summary: Authenticator reset authority requires PRD/UX adoption of SECRES-05; delegated
+    security semantics resolved.
+  affected_requirement: AUTHZ-03
+  affected_artifact: docs/web-console-prd.md
+  evidence: Current IDENT-05 Owner-assisted wording; confirmed PO-FB-004; SECRES-05
+    target matrix and continuity contract.
+  why_it_matters: Broader initiation authority must not bypass target hierarchy, final
+    Owner continuity or mandatory fresh enrollment.
+  local_correction_possible: false
+  reconciliation_required: true
+questions: []
+affected_requirements:
+- IDENT-04
+- IDENT-05
+- IDENT-06
+- AUTHZ-02
+- AUTHZ-03
+- AUDIT-01
+- AUDIT-04
+- SEC-01
+affected_artifacts:
+- docs/web-console-prd.md
+- product/security/web-console-security-contract.md
+- product/architecture/web-console-state-contract.md
+- product/ux/02-interaction-patterns.md
+- docs/web-console-prd-user-journey-audit.md
+- docs/web-console-prd-coverage.md
+reconciliation_required: true
+change_impact:
+  product: true
+  user_journeys: true
+  ux: true
+  architecture: true
+  security: true
+adoption:
+  prd_owner_action: Adopt the exact SECRES-05 Precise PRD adoption text and normative
+    sections, then reconcile REC-001/REC-002 against changed authority.
+  does_not_complete_full_security_stage: true
+  unresolved_product_choices: []
+validation:
+  method: Confirmed-intent and authority trace, OWASP primary-source verification,
+    architecture boundary consultation, positive/negative acceptance review and YAML
+    schema-key validation.
+  implementation_tests_run: false
+  rationale: Definition-only amendment; no executable product changes.

@@ -1,15 +1,23 @@
 stage: prd-to-user-journey-audit
 status: PASS
-mode: full
+mode: targeted_revalidation
 validated_inputs:
 - path: docs/web-console-prd.md
-  revision: sha256:cb8d09474431d3bdd082466beac07163051bd2cb00639433f8a87bf85b46c3d8
+  revision: sha256:bc908afcb8c40184dfcccdf296672bc559f5499236ed37f351a82f34ad0e9843
 - path: product/security/web-console-security-contract.md
-  revision: sha256:95e342c77316f1697540fa8da29c6dd6333d6b6d3356b326c4dde921bca4540d
+  revision: sha256:27df73fc50b4ef71e6d4434db62f09da7e018acc13dfa5a305c4d0da0654a94d
 - path: product/architecture/web-console-state-contract.md
-  revision: sha256:54956edc26dbcebcb48ecca0697a4695012d61488fa2297e56b6c04c9cbaa858
+  revision: sha256:c685c7fc9539f878986ccd906878808395fb13ae8ae2261fad9fd667107cbc80
 - path: docs/web-console-prd-coverage.md
-  revision: sha256:1cb9db8350470b5ddca5bc63e3005fb13df4900535b93db6541dc1f636b3598c
+  revision: sha256:ee1f5e26989ba653c007b67ef5b36d3d06922cc24db49b3c2eb8b4959620bb7e
+- path: workflow/feedback/PO-FEEDBACK-2026-10-11-001/feedback.yaml
+  revision: sha256:2a66ade78b37b971d5cf0f62ff5042564089d4482ed46bb3cce68c68299ae6d9
+- path: workflow/reconciliation/REC-RUN-002/reconciliation-result.yaml
+  revision: sha256:c6b695bd86f0ebcf526f188b7faf4bfac183761b0b2fd79631b0e121adb96e1e
+- path: product/ux/01-information-architecture.md
+  revision: sha256:a9efc597a9218098cb904728e7e6584ab8b2ac36253f52cbd4f436f321789046
+- path: docs/web-console-prd-user-journey-audit.md
+  revision: sha256:22f0693cdda9a055ed8013a4a23ccf8710918a89a3417e6a0d902df4a7bef9a2
 decision_provenance:
 - D-001
 - D-002
@@ -25,81 +33,48 @@ decision_provenance:
 - D-012
 - RES-PRD-SEC-01
 - RES-PRD-ARCH-01
+- REC-DEC-001
+- REC-DEC-003
+- PO-FB-006
+- PO-FB-008
+- PO-FB-011
+- PO-FB-013
+- PO-FB-014
 artifact_changes:
 - path: docs/web-console-prd-user-journey-audit.md
-  summary: Audited actor-specific journeys, ingress, action chains, lifecycle, failure/recovery
-    and eight-surface coverage for all normative requirements.
+  summary: Corrected derived journey inventory for separate assisted resets, per-role completion, independent SMTP
+    deletion, focused friendly settings, active navigation and lossless legacy import; retained prior IDs and pending
+    UX approval.
 - path: workflow/definition/results/journeys.yaml
-  summary: Recorded exact-input journey PASS with preimplementation evidence limitations.
+  summary: Recorded successful bounded correction recheck against unchanged normative sources and exact corrected
+    audit revision.
 changed_paths:
 - docs/web-console-prd-user-journey-audit.md
 - workflow/definition/results/journeys.yaml
 findings: []
 questions: []
 affected_requirements:
-- AUDIT-01
-- AUDIT-02
-- AUDIT-03
-- AUDIT-04
-- AUTHZ-01
 - AUTHZ-02
 - AUTHZ-03
-- AUTHZ-04
-- BACKUP-01
-- BACKUP-02
-- BACKUP-03
-- BACKUP-04
-- BACKUP-05
-- BACKUP-06
-- BASE-01
-- BASE-02
-- BASE-03
-- CONFIG-01
-- CONFIG-02
-- CONFIG-03
-- CONFIG-04
-- CONFIG-05
-- IDENT-01
-- IDENT-02
-- IDENT-03
 - IDENT-04
 - IDENT-05
 - IDENT-06
-- MCP-01
-- MCP-02
-- MCP-03
-- MCP-04
+- CONFIG-02
+- CONFIG-03
+- CONFIG-04
+- AUDIT-01
+- AUDIT-04
+- UX-02
+- UX-03
+- UX-04
 - MIGRATE-01
 - MIGRATE-02
 - MIGRATE-03
 - MIGRATE-04
-- OPS-01
-- OPS-02
-- OPS-03
-- OPS-04
-- OPS-05
-- OPS-06
-- POLICY-01
-- POLICY-02
-- POLICY-03
-- POLICY-04
-- SEC-01
-- SEC-02
-- SEC-03
-- SECRES-01
-- SECRES-02
-- SECRES-03
-- SECRES-04
+- SECRES-05
 - STATE-01
 - STATE-02
 - STATE-03
-- STATE-04
-- STATE-05
-- STATE-06
-- UX-01
-- UX-02
-- UX-03
-- UX-04
 affected_artifacts:
 - docs/web-console-prd-user-journey-audit.md
 reconciliation_required: false
@@ -110,25 +85,24 @@ change_impact:
   architecture: false
   security: false
 validation:
-  distinct_actors: 10
-  actor_context_rows: 21
-  unique_capability_families: 70
-  journeys: 47
-  specification_complete_journeys: 47
-  reachability_indeterminate_journeys: 47
-  entry_points: 23
-  action_mappings: 84
-  matrix_rows: 47
-  matrix_columns: 8
-  prd_ids_mapped: 53
-  normative_companion_ids_mapped: 10
-  derived_capability_ids: 7
-  blocker_gaps: 0
-  major_gaps: 0
-  minor_gaps: 0
-  unmapped_requirements: 0
+  actors: 10
+  actor_context_rows: 25
+  capability_families: 71
+  journeys: 59
+  entry_points: 24
+  action_mappings: 98
+  coverage_rows: 59
+  specification_gaps: 0
   implementation_tests_run: false
-  reason: Preimplementation PRD-only journey audit; backend/test implementation evidence
-    unverified and reachability indeterminate.
-workflow_readiness: Journey stage only; Product UX and full Architecture/Security
-  review remain orchestrator-owned.
+  implementation_evidence: Not verified; definition-only review
+  targeted_correction_recheck: 'PASS: 59 unique journeys and eight-column coverage rows, 24 entry points, 98 unique
+    actions; exact input hashes unchanged; separate role/issuer/target reset contracts and SMTP independent deletion
+    agree with PRD/SECRES-05/STATE amendment.'
+  authority_boundary: Current PRD and SECRES-05 govern Administrator reset authority and limited non-secret target
+    visibility. Older Owner-only IA identity-administration wording cannot narrow these adopted resets; canonical
+    UX role visibility and Settings adoption remain pending. Retained IA is used only for unaffected role scope,
+    navigation and discoverable import ingress.
+  pending_ux: UX-DESIGN-002 remains pending; no proposed Settings layout or section taxonomy adopted and no whole-workflow
+    readiness claim.
+workflow_readiness: Journey-stage PASS only. Canonical UX adoption for role visibility and focused friendly Settings
+  remains pending under UX-DESIGN-002; no implementation or delivery readiness claim.

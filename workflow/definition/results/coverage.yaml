@@ -1,13 +1,21 @@
 stage: generate-prd-coverage-matrix
 status: PASS
-mode: full
+mode: targeted_revalidation
 validated_inputs:
 - path: docs/web-console-prd.md
-  revision: sha256:cb8d09474431d3bdd082466beac07163051bd2cb00639433f8a87bf85b46c3d8
+  revision: sha256:bc908afcb8c40184dfcccdf296672bc559f5499236ed37f351a82f34ad0e9843
 - path: product/security/web-console-security-contract.md
-  revision: sha256:95e342c77316f1697540fa8da29c6dd6333d6b6d3356b326c4dde921bca4540d
+  revision: sha256:27df73fc50b4ef71e6d4434db62f09da7e018acc13dfa5a305c4d0da0654a94d
 - path: product/architecture/web-console-state-contract.md
-  revision: sha256:54956edc26dbcebcb48ecca0697a4695012d61488fa2297e56b6c04c9cbaa858
+  revision: sha256:c685c7fc9539f878986ccd906878808395fb13ae8ae2261fad9fd667107cbc80
+- path: workflow/feedback/PO-FEEDBACK-2026-10-11-001/feedback.yaml
+  revision: sha256:2a66ade78b37b971d5cf0f62ff5042564089d4482ed46bb3cce68c68299ae6d9
+- path: workflow/reconciliation/REC-RUN-002/reconciliation-result.yaml
+  revision: sha256:c6b695bd86f0ebcf526f188b7faf4bfac183761b0b2fd79631b0e121adb96e1e
+- path: product/ux/01-information-architecture.md
+  revision: sha256:a9efc597a9218098cb904728e7e6584ab8b2ac36253f52cbd4f436f321789046
+- path: docs/web-console-prd-coverage.md
+  revision: sha256:ee1f5e26989ba653c007b67ef5b36d3d06922cc24db49b3c2eb8b4959620bb7e
 decision_provenance:
 - D-001
 - D-002
@@ -23,13 +31,18 @@ decision_provenance:
 - D-012
 - RES-PRD-SEC-01
 - RES-PRD-ARCH-01
+- REC-DEC-001
+- REC-DEC-003
+- PO-FB-008
+- PO-FB-011
 artifact_changes:
 - path: docs/web-console-prd-coverage.md
-  summary: Mapped all 53 PRD IDs, ten normative companion IDs and unnumbered configuration/acceptance
-    requirements across eight surfaces with actor splits.
+  summary: Updated bounded affected coverage rows with separate reset role/lifecycle paths, independent SMTP deletion,
+    Settings scopes, navigation and legacy import obligations; preserved unaffected IDs and pending UX-DESIGN-002
+    boundary.
 - path: workflow/definition/results/coverage.yaml
-  summary: Recorded full coverage PASS against exact normative revisions and explicit
-    future implementation limitations.
+  summary: Recorded successful bounded correction recheck, exact normative and coverage revisions, and explicit
+    implementation limitation.
 changed_paths:
 - docs/web-console-prd-coverage.md
 - workflow/definition/results/coverage.yaml
@@ -99,6 +112,7 @@ affected_requirements:
 - STATE-04
 - STATE-05
 - STATE-06
+- SECRES-05
 affected_artifacts:
 - docs/web-console-prd-coverage.md
 reconciliation_required: false
@@ -109,18 +123,33 @@ change_impact:
   architecture: false
   security: false
 validation:
-  matrix_rows: 97
+  matrix_rows: 109
   primary_columns: 8
-  unique_capability_families: 70
+  unique_capability_families: 71
   prd_ids_mapped: 53
-  normative_companion_ids_mapped: 10
+  normative_companion_ids_mapped: 11
   derived_capability_ids: 7
   specification_gaps: 0
   implementation_gaps_asserted: 0
-  unverified_cells: 194
+  unverified_cells: 218
   unmapped_requirements: 0
   implementation_tests_run: false
-  reason: Preimplementation definition mapping; future console backend and test evidence
-    explicitly unverified.
-workflow_readiness: Coverage stage only; subsequent journeys, UX, full Architecture
-  and Security review remain orchestrator-owned.
+  reason: Definition-only bounded revalidation; no current implementation audit or executable tests. Historical
+    gateway evidence retained, not refreshed.
+  targeted_correction_recheck: PASS against exact recorded source and corrected coverage hashes; no implementation
+    tests or current implementation audit.
+workflow_readiness: Coverage-stage PASS only; UX-DESIGN-002 and downstream reviews remain orchestrator-owned; no
+  global implementation readiness claim.
+targeted_revalidation:
+  finding_ids:
+  - REC-001
+  - REC-002
+  - REC-003
+  - REC-004
+  - REC-005
+  - REC-006
+  - REC-007
+  pending_external_decision: UX-DESIGN-002 remains centrally tracked; no proposed mechanism adopted.
+  local_corrections: 'Completed targeted recheck: corrected coverage faithfully maps unchanged normative input revisions;
+    109 unique rows, all 53 PRD IDs and 11 companion IDs, eight populated status-prefixed columns, separate role/state/error/test
+    obligations. No remaining local correction.'

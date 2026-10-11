@@ -307,3 +307,196 @@ approved_proposal_revisions:
   - path: workflow/definition/drafts/product-ux/web-console-initial/services-desktop.png
     revision: sha256:407270942e6fbdd3fb67920becebfd5d4ac6f4fb75406a0f9ae47fbad297a42d
 ```
+
+## REC-DEC-001
+
+```yaml
+id: REC-DEC-001
+source_findings:
+- REC-001
+- REC-002
+product_owner_feedback:
+- PO-FB-002
+- PO-FB-004
+domain: security
+affected_requirement: IDENT-05
+blocking: true
+question: Derive the permitted target matrix and revocation/enrollment/issuer-continuity
+  checks for Owner and Administrator password and MFA reset initiation, keeping unrelated
+  identity administration Owner-only.
+reason: Current authority explicitly permits Owner only. Role expansion is settled;
+  target hierarchy, final Owner restriction, password-versus-factor transitions and
+  pending proof issuer eligibility need precise safe semantics.
+resolution_category: SPECIALIST_RESOLUTION
+implementation_ready: false
+affected_requirements:
+- IDENT-05
+- AUTHZ-02
+- AUTHZ-03
+status: accepted
+resolution_owner:
+- security
+routing_status: resolved
+depends_on: []
+ask_user: false
+result: workflow/definition/results/feedback-security-resolution.yaml
+resolution_artifact: product/security/web-console-security-contract.md
+resolution_result: workflow/definition/results/feedback-security-resolution.yaml
+remaining_product_choices: []
+adopted_by: workflow/reconciliation/REC-RUN-002/reconciliation-result.yaml
+```
+
+## REC-DEC-002
+
+```yaml
+id: REC-DEC-002
+source_findings:
+- REC-004
+- REC-005
+product_owner_feedback:
+- PO-FB-008
+- PO-FB-009
+- PO-FB-011
+domain: ux
+affected_requirement: UX-02
+blocking: true
+question: Specify focused Settings navigation, search/draft transitions and minimum
+  friendly control/read-summary coverage for existing configuration, preserving advanced
+  capabilities and role scopes.
+reason: No-long-page and friendly controls are settled; subtabs are exploratory. Derive
+  bounded UX within the approved calm grouped design, without adding features or assuming
+  a new global redesign.
+resolution_category: SPECIALIST_RESOLUTION
+implementation_ready: false
+affected_requirements:
+- UX-02
+- UX-IA03
+- UX-IN01
+status: pending
+resolution_owner:
+- ux
+routing_status: delegated
+depends_on: []
+ask_user: false
+result: workflow/definition/results/feedback-ux-resolution.yaml
+```
+
+## REC-DEC-003
+
+```yaml
+id: REC-DEC-003
+source_findings:
+- REC-006
+product_owner_feedback:
+- PO-FB-013
+domain: architecture
+affected_requirement: CONFIG-03
+blocking: true
+question: Define independent confirmed deletion for SMTP credentials and the audit/dependency/current-state/stale-draft/history
+  behavior needed to prevent later apply from restoring deleted values.
+reason: Independent deletion is settled, but active SMTP dependency handling and stored
+  draft credentials cross existing configuration and immediate-value boundaries; the
+  existing service-value contract cannot simply be assumed complete for SMTP.
+resolution_category: SPECIALIST_RESOLUTION
+implementation_ready: false
+affected_requirements:
+- CONFIG-03
+- IDENT-04
+- STATE-01
+- STATE-02
+- STATE-03
+status: accepted
+resolution_owner:
+- architecture
+routing_status: resolved
+depends_on: []
+ask_user: false
+result: workflow/definition/results/feedback-architecture-resolution.yaml
+resolution_artifact: product/architecture/web-console-state-contract.md
+resolution_result: workflow/definition/results/feedback-architecture-resolution.yaml
+remaining_product_choices: []
+adopted_by: workflow/reconciliation/REC-RUN-002/reconciliation-result.yaml
+```
+
+## Confirmed feedback directives — PO-FEEDBACK-2026-10-11-001
+
+The following current Product Owner decisions are accepted from the committed feedback package. Their narrower domain semantics are delegated above.
+
+| Feedback item | Status | Settled behavior |
+| --- | --- | --- |
+| PO-FB-002 | accepted | Owner and Administrator can initiate password resets for other users. |
+| PO-FB-004 | accepted | Owner and Administrator can initiate Authenticator MFA resets for other users. |
+| PO-FB-006 | accepted | Highlight the active tab in the menu bar. |
+| PO-FB-008 | accepted | Group settings into focused sections instead of one long scrolling page containing all settings. |
+| PO-FB-011 | accepted | Provide user-friendly configuration controls that hide technical configuration detail. |
+| PO-FB-013 | accepted | Use an explicit, confirmed delete action independent of applying configuration edits. |
+| PO-FB-014 | accepted | Support importing legacy YAML configuration into the new system. |
+
+## UX-DESIGN-002
+
+```yaml
+id: UX-DESIGN-002
+kind: UX_DIRECTION_APPROVAL
+blocking: true
+origin_stage: product-ux
+resolution_category: PRODUCT_DECISION
+resolution_owner: user
+depends_on: []
+affected_requirement: UX-02
+affected_requirements:
+- UX-02
+- UX-03
+- UX-04
+- CONFIG-03
+affected_surfaces:
+- settings-sections
+- settings-search
+- settings-draft-review
+- configuration-forms
+question: 'Approve the focused Settings direction shown in the concepts: six named
+  sections, one visible at a time, readable summaries and friendly forms, with all
+  draft changes shown together before applying?'
+reason: Existing feedback establishes focused sections and friendly controls; the
+  proposed secondary navigation, responsive selection and cross-section review composition
+  are consequential experience choices not explicitly covered by UX-DESIGN-001.
+recommendation: Approve this bounded direction; retain the existing calm visual language
+  and all advanced capabilities.
+options:
+- Approve this direction
+- Refine this direction
+alternatives:
+- option: Refine this direction
+  tradeoff: Identify a material concern with section navigation, disclosure or review;
+    revise only this bounded proposal.
+proposal_paths:
+- workflow/definition/drafts/product-ux/web-console-feedback-001/index.md
+- workflow/definition/drafts/product-ux/web-console-feedback-001/experience-brief.yaml
+- workflow/definition/drafts/product-ux/web-console-feedback-001/settings-desktop.png
+- workflow/definition/drafts/product-ux/web-console-feedback-001/email-desktop.png
+- workflow/definition/drafts/product-ux/web-console-feedback-001/settings-narrow.png
+- workflow/definition/drafts/product-ux/web-console-feedback-001/settings-review.png
+- workflow/definition/drafts/product-ux/web-console-feedback-001/design-contract.md
+approval_consequence: Allows synthesis of this Settings direction into canonical UX
+  after current product reconciliation is adopted; does not approve new roles, reset
+  semantics or deletion mechanisms beyond their authoritative contracts.
+derived_from: REC-DEC-002
+status: pending
+stage: ux
+routing_status: awaiting_user
+ask_user: true
+proposal_revisions:
+- path: workflow/definition/drafts/product-ux/web-console-feedback-001/index.md
+  revision: sha256:c42697e3e9460e052835e8474ec4f729daaff3078b6d2653d16bdfbe998a8349
+- path: workflow/definition/drafts/product-ux/web-console-feedback-001/experience-brief.yaml
+  revision: sha256:f512bbc5726f914bf53127217d3d3e215340a36752df1c786264dda5549cbd85
+- path: workflow/definition/drafts/product-ux/web-console-feedback-001/settings-desktop.png
+  revision: sha256:3655babf82cde5849e55a9a8b73e3042617dc37cc78bfc45440c10df73d2183f
+- path: workflow/definition/drafts/product-ux/web-console-feedback-001/email-desktop.png
+  revision: sha256:7807ee626e1180e7810a00c83f23e40e45a0fd5e6278c30563f8276dd7774377
+- path: workflow/definition/drafts/product-ux/web-console-feedback-001/settings-narrow.png
+  revision: sha256:ee10a30ef701e84cf10c181ea4281f263fabfbd7e1da339554b313648ed26012
+- path: workflow/definition/drafts/product-ux/web-console-feedback-001/settings-review.png
+  revision: sha256:e7c29bdf7b6a12eff35494c2d9e8185fca99d9ef4aa21c30249fefde33d41625
+- path: workflow/definition/drafts/product-ux/web-console-feedback-001/design-contract.md
+  revision: sha256:626f6a5c5b65f9965d98642e1e906823fd186fccbed7daaab4cb5379061fb3bb
+```

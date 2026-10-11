@@ -210,6 +210,8 @@ The primary navigation is:
 
 **UX-02 — Progressive disclosure.** Show useful defaults and plain-language summaries first. Advanced controls remain discoverable and searchable. Explain the effect of a control where it is edited.
 
+Group Settings into focused sections instead of one long scrolling page containing all settings. Provide user-friendly configuration controls that hide technical configuration detail, while preserving every supported capability and existing value. Raw JSON must not be the routine way to view or edit settings. These requirements establish the outcome; the section layout and navigation mechanism remain subject to UX direction approval.
+
 Use Vault's guided policy editing as inspiration for combining structured editing with advanced capability, and 1Password's fixed roles as inspiration for understandable administration. These are design references, not feature-parity targets. [Vault policy editor](https://developer.hashicorp.com/vault/docs/ui/visual-policy-editor), [1Password built-in roles](https://support.1password.com/groups/)
 
 **UX-03 — Predictable feedback.** Clearly distinguish Draft, Applied, Disabled, Degraded, and Failed. Preserve non-secret form work after validation errors. Place errors beside the affected field and provide a plain-language recovery action.

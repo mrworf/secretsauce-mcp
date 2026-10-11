@@ -1,0 +1,18 @@
+{
+  "checks": [
+    {
+      "textScale": 1,
+      "viewport": 320,
+      "scrollWidth": 320,
+      "overflowingText": []
+    },
+    {
+      "textScale": 2,
+      "viewport": 320,
+      "scrollWidth": 320,
+      "overflowingText": []
+    }
+  ],
+  "method": "Document width and visible text ranges; intentional offscreen skip link excluded until focused. Enlarged text uses explicit font overrides.",
+  "claim": "Proposal layout only; not production acceptance"
+}

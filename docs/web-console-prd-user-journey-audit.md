@@ -1,18 +1,20 @@
 # PRD User Journey Audit: SecretSauce Web Console
 
 > Source PRD: [web-console-prd.md](web-console-prd.md)  
-> Generated: 2026-10-09T17:16:58-07:00 (America/Los_Angeles)  
-> Review mode: Initial audit  
-> Compared against: None — first journey audit  
-> Evaluation scope: PRD and normative companions only; preimplementation definition review. Passed [coverage](web-console-prd-coverage.md) is an input, not implementation proof.
+> Generated: 2026-10-11T13:19:17-07:00 (America/Los_Angeles)  
+> Review mode: Remediation re-audit — targeted REC-RUN-002  
+> Compared against: this artifact generated 2026-10-09T17:16:58-07:00 (America/Los_Angeles)  
+> Evaluation scope: PRD and normative companions only; definition-only revalidation; existing implementation was not re-audited. Passed [coverage](web-console-prd-coverage.md) is an input, not implementation proof.
 
 ## Executive verdict
 
-PASS for journey specification: 47 actor-specific journeys map all 53 PRD IDs, all ten normative companion IDs, and seven unnumbered capability families. No new Blocker, Major or Minor specification gap was found. All journeys are specification-complete at this definition boundary; implementation is Not applicable to this future console stage and runtime reachability is Indeterminate. This is neither implementation acceptance nor a delivery-planning handoff.
+PASS for journey specification: 59 actor-specific journeys map all 53 PRD IDs, all eleven normative companion IDs, and seven unnumbered capability families. No new Blocker, Major or Minor specification gap was found. All journeys are specification-complete at this definition boundary; implementation is Not verified in this definition-only review and runtime reachability is Indeterminate. This is neither implementation acceptance nor a delivery-planning handoff.
 
 ## Audit method and status definitions
 
-Read the complete PRD, SECRES-01–04, STATE-01–06, D-001–D-012 and accepted security/state resolutions, and the passed coverage artifact. The earlier F-PRD-001–004 remain closed; this audit does not reopen their resolved domain semantics. Reviewed ingress, state, role, alternate/failure and recovery paths independently. This is explicitly a PRD-only review: no source-code absence, exact API route, database, cryptography or UI layout choice is called a specification gap.
+Targeted REC-RUN-002 review preserves unaffected inventories and checks changed reset, deletion, grouping, configuration and import paths. Read the complete PRD, SECRES-01–05, STATE-01–06, D-001–D-012 and accepted security/state resolutions, and the passed coverage artifact. The earlier F-PRD-001–004 remain closed; this audit does not reopen their resolved domain semantics. Reviewed ingress, state, role, alternate/failure and recovery paths independently. This is explicitly a PRD-only review: no source-code absence, exact API route, database, cryptography or UI layout choice is called a specification gap.
+
+**Navigation and configuration feedback:** PO-FB-006 and existing UX authority require active primary/secondary navigation indication with non-color and programmatic state, distinct from keyboard focus; back/forward/deep-link/refresh must identify the current permitted area. Both reset purposes and legacy YAML import must be discoverable to eligible actors. UX-DESIGN-002 remains pending; subtabs are exploratory, not binding.
 
 **Shared invariants (apply to every journey/action):** Current server-enforced role and ownership checks apply; sensitive actions also require durable audit and the stated recent authentication. Secret values never appear in feedback/history/logs/export; non-secret form work survives validation failures. Actions are isolated to one organization/instance. Meaningful transitions commit before success is shown. All external inputs require positive and negative validation; direct unauthorized calls must fail even if hidden by UI. Navigation/errors/focus and essential narrow-screen recovery must satisfy UX-04. Dependencies, current permissions and coherent active revisions are checked at apply/admission, not inferred from a prior screen.
 
@@ -43,6 +45,10 @@ Read the complete PRD, SECRES-01–04, STATE-01–06, D-001–D-012 and accepted
 | MCP client | Connected or restarted | Principal-bound per-POST authorization | Local/external/legacy acquisition path; active service | Discover/inspect/reference/request/explain; reacquire handles | EP-13–15 |
 | Scheduled/runtime automation | Due job or inbound work | Configured system authority/current principal | Owner configuration, audit and capacity readiness | Backups, retention, evidence, limits and health | EP-17, EP-23 |
 | Unauthenticated visitor | Public console/health | Unauthenticated | Network reachability only | Bounded health/login; no claim or self-registration | EP-22 |
+| Owner | Assisted reset link | Password-reset target retains enrolled factor; MFA-reset target is restricted | Authorized issuer under SECRES-05; purpose/generation-bound proof | Complete only bound reset, then ordinary login | EP-24; J-OWNER-PASSWORD-COMPLETE; J-OWNER-MFA-COMPLETE |
+| Administrator | Assisted reset link | Password-reset target retains enrolled factor; MFA-reset target is restricted | Authorized issuer under SECRES-05; purpose/generation-bound proof | Complete only bound reset, then ordinary login | EP-24; J-ADMIN-PASSWORD-COMPLETE; J-ADMIN-MFA-COMPLETE |
+| Auditor | Assisted reset link | Password-reset target retains enrolled factor; MFA-reset target is restricted | Authorized issuer under SECRES-05; purpose/generation-bound proof | Complete only bound reset, then ordinary login | EP-24; J-AUDITOR-PASSWORD-COMPLETE; J-AUDITOR-MFA-COMPLETE |
+| Member | Assisted reset link | Password-reset target retains enrolled factor; MFA-reset target is restricted | Authorized issuer under SECRES-05; purpose/generation-bound proof | Complete only bound reset, then ordinary login | EP-24; J-MEMBER-PASSWORD-COMPLETE; J-MEMBER-MFA-COMPLETE |
 
 
 External SMTP servers, downstream APIs and external issuers are dependencies, not console roles. Their failure outcomes are mapped in the invoking journey. The same human may also be host operator, but host authority never substitutes silently for console Owner authorization.
@@ -55,14 +61,14 @@ External SMTP servers, downstream APIs and external issuers are dependencies, no
 | EP-02 | Owner | J-OWNER-01 | Restricted initial setup | Host proof and setup URL | Required by PRD; implementation Unverified | BACKUP-02, IDENT-01, IDENT-02, SEC-01, SECRES-01, SECRES-02; no gap |
 | EP-03 | Administrator, Auditor, Member, Owner | J-OWNER-ENROLL, J-ADMIN-ENROLL, J-AUDITOR-ENROLL, J-MEMBER-ENROLL | Bound invitation enrollment link | Owner invitation via SMTP/trusted manual channel | Required by PRD; implementation Unverified | IDENT-02, IDENT-03, IDENT-05, SEC-01, SECRES-01, SECRES-03; no gap |
 | EP-04 | Administrator, Auditor, Member, Owner | J-OWNER-ACCOUNT, J-ADMIN-ACCOUNT, J-AUDITOR-ACCOUNT, J-MEMBER-ACCOUNT | Login, own security/session and reset surfaces | Login and own-account controls; reset established channel | Required by PRD; implementation Unverified | IDENT-02, IDENT-05, IDENT-06, SEC-01, SECRES-03, SECRES-04; no gap |
-| EP-05 | Owner | J-OWNER-PEOPLE, J-OWNER-RECOVERY | People & Access | Primary navigation; Owner user/invitation/recovery controls | Required by PRD; implementation Unverified | AUTHZ-02, AUTHZ-03, IDENT-03, IDENT-05, IDENT-06, SEC-03, SECRES-01, SECRES-03, STATE-01, STATE-02; no gap |
+| EP-05 | Owner, Administrator | J-OWNER-PEOPLE, J-OWNER-RECOVERY, J-ADMIN-RECOVERY, J-OWNER-PASSWORD-RESET, J-ADMIN-PASSWORD-RESET | People & Access | Primary navigation; Owner administration and bounded Administrator reset target visibility only | Required by PRD; implementation Unverified | AUTHZ-02, AUTHZ-03, IDENT-03, IDENT-05, IDENT-06, SEC-03, SECRES-01, SECRES-03, SECRES-05, STATE-01, STATE-02; no gap |
 | EP-06 | Administrator, Auditor, Owner | J-OWNER-CONFIG, J-ADMIN-CONFIG, J-AUDITOR-CONFIG | Services and service details | Landing list/search/filter → Add service or Overview/Configuration/Access/Activity | Required by PRD; implementation Unverified | AUTHZ-02, AUTHZ-04, BASE-02, CAP-CFG-01, CAP-CFG-02, CAP-CFG-03, CAP-CFG-04, CAP-CFG-05, CONFIG-01, CONFIG-03, OPS-06, POLICY-04, STATE-01, STATE-02, UX-01, UX-02, UX-03, UX-04; no gap |
 | EP-07 | Administrator, Owner | J-OWNER-CREDENTIAL, J-ADMIN-CREDENTIAL | Service Authentication and credentials | Service Configuration → authentication/credential controls | Required by PRD; implementation Unverified | BASE-03, CONFIG-02, SEC-01, SEC-03, STATE-01, STATE-02, STATE-03; no gap |
 | EP-08 | Administrator, Owner | J-OWNER-ACCESS, J-ADMIN-ACCESS | Service Access and lifecycle actions | Service Access/Overview; People & Access grants | Required by PRD; implementation Unverified | AUTHZ-01, AUTHZ-02, CONFIG-05, SEC-03, STATE-01, STATE-02, STATE-03; no gap |
 | EP-09 | Administrator, Owner | J-OWNER-POLICY, J-ADMIN-POLICY | Policy editor and safe tester | Service Configuration → policy; advanced controls | Required by PRD; implementation Unverified | CAP-CFG-05, POLICY-01, POLICY-02, POLICY-03, POLICY-04, SEC-02; no gap |
-| EP-10 | Administrator, Owner | J-OWNER-HISTORY, J-ADMIN-HISTORY | Guided import, configuration export and history | Configuration/import and history actions; exact layout delegated to Product UX | Required by PRD; implementation Unverified | BASE-03, CONFIG-04, MIGRATE-01, MIGRATE-02, MIGRATE-03, MIGRATE-04, STATE-03; no gap |
+| EP-10 | Administrator, Owner | J-OWNER-HISTORY, J-ADMIN-HISTORY | Guided import, configuration export and history | Services → Import configuration and Configuration tools; guided legacy YAML and both catalogs; retained UX-IA02/04 ingress | Required by PRD; implementation Unverified | BASE-03, CONFIG-04, MIGRATE-01, MIGRATE-02, MIGRATE-03, MIGRATE-04, STATE-03; no gap |
 | EP-11 | Administrator, Auditor, Member, Owner | J-OWNER-ACTIVITY, J-ADMIN-ACTIVITY, J-AUDITOR-ACTIVITY, J-MEMBER-ACTIVITY | Activity and evidence export | Primary Activity or service Activity; permitted filters/detail | Required by PRD; implementation Unverified | AUDIT-01, AUDIT-02, AUDIT-03, OPS-06, UX-01, UX-03, UX-04; no gap |
-| EP-12 | Owner | J-OWNER-SETTINGS | Settings authentication/SMTP/limits/retention | Primary Settings; advanced details discoverable/searchable | Required by PRD; implementation Unverified | CAP-CFG-06, IDENT-04, MCP-02, OPS-02, OPS-03, OPS-04, STATE-01, STATE-02, UX-02; no gap |
+| EP-12 | Owner; Administrator within scanning scope; Auditor read-only | J-OWNER-SETTINGS, J-ADMIN-CONFIG, J-AUDITOR-CONFIG, J-OWNER-SMTP-DELETE | Settings and role-permitted configuration | Primary Settings; focused sections and discoverable advanced controls; exact redesign pending UX-DESIGN-002 | Required by PRD; implementation Unverified | CAP-CFG-06, IDENT-04, MCP-02, OPS-02, OPS-03, OPS-04, STATE-01, STATE-02, UX-02; no gap |
 | EP-13 | Administrator, Member, Owner | J-OWNER-CLIENT, J-ADMIN-CLIENT, J-MEMBER-CLIENT | Client setup, OAuth consent and own connected clients | ChatGPT/Codex instructions; People & Access/own-client controls | Required by PRD; implementation Unverified | AUTHZ-01, IDENT-06, MCP-01, MCP-03, SECRES-01; no gap |
 | EP-14 | External MCP identity, Legacy bearer identity | J-EXTERNAL-01, J-LEGACY-01 | External issuer/legacy MCP connection | Owner advanced settings and documented MCP client connection | Required by PRD; implementation Unverified | AUTHZ-01, AUTHZ-02, BACKUP-05, MCP-02, MCP-04; no gap |
 | EP-15 | MCP client | J-MCP-01, J-MCP-RESTART | Authenticated MCP endpoint and five generic tools | Client setup URL including /mcp; tool discovery | Required by PRD; implementation Unverified | AUTHZ-01, AUTHZ-02, BASE-01, CAP-CFG-03, CAP-CFG-05, MCP-04, MIGRATE-04, POLICY-01, SEC-02, STATE-02; no gap |
@@ -74,59 +80,72 @@ External SMTP servers, downstream APIs and external issuers are dependencies, no
 | EP-21 | Administrator, Auditor, Member, Owner | J-OWNER-DIAG, J-ADMIN-DIAG, J-AUDITOR-DIAG, J-MEMBER-DIAG | Role-scoped diagnostic views/login | Existing navigation or restricted password/TOTP diagnosis during outage | Required by PRD; implementation Unverified | AUDIT-04, IDENT-06, OPS-03, SECRES-04; no gap |
 | EP-22 | Unauthenticated visitor | J-PUBLIC-01 | Public health/login entry | Documented health/console URL; no privileged setup discovery | Required by PRD; implementation Unverified | IDENT-01, IDENT-03, OPS-03, SECRES-01; no gap |
 | EP-23 | Scheduled/runtime automation | J-SYSTEM-ADMISSION | Admission, completion and health triggers | Ordinary requests/jobs and visible Activity/Settings status | Required by PRD; implementation Unverified | AUDIT-01, AUDIT-03, AUDIT-04, OPS-01, OPS-02, OPS-03, OPS-04, SEC-03, STATE-02; no gap |
+| EP-24 | Owner, Administrator, Auditor, Member as reset targets | J-*-PASSWORD-COMPLETE; J-*-MFA-COMPLETE | Separate restricted reset completion surfaces | Established contact or trusted manual channel; capture/remove fragment on load and hashchange | Required by PRD; implementation Unverified | IDENT-05; SECRES-01/05; no new gap |
 
 
 ## Capability reachability
 
 | Capability | Actor | Journey | PRD Evidence | Spec Coverage | Implementation Evidence | Reachability | Primary Gap |
 |---|---|---|---|---|---|---|---|
-| Deploy and authorize initial setup | Host operator | J-HOST-01 | IDENT-01, OPS-05, SECRES-02, CAP-ACCEPT-01 | Complete | Not applicable — future console definition | Indeterminate — no implemented path validation | None found |
-| Establish first Owner | Owner | J-OWNER-01 | IDENT-01, IDENT-02, SEC-01, BACKUP-02, SECRES-01, SECRES-02 | Complete | Not applicable — future console definition | Indeterminate — no implemented path validation | None found |
-| Accept role-bound invitation | Owner | J-OWNER-ENROLL | IDENT-02, IDENT-03, IDENT-05, SEC-01, SECRES-01, SECRES-03 | Complete | Not applicable — future console definition | Indeterminate — no implemented path validation | None found |
-| Authenticate and manage own security | Owner | J-OWNER-ACCOUNT | IDENT-02, IDENT-05, IDENT-06, SEC-01, SECRES-03, SECRES-04 | Complete | Not applicable — future console definition | Indeterminate — no implemented path validation | None found |
-| Accept role-bound invitation | Administrator | J-ADMIN-ENROLL | IDENT-02, IDENT-03, IDENT-05, SEC-01, SECRES-01, SECRES-03 | Complete | Not applicable — future console definition | Indeterminate — no implemented path validation | None found |
-| Authenticate and manage own security | Administrator | J-ADMIN-ACCOUNT | IDENT-02, IDENT-05, IDENT-06, SEC-01, SECRES-03, SECRES-04 | Complete | Not applicable — future console definition | Indeterminate — no implemented path validation | None found |
-| Accept role-bound invitation | Auditor | J-AUDITOR-ENROLL | IDENT-02, IDENT-03, IDENT-05, SEC-01, SECRES-01, SECRES-03 | Complete | Not applicable — future console definition | Indeterminate — no implemented path validation | None found |
-| Authenticate and manage own security | Auditor | J-AUDITOR-ACCOUNT | IDENT-02, IDENT-05, IDENT-06, SEC-01, SECRES-03, SECRES-04 | Complete | Not applicable — future console definition | Indeterminate — no implemented path validation | None found |
-| Accept role-bound invitation | Member | J-MEMBER-ENROLL | IDENT-02, IDENT-03, IDENT-05, SEC-01, SECRES-01, SECRES-03 | Complete | Not applicable — future console definition | Indeterminate — no implemented path validation | None found |
-| Authenticate and manage own security | Member | J-MEMBER-ACCOUNT | IDENT-02, IDENT-05, IDENT-06, SEC-01, SECRES-03, SECRES-04 | Complete | Not applicable — future console definition | Indeterminate — no implemented path validation | None found |
-| Invite, grant roles, transfer ownership and disable users | Owner | J-OWNER-PEOPLE | AUTHZ-02, AUTHZ-03, IDENT-03, IDENT-06, SEC-03, STATE-01, STATE-02 | Complete | Not applicable — future console definition | Indeterminate — no implemented path validation | None found |
-| Authorize verified account recovery | Owner | J-OWNER-RECOVERY | IDENT-05, IDENT-06, AUTHZ-03, SECRES-01, SECRES-03 | Complete | Not applicable — future console definition | Indeterminate — no implemented path validation | None found |
-| Configure and apply service and scanner settings | Owner | J-OWNER-CONFIG | BASE-02, CONFIG-01, CONFIG-03, UX-01, UX-02, UX-03, UX-04, POLICY-04, CAP-CFG-01, CAP-CFG-02, CAP-CFG-03, CAP-CFG-04, CAP-CFG-05, AUTHZ-04, STATE-01, STATE-02 | Complete | Not applicable — future console definition | Indeterminate — no implemented path validation | None found |
-| Create, rotate and delete managed credentials | Owner | J-OWNER-CREDENTIAL | CONFIG-02, BASE-03, SEC-01, SEC-03, STATE-01, STATE-02, STATE-03 | Complete | Not applicable — future console definition | Indeterminate — no implemented path validation | None found |
-| Assign service access and control service lifecycle | Owner | J-OWNER-ACCESS | AUTHZ-01, AUTHZ-02, CONFIG-05, SEC-03, STATE-01, STATE-02, STATE-03 | Complete | Not applicable — future console definition | Indeterminate — no implemented path validation | None found |
-| Inspect, edit and safely test policy | Owner | J-OWNER-POLICY | POLICY-01, POLICY-02, POLICY-03, POLICY-04, SEC-02, CAP-CFG-05 | Complete | Not applicable — future console definition | Indeterminate — no implemented path validation | None found |
-| Import, export and restore permitted configuration | Owner | J-OWNER-HISTORY | MIGRATE-01, MIGRATE-02, MIGRATE-03, MIGRATE-04, CONFIG-04, BASE-03, STATE-03 | Complete | Not applicable — future console definition | Indeterminate — no implemented path validation | None found |
-| Configure and apply service and scanner settings | Administrator | J-ADMIN-CONFIG | BASE-02, CONFIG-01, CONFIG-03, UX-01, UX-02, UX-03, UX-04, POLICY-04, CAP-CFG-01, CAP-CFG-02, CAP-CFG-03, CAP-CFG-04, CAP-CFG-05, AUTHZ-04, STATE-01, STATE-02 | Complete | Not applicable — future console definition | Indeterminate — no implemented path validation | None found |
-| Create, rotate and delete managed credentials | Administrator | J-ADMIN-CREDENTIAL | CONFIG-02, BASE-03, SEC-01, SEC-03, STATE-01, STATE-02, STATE-03 | Complete | Not applicable — future console definition | Indeterminate — no implemented path validation | None found |
-| Assign service access and control service lifecycle | Administrator | J-ADMIN-ACCESS | AUTHZ-01, AUTHZ-02, CONFIG-05, SEC-03, STATE-01, STATE-02, STATE-03 | Complete | Not applicable — future console definition | Indeterminate — no implemented path validation | None found |
-| Inspect, edit and safely test policy | Administrator | J-ADMIN-POLICY | POLICY-01, POLICY-02, POLICY-03, POLICY-04, SEC-02, CAP-CFG-05 | Complete | Not applicable — future console definition | Indeterminate — no implemented path validation | None found |
-| Import, export and restore permitted configuration | Administrator | J-ADMIN-HISTORY | MIGRATE-01, MIGRATE-02, MIGRATE-03, MIGRATE-04, CONFIG-04, BASE-03, STATE-03 | Complete | Not applicable — future console definition | Indeterminate — no implemented path validation | None found |
-| Investigate permitted activity and export evidence | Owner | J-OWNER-ACTIVITY | AUDIT-01, AUDIT-02, AUDIT-03, OPS-06, UX-01, UX-03, UX-04 | Complete | Not applicable — future console definition | Indeterminate — no implemented path validation | None found |
-| Investigate permitted activity and export evidence | Administrator | J-ADMIN-ACTIVITY | AUDIT-01, AUDIT-02, AUDIT-03, OPS-06, UX-01, UX-03, UX-04 | Complete | Not applicable — future console definition | Indeterminate — no implemented path validation | None found |
-| Investigate permitted activity and export evidence | Auditor | J-AUDITOR-ACTIVITY | AUDIT-01, AUDIT-02, AUDIT-03, OPS-06, UX-01, UX-03, UX-04 | Complete | Not applicable — future console definition | Indeterminate — no implemented path validation | None found |
-| Investigate permitted activity | Member | J-MEMBER-ACTIVITY | AUDIT-01, AUDIT-02, AUDIT-03, OPS-06, UX-01, UX-03, UX-04 | Complete | Not applicable — future console definition | Indeterminate — no implemented path validation | None found |
-| Configure authentication, SMTP, limits and retention | Owner | J-OWNER-SETTINGS | IDENT-04, MCP-02, OPS-02, OPS-03, OPS-04, CAP-CFG-06, UX-02, STATE-01, STATE-02 | Complete | Not applicable — future console definition | Indeterminate — no implemented path validation | None found |
-| Connect and revoke ChatGPT or Codex | Owner | J-OWNER-CLIENT | AUTHZ-01, MCP-01, MCP-03, IDENT-06, SECRES-01 | Complete | Not applicable — future console definition | Indeterminate — no implemented path validation | None found |
-| Connect and revoke ChatGPT or Codex | Administrator | J-ADMIN-CLIENT | AUTHZ-01, MCP-01, MCP-03, IDENT-06, SECRES-01 | Complete | Not applicable — future console definition | Indeterminate — no implemented path validation | None found |
-| Connect and revoke ChatGPT or Codex | Member | J-MEMBER-CLIENT | AUTHZ-01, MCP-01, MCP-03, IDENT-06, SECRES-01 | Complete | Not applicable — future console definition | Indeterminate — no implemented path validation | None found |
-| Use registered external OAuth access | External MCP identity | J-EXTERNAL-01 | MCP-02, AUTHZ-01, AUTHZ-02, MCP-04 | Complete | Not applicable — future console definition | Indeterminate — no implemented path validation | None found |
-| Use explicitly enabled shared bearer MCP access | Legacy bearer identity | J-LEGACY-01 | MCP-02, AUTHZ-01, MCP-04, BACKUP-05 | Complete | Not applicable — future console definition | Indeterminate — no implemented path validation | None found |
-| Discover, obtain references, request and explain denial | MCP client | J-MCP-01 | BASE-01, AUTHZ-01, AUTHZ-02, POLICY-01, SEC-02, MCP-04, STATE-02, CAP-CFG-03, CAP-CFG-05 | Complete | Not applicable — future console definition | Indeterminate — no implemented path validation | None found |
-| Resume after normal restart | MCP client | J-MCP-RESTART | MCP-04, MIGRATE-04, BASE-01 | Complete | Not applicable — future console definition | Indeterminate — no implemented path validation | None found |
-| Create, download and schedule encrypted backups | Owner | J-OWNER-BACKUP | BACKUP-01, BACKUP-02, OPS-04, STATE-04, SEC-01 | Complete | Not applicable — future console definition | Indeterminate — no implemented path validation | None found |
-| Run scheduled backup and retention | Scheduled/runtime automation | J-SYSTEM-BACKUP | BACKUP-01, BACKUP-02, AUDIT-01, AUDIT-03, OPS-03, OPS-04, STATE-04 | Complete | Not applicable — future console definition | Indeterminate — no implemented path validation | None found |
-| Preview and replace functioning instance | Owner | J-OWNER-RESTORE | BACKUP-03, BACKUP-04, BACKUP-06, IDENT-06, SECRES-02, STATE-05, STATE-06 | Complete | Not applicable — future console definition | Indeterminate — no implemented path validation | None found |
-| Restore to clean replacement host | Host operator | J-HOST-RESTORE | BACKUP-03, BACKUP-04, BACKUP-06, OPS-05, SECRES-02, STATE-05, STATE-06 | Complete | Not applicable — future console definition | Indeterminate — no implemented path validation | None found |
-| Enroll recovery Owner and reactivate reviewed access | Owner | J-OWNER-RESUME | BACKUP-05, BACKUP-06, AUTHZ-03, SECRES-02, STATE-06 | Complete | Not applicable — future console definition | Indeterminate — no implemented path validation | None found |
-| Recover locked-out Owners and repair audit storage | Host operator | J-HOST-RECOVERY | IDENT-05, AUDIT-04, OPS-03, SECRES-02, SECRES-04, STATE-06 | Complete | Not applicable — future console definition | Indeterminate — no implemented path validation | None found |
-| Use read-only diagnosis during audit outage | Owner | J-OWNER-DIAG | AUDIT-04, OPS-03, SECRES-04, IDENT-06 | Complete | Not applicable — future console definition | Indeterminate — no implemented path validation | None found |
-| Use read-only diagnosis during audit outage | Administrator | J-ADMIN-DIAG | AUDIT-04, OPS-03, SECRES-04, IDENT-06 | Complete | Not applicable — future console definition | Indeterminate — no implemented path validation | None found |
-| Use read-only diagnosis during audit outage | Auditor | J-AUDITOR-DIAG | AUDIT-04, OPS-03, SECRES-04, IDENT-06 | Complete | Not applicable — future console definition | Indeterminate — no implemented path validation | None found |
-| Use read-only diagnosis during audit outage | Member | J-MEMBER-DIAG | AUDIT-04, OPS-03, SECRES-04, IDENT-06 | Complete | Not applicable — future console definition | Indeterminate — no implemented path validation | None found |
-| Observe bounded health and locate authorized entry | Unauthenticated visitor | J-PUBLIC-01 | OPS-03, IDENT-01, IDENT-03, SECRES-01 | Complete | Not applicable — future console definition | Indeterminate — no implemented path validation | None found |
-| Enforce limits and maintain durable evidence | Scheduled/runtime automation | J-SYSTEM-ADMISSION | AUDIT-01, AUDIT-03, AUDIT-04, OPS-01, OPS-02, OPS-03, OPS-04, SEC-03, STATE-02 | Complete | Not applicable — future console definition | Indeterminate — no implemented path validation | None found |
-| Inspect non-secret configuration | Auditor | J-AUDITOR-CONFIG | AUTHZ-02, AUTHZ-04, UX-01, UX-02, UX-04, OPS-06 | Complete | Not applicable — future console definition | Indeterminate — no implemented path validation | None found |
+| Deploy and authorize initial setup | Host operator | J-HOST-01 | IDENT-01, OPS-05, SECRES-02, CAP-ACCEPT-01 | Complete | Not verified — outside targeted definition review | Indeterminate — no implemented path validation | None found |
+| Establish first Owner | Owner | J-OWNER-01 | IDENT-01, IDENT-02, SEC-01, BACKUP-02, SECRES-01, SECRES-02 | Complete | Not verified — outside targeted definition review | Indeterminate — no implemented path validation | None found |
+| Accept role-bound invitation | Owner | J-OWNER-ENROLL | IDENT-02, IDENT-03, IDENT-05, SEC-01, SECRES-01, SECRES-03 | Complete | Not verified — outside targeted definition review | Indeterminate — no implemented path validation | None found |
+| Authenticate and manage own security | Owner | J-OWNER-ACCOUNT | IDENT-02, IDENT-05, IDENT-06, SEC-01, SECRES-03, SECRES-04 | Complete | Not verified — outside targeted definition review | Indeterminate — no implemented path validation | None found |
+| Accept role-bound invitation | Administrator | J-ADMIN-ENROLL | IDENT-02, IDENT-03, IDENT-05, SEC-01, SECRES-01, SECRES-03 | Complete | Not verified — outside targeted definition review | Indeterminate — no implemented path validation | None found |
+| Authenticate and manage own security | Administrator | J-ADMIN-ACCOUNT | IDENT-02, IDENT-05, IDENT-06, SEC-01, SECRES-03, SECRES-04 | Complete | Not verified — outside targeted definition review | Indeterminate — no implemented path validation | None found |
+| Accept role-bound invitation | Auditor | J-AUDITOR-ENROLL | IDENT-02, IDENT-03, IDENT-05, SEC-01, SECRES-01, SECRES-03 | Complete | Not verified — outside targeted definition review | Indeterminate — no implemented path validation | None found |
+| Authenticate and manage own security | Auditor | J-AUDITOR-ACCOUNT | IDENT-02, IDENT-05, IDENT-06, SEC-01, SECRES-03, SECRES-04 | Complete | Not verified — outside targeted definition review | Indeterminate — no implemented path validation | None found |
+| Accept role-bound invitation | Member | J-MEMBER-ENROLL | IDENT-02, IDENT-03, IDENT-05, SEC-01, SECRES-01, SECRES-03 | Complete | Not verified — outside targeted definition review | Indeterminate — no implemented path validation | None found |
+| Authenticate and manage own security | Member | J-MEMBER-ACCOUNT | IDENT-02, IDENT-05, IDENT-06, SEC-01, SECRES-03, SECRES-04 | Complete | Not verified — outside targeted definition review | Indeterminate — no implemented path validation | None found |
+| Invite, grant roles, transfer ownership and disable users | Owner | J-OWNER-PEOPLE | AUTHZ-02, AUTHZ-03, IDENT-03, IDENT-06, SEC-03, STATE-01, STATE-02 | Complete | Not verified — outside targeted definition review | Indeterminate — no implemented path validation | None found |
+| Authorize verified account recovery | Owner | J-OWNER-RECOVERY | IDENT-05, IDENT-06, AUTHZ-03, SECRES-01, SECRES-03 | Complete | Not verified — outside targeted definition review | Indeterminate — no implemented path validation | None found |
+| Configure and apply service and scanner settings | Owner | J-OWNER-CONFIG | BASE-02, CONFIG-01, CONFIG-03, UX-01, UX-02, UX-03, UX-04, POLICY-04, CAP-CFG-01, CAP-CFG-02, CAP-CFG-03, CAP-CFG-04, CAP-CFG-05, AUTHZ-04, STATE-01, STATE-02 | Complete | Not verified — outside targeted definition review | Indeterminate — no implemented path validation | None found |
+| Create, rotate and delete managed credentials | Owner | J-OWNER-CREDENTIAL | CONFIG-02, BASE-03, SEC-01, SEC-03, STATE-01, STATE-02, STATE-03 | Complete | Not verified — outside targeted definition review | Indeterminate — no implemented path validation | None found |
+| Assign service access and control service lifecycle | Owner | J-OWNER-ACCESS | AUTHZ-01, AUTHZ-02, CONFIG-05, SEC-03, STATE-01, STATE-02, STATE-03 | Complete | Not verified — outside targeted definition review | Indeterminate — no implemented path validation | None found |
+| Inspect, edit and safely test policy | Owner | J-OWNER-POLICY | POLICY-01, POLICY-02, POLICY-03, POLICY-04, SEC-02, CAP-CFG-05 | Complete | Not verified — outside targeted definition review | Indeterminate — no implemented path validation | None found |
+| Import, export and restore permitted configuration | Owner | J-OWNER-HISTORY | MIGRATE-01, MIGRATE-02, MIGRATE-03, MIGRATE-04, CONFIG-04, BASE-03, STATE-03 | Complete | Not verified — outside targeted definition review | Indeterminate — no implemented path validation | None found |
+| Configure and apply service and scanner settings | Administrator | J-ADMIN-CONFIG | BASE-02, CONFIG-01, CONFIG-03, UX-01, UX-02, UX-03, UX-04, POLICY-04, CAP-CFG-01, CAP-CFG-02, CAP-CFG-03, CAP-CFG-04, CAP-CFG-05, AUTHZ-04, STATE-01, STATE-02 | Complete | Not verified — outside targeted definition review | Indeterminate — no implemented path validation | None found |
+| Create, rotate and delete managed credentials | Administrator | J-ADMIN-CREDENTIAL | CONFIG-02, BASE-03, SEC-01, SEC-03, STATE-01, STATE-02, STATE-03 | Complete | Not verified — outside targeted definition review | Indeterminate — no implemented path validation | None found |
+| Assign service access and control service lifecycle | Administrator | J-ADMIN-ACCESS | AUTHZ-01, AUTHZ-02, CONFIG-05, SEC-03, STATE-01, STATE-02, STATE-03 | Complete | Not verified — outside targeted definition review | Indeterminate — no implemented path validation | None found |
+| Inspect, edit and safely test policy | Administrator | J-ADMIN-POLICY | POLICY-01, POLICY-02, POLICY-03, POLICY-04, SEC-02, CAP-CFG-05 | Complete | Not verified — outside targeted definition review | Indeterminate — no implemented path validation | None found |
+| Import, export and restore permitted configuration | Administrator | J-ADMIN-HISTORY | MIGRATE-01, MIGRATE-02, MIGRATE-03, MIGRATE-04, CONFIG-04, BASE-03, STATE-03 | Complete | Not verified — outside targeted definition review | Indeterminate — no implemented path validation | None found |
+| Investigate permitted activity and export evidence | Owner | J-OWNER-ACTIVITY | AUDIT-01, AUDIT-02, AUDIT-03, OPS-06, UX-01, UX-03, UX-04 | Complete | Not verified — outside targeted definition review | Indeterminate — no implemented path validation | None found |
+| Investigate permitted activity and export evidence | Administrator | J-ADMIN-ACTIVITY | AUDIT-01, AUDIT-02, AUDIT-03, OPS-06, UX-01, UX-03, UX-04 | Complete | Not verified — outside targeted definition review | Indeterminate — no implemented path validation | None found |
+| Investigate permitted activity and export evidence | Auditor | J-AUDITOR-ACTIVITY | AUDIT-01, AUDIT-02, AUDIT-03, OPS-06, UX-01, UX-03, UX-04 | Complete | Not verified — outside targeted definition review | Indeterminate — no implemented path validation | None found |
+| Investigate permitted activity | Member | J-MEMBER-ACTIVITY | AUDIT-01, AUDIT-02, AUDIT-03, OPS-06, UX-01, UX-03, UX-04 | Complete | Not verified — outside targeted definition review | Indeterminate — no implemented path validation | None found |
+| Configure authentication, SMTP, limits and retention | Owner | J-OWNER-SETTINGS | IDENT-04, MCP-02, OPS-02, OPS-03, OPS-04, CAP-CFG-06, UX-02, STATE-01, STATE-02 | Complete | Not verified — outside targeted definition review | Indeterminate — no implemented path validation | None found |
+| Connect and revoke ChatGPT or Codex | Owner | J-OWNER-CLIENT | AUTHZ-01, MCP-01, MCP-03, IDENT-06, SECRES-01 | Complete | Not verified — outside targeted definition review | Indeterminate — no implemented path validation | None found |
+| Connect and revoke ChatGPT or Codex | Administrator | J-ADMIN-CLIENT | AUTHZ-01, MCP-01, MCP-03, IDENT-06, SECRES-01 | Complete | Not verified — outside targeted definition review | Indeterminate — no implemented path validation | None found |
+| Connect and revoke ChatGPT or Codex | Member | J-MEMBER-CLIENT | AUTHZ-01, MCP-01, MCP-03, IDENT-06, SECRES-01 | Complete | Not verified — outside targeted definition review | Indeterminate — no implemented path validation | None found |
+| Use registered external OAuth access | External MCP identity | J-EXTERNAL-01 | MCP-02, AUTHZ-01, AUTHZ-02, MCP-04 | Complete | Not verified — outside targeted definition review | Indeterminate — no implemented path validation | None found |
+| Use explicitly enabled shared bearer MCP access | Legacy bearer identity | J-LEGACY-01 | MCP-02, AUTHZ-01, MCP-04, BACKUP-05 | Complete | Not verified — outside targeted definition review | Indeterminate — no implemented path validation | None found |
+| Discover, obtain references, request and explain denial | MCP client | J-MCP-01 | BASE-01, AUTHZ-01, AUTHZ-02, POLICY-01, SEC-02, MCP-04, STATE-02, CAP-CFG-03, CAP-CFG-05 | Complete | Not verified — outside targeted definition review | Indeterminate — no implemented path validation | None found |
+| Resume after normal restart | MCP client | J-MCP-RESTART | MCP-04, MIGRATE-04, BASE-01 | Complete | Not verified — outside targeted definition review | Indeterminate — no implemented path validation | None found |
+| Create, download and schedule encrypted backups | Owner | J-OWNER-BACKUP | BACKUP-01, BACKUP-02, OPS-04, STATE-04, SEC-01 | Complete | Not verified — outside targeted definition review | Indeterminate — no implemented path validation | None found |
+| Run scheduled backup and retention | Scheduled/runtime automation | J-SYSTEM-BACKUP | BACKUP-01, BACKUP-02, AUDIT-01, AUDIT-03, OPS-03, OPS-04, STATE-04 | Complete | Not verified — outside targeted definition review | Indeterminate — no implemented path validation | None found |
+| Preview and replace functioning instance | Owner | J-OWNER-RESTORE | BACKUP-03, BACKUP-04, BACKUP-06, IDENT-06, SECRES-02, STATE-05, STATE-06 | Complete | Not verified — outside targeted definition review | Indeterminate — no implemented path validation | None found |
+| Restore to clean replacement host | Host operator | J-HOST-RESTORE | BACKUP-03, BACKUP-04, BACKUP-06, OPS-05, SECRES-02, STATE-05, STATE-06 | Complete | Not verified — outside targeted definition review | Indeterminate — no implemented path validation | None found |
+| Enroll recovery Owner and reactivate reviewed access | Owner | J-OWNER-RESUME | BACKUP-05, BACKUP-06, AUTHZ-03, SECRES-02, STATE-06 | Complete | Not verified — outside targeted definition review | Indeterminate — no implemented path validation | None found |
+| Recover locked-out Owners and repair audit storage | Host operator | J-HOST-RECOVERY | IDENT-05, AUDIT-04, OPS-03, SECRES-02, SECRES-04, STATE-06 | Complete | Not verified — outside targeted definition review | Indeterminate — no implemented path validation | None found |
+| Use read-only diagnosis during audit outage | Owner | J-OWNER-DIAG | AUDIT-04, OPS-03, SECRES-04, IDENT-06 | Complete | Not verified — outside targeted definition review | Indeterminate — no implemented path validation | None found |
+| Use read-only diagnosis during audit outage | Administrator | J-ADMIN-DIAG | AUDIT-04, OPS-03, SECRES-04, IDENT-06 | Complete | Not verified — outside targeted definition review | Indeterminate — no implemented path validation | None found |
+| Use read-only diagnosis during audit outage | Auditor | J-AUDITOR-DIAG | AUDIT-04, OPS-03, SECRES-04, IDENT-06 | Complete | Not verified — outside targeted definition review | Indeterminate — no implemented path validation | None found |
+| Use read-only diagnosis during audit outage | Member | J-MEMBER-DIAG | AUDIT-04, OPS-03, SECRES-04, IDENT-06 | Complete | Not verified — outside targeted definition review | Indeterminate — no implemented path validation | None found |
+| Observe bounded health and locate authorized entry | Unauthenticated visitor | J-PUBLIC-01 | OPS-03, IDENT-01, IDENT-03, SECRES-01 | Complete | Not verified — outside targeted definition review | Indeterminate — no implemented path validation | None found |
+| Enforce limits and maintain durable evidence | Scheduled/runtime automation | J-SYSTEM-ADMISSION | AUDIT-01, AUDIT-03, AUDIT-04, OPS-01, OPS-02, OPS-03, OPS-04, SEC-03, STATE-02 | Complete | Not verified — outside targeted definition review | Indeterminate — no implemented path validation | None found |
+| Inspect non-secret configuration | Auditor | J-AUDITOR-CONFIG | AUTHZ-02, AUTHZ-04, UX-01, UX-02, UX-04, OPS-06 | Complete | Not verified — outside targeted definition review | Indeterminate — no implemented path validation | None found |
+| Initiate separate password reset | Owner | J-OWNER-PASSWORD-RESET | IDENT-04, IDENT-05, IDENT-06, AUTHZ-02, AUTHZ-03, AUDIT-01, AUDIT-04, SECRES-01, SECRES-03, SECRES-05 | Complete | Not verified — outside targeted definition review | Indeterminate | None found |
+| Initiate separate MFA reset | Administrator | J-ADMIN-RECOVERY | IDENT-04, IDENT-05, IDENT-06, AUTHZ-02, AUTHZ-03, AUDIT-01, AUDIT-04, SECRES-01, SECRES-03, SECRES-05 | Complete | Not verified — outside targeted definition review | Indeterminate | None found |
+| Initiate separate password reset | Administrator | J-ADMIN-PASSWORD-RESET | IDENT-04, IDENT-05, IDENT-06, AUTHZ-02, AUTHZ-03, AUDIT-01, AUDIT-04, SECRES-01, SECRES-03, SECRES-05 | Complete | Not verified — outside targeted definition review | Indeterminate | None found |
+| Complete assisted password reset | Owner | J-OWNER-PASSWORD-COMPLETE | IDENT-04, IDENT-05, IDENT-06, AUTHZ-02, AUTHZ-03, AUDIT-01, AUDIT-04, SECRES-01, SECRES-03, SECRES-05 | Complete | Not verified — outside targeted definition review | Indeterminate | None found |
+| Complete assisted Authenticator enrollment | Owner | J-OWNER-MFA-COMPLETE | IDENT-04, IDENT-05, IDENT-06, AUTHZ-02, AUTHZ-03, AUDIT-01, AUDIT-04, SECRES-01, SECRES-03, SECRES-05 | Complete | Not verified — outside targeted definition review | Indeterminate | None found |
+| Complete assisted password reset | Administrator | J-ADMIN-PASSWORD-COMPLETE | IDENT-04, IDENT-05, IDENT-06, AUTHZ-02, AUTHZ-03, AUDIT-01, AUDIT-04, SECRES-01, SECRES-03, SECRES-05 | Complete | Not verified — outside targeted definition review | Indeterminate | None found |
+| Complete assisted Authenticator enrollment | Administrator | J-ADMIN-MFA-COMPLETE | IDENT-04, IDENT-05, IDENT-06, AUTHZ-02, AUTHZ-03, AUDIT-01, AUDIT-04, SECRES-01, SECRES-03, SECRES-05 | Complete | Not verified — outside targeted definition review | Indeterminate | None found |
+| Complete assisted password reset | Auditor | J-AUDITOR-PASSWORD-COMPLETE | IDENT-04, IDENT-05, IDENT-06, AUTHZ-02, AUTHZ-03, AUDIT-01, AUDIT-04, SECRES-01, SECRES-03, SECRES-05 | Complete | Not verified — outside targeted definition review | Indeterminate | None found |
+| Complete assisted Authenticator enrollment | Auditor | J-AUDITOR-MFA-COMPLETE | IDENT-04, IDENT-05, IDENT-06, AUTHZ-02, AUTHZ-03, AUDIT-01, AUDIT-04, SECRES-01, SECRES-03, SECRES-05 | Complete | Not verified — outside targeted definition review | Indeterminate | None found |
+| Complete assisted password reset | Member | J-MEMBER-PASSWORD-COMPLETE | IDENT-04, IDENT-05, IDENT-06, AUTHZ-02, AUTHZ-03, AUDIT-01, AUDIT-04, SECRES-01, SECRES-03, SECRES-05 | Complete | Not verified — outside targeted definition review | Indeterminate | None found |
+| Complete assisted Authenticator enrollment | Member | J-MEMBER-MFA-COMPLETE | IDENT-04, IDENT-05, IDENT-06, AUTHZ-02, AUTHZ-03, AUDIT-01, AUDIT-04, SECRES-01, SECRES-03, SECRES-05 | Complete | Not verified — outside targeted definition review | Indeterminate | None found |
+| Delete SMTP credential independently | Owner | J-OWNER-SMTP-DELETE | IDENT-04, IDENT-06, CONFIG-03, CONFIG-04, AUDIT-01, AUDIT-04, STATE-01, STATE-02, STATE-03 | Complete | Not verified — outside targeted definition review | Indeterminate | None found |
 
 
 ## User journeys
@@ -145,7 +164,7 @@ Each step below has an ACT mapping. Common role journeys reference the correspon
 - **Recovery:** Repair mounts/proxy/key inputs or reissue proof; continue J-OWNER-01.
 - **Exit / reversal:** Abandon setup with no normal access; no reversal of host deployment is promised by console.
 
-**Assessment:** Complete specification; implementation Not applicable at this stage; reachability Indeterminate; no gap.
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no gap.
 
 ### J-OWNER-01 — Owner: Establish first Owner
 
@@ -159,7 +178,7 @@ Each step below has an ACT mapping. Common role journeys reference the correspon
 - **Recovery:** Correct input; use new host proof after expiry; repair audit before completion.
 - **Exit / reversal:** Leave incomplete setup restricted; later logout or protected host recovery, not public re-claim.
 
-**Assessment:** Complete specification; implementation Not applicable at this stage; reachability Indeterminate; no gap.
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no gap.
 
 ### J-OWNER-ENROLL — Owner: Accept role-bound invitation
 
@@ -173,7 +192,7 @@ Each step below has an ACT mapping. Common role journeys reference the correspon
 - **Recovery:** Correct non-secret input; request fresh invitation from Owner; no self-registration fallback.
 - **Exit / reversal:** Close before completion without activating; after activation use own logout/recovery; Owner can disable.
 
-**Assessment:** Complete specification; implementation Not applicable at this stage; reachability Indeterminate; no gap.
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no gap.
 
 ### J-OWNER-ACCOUNT — Owner: Authenticate and manage own security
 
@@ -187,7 +206,7 @@ Each step below has an ACT mapping. Common role journeys reference the correspon
 - **Recovery:** Retry within limits, reset through established contact channel, or ask Owner for verified recovery; locked-out Owners use host recovery.
 - **Exit / reversal:** Logout is independent of revoking other sessions; closing a form abandons an uncommitted replacement, not an already completed security action.
 
-**Assessment:** Complete specification; implementation Not applicable at this stage; reachability Indeterminate; no gap.
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no gap.
 
 ### J-ADMIN-ENROLL — Administrator: Accept role-bound invitation
 
@@ -196,7 +215,7 @@ Each step below has an ACT mapping. Common role journeys reference the correspon
 - **Paths, state, recovery, exit and actions:** Follow J-OWNER-ENROLL with this actor and permissions. Administrative authority does not imply service execution.
 - **Acceptance:** Administrator enrollment and manual/SMTP delivery; link preview, wrong role/proof and MFA bypass negatives.
 
-**Assessment:** Complete specification; implementation Not applicable at this stage; reachability Indeterminate; no gap.
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no gap.
 
 ### J-ADMIN-ACCOUNT — Administrator: Authenticate and manage own security
 
@@ -205,7 +224,7 @@ Each step below has an ACT mapping. Common role journeys reference the correspon
 - **Paths, state, recovery, exit and actions:** Follow J-OWNER-ACCOUNT with this actor and permissions. Administrative authority does not imply service execution.
 - **Acceptance:** Administrator normal login, own update/logout; replay, other-user mutation, expired session and session-only MFA replacement fail.
 
-**Assessment:** Complete specification; implementation Not applicable at this stage; reachability Indeterminate; no gap.
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no gap.
 
 ### J-AUDITOR-ENROLL — Auditor: Accept role-bound invitation
 
@@ -214,7 +233,7 @@ Each step below has an ACT mapping. Common role journeys reference the correspon
 - **Paths, state, recovery, exit and actions:** Follow J-OWNER-ENROLL with this actor and permissions. Auditor is evidence/configuration read-only and cannot execute MCP; activity inspection has no execution entitlement.
 - **Acceptance:** Auditor enrollment and manual/SMTP delivery; link preview, wrong role/proof and MFA bypass negatives.
 
-**Assessment:** Complete specification; implementation Not applicable at this stage; reachability Indeterminate; no gap.
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no gap.
 
 ### J-AUDITOR-ACCOUNT — Auditor: Authenticate and manage own security
 
@@ -223,7 +242,7 @@ Each step below has an ACT mapping. Common role journeys reference the correspon
 - **Paths, state, recovery, exit and actions:** Follow J-OWNER-ACCOUNT with this actor and permissions. Auditor is evidence/configuration read-only and cannot execute MCP; activity inspection has no execution entitlement.
 - **Acceptance:** Auditor normal login, own update/logout; replay, other-user mutation, expired session and session-only MFA replacement fail.
 
-**Assessment:** Complete specification; implementation Not applicable at this stage; reachability Indeterminate; no gap.
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no gap.
 
 ### J-MEMBER-ENROLL — Member: Accept role-bound invitation
 
@@ -232,7 +251,7 @@ Each step below has an ACT mapping. Common role journeys reference the correspon
 - **Paths, state, recovery, exit and actions:** Follow J-OWNER-ENROLL with this actor and permissions. Member has no instance evidence/export or administration rights.
 - **Acceptance:** Member enrollment and manual/SMTP delivery; link preview, wrong role/proof and MFA bypass negatives.
 
-**Assessment:** Complete specification; implementation Not applicable at this stage; reachability Indeterminate; no gap.
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no gap.
 
 ### J-MEMBER-ACCOUNT — Member: Authenticate and manage own security
 
@@ -241,7 +260,7 @@ Each step below has an ACT mapping. Common role journeys reference the correspon
 - **Paths, state, recovery, exit and actions:** Follow J-OWNER-ACCOUNT with this actor and permissions. Member has no instance evidence/export or administration rights.
 - **Acceptance:** Member normal login, own update/logout; replay, other-user mutation, expired session and session-only MFA replacement fail.
 
-**Assessment:** Complete specification; implementation Not applicable at this stage; reachability Indeterminate; no gap.
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no gap.
 
 ### J-OWNER-PEOPLE — Owner: Invite, grant roles, transfer ownership and disable users
 
@@ -255,21 +274,21 @@ Each step below has an ACT mapping. Common role journeys reference the correspon
 - **Recovery:** Correct target/role; enroll replacement before ownership transfer; retry delivery or share manually; fix audit first.
 - **Exit / reversal:** Cancel before explicit immediate action; completed grants/removals require another current-authorized action and never history rollback.
 
-**Assessment:** Complete specification; implementation Not applicable at this stage; reachability Indeterminate; no gap.
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no gap.
 
-### J-OWNER-RECOVERY — Owner: Authorize verified account recovery
+### J-OWNER-RECOVERY — Owner: Initiate separate MFA reset
 
-- **Promise/evidence:** IDENT-05, IDENT-06, AUTHZ-03, SECRES-01, SECRES-03.
-- **Begins / entry:** Target cannot use normal MFA/recovery; active assisting Owner; EP-05.
-- **Permissions / preconditions:** Recent Owner password/TOTP plus trusted-channel identity verification; recheck issuer at activation.
-- **Happy path:** 1. Verify person and authorize recovery (Immediate restriction and single-use 30-minute enrollment link) → 2. Deliver link manually or through SMTP (Safe delivery failure or pending status) → 3. Review completion (Completion/security notice).
-- **Alternate paths:** Normal established-channel password reset remains separate and cannot remove MFA. All Owners locked out use J-HOST-RECOVERY.
-- **Failure paths:** Unverified person, stale/disabled issuer, expired/replayed proof, audit outage or incomplete enrollment cannot grant access.
-- **State transitions:** Authorized recovery → sessions/grants invalid and account restricted; deliberate valid enrollment → active.
-- **Recovery:** Reverify/reissue after expiry; repair audit first; unavailable Owner routes to host-local recovery.
-- **Exit / reversal:** Abandoned recovery leaves restricted account; cancelling/reissuing invalidates proof and cannot silently restore old sessions.
+- **Promise/evidence:** IDENT-04, IDENT-05, IDENT-06, AUTHZ-02, AUTHZ-03, AUDIT-01, AUDIT-04, SECRES-01, SECRES-03, SECRES-05.
+- **Begins / entry:** Eligible other user needs MFA recovery; EP-05.
+- **Permissions / preconditions:** Active enrolled initiator; password/TOTP within five minutes; verified person through established trusted channel; named operation/target confirmation; durable audit; live issuer/target role and generation checks; target another Owner, Administrator, Auditor or Member; atomically retain another active enrolled Owner.
+- **Happy path:** Select eligible target and reset purpose → verify person and reauthenticate → confirm → show one-time 30-minute proof for established SMTP/manual channel → inspect sanitized reset/delivery status.
+- **Alternate paths:** Reissue to otherwise eligible MFA-restricted user; both-lost target completes MFA first, then receives fresh password proof.
+- **Failure paths:** Reject self, disabled/deleted/invited/unreviewed-restored or external/legacy targets, stale reauthentication, audit outage, wrong-purpose/expired/replayed proof, issuer revocation/demotion/recovery or changed generations; SMTP failure does not reverse committed security state; uncertain persistence cannot report success or restore authority; concurrent final-Owner restriction rejects and points to existing host recovery; invited/recovering/diagnostic users do not satisfy continuity.
+- **State transitions:** Enrolled → issuance revokes factor/codes/sessions/MCP grants/references and advances generation → restricted enrolled:false; completion is separately mapped by target role.
+- **Recovery:** Correct eligibility or reauthenticate; reissue revokes prior proof; natural issuer browser expiry alone does not invalidate eligible issuer; repair audit before retry; consult durable outcome after uncertainty.
+- **Exit / reversal:** Cancel confirmation without mutation; expiry/cancellation/abandonment after issuance leaves target restricted; use authorized reissue or host recovery, never restore old factors.
 
-**Assessment:** Complete specification; implementation Not applicable at this stage; reachability Indeterminate; no gap.
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no new specification gap.
 
 ### J-OWNER-CONFIG — Owner: Configure and apply service and scanner settings
 
@@ -283,7 +302,7 @@ Each step below has an ACT mapping. Common role journeys reference the correspon
 - **Recovery:** Keep non-secret fields, correct inline errors, compare/reload stale changes and review again; secret inputs are not exposed as recovery data.
 - **Exit / reversal:** Leave draft unapplied; no active change until apply. Reverse permitted applied configuration with J-OWNER-HISTORY; immediate credentials/grants are separate.
 
-**Assessment:** Complete specification; implementation Not applicable at this stage; reachability Indeterminate; no gap.
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no gap.
 
 ### J-OWNER-CREDENTIAL — Owner: Create, rotate and delete managed credentials
 
@@ -297,7 +316,7 @@ Each step below has an ACT mapping. Common role journeys reference the correspon
 - **Recovery:** Correct input; remove/update dependencies through reviewed configuration before deletion; acquire new gateway references after rotation.
 - **Exit / reversal:** Cancel before explicit value action; after action another authorized replacement is required, never reveal or history undo.
 
-**Assessment:** Complete specification; implementation Not applicable at this stage; reachability Indeterminate; no gap.
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no gap.
 
 ### J-OWNER-ACCESS — Owner: Assign service access and control service lifecycle
 
@@ -311,7 +330,7 @@ Each step below has an ACT mapping. Common role journeys reference the correspon
 - **Recovery:** Correct identity eligibility via Owner where needed; refresh access list after conflict; explicitly review current service to re-enable.
 - **Exit / reversal:** Cancel before immediate action; deliberate new grant/re-enable reverses removal only under current checks; no remote-side-effect rollback.
 
-**Assessment:** Complete specification; implementation Not applicable at this stage; reachability Indeterminate; no gap.
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no gap.
 
 ### J-OWNER-POLICY — Owner: Inspect, edit and safely test policy
 
@@ -325,7 +344,7 @@ Each step below has an ACT mapping. Common role journeys reference the correspon
 - **Recovery:** Correct highlighted field, inspect canonical path, adjust intended rule then retest/review.
 - **Exit / reversal:** Abandon draft/preview; roll back applied permitted policy only via fresh history draft.
 
-**Assessment:** Complete specification; implementation Not applicable at this stage; reachability Indeterminate; no gap.
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no gap.
 
 ### J-OWNER-HISTORY — Owner: Import, export and restore permitted configuration
 
@@ -333,13 +352,13 @@ Each step below has an ACT mapping. Common role journeys reference the correspon
 - **Begins / entry:** Legacy YAML/catalogs or existing applied history; authenticated actor; EP-10.
 - **Permissions / preconditions:** Current permissions for every imported/history setting; deliberate credential sources; no email-only identity grant.
 - **Happy path:** 1. Import files or choose earlier revision (Unknown fields, missing credentials/identities and impact listed) → 2. Resolve credentials and explicit identities (Missing values keep service inactive) → 3. Review/apply or export sanitized configuration (No routine restart; reconnect notice when identity/endpoint changes).
-- **Alternate paths:** Latest 50 applied revisions retained; switching editors preserves imported regex/catalog fields; secret-bearing recovery uses encrypted backup, not export.
+- **Alternate paths:** Latest 50 applied revisions retained; guided/form/advanced editor round trips preserve identifiers, priorities, match semantics, exceptions and both catalogs; secret-bearing recovery uses encrypted backup, not export.
 - **Failure paths:** Malformed/unknown fields, arbitrary host source, forbidden setting, missing/deleted secret or obsolete grant/lifecycle snapshot rejected; audit outage blocks mutations/export.
 - **State transitions:** Import/history → fresh draft → applied; no live grant/identity/lifecycle/secret rollback; old YAML/env cannot override managed authority.
 - **Recovery:** Resolve each explicit error; resupply intended secret; map identity with appropriate authority; retry fresh review after conflict.
 - **Exit / reversal:** Cancel import or leave draft unapplied; prior configuration remains active on failure; export does not mutate configuration.
 
-**Assessment:** Complete specification; implementation Not applicable at this stage; reachability Indeterminate; no gap.
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no gap.
 
 ### J-ADMIN-CONFIG — Administrator: Configure and apply service and scanner settings
 
@@ -348,7 +367,7 @@ Each step below has an ACT mapping. Common role journeys reference the correspon
 - **Paths, state, recovery, exit and actions:** Follow J-OWNER-CONFIG with this actor and permissions. Administrative authority does not imply service execution.
 - **Acceptance:** All existing configuration fields round-trip; invalid input, stale apply and mixed-owner-setting negatives; keyboard/narrow screens; first simple service within 15 minutes.
 
-**Assessment:** Complete specification; implementation Not applicable at this stage; reachability Indeterminate; no gap.
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no gap.
 
 ### J-ADMIN-CREDENTIAL — Administrator: Create, rotate and delete managed credentials
 
@@ -357,7 +376,7 @@ Each step below has an ACT mapping. Common role journeys reference the correspon
 - **Paths, state, recovery, exit and actions:** Follow J-OWNER-CREDENTIAL with this actor and permissions. Administrative authority does not imply service execution.
 - **Acceptance:** Write-only creation/rotation and dependency-safe deletion; canary leaks, arbitrary host reads and old-reference use fail.
 
-**Assessment:** Complete specification; implementation Not applicable at this stage; reachability Indeterminate; no gap.
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no gap.
 
 ### J-ADMIN-ACCESS — Administrator: Assign service access and control service lifecycle
 
@@ -366,7 +385,7 @@ Each step below has an ACT mapping. Common role journeys reference the correspon
 - **Paths, state, recovery, exit and actions:** Follow J-OWNER-ACCESS with this actor and permissions. Administrative authority does not imply service execution.
 - **Acceptance:** Grant/remove/disable/archive/unarchive success; Auditor/unassigned admin and queued stale requests denied; completed request cannot revive references.
 
-**Assessment:** Complete specification; implementation Not applicable at this stage; reachability Indeterminate; no gap.
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no gap.
 
 ### J-ADMIN-POLICY — Administrator: Inspect, edit and safely test policy
 
@@ -375,7 +394,7 @@ Each step below has an ACT mapping. Common role journeys reference the correspon
 - **Paths, state, recovery, exit and actions:** Follow J-OWNER-POLICY with this actor and permissions. Administrative authority does not imply service execution.
 - **Acceptance:** Preview/runtime agreement including ties/defaults/canonical path; malformed inputs and zero substitution/I/O checks; self-signed TLS test in runtime regression.
 
-**Assessment:** Complete specification; implementation Not applicable at this stage; reachability Indeterminate; no gap.
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no gap.
 
 ### J-ADMIN-HISTORY — Administrator: Import, export and restore permitted configuration
 
@@ -384,7 +403,7 @@ Each step below has an ACT mapping. Common role journeys reference the correspon
 - **Paths, state, recovery, exit and actions:** Follow J-OWNER-HISTORY with this actor and permissions. Administrative authority does not imply service execution.
 - **Acceptance:** All legacy fields and catalogs preserved; missing/unknown inputs fail; history cannot restore secrets/access or Owner-only settings; no stale-env override.
 
-**Assessment:** Complete specification; implementation Not applicable at this stage; reachability Indeterminate; no gap.
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no gap.
 
 ### J-OWNER-ACTIVITY — Owner: Investigate permitted activity and export evidence
 
@@ -398,7 +417,7 @@ Each step below has an ACT mapping. Common role journeys reference the correspon
 - **Recovery:** Adjust filter/request ID, check retention and permissions; uncertain remote effect requires investigation, not automatic retry.
 - **Exit / reversal:** Clear filters or leave detail; exports do not delete records; retention is separate Owner setting.
 
-**Assessment:** Complete specification; implementation Not applicable at this stage; reachability Indeterminate; no gap.
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no gap.
 
 ### J-ADMIN-ACTIVITY — Administrator: Investigate permitted activity and export evidence
 
@@ -407,7 +426,7 @@ Each step below has an ACT mapping. Common role journeys reference the correspon
 - **Paths, state, recovery, exit and actions:** Follow J-OWNER-ACTIVITY with this actor and permissions. Administrative authority does not imply service execution.
 - **Acceptance:** Administrator scoped list/detail; forbidden actor/service data, secret canaries and raw body exposure denied; denial diagnosis within two minutes.
 
-**Assessment:** Complete specification; implementation Not applicable at this stage; reachability Indeterminate; no gap.
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no gap.
 
 ### J-AUDITOR-ACTIVITY — Auditor: Investigate permitted activity and export evidence
 
@@ -416,7 +435,7 @@ Each step below has an ACT mapping. Common role journeys reference the correspon
 - **Paths, state, recovery, exit and actions:** Follow J-OWNER-ACTIVITY with this actor and permissions. Auditor is evidence/configuration read-only and cannot execute MCP; activity inspection has no execution entitlement.
 - **Acceptance:** Auditor scoped list/detail; forbidden actor/service data, secret canaries and raw body exposure denied; denial diagnosis within two minutes.
 
-**Assessment:** Complete specification; implementation Not applicable at this stage; reachability Indeterminate; no gap.
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no gap.
 
 ### J-MEMBER-ACTIVITY — Member: Investigate permitted activity
 
@@ -430,13 +449,15 @@ Each step below has an ACT mapping. Common role journeys reference the correspon
 - **Recovery:** Adjust filter/request ID, check retention and permissions; uncertain remote effect requires investigation, not automatic retry.
 - **Exit / reversal:** Clear filters or leave detail; exports do not delete records; retention is separate Owner setting.
 
-**Assessment:** Complete specification; implementation Not applicable at this stage; reachability Indeterminate; no gap.
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no gap.
 
 ### J-OWNER-SETTINGS — Owner: Configure authentication, SMTP, limits and retention
 
 - **Promise/evidence:** IDENT-04, MCP-02, OPS-02, OPS-03, OPS-04, CAP-CFG-06, UX-02, STATE-01, STATE-02.
 - **Begins / entry:** Active Owner; known SMTP/authorization values and current usage; EP-12.
 - **Permissions / preconditions:** Current Owner; recent authentication for authentication/recovery-material changes; audit.
+- **Settings interaction:** Focused groups replace the all-settings scrolling form; user-friendly controls and plain-language summaries replace routine JSON, while all supported values remain editable and survive round trips. Group names, layout and navigation mechanism await UX-DESIGN-002. Owner edits instance authentication/SMTP/limits/retention; Administrator edits only response protection within existing configuration permission; Auditor sees non-secret read-only configuration; Member gains no Settings access.
+- **Deletion boundary:** J-OWNER-SMTP-DELETE is separate from Save/Review/Apply; disabling SMTP retains credentials and deleting never silently changes authentication mode.
 - **Happy path:** 1. Edit advanced instance settings (Units/defaults/current use and capacity effect) → 2. Review and apply settings (Applied; reconnect warnings or errors) → 3. Test SMTP and inspect status (Test success/failure; optional manual workflow remains).
 - **Alternate paths:** Built-in OAuth is normal; external issuer/subject registration or legacy mode explicitly selected; no browser SSO. Capacity below use blocks new allocations without eviction.
 - **Failure paths:** Invalid setting combinations, SMTP error, stale apply, non-Owner attempt or audit failure reject relevant operation; mail outage alone does not block gateway.
@@ -444,7 +465,7 @@ Each step below has an ACT mapping. Common role journeys reference the correspon
 - **Recovery:** Correct field and retry test; use trusted manual invitations; restore valid limit; operator repairs underlying storage.
 - **Exit / reversal:** Abandon unapplied settings or explicitly apply new values; no hidden override from old environment/YAML.
 
-**Assessment:** Complete specification; implementation Not applicable at this stage; reachability Indeterminate; no gap.
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no gap.
 
 ### J-OWNER-CLIENT — Owner: Connect and revoke ChatGPT or Codex
 
@@ -458,7 +479,7 @@ Each step below has an ACT mapping. Common role journeys reference the correspon
 - **Recovery:** Correct URL/reachability, obtain explicit assignment, retry valid authorization; reconnect after restore/auth identity change.
 - **Exit / reversal:** Decline consent before grant; revoke client after grant; console logout and OAuth revocation are distinct.
 
-**Assessment:** Complete specification; implementation Not applicable at this stage; reachability Indeterminate; no gap.
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no gap.
 
 ### J-ADMIN-CLIENT — Administrator: Connect and revoke ChatGPT or Codex
 
@@ -467,7 +488,7 @@ Each step below has an ACT mapping. Common role journeys reference the correspon
 - **Paths, state, recovery, exit and actions:** Follow J-OWNER-CLIENT with this actor and permissions. Administrative authority does not imply service execution.
 - **Acceptance:** Real ChatGPT/Codex for assigned Administrator; unassigned admin, invalid PKCE/redirect, replay and revoked access negatives.
 
-**Assessment:** Complete specification; implementation Not applicable at this stage; reachability Indeterminate; no gap.
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no gap.
 
 ### J-MEMBER-CLIENT — Member: Connect and revoke ChatGPT or Codex
 
@@ -476,7 +497,7 @@ Each step below has an ACT mapping. Common role journeys reference the correspon
 - **Paths, state, recovery, exit and actions:** Follow J-OWNER-CLIENT with this actor and permissions. Member has no instance evidence/export or administration rights.
 - **Acceptance:** Real ChatGPT/Codex for assigned Member; unassigned admin, invalid PKCE/redirect, replay and revoked access negatives.
 
-**Assessment:** Complete specification; implementation Not applicable at this stage; reachability Indeterminate; no gap.
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no gap.
 
 ### J-EXTERNAL-01 — External MCP identity: Use registered external OAuth access
 
@@ -490,7 +511,7 @@ Each step below has an ACT mapping. Common role journeys reference the correspon
 - **Recovery:** Operator/Owner corrects registration or issuer settings; caller obtains valid external token.
 - **Exit / reversal:** Remove service assignment or disable mode; external provider token lifecycle remains external responsibility.
 
-**Assessment:** Complete specification; implementation Not applicable at this stage; reachability Indeterminate; no gap.
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no gap.
 
 ### J-LEGACY-01 — Legacy bearer identity: Use explicitly enabled shared bearer MCP access
 
@@ -504,7 +525,7 @@ Each step below has an ACT mapping. Common role journeys reference the correspon
 - **Recovery:** Owner reviews advanced mode and issues new access through authorized setup; callers reconnect.
 - **Exit / reversal:** Owner disables mode/removes assignment; no browser logout for this transport identity.
 
-**Assessment:** Complete specification; implementation Not applicable at this stage; reachability Indeterminate; no gap.
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no gap.
 
 ### J-MCP-01 — MCP client: Discover, obtain references, request and explain denial
 
@@ -518,7 +539,7 @@ Each step below has an ACT mapping. Common role journeys reference the correspon
 - **Recovery:** Inspect safe denial, correct allowed input or reacquire valid reference; already-dispatched uncertain effects require investigation before deliberate retry.
 - **Exit / reversal:** Finish request or abandon before admission; timeout/cancel does not promise remote undo; administrative revocation blocks future admission.
 
-**Assessment:** Complete specification; implementation Not applicable at this stage; reachability Indeterminate; no gap.
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no gap.
 
 ### J-MCP-RESTART — MCP client: Resume after normal restart
 
@@ -532,7 +553,7 @@ Each step below has an ACT mapping. Common role journeys reference the correspon
 - **Recovery:** Repair startup material; reacquire references or perform full OAuth authorization when required.
 - **Exit / reversal:** Client may remain disconnected; no mcp-session-id is created/trusted.
 
-**Assessment:** Complete specification; implementation Not applicable at this stage; reachability Indeterminate; no gap.
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no gap.
 
 ### J-OWNER-BACKUP — Owner: Create, download and schedule encrypted backups
 
@@ -546,7 +567,7 @@ Each step below has an ACT mapping. Common role journeys reference the correspon
 - **Recovery:** Correct mount/capacity through host operator, retry after current job; retain independently stored archive/key.
 - **Exit / reversal:** Leave progress and inspect status later; no promised mid-job cancellation. Download does not change source instance; expiry is configured retention.
 
-**Assessment:** Complete specification; implementation Not applicable at this stage; reachability Indeterminate; no gap.
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no gap.
 
 ### J-SYSTEM-BACKUP — Scheduled/runtime automation: Run scheduled backup and retention
 
@@ -560,7 +581,7 @@ Each step below has an ACT mapping. Common role journeys reference the correspon
 - **Recovery:** Owner/operator repairs cause and starts manual retry or waits for next scheduled execution; in-product status remains source of outcome.
 - **Exit / reversal:** Owner changes schedule/retention explicitly; no automated rollback of application configuration.
 
-**Assessment:** Complete specification; implementation Not applicable at this stage; reachability Indeterminate; no gap.
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no gap.
 
 ### J-OWNER-RESTORE — Owner: Preview and replace functioning instance
 
@@ -574,7 +595,7 @@ Each step below has an ACT mapping. Common role journeys reference the correspon
 - **Recovery:** Fix preview inputs and retry; host repairs failed rollback using protected local source; completed installation enrollment failures use J-OWNER-RESUME.
 - **Exit / reversal:** Cancel at preview without replacement; after installation no automatic reactivation of old state; no selective merge or downstream data restore.
 
-**Assessment:** Complete specification; implementation Not applicable at this stage; reachability Indeterminate; no gap.
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no gap.
 
 ### J-HOST-RESTORE — Host operator: Restore to clean replacement host
 
@@ -588,7 +609,7 @@ Each step below has an ACT mapping. Common role journeys reference the correspon
 - **Recovery:** Correct prerequisites, reissue proof or retry intact archive; do not copy partially installed state into active use.
 - **Exit / reversal:** Abandon preview restricted; once installed continue J-OWNER-RESUME; replacing state again requires authorized full restore.
 
-**Assessment:** Complete specification; implementation Not applicable at this stage; reachability Indeterminate; no gap.
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no gap.
 
 ### J-OWNER-RESUME — Owner: Enroll recovery Owner and reactivate reviewed access
 
@@ -602,7 +623,7 @@ Each step below has an ACT mapping. Common role journeys reference the correspon
 - **Recovery:** Lost/expired continuation uses host recovery; replace stale credentials and correct policy; reconnect clients only after activation.
 - **Exit / reversal:** Leave services Disabled/users pending; no rollback to old authentication state; later explicit disable/revoke is available.
 
-**Assessment:** Complete specification; implementation Not applicable at this stage; reachability Indeterminate; no gap.
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no gap.
 
 ### J-HOST-RECOVERY — Host operator: Recover locked-out Owners and repair audit storage
 
@@ -616,7 +637,7 @@ Each step below has an ACT mapping. Common role journeys reference the correspon
 - **Recovery:** Continue host storage repair; reissue expired capability; investigate uncertain side effects manually.
 - **Exit / reversal:** Remain degraded safely if repair fails; no UI override or fake audit continuity; local logout remains available.
 
-**Assessment:** Complete specification; implementation Not applicable at this stage; reachability Indeterminate; no gap.
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no gap.
 
 ### J-OWNER-DIAG — Owner: Use read-only diagnosis during audit outage
 
@@ -630,7 +651,7 @@ Each step below has an ACT mapping. Common role journeys reference the correspon
 - **Recovery:** Host operator repairs storage; user retries normal authentication afterward; no unaudited web repair bypass.
 - **Exit / reversal:** Local logout or expiry always possible; leaving diagnosis does not restore audit service.
 
-**Assessment:** Complete specification; implementation Not applicable at this stage; reachability Indeterminate; no gap.
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no gap.
 
 ### J-ADMIN-DIAG — Administrator: Use read-only diagnosis during audit outage
 
@@ -639,7 +660,7 @@ Each step below has an ACT mapping. Common role journeys reference the correspon
 - **Paths, state, recovery, exit and actions:** Follow J-OWNER-DIAG with this actor and permissions. Administrative authority does not imply service execution.
 - **Acceptance:** Administrator appropriate diagnostic reads; unreliable login, other-role data, exports and mutation bypass fail; logout works.
 
-**Assessment:** Complete specification; implementation Not applicable at this stage; reachability Indeterminate; no gap.
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no gap.
 
 ### J-AUDITOR-DIAG — Auditor: Use read-only diagnosis during audit outage
 
@@ -648,7 +669,7 @@ Each step below has an ACT mapping. Common role journeys reference the correspon
 - **Paths, state, recovery, exit and actions:** Follow J-OWNER-DIAG with this actor and permissions. Auditor is evidence/configuration read-only and cannot execute MCP; activity inspection has no execution entitlement.
 - **Acceptance:** Auditor appropriate diagnostic reads; unreliable login, other-role data, exports and mutation bypass fail; logout works.
 
-**Assessment:** Complete specification; implementation Not applicable at this stage; reachability Indeterminate; no gap.
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no gap.
 
 ### J-MEMBER-DIAG — Member: Use read-only diagnosis during audit outage
 
@@ -657,7 +678,7 @@ Each step below has an ACT mapping. Common role journeys reference the correspon
 - **Paths, state, recovery, exit and actions:** Follow J-OWNER-DIAG with this actor and permissions. Member has no instance evidence/export or administration rights.
 - **Acceptance:** Member appropriate diagnostic reads; unreliable login, other-role data, exports and mutation bypass fail; logout works.
 
-**Assessment:** Complete specification; implementation Not applicable at this stage; reachability Indeterminate; no gap.
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no gap.
 
 ### J-PUBLIC-01 — Unauthenticated visitor: Observe bounded health and locate authorized entry
 
@@ -671,7 +692,7 @@ Each step below has an ACT mapping. Common role journeys reference the correspon
 - **Recovery:** Use valid invitation or contact Owner/operator through existing trusted channel.
 - **Exit / reversal:** Close page; no account or grant to revoke.
 
-**Assessment:** Complete specification; implementation Not applicable at this stage; reachability Indeterminate; no gap.
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no gap.
 
 ### J-SYSTEM-ADMISSION — Scheduled/runtime automation: Enforce limits and maintain durable evidence
 
@@ -685,7 +706,7 @@ Each step below has an ACT mapping. Common role journeys reference the correspon
 - **Recovery:** Operator repairs cause, Owner corrects limits, user investigates uncertain remote effect; no automatic effect retry.
 - **Exit / reversal:** No individual audit editing; retention follows explicit audited policy; admitted remote work is not undone by later denial.
 
-**Assessment:** Complete specification; implementation Not applicable at this stage; reachability Indeterminate; no gap.
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no gap.
 
 ### J-AUDITOR-CONFIG — Auditor: Inspect non-secret configuration
 
@@ -699,7 +720,175 @@ Each step below has an ACT mapping. Common role journeys reference the correspon
 - **Recovery:** Adjust search or ask Owner for intended access; report observed exceptions using existing organizational process.
 - **Exit / reversal:** Leave detail or logout; nothing to undo.
 
-**Assessment:** Complete specification; implementation Not applicable at this stage; reachability Indeterminate; no gap.
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no gap.
+
+### J-OWNER-PASSWORD-RESET — Owner: Initiate separate password reset
+
+- **Promise/evidence:** IDENT-04, IDENT-05, IDENT-06, AUTHZ-02, AUTHZ-03, AUDIT-01, AUDIT-04, SECRES-01, SECRES-03, SECRES-05.
+- **Begins / entry:** Eligible other user needs password recovery; EP-05.
+- **Permissions / preconditions:** Active enrolled initiator; password/TOTP within five minutes; verified person through established trusted channel; named operation/target confirmation; durable audit; live issuer/target role and generation checks; target another Owner, Administrator, Auditor or Member; target has enrolled factor.
+- **Happy path:** Select eligible target and reset purpose → verify person and reauthenticate → confirm → show one-time 30-minute proof for established SMTP/manual channel → inspect sanitized reset/delivery status.
+- **Alternate paths:** Normal public request remains non-enumerating; retained unused recovery code may substitute for current TOTP at completion.
+- **Failure paths:** Reject self, disabled/deleted/invited/unreviewed-restored or external/legacy targets, stale reauthentication, audit outage, wrong-purpose/expired/replayed proof, issuer revocation/demotion/recovery or changed generations; SMTP failure does not reverse committed security state; uncertain persistence cannot report success or restore authority; proof issuance never locks out target.
+- **State transitions:** Enrolled → proof issued, enrollment/password/factor/codes/sessions unchanged; successful target completion changes password only and revokes prior access.
+- **Recovery:** Correct eligibility or reauthenticate; reissue revokes prior proof; natural issuer browser expiry alone does not invalidate eligible issuer; repair audit before retry; consult durable outcome after uncertainty.
+- **Exit / reversal:** Cancel confirmation without mutation; expiry/cancellation leaves original password and factor intact; completion cannot be reversed through drafts/history.
+
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no new specification gap.
+
+### J-ADMIN-RECOVERY — Administrator: Initiate separate MFA reset
+
+- **Promise/evidence:** IDENT-04, IDENT-05, IDENT-06, AUTHZ-02, AUTHZ-03, AUDIT-01, AUDIT-04, SECRES-01, SECRES-03, SECRES-05.
+- **Begins / entry:** Eligible other user needs MFA recovery; EP-05.
+- **Permissions / preconditions:** Active enrolled initiator; password/TOTP within five minutes; verified person through established trusted channel; named operation/target confirmation; durable audit; live issuer/target role and generation checks; target another Administrator, Auditor or Member; never an Owner; atomically retain another active enrolled Owner.
+- **Happy path:** Select eligible target and reset purpose → verify person and reauthenticate → confirm → show one-time 30-minute proof for established SMTP/manual channel → inspect sanitized reset/delivery status.
+- **Alternate paths:** Reissue to otherwise eligible MFA-restricted user; both-lost target completes MFA first, then receives fresh password proof.
+- **Failure paths:** Reject self, disabled/deleted/invited/unreviewed-restored or external/legacy targets, stale reauthentication, audit outage, wrong-purpose/expired/replayed proof, issuer revocation/demotion/recovery or changed generations; SMTP failure does not reverse committed security state; uncertain persistence cannot report success or restore authority; concurrent final-Owner restriction rejects and points to existing host recovery; invited/recovering/diagnostic users do not satisfy continuity.
+- **State transitions:** Enrolled → issuance revokes factor/codes/sessions/MCP grants/references and advances generation → restricted enrolled:false; completion is separately mapped by target role.
+- **Recovery:** Correct eligibility or reauthenticate; reissue revokes prior proof; natural issuer browser expiry alone does not invalidate eligible issuer; repair audit before retry; consult durable outcome after uncertainty.
+- **Exit / reversal:** Cancel confirmation without mutation; expiry/cancellation/abandonment after issuance leaves target restricted; use authorized reissue or host recovery, never restore old factors.
+
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no new specification gap.
+
+### J-ADMIN-PASSWORD-RESET — Administrator: Initiate separate password reset
+
+- **Promise/evidence:** IDENT-04, IDENT-05, IDENT-06, AUTHZ-02, AUTHZ-03, AUDIT-01, AUDIT-04, SECRES-01, SECRES-03, SECRES-05.
+- **Begins / entry:** Eligible other user needs password recovery; EP-05.
+- **Permissions / preconditions:** Active enrolled initiator; password/TOTP within five minutes; verified person through established trusted channel; named operation/target confirmation; durable audit; live issuer/target role and generation checks; target another Administrator, Auditor or Member; never an Owner; target has enrolled factor.
+- **Happy path:** Select eligible target and reset purpose → verify person and reauthenticate → confirm → show one-time 30-minute proof for established SMTP/manual channel → inspect sanitized reset/delivery status.
+- **Alternate paths:** Normal public request remains non-enumerating; retained unused recovery code may substitute for current TOTP at completion.
+- **Failure paths:** Reject self, disabled/deleted/invited/unreviewed-restored or external/legacy targets, stale reauthentication, audit outage, wrong-purpose/expired/replayed proof, issuer revocation/demotion/recovery or changed generations; SMTP failure does not reverse committed security state; uncertain persistence cannot report success or restore authority; proof issuance never locks out target.
+- **State transitions:** Enrolled → proof issued, enrollment/password/factor/codes/sessions unchanged; successful target completion changes password only and revokes prior access.
+- **Recovery:** Correct eligibility or reauthenticate; reissue revokes prior proof; natural issuer browser expiry alone does not invalidate eligible issuer; repair audit before retry; consult durable outcome after uncertainty.
+- **Exit / reversal:** Cancel confirmation without mutation; expiry/cancellation leaves original password and factor intact; completion cannot be reversed through drafts/history.
+
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no new specification gap.
+
+### J-OWNER-PASSWORD-COMPLETE — Owner: Complete assisted password reset
+
+- **Promise/evidence:** IDENT-04, IDENT-05, IDENT-06, AUTHZ-02, AUTHZ-03, AUDIT-01, AUDIT-04, SECRES-01, SECRES-03, SECRES-05.
+- **Begins / entry:** Enrolled target receives purpose-bound reset link; EP-24.
+- **Permissions / preconditions:** Bound 30-minute proof; current instance/target/issuer generations and live issuer eligibility; current TOTP or one unused recovery code plus valid new password; audit admission; Owner target requires Owner issuer.
+- **Happy path:** Open link without mutation → provide new password and retained factor/code → atomically consume proof and used code → ordinary login.
+- **Alternate paths:** Unused recovery code replaces current TOTP; other codes and existing TOTP remain valid.
+- **Failure paths:** Reject purpose/target/instance mismatch, expired/replayed proof, issuer demotion/revocation/generation change, target lifecycle/generation change or promotion beyond issuer authority; concurrent completion succeeds once; audit/persistence uncertainty never grants access.
+- **State transitions:** Enrolled → password verifier replaced, proof/code consumed, generation advanced, all sessions/grants/references revoked; factor and remaining codes retained.
+- **Recovery:** Retain non-secret work after errors; never persist secret form values; authorized reissue consults current state and durable outcome; issuer browser need not remain open.
+- **Exit / reversal:** Abandonment changes no credentials; completion does not auto-login and cannot restore old authority.
+
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no new specification gap.
+
+### J-OWNER-MFA-COMPLETE — Owner: Complete assisted Authenticator enrollment
+
+- **Promise/evidence:** IDENT-04, IDENT-05, IDENT-06, AUTHZ-02, AUTHZ-03, AUDIT-01, AUDIT-04, SECRES-01, SECRES-03, SECRES-05.
+- **Begins / entry:** Restricted enrolled:false target receives purpose-bound reset link; EP-24.
+- **Permissions / preconditions:** Bound 30-minute proof; current instance/target/issuer generations and live issuer eligibility; otherwise eligible restricted identity; audit admission; Owner target requires Owner issuer.
+- **Happy path:** Open link without mutation → enroll and confirm fresh TOTP/recovery codes → consume proof atomically → ordinary password/MFA login.
+- **Alternate paths:** No lost factor or forgotten password required for this ceremony; both-lost user next obtains a fresh password proof.
+- **Failure paths:** Reject purpose/target/instance mismatch, expired/replayed proof, issuer demotion/revocation/generation change, target lifecycle/generation change or promotion beyond issuer authority; concurrent completion succeeds once; audit/persistence uncertainty never grants access.
+- **State transitions:** Restricted → confirmed factor/codes, generation advanced, enrolled → logged out eligible account; password unchanged.
+- **Recovery:** Retain non-secret work after errors; never persist secret form values; authorized reissue consults current state and durable outcome; issuer browser need not remain open.
+- **Exit / reversal:** Abandonment stays restricted until reissue/host recovery; no ordinary access from link and no restoration of old factors.
+
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no new specification gap.
+
+### J-ADMIN-PASSWORD-COMPLETE — Administrator: Complete assisted password reset
+
+- **Promise/evidence:** IDENT-04, IDENT-05, IDENT-06, AUTHZ-02, AUTHZ-03, AUDIT-01, AUDIT-04, SECRES-01, SECRES-03, SECRES-05.
+- **Begins / entry:** Enrolled target receives purpose-bound reset link; EP-24.
+- **Permissions / preconditions:** Bound 30-minute proof; current instance/target/issuer generations and live issuer eligibility; current TOTP or one unused recovery code plus valid new password; audit admission; Owner target requires Owner issuer.
+- **Happy path:** Open link without mutation → provide new password and retained factor/code → atomically consume proof and used code → ordinary login.
+- **Alternate paths:** Unused recovery code replaces current TOTP; other codes and existing TOTP remain valid.
+- **Failure paths:** Reject purpose/target/instance mismatch, expired/replayed proof, issuer demotion/revocation/generation change, target lifecycle/generation change or promotion beyond issuer authority; concurrent completion succeeds once; audit/persistence uncertainty never grants access.
+- **State transitions:** Enrolled → password verifier replaced, proof/code consumed, generation advanced, all sessions/grants/references revoked; factor and remaining codes retained.
+- **Recovery:** Retain non-secret work after errors; never persist secret form values; authorized reissue consults current state and durable outcome; issuer browser need not remain open.
+- **Exit / reversal:** Abandonment changes no credentials; completion does not auto-login and cannot restore old authority.
+
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no new specification gap.
+
+### J-ADMIN-MFA-COMPLETE — Administrator: Complete assisted Authenticator enrollment
+
+- **Promise/evidence:** IDENT-04, IDENT-05, IDENT-06, AUTHZ-02, AUTHZ-03, AUDIT-01, AUDIT-04, SECRES-01, SECRES-03, SECRES-05.
+- **Begins / entry:** Restricted enrolled:false target receives purpose-bound reset link; EP-24.
+- **Permissions / preconditions:** Bound 30-minute proof; current instance/target/issuer generations and live issuer eligibility; otherwise eligible restricted identity; audit admission; Owner target requires Owner issuer.
+- **Happy path:** Open link without mutation → enroll and confirm fresh TOTP/recovery codes → consume proof atomically → ordinary password/MFA login.
+- **Alternate paths:** No lost factor or forgotten password required for this ceremony; both-lost user next obtains a fresh password proof.
+- **Failure paths:** Reject purpose/target/instance mismatch, expired/replayed proof, issuer demotion/revocation/generation change, target lifecycle/generation change or promotion beyond issuer authority; concurrent completion succeeds once; audit/persistence uncertainty never grants access.
+- **State transitions:** Restricted → confirmed factor/codes, generation advanced, enrolled → logged out eligible account; password unchanged.
+- **Recovery:** Retain non-secret work after errors; never persist secret form values; authorized reissue consults current state and durable outcome; issuer browser need not remain open.
+- **Exit / reversal:** Abandonment stays restricted until reissue/host recovery; no ordinary access from link and no restoration of old factors.
+
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no new specification gap.
+
+### J-AUDITOR-PASSWORD-COMPLETE — Auditor: Complete assisted password reset
+
+- **Promise/evidence:** IDENT-04, IDENT-05, IDENT-06, AUTHZ-02, AUTHZ-03, AUDIT-01, AUDIT-04, SECRES-01, SECRES-03, SECRES-05.
+- **Begins / entry:** Enrolled target receives purpose-bound reset link; EP-24.
+- **Permissions / preconditions:** Bound 30-minute proof; current instance/target/issuer generations and live issuer eligibility; current TOTP or one unused recovery code plus valid new password; audit admission; Owner target requires Owner issuer.
+- **Happy path:** Open link without mutation → provide new password and retained factor/code → atomically consume proof and used code → ordinary login.
+- **Alternate paths:** Unused recovery code replaces current TOTP; other codes and existing TOTP remain valid.
+- **Failure paths:** Reject purpose/target/instance mismatch, expired/replayed proof, issuer demotion/revocation/generation change, target lifecycle/generation change or promotion beyond issuer authority; concurrent completion succeeds once; audit/persistence uncertainty never grants access.
+- **State transitions:** Enrolled → password verifier replaced, proof/code consumed, generation advanced, all sessions/grants/references revoked; factor and remaining codes retained.
+- **Recovery:** Retain non-secret work after errors; never persist secret form values; authorized reissue consults current state and durable outcome; issuer browser need not remain open.
+- **Exit / reversal:** Abandonment changes no credentials; completion does not auto-login and cannot restore old authority.
+
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no new specification gap.
+
+### J-AUDITOR-MFA-COMPLETE — Auditor: Complete assisted Authenticator enrollment
+
+- **Promise/evidence:** IDENT-04, IDENT-05, IDENT-06, AUTHZ-02, AUTHZ-03, AUDIT-01, AUDIT-04, SECRES-01, SECRES-03, SECRES-05.
+- **Begins / entry:** Restricted enrolled:false target receives purpose-bound reset link; EP-24.
+- **Permissions / preconditions:** Bound 30-minute proof; current instance/target/issuer generations and live issuer eligibility; otherwise eligible restricted identity; audit admission; Owner target requires Owner issuer.
+- **Happy path:** Open link without mutation → enroll and confirm fresh TOTP/recovery codes → consume proof atomically → ordinary password/MFA login.
+- **Alternate paths:** No lost factor or forgotten password required for this ceremony; both-lost user next obtains a fresh password proof.
+- **Failure paths:** Reject purpose/target/instance mismatch, expired/replayed proof, issuer demotion/revocation/generation change, target lifecycle/generation change or promotion beyond issuer authority; concurrent completion succeeds once; audit/persistence uncertainty never grants access.
+- **State transitions:** Restricted → confirmed factor/codes, generation advanced, enrolled → logged out eligible account; password unchanged.
+- **Recovery:** Retain non-secret work after errors; never persist secret form values; authorized reissue consults current state and durable outcome; issuer browser need not remain open.
+- **Exit / reversal:** Abandonment stays restricted until reissue/host recovery; no ordinary access from link and no restoration of old factors.
+
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no new specification gap.
+
+### J-MEMBER-PASSWORD-COMPLETE — Member: Complete assisted password reset
+
+- **Promise/evidence:** IDENT-04, IDENT-05, IDENT-06, AUTHZ-02, AUTHZ-03, AUDIT-01, AUDIT-04, SECRES-01, SECRES-03, SECRES-05.
+- **Begins / entry:** Enrolled target receives purpose-bound reset link; EP-24.
+- **Permissions / preconditions:** Bound 30-minute proof; current instance/target/issuer generations and live issuer eligibility; current TOTP or one unused recovery code plus valid new password; audit admission; Owner target requires Owner issuer.
+- **Happy path:** Open link without mutation → provide new password and retained factor/code → atomically consume proof and used code → ordinary login.
+- **Alternate paths:** Unused recovery code replaces current TOTP; other codes and existing TOTP remain valid.
+- **Failure paths:** Reject purpose/target/instance mismatch, expired/replayed proof, issuer demotion/revocation/generation change, target lifecycle/generation change or promotion beyond issuer authority; concurrent completion succeeds once; audit/persistence uncertainty never grants access.
+- **State transitions:** Enrolled → password verifier replaced, proof/code consumed, generation advanced, all sessions/grants/references revoked; factor and remaining codes retained.
+- **Recovery:** Retain non-secret work after errors; never persist secret form values; authorized reissue consults current state and durable outcome; issuer browser need not remain open.
+- **Exit / reversal:** Abandonment changes no credentials; completion does not auto-login and cannot restore old authority.
+
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no new specification gap.
+
+### J-MEMBER-MFA-COMPLETE — Member: Complete assisted Authenticator enrollment
+
+- **Promise/evidence:** IDENT-04, IDENT-05, IDENT-06, AUTHZ-02, AUTHZ-03, AUDIT-01, AUDIT-04, SECRES-01, SECRES-03, SECRES-05.
+- **Begins / entry:** Restricted enrolled:false target receives purpose-bound reset link; EP-24.
+- **Permissions / preconditions:** Bound 30-minute proof; current instance/target/issuer generations and live issuer eligibility; otherwise eligible restricted identity; audit admission; Owner target requires Owner issuer.
+- **Happy path:** Open link without mutation → enroll and confirm fresh TOTP/recovery codes → consume proof atomically → ordinary password/MFA login.
+- **Alternate paths:** No lost factor or forgotten password required for this ceremony; both-lost user next obtains a fresh password proof.
+- **Failure paths:** Reject purpose/target/instance mismatch, expired/replayed proof, issuer demotion/revocation/generation change, target lifecycle/generation change or promotion beyond issuer authority; concurrent completion succeeds once; audit/persistence uncertainty never grants access.
+- **State transitions:** Restricted → confirmed factor/codes, generation advanced, enrolled → logged out eligible account; password unchanged.
+- **Recovery:** Retain non-secret work after errors; never persist secret form values; authorized reissue consults current state and durable outcome; issuer browser need not remain open.
+- **Exit / reversal:** Abandonment stays restricted until reissue/host recovery; no ordinary access from link and no restoration of old factors.
+
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no new specification gap.
+
+### J-OWNER-SMTP-DELETE — Owner: Delete SMTP credential independently
+
+- **Promise/evidence:** IDENT-04, IDENT-06, CONFIG-03, CONFIG-04, AUDIT-01, AUDIT-04, STATE-01, STATE-02, STATE-03.
+- **Begins / entry:** Current SMTP settings and credential metadata visible; EP-12.
+- **Permissions / preconditions:** Current Owner, recent authentication, durable audit, current SMTP revision and credential version, no enabled dependency.
+- **Happy path:** Choose Delete SMTP credential → if enabled dependency blocks, disable SMTP through ordinary review/apply → separately confirm current-version deletion → show absent credential with non-secret settings retained.
+- **Alternate paths:** Already absent returns explicit absent result; SMTP creation/replacement remains encrypted write-only draft/review/apply; explicit valid unauthenticated SMTP remains possible without hidden fallback.
+- **Failure paths:** Reject stale version/revision, concurrent replacement, role change, expired recent authentication, enabled dependency and audit admission failure; uncertain persistence fences new credential use and reports uncertainty.
+- **State transitions:** Enabled → applied Disabled retains secret → explicit deletion removes live and pending copies, advances credential version/state revision and invalidates reviews; non-secret drafts survive for reload.
+- **Recovery:** Reload sanitized metadata and non-secret edits; fresh value entry and new review/apply required to create or replace; history/blank fields/stale submissions cannot resurrect value; durable recovery selects coherent prior state or completed deletion.
+- **Exit / reversal:** Cancel before deletion changes nothing; deletion cannot recall dispatched mail or destroy retained encrypted archives; pending sends recheck admission and late completion cannot restore secret.
+
+**Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no new specification gap.
 
 ## Action-to-surface mapping
 
@@ -721,9 +910,9 @@ The Journey column binds each shared action to the actor and permissions of that
 | ACT-012 | J-OWNER-PEOPLE / 1 | Invite a user with fixed role | EP-05 | Specified: Create bound invitation and deliver via configured channel | Each linked journey’s current role/ownership/preconditions; shared audit gate | No user → pending invitation | Pending/delivery status and manual link option | J-OWNER-PEOPLE; no gap |
 | ACT-013 | J-OWNER-PEOPLE / 2 | Change role or transfer ownership | EP-05 | Specified: Recheck Owner authority and continuity | Each linked journey’s current role/ownership/preconditions; shared audit gate | Existing role → selected fixed role | Immediate current-role feedback | J-OWNER-PEOPLE; no gap |
 | ACT-014 | J-OWNER-PEOPLE / 3 | Disable user or revoke their sessions/MCP grants | EP-05 | Specified: Invalidate current eligibility and selected access immediately | Each linked journey’s current role/ownership/preconditions; shared audit gate | Active → disabled or grants revoked | Success before later request admission; history retained | J-OWNER-PEOPLE; no gap |
-| ACT-015 | J-OWNER-RECOVERY / 1 | Verify person and authorize recovery | EP-05 | Specified: Record channel category without identity documents; revoke target sessions/grants | Each linked journey’s current role/ownership/preconditions; shared audit gate | Active/locked-out → restricted recovery | Immediate restriction and single-use 30-minute enrollment link | J-OWNER-RECOVERY; no gap |
+| ACT-015 | J-OWNER-RECOVERY / 1 | Verify person and authorize recovery | EP-05 | Specified: Record channel category; apply separate MFA restriction under SECRES-05; revoke target sessions/grants/references, factor and codes | Each linked journey’s current role/ownership/preconditions; shared audit gate | Active/locked-out → restricted recovery | Immediate restriction and single-use 30-minute enrollment link | J-OWNER-RECOVERY; no gap |
 | ACT-016 | J-OWNER-RECOVERY / 2 | Deliver link manually or through SMTP | EP-05 | Specified: Deliver only bound proof; expose delivery result | Each linked journey’s current role/ownership/preconditions; shared audit gate | Restricted → awaiting enrollment | Safe delivery failure or pending status | J-OWNER-RECOVERY; no gap |
-| ACT-017 | J-OWNER-RECOVERY / 3 | Review completion | EP-05 | Specified: Verify issuer and consume proof once; target enrolls fresh factor | Each linked journey’s current role/ownership/preconditions; shared audit gate | Restricted → freshly enrolled active account | Completion/security notice | J-OWNER-RECOVERY; no gap |
+| ACT-017 | J-OWNER-RECOVERY / 3 | Review completion | EP-05 | Specified: Recheck current issuer/target generations and authority; consume proof once; target confirms fresh factor/codes; retain password | Each linked journey’s current role/ownership/preconditions; shared audit gate | Restricted → freshly enrolled eligible account; ordinary login required | Completion/security notice | J-OWNER-RECOVERY; no gap |
 | ACT-018 | J-OWNER-CONFIG, J-ADMIN-CONFIG / 1 | Find service or start Add service | EP-06 | Specified: Search/filter and load permitted metadata or new draft | Each linked journey’s current role/ownership/preconditions; shared audit gate | Existing active config unchanged; new service Draft | Overview/Configuration/Access/Activity or five-step wizard | J-OWNER-CONFIG; no gap |
 | ACT-019 | J-OWNER-CONFIG, J-ADMIN-CONFIG / 2 | Edit details, destinations, placement and scanning | EP-06 | Specified: Validate common/advanced fields in same draft | Each linked journey’s current role/ownership/preconditions; shared audit gate | Unsaved → saved unapplied draft | Effective summaries; exact/suffix/regex, TLS inheritance, multiple/no-auth placement and both catalogs retained | J-OWNER-CONFIG; no gap |
 | ACT-020 | J-OWNER-CONFIG, J-ADMIN-CONFIG / 3 | Review differences and exceptions | EP-06 | Specified: Prepare sanitized scoped changes; check dependencies and proposed initial grants | Each linked journey’s current role/ownership/preconditions; shared audit gate | Draft → reviewed candidate | Affected services, exceptions and reconnect impact visible | J-OWNER-CONFIG; no gap |
@@ -791,6 +980,20 @@ The Journey column binds each shared action to the actor and permissions of that
 | ACT-082 | Every journey (with its own permissions and stated path) / alternate | Choose documented alternate path | Invoking journey entry point | Specified: validate alternative under same current-authority and audit contract | Each linked journey’s current role/ownership/preconditions; shared audit gate | Only the alternate transition explicitly specified in the invoking journey | Journey alternate outcome; no extra privilege | Each journey and normative references; no gap |
 | ACT-083 | Every journey (with its own permissions and stated path) / failure | Correct rejected input or repair prerequisite and retry | Invoking journey entry point | Specified: reject invalid operation before sensitive effect; expose safe error/recovery; restore-specific rollback only as defined | Each linked journey’s current role/ownership/preconditions; shared audit gate | No invalid sensitive transition; restore rollback follows STATE-05 | Safe reason and recovery action specified in the invoking journey | Each journey and normative references; no gap |
 | ACT-084 | Every journey (with its own permissions and stated path) / exit | Abandon pending action or use authorized reversal | Invoking journey entry point | Specified: no unconfirmed mutation; completed actions reverse only through the stated authorized lifecycle | Each linked journey’s current role/ownership/preconditions; shared audit gate | Unconfirmed action has no effect; completed state changes only through stated reversal | Journey terminal/reversal state | Each journey and normative references; no gap |
+| ACT-085 | J-OWNER-PASSWORD-RESET / issuance or completion, alternates, failure and exit | Select eligible target and reset purpose → verify person and reauthenticate → confirm → show one-time 30-minute proof for established SMTP/manual channel → inspect sanitized reset/delivery status | EP-05 | Specified: enforce Initiate separate password reset contract; every rejection retains or restricts state as mapped | Active enrolled initiator; password/TOTP within five minutes; verified person through established trusted channel; named operation/target confirmation; durable audit; live issuer/target role and generation checks; target another Owner, Administrator, Auditor or Member; target has enrolled factor | Enrolled → proof issued, enrollment/password/factor/codes/sessions unchanged; successful target completion changes password only and revokes prior access | Sanitized success or correction/reissue path; uncertainty never success; Cancel confirmation without mutation; expiry/cancellation leaves original password and factor intact; completion cannot be reversed through drafts/history | IDENT-04, IDENT-05, IDENT-06, AUTHZ-02, AUTHZ-03, AUDIT-01, AUDIT-04, SECRES-01, SECRES-03, SECRES-05; implementation Unverified |
+| ACT-086 | J-ADMIN-RECOVERY / issuance or completion, alternates, failure and exit | Select eligible target and reset purpose → verify person and reauthenticate → confirm → show one-time 30-minute proof for established SMTP/manual channel → inspect sanitized reset/delivery status | EP-05 | Specified: enforce Initiate separate MFA reset contract; every rejection retains or restricts state as mapped | Active enrolled initiator; password/TOTP within five minutes; verified person through established trusted channel; named operation/target confirmation; durable audit; live issuer/target role and generation checks; target another Administrator, Auditor or Member; never an Owner; atomically retain another active enrolled Owner | Enrolled → issuance revokes factor/codes/sessions/MCP grants/references and advances generation → restricted enrolled:false; completion is separately mapped by target role | Sanitized success or correction/reissue path; uncertainty never success; Cancel confirmation without mutation; expiry/cancellation/abandonment after issuance leaves target restricted; use authorized reissue or host recovery, never restore old factors | IDENT-04, IDENT-05, IDENT-06, AUTHZ-02, AUTHZ-03, AUDIT-01, AUDIT-04, SECRES-01, SECRES-03, SECRES-05; implementation Unverified |
+| ACT-087 | J-ADMIN-PASSWORD-RESET / issuance or completion, alternates, failure and exit | Select eligible target and reset purpose → verify person and reauthenticate → confirm → show one-time 30-minute proof for established SMTP/manual channel → inspect sanitized reset/delivery status | EP-05 | Specified: enforce Initiate separate password reset contract; every rejection retains or restricts state as mapped | Active enrolled initiator; password/TOTP within five minutes; verified person through established trusted channel; named operation/target confirmation; durable audit; live issuer/target role and generation checks; target another Administrator, Auditor or Member; never an Owner; target has enrolled factor | Enrolled → proof issued, enrollment/password/factor/codes/sessions unchanged; successful target completion changes password only and revokes prior access | Sanitized success or correction/reissue path; uncertainty never success; Cancel confirmation without mutation; expiry/cancellation leaves original password and factor intact; completion cannot be reversed through drafts/history | IDENT-04, IDENT-05, IDENT-06, AUTHZ-02, AUTHZ-03, AUDIT-01, AUDIT-04, SECRES-01, SECRES-03, SECRES-05; implementation Unverified |
+| ACT-088 | J-OWNER-PASSWORD-COMPLETE / issuance or completion, alternates, failure and exit | Open link without mutation → provide new password and retained factor/code → atomically consume proof and used code → ordinary login | EP-24 | Specified: enforce Complete assisted password reset contract; every rejection retains or restricts state as mapped | Bound 30-minute proof; current instance/target/issuer generations and live issuer eligibility; current TOTP or one unused recovery code plus valid new password; audit admission; Owner target requires Owner issuer | Enrolled → password verifier replaced, proof/code consumed, generation advanced, all sessions/grants/references revoked; factor and remaining codes retained | Sanitized success or correction/reissue path; uncertainty never success; Abandonment changes no credentials; completion does not auto-login and cannot restore old authority | IDENT-04, IDENT-05, IDENT-06, AUTHZ-02, AUTHZ-03, AUDIT-01, AUDIT-04, SECRES-01, SECRES-03, SECRES-05; implementation Unverified |
+| ACT-089 | J-OWNER-MFA-COMPLETE / issuance or completion, alternates, failure and exit | Open link without mutation → enroll and confirm fresh TOTP/recovery codes → consume proof atomically → ordinary password/MFA login | EP-24 | Specified: enforce Complete assisted Authenticator enrollment contract; every rejection retains or restricts state as mapped | Bound 30-minute proof; current instance/target/issuer generations and live issuer eligibility; otherwise eligible restricted identity; audit admission; Owner target requires Owner issuer | Restricted → confirmed factor/codes, generation advanced, enrolled → logged out eligible account; password unchanged | Sanitized success or correction/reissue path; uncertainty never success; Abandonment stays restricted until reissue/host recovery; no ordinary access from link and no restoration of old factors | IDENT-04, IDENT-05, IDENT-06, AUTHZ-02, AUTHZ-03, AUDIT-01, AUDIT-04, SECRES-01, SECRES-03, SECRES-05; implementation Unverified |
+| ACT-090 | J-ADMIN-PASSWORD-COMPLETE / issuance or completion, alternates, failure and exit | Open link without mutation → provide new password and retained factor/code → atomically consume proof and used code → ordinary login | EP-24 | Specified: enforce Complete assisted password reset contract; every rejection retains or restricts state as mapped | Bound 30-minute proof; current instance/target/issuer generations and live issuer eligibility; current TOTP or one unused recovery code plus valid new password; audit admission; Owner target requires Owner issuer | Enrolled → password verifier replaced, proof/code consumed, generation advanced, all sessions/grants/references revoked; factor and remaining codes retained | Sanitized success or correction/reissue path; uncertainty never success; Abandonment changes no credentials; completion does not auto-login and cannot restore old authority | IDENT-04, IDENT-05, IDENT-06, AUTHZ-02, AUTHZ-03, AUDIT-01, AUDIT-04, SECRES-01, SECRES-03, SECRES-05; implementation Unverified |
+| ACT-091 | J-ADMIN-MFA-COMPLETE / issuance or completion, alternates, failure and exit | Open link without mutation → enroll and confirm fresh TOTP/recovery codes → consume proof atomically → ordinary password/MFA login | EP-24 | Specified: enforce Complete assisted Authenticator enrollment contract; every rejection retains or restricts state as mapped | Bound 30-minute proof; current instance/target/issuer generations and live issuer eligibility; otherwise eligible restricted identity; audit admission; Owner target requires Owner issuer | Restricted → confirmed factor/codes, generation advanced, enrolled → logged out eligible account; password unchanged | Sanitized success or correction/reissue path; uncertainty never success; Abandonment stays restricted until reissue/host recovery; no ordinary access from link and no restoration of old factors | IDENT-04, IDENT-05, IDENT-06, AUTHZ-02, AUTHZ-03, AUDIT-01, AUDIT-04, SECRES-01, SECRES-03, SECRES-05; implementation Unverified |
+| ACT-092 | J-AUDITOR-PASSWORD-COMPLETE / issuance or completion, alternates, failure and exit | Open link without mutation → provide new password and retained factor/code → atomically consume proof and used code → ordinary login | EP-24 | Specified: enforce Complete assisted password reset contract; every rejection retains or restricts state as mapped | Bound 30-minute proof; current instance/target/issuer generations and live issuer eligibility; current TOTP or one unused recovery code plus valid new password; audit admission; Owner target requires Owner issuer | Enrolled → password verifier replaced, proof/code consumed, generation advanced, all sessions/grants/references revoked; factor and remaining codes retained | Sanitized success or correction/reissue path; uncertainty never success; Abandonment changes no credentials; completion does not auto-login and cannot restore old authority | IDENT-04, IDENT-05, IDENT-06, AUTHZ-02, AUTHZ-03, AUDIT-01, AUDIT-04, SECRES-01, SECRES-03, SECRES-05; implementation Unverified |
+| ACT-093 | J-AUDITOR-MFA-COMPLETE / issuance or completion, alternates, failure and exit | Open link without mutation → enroll and confirm fresh TOTP/recovery codes → consume proof atomically → ordinary password/MFA login | EP-24 | Specified: enforce Complete assisted Authenticator enrollment contract; every rejection retains or restricts state as mapped | Bound 30-minute proof; current instance/target/issuer generations and live issuer eligibility; otherwise eligible restricted identity; audit admission; Owner target requires Owner issuer | Restricted → confirmed factor/codes, generation advanced, enrolled → logged out eligible account; password unchanged | Sanitized success or correction/reissue path; uncertainty never success; Abandonment stays restricted until reissue/host recovery; no ordinary access from link and no restoration of old factors | IDENT-04, IDENT-05, IDENT-06, AUTHZ-02, AUTHZ-03, AUDIT-01, AUDIT-04, SECRES-01, SECRES-03, SECRES-05; implementation Unverified |
+| ACT-094 | J-MEMBER-PASSWORD-COMPLETE / issuance or completion, alternates, failure and exit | Open link without mutation → provide new password and retained factor/code → atomically consume proof and used code → ordinary login | EP-24 | Specified: enforce Complete assisted password reset contract; every rejection retains or restricts state as mapped | Bound 30-minute proof; current instance/target/issuer generations and live issuer eligibility; current TOTP or one unused recovery code plus valid new password; audit admission; Owner target requires Owner issuer | Enrolled → password verifier replaced, proof/code consumed, generation advanced, all sessions/grants/references revoked; factor and remaining codes retained | Sanitized success or correction/reissue path; uncertainty never success; Abandonment changes no credentials; completion does not auto-login and cannot restore old authority | IDENT-04, IDENT-05, IDENT-06, AUTHZ-02, AUTHZ-03, AUDIT-01, AUDIT-04, SECRES-01, SECRES-03, SECRES-05; implementation Unverified |
+| ACT-095 | J-MEMBER-MFA-COMPLETE / issuance or completion, alternates, failure and exit | Open link without mutation → enroll and confirm fresh TOTP/recovery codes → consume proof atomically → ordinary password/MFA login | EP-24 | Specified: enforce Complete assisted Authenticator enrollment contract; every rejection retains or restricts state as mapped | Bound 30-minute proof; current instance/target/issuer generations and live issuer eligibility; otherwise eligible restricted identity; audit admission; Owner target requires Owner issuer | Restricted → confirmed factor/codes, generation advanced, enrolled → logged out eligible account; password unchanged | Sanitized success or correction/reissue path; uncertainty never success; Abandonment stays restricted until reissue/host recovery; no ordinary access from link and no restoration of old factors | IDENT-04, IDENT-05, IDENT-06, AUTHZ-02, AUTHZ-03, AUDIT-01, AUDIT-04, SECRES-01, SECRES-03, SECRES-05; implementation Unverified |
+| ACT-096 | J-OWNER-SMTP-DELETE / issuance or completion, alternates, failure and exit | Choose Delete SMTP credential → if enabled dependency blocks, disable SMTP through ordinary review/apply → separately confirm current-version deletion → show absent credential with non-secret settings retained | EP-12 | Specified: enforce Delete SMTP credential independently contract; every rejection retains or restricts state as mapped | Current Owner, recent authentication, durable audit, current SMTP revision and credential version, no enabled dependency | Enabled → applied Disabled retains secret → explicit deletion removes live and pending copies, advances credential version/state revision and invalidates reviews; non-secret drafts survive for reload | Sanitized success or correction/reissue path; uncertainty never success; Cancel before deletion changes nothing; deletion cannot recall dispatched mail or destroy retained encrypted archives; pending sends recheck admission and late completion cannot restore secret | IDENT-04, IDENT-06, CONFIG-03, CONFIG-04, AUDIT-01, AUDIT-04, STATE-01, STATE-02, STATE-03; implementation Unverified |
+| ACT-097 | J-*-ACCOUNT, J-*-CONFIG, J-OWNER-SETTINGS / navigation | Navigate by control, deep link, back/forward or refresh | Existing primary/secondary navigation | Specified: resolve current permitted surface; no authority from selected state | Current role for destination | Current area changes; configuration does not apply from navigation | Active area indicated accessibly and independently of focus | PO-FB-006; UX-04; implementation Unverified |
+| ACT-098 | J-OWNER-SETTINGS, J-ADMIN-CONFIG, J-AUDITOR-CONFIG / focused settings | Find and edit permitted settings or inspect read-only values | EP-12 or existing response-protection configuration ingress | Specified: friendly controls preserve complete configuration through scoped draft review/apply | Owner instance settings; Administrator response protection only; Auditor read only | Scoped draft changes only; active state unchanged until Apply | Focused sections, plain-language summaries, retained advanced values and inline errors | UX-02/03; UX-DESIGN-002 pending; implementation Unverified |
 
 
 ## Lifecycle completeness
@@ -810,13 +1013,15 @@ The Journey column binds each shared action to the actor and permissions of that
 | Outage diagnosis | Every role; host | J-*-DIAG; J-HOST-RECOVERY | EP-20–23 | Durable repair then fresh normal authentication | No web bypass; failed safety state leaves host diagnosis | Complete | AUDIT-04; SECRES-04 |
 | Tenant/account purge | Not a promised role/capability | N/A: single organization; disable/archive are intended exits | N/A: no tenant UI | N/A: no tenant lifecycle promised | No invented permanent-user/tenant purge workflow | N/A: explicitly excluded or unpromised | D-001; AUTHZ-03; CONFIG-05 |
 | Background cancellation | Owner/operator | Job status and safe bounded completion, not arbitrary cancel | EP-16–18 | Completed/failed job; preview can be abandoned | Restore crash recovers coherent state; no claim of remote undo | Complete at stated scope | BACKUP-02–04; STATE-04–05 |
+| Separate assisted reset | Owner/Administrator initiator; four human target roles | J-*-RECOVERY; J-*-PASSWORD-RESET; J-*-PASSWORD-COMPLETE; J-*-MFA-COMPLETE | EP-05, EP-24 | Password issuance retains access; MFA issuance restricts; target completion requires normal login | Hierarchy, generation, final enrolled Owner and audit checks; reissue/host recovery; no implicit access | Complete at specified outcome | SECRES-05; IDENT-05/06 |
+| SMTP credential deletion | Owner only | J-OWNER-SMTP-DELETE | EP-12 | Current and pending values deleted independently of Apply | Enabled dependency blocks; disable/apply then delete; uncertainty fences; reload current revision | Complete | IDENT-04; STATE-01/02/03 amendment |
 
 
 ## Interface and reachability mismatches
 
 ### Unreachable capabilities
 
-None found at specification level. Runtime reachability is Indeterminate for all journeys because this is future-product definition, not runtime verification.
+None found at specification level. Runtime reachability is Indeterminate for all journeys because this is definition-only revalidation, not runtime verification.
 
 ### Backend capabilities without user-facing interfaces
 
@@ -832,7 +1037,7 @@ Not evaluated in implementation: source/runtime inspection is out of scope. No n
 
 ## Coverage matrix
 
-Each row represents one actor-specific behavior bundle; the Capability cell enumerates every requirement family it covers. Related sequential operations remain grouped when they have one permission/entry/lifecycle contract; materially different Owner, Administrator, Auditor, Member, external, legacy, host and system paths are separate. This is the audit’s initial eight-surface matrix, not a copy of the upstream coverage artifact.
+Each row represents one actor-specific behavior bundle; the Capability cell enumerates every requirement family it covers. Related sequential operations remain grouped when they have one permission/entry/lifecycle contract; materially different Owner, Administrator, Auditor, Member, external, legacy, host and system paths are separate. This is the audit’s current eight-surface matrix, not a copy of the upstream coverage artifact.
 
 | Capability | User Role | UI or Entry Point | Backend/API | Data/State | Authorization | Error States | Tests |
 |---|---|---|---|---|---|---|---|
@@ -847,7 +1052,7 @@ Each row represents one actor-specific behavior bundle; the Capability cell enum
 | J-MEMBER-ENROLL — Accept role-bound invitation; IDENT-02, IDENT-03, IDENT-05, SEC-01, SECRES-01, SECRES-03 | Specified: Member | Specified: EP-03 | Specified: action chain in J-MEMBER-ENROLL and linked ACT rows. Unverified: implementation. | Specified: Pending → confirmed enrollment → active. Full transitions: J-MEMBER-ENROLL | Specified: Single-use 72-hour identity/purpose/instance-bound proof; no ordinary account access before MFA | Specified: J-MEMBER-ENROLL failure/recovery paths; safe rejection, current-role/audit and stated dependency checks. | Specified: Member enrollment and manual/SMTP delivery; link preview, wrong role/proof and MFA bypass negatives. Unverified: execution. |
 | J-MEMBER-ACCOUNT — Authenticate and manage own security; IDENT-02, IDENT-05, IDENT-06, SEC-01, SECRES-03, SECRES-04 | Specified: Member | Specified: EP-04 | Specified: action chain in J-MEMBER-ACCOUNT and linked ACT rows. Unverified: implementation. | Specified: Logged out → valid two factors → active. Full transitions: J-MEMBER-ACCOUNT | Specified: Own identity; password plus valid factor/code for replacement; current session alone insufficient | Specified: J-MEMBER-ACCOUNT failure/recovery paths; safe rejection, current-role/audit and stated dependency checks. | Specified: Member normal login, own update/logout; replay, other-user mutation, expired session and session-only MFA replacement fail. Unverified: execution. |
 | J-OWNER-PEOPLE — Invite, grant roles, transfer ownership and disable users; AUTHZ-02, AUTHZ-03, IDENT-03, IDENT-06, SEC-03, STATE-01, STATE-02 | Specified: Owner | Specified: EP-05 | Specified: action chain in J-OWNER-PEOPLE and linked ACT rows. Unverified: implementation. | Specified: Pending → revoke/reissue → cancelled/new proof. Full transitions: J-OWNER-PEOPLE | Specified: Current Owner; recent authentication for ownership change; audit; final active Owner protected | Specified: J-OWNER-PEOPLE failure/recovery paths; safe rejection, current-role/audit and stated dependency checks. | Specified: Every fixed-role permission cell; one-minute disable target; last Owner and demotion/admission races rejected. Unverified: execution. |
-| J-OWNER-RECOVERY — Authorize verified account recovery; IDENT-05, IDENT-06, AUTHZ-03, SECRES-01, SECRES-03 | Specified: Owner | Specified: EP-05 | Specified: action chain in J-OWNER-RECOVERY and linked ACT rows. Unverified: implementation. | Specified: Authorized recovery → sessions/grants invalid and account restricted. Full transitions: J-OWNER-RECOVERY | Specified: Recent Owner password/TOTP plus trusted-channel identity verification; recheck issuer at activation | Specified: J-OWNER-RECOVERY failure/recovery paths; safe rejection, current-role/audit and stated dependency checks. | Specified: Verified manual/SMTP recovery success; invalid issuer, concurrent consumption and password-reset-only MFA removal fail. Unverified: execution. |
+| J-OWNER-RECOVERY — Initiate separate MFA reset; IDENT-05, IDENT-06, AUTHZ-02, AUTHZ-03, SECRES-01, SECRES-03, SECRES-05 | Specified: Owner | Specified: EP-05 | Specified: action chain in J-OWNER-RECOVERY and linked ACT rows. Unverified: implementation. | Specified: Authorized recovery → sessions/grants invalid and account restricted. Full transitions: J-OWNER-RECOVERY | Specified: Current enrolled Owner; recent password/TOTP; verified trusted channel; eligible other target; current issuer/target generations; final enrolled Owner continuity and audit admission | Specified: J-OWNER-RECOVERY failure/recovery paths; safe rejection, current-role/audit and stated dependency checks. | Specified: SECRES-T08/10/11: manual/SMTP recovery; target/issuer hierarchy and generation, final Owner concurrency, expired/cancelled/replayed proof, uncertain state and audit denial; password reset remains separate. Unverified: execution. |
 | J-OWNER-CONFIG — Configure and apply service and scanner settings; BASE-02, CONFIG-01, CONFIG-03, UX-01, UX-02, UX-03, UX-04, POLICY-04, CAP-CFG-01, CAP-CFG-02, CAP-CFG-03, CAP-CFG-04, CAP-CFG-05, AUTHZ-04, STATE-01, STATE-02 | Specified: Owner | Specified: EP-06 | Specified: action chain in J-OWNER-CONFIG and linked ACT rows. Unverified: implementation. | Specified: Draft → review → applied. Full transitions: J-OWNER-CONFIG | Specified: Current per-setting configuration permission; audit; no implicit MCP grant; Owner instance settings allowed only when explicitly included | Specified: J-OWNER-CONFIG failure/recovery paths; safe rejection, current-role/audit and stated dependency checks. | Specified: All existing configuration fields round-trip; invalid input, stale apply and mixed-owner-setting negatives; keyboard/narrow screens; first simple service within 15 minutes. Unverified: execution. |
 | J-OWNER-CREDENTIAL — Create, rotate and delete managed credentials; CONFIG-02, BASE-03, SEC-01, SEC-03, STATE-01, STATE-02, STATE-03 | Specified: Owner | Specified: EP-07 | Specified: action chain in J-OWNER-CREDENTIAL and linked ACT rows. Unverified: implementation. | Specified: Creation/rotation/deletion immediately changes managed value state. Full transitions: J-OWNER-CREDENTIAL | Specified: Current configuration role; healthy audit; deletion dependencies resolved | Specified: J-OWNER-CREDENTIAL failure/recovery paths; safe rejection, current-role/audit and stated dependency checks. | Specified: Write-only creation/rotation and dependency-safe deletion; canary leaks, arbitrary host reads and old-reference use fail. Unverified: execution. |
 | J-OWNER-ACCESS — Assign service access and control service lifecycle; AUTHZ-01, AUTHZ-02, CONFIG-05, SEC-03, STATE-01, STATE-02, STATE-03 | Specified: Owner | Specified: EP-08 | Specified: action chain in J-OWNER-ACCESS and linked ACT rows. Unverified: implementation. | Specified: Grant/remove immediate. Full transitions: J-OWNER-ACCESS | Specified: Current configuration role; target eligible; durable audit; Administrator cannot create users/change role | Specified: J-OWNER-ACCESS failure/recovery paths; safe rejection, current-role/audit and stated dependency checks. | Specified: Grant/remove/disable/archive/unarchive success; Auditor/unassigned admin and queued stale requests denied; completed request cannot revive references. Unverified: execution. |
@@ -883,6 +1088,18 @@ Each row represents one actor-specific behavior bundle; the Capability cell enum
 | J-PUBLIC-01 — Observe bounded health and locate authorized entry; OPS-03, IDENT-01, IDENT-03, SECRES-01 | Specified: Unauthenticated visitor | Specified: EP-22 | Specified: action chain in J-PUBLIC-01 and linked ACT rows. Unverified: implementation. | Specified: Unauthenticated remains unauthenticated until complete authorized login/enrollment.. Full transitions: J-PUBLIC-01 | Specified: Public bounded healthy/degraded status only; no discoverable bootstrap authority | Specified: J-PUBLIC-01 failure/recovery paths; safe rejection, current-role/audit and stated dependency checks. | Specified: Public health useful without configuration disclosure; account enumeration, public takeover and mutating link preview fail. Unverified: execution. |
 | J-SYSTEM-ADMISSION — Enforce limits and maintain durable evidence; AUDIT-01, AUDIT-03, AUDIT-04, OPS-01, OPS-02, OPS-03, OPS-04, SEC-03, STATE-02 | Specified: Scheduled/runtime automation | Specified: EP-23 | Specified: action chain in J-SYSTEM-ADMISSION and linked ACT rows. Unverified: implementation. | Specified: Requested → recorded start → completed. Full transitions: J-SYSTEM-ADMISSION | Specified: Current active limits and permissions; mandatory durable admission and sanitized append | Specified: J-SYSTEM-ADMISSION failure/recovery paths; safe rejection, current-role/audit and stated dependency checks. | Specified: Capacity/role/admission races; positive/negative every new external input; durable start survives crash and completion failure without false success. Unverified: execution. |
 | J-AUDITOR-CONFIG — Inspect non-secret configuration; AUTHZ-02, AUTHZ-04, UX-01, UX-02, UX-04, OPS-06 | Specified: Auditor | Specified: EP-06 | Specified: action chain in J-AUDITOR-CONFIG and linked ACT rows. Unverified: implementation. | Specified: Service list → read-only detail → evidence → list. Full transitions: J-AUDITOR-CONFIG | Specified: Authenticated Auditor read-only scope; no credential values, editing, assignments or execution | Specified: J-AUDITOR-CONFIG failure/recovery paths; safe rejection, current-role/audit and stated dependency checks. | Specified: All non-secret read surfaces accessible; direct API edits, secret reveal and execution fail. Unverified: execution. |
+| J-OWNER-PASSWORD-RESET — Initiate separate password reset; IDENT-04, IDENT-05, IDENT-06, AUTHZ-02, AUTHZ-03, AUDIT-01, AUDIT-04, SECRES-01, SECRES-03, SECRES-05 | Specified: Owner | Specified: EP-05 | Specified: Select eligible target and reset purpose → verify person and reauthenticate → confirm → show one-time 30-minute proof for established SMTP/manual channel → inspect sanitized reset/delivery status; Unverified: implementation | Specified: Enrolled → proof issued, enrollment/password/factor/codes/sessions unchanged; successful target completion changes password only and revokes prior access | Specified: Active enrolled initiator; password/TOTP within five minutes; verified person through established trusted channel; named operation/target confirmation; durable audit; live issuer/target role and generation checks; target another Owner, Administrator, Auditor or Member; target has enrolled factor | Specified: Reject self, disabled/deleted/invited/unreviewed-restored or external/legacy targets, stale reauthentication, audit outage, wrong-purpose/expired/replayed proof, issuer revocation/demotion/recovery or changed generations; SMTP failure does not reverse committed security state; uncertain persistence cannot report success or restore authority; proof issuance never locks out target; Correct eligibility or reauthenticate; reissue revokes prior proof; natural issuer browser expiry alone does not invalidate eligible issuer; repair audit before retry; consult durable outcome after uncertainty | Specified: positive completion plus each denial/recovery/abandonment path; SECRES-T08–11 or STATE SMTP cases as applicable. Unverified: execution |
+| J-ADMIN-RECOVERY — Initiate separate MFA reset; IDENT-04, IDENT-05, IDENT-06, AUTHZ-02, AUTHZ-03, AUDIT-01, AUDIT-04, SECRES-01, SECRES-03, SECRES-05 | Specified: Administrator | Specified: EP-05 | Specified: Select eligible target and reset purpose → verify person and reauthenticate → confirm → show one-time 30-minute proof for established SMTP/manual channel → inspect sanitized reset/delivery status; Unverified: implementation | Specified: Enrolled → issuance revokes factor/codes/sessions/MCP grants/references and advances generation → restricted enrolled:false; completion is separately mapped by target role | Specified: Active enrolled initiator; password/TOTP within five minutes; verified person through established trusted channel; named operation/target confirmation; durable audit; live issuer/target role and generation checks; target another Administrator, Auditor or Member; never an Owner; atomically retain another active enrolled Owner | Specified: Reject self, disabled/deleted/invited/unreviewed-restored or external/legacy targets, stale reauthentication, audit outage, wrong-purpose/expired/replayed proof, issuer revocation/demotion/recovery or changed generations; SMTP failure does not reverse committed security state; uncertain persistence cannot report success or restore authority; concurrent final-Owner restriction rejects and points to existing host recovery; invited/recovering/diagnostic users do not satisfy continuity; Correct eligibility or reauthenticate; reissue revokes prior proof; natural issuer browser expiry alone does not invalidate eligible issuer; repair audit before retry; consult durable outcome after uncertainty | Specified: positive completion plus each denial/recovery/abandonment path; SECRES-T08–11 or STATE SMTP cases as applicable. Unverified: execution |
+| J-ADMIN-PASSWORD-RESET — Initiate separate password reset; IDENT-04, IDENT-05, IDENT-06, AUTHZ-02, AUTHZ-03, AUDIT-01, AUDIT-04, SECRES-01, SECRES-03, SECRES-05 | Specified: Administrator | Specified: EP-05 | Specified: Select eligible target and reset purpose → verify person and reauthenticate → confirm → show one-time 30-minute proof for established SMTP/manual channel → inspect sanitized reset/delivery status; Unverified: implementation | Specified: Enrolled → proof issued, enrollment/password/factor/codes/sessions unchanged; successful target completion changes password only and revokes prior access | Specified: Active enrolled initiator; password/TOTP within five minutes; verified person through established trusted channel; named operation/target confirmation; durable audit; live issuer/target role and generation checks; target another Administrator, Auditor or Member; never an Owner; target has enrolled factor | Specified: Reject self, disabled/deleted/invited/unreviewed-restored or external/legacy targets, stale reauthentication, audit outage, wrong-purpose/expired/replayed proof, issuer revocation/demotion/recovery or changed generations; SMTP failure does not reverse committed security state; uncertain persistence cannot report success or restore authority; proof issuance never locks out target; Correct eligibility or reauthenticate; reissue revokes prior proof; natural issuer browser expiry alone does not invalidate eligible issuer; repair audit before retry; consult durable outcome after uncertainty | Specified: positive completion plus each denial/recovery/abandonment path; SECRES-T08–11 or STATE SMTP cases as applicable. Unverified: execution |
+| J-OWNER-PASSWORD-COMPLETE — Complete assisted password reset; IDENT-04, IDENT-05, IDENT-06, AUTHZ-02, AUTHZ-03, AUDIT-01, AUDIT-04, SECRES-01, SECRES-03, SECRES-05 | Specified: Owner | Specified: EP-24 | Specified: Open link without mutation → provide new password and retained factor/code → atomically consume proof and used code → ordinary login; Unverified: implementation | Specified: Enrolled → password verifier replaced, proof/code consumed, generation advanced, all sessions/grants/references revoked; factor and remaining codes retained | Specified: Bound 30-minute proof; current instance/target/issuer generations and live issuer eligibility; current TOTP or one unused recovery code plus valid new password; audit admission; Owner target requires Owner issuer | Specified: Reject purpose/target/instance mismatch, expired/replayed proof, issuer demotion/revocation/generation change, target lifecycle/generation change or promotion beyond issuer authority; concurrent completion succeeds once; audit/persistence uncertainty never grants access; Retain non-secret work after errors; never persist secret form values; authorized reissue consults current state and durable outcome; issuer browser need not remain open | Specified: positive completion plus each denial/recovery/abandonment path; SECRES-T08–11 or STATE SMTP cases as applicable. Unverified: execution |
+| J-OWNER-MFA-COMPLETE — Complete assisted Authenticator enrollment; IDENT-04, IDENT-05, IDENT-06, AUTHZ-02, AUTHZ-03, AUDIT-01, AUDIT-04, SECRES-01, SECRES-03, SECRES-05 | Specified: Owner | Specified: EP-24 | Specified: Open link without mutation → enroll and confirm fresh TOTP/recovery codes → consume proof atomically → ordinary password/MFA login; Unverified: implementation | Specified: Restricted → confirmed factor/codes, generation advanced, enrolled → logged out eligible account; password unchanged | Specified: Bound 30-minute proof; current instance/target/issuer generations and live issuer eligibility; otherwise eligible restricted identity; audit admission; Owner target requires Owner issuer | Specified: Reject purpose/target/instance mismatch, expired/replayed proof, issuer demotion/revocation/generation change, target lifecycle/generation change or promotion beyond issuer authority; concurrent completion succeeds once; audit/persistence uncertainty never grants access; Retain non-secret work after errors; never persist secret form values; authorized reissue consults current state and durable outcome; issuer browser need not remain open | Specified: positive completion plus each denial/recovery/abandonment path; SECRES-T08–11 or STATE SMTP cases as applicable. Unverified: execution |
+| J-ADMIN-PASSWORD-COMPLETE — Complete assisted password reset; IDENT-04, IDENT-05, IDENT-06, AUTHZ-02, AUTHZ-03, AUDIT-01, AUDIT-04, SECRES-01, SECRES-03, SECRES-05 | Specified: Administrator | Specified: EP-24 | Specified: Open link without mutation → provide new password and retained factor/code → atomically consume proof and used code → ordinary login; Unverified: implementation | Specified: Enrolled → password verifier replaced, proof/code consumed, generation advanced, all sessions/grants/references revoked; factor and remaining codes retained | Specified: Bound 30-minute proof; current instance/target/issuer generations and live issuer eligibility; current TOTP or one unused recovery code plus valid new password; audit admission; Owner target requires Owner issuer | Specified: Reject purpose/target/instance mismatch, expired/replayed proof, issuer demotion/revocation/generation change, target lifecycle/generation change or promotion beyond issuer authority; concurrent completion succeeds once; audit/persistence uncertainty never grants access; Retain non-secret work after errors; never persist secret form values; authorized reissue consults current state and durable outcome; issuer browser need not remain open | Specified: positive completion plus each denial/recovery/abandonment path; SECRES-T08–11 or STATE SMTP cases as applicable. Unverified: execution |
+| J-ADMIN-MFA-COMPLETE — Complete assisted Authenticator enrollment; IDENT-04, IDENT-05, IDENT-06, AUTHZ-02, AUTHZ-03, AUDIT-01, AUDIT-04, SECRES-01, SECRES-03, SECRES-05 | Specified: Administrator | Specified: EP-24 | Specified: Open link without mutation → enroll and confirm fresh TOTP/recovery codes → consume proof atomically → ordinary password/MFA login; Unverified: implementation | Specified: Restricted → confirmed factor/codes, generation advanced, enrolled → logged out eligible account; password unchanged | Specified: Bound 30-minute proof; current instance/target/issuer generations and live issuer eligibility; otherwise eligible restricted identity; audit admission; Owner target requires Owner issuer | Specified: Reject purpose/target/instance mismatch, expired/replayed proof, issuer demotion/revocation/generation change, target lifecycle/generation change or promotion beyond issuer authority; concurrent completion succeeds once; audit/persistence uncertainty never grants access; Retain non-secret work after errors; never persist secret form values; authorized reissue consults current state and durable outcome; issuer browser need not remain open | Specified: positive completion plus each denial/recovery/abandonment path; SECRES-T08–11 or STATE SMTP cases as applicable. Unverified: execution |
+| J-AUDITOR-PASSWORD-COMPLETE — Complete assisted password reset; IDENT-04, IDENT-05, IDENT-06, AUTHZ-02, AUTHZ-03, AUDIT-01, AUDIT-04, SECRES-01, SECRES-03, SECRES-05 | Specified: Auditor | Specified: EP-24 | Specified: Open link without mutation → provide new password and retained factor/code → atomically consume proof and used code → ordinary login; Unverified: implementation | Specified: Enrolled → password verifier replaced, proof/code consumed, generation advanced, all sessions/grants/references revoked; factor and remaining codes retained | Specified: Bound 30-minute proof; current instance/target/issuer generations and live issuer eligibility; current TOTP or one unused recovery code plus valid new password; audit admission; Owner target requires Owner issuer | Specified: Reject purpose/target/instance mismatch, expired/replayed proof, issuer demotion/revocation/generation change, target lifecycle/generation change or promotion beyond issuer authority; concurrent completion succeeds once; audit/persistence uncertainty never grants access; Retain non-secret work after errors; never persist secret form values; authorized reissue consults current state and durable outcome; issuer browser need not remain open | Specified: positive completion plus each denial/recovery/abandonment path; SECRES-T08–11 or STATE SMTP cases as applicable. Unverified: execution |
+| J-AUDITOR-MFA-COMPLETE — Complete assisted Authenticator enrollment; IDENT-04, IDENT-05, IDENT-06, AUTHZ-02, AUTHZ-03, AUDIT-01, AUDIT-04, SECRES-01, SECRES-03, SECRES-05 | Specified: Auditor | Specified: EP-24 | Specified: Open link without mutation → enroll and confirm fresh TOTP/recovery codes → consume proof atomically → ordinary password/MFA login; Unverified: implementation | Specified: Restricted → confirmed factor/codes, generation advanced, enrolled → logged out eligible account; password unchanged | Specified: Bound 30-minute proof; current instance/target/issuer generations and live issuer eligibility; otherwise eligible restricted identity; audit admission; Owner target requires Owner issuer | Specified: Reject purpose/target/instance mismatch, expired/replayed proof, issuer demotion/revocation/generation change, target lifecycle/generation change or promotion beyond issuer authority; concurrent completion succeeds once; audit/persistence uncertainty never grants access; Retain non-secret work after errors; never persist secret form values; authorized reissue consults current state and durable outcome; issuer browser need not remain open | Specified: positive completion plus each denial/recovery/abandonment path; SECRES-T08–11 or STATE SMTP cases as applicable. Unverified: execution |
+| J-MEMBER-PASSWORD-COMPLETE — Complete assisted password reset; IDENT-04, IDENT-05, IDENT-06, AUTHZ-02, AUTHZ-03, AUDIT-01, AUDIT-04, SECRES-01, SECRES-03, SECRES-05 | Specified: Member | Specified: EP-24 | Specified: Open link without mutation → provide new password and retained factor/code → atomically consume proof and used code → ordinary login; Unverified: implementation | Specified: Enrolled → password verifier replaced, proof/code consumed, generation advanced, all sessions/grants/references revoked; factor and remaining codes retained | Specified: Bound 30-minute proof; current instance/target/issuer generations and live issuer eligibility; current TOTP or one unused recovery code plus valid new password; audit admission; Owner target requires Owner issuer | Specified: Reject purpose/target/instance mismatch, expired/replayed proof, issuer demotion/revocation/generation change, target lifecycle/generation change or promotion beyond issuer authority; concurrent completion succeeds once; audit/persistence uncertainty never grants access; Retain non-secret work after errors; never persist secret form values; authorized reissue consults current state and durable outcome; issuer browser need not remain open | Specified: positive completion plus each denial/recovery/abandonment path; SECRES-T08–11 or STATE SMTP cases as applicable. Unverified: execution |
+| J-MEMBER-MFA-COMPLETE — Complete assisted Authenticator enrollment; IDENT-04, IDENT-05, IDENT-06, AUTHZ-02, AUTHZ-03, AUDIT-01, AUDIT-04, SECRES-01, SECRES-03, SECRES-05 | Specified: Member | Specified: EP-24 | Specified: Open link without mutation → enroll and confirm fresh TOTP/recovery codes → consume proof atomically → ordinary password/MFA login; Unverified: implementation | Specified: Restricted → confirmed factor/codes, generation advanced, enrolled → logged out eligible account; password unchanged | Specified: Bound 30-minute proof; current instance/target/issuer generations and live issuer eligibility; otherwise eligible restricted identity; audit admission; Owner target requires Owner issuer | Specified: Reject purpose/target/instance mismatch, expired/replayed proof, issuer demotion/revocation/generation change, target lifecycle/generation change or promotion beyond issuer authority; concurrent completion succeeds once; audit/persistence uncertainty never grants access; Retain non-secret work after errors; never persist secret form values; authorized reissue consults current state and durable outcome; issuer browser need not remain open | Specified: positive completion plus each denial/recovery/abandonment path; SECRES-T08–11 or STATE SMTP cases as applicable. Unverified: execution |
+| J-OWNER-SMTP-DELETE — Delete SMTP credential independently; IDENT-04, IDENT-06, CONFIG-03, CONFIG-04, AUDIT-01, AUDIT-04, STATE-01, STATE-02, STATE-03 | Specified: Owner | Specified: EP-12 | Specified: Choose Delete SMTP credential → if enabled dependency blocks, disable SMTP through ordinary review/apply → separately confirm current-version deletion → show absent credential with non-secret settings retained; Unverified: implementation | Specified: Enabled → applied Disabled retains secret → explicit deletion removes live and pending copies, advances credential version/state revision and invalidates reviews; non-secret drafts survive for reload | Specified: Current Owner, recent authentication, durable audit, current SMTP revision and credential version, no enabled dependency | Specified: Reject stale version/revision, concurrent replacement, role change, expired recent authentication, enabled dependency and audit admission failure; uncertain persistence fences new credential use and reports uncertainty; Reload sanitized metadata and non-secret edits; fresh value entry and new review/apply required to create or replace; history/blank fields/stale submissions cannot resurrect value; durable recovery selects coherent prior state or completed deletion | Specified: positive completion plus each denial/recovery/abandonment path; SECRES-T08–11 or STATE SMTP cases as applicable. Unverified: execution |
 
 
 ## Gap register
@@ -891,7 +1108,7 @@ None found. Zero Blocker, Major and Minor specification gaps; no implementation-
 
 ## Remediation verification
 
-Not applicable as a prior journey audit comparison: this is the initial journey audit. The orchestrator’s earlier PRD findings F-PRD-001–004 are closed, not journey gaps: SECRES-01 provides bound-link exceptions, SECRES-02/STATE-05–06 restore authority/recovery, SECRES-04 audit-outage boundaries, and STATE-01–03 immediate versus draft/rollback semantics. The affected journeys verify those requirements without reopening accepted decisions.
+The prior audit recorded no journey gaps: zero prior gap IDs require a new disposition. REC-001–007 are reconciliation findings, not invented journey-gap IDs. Targeted mappings below preserve their source identity and distinguish specified behavior from runtime evidence. The orchestrator’s earlier PRD findings F-PRD-001–004 are closed, not journey gaps: SECRES-01 provides bound-link exceptions, SECRES-02/STATE-05–06 restore authority/recovery, SECRES-04 audit-outage boundaries, and STATE-01–03 immediate versus draft/rollback semantics. The affected journeys verify those requirements without reopening accepted decisions.
 
 ## Unmapped or uncertain PRD statements
 
@@ -958,6 +1175,7 @@ None. The following index accounts for every numbered requirement and the seven 
 | SECRES-01 | J-OWNER-01, J-OWNER-ENROLL, J-ADMIN-ENROLL, J-AUDITOR-ENROLL, J-MEMBER-ENROLL, J-OWNER-RECOVERY, J-OWNER-CLIENT, J-ADMIN-CLIENT, J-MEMBER-CLIENT, J-PUBLIC-01 |
 | SECRES-02 | J-HOST-01, J-OWNER-01, J-OWNER-RESTORE, J-HOST-RESTORE, J-OWNER-RESUME, J-HOST-RECOVERY |
 | SECRES-03 | J-OWNER-ENROLL, J-OWNER-ACCOUNT, J-ADMIN-ENROLL, J-ADMIN-ACCOUNT, J-AUDITOR-ENROLL, J-AUDITOR-ACCOUNT, J-MEMBER-ENROLL, J-MEMBER-ACCOUNT, J-OWNER-RECOVERY |
+| SECRES-05 | J-OWNER-RECOVERY, J-ADMIN-RECOVERY, J-OWNER-PASSWORD-RESET, J-ADMIN-PASSWORD-RESET, all four role-specific PASSWORD-COMPLETE and MFA-COMPLETE journeys |
 | SECRES-04 | J-OWNER-ACCOUNT, J-ADMIN-ACCOUNT, J-AUDITOR-ACCOUNT, J-MEMBER-ACCOUNT, J-HOST-RECOVERY, J-OWNER-DIAG, J-ADMIN-DIAG, J-AUDITOR-DIAG, J-MEMBER-DIAG |
 | STATE-01 | J-OWNER-PEOPLE, J-OWNER-CONFIG, J-OWNER-CREDENTIAL, J-OWNER-ACCESS, J-ADMIN-CONFIG, J-ADMIN-CREDENTIAL, J-ADMIN-ACCESS, J-OWNER-SETTINGS |
 | STATE-02 | J-OWNER-PEOPLE, J-OWNER-CONFIG, J-OWNER-CREDENTIAL, J-OWNER-ACCESS, J-ADMIN-CONFIG, J-ADMIN-CREDENTIAL, J-ADMIN-ACCESS, J-OWNER-SETTINGS, J-MCP-01, J-SYSTEM-ADMISSION |
@@ -975,17 +1193,17 @@ None. The following index accounts for every numbered requirement and the seven 
 
 ## Assumptions and open questions
 
-No open product question. Settled D-001–D-012 remain authoritative: self-hosted single organization, four fixed roles, authenticator MFA, write-only managed credentials, audit fail-closed, whole-instance backup/restore and explicit reactivation. No multi-tenant/SAML/OIDC/SCIM/billing/general vault/custom-role/specific-integration functionality is inferred. Scope is sufficient for Product UX to design exact discovery/control locations and the domain reviewers to choose technical mechanisms.
+UX-DESIGN-002 remains open in the central workflow for Settings direction; no proposed section taxonomy or navigation mechanism is authority here. No additional product question is raised by this bounded audit. Settled D-001–D-012 remain authoritative: self-hosted single organization, four fixed roles, authenticator MFA, write-only managed credentials, audit fail-closed, whole-instance backup/restore and explicit reactivation. No multi-tenant/SAML/OIDC/SCIM/billing/general vault/custom-role/specific-integration functionality is inferred. Scope is sufficient for Product UX to design exact discovery/control locations and the domain reviewers to choose technical mechanisms.
 
 An account security surface is a necessary entry for the PRD’s own-password/MFA/session capabilities; its placement is UX work. Logout is explicitly supported by SECRES-04 and is traced separately from grant revocation. Ordinary user deletion, arbitrary job cancellation, contact-address changes and support ticketing are not promised; disable/archive, safe abandonment and host/Owner recovery provide the stated terminal paths without expanding v1.
 
 ## Coverage summary
 
-- Distinct actors: 10; actor-context rows: 21.
-- Unique requirement/capability families: 70 (53 PRD IDs, ten normative companion IDs, seven derived unnumbered families).
-- Actor-specific journeys: 47; Complete: 47; Partial/Missing/Contradictory: 0.
-- Reachability: 47 Indeterminate; no Reachable claim. Implementation assessment: 47 Not applicable at preimplementation stage.
-- Entry points: 23; action mappings: 84; coverage rows: 47, exactly eight populated columns each.
+- Distinct actors: 10; actor-context rows: 25.
+- Unique requirement/capability families: 71 (53 PRD IDs, eleven normative companion IDs, seven derived unnumbered families).
+- Actor-specific journeys: 59; Complete: 59; Partial/Missing/Contradictory: 0.
+- Reachability: 59 Indeterminate; no Reachable claim. Implementation assessment: 59 Not verified; prior evidence was not refreshed.
+- Entry points: 24; action mappings: 98; coverage rows: 59, exactly eight populated columns each.
 - Unique gaps: 0 Blocker, 0 Major, 0 Minor; implementation gaps asserted: 0; unmapped requirements: 0.
 - No implementation tests run. No product authority or code changed.
 
@@ -993,10 +1211,12 @@ An account security surface is a necessary entry for the PRD’s own-password/MF
 
 | Input | Exact revision |
 |---|---|
-| docs/web-console-prd.md | sha256:cb8d09474431d3bdd082466beac07163051bd2cb00639433f8a87bf85b46c3d8 |
-| product/security/web-console-security-contract.md | sha256:95e342c77316f1697540fa8da29c6dd6333d6b6d3356b326c4dde921bca4540d |
-| product/architecture/web-console-state-contract.md | sha256:54956edc26dbcebcb48ecca0697a4695012d61488fa2297e56b6c04c9cbaa858 |
-| docs/web-console-prd-coverage.md | sha256:1cb9db8350470b5ddca5bc63e3005fb13df4900535b93db6541dc1f636b3598c |
+| docs/web-console-prd.md | sha256:bc908afcb8c40184dfcccdf296672bc559f5499236ed37f351a82f34ad0e9843 |
+| product/security/web-console-security-contract.md | sha256:27df73fc50b4ef71e6d4434db62f09da7e018acc13dfa5a305c4d0da0654a94d |
+| product/architecture/web-console-state-contract.md | sha256:c685c7fc9539f878986ccd906878808395fb13ae8ae2261fad9fd667107cbc80 |
+| docs/web-console-prd-coverage.md | sha256:ee1f5e26989ba653c007b67ef5b36d3d06922cc24db49b3c2eb8b4959620bb7e |
+| workflow/feedback/PO-FEEDBACK-2026-10-11-001/feedback.yaml | sha256:2a66ade78b37b971d5cf0f62ff5042564089d4482ed46bb3cce68c68299ae6d9 |
+| workflow/reconciliation/REC-RUN-002/reconciliation-result.yaml | sha256:c6b695bd86f0ebcf526f188b7faf4bfac183761b0b2fd79631b0e121adb96e1e |
+| product/ux/01-information-architecture.md | sha256:a9efc597a9218098cb904728e7e6584ab8b2ac36253f52cbd4f436f321789046 |
 
-
-Decision provenance: D-001–D-012, RES-PRD-SEC-01 and RES-PRD-ARCH-01; referenced by stable ID rather than a hash of the mutable workflow ledger.
+Decision provenance: D-001–D-012, RES-PRD-SEC-01, RES-PRD-ARCH-01, REC-DEC-001/003 and confirmed feedback. UX-DESIGN-002 remains pending; no overall workflow readiness claim.

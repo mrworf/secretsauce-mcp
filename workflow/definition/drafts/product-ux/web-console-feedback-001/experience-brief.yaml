@@ -1,0 +1,38 @@
+status: proposal
+product_id: secretsauce-mcp
+experience:
+  revision: feedback-draft-1
+  scope: Focused Settings navigation and friendly configuration controls
+  audience:
+    primary: [Owner, Administrator]
+    secondary: [Auditor]
+  principles:
+    - One Settings section at a time, with readable applied state before editing
+    - Plain-language controls preserve every existing configuration capability
+    - One settings draft and explicit full-scope review, without hidden cross-section apply
+  product_character:
+    tone: Preserve approved calm and precise direction
+    density: Preserve moderate density and grouped forms
+    complexity_strategy: Summary first; labeled controls; named advanced disclosure; optional lossless advanced editor
+    guidance_level: Brief effect descriptions, units, effective inheritance, current versus draft labels
+  interaction_direction:
+    navigation: Six Settings destinations in a compact secondary rail; labeled section selector on narrow screens
+    routine_actions: Read applied summary, edit current section, Save draft, Review all settings changes
+    consequential_actions: Preserve exact review/apply and immediate-action safeguards; dependent reset and deletion contracts remain separate
+    progressive_disclosure: Named advanced groups remain searchable; no raw JSON default view
+  responsive_priority: One content column; selected section and draft scope remain visible; no hidden capabilities
+  explicit_po_preferences:
+    - statement: Group settings into focused sections instead of one long scrolling page
+      decision_refs: [PO-FB-008]
+    - statement: Friendly controls hide technical configuration detail
+      decision_refs: [PO-FB-011]
+  explicit_po_dislikes:
+    - statement: A long page containing every setting and JSON-heavy routine administration
+      decision_refs: [PO-FB-007, PO-FB-010]
+  designer_discretion:
+    - Field labels, spacing, ordinary control geometry, and exact reflow breakpoint
+  approval:
+    approved: false
+    decision_refs: []
+    pending_question: UX-DESIGN-002
+preserved_approval: UX-DESIGN-001

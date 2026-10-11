@@ -1,6 +1,6 @@
 # Web console PRD targeted revalidation
 
-**PRD refinement gate: PASS.** **PRD-ready for downstream definition review: yes.** No unresolved material PRD finding or Product Owner choice remains in the supplied review scope.
+**Current feedback PRD revalidation: PASS.** Targeted recheck of UX-02 passed at the exact recorded revision. The initial refinement evidence below remains historical; this update does not claim whole-workflow readiness.
 
 **Implementation-ready: no** at the whole-product workflow level: coverage, journey, UX and full Architecture/Security review remain separate required gates managed by the orchestrator. Their status does not prevent this PRD stage from passing. Missing application code is not a definition blocker.
 
@@ -24,3 +24,13 @@ All local PRD links resolve. Normative hashes match those at correction completi
 Remaining mechanism choices (durable storage implementation, encryption/key handling, audit integrity construction and crash-safe installation mechanics) remain with the full specialist reviews under the already-settled observable contracts. This result does not pass those separate stages or claim SOC 2 compliance.
 
 Changed only `workflow/definition/results/prd-review.md` and `workflow/definition/results/prd.yaml`. Earlier full-review and correction evidence remains in the orchestrator's history directory.
+
+## REC-RUN-002 feedback revalidation
+
+Scoped review of REC-001, REC-002 and REC-006 confirms the PRD adopts SECRES-05 and the SMTP STATE-01/02/03 amendment. Owners and Administrators can initiate distinct password and MFA resets within the target matrix; invitations and unrelated user administration remain Owner-only. Password issuance retains access while completion revokes it; MFA issuance immediately restricts the target and invalidates factors/access. Both-lost recovery, issuer continuity, final enrolled Owner protection, concurrency, audit failure and ordinary-login completion remain explicit.
+
+SMTP deletion is separately confirmed and immediate, requires current Owner authority and recent authentication, rejects an enabled credential dependency, and cannot be undone through stale drafts, pending values, browser submissions or history. Creation/replacement retain draft/review/apply. Non-secret settings survive deletion; queued work rechecks admission and already-dispatched work cannot resurrect credentials. Migration still covers existing YAML and both scanner catalogs, explicit subject mapping, safe credential resolution and managed-source precedence.
+
+**Narrow correction F-PRD-005:** UX-02 previously supplied only general progressive-disclosure language. Added the already-confirmed focused Settings sections/no-long-page and friendly configuration control outcomes from PO-FB-008/011. It preserves advanced capability and existing values and chooses no layout, section names or navigation mechanism. The concrete UX-DESIGN-002 proposal remains pending approval. The subsequent targeted recheck of this exact addition passed against PRD SHA-256 `bc908afcb8c40184dfcccdf296672bc559f5499236ed37f351a82f34ad0e9843` and unchanged companion/source revisions. F-PRD-005 is resolved; the earlier FIX_LOCAL correction and this recheck are distinct steps. The wording faithfully captures PO-FB-008/011 and grants no proposed layout authority.
+
+Requirement identifiers are preserved; source revisions are recorded in `prd.yaml`. Historical F-PRD-001–004 remain resolved and were not reopened. Static checks cover local PRD links and requirement IDs; no code changed or runtime tests ran. Current changed paths are the PRD and the two PRD result files only. The overall workflow remains not implementation-ready while UX direction and dependent specialist revalidation remain outstanding.

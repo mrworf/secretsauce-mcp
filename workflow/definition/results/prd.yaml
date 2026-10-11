@@ -3,11 +3,15 @@ status: PASS
 mode: targeted_revalidation
 validated_inputs:
 - path: docs/web-console-prd.md
-  revision: sha256:cb8d09474431d3bdd082466beac07163051bd2cb00639433f8a87bf85b46c3d8
+  revision: sha256:bc908afcb8c40184dfcccdf296672bc559f5499236ed37f351a82f34ad0e9843
 - path: product/security/web-console-security-contract.md
-  revision: sha256:95e342c77316f1697540fa8da29c6dd6333d6b6d3356b326c4dde921bca4540d
+  revision: sha256:27df73fc50b4ef71e6d4434db62f09da7e018acc13dfa5a305c4d0da0654a94d
 - path: product/architecture/web-console-state-contract.md
-  revision: sha256:54956edc26dbcebcb48ecca0697a4695012d61488fa2297e56b6c04c9cbaa858
+  revision: sha256:c685c7fc9539f878986ccd906878808395fb13ae8ae2261fad9fd667107cbc80
+- path: workflow/feedback/PO-FEEDBACK-2026-10-11-001/feedback.yaml
+  revision: sha256:2a66ade78b37b971d5cf0f62ff5042564089d4482ed46bb3cce68c68299ae6d9
+- path: workflow/reconciliation/REC-RUN-002/reconciliation-result.yaml
+  revision: sha256:c6b695bd86f0ebcf526f188b7faf4bfac183761b0b2fd79631b0e121adb96e1e
 decision_provenance:
 - D-001
 - D-002
@@ -23,15 +27,22 @@ decision_provenance:
 - D-012
 - RES-PRD-SEC-01
 - RES-PRD-ARCH-01
+- REC-DEC-001
+- REC-DEC-003
+- PO-FB-008
+- PO-FB-011
 artifact_changes:
-- path: workflow/definition/results/prd-review.md
-  summary: Recorded targeted validation and closure of F-PRD-001 through F-PRD-004
-    without authority changes.
+- path: docs/web-console-prd.md
+  summary: UX-02 explicitly preserves confirmed focused Settings sections and friendly controls;
+    no layout mechanism or section taxonomy selected.
 - path: workflow/definition/results/prd.yaml
-  summary: Recorded exact normative revisions and PRD-stage PASS.
+  summary: Recorded bounded correction and successful targeted revalidation with exact source revisions.
+- path: workflow/definition/results/prd-review.md
+  summary: Appended bounded feedback revalidation, correction recheck and pending UX direction boundary.
 changed_paths:
-- workflow/definition/results/prd-review.md
+- docs/web-console-prd.md
 - workflow/definition/results/prd.yaml
+- workflow/definition/results/prd-review.md
 findings:
 - id: F-PRD-001
   significance: OBSERVATION
@@ -39,10 +50,9 @@ findings:
   summary: Targeted revalidation confirms adopted correction.
   affected_requirement: SEC-01
   affected_artifact: docs/web-console-prd.md
-  evidence: 'SECRES-01: ordinary secrets prohibited; purpose-bound proof and OAuth
-    code exceptions preserve required flows and downstream query placement.'
-  why_it_matters: Established product intent now has a consistent testable contract
-    for this boundary.
+  evidence: 'SECRES-01: ordinary secrets prohibited; purpose-bound proof and OAuth code exceptions
+    preserve required flows and downstream query placement.'
+  why_it_matters: Established product intent now has a consistent testable contract for this boundary.
   local_correction_possible: false
   reconciliation_required: false
 - id: F-PRD-002
@@ -51,11 +61,10 @@ findings:
   summary: Targeted revalidation confirms adopted correction.
   affected_requirement: BACKUP-05
   affected_artifact: docs/web-console-prd.md
-  evidence: 'SECRES-02 and STATE-04/05/06: host proof plus archive material or recent
-    current Owner authority, archived Owner nomination, fresh enrollment, coherent
-    failed-install recovery, and explicit activation.'
-  why_it_matters: Established product intent now has a consistent testable contract
-    for this boundary.
+  evidence: 'SECRES-02 and STATE-04/05/06: host proof plus archive material or recent current Owner
+    authority, archived Owner nomination, fresh enrollment, coherent failed-install recovery, and
+    explicit activation.'
+  why_it_matters: Established product intent now has a consistent testable contract for this boundary.
   local_correction_possible: false
   reconciliation_required: false
 - id: F-PRD-003
@@ -64,11 +73,10 @@ findings:
   summary: Targeted revalidation confirms adopted correction.
   affected_requirement: AUDIT-04
   affected_artifact: docs/web-console-prd.md
-  evidence: 'SECRES-04: every sensitive path fails closed, restricted diagnostic login
-    is an explicit bounded exception, host repair cannot become privileged web mutation,
-    and durable recovery event precedes admission.'
-  why_it_matters: Established product intent now has a consistent testable contract
-    for this boundary.
+  evidence: 'SECRES-04: every sensitive path fails closed, restricted diagnostic login is an explicit
+    bounded exception, host repair cannot become privileged web mutation, and durable recovery event
+    precedes admission.'
+  why_it_matters: Established product intent now has a consistent testable contract for this boundary.
   local_correction_possible: false
   reconciliation_required: false
 - id: F-PRD-004
@@ -77,12 +85,62 @@ findings:
   summary: Targeted revalidation confirms adopted correction.
   affected_requirement: CONFIG-03
   affected_artifact: docs/web-console-prd.md
-  evidence: 'STATE-01/02/03: immediate security/lifecycle actions, current permissions
-    and dependencies at apply/admission, scoped history, and no implicit resurrection
-    of revoked access or credential values.'
-  why_it_matters: Established product intent now has a consistent testable contract
-    for this boundary.
+  evidence: 'STATE-01/02/03: immediate security/lifecycle actions, current permissions and dependencies
+    at apply/admission, scoped history, and no implicit resurrection of revoked access or credential
+    values.'
+  why_it_matters: Established product intent now has a consistent testable contract for this boundary.
   local_correction_possible: false
+  reconciliation_required: false
+- id: REC-001
+  significance: OBSERVATION
+  status: resolved
+  summary: Bounded PRD adoption validated against delegated companion contract.
+  affected_requirement: IDENT-05
+  affected_artifact: docs/web-console-prd.md
+  evidence: Role matrix, AUTHZ-02 and IDENT-04/05/06 adopt Owner/Administrator assisted password
+    reset with target hierarchy; non-restricting issuance, proof plus retained factor at completion
+    and access revocation are distinct.
+  why_it_matters: Settled feedback now has explicit positive, denial and uncertainty contracts without
+    broadening unrelated powers.
+  local_correction_possible: false
+  reconciliation_required: false
+- id: REC-002
+  significance: OBSERVATION
+  status: resolved
+  summary: Bounded PRD adoption validated against delegated companion contract.
+  affected_requirement: AUTHZ-03
+  affected_artifact: docs/web-console-prd.md
+  evidence: IDENT-05 and AUTHZ-03 adopt separate MFA restriction/fresh-enrollment transitions, both-lost
+    sequence, issuer/target generation binding and atomic final enrolled Owner protection.
+  why_it_matters: Settled feedback now has explicit positive, denial and uncertainty contracts without
+    broadening unrelated powers.
+  local_correction_possible: false
+  reconciliation_required: false
+- id: REC-006
+  significance: OBSERVATION
+  status: resolved
+  summary: Bounded PRD adoption validated against delegated companion contract.
+  affected_requirement: CONFIG-03
+  affected_artifact: docs/web-console-prd.md
+  evidence: IDENT-04 and CONFIG-03/04 require independent confirmed SMTP deletion, enabled dependency
+    rejection, current revision/version checks, pending-copy deletion, stale-draft fencing and no
+    rollback resurrection.
+  why_it_matters: Settled feedback now has explicit positive, denial and uncertainty contracts without
+    broadening unrelated powers.
+  local_correction_possible: false
+  reconciliation_required: false
+- id: F-PRD-005
+  significance: OBSERVATION
+  status: resolved
+  summary: Targeted recheck confirms UX-02 faithfully preserves PO-FB-008/011 without adopting a
+    layout proposal.
+  affected_requirement: UX-02
+  affected_artifact: docs/web-console-prd.md
+  evidence: PO-FB-008/011 already confirm the outcomes; prior UX-02 stated only general progressive
+    disclosure. Added mechanism-independent requirements while preserving UX-DESIGN-002 approval.
+  why_it_matters: Downstream UX must preserve confirmed outcomes without treating an unapproved design
+    proposal as authority.
+  local_correction_possible: true
   reconciliation_required: false
 questions: []
 resolved_question_ids:
@@ -90,73 +148,62 @@ resolved_question_ids:
 - Q-PRD-002
 - Q-PRD-003
 - Q-PRD-004
-affected_requirements:
-- AUDIT-01
-- AUDIT-04
+affected_requirements: &id001
 - AUTHZ-02
 - AUTHZ-03
-- BACKUP-02
-- BACKUP-03
-- BACKUP-04
-- BACKUP-05
-- BACKUP-06
-- BASE-01
+- IDENT-04
+- IDENT-05
+- IDENT-06
 - CONFIG-02
 - CONFIG-03
 - CONFIG-04
-- CONFIG-05
-- IDENT-01
-- IDENT-02
-- IDENT-03
-- IDENT-05
-- IDENT-06
-- OPS-02
-- SEC-01
-- SEC-03
-affected_artifacts: &id001
+- AUDIT-01
+- AUDIT-04
+- UX-02
+- MIGRATE-01
+- MIGRATE-02
+- MIGRATE-03
+- MIGRATE-04
+affected_artifacts:
 - docs/web-console-prd.md
 - product/security/web-console-security-contract.md
 - product/architecture/web-console-state-contract.md
 reconciliation_required: false
 change_impact:
-  product: false
-  user_journeys: false
-  ux: false
+  product: true
+  user_journeys: true
+  ux: true
   architecture: false
   security: false
 validation:
   requirement_ids_preserved: 53
   local_links: pass
-  normative_source_hashes: verified unchanged during revalidation
-  settled_decisions: D-001 through D-012 preserved
+  normative_source_hashes: Recorded after narrow UX-02 correction; security and state contracts unchanged.
+  settled_decisions: D-001 through D-012 and accepted REC-DEC-001/003 preserved. UX-DESIGN-002 remains
+    pending.
   implementation_tests_run: false
-  reason: Targeted definition validation; no executable code changed.
+  reason: Definition-only static review; no executable inputs or code changed.
+  scope_checks:
+  - No Owner-only assisted-reset or undifferentiated issuance revocation contradiction in PRD.
+  - Final Owner continuity, audit admission and issuer/target generation requirements agree with
+    SECRES-05.
+  - SMTP deletion and draft creation/replacement distinction agree with STATE-01/02/03 amendment.
+  - Legacy YAML and both scanner catalog imports remain required under MIGRATE-01 through MIGRATE-04.
+  - Focused Settings and friendly controls explicitly stated without choosing subtabs, section names
+    or navigation mechanism.
+  targeted_correction_recheck: F-PRD-005 passed against the exact recorded PRD hash and unchanged
+    companion/source revisions; section taxonomy and navigation mechanism remain unapproved.
 targeted_revalidation:
   finding_ids:
-  - F-PRD-001
-  - F-PRD-002
-  - F-PRD-003
-  - F-PRD-004
-  requirement_ids:
-  - AUDIT-01
-  - AUDIT-04
-  - AUTHZ-02
-  - AUTHZ-03
-  - BACKUP-03
-  - BACKUP-04
-  - BACKUP-05
-  - BASE-01
-  - CONFIG-02
-  - CONFIG-03
-  - CONFIG-04
-  - CONFIG-05
-  - IDENT-01
-  - IDENT-02
-  - IDENT-03
-  - IDENT-05
-  - OPS-02
-  - SEC-01
-  - SEC-03
-  artifact_paths: *id001
+  - REC-001
+  - REC-002
+  - REC-006
+  - F-PRD-005
+  requirement_ids: *id001
+  artifact_paths:
+  - docs/web-console-prd.md
+  - product/security/web-console-security-contract.md
+  - product/architecture/web-console-state-contract.md
 prd_ready_for_downstream_review: true
-workflow_readiness: Determined by orchestrator; this result passes only the PRD stage.
+workflow_readiness: PRD-stage PASS only. UX-DESIGN-002 remains independently pending; global implementation
+  and delivery readiness are not established.

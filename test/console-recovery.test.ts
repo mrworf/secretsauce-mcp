@@ -37,10 +37,10 @@ describe('bounded account recovery', () => {
         recent(f);
         expect(() => p.assist(f.session, { id: f.session.userId, purpose: 'factor', channel: 'in_person', verified: true, confirmed: true })).toThrow(/own account/);
         const r = p.assist(f.session, { id: m.id, purpose: 'password', channel: 'established_contact', verified: true, confirmed: true }), proof = value(r.link);
-        expect(f.store.state.users.find(u => u.id === m.id)!.enrolled).toBe(false);
-        expect(() => f.store.login('member@example.org', password, totp(m.seed, Date.now() + 30000))).toThrow();
+        expect(f.store.state.users.find(u => u.id === m.id)!.enrolled).toBe(true);
         expect(() => p.begin({ ...proof, password })).toThrow();
-        p.resetPassword({ ...proof, password: 'A reset lengthy passphrase 2026' });
+        expect(() => p.resetPassword({ ...proof, password: 'A reset lengthy passphrase 2026' })).toThrow();
+        p.resetPassword({ ...proof, password: 'A reset lengthy passphrase 2026', kind: 'recovery', factor: m.codes[0] });
         const u = f.store.state.users.find(u => u.id === m.id)!;
         expect(u.seed).toBe(m.seed);
         expect(u.enrolled).toBe(true);

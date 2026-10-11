@@ -1,0 +1,6 @@
+{
+  "result": "PASS",
+  "checks": [
+    "Actual HTTPS guided file upload, explicit identity selector, blank optional defaults, punctuation legacy ID and readable draft result; malformed source fails safely."
+  ]
+}

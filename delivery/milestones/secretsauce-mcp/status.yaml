@@ -251,23 +251,25 @@ milestones:
 - id: '19'
   title: Delete SMTP credentials independently
   file: delivery/milestones/secretsauce-mcp/19-independent-smtp-deletion.md
-  status: in_progress
+  status: completed
   dependencies:
   - '12'
-  completed_at: null
-  commit_hash: null
-  notes: null
+  completed_at: '2026-10-11T23:15:18.518781+00:00'
+  commit_hash: 1ac1697c744ac27883bb0eddabd0ac51bc537ef7
+  notes: One committed vertical slice; 651 tests/70 files and build pass; actual HTTPS
+    deletion/cancel/reflow acceptance; all criteria mapped in evidence/qa/secretsauce-mcp/milestone19/acceptance.md.
   started_at: '2026-10-11T23:08:28.346717+00:00'
 - id: '20'
   title: Navigate focused Settings with exact draft review
   file: delivery/milestones/secretsauce-mcp/20-focused-settings-and-navigation.md
-  status: pending
+  status: in_progress
   dependencies:
   - '15'
   - '17'
   completed_at: null
   commit_hash: null
   notes: null
+  started_at: '2026-10-11T23:15:18.518804+00:00'
 - id: '21'
   title: Configure all capabilities with forms and lossless import
   file: delivery/milestones/secretsauce-mcp/21-friendly-configuration-and-import.md
@@ -328,10 +330,10 @@ delivery_goal:
   - '20'
   - '21'
   execution: autonomous
-  current_milestone: '19'
-  governing_plan: delivery/plans/secretsauce-mcp/milestone_19_plan_01.md
+  current_milestone: '20'
+  governing_plan: delivery/plans/secretsauce-mcp/milestone_20_plan_01.md
   blockers: []
-  resume_point: Plan and deliver M19 using one minimal-slice-delivery transaction.
+  resume_point: Plan and deliver M20 using one minimal-slice-delivery transaction.
 compiled_from_history:
 - product_id: secretsauce-mcp
   input_mode: PRODUCT_BUILD

@@ -12,7 +12,7 @@ Include API, confirmation UI, version-bound drafts, captured delivery metadata, 
 ## Slice index
 | Slice | Plan | Outcome | Dependency | Status | Commit |
 |---|---|---|---|---|---|
-| 01 | [Plan](milestone_19_plan_01_slice_01.md) | Independent SMTP deletion and complete lifecycle | M12 complete | complete | root records resulting slice commit |
+| 01 | [Plan](milestone_19_plan_01_slice_01.md) | Independent SMTP deletion and complete lifecycle | M12 complete | complete | 1ac1697c744ac27883bb0eddabd0ac51bc537ef7 |
 
 One slice is the smallest reversible end-to-end behavior; separating persistence from its UI/security fence would leave unsafe partial behavior.
 

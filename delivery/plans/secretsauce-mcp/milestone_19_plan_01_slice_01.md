@@ -20,3 +20,5 @@ All five M19 acceptance clauses require concrete evidence. Single commit contain
 
 ## Delivered evidence
 Complete: API/UI, retained disabled settings, strict current draft version, stale/legacy rejection, captured delivery metadata, backup schema and manual-reset callers. Ten focused tests passed plus related SMTP/HTTP tests; HTTPS keyboard/reflow browser passed; build passed. See milestone19 acceptance evidence and governing plan for final full-suite total. Commit reference recorded by root after this single slice commit.
+
+Committed as `1ac1697c744ac27883bb0eddabd0ac51bc537ef7`; parent verified acceptance mapping and packet freshness.

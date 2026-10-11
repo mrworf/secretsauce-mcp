@@ -28,7 +28,7 @@ describe('direct people HTTP/MCP boundaries', () => {
             const mutations: [
                 string,
                 unknown
-            ][] = [['people/invite', { email: 'new@example.org', role: 'Member', confirmed: true }], ['people/external', { issuer: 'https://issuer.example.org', subject: 's', label: 'External', confirmed: true }], ['notifications/save', { base: 0, generation: 0, settings: { host: 'smtp.example.org', port: 465, sender: 'console@example.org', username: '', password: '' } }]];
+            ][] = [['people/invite', { email: 'new@example.org', role: 'Member', confirmed: true }], ['people/external', { issuer: 'https://issuer.example.org', subject: 's', label: 'External', confirmed: true }], ['notifications/save', { credentialVersion: 0, base: 0, generation: 0, settings: { host: 'smtp.example.org', port: 465, sender: 'console@example.org', username: '', password: '' } }]];
             for (const [path, data] of mutations)
                 expect((await f.post(path, data)).status).toBe(role === 'Owner' ? 200 : 403);
             if (role !== 'Owner') {
@@ -40,7 +40,7 @@ describe('direct people HTTP/MCP boundaries', () => {
                     string,
                     unknown,
                     string
-                ][] = [['people/change', { id: target.id, role: 'Member', active: false, confirmed: true }, 'people.change'], ['people/recovery', { id: target.id, purpose: 'factor', channel: 'in_person', verified: true, confirmed: true }, 'people.recovery'], ['people/revoke', { id: target.id, confirmed: true }, 'people.revoke'], ['people/external-change', { id: target.id, active: false, confirmed: true }, 'people.change'], ['notifications/review', {}, 'notifications.apply'], ['notifications/apply', { review, confirmed: true }, 'notifications.apply'], ['notifications/test', { recipient: 'test@example.org', confirmed: true }, 'notifications.test']];
+                ][] = [['people/change', { id: target.id, role: 'Member', active: false, confirmed: true }, 'people.change'], ['people/recovery', { id: target.id, purpose: 'factor', channel: 'in_person', verified: true, confirmed: true }, 'people.recovery'], ['people/revoke', { id: target.id, confirmed: true }, 'people.revoke'], ['people/external-change', { id: target.id, active: false, confirmed: true }, 'people.change'], ['notifications/delete', {revision:0,credentialVersion:0,confirmed:true}, 'notifications.delete'], ['notifications/review', {}, 'notifications.apply'], ['notifications/apply', { review, confirmed: true }, 'notifications.apply'], ['notifications/test', { recipient: 'test@example.org', confirmed: true }, 'notifications.test']];
                 for (const [path, data, action] of cells) {
                     f.store.state.sessions[0]!.recent = { action, expires: Date.now() + 300000 };
                     expect((await f.post(path, data)).status).toBe(role === 'Administrator' && path === 'people/recovery' ? 200 : 403);

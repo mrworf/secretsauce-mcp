@@ -13,30 +13,31 @@ import {backupPublicKey} from '../src/consoleBackupArchive.js';
 import {randomSecret} from '../src/consoleCrypto.js';
 const config = { host: 'smtp.example.org', port: 465, sender: 'console@example.org', username: 'synthetic-user', password: 'synthetic-mail-secret' };
 function recent(f: ReturnType<typeof managedFixture>, action: string) { f.store.state.sessions[0]!.recent = { action, expires: Date.now() + 300000 }; }
-function apply(f: ReturnType<typeof managedFixture>, n: ConsoleNotifications, c = config, clearCredential = false) { n.save(f.session, { base: n.state.revision, generation: n.state.draft?.generation ?? 0, settings: c, clearCredential }); const r = n.review(f.session); recent(f, 'notifications.apply'); n.apply(f.session, { review: r.review, confirmed: true }); }
+function apply(f: ReturnType<typeof managedFixture>, n: ConsoleNotifications, c = config) { n.save(f.session, { base: n.state.revision, generation: n.state.draft?.generation ?? 0, settings: c, credentialVersion: n.state.credentialVersion ?? 0 }); const r = n.review(f.session); recent(f, 'notifications.apply'); n.apply(f.session, { review: r.review, confirmed: true }); }
 describe('bounded optional SMTP', () => {
     it('Owner draft/apply is scoped and write-only; replaces/deletes credentials and disables delivery; other roles and malformed input denied', async () => { const f = managedFixture(); try {
         const n = new ConsoleNotifications(f.store);
-        n.save(f.session, { base: 0, generation: 0, settings: config });
+        n.save(f.session, { base: 0, generation: 0, credentialVersion: n.state.credentialVersion ?? 0, settings: config });
         expect(n.state.applied).toBeUndefined();
         expect(JSON.stringify(n.read(f.session))).not.toContain(config.password);
         const r = n.review(f.session);
         expect(() => n.apply(f.session, { review: r.review, confirmed: true })).toThrow(/Confirm/);
         recent(f, 'notifications.apply');
         n.apply(f.session, { review: r.review, confirmed: true });
-        expect(n.state.applied!.password).toBe(config.password);expect(()=>n.apply(f.session,{review:r.review,confirmed:true})).toThrow(/Stale/);expect(()=>n.save(f.session,{base:999,generation:0,settings:config})).toThrow(/Stale/);recent(f,'notifications.test');await expect(n.test(f.session,{recipient:'bad\r\nrecipient',confirmed:true})).rejects.toThrow(/Invalid/);
-        apply(f, n, { ...config, password: '' }, true);
+        expect(n.state.applied!.password).toBe(config.password);expect(()=>n.apply(f.session,{review:r.review,confirmed:true})).toThrow(/Stale/);expect(()=>n.save(f.session,{base:999,generation:0,credentialVersion:0,settings:config})).toThrow(/Stale/);recent(f,'notifications.test');await expect(n.test(f.session,{recipient:'bad\r\nrecipient',confirmed:true})).rejects.toThrow(/Invalid/);
+        apply(f, n, { ...config, enabled: false } as typeof config);
+        recent(f,'notifications.delete'); n.deleteCredential(f.session,{revision:n.state.revision,credentialVersion:n.state.credentialVersion,confirmed:true});
         expect(n.state.applied!.password).toBe('');
         expect(n.read(f.session).applied!.credentialVersion).toBe(2);
         apply(f, n, { ...config, enabled: false } as typeof config);
         expect(await n.send('security', 'person@example.org', 'safe notice')).toEqual({ status: 'manual' });
         for (const role of ['Administrator', 'Auditor', 'Member'] as const) {
             f.store.state.users[0]!.role = role;
-            expect(() => n.save(f.session, { base: n.state.revision, generation: 0, settings: config })).toThrow(/Forbidden/);
+            expect(() => n.save(f.session, { base: n.state.revision, generation: 0, credentialVersion: n.state.credentialVersion ?? 0, settings: config })).toThrow(/Forbidden/);
         }
         f.store.state.users[0]!.role = 'Owner';
         for (const c of [{ ...config, host: 'smtp.example.org/path' }, { ...config, port: 0 }, { ...config, sender: 'a@example.org\r\nBcc: b@example.org' }, { ...config, password: 'bad\nsecret' }, { ...config, extra: true },{...config,enabled:'yes'},{...config,username:'bad\nusername'},{...config,port:65536}])
-            expect(() => n.save(f.session, { base: n.state.revision, generation: 0, settings: c })).toThrow(/Invalid/);
+            expect(() => n.save(f.session, { base: n.state.revision, generation: 0, credentialVersion: n.state.credentialVersion ?? 0, settings: c })).toThrow(/Invalid/);
     }
     finally {
         f.close();

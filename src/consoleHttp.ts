@@ -184,6 +184,7 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
         if(path==='/console/api/configuration/export'){if(Object.keys(data).length)throw new ServiceManagementError('export: No input fields supported.');reply(200,exportConfiguration(consoleServices(store),session));return;}
         if(path?.startsWith('/console/api/protection/')){const p=consoleProtection(consoleServices(store));if(path==='/console/api/protection/save'){reply(200,p.save(session,data));return;}if(path==='/console/api/protection/review'){reply(200,p.review(session,data));return;}if(path==='/console/api/protection/apply'){reply(200,p.apply(session,data));return;}}
         if(path==='/console/api/notifications/save'){reply(200,consoleNotifications(store).save(session,data));return;}
+        if(path==='/console/api/notifications/delete'){reply(200,consoleNotifications(store).deleteCredential(session,data));return;}
         if(path==='/console/api/notifications/review'){if(Object.keys(data).length)throw new NotificationError('Invalid SMTP input.');reply(200,consoleNotifications(store).review(session));return;}
         if(path==='/console/api/notifications/apply'){reply(200,consoleNotifications(store).apply(session,data));return;}
         if(path==='/console/api/notifications/test'){reply(200,await consoleNotifications(store).test(session,data));return;}

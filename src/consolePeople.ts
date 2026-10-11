@@ -114,7 +114,7 @@ export class ConsolePeople {
             throw new PeopleError('Recovery unavailable. Ask the host operator to repair durable storage.');
         this.store.commit('contact', 'identity.reset_request', 'contact', () => { });
         const notifications = consoleNotifications(this.store);
-        const delivery = this.resetDelivery ?? (notifications.state.applied ? ((email: string, link: string) => notifications.send('password', email, link).then(() => { })) : undefined);
+        const delivery = this.resetDelivery ?? (notifications.state.applied && notifications.state.applied.enabled !== false ? ((email: string, link: string) => notifications.send('password', email, link).then(() => { })) : undefined);
         const user = this.store.state.users.find(u => u.email === data.email && u.active && u.enrolled !== false);
         // No SMTP means an Owner must verify the person and deliberately issue a manual link.
         if (user && delivery) {
@@ -179,7 +179,7 @@ export class ConsolePeople {
     }
     private assistAuthorized(session: ConsoleSession, input: unknown, now: number) { const data = this.parse(z.object({ id, purpose: z.enum(['password', 'factor']), channel: z.enum(['in_person', 'known_phone', 'established_contact']), verified: z.literal(true), confirmed: z.literal(true) }).strict(), input); const user = this.store.state.users.find(u => u.id === data.id); const actor = this.resetActor(session, user, now); if (data.id === actor.id)
         throw new PeopleError('Use your password and existing factor or a recovery code for your own account; host recovery is available if locked out.'); if (!user || !user.active || user.password === '' || (user.enrolled === false && (data.purpose === 'password' || !this.factorPending(user))))
-        throw new PeopleError('Recovery target unavailable.'); this.resetFormat(actor.id); const p = this.newProof(data.purpose, user.id, now, actor.id); (p.proof as IdentityProof).assisted = true; (p.proof as IdentityProof).delivery = consoleNotifications(this.store).state.applied ? 'queued' : 'manual'; const revision = this.store.state.revision; let operation: string; try {
+        throw new PeopleError('Recovery target unavailable.'); this.resetFormat(actor.id); const p = this.newProof(data.purpose, user.id, now, actor.id); (p.proof as IdentityProof).assisted = true; (p.proof as IdentityProof).delivery = consoleNotifications(this.store).state.applied && consoleNotifications(this.store).state.applied!.enabled !== false ? 'queued' : 'manual'; const revision = this.store.state.revision; let operation: string; try {
         operation = this.store.commit(actor.id, 'identity.' + data.purpose + '_reset_' + (this.state.proofs.some(v=>v.target===user.id)?'reissue':'issue'), user.id, s => { const u = s.users.find(v => v.id === user.id)!; if (data.purpose === 'factor') { if (u.role === 'Owner' && !s.users.some(v=>v.id!==u.id && v.active && v.enrolled!==false && v.role==='Owner')) throw new PeopleError('The last active Owner must remain enrolled. Use host recovery.'); u.authorizationGeneration=(u.authorizationGeneration??0)+1; p.proof.targetGeneration=u.authorizationGeneration; u.assistedFactorPending = true; u.seed=''; u.recoveryHashes=[]; u.lastCounter=-1; u.enrolled = false; s.sessions = s.sessions.filter(v => v.userId !== user.id); } this.install(s, p.proof); }, { channel: data.channel, ...(data.purpose==='factor'?{authorizationGeneration:(user.authorizationGeneration??0)+1}:{}) });
     }
     finally {

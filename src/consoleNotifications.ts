@@ -19,6 +19,7 @@ export interface NotificationState {
         base: number;
         generation: number;
         actor: string;
+        credentialVersion?: number;
     };
     review?: {
         id: string;
@@ -29,6 +30,8 @@ export interface NotificationState {
     deliveries: {
         kind: string;
         time: number;
+        revision?: number;
+        credentialVersion?: number;
         status: 'queued' | 'delivered' | 'failed' | 'manual' | 'capacity';
     }[];
 }
@@ -107,31 +110,49 @@ export class ConsoleNotifications {
     private parse<T>(schema: z.ZodType<T>, input: unknown): T { const r = schema.safeParse(input); if (!r.success)
         throw new NotificationError('Invalid SMTP input. Use a hostname, TLS port and valid sender/contact address.'); return r.data; }
     private safe(c: SmtpSettings | undefined) { return c ? { enabled: c.enabled !== false, host: c.host, port: c.port, sender: c.sender, username: c.username, credentialAvailable: Boolean(c.password), credentialVersion: this.state.credentialVersion ?? 0 } : undefined; }
-    read(session: ConsoleSession) { this.store.authorize(session, 'instance'); return { revision: this.state.revision, applied: this.safe(this.state.applied), draft: this.state.draft ? { settings: this.safe(this.state.draft.settings), base: this.state.draft.base, generation: this.state.draft.generation } : undefined, deliveries: this.state.deliveries }; }
-    save(session: ConsoleSession, input: unknown) { const actor = this.owner(session); const data = this.parse(z.object({ base: z.number().int().nonnegative(), generation: z.number().int().nonnegative(), settings: settings, clearCredential: z.boolean().optional() }).strict(), input); if (data.base !== this.state.revision || data.generation !== (this.state.draft?.generation ?? 0))
-        throw new NotificationError('Stale SMTP draft. Reload settings and review again.'); const c = { ...data.settings, password: data.clearCredential ? '' : data.settings.password || this.state.draft?.settings.password || this.state.applied?.password || '' }; return { operation: this.store.commit(actor.id, 'notification.draft_save', 'smtp', s => { const state = this.init(s); state.draft = { settings: c, base: data.base, generation: data.generation + 1, actor: actor.id }; delete state.review; }), status: 'Draft saved; applied delivery is unchanged.' }; }
-    review(session: ConsoleSession) { const actor = this.owner(session); const d = this.state.draft; if (!d || d.base !== this.state.revision)
+    read(session: ConsoleSession) { this.store.authorize(session, 'instance'); return { revision: this.state.revision, credentialVersion: this.state.credentialVersion ?? 0, applied: this.safe(this.state.applied), draft: this.state.draft ? { settings: this.safe(this.state.draft.settings), base: this.state.draft.base, generation: this.state.draft.generation } : undefined, deliveries: this.state.deliveries }; }
+    save(session: ConsoleSession, input: unknown) { const actor = this.owner(session); const data = this.parse(z.object({ base: z.number().int().nonnegative(), generation: z.number().int().nonnegative(), settings: settings, credentialVersion: z.number().int().nonnegative() }).strict(), input); if (data.credentialVersion !== (this.state.credentialVersion ?? 0) || data.base !== this.state.revision || data.generation !== (this.state.draft?.generation ?? 0))
+        throw new NotificationError('Stale SMTP draft. Reload settings and review again.'); const c = { ...data.settings, password: data.settings.password || (this.state.draft?.credentialVersion === data.credentialVersion ? this.state.draft.settings.password : '') || this.state.applied?.password || '' }; return { operation: this.store.commit(actor.id, 'notification.draft_save', 'smtp', s => { const state = this.init(s); state.draft = { settings: c, base: data.base, generation: data.generation + 1, actor: actor.id, credentialVersion: data.credentialVersion }; delete state.review; }), status: 'Draft saved; applied delivery is unchanged.' }; }
+    review(session: ConsoleSession) { const actor = this.owner(session); const d = this.state.draft; if (!d || d.base !== this.state.revision || d.credentialVersion !== (this.state.credentialVersion ?? 0))
         throw new NotificationError('Save a current SMTP draft first.'); const review = { id: randomUUID(), actor: actor.id, base: this.state.revision, generation: d.generation }; return { operation: this.store.commit(actor.id, 'notification.review', 'smtp', s => { this.init(s).review = review; }), review: review.id, scope: ['smtp'], current: this.safe(this.state.applied), proposed: this.safe(d.settings) }; }
-    apply(session: ConsoleSession, input: unknown) { const actor = this.owner(session, 'notifications.apply'); const d = this.parse(z.object({ review: z.string().uuid(), confirmed: z.literal(true) }).strict(), input), r = this.state.review, draft = this.state.draft; if (!r || !draft || r.id !== d.review || r.actor !== actor.id || r.base !== this.state.revision || draft.base !== r.base || draft.generation !== r.generation)
+    apply(session: ConsoleSession, input: unknown) { const actor = this.owner(session, 'notifications.apply'); const d = this.parse(z.object({ review: z.string().uuid(), confirmed: z.literal(true) }).strict(), input), r = this.state.review, draft = this.state.draft; if (!r || !draft || draft.credentialVersion !== (this.state.credentialVersion ?? 0) || r.id !== d.review || r.actor !== actor.id || r.base !== this.state.revision || draft.base !== r.base || draft.generation !== r.generation)
         throw new NotificationError('Stale SMTP review. Reload and review again.'); return { operation: this.store.commit(actor.id, 'notification.apply', 'smtp', s => { const state = this.init(s); if (draft.settings.password !== (state.applied?.password ?? ''))
-            state.credentialVersion = (state.credentialVersion ?? 0) + 1; if (draft.settings.enabled === false)
-            delete state.applied;
-        else
-            state.applied = draft.settings; state.revision++; delete state.draft; delete state.review; }), status: 'Applied SMTP settings. Delivery is separate from enrollment.' }; }
+            state.credentialVersion = (state.credentialVersion ?? 0) + 1; state.applied = draft.settings; state.revision++; delete state.draft; delete state.review; }), status: 'Applied SMTP settings. Delivery is separate from enrollment.' }; }
+    deleteCredential(session: ConsoleSession, input: unknown) {
+        const actor = this.owner(session, 'notifications.delete');
+        const d = this.parse(z.object({ revision: z.number().int().nonnegative(), credentialVersion: z.number().int().nonnegative(), confirmed: z.literal(true) }).strict(), input);
+        if (d.revision !== this.state.revision || d.credentialVersion !== (this.state.credentialVersion ?? 0))
+            throw new NotificationError('Stale SMTP credential confirmation. Reload Email settings and confirm the current version.');
+        if (!this.state.applied?.password && !this.state.draft?.settings.password)
+            return { status: 'SMTP credential already absent.' };
+        if (this.state.applied?.password && this.state.applied.enabled !== false)
+            throw new NotificationError('Enabled SMTP depends on this credential. Disable email delivery in Settings, save, review and apply, then delete the credential separately.');
+        return { operation: this.store.commit(actor.id, 'notification.credential_delete', 'smtp', s => {
+            const state = this.init(s);
+            if (state.applied) state.applied.password = '';
+            if (state.draft) state.draft.settings.password = '';
+            state.credentialVersion = (state.credentialVersion ?? 0) + 1;
+            state.revision++;
+            delete state.review;
+        }), status: 'SMTP credential deleted. Non-secret settings retained; reload and review any draft edits.' };
+    }
     async test(session: ConsoleSession, input: unknown) { this.owner(session, 'notifications.test'); const d = this.parse(z.object({ recipient: address, confirmed: z.literal(true) }).strict(), input); const result = await this.send('test', d.recipient, 'Synthetic or authorized SMTP test. This message does not enroll or authenticate anyone.'); this.owner(session); return result; }
     async send(kind: string, recipient: string, body: string) { if (!['test', 'invitation', 'password', 'security', 'backup', 'audit'].includes(kind) || !address.safeParse(recipient).success || body.length > 16384)
-        throw new NotificationError('Invalid notification input.'); const config = this.state.applied; if (!config)
+        throw new NotificationError('Invalid notification input.'); const config = this.state.applied; if (!config || config.enabled === false)
         return { status: 'manual' }; if (this.occupied >= 4)
-        return { status: 'capacity' }; this.occupied++; let status: 'delivered' | 'failed' = 'failed'; try {
-        this.store.commit('system', 'notification.admit', 'smtp', s => { const state = this.init(s); state.deliveries = state.deliveries.slice(-19); state.deliveries.push({ kind, time: Date.now(), status: 'queued' }); });
+        return { status: 'capacity' }; const revision = this.state.revision, credentialVersion = this.state.credentialVersion ?? 0; this.occupied++; let status: 'delivered' | 'failed' | 'manual' = 'failed'; try {
+        this.store.commit('system', 'notification.admit', 'smtp', s => { const state = this.init(s); state.deliveries = state.deliveries.slice(-19); state.deliveries.push({ kind, time: Date.now(), status: 'queued', revision, credentialVersion }); });
         try {
-            await this.transport(structuredClone(config), recipient, body);
-            status = 'delivered';
+            if (!this.store.storageReliable || this.state.revision !== revision || (this.state.credentialVersion ?? 0) !== credentialVersion || !this.state.applied || this.state.applied.enabled === false) status = 'manual';
+            else {
+                await this.transport(structuredClone(config), recipient, body);
+                status = 'delivered';
+            }
         }
         catch {
             status = 'failed';
         }
-        this.store.commit('system', 'notification.complete', 'smtp', s => { const state = this.init(s); state.deliveries = state.deliveries.slice(-19); state.deliveries.push({ kind, time: Date.now(), status }); });
+        this.store.commit('system', 'notification.complete', 'smtp', s => { const state = this.init(s); state.deliveries = state.deliveries.slice(-19); state.deliveries.push({ kind, time: Date.now(), status, revision, credentialVersion }); });
         return { status };
     }
     finally {

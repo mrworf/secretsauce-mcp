@@ -18,7 +18,7 @@ describe('bounded account recovery', () => {
         expect(f.store.session(l.token)).toBeUndefined();
         expect(invalidated).toEqual([m.id]);
         expect(() => f.store.login('member@example.org', password, totp(m.seed, Date.now() + 30000))).toThrow();
-        const proof = value(r.link), e = p.begin({ ...proof, password });
+        const proof = value(r.link), e = p.begin(proof);
         f.store.state.users[0]!.role = 'Administrator';
         expect(() => p.complete({ ...proof, code: totp(e.seed, Date.now()), saved: true })).toThrow(/issuer/);
         f.store.state.users[0]!.role = 'Owner';
@@ -115,7 +115,8 @@ describe('bounded account recovery', () => {
         recent(f);
         const invalidate = vi.fn();
         f.store.invalidateUser = invalidate;
-        vi.spyOn(f.store.journal, 'finish').mockImplementation(() => { throw Error('synthetic completion outage'); });
+        const finish = f.store.journal.finish.bind(f.store.journal);
+        vi.spyOn(f.store.journal, 'finish').mockImplementation((...args) => { if(args[2]==='identity.factor_reset_issue')throw Error('synthetic completion outage');return finish(...args); });
         expect(() => p.assist(f.session, { id: m.id, purpose: 'factor', channel: 'in_person', verified: true, confirmed: true })).toThrow(/uncertain/);
         expect(f.store.state.users.find(u => u.id === m.id)!.enrolled).toBe(false);
         expect(invalidate).toHaveBeenCalledWith(m.id);

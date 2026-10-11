@@ -15,6 +15,7 @@ export type HumanRole = 'Owner' | 'Administrator' | 'Auditor' | 'Member';
 export interface ConsoleUser {
     authorizationGeneration?: number;
     enrolled?: boolean;
+    assistedFactorPending?: boolean;
     id: string;
     email: string;
     role: HumanRole;
@@ -46,7 +47,7 @@ export interface ConsoleState {
     gatewayAuditIdentity?: string;
     operating?: import("./consoleOperations.js").OperatingState;
     retention?: import("./consoleEvidence.js").RetentionState;
-    v: 1;
+    v: 1 | 2;
     id: string;
     revision: number;
     initialized: boolean;
@@ -132,12 +133,24 @@ export class ConsoleStore {
             if (existsSync(join(directory, 'managed')) && !existsSync(this.file))
                 throw new Error('Managed state missing');
             this.state = existsSync(this.file) ? decrypt<ConsoleState>(readFileSync(this.file, 'utf8'), this.key) : { v: 1, id: randomUUID(), revision: 0, initialized: false, origin: '', name: '', users: [], sessions: [], ...(options.config ? { config: options.config } : {}) };
-            if (this.state.v !== 1 || !Array.isArray(this.state.users) || !Array.isArray(this.state.sessions))
+            if (![1,2].includes(this.state.v) || !Array.isArray(this.state.users) || !Array.isArray(this.state.sessions))
                 throw new Error('Invalid managed state');
             if (this.state.config) { if(this.state.managed?.protection)this.state.config.responseProtection=validateProtection(this.state.managed.protection.applied).effective;hydrateManagedConfig(this.state.config);normalizeManagedOAuthPath(this.state.config,this.directory); }
             this.journal = new ConsoleJournal(join(directory, 'audit.chain'), this.key, options.faultAudit);
             if(recovered)this.journal.append({id:randomSecret(),phase:'recovery',actor:'host',action:'restore.restart_'+recovered,target:'Crash recovery selected coherent '+recovered+' installation; prior sessions and grants remain invalid.',time:Date.now(),revision:this.state.revision});
             this.faultState = options.faultState;
+            // A durable reset intent may outlive a failed pre-rename identity write.
+            // Fence that authority before accepting any new session or MCP grant.
+            const records=this.journal.entries(),rejected=new Set(records.filter(r=>r.phase==='complete'&&r.result==='failed').map(r=>r.id));
+            const intents = records.filter(r=>!rejected.has(r.id) && r.phase==='start' && /^identity\.(password_reset|factor_reset_(issue|reissue)|enrollment_complete)$/.test(r.action) && Number.isSafeInteger(r.details?.authorizationGeneration));
+            for (const intent of intents) {
+                const user=this.state.users.find(u=>u.id===intent.target),generation=intent.details!.authorizationGeneration!;
+                if (!user || generation <= (user.authorizationGeneration??0)) continue;
+                this.commit('system','identity.uncertain_reset_restrict',user.id,s=>{
+                    s.v=2;const u=s.users.find(v=>v.id===user.id)!;u.authorizationGeneration=generation;u.enrolled=false;u.assistedFactorPending=true;u.seed='';u.recoveryHashes=[];u.lastCounter=-1;
+                    s.sessions=s.sessions.filter(v=>v.userId!==u.id);if(s.people)s.people.proofs=s.people.proofs.filter(p=>p.target!==u.id);
+                });
+            }
             if (!existsSync(this.file)) {
                 this.save(this.state);
                 atomicFile(join(directory, 'managed'), '1');
@@ -392,7 +405,7 @@ export function loadManagedConfig(directory: string, keyFile: string): GatewayCo
     if (!existsSync(join(directory, 'managed')))
         throw new Error('Managed marker missing');
     const key=readConsoleKey(keyFile);const state = pendingRecoveryState(directory,key)??decrypt<ConsoleState>(readFileSync(join(directory, 'state.enc'), 'utf8'),key);
-    if (state.v !== 1 || !state.config)
+    if (![1,2].includes(state.v) || !state.config)
         throw new Error('Managed configuration missing');
     const config=hydrateManagedConfig(state.config);
     normalizeManagedOAuthPath(config,directory);

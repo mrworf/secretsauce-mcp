@@ -4,7 +4,7 @@ import { createHmac } from 'node:crypto';
 import { atomicFile } from './consolePersistence.js';
 import { equal, randomSecret } from './consoleCrypto.js';
 export interface ManagementDetails {
-    channel?: string; credential?: string; credentialVersion?: number; identity?: string; grant?: string; grantExpires?: number }
+    authorizationGeneration?: number; channel?: string; credential?: string; credentialVersion?: number; identity?: string; grant?: string; grantExpires?: number }
 export interface OperationRecord {
     details?: ManagementDetails;
     id: string;

@@ -20,4 +20,4 @@ Positive/negative inputs for every changed endpoint. Assert role matrix, valid T
 All scoped behavior passes positive/negative tests; no authority expansion or live-instance changes. Commit implementation, tests, this plan and relevant docs/evidence together. Parent owns manifest; exclude test-results/. Record exact commit in governing index after commit.
 
 ## Status
-Planned; planning gate complete.
+Completed and validated; implementation commit pending. The companion retained this plan and two-slice structure. Supporting persistence work is required by the existing uncertainty/downgrade acceptance contract: format v2 prerequisite, generation-bearing reset intents, restart restriction, compatible config/recovery readers. No other milestone implemented. Final `npm test`: 69 files / 641 tests PASS; build PASS. Actual HTTPS dedicated reset browser: 33 checks PASS; retained people browser: 8 checks PASS. Exact acceptance mapping: evidence/qa/secretsauce-mcp/milestone18/acceptance.md.

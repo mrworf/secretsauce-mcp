@@ -32,7 +32,7 @@ describe('direct people HTTP/MCP boundaries', () => {
             for (const [path, data] of mutations)
                 expect((await f.post(path, data)).status).toBe(role === 'Owner' ? 200 : 403);
             if (role !== 'Owner') {
-                const n = consoleNotifications(f.store);
+                const n = consoleNotifications(f.store); n.transport=async()=>{throw Error('synthetic delivery failure');};
                 const settings = { host: 'smtp.example.org', port: 465, sender: 'console@example.org', username: '', password: '' };
                 const review = randomUUID();
                 f.store.state.notifications = { revision: 0, applied: settings, draft: { base: 0, generation: 1, actor: f.session.userId, settings }, review: { id: review, base: 0, generation: 1, actor: f.session.userId }, deliveries: [] };
@@ -43,12 +43,13 @@ describe('direct people HTTP/MCP boundaries', () => {
                 ][] = [['people/change', { id: target.id, role: 'Member', active: false, confirmed: true }, 'people.change'], ['people/recovery', { id: target.id, purpose: 'factor', channel: 'in_person', verified: true, confirmed: true }, 'people.recovery'], ['people/revoke', { id: target.id, confirmed: true }, 'people.revoke'], ['people/external-change', { id: target.id, active: false, confirmed: true }, 'people.change'], ['notifications/review', {}, 'notifications.apply'], ['notifications/apply', { review, confirmed: true }, 'notifications.apply'], ['notifications/test', { recipient: 'test@example.org', confirmed: true }, 'notifications.test']];
                 for (const [path, data, action] of cells) {
                     f.store.state.sessions[0]!.recent = { action, expires: Date.now() + 300000 };
-                    expect((await f.post(path, data)).status).toBe(403);
+                    expect((await f.post(path, data)).status).toBe(role === 'Administrator' && path === 'people/recovery' ? 200 : 403);
                 }
             }
             const cfgsave = { id: 'baseline', base: manager.state.revision, generation: 0, service: manager.state.services.baseline!.applied };
             expect((await f.post('service/save', cfgsave)).status).toBe(['Owner', 'Administrator'].includes(role) ? 200 : 403);
-            expect((await f.post('service/access', { id: 'baseline', user: target.id, action: 'grant', confirmed: true })).status).toBe(['Owner', 'Administrator'].includes(role) ? 200 : 403);
+            // Administrator successfully restricted this target through MFA reset above.
+            expect((await f.post('service/access', { id: 'baseline', user: target.id, action: 'grant', confirmed: true })).status).toBe(role === 'Owner' ? 200 : role === 'Administrator' ? 400 : 403);
             const identity = consolePeople(f.store).state.external[0]?.id;
             if (role === 'Owner')
                 expect((await f.post('service/access', { id: 'baseline', user: identity, action: 'grant', confirmed: true })).status).toBe(200);

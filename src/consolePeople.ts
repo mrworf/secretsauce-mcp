@@ -15,6 +15,8 @@ export interface IdentityProof {
     attempts: number;
     issuer?: string;
     version?: 2;
+    assisted?: boolean;
+    delivery?: 'manual' | 'queued' | 'delivered' | 'failed' | 'capacity';
     targetGeneration?: number;
     issuerGeneration?: number;
     issuerRole?: HumanRole;
@@ -53,12 +55,18 @@ export class ConsolePeople {
     private owner(session: ConsoleSession, action?: string, now = Date.now()) { const actor = this.store.authorize(session, 'identity', now); this.store.requireSensitive(session); if (action)
         this.store.requireRecent(session, action, now); return actor; }
     private mutate(actor: string, action: string, target: string, change: (s: ConsoleState) => void, invalidate = false) { const revision = this.store.state.revision; try {
-        return this.store.commit(actor, action, target, s => { change(s); if(invalidate){const u=s.users.find(u=>u.id===target)??s.people?.external.find(e=>e.id===target);if(u)u.authorizationGeneration=(u.authorizationGeneration??0)+1;} });
+        return this.store.commit(actor, action, target, s => { change(s); if(invalidate){const u=s.users.find(u=>u.id===target)??s.people?.external.find(e=>e.id===target);if(u)u.authorizationGeneration=(u.authorizationGeneration??0)+1;} }, invalidate ? {authorizationGeneration:(this.store.state.users.find(u=>u.id===target)?.authorizationGeneration??0)+1} : undefined);
     }
     finally {
         if (invalidate && (this.store.state.revision !== revision || !this.store.storageReliable))
             this.store.invalidateUser(target);
     } }
+    private resetFormat(actor: string) {
+        if(this.store.state.v===1)this.store.commit(actor,'identity.reset_format','instance',s=>{s.v=2;});
+    }
+    private factorPending(user: ConsoleUser) {
+        return user.assistedFactorPending === true || this.state.proofs.some(p=>p.target===user.id && p.issuer && !p.assisted && ['password','factor'].includes(p.purpose));
+    }
     private resetActor(session: ConsoleSession, target: ConsoleUser | undefined, now: number) {
         const actor = this.store.requireSensitive(session);
         if (!['Owner', 'Administrator'].includes(actor.role) || (actor.role === 'Administrator' && target?.role === 'Owner')) throw new Error('Forbidden.');
@@ -67,9 +75,9 @@ export class ConsolePeople {
         return actor;
     }
     private newProof(purpose: ProofPurpose, target: string, now: number, issuer?: string) { const value = randomSecret(); return { value, proof: { hash: digest(value), purpose, target, instance: this.store.state.id, generation: this.store.state.securityGeneration ?? 0, expires: now + (purpose === 'invite' ? 259200000 : 1800000), attempts: 0, version: 2, targetGeneration: this.store.state.users.find(u => u.id === target)?.authorizationGeneration ?? 0, ...(issuer ? { issuer, issuerGeneration: this.store.state.users.find(u => u.id === issuer)?.authorizationGeneration ?? 0, issuerRole: this.store.state.users.find(u => u.id === issuer)!.role } : {}) } satisfies IdentityProof }; }
-    private install(s: ConsoleState, p: IdentityProof) { const state = this.init(s); state.proofs = state.proofs.filter(v => v.target !== p.target); state.proofs.push(p); }
+    private install(s: ConsoleState, p: IdentityProof) { if(p.purpose==='password'||p.assisted)s.v=2; const state = this.init(s); state.proofs = state.proofs.filter(v => v.target !== p.target); state.proofs.push(p); }
     private link(value: string, p: IdentityProof) { return { link: this.store.state.origin + '/console#' + new URLSearchParams({ purpose: p.purpose, target: p.target, proof: value }).toString(), expires: p.expires, delivery: 'manual', status: 'Pending enrollment' }; }
-    list(session: ConsoleSession) { const actor = this.store.authorize(session, 'configuration'); return { writable: actor.role === 'Owner' && !session.restricted && !this.store.journal.degraded && !this.store.externalAudit?.degraded, users: this.store.state.users.map(u => ({ id: u.id, email: u.email, role: u.role, active: u.active, enrolled: u.enrolled !== false, status: u.enrolled === false ? (this.state.proofs.some(p => p.target === u.id && p.purpose === 'invite') ? 'Invited' : 'Recovery required') : u.active ? 'Active' : 'Disabled', canResetPassword: !session.restricted && !this.store.journal.degraded && ['Owner','Administrator'].includes(actor.role) && u.id !== actor.id && (actor.role === 'Owner' || u.role !== 'Owner') && u.active && u.enrolled !== false, invitation: this.state.proofs.find(p => p.target === u.id)?.expires })), external: this.state.external.map(e => ({ ...e })), recommendation: 'Keep a second enrolled Owner for recovery continuity.' }; }
+    list(session: ConsoleSession) { const actor = this.store.authorize(session, 'configuration'); return { writable: actor.role === 'Owner' && !session.restricted && !this.store.journal.degraded && !this.store.externalAudit?.degraded, users: this.store.state.users.map(u => ({ id: u.id, email: u.email, role: u.role, active: u.active, enrolled: u.enrolled !== false, status: u.enrolled === false ? (this.state.proofs.some(p => p.target === u.id && p.purpose === 'invite') ? 'Invited' : 'Recovery required') : u.active ? 'Active' : 'Disabled', canResetFactor: !session.restricted && !this.store.journal.degraded && !this.store.externalAudit?.degraded && this.store.storageReliable && ['Owner','Administrator'].includes(actor.role) && u.id !== actor.id && (actor.role === 'Owner' || u.role !== 'Owner') && u.active && (u.enrolled !== false || this.factorPending(u)), canResetPassword: !session.restricted && !this.store.journal.degraded && !this.store.externalAudit?.degraded && this.store.storageReliable && ['Owner','Administrator'].includes(actor.role) && u.id !== actor.id && (actor.role === 'Owner' || u.role !== 'Owner') && u.active && u.enrolled !== false, resetDelivery: this.state.proofs.find(p=>p.target===u.id && p.assisted)?.delivery, pendingReset: this.state.proofs.find(p=>p.target===u.id && p.assisted)?.purpose, invitation: this.state.proofs.find(p => p.target === u.id)?.expires })), external: this.state.external.map(e => ({ ...e })), recommendation: 'Keep a second enrolled Owner for recovery continuity.' }; }
     invite(session: ConsoleSession, input: unknown, now = Date.now()) { const actor = this.owner(session); const data = this.parse(z.object({ email: emailSchema, role: roles, confirmed: z.literal(true) }).strict(), input); if (this.store.state.users.some(u => u.email === data.email))
         throw new PeopleError('An account already uses this contact. Reissue its pending invitation or inspect account status.'); if (this.store.state.users.length >= 1000)
         throw new PeopleError('Account capacity reached.'); const target = randomUUID(), p = this.newProof('invite', target, now, actor.id); const operation = this.mutate(actor.id, 'identity.invite', target, s => { s.users.push({ id: target, email: data.email, role: data.role, active: false, enrolled: false, password: '', seed: '', lastCounter: -1, recoveryHashes: [], attempts: 0, blockedUntil: 0 }); this.install(s, p.proof); }); const result = { operation, id: target, ...this.link(p.value, p.proof) }; void consoleNotifications(this.store).send('invitation', data.email, result.link).catch(() => { }); return result; }
@@ -80,17 +88,21 @@ export class ConsolePeople {
     private proof(input: unknown, now: number) { const d = this.parse(z.object({ purpose: z.enum(['invite', 'password', 'factor', 'host']), target: id, proof: z.string().min(20).max(128) }).strict(), input); const p = this.state.proofs.find(p => p.target === d.target && p.purpose === d.purpose); if (p && !equal(p.hash, digest(d.proof)) && p.attempts < 10)
         this.mutate('capability', 'identity.proof_rejected', p.target, s => { this.init(s).proofs.find(v => v.target === p.target && v.purpose === p.purpose)!.attempts++; }); if (!p || p.instance !== this.store.state.id || p.generation !== (this.store.state.securityGeneration ?? 0) || p.expires <= now || p.attempts >= 10 || !equal(p.hash, digest(d.proof)))
         throw new PeopleError('Link invalid or expired. Ask the authorized issuer to reissue it.'); const user = this.store.state.users.find(u => u.id === p.target); if (!user || (p.purpose !== 'invite' && !user.active))
-        throw new PeopleError('Link invalid or expired.'); if (p.purpose === 'password' && (p.version !== 2 || p.targetGeneration !== (user.authorizationGeneration ?? 0) || user.enrolled === false)) throw new PeopleError('Link invalid or expired. Ask the authorized issuer to reissue it.');
-        if (p.issuer && !this.store.state.users.some(u => u.id === p.issuer && u.active && u.enrolled !== false && (p.version === 2 ? u.role === p.issuerRole && (u.authorizationGeneration ?? 0) === p.issuerGeneration && (u.role === 'Owner' || (u.role === 'Administrator' && user.role !== 'Owner' && p.purpose === 'password')) : u.role === 'Owner')))
+        throw new PeopleError('Link invalid or expired.'); if ((p.purpose === 'password' || (p.purpose === 'factor' && p.issuer)) && (p.version !== 2 || p.targetGeneration !== (user.authorizationGeneration ?? 0) || (p.purpose === 'password' ? user.enrolled === false : !p.assisted || !user.assistedFactorPending || user.enrolled !== false))) throw new PeopleError('Link invalid or expired. Ask the authorized issuer to reissue it.');
+        if (p.issuer && !this.store.state.users.some(u => u.id === p.issuer && u.active && u.enrolled !== false && (p.version === 2 ? u.role === p.issuerRole && (u.authorizationGeneration ?? 0) === p.issuerGeneration && (u.role === 'Owner' || (u.role === 'Administrator' && user.role !== 'Owner' && ['password','factor'].includes(p.purpose))) : u.role === 'Owner')))
         throw new PeopleError('Recovery issuer no longer authorized. Ask a current Owner or host operator.'); return { p, user, d }; }
-    preview(input: unknown, now = Date.now()) { const { p, user } = this.proof(input, now); return { email: user.email, role: user.role, purpose: p.purpose, expires: p.expires, status: 'Restricted enrollment only' }; }
-    begin(input: unknown, now = Date.now()) { const data = this.parse(z.object({ purpose: z.enum(['invite', 'factor', 'host']), target: id, proof: z.string().min(20).max(128), password: z.string().max(4096) }).strict(), input); const { p, user } = this.proof({ purpose: data.purpose, target: data.target, proof: data.proof }, now); if (p.begun)
-        throw new PeopleError('Enrollment already started. Reissue if the fresh material was lost.'); validatePassword(data.password); const seed = newSeed(), recovery = Array.from({ length: 10 }, () => randomSecret()); this.mutate(p.issuer ?? 'capability', 'identity.enrollment_begin', user.id, s => { const target = this.init(s).proofs.find(v => v.hash === p.hash)!; target.seed = seed; target.password = passwordHash(data.password); target.recoveryHashes = recovery.map(digest); target.begun = true; }); return { seed, recoveryCodes: recovery, expires: p.expires }; }
-    complete(input: unknown, now = Date.now()) { const data = this.parse(z.object({ purpose: z.enum(['invite', 'factor', 'host']), target: id, proof: z.string().min(20).max(128), code: z.string().regex(/^\d{6}$/), saved: z.literal(true) }).strict(), input); const { p, user } = this.proof({ purpose: data.purpose, target: data.target, proof: data.proof }, now); if (!p.begun || !p.seed || !p.password || !p.recoveryHashes)
+    preview(input: unknown, now = Date.now()) { const { p, user } = this.proof(input, now); return { email: user.email, role: user.role, purpose: p.purpose, expires: p.expires, status: p.purpose === 'password' ? 'Password reset; existing factor required' : 'Restricted enrollment only', requiresPassword: !p.assisted || p.purpose === 'password' }; }
+    confirmEnrollmentAuthority(input: unknown) {
+        this.proof(input, Date.now());
+        if(this.store.mutationsBlocked() || this.store.journal.degraded || this.store.externalAudit?.degraded || !this.store.storageReliable || !this.store.materialAvailable()) throw new PeopleError('Recovery unavailable. Repair durable storage before continuing.');
+    }
+    begin(input: unknown, now = Date.now()) { const data = this.parse(z.object({ purpose: z.enum(['invite', 'factor', 'host']), target: id, proof: z.string().min(20).max(128), password: z.string().max(4096).optional() }).strict(), input); const { p, user } = this.proof({ purpose: data.purpose, target: data.target, proof: data.proof }, now); if (p.begun)
+        throw new PeopleError('Enrollment already started. Reissue if the fresh material was lost.'); if (p.assisted) { if (data.password !== undefined) throw new PeopleError('Authenticator reset does not change the password.'); } else validatePassword(data.password); const seed = newSeed(), recovery = Array.from({ length: 10 }, () => randomSecret()); this.mutate(p.issuer ?? 'capability', 'identity.enrollment_begin', user.id, s => { this.proof({purpose:data.purpose,target:data.target,proof:data.proof},now); const target = this.init(s).proofs.find(v => v.hash === p.hash)!; target.seed = seed; if (!p.assisted) target.password = passwordHash(data.password!); target.recoveryHashes = recovery.map(digest); target.begun = true; }); return { seed, recoveryCodes: recovery, expires: p.expires }; }
+    complete(input: unknown, now = Date.now()) { const data = this.parse(z.object({ purpose: z.enum(['invite', 'factor', 'host']), target: id, proof: z.string().min(20).max(128), code: z.string().regex(/^\d{6}$/), saved: z.literal(true) }).strict(), input); const { p, user } = this.proof({ purpose: data.purpose, target: data.target, proof: data.proof }, now); if (!p.begun || !p.seed || (!p.assisted && !p.password) || !p.recoveryHashes)
         throw new PeopleError('Begin fresh enrollment first.'); if (!equal(totp(p.seed, now), data.code)) {
         this.mutate('capability', 'identity.enrollment_rejected', user.id, s => { this.init(s).proofs.find(v => v.hash === p.hash)!.attempts++; });
         throw new PeopleError('Authenticator code was not accepted.');
-    } return { operation: this.mutate(p.issuer ?? 'capability', 'identity.enrollment_complete', user.id, s => { const u = s.users.find(v => v.id === user.id)!; u.password = p.password!; u.seed = p.seed!; u.recoveryHashes = p.recoveryHashes!; u.lastCounter = Math.floor(now / 30000); u.active = true; u.enrolled = true; u.attempts = 0; u.blockedUntil = 0; s.sessions = s.sessions.filter(v => v.userId !== u.id); this.init(s).proofs = this.init(s).proofs.filter(v => v.target !== u.id); }, true), status: 'Enrollment complete. Sign in with a fresh authenticator code.' }; }
+    } return { operation: this.mutate(p.issuer ?? 'capability', 'identity.enrollment_complete', user.id, s => { this.proof({purpose:data.purpose,target:data.target,proof:data.proof},now); const u = s.users.find(v => v.id === user.id)!; if (!p.assisted) u.password = p.password!; delete u.assistedFactorPending; u.seed = p.seed!; u.recoveryHashes = p.recoveryHashes!; u.lastCounter = Math.floor(now / 30000); u.active = true; u.enrolled = true; u.attempts = 0; u.blockedUntil = 0; s.sessions = s.sessions.filter(v => v.userId !== u.id); this.init(s).proofs = this.init(s).proofs.filter(v => v.target !== u.id); }, true), status: 'Enrollment complete. Sign in with a fresh authenticator code.' }; }
     change(session: ConsoleSession, input: unknown, now = Date.now()) { const data = this.parse(z.object({ id, role: roles, active: z.boolean(), confirmed: z.literal(true) }).strict(), input); const actor = this.owner(session, 'people.change', now), u = this.store.state.users.find(u => u.id === data.id); if (!u)
         throw new PeopleError('Account unavailable.'); if (data.active && u.enrolled === false)
         throw new PeopleError('Fresh enrollment is required before activation.'); this.store.assertUserChange(u.id, data.role, data.active); return { operation: this.mutate(actor.id, 'identity.change', u.id, s => { const target = s.users.find(v => v.id === u.id)!; target.role = data.role; target.active = data.active; s.sessions = s.sessions.filter(v => v.userId !== u.id); this.init(s).proofs = this.init(s).proofs.filter(v => v.target !== u.id); }, true), status: 'Role and access changed immediately; sessions and client grants revoked.' }; }
@@ -107,6 +119,7 @@ export class ConsolePeople {
         // No SMTP means an Owner must verify the person and deliberately issue a manual link.
         if (user && delivery) {
             try {
+                this.resetFormat('contact');
                 const p = this.newProof('password', user.id, Date.now());
                 this.mutate('contact', 'identity.password_reset_issue', user.id, s => this.install(s, p.proof));
                 void delivery(user.email, this.link(p.value, p.proof).link).catch(() => { });
@@ -119,6 +132,7 @@ export class ConsolePeople {
         const data = this.parse(z.object({ purpose: z.literal('password'), target: id, proof: z.string().min(20).max(128), password: z.string().max(4096), kind: z.enum(['totp', 'recovery']), factor: z.string().min(1).max(128) }).strict(), input);
         const { p, user } = this.proof({ purpose: data.purpose, target: data.target, proof: data.proof }, now);
         validatePassword(data.password);
+        this.resetFormat(p.issuer ?? 'contact');
         if (user.blockedUntil > now) throw new PeopleError('Factor verification was not accepted. Wait before trying again.');
         let counter = -1;
         const recoveryIndex = data.kind === 'recovery' ? user.recoveryHashes.findIndex(h => equal(h, digest(data.factor))) : -1;
@@ -145,15 +159,33 @@ export class ConsolePeople {
             this.init(s).proofs = this.init(s).proofs.filter(v => v.target !== user.id);
         }, true), status: 'Password changed. MFA remains required. Sign in again; all prior sessions and client grants revoked.' };
     }
-    assist(session: ConsoleSession, input: unknown, now = Date.now()) { const data = this.parse(z.object({ id, purpose: z.enum(['password', 'factor']), channel: z.enum(['in_person', 'known_phone', 'established_contact']), verified: z.literal(true), confirmed: z.literal(true) }).strict(), input); const user = this.store.state.users.find(u => u.id === data.id); const actor = data.purpose === 'password' ? this.resetActor(session, user, now) : this.owner(session, 'people.recovery', now); if (data.id === actor.id)
-        throw new PeopleError('Use your password and existing factor or a recovery code for your own account; host recovery is available if locked out.'); if (!user || !user.active || user.password === '' || (data.purpose === 'password' && user.enrolled === false))
-        throw new PeopleError('Recovery target unavailable.'); const p = this.newProof(data.purpose, user.id, now, actor.id); const revision = this.store.state.revision; let operation: string; try {
-        operation = this.store.commit(actor.id, 'identity.' + data.purpose + '_reset_' + (this.state.proofs.some(v=>v.target===user.id)?'reissue':'issue'), user.id, s => { const u = s.users.find(v => v.id === user.id)!; if (data.purpose === 'factor') { u.authorizationGeneration=(u.authorizationGeneration??0)+1; u.enrolled = false; s.sessions = s.sessions.filter(v => v.userId !== user.id); } this.install(s, p.proof); }, { channel: data.channel });
+    assist(session: ConsoleSession, input: unknown, now = Date.now()) {
+        const actor = this.store.requireSensitive(session);
+        try { return this.assistAuthorized(session,input,now); }
+        catch (error) {
+            // Record only a validated identifier and bounded operation; never echo untrusted fields.
+            const d = z.object({id, purpose:z.enum(['password','factor'])}).safeParse(input);
+            if (d.success && this.store.storageReliable && !this.store.journal.degraded) {
+                try { this.store.commit(actor.id,'identity.'+d.data.purpose+'_reset_denied',d.data.id,()=>{}); } catch { /* original failure remains authoritative */ }
+            }
+            throw error;
+        }
+    }
+    cancelReset(session: ConsoleSession, input: unknown, now = Date.now()) {
+        const data = this.parse(z.object({id,purpose:z.enum(['password','factor']),confirmed:z.literal(true)}).strict(),input);
+        const user=this.store.state.users.find(u=>u.id===data.id),actor=this.resetActor(session,user,now);
+        if (!user || !user.active || !this.state.proofs.some(p=>p.target===user.id && p.purpose===data.purpose && p.assisted)) throw new PeopleError('No pending reset.');
+        return {operation:this.mutate(actor.id,'identity.'+data.purpose+'_reset_cancel',user.id,s=>{this.init(s).proofs=this.init(s).proofs.filter(p=>p.target!==user.id);}),status:data.purpose==='factor'?'Link cancelled. Account remains restricted; reissue to resume.':'Password reset link cancelled. Existing access is unchanged.'};
+    }
+    private assistAuthorized(session: ConsoleSession, input: unknown, now: number) { const data = this.parse(z.object({ id, purpose: z.enum(['password', 'factor']), channel: z.enum(['in_person', 'known_phone', 'established_contact']), verified: z.literal(true), confirmed: z.literal(true) }).strict(), input); const user = this.store.state.users.find(u => u.id === data.id); const actor = this.resetActor(session, user, now); if (data.id === actor.id)
+        throw new PeopleError('Use your password and existing factor or a recovery code for your own account; host recovery is available if locked out.'); if (!user || !user.active || user.password === '' || (user.enrolled === false && (data.purpose === 'password' || !this.factorPending(user))))
+        throw new PeopleError('Recovery target unavailable.'); this.resetFormat(actor.id); const p = this.newProof(data.purpose, user.id, now, actor.id); (p.proof as IdentityProof).assisted = true; (p.proof as IdentityProof).delivery = consoleNotifications(this.store).state.applied ? 'queued' : 'manual'; const revision = this.store.state.revision; let operation: string; try {
+        operation = this.store.commit(actor.id, 'identity.' + data.purpose + '_reset_' + (this.state.proofs.some(v=>v.target===user.id)?'reissue':'issue'), user.id, s => { const u = s.users.find(v => v.id === user.id)!; if (data.purpose === 'factor') { if (u.role === 'Owner' && !s.users.some(v=>v.id!==u.id && v.active && v.enrolled!==false && v.role==='Owner')) throw new PeopleError('The last active Owner must remain enrolled. Use host recovery.'); u.authorizationGeneration=(u.authorizationGeneration??0)+1; p.proof.targetGeneration=u.authorizationGeneration; u.assistedFactorPending = true; u.seed=''; u.recoveryHashes=[]; u.lastCounter=-1; u.enrolled = false; s.sessions = s.sessions.filter(v => v.userId !== user.id); } this.install(s, p.proof); }, { channel: data.channel, ...(data.purpose==='factor'?{authorizationGeneration:(user.authorizationGeneration??0)+1}:{}) });
     }
     finally {
         if (data.purpose === 'factor' && (this.store.state.revision !== revision || !this.store.storageReliable))
             this.store.invalidateUser(user.id);
-    } void consoleNotifications(this.store).send(data.purpose, user.email, this.link(p.value,p.proof).link).catch(() => {}); return { operation, ...this.link(p.value, p.proof), status: data.purpose === 'factor' ? 'Restricted until fresh password and authenticator enrollment.' : 'Password reset authorized; existing MFA remains required.' }; }
+    } void consoleNotifications(this.store).send(data.purpose === 'factor' ? 'security' : 'password', user.email, this.link(p.value,p.proof).link).then(result => { if(this.state.proofs.some(v=>v.hash===p.proof.hash))this.store.commit(actor.id,'identity.'+data.purpose+'_notification_'+result.status,user.id,s=>{const current=this.init(s).proofs.find(v=>v.hash===p.proof.hash);if(current)current.delivery=result.status as NonNullable<IdentityProof['delivery']>;}); }).catch(() => {}); return { operation, ...this.link(p.value, p.proof), status: data.purpose === 'factor' ? 'Restricted until fresh authenticator enrollment. Password is unchanged.' : 'Password reset authorized; existing MFA remains required.' }; }
     replaceFactor(session: ConsoleSession | undefined, input: unknown, now = Date.now()) { let value = input; let user: ConsoleUser | undefined; if (session)
         user = this.store.requireSensitive(session);
     else {

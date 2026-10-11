@@ -142,7 +142,7 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
         if(path === '/console/api/reset/request'){reply(200,await consolePeople(store).requestPassword(data));return;}
         if(path === '/console/api/link/password'){reply(200,consolePeople(store).resetPassword(data));return;}
         if(path === '/console/api/link/preview'){reply(200,consolePeople(store).preview(data));return;}
-        if(path === '/console/api/link/begin'){const r=consolePeople(store).begin(data);reply(200,{...r,qr:await QRCode.toDataURL('otpauth://totp/SecretSauce?secret='+r.seed+'&issuer=SecretSauce')});return;}
+        if(path === '/console/api/link/begin'){const r=consolePeople(store).begin(data);const qr=await QRCode.toDataURL('otpauth://totp/SecretSauce?secret='+r.seed+'&issuer=SecretSauce');consolePeople(store).confirmEnrollmentAuthority({purpose:data.purpose,target:data.target,proof:data.proof});reply(200,{...r,qr});return;}
         if(path === '/console/api/link/complete'){reply(200,consolePeople(store).complete(data));return;}
         if (path === '/console/api/login') {
             const result = store.login(data.email, data.password, data.code);
@@ -188,7 +188,8 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
         if(path==='/console/api/notifications/apply'){reply(200,consoleNotifications(store).apply(session,data));return;}
         if(path==='/console/api/notifications/test'){reply(200,await consoleNotifications(store).test(session,data));return;}
         if(path==='/console/api/people/external-change'){reply(200,consolePeople(store).externalChange(session,data));return;}
-        if(path==='/console/api/people/recovery'){reply(200,consolePeople(store).assist(session,data));return;}
+        if(path==='/console/api/people/recovery-cancel'){reply(200,consolePeople(store).cancelReset(session,data));return;}
+        if(path==='/console/api/people/recovery'){consolePeople(store).attempt(source,data.id,'assisted-'+(data.purpose==='factor'?'factor':'password'));reply(200,consolePeople(store).assist(session,data));return;}
         if(path==='/console/api/factor/replace'){consolePeople(store).attempt(source,session.userId,'factor');reply(200,consolePeople(store).replaceFactor(session,data));return;}
         if(path==='/console/api/people/invite'){reply(200,consolePeople(store).invite(session,data));return;}
         if(path==='/console/api/people/invitation'){reply(200,consolePeople(store).invitation(session,data));return;}

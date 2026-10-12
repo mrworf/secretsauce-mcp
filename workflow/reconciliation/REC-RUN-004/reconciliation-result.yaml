@@ -1,0 +1,1123 @@
+"schema_version": 1
+"reconciliation_id": "REC-RUN-004"
+"product_id": "secretsauce-mcp"
+"status": "PARTIALLY_RESOLVED"
+"transaction":
+  "parent_commit": "532b2dd8c4631dccd9463194d3daa36d12722732"
+  "repository_commit": null
+  "pre_existing_dirty_paths":
+  - "test-results/"
+  "concurrent_owned_elsewhere":
+  - "workflow/definition/state.yaml"
+  "owned_paths":
+  - "workflow/reconciliation/REC-RUN-004"
+"source":
+  "invocation": "product-definition-orchestrator"
+  "originating_stage": "product-owner-feedback"
+  "triggering_findings":
+  - "PO-FB-015"
+  - "PO-FB-016"
+  - "PO-FB-017"
+  - "PO-FB-018"
+  - "PO-FB-019"
+  - "PO-FB-020"
+  - "PO-FB-021"
+  - "PO-FB-022"
+  - "PO-FB-023"
+  - "PO-FB-024"
+  - "PO-FB-025"
+  - "PO-FB-026"
+  - "PO-FB-027"
+  - "PO-FB-028"
+  - "PO-FB-029"
+  - "PO-FB-030"
+  - "PO-FB-031"
+  - "PO-FB-032"
+  - "PO-FB-033"
+  - "PO-FB-034"
+  - "PO-FB-035"
+  - "PO-FB-036"
+  - "PO-FB-037"
+  - "PO-FB-038"
+  - "PO-FB-039"
+  - "PO-FB-040"
+  - "PO-FB-041"
+  "affected_requirements":
+  - "AUTHZ-02"
+  - "AUTHZ-03"
+  - "IDENT-02"
+  - "IDENT-03"
+  - "IDENT-04"
+  - "IDENT-05"
+  - "CONFIG-03"
+  - "UX-02"
+  - "UX-03"
+  - "UX-04"
+  - "BACKUP-02"
+  - "OPS-03"
+  "artifact_revisions":
+  - "artifact": "workflow/feedback/PO-FEEDBACK-2026-10-11-002/feedback.yaml"
+    "revision": "sha256:515a53d2c56f256708cef2fce9add362aa20f2fbcf1f6d34b4ff1a1dfdb9d53b"
+  - "artifact": "workflow/definition/definition-package.yaml"
+    "revision": "sha256:f60ab3efcfca9d95991c023058ee81e61838121275ec482b549fed55a87618f9"
+  - "artifact": "docs/web-console-prd.md"
+    "revision": "sha256:bc908afcb8c40184dfcccdf296672bc559f5499236ed37f351a82f34ad0e9843"
+  - "artifact": "product/ux/01-information-architecture.md"
+    "revision": "sha256:2f7bc646c1f518e424378a4b47df945d5b7eb8c72f1c2aef7f07879929a40ddf"
+  - "artifact": "product/ux/02-interaction-patterns.md"
+    "revision": "sha256:0346e83574043bcac2927c197c5639624d6d405961e9226e4a5f15b02908f331"
+  - "artifact": "product/security/web-console-security-contract.md"
+    "revision": "sha256:27df73fc50b4ef71e6d4434db62f09da7e018acc13dfa5a305c4d0da0654a94d"
+  - "artifact": "product/architecture/web-console-state-contract.md"
+    "revision": "sha256:c685c7fc9539f878986ccd906878808395fb13ae8ae2261fad9fd667107cbc80"
+  "product_owner_feedback":
+  - "feedback_id": "PO-FEEDBACK-2026-10-11-002"
+    "path": "workflow/feedback/PO-FEEDBACK-2026-10-11-002/feedback.yaml"
+    "schema_version": 1
+    "status": "CONFIRMED"
+    "transaction":
+      "parent_commit": "4656bc07f4fdc292de89d960f8c64216e8a02f60"
+      "repository_commit": "ed4211c661e6ba378ef490654efad8340194f795"
+      "pre_existing_dirty_paths":
+      - "test-results/"
+      "owned_paths":
+      - "workflow/feedback/PO-FEEDBACK-2026-10-11-002"
+    "source":
+      "type": "product_owner"
+      "captured_from": "prompt"
+      "captured_at": "2026-10-12T03:32:55.358576+00:00"
+      "references":
+      - "workflow/feedback/PO-FEEDBACK-2026-10-11-001/feedback.yaml"
+      - "workflow/feedback/PO-FEEDBACK-2026-10-11-002/research.md"
+      "original_prompt": "using $product-owner-debrief process the following feedback:\n- The language used\
+        \ in the product is too convoluted or complex to understand in many cases\n- The UX should use more\
+        \ of the horizontal screen realestate\n- Adding a service has visual glitches, a list of items are\
+        \ drawn over eachother\n- Mandatory fields lack visual indicator (such as a red asterisk) that they\
+        \ must be provided\n- INput fields use labels, but short description underneath would help the understanding\n\
+        - People & Access view, the list of users should be a single row per user, clicking should bring up\
+        \ account information for that user where the admin can edit the properties, change roles, etc. it\
+        \ should also show creation date and last login. Draw inspirtation from other SaaS products\n- Response\
+        \ protection is cool sounding, but for the uninitiated, it doesn't make sense, response to what? (See\
+        \ first bullet)\n- SMTP settings seem incomplete, why have a dropdown for encryption if I cannot disable\
+        \ it\n- SMTP settings show settings as undefined, perhaps not show it at all, instead prefill the fields\
+        \ with current settings (except password, since that's a no-no). This is generally a decent approach\
+        \ to avoid have a show option and an edit option, again, research best practices.\n- Setting backup\
+        \ settings keeps talking about draft and nothing seems to save\n- Applied diagnostics in the health\
+        \ section shows a static value, the edit seems to show current. Again, inconsistent and far from best\
+        \ practices\n\nYou need to research best practices and common design patterns for settings and viewing\
+        \ vs edit, because it's very common that edit is there to show current values, cutting down on unnecessary\
+        \ extra steps where it makes sense."
+      "clarifications":
+      - "original": "run $product-definition-orchestrator ... 1) Yes and 2) yes, support unencrypted"
+        "resolves":
+        - "PO-UNRESOLVED-002"
+        - "PO-UNRESOLVED-003"
+        "meaning": "Expand the named Administrator role to manage account properties and roles; support disabling\
+          \ SMTP encryption. Detailed safeguards are delegated to Product Definition."
+  "inspected_revision": "532b2dd8c4631dccd9463194d3daa36d12722732"
+  "implementation_baseline": "bbbd9e329ad6b9ec3c4bec692c81b7d7d99db49d"
+  "runtime": "Not attempted; live local instance untouched"
+  "concurrent_resolution_note": "Security and architecture amendments produced concurrently after the inspected\
+    \ baseline are not adopted in this partial transaction; a subsequent reconciliation consumes their committed\
+    \ authority."
+"findings":
+  "resolved":
+  - "REC-015"
+  - "REC-017"
+  - "REC-018"
+  "unresolved":
+  - "REC-008"
+  - "REC-009"
+  - "REC-010"
+  - "REC-011"
+  - "REC-012"
+  - "REC-013"
+  - "REC-014"
+  - "REC-016"
+"feedback_dispositions":
+- "feedback_id": "PO-FEEDBACK-2026-10-11-002"
+  "item_id": "PO-FB-015"
+  "classification": "OBSERVATION"
+  "confirmation": "CONFIRMED"
+  "product_intent_authority": "evidence"
+  "original": "The language used in the product is too convoluted or complex to understand in many cases"
+  "normalized": "Much of the product language is difficult to understand."
+  "disposition": "EVIDENCE_CORRELATED"
+  "source_findings":
+  - "REC-008"
+  "source_changes":
+  - "REC-CHANGE-008"
+  "remediation": []
+  "decisions_required":
+  - "REC-DEC-006"
+  "affected_artifacts": &id001
+  - "product/ux/01-information-architecture.md"
+  - "product/ux/04-visual-system.md"
+  - "product/ux/03-responsive-and-platform.md"
+  "rationale": "Current intent is preserved. Resolve clear purpose-based terms and responsive use of available\
+    \ space within existing navigation and safety scope. Specific terminology/layout remains non-authoritative\
+    \ pending design. Empty remediation/decision links mean this is advisory, already aligned, evidence-limited,\
+    \ or unresolved design rather than implementation-ready work."
+  "scope":
+  - "product-language"
+  "tags": []
+  "suggestions": []
+  "ambiguity": []
+- "feedback_id": "PO-FEEDBACK-2026-10-11-002"
+  "item_id": "PO-FB-016"
+  "classification": "PREFERENCE"
+  "confirmation": "CONFIRMED"
+  "product_intent_authority": "advisory"
+  "original": "The language used in the product is too convoluted or complex to understand in many cases"
+  "normalized": "Favor simpler, easier-to-understand product language."
+  "disposition": "ADVISORY_CONSIDERED"
+  "source_findings":
+  - "REC-008"
+  "source_changes":
+  - "REC-CHANGE-008"
+  "remediation": []
+  "decisions_required":
+  - "REC-DEC-006"
+  "affected_artifacts": *id001
+  "rationale": "Current intent is preserved. Resolve clear purpose-based terms and responsive use of available\
+    \ space within existing navigation and safety scope. Specific terminology/layout remains non-authoritative\
+    \ pending design. Empty remediation/decision links mean this is advisory, already aligned, evidence-limited,\
+    \ or unresolved design rather than implementation-ready work."
+  "scope":
+  - "product-language"
+  "tags": []
+  "suggestions": []
+  "ambiguity": []
+  "clarifies":
+  - "PO-FB-011"
+- "feedback_id": "PO-FEEDBACK-2026-10-11-002"
+  "item_id": "PO-FB-017"
+  "classification": "PREFERENCE"
+  "confirmation": "CONFIRMED"
+  "product_intent_authority": "advisory"
+  "original": "The UX should use more of the horizontal screen realestate"
+  "normalized": "Make greater use of available horizontal screen space."
+  "disposition": "ADVISORY_CONSIDERED"
+  "source_findings":
+  - "REC-008"
+  "source_changes":
+  - "REC-CHANGE-008"
+  "remediation": []
+  "decisions_required":
+  - "REC-DEC-006"
+  "affected_artifacts": *id001
+  "rationale": "Current intent is preserved. Resolve clear purpose-based terms and responsive use of available\
+    \ space within existing navigation and safety scope. Specific terminology/layout remains non-authoritative\
+    \ pending design. Empty remediation/decision links mean this is advisory, already aligned, evidence-limited,\
+    \ or unresolved design rather than implementation-ready work."
+  "scope":
+  - "layout"
+  "tags": []
+  "suggestions": []
+  "ambiguity": []
+- "feedback_id": "PO-FEEDBACK-2026-10-11-002"
+  "item_id": "PO-FB-018"
+  "classification": "OBSERVATION"
+  "confirmation": "CONFIRMED"
+  "product_intent_authority": "evidence"
+  "original": "Adding a service has visual glitches, a list of items are drawn over eachother"
+  "normalized": "List items overlap visually while adding a service."
+  "disposition": "INSUFFICIENT_EVIDENCE"
+  "source_findings":
+  - "REC-009"
+  "source_changes":
+  - "REC-CHANGE-009"
+  "remediation": []
+  "decisions_required": []
+  "affected_artifacts":
+  - "product/ux/03-responsive-and-platform.md"
+  - "product/ux/05-accessibility.md"
+  "rationale": "Current intent is preserved. Reproduce affected service creation list and compare against existing\
+    \ readable/reflow rules; no authority change justified. Empty remediation/decision links mean this is advisory,\
+    \ already aligned, evidence-limited, or unresolved design rather than implementation-ready work."
+  "scope":
+  - "service-creation"
+  "tags": []
+  "suggestions": []
+  "ambiguity": []
+- "feedback_id": "PO-FEEDBACK-2026-10-11-002"
+  "item_id": "PO-FB-019"
+  "classification": "OBSERVATION"
+  "confirmation": "CONFIRMED"
+  "product_intent_authority": "evidence"
+  "original": "Mandatory fields lack visual indicator (such as a red asterisk) that they must be provided"
+  "normalized": "Mandatory fields lack a visible indication that input is required."
+  "disposition": "EVIDENCE_CORRELATED"
+  "source_findings":
+  - "REC-010"
+  "source_changes":
+  - "REC-CHANGE-010"
+  "remediation": []
+  "decisions_required":
+  - "REC-DEC-006"
+  "affected_artifacts": &id002
+  - "product/ux/02-interaction-patterns.md"
+  - "product/ux/05-accessibility.md"
+  "rationale": "Current intent is preserved. Visually identify required fields consistently and accessibly;\
+    \ preserve conditional requirements and existing concise help rule. Marker convention belongs in design,\
+    \ not implicit adoption of red-only cues. Empty remediation/decision links mean this is advisory, already\
+    \ aligned, evidence-limited, or unresolved design rather than implementation-ready work."
+  "scope":
+  - "forms"
+  "tags": []
+  "suggestions": []
+  "ambiguity": []
+- "feedback_id": "PO-FEEDBACK-2026-10-11-002"
+  "item_id": "PO-FB-020"
+  "classification": "DIRECTIVE"
+  "confirmation": "CONFIRMED"
+  "product_intent_authority": "authoritative"
+  "original": "Mandatory fields lack visual indicator (such as a red asterisk) that they must be provided"
+  "normalized": "Visually indicate mandatory fields."
+  "disposition": "AWAITING_SPECIALIST_RESOLUTION"
+  "source_findings":
+  - "REC-010"
+  "source_changes":
+  - "REC-CHANGE-010"
+  "remediation": []
+  "decisions_required":
+  - "REC-DEC-006"
+  "affected_artifacts": *id002
+  "rationale": "Current intent is preserved. Visually identify required fields consistently and accessibly;\
+    \ preserve conditional requirements and existing concise help rule. Marker convention belongs in design,\
+    \ not implicit adoption of red-only cues. Empty remediation/decision links mean this is advisory, already\
+    \ aligned, evidence-limited, or unresolved design rather than implementation-ready work."
+  "scope":
+  - "forms"
+  "tags": []
+  "suggestions": []
+  "ambiguity": []
+- "feedback_id": "PO-FEEDBACK-2026-10-11-002"
+  "item_id": "PO-FB-021"
+  "classification": "IDEA_OR_QUESTION"
+  "confirmation": "CONFIRMED"
+  "product_intent_authority": "exploratory"
+  "original": "Mandatory fields lack visual indicator (such as a red asterisk) that they must be provided"
+  "normalized": "A red asterisk is a suggested required-field indicator."
+  "disposition": "EXPLORATORY_RECORDED"
+  "source_findings":
+  - "REC-010"
+  "source_changes":
+  - "REC-CHANGE-010"
+  "remediation": []
+  "decisions_required":
+  - "REC-DEC-006"
+  "affected_artifacts": *id002
+  "rationale": "Current intent is preserved. Visually identify required fields consistently and accessibly;\
+    \ preserve conditional requirements and existing concise help rule. Marker convention belongs in design,\
+    \ not implicit adoption of red-only cues. Empty remediation/decision links mean this is advisory, already\
+    \ aligned, evidence-limited, or unresolved design rather than implementation-ready work."
+  "scope":
+  - "forms"
+  "tags": []
+  "suggestions": []
+  "ambiguity": []
+- "feedback_id": "PO-FEEDBACK-2026-10-11-002"
+  "item_id": "PO-FB-022"
+  "classification": "IDEA_OR_QUESTION"
+  "confirmation": "CONFIRMED"
+  "product_intent_authority": "exploratory"
+  "original": "INput fields use labels, but short description underneath would help the understanding"
+  "normalized": "Add short descriptions beneath field labels to help explain the inputs."
+  "disposition": "EXPLORATORY_RECORDED"
+  "source_findings":
+  - "REC-010"
+  "source_changes":
+  - "REC-CHANGE-010"
+  "remediation": []
+  "decisions_required":
+  - "REC-DEC-006"
+  "affected_artifacts": *id002
+  "rationale": "Current intent is preserved. Visually identify required fields consistently and accessibly;\
+    \ preserve conditional requirements and existing concise help rule. Marker convention belongs in design,\
+    \ not implicit adoption of red-only cues. Empty remediation/decision links mean this is advisory, already\
+    \ aligned, evidence-limited, or unresolved design rather than implementation-ready work."
+  "scope":
+  - "form-help"
+  "tags": []
+  "suggestions": []
+  "ambiguity": []
+- "feedback_id": "PO-FEEDBACK-2026-10-11-002"
+  "item_id": "PO-FB-023"
+  "classification": "DIRECTIVE"
+  "confirmation": "CONFIRMED"
+  "product_intent_authority": "authoritative"
+  "original": "People & Access view, the list of users should be a single row per user, clicking should bring\
+    \ up account information for that user where the admin can edit the properties, change roles, etc. it should\
+    \ also show creation date and last login. Draw inspirtation from other SaaS products"
+  "normalized": "Show one row per user in People & Access."
+  "disposition": "AWAITING_SPECIALIST_RESOLUTION"
+  "source_findings":
+  - "REC-011"
+  "source_changes":
+  - "REC-CHANGE-011"
+  "remediation": []
+  "decisions_required":
+  - "REC-DEC-006"
+  "affected_artifacts": &id003
+  - "product/ux/01-information-architecture.md"
+  - "product/ux/02-interaction-patterns.md"
+  "rationale": "Current intent is preserved. One row per user opens that user\u2019s account information. Define\
+    \ keyboard/narrow-screen behavior, role-aware controls and navigation without inventing new permission\
+    \ scope. Empty remediation/decision links mean this is advisory, already aligned, evidence-limited, or\
+    \ unresolved design rather than implementation-ready work."
+  "scope":
+  - "people-list"
+  "tags": []
+  "suggestions": []
+  "ambiguity": []
+- "feedback_id": "PO-FEEDBACK-2026-10-11-002"
+  "item_id": "PO-FB-024"
+  "classification": "DIRECTIVE"
+  "confirmation": "CONFIRMED"
+  "product_intent_authority": "authoritative"
+  "original": "People & Access view, the list of users should be a single row per user, clicking should bring\
+    \ up account information for that user where the admin can edit the properties, change roles, etc. it should\
+    \ also show creation date and last login. Draw inspirtation from other SaaS products"
+  "normalized": "Clicking a user opens that user\u2019s account information."
+  "disposition": "AWAITING_SPECIALIST_RESOLUTION"
+  "source_findings":
+  - "REC-011"
+  "source_changes":
+  - "REC-CHANGE-011"
+  "remediation": []
+  "decisions_required":
+  - "REC-DEC-006"
+  "affected_artifacts": *id003
+  "rationale": "Current intent is preserved. One row per user opens that user\u2019s account information. Define\
+    \ keyboard/narrow-screen behavior, role-aware controls and navigation without inventing new permission\
+    \ scope. Empty remediation/decision links mean this is advisory, already aligned, evidence-limited, or\
+    \ unresolved design rather than implementation-ready work."
+  "scope":
+  - "people-detail"
+  "tags": []
+  "suggestions": []
+  "ambiguity": []
+- "feedback_id": "PO-FEEDBACK-2026-10-11-002"
+  "item_id": "PO-FB-025"
+  "classification": "DIRECTIVE"
+  "confirmation": "CONFIRMED"
+  "product_intent_authority": "authoritative"
+  "original": "People & Access view, the list of users should be a single row per user, clicking should bring\
+    \ up account information for that user where the admin can edit the properties, change roles, etc. it should\
+    \ also show creation date and last login. Draw inspirtation from other SaaS products"
+  "normalized": "Allow the named Administrator role to edit account properties and roles in the user detail\
+    \ view."
+  "disposition": "AWAITING_SPECIALIST_RESOLUTION"
+  "source_findings":
+  - "REC-012"
+  "source_changes":
+  - "REC-CHANGE-012"
+  "remediation": []
+  "decisions_required":
+  - "REC-DEC-004"
+  "affected_artifacts":
+  - "docs/web-console-prd.md"
+  - "product/security/web-console-security-contract.md"
+  - "product/ux/01-information-architecture.md"
+  - "product/architecture/web-console-state-contract.md"
+  "rationale": "Current intent is preserved. Administrator can edit account properties and roles; define eligible\
+    \ targets, allowed properties, self/Owner boundaries, revocation, confirmations and audit without granting\
+    \ unrelated Owner capabilities. Empty remediation/decision links mean this is advisory, already aligned,\
+    \ evidence-limited, or unresolved design rather than implementation-ready work."
+  "scope":
+  - "people-permissions"
+  "tags": []
+  "suggestions": []
+  "ambiguity": []
+- "feedback_id": "PO-FEEDBACK-2026-10-11-002"
+  "item_id": "PO-FB-026"
+  "classification": "DIRECTIVE"
+  "confirmation": "CONFIRMED"
+  "product_intent_authority": "authoritative"
+  "original": "People & Access view, the list of users should be a single row per user, clicking should bring\
+    \ up account information for that user where the admin can edit the properties, change roles, etc. it should\
+    \ also show creation date and last login. Draw inspirtation from other SaaS products"
+  "normalized": "Show the user\u2019s creation date."
+  "disposition": "AWAITING_SPECIALIST_RESOLUTION"
+  "source_findings":
+  - "REC-013"
+  "source_changes":
+  - "REC-CHANGE-013"
+  "remediation": []
+  "decisions_required":
+  - "REC-DEC-007"
+  "affected_artifacts": &id004
+  - "docs/web-console-prd.md"
+  - "product/security/web-console-security-contract.md"
+  - "product/architecture/web-console-state-contract.md"
+  - "product/ux/01-information-architecture.md"
+  "rationale": "Current intent is preserved. Show creation date and last login with defined event/time semantics,\
+    \ truthful never/unknown states, authorized visibility and migration/backup/restore continuity. Empty remediation/decision\
+    \ links mean this is advisory, already aligned, evidence-limited, or unresolved design rather than implementation-ready\
+    \ work."
+  "scope":
+  - "people-detail"
+  "tags": []
+  "suggestions": []
+  "ambiguity": []
+- "feedback_id": "PO-FEEDBACK-2026-10-11-002"
+  "item_id": "PO-FB-027"
+  "classification": "DIRECTIVE"
+  "confirmation": "CONFIRMED"
+  "product_intent_authority": "authoritative"
+  "original": "People & Access view, the list of users should be a single row per user, clicking should bring\
+    \ up account information for that user where the admin can edit the properties, change roles, etc. it should\
+    \ also show creation date and last login. Draw inspirtation from other SaaS products"
+  "normalized": "Show the user\u2019s last login."
+  "disposition": "AWAITING_SPECIALIST_RESOLUTION"
+  "source_findings":
+  - "REC-013"
+  "source_changes":
+  - "REC-CHANGE-013"
+  "remediation": []
+  "decisions_required":
+  - "REC-DEC-007"
+  "affected_artifacts": *id004
+  "rationale": "Current intent is preserved. Show creation date and last login with defined event/time semantics,\
+    \ truthful never/unknown states, authorized visibility and migration/backup/restore continuity. Empty remediation/decision\
+    \ links mean this is advisory, already aligned, evidence-limited, or unresolved design rather than implementation-ready\
+    \ work."
+  "scope":
+  - "people-detail"
+  "tags": []
+  "suggestions": []
+  "ambiguity": []
+- "feedback_id": "PO-FEEDBACK-2026-10-11-002"
+  "item_id": "PO-FB-028"
+  "classification": "DIRECTIVE"
+  "confirmation": "CONFIRMED"
+  "product_intent_authority": "authoritative"
+  "original": "People & Access view, the list of users should be a single row per user, clicking should bring\
+    \ up account information for that user where the admin can edit the properties, change roles, etc. it should\
+    \ also show creation date and last login. Draw inspirtation from other SaaS products"
+  "normalized": "Draw inspiration from established SaaS user-management experiences."
+  "disposition": "NO_CHANGE_REQUIRED"
+  "source_findings":
+  - "REC-017"
+  "source_changes":
+  - "REC-CHANGE-017"
+  "remediation": []
+  "decisions_required": []
+  "affected_artifacts": &id007
+  - "workflow/feedback/PO-FEEDBACK-2026-10-11-002/research.md"
+  "rationale": "Current intent is preserved. Use cited research as input; no universal mandate for autosave\
+    \ or a specific drawer. Research request itself requires no implementation. Empty remediation/decision\
+    \ links mean this is advisory, already aligned, evidence-limited, or unresolved design rather than implementation-ready\
+    \ work."
+  "scope":
+  - "design-research"
+  "tags": []
+  "suggestions": []
+  "ambiguity": []
+- "feedback_id": "PO-FEEDBACK-2026-10-11-002"
+  "item_id": "PO-FB-029"
+  "classification": "OBSERVATION"
+  "confirmation": "CONFIRMED"
+  "product_intent_authority": "evidence"
+  "original": "Response protection is cool sounding, but for the uninitiated, it doesn't make sense, response\
+    \ to what? (See first bullet)"
+  "normalized": "The label Response protection does not explain its meaning to an uninitiated user."
+  "disposition": "EVIDENCE_CORRELATED"
+  "source_findings":
+  - "REC-008"
+  "source_changes":
+  - "REC-CHANGE-008"
+  "remediation": []
+  "decisions_required":
+  - "REC-DEC-006"
+  "affected_artifacts": *id001
+  "rationale": "Current intent is preserved. Resolve clear purpose-based terms and responsive use of available\
+    \ space within existing navigation and safety scope. Specific terminology/layout remains non-authoritative\
+    \ pending design. Empty remediation/decision links mean this is advisory, already aligned, evidence-limited,\
+    \ or unresolved design rather than implementation-ready work."
+  "scope":
+  - "product-language"
+  "tags": []
+  "suggestions": []
+  "ambiguity": []
+- "feedback_id": "PO-FEEDBACK-2026-10-11-002"
+  "item_id": "PO-FB-030"
+  "classification": "OBSERVATION"
+  "confirmation": "CONFIRMED"
+  "product_intent_authority": "evidence"
+  "original": "SMTP settings seem incomplete, why have a dropdown for encryption if I cannot disable it"
+  "normalized": "SMTP configuration appears incomplete and offers an encryption dropdown without a way to disable\
+    \ encryption."
+  "disposition": "EVIDENCE_CORRELATED"
+  "source_findings":
+  - "REC-014"
+  "source_changes":
+  - "REC-CHANGE-014"
+  "remediation": []
+  "decisions_required":
+  - "REC-DEC-005"
+  "affected_artifacts": &id005
+  - "docs/web-console-prd.md"
+  - "product/architecture/web-console-state-contract.md"
+  - "product/security/web-console-security-contract.md"
+  - "product/ux/01-information-architecture.md"
+  "rationale": "Current intent is preserved. Support explicit unencrypted SMTP alongside existing encrypted\
+    \ transport. Resolve mode persistence/defaults, no implicit downgrade, authentication/secret exposure acknowledgement,\
+    \ delivery admission and restore compatibility. Do not silently add STARTTLS as an additional feature.\
+    \ Empty remediation/decision links mean this is advisory, already aligned, evidence-limited, or unresolved\
+    \ design rather than implementation-ready work."
+  "scope":
+  - "smtp-settings"
+  "tags": []
+  "suggestions": []
+  "ambiguity": []
+- "feedback_id": "PO-FEEDBACK-2026-10-11-002"
+  "item_id": "PO-FB-031"
+  "classification": "DIRECTIVE"
+  "confirmation": "CONFIRMED"
+  "product_intent_authority": "authoritative"
+  "original": "SMTP settings seem incomplete, why have a dropdown for encryption if I cannot disable it"
+  "normalized": "Support an option to disable SMTP encryption."
+  "disposition": "AWAITING_SPECIALIST_RESOLUTION"
+  "source_findings":
+  - "REC-014"
+  "source_changes":
+  - "REC-CHANGE-014"
+  "remediation": []
+  "decisions_required":
+  - "REC-DEC-005"
+  "affected_artifacts": *id005
+  "rationale": "Current intent is preserved. Support explicit unencrypted SMTP alongside existing encrypted\
+    \ transport. Resolve mode persistence/defaults, no implicit downgrade, authentication/secret exposure acknowledgement,\
+    \ delivery admission and restore compatibility. Do not silently add STARTTLS as an additional feature.\
+    \ Empty remediation/decision links mean this is advisory, already aligned, evidence-limited, or unresolved\
+    \ design rather than implementation-ready work."
+  "scope":
+  - "smtp-settings"
+  "tags": []
+  "suggestions": []
+  "ambiguity": []
+- "feedback_id": "PO-FEEDBACK-2026-10-11-002"
+  "item_id": "PO-FB-032"
+  "classification": "OBSERVATION"
+  "confirmation": "CONFIRMED"
+  "product_intent_authority": "evidence"
+  "original": "SMTP settings show settings as undefined, perhaps not show it at all, instead prefill the fields\
+    \ with current settings (except password, since that's a no-no). This is generally a decent approach to\
+    \ avoid have a show option and an edit option, again, research best practices."
+  "normalized": "SMTP settings display undefined values."
+  "disposition": "EVIDENCE_CORRELATED"
+  "source_findings":
+  - "REC-015"
+  "source_changes":
+  - "REC-CHANGE-015"
+  "remediation":
+  - "REC-RM-007"
+  "decisions_required": []
+  "affected_artifacts":
+  - "product/ux/02-interaction-patterns.md"
+  - "product/ux/01-information-architecture.md"
+  "rationale": "Current intent is preserved. Show a meaningful unconfigured/empty state instead of undefined;\
+    \ populated non-secret fields retain current values and saved secrets stay write-only. Empty remediation/decision\
+    \ links mean this is advisory, already aligned, evidence-limited, or unresolved design rather than implementation-ready\
+    \ work."
+  "scope":
+  - "smtp-settings"
+  "tags": []
+  "suggestions": []
+  "ambiguity": []
+- "feedback_id": "PO-FEEDBACK-2026-10-11-002"
+  "item_id": "PO-FB-033"
+  "classification": "IDEA_OR_QUESTION"
+  "confirmation": "CONFIRMED"
+  "product_intent_authority": "exploratory"
+  "original": "SMTP settings show settings as undefined, perhaps not show it at all, instead prefill the fields\
+    \ with current settings (except password, since that's a no-no). This is generally a decent approach to\
+    \ avoid have a show option and an edit option, again, research best practices."
+  "normalized": "Consider omitting the separate SMTP settings display and prefilling editable fields with current\
+    \ values."
+  "disposition": "EXPLORATORY_RECORDED"
+  "source_findings":
+  - "REC-016"
+  "source_changes":
+  - "REC-CHANGE-016"
+  "remediation": []
+  "decisions_required":
+  - "REC-DEC-006"
+  "affected_artifacts": &id006
+  - "docs/web-console-prd.md"
+  - "product/ux/01-information-architecture.md"
+  - "product/ux/02-interaction-patterns.md"
+  - "product/architecture/web-console-state-contract.md"
+  "rationale": "Current intent is preserved. Resolve a consistent current-value editing and save/review experience,\
+    \ truthful success feedback and pending-change distinction. Preserve atomic reviewed activation and unrelated\
+    \ drafts unless a separate authoritative change explicitly settles otherwise. Empty remediation/decision\
+    \ links mean this is advisory, already aligned, evidence-limited, or unresolved design rather than implementation-ready\
+    \ work."
+  "scope":
+  - "settings-editing"
+  "tags": []
+  "suggestions": []
+  "ambiguity": []
+- "feedback_id": "PO-FEEDBACK-2026-10-11-002"
+  "item_id": "PO-FB-034"
+  "classification": "DIRECTIVE"
+  "confirmation": "CONFIRMED"
+  "product_intent_authority": "authoritative"
+  "original": "SMTP settings show settings as undefined, perhaps not show it at all, instead prefill the fields\
+    \ with current settings (except password, since that's a no-no). This is generally a decent approach to\
+    \ avoid have a show option and an edit option, again, research best practices."
+  "normalized": "Do not prefill the SMTP password with its saved value."
+  "disposition": "NO_CHANGE_REQUIRED"
+  "source_findings":
+  - "REC-018"
+  "source_changes":
+  - "REC-CHANGE-018"
+  "remediation": []
+  "decisions_required": []
+  "affected_artifacts":
+  - "docs/web-console-prd.md"
+  - "product/ux/02-interaction-patterns.md"
+  - "product/architecture/web-console-state-contract.md"
+  "rationale": "Current intent is preserved. Preserve blank replacement input and credential-presence metadata,\
+    \ never reveal saved secret while simplifying other fields. Empty remediation/decision links mean this\
+    \ is advisory, already aligned, evidence-limited, or unresolved design rather than implementation-ready\
+    \ work."
+  "scope":
+  - "smtp-credentials"
+  "tags": []
+  "suggestions": []
+  "ambiguity": []
+- "feedback_id": "PO-FEEDBACK-2026-10-11-002"
+  "item_id": "PO-FB-035"
+  "classification": "PREFERENCE"
+  "confirmation": "CONFIRMED"
+  "product_intent_authority": "advisory"
+  "original": "SMTP settings show settings as undefined, perhaps not show it at all, instead prefill the fields\
+    \ with current settings (except password, since that's a no-no). This is generally a decent approach to\
+    \ avoid have a show option and an edit option, again, research best practices."
+  "normalized": "Avoid unnecessary separate show and edit steps where a form showing current values is suitable."
+  "disposition": "ADVISORY_CONSIDERED"
+  "source_findings":
+  - "REC-016"
+  "source_changes":
+  - "REC-CHANGE-016"
+  "remediation": []
+  "decisions_required":
+  - "REC-DEC-006"
+  "affected_artifacts": *id006
+  "rationale": "Current intent is preserved. Resolve a consistent current-value editing and save/review experience,\
+    \ truthful success feedback and pending-change distinction. Preserve atomic reviewed activation and unrelated\
+    \ drafts unless a separate authoritative change explicitly settles otherwise. Empty remediation/decision\
+    \ links mean this is advisory, already aligned, evidence-limited, or unresolved design rather than implementation-ready\
+    \ work."
+  "scope":
+  - "settings-editing"
+  "tags": []
+  "suggestions": []
+  "ambiguity": []
+- "feedback_id": "PO-FEEDBACK-2026-10-11-002"
+  "item_id": "PO-FB-036"
+  "classification": "OBSERVATION"
+  "confirmation": "CONFIRMED"
+  "product_intent_authority": "evidence"
+  "original": "Setting backup settings keeps talking about draft and nothing seems to save"
+  "normalized": "Backup configuration repeatedly refers to drafts."
+  "disposition": "EVIDENCE_CORRELATED"
+  "source_findings":
+  - "REC-016"
+  "source_changes":
+  - "REC-CHANGE-016"
+  "remediation": []
+  "decisions_required":
+  - "REC-DEC-006"
+  "affected_artifacts": *id006
+  "rationale": "Current intent is preserved. Resolve a consistent current-value editing and save/review experience,\
+    \ truthful success feedback and pending-change distinction. Preserve atomic reviewed activation and unrelated\
+    \ drafts unless a separate authoritative change explicitly settles otherwise. Empty remediation/decision\
+    \ links mean this is advisory, already aligned, evidence-limited, or unresolved design rather than implementation-ready\
+    \ work."
+  "scope":
+  - "backup-settings"
+  "tags": []
+  "suggestions": []
+  "ambiguity": []
+- "feedback_id": "PO-FEEDBACK-2026-10-11-002"
+  "item_id": "PO-FB-037"
+  "classification": "OBSERVATION"
+  "confirmation": "CONFIRMED"
+  "product_intent_authority": "evidence"
+  "original": "Setting backup settings keeps talking about draft and nothing seems to save"
+  "normalized": "Changes to backup settings do not appear to save."
+  "disposition": "EVIDENCE_CORRELATED"
+  "source_findings":
+  - "REC-016"
+  "source_changes":
+  - "REC-CHANGE-016"
+  "remediation": []
+  "decisions_required":
+  - "REC-DEC-006"
+  "affected_artifacts": *id006
+  "rationale": "Current intent is preserved. Resolve a consistent current-value editing and save/review experience,\
+    \ truthful success feedback and pending-change distinction. Preserve atomic reviewed activation and unrelated\
+    \ drafts unless a separate authoritative change explicitly settles otherwise. Empty remediation/decision\
+    \ links mean this is advisory, already aligned, evidence-limited, or unresolved design rather than implementation-ready\
+    \ work."
+  "scope":
+  - "backup-settings"
+  "tags": []
+  "suggestions": []
+  "ambiguity": []
+- "feedback_id": "PO-FEEDBACK-2026-10-11-002"
+  "item_id": "PO-FB-038"
+  "classification": "OBSERVATION"
+  "confirmation": "CONFIRMED"
+  "product_intent_authority": "evidence"
+  "original": "Applied diagnostics in the health section shows a static value, the edit seems to show current.\
+    \ Again, inconsistent and far from best practices"
+  "normalized": "Applied diagnostics appears static while the edit view appears to show the current value."
+  "disposition": "EVIDENCE_CORRELATED"
+  "source_findings":
+  - "REC-016"
+  "source_changes":
+  - "REC-CHANGE-016"
+  "remediation": []
+  "decisions_required":
+  - "REC-DEC-006"
+  "affected_artifacts": *id006
+  "rationale": "Current intent is preserved. Resolve a consistent current-value editing and save/review experience,\
+    \ truthful success feedback and pending-change distinction. Preserve atomic reviewed activation and unrelated\
+    \ drafts unless a separate authoritative change explicitly settles otherwise. Empty remediation/decision\
+    \ links mean this is advisory, already aligned, evidence-limited, or unresolved design rather than implementation-ready\
+    \ work."
+  "scope":
+  - "health-diagnostics"
+  "tags": []
+  "suggestions": []
+  "ambiguity": []
+- "feedback_id": "PO-FEEDBACK-2026-10-11-002"
+  "item_id": "PO-FB-039"
+  "classification": "PREFERENCE"
+  "confirmation": "CONFIRMED"
+  "product_intent_authority": "advisory"
+  "original": "Applied diagnostics in the health section shows a static value, the edit seems to show current.\
+    \ Again, inconsistent and far from best practices"
+  "normalized": "Use consistent settings displays and editing behavior informed by established practices."
+  "disposition": "ADVISORY_CONSIDERED"
+  "source_findings":
+  - "REC-016"
+  "source_changes":
+  - "REC-CHANGE-016"
+  "remediation": []
+  "decisions_required":
+  - "REC-DEC-006"
+  "affected_artifacts": *id006
+  "rationale": "Current intent is preserved. Resolve a consistent current-value editing and save/review experience,\
+    \ truthful success feedback and pending-change distinction. Preserve atomic reviewed activation and unrelated\
+    \ drafts unless a separate authoritative change explicitly settles otherwise. Empty remediation/decision\
+    \ links mean this is advisory, already aligned, evidence-limited, or unresolved design rather than implementation-ready\
+    \ work."
+  "scope":
+  - "settings-editing"
+  "tags": []
+  "suggestions": []
+  "ambiguity": []
+- "feedback_id": "PO-FEEDBACK-2026-10-11-002"
+  "item_id": "PO-FB-040"
+  "classification": "DIRECTIVE"
+  "confirmation": "CONFIRMED"
+  "product_intent_authority": "authoritative"
+  "original": "You need to research best practices and common design patterns for settings and viewing vs edit,\
+    \ because it's very common that edit is there to show current values, cutting down on unnecessary extra\
+    \ steps where it makes sense."
+  "normalized": "Research best practices and common patterns for settings, viewing current values, and editing."
+  "disposition": "NO_CHANGE_REQUIRED"
+  "source_findings":
+  - "REC-017"
+  "source_changes":
+  - "REC-CHANGE-017"
+  "remediation": []
+  "decisions_required": []
+  "affected_artifacts": *id007
+  "rationale": "Current intent is preserved. Use cited research as input; no universal mandate for autosave\
+    \ or a specific drawer. Research request itself requires no implementation. Empty remediation/decision\
+    \ links mean this is advisory, already aligned, evidence-limited, or unresolved design rather than implementation-ready\
+    \ work."
+  "scope":
+  - "design-research"
+  "tags": []
+  "suggestions": []
+  "ambiguity": []
+- "feedback_id": "PO-FEEDBACK-2026-10-11-002"
+  "item_id": "PO-FB-041"
+  "classification": "PREFERENCE"
+  "confirmation": "CONFIRMED"
+  "product_intent_authority": "advisory"
+  "original": "You need to research best practices and common design patterns for settings and viewing vs edit,\
+    \ because it's very common that edit is there to show current values, cutting down on unnecessary extra\
+    \ steps where it makes sense."
+  "normalized": "Favor showing current values in editable forms where it reduces unnecessary steps."
+  "disposition": "ADVISORY_CONSIDERED"
+  "source_findings":
+  - "REC-016"
+  "source_changes":
+  - "REC-CHANGE-016"
+  "remediation": []
+  "decisions_required":
+  - "REC-DEC-006"
+  "affected_artifacts": *id006
+  "rationale": "Current intent is preserved. Resolve a consistent current-value editing and save/review experience,\
+    \ truthful success feedback and pending-change distinction. Preserve atomic reviewed activation and unrelated\
+    \ drafts unless a separate authoritative change explicitly settles otherwise. Empty remediation/decision\
+    \ links mean this is advisory, already aligned, evidence-limited, or unresolved design rather than implementation-ready\
+    \ work."
+  "scope":
+  - "settings-editing"
+  "tags": []
+  "suggestions": []
+  "ambiguity": []
+"authoritative_changes":
+  "changed": false
+  "entries":
+  - "change_id": "REC-CHANGE-008"
+    "source_findings":
+    - "REC-008"
+    "product_owner_feedback":
+    - "PO-FB-015"
+    - "PO-FB-016"
+    - "PO-FB-017"
+    - "PO-FB-029"
+    "path": "product/ux/01-information-architecture.md"
+    "requirements":
+    - "UX-02; UX-IA05; UX-V01/V04"
+    "status": "NO_SOURCE_MUTATION"
+  - "change_id": "REC-CHANGE-009"
+    "source_findings":
+    - "REC-009"
+    "product_owner_feedback":
+    - "PO-FB-018"
+    "path": "product/ux/03-responsive-and-platform.md"
+    "requirements":
+    - "UX-04; UX-R01/02"
+    "status": "NO_SOURCE_MUTATION"
+  - "change_id": "REC-CHANGE-010"
+    "source_findings":
+    - "REC-010"
+    "product_owner_feedback":
+    - "PO-FB-019"
+    - "PO-FB-020"
+    - "PO-FB-021"
+    - "PO-FB-022"
+    "path": "product/ux/02-interaction-patterns.md"
+    "requirements":
+    - "UX-04; UX-IN01; UX-A01"
+    "status": "NO_SOURCE_MUTATION"
+  - "change_id": "REC-CHANGE-011"
+    "source_findings":
+    - "REC-011"
+    "product_owner_feedback":
+    - "PO-FB-023"
+    - "PO-FB-024"
+    "path": "product/ux/01-information-architecture.md"
+    "requirements":
+    - "UX-IA04; AUTHZ-02"
+    "status": "NO_SOURCE_MUTATION"
+  - "change_id": "REC-CHANGE-012"
+    "source_findings":
+    - "REC-012"
+    "product_owner_feedback":
+    - "PO-FB-025"
+    "path": "docs/web-console-prd.md"
+    "requirements":
+    - "Roles matrix; IDENT-04/05; AUTHZ-02/03; SECRES-05"
+    "status": "NO_SOURCE_MUTATION"
+  - "change_id": "REC-CHANGE-013"
+    "source_findings":
+    - "REC-013"
+    "product_owner_feedback":
+    - "PO-FB-026"
+    - "PO-FB-027"
+    "path": "docs/web-console-prd.md"
+    "requirements":
+    - "IDENT-02/03; AUTHZ-02; People detail"
+    "status": "NO_SOURCE_MUTATION"
+  - "change_id": "REC-CHANGE-014"
+    "source_findings":
+    - "REC-014"
+    "product_owner_feedback":
+    - "PO-FB-030"
+    - "PO-FB-031"
+    "path": "docs/web-console-prd.md"
+    "requirements":
+    - "IDENT-04; STATE-01/02/03 SMTP"
+    "status": "NO_SOURCE_MUTATION"
+  - "change_id": "REC-CHANGE-015"
+    "source_findings":
+    - "REC-015"
+    "product_owner_feedback":
+    - "PO-FB-032"
+    "path": "product/ux/02-interaction-patterns.md"
+    "requirements":
+    - "UX-02/03; UX-IN05; UX-IA06"
+    "status": "NO_SOURCE_MUTATION"
+  - "change_id": "REC-CHANGE-016"
+    "source_findings":
+    - "REC-016"
+    "product_owner_feedback":
+    - "PO-FB-033"
+    - "PO-FB-035"
+    - "PO-FB-036"
+    - "PO-FB-037"
+    - "PO-FB-038"
+    - "PO-FB-039"
+    - "PO-FB-041"
+    "path": "docs/web-console-prd.md"
+    "requirements":
+    - "CONFIG-03; UX-03; UX-IA05/06; UX-IN01/02"
+    "status": "NO_SOURCE_MUTATION"
+  - "change_id": "REC-CHANGE-017"
+    "source_findings":
+    - "REC-017"
+    "product_owner_feedback":
+    - "PO-FB-028"
+    - "PO-FB-040"
+    "path": "workflow/feedback/PO-FEEDBACK-2026-10-11-002/research.md"
+    "requirements":
+    - "Design research direction"
+    "status": "NO_SOURCE_MUTATION"
+  - "change_id": "REC-CHANGE-018"
+    "source_findings":
+    - "REC-018"
+    "product_owner_feedback":
+    - "PO-FB-034"
+    "path": "docs/web-console-prd.md"
+    "requirements":
+    - "IDENT-04; UX-IN01; STATE-03"
+    "status": "NO_SOURCE_MUTATION"
+"definition_changed": false
+"implementation_required": true
+"implementation_ready": false
+"decisions_required":
+- "id": "REC-DEC-004"
+  "source_findings":
+  - "REC-012"
+  "product_owner_feedback":
+  - "PO-FB-025"
+  "domain": "security"
+  "affected_requirement": "AUTHZ-02/03; IDENT-04/05"
+  "blocking": true
+  "resolution_type": "SPECIALIST_RESOLUTION"
+  "question": "What precise property, target-role, self-management and security-consequence rules realize approved\
+    \ Administrator account management?"
+  "reason": "Expansion is settled; older Owner-only rules are stale, but field/contact and escalation boundaries\
+    \ need security/product semantics."
+  "implementation_ready": false
+- "id": "REC-DEC-005"
+  "source_findings":
+  - "REC-014"
+  "product_owner_feedback":
+  - "PO-FB-030"
+  - "PO-FB-031"
+  "domain": "security"
+  "affected_requirement": "IDENT-04"
+  "blocking": true
+  "resolution_type": "SPECIALIST_RESOLUTION"
+  "question": "What explicit transport-mode, credential-use and acknowledgement rules support unencrypted SMTP\
+    \ while retaining secure defaults and no silent downgrade?"
+  "reason": "Unencrypted support is settled; persisted modes, transport/auth behavior, compatibility and warning\
+    \ semantics are undefined."
+  "implementation_ready": false
+- "id": "REC-DEC-006"
+  "source_findings":
+  - "REC-008"
+  - "REC-010"
+  - "REC-011"
+  - "REC-016"
+  "product_owner_feedback":
+  - "PO-FB-015"
+  - "PO-FB-016"
+  - "PO-FB-017"
+  - "PO-FB-019"
+  - "PO-FB-020"
+  - "PO-FB-021"
+  - "PO-FB-022"
+  - "PO-FB-023"
+  - "PO-FB-024"
+  - "PO-FB-029"
+  - "PO-FB-033"
+  - "PO-FB-035"
+  - "PO-FB-036"
+  - "PO-FB-037"
+  - "PO-FB-038"
+  - "PO-FB-039"
+  - "PO-FB-041"
+  "domain": "ux"
+  "affected_requirement": "UX-02/03/04; CONFIG-03"
+  "blocking": true
+  "resolution_type": "SPECIALIST_RESOLUTION"
+  "question": "What coherent language, layout, required-field, People detail and current-value settings pattern\
+    \ addresses this feedback while preserving review and permission safeguards?"
+  "reason": "Existing explicit labels and applied-summary/edit patterns need design reconsideration; preferences\
+    \ and exploratory mechanisms do not select the final design."
+  "implementation_ready": false
+- "id": "REC-DEC-007"
+  "source_findings":
+  - "REC-013"
+  "product_owner_feedback":
+  - "PO-FB-026"
+  - "PO-FB-027"
+  "domain": "architecture"
+  "affected_requirement": "IDENT-02/03"
+  "blocking": true
+  "resolution_type": "SPECIALIST_RESOLUTION"
+  "question": "Which creation and last-login events and unknown/never/restore semantics govern the requested\
+    \ account timestamps?"
+  "reason": "Metadata display is settled; historical truth, authenticated event boundaries and portable recovery\
+    \ projection are not defined."
+  "implementation_ready": false
+"change_impact":
+  "change_id": "REC-IMPACT-004"
+  "source_findings":
+  - "REC-008"
+  - "REC-009"
+  - "REC-010"
+  - "REC-011"
+  - "REC-012"
+  - "REC-013"
+  - "REC-014"
+  - "REC-015"
+  - "REC-016"
+  - "REC-017"
+  - "REC-018"
+  "changed_artifacts": []
+  "changed_requirements": []
+  "change_types":
+  - "user_behavior"
+  - "permissions"
+  - "ux_interaction"
+  - "data_model"
+  - "security_control"
+  "affected_domains":
+    "product": true
+    "user_journeys": true
+    "ux": true
+    "architecture": true
+    "security": true
+  "potentially_stale":
+  - "docs/web-console-prd-coverage.md"
+  - "docs/web-console-prd-user-journey-audit.md"
+  - "docs/web-console-prd.md"
+  - "product/architecture/web-console-state-contract.md"
+  - "product/security/web-console-security-contract.md"
+  - "product/ux/01-information-architecture.md"
+  - "product/ux/02-interaction-patterns.md"
+  - "product/ux/03-responsive-and-platform.md"
+  - "product/ux/04-visual-system.md"
+  - "product/ux/05-accessibility.md"
+  "revalidation_required": true
+"handoff":
+  "category": "DECISION_RESOLUTION"
+  "definition_revalidation_required": true
+  "delivery_planning_ready": false
+  "next_workflow": "product-definition-orchestrator"

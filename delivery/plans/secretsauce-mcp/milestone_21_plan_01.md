@@ -14,7 +14,7 @@ Existing encrypted drafts, bounded schemas, importer and reviews remain authorit
 | --- | --- | --- | --- | --- | --- |
 | 01 | milestone_21_plan_01_slice_01.md | Guided lossless import | M20 | complete | a2f42ab |
 | 02 | milestone_21_plan_01_slice_02.md | Catalog and policy friendly editors | 01 | complete | c4eb4dc |
-| 03 | milestone_21_plan_01_slice_03.md | Remaining capability summaries and browser acceptance | 02 | complete | pending final slice SHA |
+| 03 | milestone_21_plan_01_slice_03.md | Remaining capability summaries and browser acceptance | 02 | complete | c0aba3904a9039d650d913445ac0bc63c6fdfd4b |
 
 ## Cross-slice concerns
 Preserve authorization, generation/revision/audit checks, write-only immediate actions, M20 atomic full-settings review, inheritance, exact regex/order/options and safe dictionary keys. No browser persistence. Host file/environment references never read. Bound recursive form construction and inputs to existing server constraints. Secret fields cleared after submission. No production deployment or user-instance access.

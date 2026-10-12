@@ -274,16 +274,18 @@ milestones:
 - id: '21'
   title: Configure all capabilities with forms and lossless import
   file: delivery/milestones/secretsauce-mcp/21-friendly-configuration-and-import.md
-  status: in_progress
+  status: completed
   dependencies:
   - '20'
-  completed_at: null
-  commit_hash: null
-  notes: null
+  completed_at: '2026-10-12T00:03:46.337293+00:00'
+  commit_hash: c0aba3904a9039d650d913445ac0bc63c6fdfd4b
+  notes: Three committed slices; 668 tests/71 files and build pass; nine actual HTTPS
+    scenarios pass. All20 UX-IA06 rows and ten acceptance criteria mapped in evidence/qa/secretsauce-mcp/milestone21/capability-coverage.md;
+    exact source/report revisions in validation.json.
   started_at: '2026-10-11T23:38:05.308547+00:00'
 delivery_goal:
   product_id: secretsauce-mcp
-  status: in_progress
+  status: completed
   packet: delivery/milestones/secretsauce-mcp/status.yaml
   packet_revision: sha256:6379e6627db6d1b723948386f90b01c421229fad5b3f77af8586a5379e47a36c
   packet_contract_revisions:
@@ -332,10 +334,14 @@ delivery_goal:
   - '20'
   - '21'
   execution: autonomous
-  current_milestone: '21'
+  current_milestone: null
   governing_plan: delivery/plans/secretsauce-mcp/milestone_21_plan_01.md
   blockers: []
-  resume_point: Plan and deliver M21 using one minimal-slice-delivery transaction.
+  resume_point: "GOAL_COMPLETE: fixed M18\u2013M21 scope delivered in nine implementation\
+    \ slices with committed local acceptance. No required work remains. Running user\
+    \ instance was not redeployed; actual external ChatGPT/Codex validation retains\
+    \ the recorded exception."
+  completed_at: '2026-10-12T00:03:46.337315+00:00'
 compiled_from_history:
 - product_id: secretsauce-mcp
   input_mode: PRODUCT_BUILD

@@ -4,7 +4,7 @@
 "status": "PARTIALLY_RESOLVED"
 "transaction":
   "parent_commit": "0fc959f5f13b5fb4751788910fdb4c48fcdf442c"
-  "repository_commit": null
+  "repository_commit": "37ea0ef7b1b55632cb3e721d1807c1a04b380a82"
   "owned_paths":
   - "workflow/reconciliation/REC-RUN-005"
   - "docs/web-console-prd.md"

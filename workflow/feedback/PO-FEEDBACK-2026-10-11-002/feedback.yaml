@@ -52,7 +52,7 @@ source:
 status: CONFIRMED
 transaction:
   parent_commit: 4656bc07f4fdc292de89d960f8c64216e8a02f60
-  repository_commit: null
+  repository_commit: ed4211c661e6ba378ef490654efad8340194f795
   pre_existing_dirty_paths:
   - test-results/
   owned_paths:
@@ -421,5 +421,5 @@ items:
   ambiguity: []
 unresolved: []
 handoff:
-  reconciliation_ready: false
-  next_workflow: null
+  reconciliation_ready: true
+  next_workflow: product-reconciliation

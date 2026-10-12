@@ -1,0 +1,80 @@
+{
+  "milestone": "M21",
+  "status": "PASS",
+  "source_parent": "631f866",
+  "implementation_commits": [
+    "a2f42ab",
+    "c4eb4dc"
+  ],
+  "source_files": {
+    "src/consoleAuthenticationPage.ts": "sha256:feb59979c8a52b0f9c9a78c9ce3df0383f5df9b97d14422522ade7ebbe040d09",
+    "src/consoleFriendlyPage.ts": "sha256:2ca37d0f23be613014e20174dda7c73a6d7a32bad468397f6f273e967ee62c90",
+    "src/consoleMigration.ts": "sha256:7b45510615131200fd977880cafdaf60ad071f813dc8a75bda7e83751939ac45",
+    "src/consoleOperations.ts": "sha256:1fb6a5681b3b93ce49f3bd8ec56e390fccf3cc28fe780fb4a91e85efe8bc8800",
+    "src/consoleOperationsPage.ts": "sha256:ee7c8797c20305495b2b8b827fa49b77f004d6e205d419ccaf97f0f8055a8292",
+    "src/consolePage.ts": "sha256:9780da7f74ae9df4f3c01c02e065a1563517896541ebf34cc9fc94626ff1e7c8",
+    "src/consolePeoplePage.ts": "sha256:e0c35b22f1af2ba3269fc61877822fd598bedcecefe0302c8a7a6b6328b8f5e7",
+    "src/consoleServicePage.ts": "sha256:8656adcd90f9050fe53efcde43c4c31d6ff503482766c5401e3ab8bd44090a26",
+    "src/consoleServices.ts": "sha256:3c0615322209993d8d7c4e8e9209154499611da397e7c11bbfddf07f196ebdfc",
+    "src/consoleSettings.ts": "sha256:21e894140024d3fb09df2a1d3dca2e100adfa6225f85816a5a2d78b5ae6eb908",
+    "src/consoleSettingsPage.ts": "sha256:58abe91ca0a6f972ba1f0d6b003c458d6018b387a637bf04a00d52ab91826bc6"
+  },
+  "browser_reports": {
+    "evidence/qa/secretsauce-mcp/milestone21/advanced-regression/browser-report.json": {
+      "result": "PASS",
+      "sha256": "3eb30546908dd30ff5b65749763b39afcc80ee8740d10e86438048aa935d3794"
+    },
+    "evidence/qa/secretsauce-mcp/milestone21/backups-regression/browser-report.json": {
+      "result": "PASS",
+      "sha256": "7e016ce2194f8b786f91a5e93d2bc40b110b54bffdaddf718148d9879b6c8a56"
+    },
+    "evidence/qa/secretsauce-mcp/milestone21/clients-regression/browser-report.json": {
+      "result": "PASS",
+      "sha256": "118fec6d1e4ee0de30e81e72549e89225f80d51aba475029e5bb95804e3a65ca"
+    },
+    "evidence/qa/secretsauce-mcp/milestone21/focused-settings-regression/focused-settings-browser-report.json": {
+      "result": "PASS",
+      "sha256": "d13182230b3cb6721cc7091cb1b9d86e430555fc5d381e71c737d95bb7fa74ef"
+    },
+    "evidence/qa/secretsauce-mcp/milestone21/forms/browser-report.json": {
+      "result": "PASS",
+      "sha256": "89598e7f30dd0d02b9e684443fea8f5cbd8afbb2ca22e17d4b8808e50e7df21c"
+    },
+    "evidence/qa/secretsauce-mcp/milestone21/import/browser-report.json": {
+      "result": "PASS",
+      "sha256": "1b014d99ee087f13ac270efd716321bbd56c10dea3aa3127e2dcbacb6c3a7342"
+    },
+    "evidence/qa/secretsauce-mcp/milestone21/operations-regression/browser-report.json": {
+      "result": "PASS",
+      "sha256": "518f71940b2f7cdc131fdd6feffd5c5432d462a2b96a4356c7c84b1671a359b4"
+    },
+    "evidence/qa/secretsauce-mcp/milestone21/services-regression/browser-report.json": {
+      "result": "PASS",
+      "sha256": "22c22f83af903488629f2dd176de53be6dbd3fc6b407aa53e57578fc07bcf371"
+    },
+    "evidence/qa/secretsauce-mcp/milestone21/smtp-regression/smtp-deletion-browser-report.json": {
+      "result": "PASS",
+      "sha256": "1ba29b3c7e7f674103edf1b59796594fc628c2cb86d591f0982996fc228d1856"
+    }
+  },
+  "build": {
+    "command": "npm run build",
+    "result": "PASS"
+  },
+  "validation_notes": [
+    "Initial sandbox npm test listener EPERM was rerun with loopback permission.",
+    "One concurrent-browser full run exceeded the unchanged 10ms gateway echo fixture; targeted fixture passed after browser work completed. Final suite runs without concurrent browser work."
+  ],
+  "capability_mapping": "capability-coverage.md",
+  "external_platforms": "Existing authorized exception: actual ChatGPT/Codex account integration not executed.",
+  "user_instance": "Untouched; all browser state was disposable synthetic HTTPS loopback.",
+  "full_suite": {
+    "command": "npm test",
+    "result": "PASS",
+    "test_files": 71,
+    "tests": 668,
+    "duration_seconds": 42.93,
+    "started_local": "2026-10-11 17:01:50",
+    "loopback_permission": true
+  }
+}

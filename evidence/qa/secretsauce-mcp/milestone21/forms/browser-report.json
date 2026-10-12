@@ -1,7 +1,19 @@
 {
   "result": "PASS",
   "checks": [
+    "Document and text-range reflow at desktop/320px and 200% text: nested-options",
+    "Document and text-range reflow at desktop/320px and 200% text: catalog-forms",
     "Friendly catalog mode, pattern name/expression/exclusion, name regex and allow rows persist exact values; unusual nested options preserved; invalid regex rejected without draft.",
-    "Named method/host/path rows, priority, scanner disabled-rule checklist and binary scan/unlimited override persist without JSON."
+    "Document and text-range reflow at desktop/320px and 200% text: policy-forms",
+    "Named method/host/path rows, priority, scanner disabled-rule checklist and binary scan/unlimited override persist without JSON.",
+    "Document and text-range reflow at desktop/320px and 200% text: destinations",
+    "Document and text-range reflow at desktop/320px and 200% text: named-review",
+    "Destination scheme/port rows, literal matcher/TLS override and expert-to-form description preserve same draft; ordinary review presents named differences and readable values.",
+    "Document and text-range reflow at desktop/320px and 200% text: oauth-controls",
+    "External OAuth issuer/audience/JWKS/principal/scope fields and separate write-only legacy bearer form save supported modes without raw JSON; secret absent from read summary.",
+    "Document and text-range reflow at desktop/320px and 200% text: full-settings-review",
+    "OAuth URL/scope rows, duration number/unit and login limits save validated same-settings draft; invalid HTTP client rejected. Owner diagnostic info/debug uses existing atomic operating draft. Full Settings review is readable without JSON.",
+    "Document and text-range reflow at desktop/320px and 200% text: auditor-effective-catalog",
+    "Auditor effective catalog/authentication/email values readable without mutation; no browser storage."
   ]
 }

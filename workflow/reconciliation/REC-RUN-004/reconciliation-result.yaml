@@ -4,7 +4,7 @@
 "status": "PARTIALLY_RESOLVED"
 "transaction":
   "parent_commit": "532b2dd8c4631dccd9463194d3daa36d12722732"
-  "repository_commit": null
+  "repository_commit": "4d29294606cf2021b6fc27dc982da4a2dab1ca26"
   "pre_existing_dirty_paths":
   - "test-results/"
   "concurrent_owned_elsewhere":

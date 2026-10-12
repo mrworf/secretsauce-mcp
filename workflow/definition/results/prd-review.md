@@ -1,3 +1,25 @@
+# Web console PRD targeted revalidation — feedback 002
+
+**Current PRD stage: PASS. Implementation-ready: yes for the PRD product-contract gate.** This is not whole-workflow readiness or implementation authorization. Canonical UX synthesis, coverage, journeys and full architecture/security revalidation remain separate gates.
+
+Rechecked REC005 adoption and approved UX-DESIGN-003 against confirmed feedback 002, SECRES-06/07 and STATE-07/08. Exact source hashes are in `prd.yaml`. Account permissions, contact verification and revocation, immutable timestamps and legacy/restore meaning, and explicit unencrypted SMTP are settled. No new product question is needed.
+
+| Scope | Result |
+| --- | --- |
+| Administrator account management | Contact/role edits cover other non-Owners, never grant Owner or permit own-role editing; own contact allowed. Lifecycle, invitation and other-user session/grant administration remain Owner-only. Recent authentication, trusted-channel contact verification, immediate generation revocation, continuity and uncertainty safeguards are explicit. |
+| Creation and sign-in dates | Durable identity creation and full console session admission define timestamps. Never, Unknown, Not applicable and restored snapshot history remain distinct; dates grant no authority. |
+| SMTP | TLS default and explicit None preserve independent authentication/custom ports; no fallback or mode inference. Owner acknowledgment, current dependency checks, secret-safe fields and fresh restored review are explicit. |
+| UX-02 correction | Removed stale summary-first/pending-approval prose using already-approved populated forms and same-group read-only values. Exact final text rechecked against approved design contract; CONFIG-03 still requires reviewed atomic activation. Visual fidelity belongs canonical UX acceptance. |
+| Preservation | Existing gateway capability, manual email fallback, write-only secrets, independent deletion, whole-instance backup, four fixed roles and single-organization deployment remain intact. |
+
+All applicable product-level readiness gates pass in this bounded scope; companion acceptance contracts include positive, unauthorized, stale/concurrent, failure and recovery cases. Existing 53 IDs remain and adopted IDENT-02A/B add two IDs. Local PRD links resolve. No code or runtime tests were changed/run. Remaining technical mechanisms belong downstream specialists; missing implementation is not a definition defect. Historical findings below retain their original review-time context, including previously pending approvals and older Owner-only boundaries now explicitly superseded by SECRES-06.
+
+Changed paths: `docs/web-console-prd.md`, `workflow/definition/results/prd.yaml`, `workflow/definition/results/prd-review.md`. No commits by this specialist.
+
+---
+
+## Historical earlier PRD review
+
 # Web console PRD targeted revalidation
 
 **Current feedback PRD revalidation: PASS.** Targeted recheck of UX-02 passed at the exact recorded revision. The initial refinement evidence below remains historical; this update does not claim whole-workflow readiness.

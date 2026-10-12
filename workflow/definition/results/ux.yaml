@@ -1,105 +1,136 @@
-stage: product-ux
+stage: ux
 status: PASS
 mode: targeted_revalidation
-scope: Approved bounded web-console feedback synthesis for REC-001 through REC-007, preserving unaffected UX-DESIGN-001
-  authority.
+scope: Final bounded UX3 revalidation against refreshed coverage/journeys, adopted PRD and committed
+  REC-RUN-006; approved concepts and canonical UX3 unchanged during this pass
 validated_inputs:
 - path: docs/web-console-prd.md
-  revision: sha256:bc908afcb8c40184dfcccdf296672bc559f5499236ed37f351a82f34ad0e9843
-- path: docs/web-console-prd-coverage.md
-  revision: sha256:ee1f5e26989ba653c007b67ef5b36d3d06922cc24db49b3c2eb8b4959620bb7e
-- path: docs/web-console-prd-user-journey-audit.md
-  revision: sha256:22f0693cdda9a055ed8013a4a23ccf8710918a89a3417e6a0d902df4a7bef9a2
+  revision: sha256:00e6e2a9ec4661695f6aa4f01f86e8963739579bd147c7d73fa67870dda41e4b
 - path: product/security/web-console-security-contract.md
-  revision: sha256:27df73fc50b4ef71e6d4434db62f09da7e018acc13dfa5a305c4d0da0654a94d
+  revision: sha256:2f46343c6d3206b48c46212de6ba84a308b7f2a921cfba7525d2b212f3e4f5bc
 - path: product/architecture/web-console-state-contract.md
-  revision: sha256:c685c7fc9539f878986ccd906878808395fb13ae8ae2261fad9fd667107cbc80
-- path: workflow/feedback/PO-FEEDBACK-2026-10-11-001/feedback.yaml
-  revision: sha256:2a66ade78b37b971d5cf0f62ff5042564089d4482ed46bb3cce68c68299ae6d9
-- path: workflow/reconciliation/REC-RUN-002/reconciliation-result.yaml
-  revision: sha256:c6b695bd86f0ebcf526f188b7faf4bfac183761b0b2fd79631b0e121adb96e1e
-- &id001
-  path: workflow/definition/drafts/product-ux/web-console-feedback-001/design-contract.md
-  revision: sha256:626f6a5c5b65f9965d98642e1e906823fd186fccbed7daaab4cb5379061fb3bb
-- &id002
-  path: workflow/definition/drafts/product-ux/web-console-feedback-001/email-desktop.png
-  revision: sha256:7807ee626e1180e7810a00c83f23e40e45a0fd5e6278c30563f8276dd7774377
-- &id003
-  path: workflow/definition/drafts/product-ux/web-console-feedback-001/experience-brief.yaml
-  revision: sha256:f512bbc5726f914bf53127217d3d3e215340a36752df1c786264dda5549cbd85
-- &id004
-  path: workflow/definition/drafts/product-ux/web-console-feedback-001/index.md
-  revision: sha256:c42697e3e9460e052835e8474ec4f729daaff3078b6d2653d16bdfbe998a8349
-- &id005
-  path: workflow/definition/drafts/product-ux/web-console-feedback-001/render-checks.json
-  revision: sha256:e316bec7287d36dd1b8d7d4ceff88daec9f40e348469a3217a7364e202815f38
-- &id006
-  path: workflow/definition/drafts/product-ux/web-console-feedback-001/settings-desktop.png
-  revision: sha256:3655babf82cde5849e55a9a8b73e3042617dc37cc78bfc45440c10df73d2183f
-- &id007
-  path: workflow/definition/drafts/product-ux/web-console-feedback-001/settings-narrow.png
-  revision: sha256:ee10a30ef701e84cf10c181ea4281f263fabfbd7e1da339554b313648ed26012
-- &id008
-  path: workflow/definition/drafts/product-ux/web-console-feedback-001/settings-review.png
-  revision: sha256:e7c29bdf7b6a12eff35494c2d9e8185fca99d9ef4aa21c30249fefde33d41625
-- &id009
-  path: workflow/definition/drafts/product-ux/web-console-feedback-001/settings.html
-  revision: sha256:7863026c89cdb18f6d481ab95043f6315e1b191d5cfb0befb67aba36909b828e
+  revision: sha256:80835e44cdd550f10638bb757f183868804f9678cac4626a7ac84abb27ff0d32
+- path: workflow/feedback/PO-FEEDBACK-2026-10-11-002/feedback.yaml
+  revision: sha256:515a53d2c56f256708cef2fce9add362aa20f2fbcf1f6d34b4ff1a1dfdb9d53b
+- path: workflow/definition/decisions.md
+  revision: sha256:b995316b9e860e62cd77af4b8f581acfc4a0adf67a9c83274fe8f4d41c96b911
+- path: workflow/reconciliation/REC-RUN-005/reconciliation-result.yaml
+  revision: sha256:fbcfc50401f03cf2360fe0b6c68aca0c9439a5cdb0becb21d595c0f533f0dfbf
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/applied-desktop.png
+  revision: sha256:88883813822fc62478fdd1f2398868fd30554f69f8485eaae57be99473e3347a
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/applied.html
+  revision: sha256:a0deb0a1d769360a94faffe3d60656786bfff251e8ea5ef7b5381a8b574564a1
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/backups-desktop.png
+  revision: sha256:24ca35bd839d1638c297294dd3cda9fb6cf96d09fe3dbb78353b61fc52c079fc
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/backups.html
+  revision: sha256:9493546aeea22a5fe6441ff66ee09a9f9d85428156a3499bb0b7d8d96cc77838
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/design-contract.md
+  revision: sha256:03c15ccd3771bf988d69858d8fb3d93dc575f5888add7618d624e3e21b4e55d2
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/email-desktop.png
+  revision: sha256:89cc554c77925c758a6db57e9251015fd0089bfcb3e402333b93210b84e0d70f
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/email-narrow.png
+  revision: sha256:12f01cdfba2c06cc9ae4795e6c8cde6679682881fdeec08bb328982b7153d090
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/email-unencrypted-desktop.png
+  revision: sha256:87addefb645d36a512eb87392c249cbeb2050b57595b2c4de6473a9040bbe5e7
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/email-unencrypted.html
+  revision: sha256:cf83a1cf7c58c1ef32387111d5027a75d46801c56cb3657186652f01e8179c82
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/email.html
+  revision: sha256:8a3190838d961be0a8fdbcec5da7e9835ac7d15350182875d1f52686e63b5ee0
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/experience-brief.yaml
+  revision: sha256:9586ee91923146c2200eefe88ce54052e441edca945c5ec7b938116d77bdd13f
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/health-desktop.png
+  revision: sha256:9658ff4f0a49df664a27534fc1fb589ff76feb77896c7822131403d08e6312dc
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/health.html
+  revision: sha256:a52129cc06c327e4bb9dc6b9cf7ba5212c7d3bd8d527916181b6f54755d4c7a7
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/index.md
+  revision: sha256:6c25aaeb67be2a76cf590b785335c26195b5fb148f256d0983995706021e71e2
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/people-desktop.png
+  revision: sha256:52448c32c4bdd68c9f1fb16a7a68c350dd712117901c8b9068524ee01095c689
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/people-narrow.png
+  revision: sha256:511588b3f86e4d1283976695ae3d4b8f02c2d04d500745d96c5099b5f69a1400
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/people.html
+  revision: sha256:e65f05d878e1dc570d18f58c9454e42966438752f57280b36000324c5ec2dfc9
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/person-desktop.png
+  revision: sha256:62b963894fe5f7b4a7f8be484f0230fb3c0277e2afabc7fbd78fe4dfeae6ccd7
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/person.html
+  revision: sha256:87d27056da0bd3f27aa54703471d4c1bcd06d9b3e682d824f5127ffadae63908
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/render-checks.json
+  revision: sha256:17e6bf6955708a1b5e6cc6749d55d64b8643afc8723c2fa5c216020bd1b874c9
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/research.md
+  revision: sha256:04c1955fe894207d5987741aacd140986d88f3772040608376897052deb49650
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/review-desktop.png
+  revision: sha256:e43a0dce1e32c643e8c3fa4a24a215bc35c9c7b94df6c66a4cc3176173ae24b2
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/review.html
+  revision: sha256:39659ab5d77125174c343bda3eabc28a9f0b130ce22a15ca1e8135f1e7404dc2
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/service-desktop.png
+  revision: sha256:1d31ea296d0bafdfde5db3f872afd33f1f36f074fda109eb9fffbfce1b83ce5d
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/service.html
+  revision: sha256:7ebeed7cbefedbe77083ba75a6160332bc10e8a271598d7aaa54326833ae484a
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/styles.css
+  revision: sha256:ea601aef177d7644e5a3eab2a02e477b055d73700ed94d3e94b1ac249676fe93
+- path: docs/web-console-prd-coverage.md
+  revision: sha256:36af3429ba960eaa2adf42777c7bc7a0d8cae12b62cac3ba63d228f14eee037e
+- path: docs/web-console-prd-user-journey-audit.md
+  revision: sha256:7f0f3e3159a06e867aeabdadacdd73915c1c1a11ad0a4a8e6d597304efc1ff67
+- path: workflow/reconciliation/REC-RUN-006/reconciliation-result.yaml
+  revision: sha256:66907c2a791c0c794e600f3b3b1dd1d9167ebe7ea804fe24d759f0d309edeb93
+- path: product/ux/00-overview.md
+  revision: sha256:c7764e530cee91d697dc99d91c59367bb390dde11a8e5588056abee6977f8ce8
+- path: product/ux/01-information-architecture.md
+  revision: sha256:598d58ff99579c25797744d955519c9c611735a79c2a8c49154e1fee2486b2db
+- path: product/ux/02-interaction-patterns.md
+  revision: sha256:7e9090b32ffeab812989a467e9aa7f1d574928b66f61056fd2a4a724a0885928
+- path: product/ux/03-responsive-and-platform.md
+  revision: sha256:e277c6634a9c2e240da30cd3c82026676b53b3dcd242218a7a254d321f2ad914
+- path: product/ux/04-visual-system.md
+  revision: sha256:7c68c82b60d81c638d521eb6d03d28b4cba08f13244276bff1d43295f078937b
+- path: product/ux/05-accessibility.md
+  revision: sha256:c638c001079626f71876d60ef8075f9e5d682e4a62fabf8800f8ed1e3eea969e
+- path: product/ux/06-feature-exceptions.md
+  revision: sha256:4dfbfc09ff7e131672922ef83ec81106b4ae38407ee21f9aabff8bdc19aaac2f
+- path: product/ux/07-acceptance-checklist.md
+  revision: sha256:e37fd2617fc4ac140a8df33990a067d6e8ffdb6a5ffbd419d0aa9988584e58f0
+- path: product/ux/experience-brief.yaml
+  revision: sha256:401e66e9ac595a78b84a0838e632a6ee124dcebef8c198ba2e80fdcad67e81b5
+- path: product/ux/manifest.yaml
+  revision: sha256:7331cb34170fa5f35d6790c4be5825b21cd9ba00b66be88caab3409de7c56563
 decision_provenance:
-- UX-DESIGN-001
-- UX-DESIGN-002
-- REC-DEC-001
-- REC-DEC-003
-- PO-FB-002
-- PO-FB-004
-- PO-FB-006
-- PO-FB-008
-- PO-FB-011
-- PO-FB-013
-- PO-FB-014
+- UX-DESIGN-003
+- REC-DEC-004
+- REC-DEC-005
+- REC-DEC-006
+- REC-DEC-007
 artifact_changes:
 - path: product/ux/00-overview.md
-  summary: Published coherent approved web-console-ux-2 bounded authority; preserved unaffected rules and stable
-    IDs.
-  revision: sha256:2ef8da7f945e6aec97ff1e57f58f41ea89fb677f97e71fff3e983141efca4f6a
+  revision: sha256:c7764e530cee91d697dc99d91c59367bb390dde11a8e5588056abee6977f8ce8
+  summary: Synthesize approved UX3 direction; preserve unaffected rules and stable IDs
 - path: product/ux/01-information-architecture.md
-  summary: Published coherent approved web-console-ux-2 bounded authority; preserved unaffected rules and stable
-    IDs.
-  revision: sha256:2f7bc646c1f518e424378a4b47df945d5b7eb8c72f1c2aef7f07879929a40ddf
+  revision: sha256:598d58ff99579c25797744d955519c9c611735a79c2a8c49154e1fee2486b2db
+  summary: Synthesize approved UX3 direction; preserve unaffected rules and stable IDs
 - path: product/ux/02-interaction-patterns.md
-  summary: Published coherent approved web-console-ux-2 bounded authority; preserved unaffected rules and stable
-    IDs.
-  revision: sha256:0346e83574043bcac2927c197c5639624d6d405961e9226e4a5f15b02908f331
+  revision: sha256:7e9090b32ffeab812989a467e9aa7f1d574928b66f61056fd2a4a724a0885928
+  summary: Synthesize approved UX3 direction; preserve unaffected rules and stable IDs
 - path: product/ux/03-responsive-and-platform.md
-  summary: Published coherent approved web-console-ux-2 bounded authority; preserved unaffected rules and stable
-    IDs.
-  revision: sha256:0f4128d57beaf0ad2bf82fe0f66ca6ecd65e47d680847fc11ae082010f32f16c
+  revision: sha256:e277c6634a9c2e240da30cd3c82026676b53b3dcd242218a7a254d321f2ad914
+  summary: Synthesize approved UX3 direction; preserve unaffected rules and stable IDs
 - path: product/ux/04-visual-system.md
-  summary: Published coherent approved web-console-ux-2 bounded authority; preserved unaffected rules and stable
-    IDs.
-  revision: sha256:8ecf109ee9a61de31a205bd746727433afac135a9a2d061a93bba8f6fd9209d7
+  revision: sha256:7c68c82b60d81c638d521eb6d03d28b4cba08f13244276bff1d43295f078937b
+  summary: Synthesize approved UX3 direction; preserve unaffected rules and stable IDs
 - path: product/ux/05-accessibility.md
-  summary: Published coherent approved web-console-ux-2 bounded authority; preserved unaffected rules and stable
-    IDs.
-  revision: sha256:96a81f4275b0c747026f7f77c4f57935c5abe5fd824a657b16997e397a514795
+  revision: sha256:c638c001079626f71876d60ef8075f9e5d682e4a62fabf8800f8ed1e3eea969e
+  summary: Synthesize approved UX3 direction; preserve unaffected rules and stable IDs
 - path: product/ux/06-feature-exceptions.md
-  summary: Published coherent approved web-console-ux-2 bounded authority; preserved unaffected rules and stable
-    IDs.
-  revision: sha256:6347b8162f4b4987db9ef3cf7030f8930a42594988cf48dbe7ed6021e0b82569
+  revision: sha256:4dfbfc09ff7e131672922ef83ec81106b4ae38407ee21f9aabff8bdc19aaac2f
+  summary: Synthesize approved UX3 direction; preserve unaffected rules and stable IDs
 - path: product/ux/07-acceptance-checklist.md
-  summary: Published coherent approved web-console-ux-2 bounded authority; preserved unaffected rules and stable
-    IDs.
-  revision: sha256:c47b51b4a4f6f9d73d644f67e125c3e7b0118174a6f2a9ccfdc6b44abdb6e4f5
+  revision: sha256:e37fd2617fc4ac140a8df33990a067d6e8ffdb6a5ffbd419d0aa9988584e58f0
+  summary: Synthesize approved UX3 direction; preserve unaffected rules and stable IDs
 - path: product/ux/experience-brief.yaml
-  summary: Published coherent approved web-console-ux-2 bounded authority; preserved unaffected rules and stable
-    IDs.
-  revision: sha256:b8371e8d77f398cd44c205320b7d73f860b0e48c152d0ad2425b5bdc9902121f
+  revision: sha256:401e66e9ac595a78b84a0838e632a6ee124dcebef8c198ba2e80fdcad67e81b5
+  summary: Synthesize approved UX3 direction; preserve unaffected rules and stable IDs
 - path: product/ux/manifest.yaml
-  summary: Published coherent approved web-console-ux-2 bounded authority; preserved unaffected rules and stable
-    IDs.
-  revision: sha256:8c2881d271b7ca836fbf9ca28e2687e2c049004fdca9093b7f9f3f6c80f43132
-- path: workflow/definition/results/ux.yaml
-  summary: Final bounded UX PASS with exact sources, approval evidence and canonical artifact hashes.
+  revision: sha256:7331cb34170fa5f35d6790c4be5825b21cd9ba00b66be88caab3409de7c56563
+  summary: Synthesize approved UX3 direction; preserve unaffected rules and stable IDs
 changed_paths:
 - product/ux/00-overview.md
 - product/ux/01-information-architecture.md
@@ -114,32 +145,19 @@ changed_paths:
 - workflow/definition/results/ux.yaml
 findings: []
 questions: []
-resolved_question_ids:
-- UX-DESIGN-002
-resolved_resolution_ids:
-- REC-DEC-002
 affected_requirements:
-- AUTHZ-02
-- AUTHZ-03
-- IDENT-04
-- IDENT-05
-- IDENT-06
-- CONFIG-01
-- CONFIG-02
-- CONFIG-03
-- CONFIG-04
 - UX-01
 - UX-02
 - UX-03
 - UX-04
-- MIGRATE-01
-- MIGRATE-02
-- MIGRATE-03
-- MIGRATE-04
-- SECRES-05
-- STATE-01
-- STATE-02
-- STATE-03
+- IDENT-02A
+- IDENT-04
+- IDENT-05
+- IDENT-06
+- CONFIG-03
+- BACKUP-02
+- AUTHZ-02
+- AUTHZ-03
 affected_artifacts:
 - product/ux/00-overview.md
 - product/ux/01-information-architecture.md
@@ -163,30 +181,14 @@ change_impact:
 ux_handoff:
   manifest:
     path: product/ux/manifest.yaml
-    revision: web-console-ux-2
-    content_revision: sha256:8c2881d271b7ca836fbf9ca28e2687e2c049004fdca9093b7f9f3f6c80f43132
+    revision: web-console-ux-3
   experience_brief:
     path: product/ux/experience-brief.yaml
-    revision: web-console-ux-2
-    content_revision: sha256:b8371e8d77f398cd44c205320b7d73f860b0e48c152d0ad2425b5bdc9902121f
+    revision: web-console-ux-3
   approval:
     status: approved
     decision_refs:
-    - UX-DESIGN-001
-    - UX-DESIGN-002
-    decision_ledger: workflow/definition/decisions.md
-    approved_proposal_revisions:
-    - *id001
-    - *id002
-    - *id003
-    - *id004
-    - *id005
-    - *id006
-    - *id007
-    - *id008
-    - *id009
-    approval_scope: Explicit approval of feedback-draft-1 Settings direction; prior visual character remains UX-DESIGN-001;
-      settled PRD/domain semantics supply resets/deletion.
+    - UX-DESIGN-003
   authoritative_artifacts_changed:
   - product/ux/00-overview.md
   - product/ux/01-information-architecture.md
@@ -198,62 +200,42 @@ ux_handoff:
   - product/ux/07-acceptance-checklist.md
   - product/ux/experience-brief.yaml
   - product/ux/manifest.yaml
-  source_authorities_unchanged:
-  - docs/web-console-prd.md
-  - docs/web-console-prd-coverage.md
-  - docs/web-console-prd-user-journey-audit.md
-  - product/security/web-console-security-contract.md
-  - product/architecture/web-console-state-contract.md
-  - workflow/feedback/PO-FEEDBACK-2026-10-11-001/feedback.yaml
-  - workflow/reconciliation/REC-RUN-002/reconciliation-result.yaml
   downstream_freshness:
     affected_domains: []
     potentially_stale_artifacts: []
+    note: UX-owned crosscheck of current coverage and journeys completed; parent still owns architecture/security
+      freshness and routing.
   impact_hints:
-    coverage_journeys: IA input changed. Bounded input recheck recommended; no derived artifact edits made by UX.
-    architecture_security: Review current approved UX against their unchanged domain authority; no freshness decision
-      made here.
+    reconciliation: REC-RUN-006 resolved and REC-DEC-006 accepted; no additional UX reconciliation
+      required.
+    visual_acceptance: UX-C42 requires implementation/reference screenshot comparison and resolution
+      of meaningful appearance differences
   consumer: product-definition-orchestrator
-  canonical_rules:
-    settings: UX-IA05/06, UX-R04, UX-V04, UX-A05
-    resets: UX-IA04, UX-IN08
-    smtp_deletion: UX-IN09, UX-EX03
-    navigation_import: UX-IA01/04/06
-    conformance: "Existing UX-C01\u201325 retained; UX-C26\u201333 added."
 validation:
-  canonical_artifacts: 10
-  conformance_criteria: 33
-  unresolved_questions: 0
-  approved_proposal_bytes_preserved: true
-  source_hashes_verified: 7
-  approved_proposal_hashes_verified: 9
-  canonical_manifest_hashes_verified: 9
-  stable_rule_ids_unique: true
-  correction_recheck: 'PASS after synthesis: duplicate proposed reflow ID corrected to new UX-R04; backup-recovery
-    Owner-only wording explicitly distinguishes assisted account resets. All manifest hashes recomputed after final
-    edits.'
-  scope_checks:
-  - Six approved Settings destinations, one-section composition, readable summaries and typed controls preserve
-    full existing capability.
-  - Same-draft search/navigation guards and exact complete-scope review do not introduce partial apply.
-  - Reset target hierarchy, recent verification, issuance/completion distinctions, issuer/target proof checks and
-    last enrolled Owner continuity agree with SECRES-05.
-  - SMTP deletion is independent while creation/replacement retain draft/apply; dependency, stale-value, audit and
-    uncertainty rules match STATE amendment.
-  - Navigation and guided legacy/catalog import remain discoverable with role scope and no implicit activation.
-  - Approved visual character and proposal bytes retained; current canonical brief/manifest reflect explicit accepted
-    approval.
-  implementation_tests_run: false
-  limitations: Definition-only synthesis. Existing rendered proposal evidence was inspected previously and bytes
-    are unchanged. No new runtime conformance, assistive-technology, release or compliance certification.
-transaction:
-  parent_commit: 1cbc57766e76b4cd4de8f35e9a7dc39b7b1214e3
-  owner: product-definition-orchestrator
+  canonical_synthesis: true
+  production_tests_run: false
+  approved_concepts_changed: false
+  coverage_journeys: 'PASS: current coverage and actor journeys preserve populated forms, save/review/apply
+    state, bounded roles, metadata, SMTP mode and UX-C42 screenshot evidence obligations.'
+  visual_concepts: Previously rendered/inspected approved concepts retained byte-for-byte; actual
+    implementation screenshots required in delivery
+  crosscheck:
+  - Coverage UX-02/02.a/02.d and UX-04.a/04.b agree with UX-IA05/07/08, UX-IN10/11 and UX-V05.
+  - Journeys ACT-099–110 and People/Settings/backup/restore paths agree with UX-IN10/12/13 and STATE-07/08
+    metadata/transport semantics.
+  - Both derived audits explicitly preserve matching-state/viewport actual-reference screenshots
+    and correction or explicit exception of meaningful visual divergence; neither claims implementation
+    conformance.
+  canonical_changes_this_pass: []
+  manifest_checkpoint_note: Manifest validation_boundary records synthesis-time pending audits; this
+    current result closes that bounded UX audit dependency without changing the immutable approved
+    UX3 authority inputs or derived-audit hashes.
+git_ownership:
+  parent_commit: 65c1d45ba19f8dbcfca161bddf8c415f04c40d26
+  commit_owner: product-definition-orchestrator
   child_commit: false
   pre_existing_dirty_paths:
   - workflow/definition/decisions.md
   - workflow/definition/open-questions.md
   - workflow/definition/state.yaml
   - test-results/
-workflow_readiness: UX-stage PASS for exact current sources only. Parent owns downstream revalidation, reconciliation
-  closeout, package and transaction.

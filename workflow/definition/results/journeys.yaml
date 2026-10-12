@@ -1,80 +1,74 @@
-stage: prd-to-user-journey-audit
+stage: journeys
 status: PASS
 mode: targeted_revalidation
+generated_at: '2026-10-12T23:48:31+00:00'
 validated_inputs:
 - path: docs/web-console-prd.md
-  revision: sha256:bc908afcb8c40184dfcccdf296672bc559f5499236ed37f351a82f34ad0e9843
+  revision: sha256:00e6e2a9ec4661695f6aa4f01f86e8963739579bd147c7d73fa67870dda41e4b
 - path: product/security/web-console-security-contract.md
-  revision: sha256:27df73fc50b4ef71e6d4434db62f09da7e018acc13dfa5a305c4d0da0654a94d
+  revision: sha256:2f46343c6d3206b48c46212de6ba84a308b7f2a921cfba7525d2b212f3e4f5bc
 - path: product/architecture/web-console-state-contract.md
-  revision: sha256:c685c7fc9539f878986ccd906878808395fb13ae8ae2261fad9fd667107cbc80
+  revision: sha256:80835e44cdd550f10638bb757f183868804f9678cac4626a7ac84abb27ff0d32
 - path: docs/web-console-prd-coverage.md
-  revision: sha256:ee1f5e26989ba653c007b67ef5b36d3d06922cc24db49b3c2eb8b4959620bb7e
-- path: workflow/feedback/PO-FEEDBACK-2026-10-11-001/feedback.yaml
-  revision: sha256:2a66ade78b37b971d5cf0f62ff5042564089d4482ed46bb3cce68c68299ae6d9
-- path: workflow/reconciliation/REC-RUN-002/reconciliation-result.yaml
-  revision: sha256:c6b695bd86f0ebcf526f188b7faf4bfac183761b0b2fd79631b0e121adb96e1e
+  revision: sha256:36af3429ba960eaa2adf42777c7bc7a0d8cae12b62cac3ba63d228f14eee037e
+- path: workflow/feedback/PO-FEEDBACK-2026-10-11-002/feedback.yaml
+  revision: sha256:515a53d2c56f256708cef2fce9add362aa20f2fbcf1f6d34b4ff1a1dfdb9d53b
+- path: workflow/reconciliation/REC-RUN-004/reconciliation-result.yaml
+  revision: sha256:ecaf289db5f2684b1195aa9b68a6b6957dc3074b98d61b2ef8882ffb27ebedde
+- path: workflow/reconciliation/REC-RUN-005/reconciliation-result.yaml
+  revision: sha256:fbcfc50401f03cf2360fe0b6c68aca0c9439a5cdb0becb21d595c0f533f0dfbf
+- path: product/ux/00-overview.md
+  revision: sha256:c7764e530cee91d697dc99d91c59367bb390dde11a8e5588056abee6977f8ce8
 - path: product/ux/01-information-architecture.md
-  revision: sha256:2f7bc646c1f518e424378a4b47df945d5b7eb8c72f1c2aef7f07879929a40ddf
-- path: docs/web-console-prd-user-journey-audit.md
-  revision: sha256:22f0693cdda9a055ed8013a4a23ccf8710918a89a3417e6a0d902df4a7bef9a2
+  revision: sha256:598d58ff99579c25797744d955519c9c611735a79c2a8c49154e1fee2486b2db
 - path: product/ux/02-interaction-patterns.md
-  revision: sha256:0346e83574043bcac2927c197c5639624d6d405961e9226e4a5f15b02908f331
+  revision: sha256:7e9090b32ffeab812989a467e9aa7f1d574928b66f61056fd2a4a724a0885928
+- path: product/ux/03-responsive-and-platform.md
+  revision: sha256:e277c6634a9c2e240da30cd3c82026676b53b3dcd242218a7a254d321f2ad914
+- path: product/ux/04-visual-system.md
+  revision: sha256:7c68c82b60d81c638d521eb6d03d28b4cba08f13244276bff1d43295f078937b
+- path: product/ux/05-accessibility.md
+  revision: sha256:c638c001079626f71876d60ef8075f9e5d682e4a62fabf8800f8ed1e3eea969e
+- path: product/ux/06-feature-exceptions.md
+  revision: sha256:4dfbfc09ff7e131672922ef83ec81106b4ae38407ee21f9aabff8bdc19aaac2f
+- path: product/ux/07-acceptance-checklist.md
+  revision: sha256:e37fd2617fc4ac140a8df33990a067d6e8ffdb6a5ffbd419d0aa9988584e58f0
+- path: product/ux/experience-brief.yaml
+  revision: sha256:401e66e9ac595a78b84a0838e632a6ee124dcebef8c198ba2e80fdcad67e81b5
 - path: product/ux/manifest.yaml
-  revision: sha256:8c2881d271b7ca836fbf9ca28e2687e2c049004fdca9093b7f9f3f6c80f43132
-decision_provenance:
-- D-001
-- D-002
-- D-003
-- D-004
-- D-005
-- D-006
-- D-007
-- D-008
-- D-009
-- D-010
-- D-011
-- D-012
-- RES-PRD-SEC-01
-- RES-PRD-ARCH-01
-- REC-DEC-001
-- REC-DEC-003
-- PO-FB-006
-- PO-FB-008
-- PO-FB-011
-- PO-FB-013
-- PO-FB-014
-- UX-DESIGN-002
+  revision: sha256:7331cb34170fa5f35d6790c4be5825b21cd9ba00b66be88caab3409de7c56563
 artifact_changes:
+- path: docs/web-console-prd-user-journey-audit.md
+  summary: Preserve all 59 existing journeys and add five role-specific People viewing/account-edit
+    journeys; update populated settings, SMTP modes, metadata, responsive errors and mockup-fidelity
+    acceptance.
 - path: workflow/definition/results/journeys.yaml
-  summary: Adapter-only compatibility refresh against approved web-console-ux-2 IA/patterns; supersedes pending-approval
-    checkpoint while preserving journey audit bytes and unchanged normative source revisions.
+  summary: Current authority hashes and bounded journey-stage PASS; runtime remains unverified.
 changed_paths:
+- docs/web-console-prd-user-journey-audit.md
 - workflow/definition/results/journeys.yaml
 findings: []
 questions: []
 affected_requirements:
+- IDENT-02A
+- IDENT-02B
+- IDENT-04
+- IDENT-06
 - AUTHZ-02
 - AUTHZ-03
-- IDENT-04
-- IDENT-05
-- IDENT-06
-- CONFIG-02
 - CONFIG-03
-- CONFIG-04
-- AUDIT-01
-- AUDIT-04
 - UX-02
 - UX-03
 - UX-04
-- MIGRATE-01
-- MIGRATE-02
-- MIGRATE-03
-- MIGRATE-04
-- SECRES-05
-- STATE-01
-- STATE-02
-- STATE-03
+- BACKUP-01
+- BACKUP-02
+- BACKUP-05
+- OPS-03
+- OPS-04
+- SECRES-06
+- SECRES-07
+- STATE-07
+- STATE-08
 affected_artifacts:
 - docs/web-console-prd-user-journey-audit.md
 reconciliation_required: false
@@ -87,53 +81,15 @@ change_impact:
 validation:
   actors: 10
   actor_context_rows: 25
-  capability_families: 71
-  journeys: 59
-  entry_points: 24
-  action_mappings: 98
-  coverage_rows: 59
+  capability_families: 77
+  journeys: 64
+  entry_points: 25
+  action_mappings: 110
+  coverage_rows: 64
   specification_gaps: 0
   implementation_tests_run: false
   implementation_evidence: Not verified; definition-only review
-  targeted_correction_recheck: 'PASS: 59 unique journeys and eight-column coverage rows, 24 entry points, 98 unique
-    actions; exact input hashes unchanged; separate role/issuer/target reset contracts and SMTP independent deletion
-    agree with PRD/SECRES-05/STATE amendment.'
-  authority_boundary: Approved web-console-ux-2 IA and interaction patterns adopt current PRD/SECRES-05 role hierarchy,
-    separate reset transitions and STATE SMTP deletion. Exact current hashes captured; no stale Owner-only reset
-    limitation remains in current authority.
-  approved_ux_compatibility_recheck: 'PASS: canonical UX specializes the already mapped journeys and action chains
-    without changing eligibility, state boundaries or outcomes. Existing audit is preserved byte-for-byte; its pending-design
-    wording is an earlier checkpoint superseded by this current adapter and approved UX authority.'
-workflow_readiness: Journey-stage PASS against approved web-console-ux-2. UX-DESIGN-002 approved; downstream architecture/security
-  reviews and reconciliation convergence remain orchestrator-owned. No implementation validation or global delivery
-  readiness claim.
-targeted_revalidation:
-  finding_ids:
-  - REC-001
-  - REC-002
-  - REC-003
-  - REC-004
-  - REC-005
-  - REC-006
-  - REC-007
-  pending_external_decision: None for this journey revalidation. UX-DESIGN-002 is approved; prior audit pending-approval
-    checkpoint is superseded for current workflow position.
-  approved_ux_compatibility:
-    UX-IA01/04 and UX-IN08: EP-05/24, J-OWNER/ADMIN-RECOVERY and PASSWORD-RESET, eight role-specific target-completion
-      journeys and associated actions preserve bounded Administrator visibility, issuer/target eligibility, separate
-      password versus MFA transitions, final Owner, trusted delivery, proof generations and all denial/recovery
-      outcomes.
-    UX-IA05: J-OWNER-SETTINGS, J-ADMIN-CONFIG, J-AUDITOR-CONFIG, EP-12 and ACT-040/041/098 already map role-scoped
-      focused settings, friendly values, draft/review/apply and failure recovery. Approved six-destination links,
-      narrow selector, initial Response protection, search/error focus and Stay/Save/Discard guard specialize ingress
-      and safe navigation; one saved settings draft and exact whole-reviewed-set atomic apply preserve STATE-01/02.
-    UX-IA06: Configuration, policy, credential, settings and history/import journeys preserve every supported value
-      and scope. Typed option/list controls, readable summaries and optional expert syntax specialize existing friendly
-      lossless editing obligations; host-only inputs remain outside web management.
-    UX-IN09: J-OWNER-SMTP-DELETE and ACT-096 preserve separate immediate deletion, enabled dependency block, disable/apply
-      then delete, current-version checks, pending-copy removal, stale review rejection, safe non-secret draft recovery,
-      delivery admission and uncertainty fences.
-    Navigation and migration: ACT-097 preserves selected global/secondary navigation independent of focus. EP-10
-      and J-OWNER/ADMIN-HISTORY retain Services/Configuration tools discovery, separate legacy YAML/catalog inputs,
-      explicit credential/identity resolution, unknown-field rejection and preservation across editor/import round
-      trips.
+  visual_acceptance: UX-V05/UX-C42 matching-state/viewport implementation/reference comparison required;
+    no runtime acceptance claim.
+workflow_readiness: Journey-stage PASS against current PRD/companions and approved UX3. Reconciliation
+  convergence, final domain reviews and delivery planning remain orchestrator-owned.

@@ -8,7 +8,7 @@ Maintain a shared spacing/type rhythm, with readable body/help text and clear se
 
 ## UX-V02 — State and action language
 
-Represent lifecycle, editing and health separately: **Active** versus **Draft changes**; **Applied revision N** versus **Saved draft**; **Degraded** versus **Failed**. Distinguish Disabled from Archived. Use text with icons/shape plus restrained green/blue/amber/red status accents. Color alone cannot encode severity, allowed/denied or before/after.
+Represent lifecycle, editing and health separately: **Active** versus **Draft changes**; **In use / Applied revision N** versus **Saved for later · Not in use yet**; **Degraded** versus **Failed**. Distinguish Disabled from Archived. Use text with icons/shape plus restrained green/blue/amber/red status accents. Color alone cannot encode severity, allowed/denied or before/after.
 
 Primary action is visually strongest for the current task (Add service, Review & apply, Apply reviewed changes). Secondary actions use quieter controls; destructive actions become prominent only in their relevant confirmation. Never style a noninteractive status badge as an action. Read-only views have a clear scope label and omit forbidden edit affordances. Runtime banners for audit outage, restricted diagnosis or recovery precede normal content and cannot be dismissed while the state persists.
 
@@ -21,4 +21,12 @@ Match the approved service-list hierarchy, grouped edit sections, explicit impac
 
 ## UX-V04 — Settings and location state
 
-Extend UX-DESIGN-001 with UX-DESIGN-002: compact secondary section navigation, readable applied summaries, clearly labeled editing state and a single prominent full-draft review action. Global and section selection use restrained accent plus weight/shape, not color alone. Keep raw JSON/YAML behind an explicitly optional advanced editor. Friendly repeated rows, selectors, units and typed option controls replace object dumps in ordinary editing and read-only views. Immediate deletion/reset controls remain secondary until their specific confirmation.
+Extend UX-DESIGN-001 with UX-DESIGN-002: compact secondary section navigation, populated current-value forms under UX-DESIGN-003, clearly labeled change state and a single prominent full-draft review action. Global and section selection use restrained accent plus weight/shape, not color alone. Keep raw JSON/YAML behind an explicitly optional advanced editor. Friendly repeated rows, selectors, units and typed option controls replace object dumps in ordinary editing and read-only views. Immediate deletion/reset controls remain secondary until their specific confirmation.
+
+## UX-V05 — Material fidelity to approved feedback 002 mockups
+
+UX-DESIGN-003 explicitly requires the implementation’s general appearance to match the approved mockups. Preserve the demonstrated overall composition, useful horizontal space, moderate density, typography hierarchy, spacing rhythm, grouped white cards on pale neutral surfaces, dark text, restrained orange primary/selection accents, input/button treatment, primary/secondary action hierarchy, primary and Settings rails, and responsive form/list transformation. Functional equivalence alone does not satisfy this requirement.
+
+Compare actual implementation screenshots with the manifest-hashed concepts at representative matching states and viewports: populated Email, None warning, saved backup settings/full review/applied result, People list and account detail, Add service destinations, diagnostics, and narrow Email/People. Use synthetic data and equivalent permissions; record meaningful visual differences and their resolution. Correct material divergence before claiming UX conformance, or record an explicitly accepted, scoped exception with rationale. Do not rewrite reference concepts to disguise drift.
+
+This is general visual fidelity, not pixel-perfect geometry, identical sample text/counts or font-antialias matching. Accessibility, real capability completeness, dynamic state and current security contracts remain mandatory; if they require material deviation, document it and obtain explicit acceptance rather than silently changing the design. Minor implementation-specific rendering differences need no cosmetic approval ceremony. Existing approved unaffected recovery/service flows retain their prior visual authority.

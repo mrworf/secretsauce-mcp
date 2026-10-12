@@ -219,9 +219,9 @@ The primary navigation is:
 
 **UX-01 — Service-centered design.** Start on Services, with search, status filters, and a clear Add service action. Service details contain Overview, Configuration, Access, and Activity. Avoid a separate dashboard dominated by decorative charts.
 
-**UX-02 — Progressive disclosure.** Show useful defaults and plain-language summaries first. Advanced controls remain discoverable and searchable. Explain the effect of a control where it is edited.
+**UX-02 — Progressive disclosure.** Show useful defaults, plain-language labels and concise help. For authorized Settings editors, show current non-secret values in populated forms; read-only viewers receive the same grouping as labeled values. Advanced controls remain discoverable and searchable. Explain the effect of a control where it is edited.
 
-Group Settings into focused sections instead of one long scrolling page containing all settings. Provide user-friendly configuration controls that hide technical configuration detail, while preserving every supported capability and existing value. Raw JSON must not be the routine way to view or edit settings. These requirements establish the outcome; the section layout and navigation mechanism remain subject to UX direction approval.
+Group Settings into focused sections instead of one long scrolling page containing all settings. Provide user-friendly configuration controls that hide technical configuration detail, while preserving every supported capability and existing value. Raw JSON must not be the routine way to view or edit settings. The approved UX-DESIGN-003 direction and canonical UX artifacts define the section navigation, editing states and visual acceptance requirements; populated forms preserve the reviewed activation contract in CONFIG-03.
 
 Use Vault's guided policy editing as inspiration for combining structured editing with advanced capability, and 1Password's fixed roles as inspiration for understandable administration. These are design references, not feature-parity targets. [Vault policy editor](https://developer.hashicorp.com/vault/docs/ui/visual-policy-editor), [1Password built-in roles](https://support.1password.com/groups/)
 

@@ -1,48 +1,50 @@
-stage: generate-prd-coverage-matrix
+stage: coverage
 status: PASS
 mode: targeted_revalidation
 validated_inputs:
 - path: docs/web-console-prd.md
-  revision: sha256:bc908afcb8c40184dfcccdf296672bc559f5499236ed37f351a82f34ad0e9843
+  revision: sha256:00e6e2a9ec4661695f6aa4f01f86e8963739579bd147c7d73fa67870dda41e4b
 - path: product/security/web-console-security-contract.md
-  revision: sha256:27df73fc50b4ef71e6d4434db62f09da7e018acc13dfa5a305c4d0da0654a94d
+  revision: sha256:2f46343c6d3206b48c46212de6ba84a308b7f2a921cfba7525d2b212f3e4f5bc
 - path: product/architecture/web-console-state-contract.md
-  revision: sha256:c685c7fc9539f878986ccd906878808395fb13ae8ae2261fad9fd667107cbc80
-- path: workflow/feedback/PO-FEEDBACK-2026-10-11-001/feedback.yaml
-  revision: sha256:2a66ade78b37b971d5cf0f62ff5042564089d4482ed46bb3cce68c68299ae6d9
-- path: workflow/reconciliation/REC-RUN-002/reconciliation-result.yaml
-  revision: sha256:c6b695bd86f0ebcf526f188b7faf4bfac183761b0b2fd79631b0e121adb96e1e
+  revision: sha256:80835e44cdd550f10638bb757f183868804f9678cac4626a7ac84abb27ff0d32
+- path: workflow/feedback/PO-FEEDBACK-2026-10-11-002/feedback.yaml
+  revision: sha256:515a53d2c56f256708cef2fce9add362aa20f2fbcf1f6d34b4ff1a1dfdb9d53b
+- path: workflow/reconciliation/REC-RUN-004/reconciliation-result.yaml
+  revision: sha256:ecaf289db5f2684b1195aa9b68a6b6957dc3074b98d61b2ef8882ffb27ebedde
+- path: workflow/reconciliation/REC-RUN-005/reconciliation-result.yaml
+  revision: sha256:fbcfc50401f03cf2360fe0b6c68aca0c9439a5cdb0becb21d595c0f533f0dfbf
+- path: product/ux/00-overview.md
+  revision: sha256:c7764e530cee91d697dc99d91c59367bb390dde11a8e5588056abee6977f8ce8
 - path: product/ux/01-information-architecture.md
-  revision: sha256:2f7bc646c1f518e424378a4b47df945d5b7eb8c72f1c2aef7f07879929a40ddf
-- path: docs/web-console-prd-coverage.md
-  revision: sha256:ee1f5e26989ba653c007b67ef5b36d3d06922cc24db49b3c2eb8b4959620bb7e
+  revision: sha256:598d58ff99579c25797744d955519c9c611735a79c2a8c49154e1fee2486b2db
 - path: product/ux/02-interaction-patterns.md
-  revision: sha256:0346e83574043bcac2927c197c5639624d6d405961e9226e4a5f15b02908f331
-decision_provenance:
-- D-001
-- D-002
-- D-003
-- D-004
-- D-005
-- D-006
-- D-007
-- D-008
-- D-009
-- D-010
-- D-011
-- D-012
-- RES-PRD-SEC-01
-- RES-PRD-ARCH-01
-- REC-DEC-001
-- REC-DEC-003
-- PO-FB-008
-- PO-FB-011
-- UX-DESIGN-002
+  revision: sha256:7e9090b32ffeab812989a467e9aa7f1d574928b66f61056fd2a4a724a0885928
+- path: product/ux/03-responsive-and-platform.md
+  revision: sha256:e277c6634a9c2e240da30cd3c82026676b53b3dcd242218a7a254d321f2ad914
+- path: product/ux/04-visual-system.md
+  revision: sha256:7c68c82b60d81c638d521eb6d03d28b4cba08f13244276bff1d43295f078937b
+- path: product/ux/05-accessibility.md
+  revision: sha256:c638c001079626f71876d60ef8075f9e5d682e4a62fabf8800f8ed1e3eea969e
+- path: product/ux/06-feature-exceptions.md
+  revision: sha256:4dfbfc09ff7e131672922ef83ec81106b4ae38407ee21f9aabff8bdc19aaac2f
+- path: product/ux/07-acceptance-checklist.md
+  revision: sha256:e37fd2617fc4ac140a8df33990a067d6e8ffdb6a5ffbd419d0aa9988584e58f0
+- path: product/ux/experience-brief.yaml
+  revision: sha256:401e66e9ac595a78b84a0838e632a6ee124dcebef8c198ba2e80fdcad67e81b5
+- path: product/ux/manifest.yaml
+  revision: sha256:7331cb34170fa5f35d6790c4be5825b21cd9ba00b66be88caab3409de7c56563
+- path: docs/web-console-prd-coverage.md
+  revision: sha256:36af3429ba960eaa2adf42777c7bc7a0d8cae12b62cac3ba63d228f14eee037e
 artifact_changes:
+- path: docs/web-console-prd-coverage.md
+  summary: Preserved all capability rows; updated bounded account authority, metadata/recovery, TLS/None
+    SMTP, populated forms and current-state accuracy; mapped approved UX3 and mandatory actual screenshot
+    comparison.
 - path: workflow/definition/results/coverage.yaml
-  summary: Adapter-only compatibility recheck against approved web-console-ux-2 IA and interaction patterns; prior
-    coverage bytes and validated PRD/security/state revisions preserved.
+  summary: Exact-input targeted revalidation adapter for feedback 002 and approved UX3.
 changed_paths:
+- docs/web-console-prd-coverage.md
 - workflow/definition/results/coverage.yaml
 findings: []
 questions: []
@@ -71,6 +73,8 @@ affected_requirements:
 - CONFIG-05
 - IDENT-01
 - IDENT-02
+- IDENT-02A
+- IDENT-02B
 - IDENT-03
 - IDENT-04
 - IDENT-05
@@ -96,21 +100,25 @@ affected_requirements:
 - SEC-01
 - SEC-02
 - SEC-03
-- UX-01
-- UX-02
-- UX-03
-- UX-04
 - SECRES-01
 - SECRES-02
 - SECRES-03
 - SECRES-04
+- SECRES-05
+- SECRES-06
+- SECRES-07
 - STATE-01
 - STATE-02
 - STATE-03
 - STATE-04
 - STATE-05
 - STATE-06
-- SECRES-05
+- STATE-07
+- STATE-08
+- UX-01
+- UX-02
+- UX-03
+- UX-04
 affected_artifacts:
 - docs/web-console-prd-coverage.md
 reconciliation_required: false
@@ -121,53 +129,26 @@ change_impact:
   architecture: false
   security: false
 validation:
-  matrix_rows: 109
+  matrix_rows: 121
   primary_columns: 8
-  unique_capability_families: 71
-  prd_ids_mapped: 53
-  normative_companion_ids_mapped: 11
+  unique_capability_families: 77
+  prd_ids_mapped: 55
+  normative_companion_ids_mapped: 15
   derived_capability_ids: 7
   specification_gaps: 0
   implementation_gaps_asserted: 0
-  unverified_cells: 218
+  unverified_cells: 242
   unmapped_requirements: 0
   implementation_tests_run: false
-  reason: Definition-only bounded revalidation; no current implementation audit or executable tests. Historical
-    gateway evidence retained, not refreshed.
-  targeted_correction_recheck: PASS against exact recorded source and corrected coverage hashes; no implementation
-    tests or current implementation audit.
-  approved_ux_compatibility_recheck: 'PASS: exact approved IA/pattern hashes recorded; canonical UX adds specific
-    interaction composition within already mapped PRD capabilities. No new capability, lost role/state/test obligation
-    or normative conflict found. Prior coverage revision unchanged; REC-RUN-002 remains historical reconciliation
-    evidence.'
-workflow_readiness: Coverage-stage PASS against approved web-console-ux-2. UX-DESIGN-002 is approved; downstream
-  domain reviews and reconciliation convergence remain orchestrator-owned. No implementation readiness claim.
-targeted_revalidation:
-  finding_ids:
-  - REC-001
-  - REC-002
-  - REC-003
-  - REC-004
-  - REC-005
-  - REC-006
-  - REC-007
-  pending_external_decision: None for coverage. UX-DESIGN-002 approved and canonical UX published; coverage Markdown
-    pending-design wording records the earlier review checkpoint and is superseded for current workflow status by
-    this adapter, not current authority.
-  local_corrections: 'Completed targeted recheck: corrected coverage faithfully maps unchanged normative input revisions;
-    109 unique rows, all 53 PRD IDs and 11 companion IDs, eight populated status-prefixed columns, separate role/state/error/test
-    obligations. No remaining local correction.'
-  approved_ux_compatibility:
-    UX-IA01: UX-01.d and UX-04 cover selected navigation including programmatic state and non-color indication;
-      existing row acceptance remains required.
-    UX-IA05: UX-02 and UX-02.a/b/c cover focused role-scoped Settings, search and friendly summaries. CONFIG-03.b
-      and UX-03 cover shared saved draft, exact whole-reviewed-set atomic apply, unsaved-edit navigation guards,
-      stale authority and preserved safe work. Approved six-destination navigation, initial Response protection,
-      narrow selector and search/error focus specialize these existing obligations without conflicting product semantics.
-    UX-IA06: CAP-CFG-01 through CAP-CFG-06, OPS-02, IDENT-04 and migration rows retain full configuration inventory.
-      Typed option/list controls and readable summaries specialize UX-02 lossless friendly editing; expert syntax
-      remains optional and host-only inputs remain excluded.
-    UX-IN08: IDENT-05.b/d/e/f/g/h and SECRES-05 explicitly cover separate initiators, target hierarchy, retained-factor
-      password completion, restrictive MFA issuance, issuer/target generations and final Owner continuity.
-    UX-IN09: IDENT-04.c and STATE-01/02/03 cover separate SMTP deletion, retained create/replace draft workflow,
-      dependencies, pending-copy removal, revision races, uncertain persistence and delivery admission.
+  reason: Definition-only targeted revalidation; retained historical gateway evidence is not a current
+    implementation verdict. UX-C42 requires downstream actual screenshots compared with unchanged
+    approved mockups.
+decision_provenance:
+- D-001–D-012
+- REC-DEC-004
+- REC-DEC-005
+- REC-DEC-007
+- UX-DESIGN-003
+- PO-FB-015–041
+workflow_readiness: Coverage-stage PASS against exact PRD, security/state and approved web-console-ux-3;
+  remaining reconciliation and downstream review/package readiness owned by orchestrator.

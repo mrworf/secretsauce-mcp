@@ -1,6 +1,6 @@
 # SecretSauce web console UX system
 
-**Authority:** Approved UX revision `web-console-ux-2`, preserving draft-1 under **UX-DESIGN-001** and adopting feedback-draft-1 under accepted **UX-DESIGN-002** (“i approve of the proposal”). [Manifest](manifest.yaml) routes this system and exact source revisions; [experience brief](experience-brief.yaml) records approved direction. The [decision ledger](../../workflow/definition/decisions.md) is the approval record. The [preserved concepts](../../workflow/definition/drafts/product-ux/web-console-initial/index.md) are representative evidence, not an implementation or exhaustive screen specification. Their original unapproved labels document their pre-approval provenance; approval is recorded here and in the ledger without rewriting them.
+**Authority:** Approved UX revision `web-console-ux-3`, preserving unaffected UX-DESIGN-001/002 authority and adopting feedback-002-draft-1 under **UX-DESIGN-003**, including the Product Owner’s instruction that the actual UX generally match the approved mockups. [Manifest](manifest.yaml) routes this system and exact source revisions; [experience brief](experience-brief.yaml) records approved direction. The [decision ledger](../../workflow/definition/decisions.md) is the approval record. The [preserved concepts](../../workflow/definition/drafts/product-ux/web-console-initial/index.md) are representative evidence, not an implementation or exhaustive screen specification. Their original unapproved labels document their pre-approval provenance; approval is recorded here and in the ledger without rewriting them.
 
 ## UX-G01 — Product and audience
 
@@ -14,7 +14,7 @@ Desktop is the primary authoring surface; narrow screens support essential monit
 
 ## UX-G03 — Authority and responsibilities
 
-The PRD, normative security/state contracts and 59 actor journeys define required behavior. This system defines observable composition, interaction, disclosure and accessibility. The source contracts prevail for permissions and security transitions; a demonstrated conflict must be surfaced rather than silently implemented. No new cryptography, route/schema, storage, authentication mode, integration or release guarantee is introduced.
+The PRD, normative security/state contracts and actor journeys define required behavior. This system defines observable composition, interaction, disclosure and accessibility. The source contracts prevail for permissions and security transitions; a demonstrated conflict must be surfaced rather than silently implemented. No new cryptography, route/schema, storage, authentication mode, integration or release guarantee is introduced.
 
 Implementation must preserve all supported gateway configuration, including advanced controls. A missing field in a representative concept is not permission to remove it. Prototype controls that illustrate structure without working behavior must become real, permission-appropriate interactions in implementation.
 
@@ -36,4 +36,12 @@ Consulted 2026-10-09. [IBM Carbon table guidance](https://www.carbondesignsystem
 
 The prior [visual inspection record](../../workflow/definition/drafts/product-ux/web-console-initial/index.md) covers five rendered concepts, including 390px recovery. This synthesis checks rule coherence and source traceability. Runtime usability, assistive-technology and full accessibility evidence remain future implementation work.
 
-The approved [Settings concepts](../../workflow/definition/drafts/product-ux/web-console-feedback-001/index.md) establish focused sections, friendly controls, applied summaries and explicit whole-draft review. Their proposal labels and bytes are preserved as approval evidence. UX-DESIGN-002 covers the bounded Settings direction; current PRD/SECRES-05/STATE authority supplies the separate reset and deletion semantics. Unaffected visual direction remains UX-DESIGN-001. No production conformance is claimed by this revision.
+The approved [Settings concepts](../../workflow/definition/drafts/product-ux/web-console-feedback-001/index.md) establish focused sections, friendly controls, focused navigation and explicit whole-draft review (the summary-first editing pattern is superseded by UX-DESIGN-003). Their proposal labels and bytes are preserved as approval evidence. UX-DESIGN-002 covers the bounded Settings direction; current PRD/SECRES-05/STATE authority supplies the separate reset and deletion semantics. Unaffected visual direction remains UX-DESIGN-001. No production conformance is claimed by this revision.
+
+## UX-G04 — Approved feedback 002 direction and fidelity
+
+The approved [feedback 002 concepts](../../workflow/definition/drafts/product-ux/web-console-feedback-002/index.md) establish populated Settings forms, useful desktop width, compact account rows with full detail pages, plain terminology, required markers and short field help. **Review changes** durably saves pending work then opens the existing complete-scope review; **Save for later** retains save-only behavior. Explicit **Apply** remains necessary to change running configuration. Account edits remain immediate confirmed security actions.
+
+The Owner approved the direction and specifically requested that implementation match the general look of these mockups. Composition, density, typography hierarchy, spacing, control treatment, colors, navigation and responsive transformations are therefore conformance requirements under UX-V05 and UX-C42, not optional decoration. Exact pixels and font rasterization are not the requirement. Approved source concepts are immutable evidence; their original pending-approval labels are historical.
+
+[Research consulted 12 October 2026](../../workflow/definition/drafts/product-ux/web-console-feedback-002/research.md) uses Carbon populated forms, GOV.UK associated hints, Shopify visible save state, Auth0 list-to-detail accounts and Atlassian clear language. These patterns inform design, not permissions or guarantees. This synthesis does not certify implementation or refresh other domains’ validation.

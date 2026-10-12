@@ -1,45 +1,49 @@
-stage: security-code-reviewer
+stage: security
 status: PASS
 validated_inputs:
 - path: docs/web-console-prd.md
-  revision: sha256:bc908afcb8c40184dfcccdf296672bc559f5499236ed37f351a82f34ad0e9843
+  revision: sha256:00e6e2a9ec4661695f6aa4f01f86e8963739579bd147c7d73fa67870dda41e4b
 - path: product/security/web-console-security-contract.md
-  revision: sha256:27df73fc50b4ef71e6d4434db62f09da7e018acc13dfa5a305c4d0da0654a94d
+  revision: sha256:2f46343c6d3206b48c46212de6ba84a308b7f2a921cfba7525d2b212f3e4f5bc
 - path: product/architecture/web-console-state-contract.md
-  revision: sha256:c685c7fc9539f878986ccd906878808395fb13ae8ae2261fad9fd667107cbc80
+  revision: sha256:80835e44cdd550f10638bb757f183868804f9678cac4626a7ac84abb27ff0d32
 - path: docs/web-console-prd-coverage.md
-  revision: sha256:ee1f5e26989ba653c007b67ef5b36d3d06922cc24db49b3c2eb8b4959620bb7e
+  revision: sha256:36af3429ba960eaa2adf42777c7bc7a0d8cae12b62cac3ba63d228f14eee037e
 - path: docs/web-console-prd-user-journey-audit.md
-  revision: sha256:22f0693cdda9a055ed8013a4a23ccf8710918a89a3417e6a0d902df4a7bef9a2
+  revision: sha256:7f0f3e3159a06e867aeabdadacdd73915c1c1a11ad0a4a8e6d597304efc1ff67
 - path: product/ux/manifest.yaml
-  revision: sha256:8c2881d271b7ca836fbf9ca28e2687e2c049004fdca9093b7f9f3f6c80f43132
-  declared_revision: web-console-ux-2
+  revision: sha256:7331cb34170fa5f35d6790c4be5825b21cd9ba00b66be88caab3409de7c56563
+  declared_revision: web-console-ux-3
 - path: product/ux/experience-brief.yaml
-  revision: sha256:b8371e8d77f398cd44c205320b7d73f860b0e48c152d0ad2425b5bdc9902121f
+  revision: sha256:401e66e9ac595a78b84a0838e632a6ee124dcebef8c198ba2e80fdcad67e81b5
 - path: product/ux/00-overview.md
-  revision: sha256:2ef8da7f945e6aec97ff1e57f58f41ea89fb677f97e71fff3e983141efca4f6a
+  revision: sha256:c7764e530cee91d697dc99d91c59367bb390dde11a8e5588056abee6977f8ce8
 - path: product/ux/01-information-architecture.md
-  revision: sha256:2f7bc646c1f518e424378a4b47df945d5b7eb8c72f1c2aef7f07879929a40ddf
+  revision: sha256:598d58ff99579c25797744d955519c9c611735a79c2a8c49154e1fee2486b2db
 - path: product/ux/02-interaction-patterns.md
-  revision: sha256:0346e83574043bcac2927c197c5639624d6d405961e9226e4a5f15b02908f331
+  revision: sha256:7e9090b32ffeab812989a467e9aa7f1d574928b66f61056fd2a4a724a0885928
 - path: product/ux/03-responsive-and-platform.md
-  revision: sha256:0f4128d57beaf0ad2bf82fe0f66ca6ecd65e47d680847fc11ae082010f32f16c
+  revision: sha256:e277c6634a9c2e240da30cd3c82026676b53b3dcd242218a7a254d321f2ad914
 - path: product/ux/04-visual-system.md
-  revision: sha256:8ecf109ee9a61de31a205bd746727433afac135a9a2d061a93bba8f6fd9209d7
+  revision: sha256:7c68c82b60d81c638d521eb6d03d28b4cba08f13244276bff1d43295f078937b
 - path: product/ux/05-accessibility.md
-  revision: sha256:96a81f4275b0c747026f7f77c4f57935c5abe5fd824a657b16997e397a514795
+  revision: sha256:c638c001079626f71876d60ef8075f9e5d682e4a62fabf8800f8ed1e3eea969e
 - path: product/ux/06-feature-exceptions.md
-  revision: sha256:6347b8162f4b4987db9ef3cf7030f8930a42594988cf48dbe7ed6021e0b82569
+  revision: sha256:4dfbfc09ff7e131672922ef83ec81106b4ae38407ee21f9aabff8bdc19aaac2f
 - path: product/ux/07-acceptance-checklist.md
-  revision: sha256:c47b51b4a4f6f9d73d644f67e125c3e7b0118174a6f2a9ccfdc6b44abdb6e4f5
+  revision: sha256:e37fd2617fc4ac140a8df33990a067d6e8ffdb6a5ffbd419d0aa9988584e58f0
+- path: workflow/feedback/PO-FEEDBACK-2026-10-11-002/feedback.yaml
+  revision: sha256:515a53d2c56f256708cef2fce9add362aa20f2fbcf1f6d34b4ff1a1dfdb9d53b
+- path: workflow/reconciliation/REC-RUN-006/reconciliation-result.yaml
+  revision: sha256:66907c2a791c0c794e600f3b3b1dd1d9167ebe7ea804fe24d759f0d309edeb93
 artifact_changes:
 - path: product/security/web-console-security-review.md
-  summary: Targeted security definition revalidation of confirmed feedback and approved
-    web-console-ux-2; preserved accepted SEC-DEF-001 and separated historical source
-    observations from current review.
+  summary: Final targeted feedback-002 and approved UX3 security review; adopted account,
+    metadata and SMTP boundaries consistent; historical UX2 restriction explicitly
+    superseded.
 - path: workflow/definition/results/security.yaml
-  summary: Recorded PASS against 15 exact stable current inputs; no new material findings
-    or upstream authority changes.
+  summary: Recorded security PASS against 17 exact current inputs; existing accepted
+    scanning risk and runtime validation limitations preserved.
 changed_paths:
 - product/security/web-console-security-review.md
 - workflow/definition/results/security.yaml
@@ -102,6 +106,8 @@ affected_requirements:
 - BASE-01
 - CONFIG-03
 - CONFIG-04
+- IDENT-02A
+- IDENT-02B
 - IDENT-04
 - IDENT-05
 - IDENT-06
@@ -112,8 +118,13 @@ affected_requirements:
 - OPS-05
 - OPS-06
 - SEC-02
+- SECRES-06
+- SECRES-07
+- STATE-07
+- STATE-08
 - UX-02
 - UX-03
+- UX-04
 affected_artifacts:
 - docs/web-console-prd.md
 - product/security/web-console-security-contract.md
@@ -130,6 +141,8 @@ affected_artifacts:
 - product/ux/05-accessibility.md
 - product/ux/06-feature-exceptions.md
 - product/ux/07-acceptance-checklist.md
+- workflow/feedback/PO-FEEDBACK-2026-10-11-002/feedback.yaml
+- workflow/reconciliation/REC-RUN-006/reconciliation-result.yaml
 - product/security/web-console-security-review.md
 reconciliation_required: false
 change_impact:
@@ -142,16 +155,17 @@ native_report: product/security/web-console-security-review.md
 validation:
   kind: product_definition_security_review
   mode: targeted_revalidation
-  inputs_verified: 15
+  inputs_verified: 17
   unresolved_material_findings: 0
-  source_evidence: Current authoritative definition trace only; historical source
-    samples retained explicitly as prior review context.
+  source_evidence: Final authoritative PRD/companion/coverage/journey and all UX3
+    artifact trace; current confirmed feedback and resolved reconciliation. No application
+    source inspected in this final pass.
   tests_run: []
   limitations:
-  - No current application code audit, runtime security acceptance, dependency audit
-    or SOC 2 acceptance.
-  - Positive/negative scenarios remain implementation verification obligations; existing
-    delivery evidence was not rerun or superseded.
+  - No current application code audit, runtime security or visual acceptance, dependency
+    audit or SOC 2 acceptance.
+  - Positive/negative scenarios remain delivery verification obligations; prior implementation
+    evidence is neither rerun nor superseded.
 mode: targeted_revalidation
 decision_provenance:
 - D-001
@@ -173,3 +187,11 @@ decision_provenance:
 - REC-DEC-001
 - REC-DEC-003
 - PO-FEEDBACK-2026-10-11-001
+- UX-DESIGN-003
+- REC-DEC-004
+- REC-DEC-005
+- REC-DEC-007
+- PO-FEEDBACK-2026-10-11-002
+resolved_findings:
+- SECRES-F06
+- SECRES-F07

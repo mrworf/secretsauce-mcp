@@ -26,3 +26,7 @@ These are observable requirements for implementation and later audit. Static pro
 ## UX-A05 — Settings and assisted-reset focus
 
 Settings destinations are navigation links with current-page semantics, not ARIA tabs for separate pages. The narrow selector has a visible label and current value. Search results name section/field; selection follows the unsaved-work guard, opens the required disclosure and focuses the target field or readable value. Linked cross-section error summaries follow the same safe transition. Preserve focus and safe draft work after stale-state errors. Distinct password/factor reset confirmations and restricted enrollment announce the correct consequence and status without secret proof/factor contents. Return cancelled confirmations to their invoking control; forbidden or removed targets use a safe successor.
+
+## UX-A06 — Required input and account-list semantics
+
+Mandatory indicators include visible symbol and legend plus required semantics; help and errors are associated with their controls. Account rows have real named account links and keyboard access, with table relationships and unambiguous focus; row clicking cannot consume nested control actions. No hover-only discovery. Narrow omission of secondary columns preserves their values and actions in linked detail. Populated-form state announcements distinguish unsaved, saved pending and applied without repeating unchanged status or exposing secrets. Screenshot comparison supplements, never replaces, keyboard, reflow and accessibility evidence.

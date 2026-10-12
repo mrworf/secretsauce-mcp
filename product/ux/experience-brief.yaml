@@ -2,87 +2,81 @@ status: approved
 product_id: secretsauce-mcp
 sources:
 - path: docs/web-console-prd.md
-  revision: sha256:bc908afcb8c40184dfcccdf296672bc559f5499236ed37f351a82f34ad0e9843
-- path: docs/web-console-prd-coverage.md
-  revision: sha256:ee1f5e26989ba653c007b67ef5b36d3d06922cc24db49b3c2eb8b4959620bb7e
-- path: docs/web-console-prd-user-journey-audit.md
-  revision: sha256:22f0693cdda9a055ed8013a4a23ccf8710918a89a3417e6a0d902df4a7bef9a2
+  revision: sha256:00e6e2a9ec4661695f6aa4f01f86e8963739579bd147c7d73fa67870dda41e4b
 - path: product/security/web-console-security-contract.md
-  revision: sha256:27df73fc50b4ef71e6d4434db62f09da7e018acc13dfa5a305c4d0da0654a94d
+  revision: sha256:2f46343c6d3206b48c46212de6ba84a308b7f2a921cfba7525d2b212f3e4f5bc
 - path: product/architecture/web-console-state-contract.md
-  revision: sha256:c685c7fc9539f878986ccd906878808395fb13ae8ae2261fad9fd667107cbc80
-- path: workflow/feedback/PO-FEEDBACK-2026-10-11-001/feedback.yaml
-  revision: sha256:2a66ade78b37b971d5cf0f62ff5042564089d4482ed46bb3cce68c68299ae6d9
-- path: workflow/reconciliation/REC-RUN-002/reconciliation-result.yaml
-  revision: sha256:c6b695bd86f0ebcf526f188b7faf4bfac183761b0b2fd79631b0e121adb96e1e
+  revision: sha256:80835e44cdd550f10638bb757f183868804f9678cac4626a7ac84abb27ff0d32
+- path: workflow/feedback/PO-FEEDBACK-2026-10-11-002/feedback.yaml
+  revision: sha256:515a53d2c56f256708cef2fce9add362aa20f2fbcf1f6d34b4ff1a1dfdb9d53b
+- path: workflow/definition/decisions.md
+  revision: sha256:e0e4789d9d7f3d624cefb8642fde62e7c7d7d8059dc30f37c2925b029f433ba1
+- path: workflow/reconciliation/REC-RUN-005/reconciliation-result.yaml
+  revision: sha256:fbcfc50401f03cf2360fe0b6c68aca0c9439a5cdb0becb21d595c0f533f0dfbf
 experience:
+  revision: web-console-ux-3
   audience:
     primary:
-    - Occasional technical Owners
-    - Administrators configuring agent access
+    - Owners
+    - Administrators
     secondary:
-    - Auditors reviewing evidence
-    - Members connecting clients
+    - Auditors
+    - Members within existing scope
   principles:
-  - Show current effective state before editable complexity
-  - Group controls around the service and task
-  - Make draft changes and immediate security actions visibly different
-  - Keep recovery instructions calm, concrete and reachable
+  - Show known current values directly in forms
+  - Use plain action and state language
+  - Use desktop width for useful related content
+  - Preserve deliberate review and security boundaries
   product_character:
-    tone: Calm, precise and practical; restrained existing brand accent
-    density: Moderate density with aligned lists and generous form grouping
-    complexity_strategy: Guided default forms, in-context advanced disclosure and an equivalent advanced editor
-    guidance_level: Short explanations at decision points; impact summaries before consequential actions
+    tone: Plain, calm, precise
+    density: Moderate density; compact one-row account list
+    complexity_strategy: Focused sections and named advanced controls; no routine JSON
+    guidance_level: Short associated help and concrete consequences
   information_priorities:
-  - Service identity, runtime status and draft status
-  - Effective access and security exceptions
-  - A clear next action and its consequences
-  - Audit/read-only/recovery state before ordinary controls
+  - Current versus pending versus unsaved state
+  - The next action needed to make changes take effect
+  - Role-permitted account details and current health
   interaction_direction:
-    navigation: Established four-area service-first shell; six focused Settings destinations with secondary section
-      rail on desktop and labeled selector on narrow screens; account controls persistent
-    routine_actions: Readable applied summaries and friendly controls; same draft across Settings sections, explicit
-      save and complete-scope review/apply; ordinary editing avoids modal stacks
-    consequential_actions: Full-page review for complex changes and restore; concise confirmation for immediate
-      disable/revoke/rotation; recent authentication only where required
-    progressive_disclosure: Named advanced controls and settings search preserve every supported value; optional
-      lossless advanced editor; raw JSON is not the ordinary read/edit surface
-  responsive_priority: Reflow to one column while retaining status, consequences and next action; service rows become
-    labeled stacks; no narrow-screen removal of essential monitoring/recovery
+    navigation: Preserve four primary areas and six focused Settings sections; rename Response protection to Secret
+      detection
+    routine_actions: Populated forms; Review changes saves pending work then opens complete-scope review; Save for
+      later retains existing persistence-only option
+    consequential_actions: Apply reviewed Settings atomically; confirm immediate account operations separately
+    progressive_disclosure: Preserve all advanced capabilities without putting raw structure in routine paths
+  responsive_priority: Use columns on wide screens, reflow forms and keep compact account rows linked to complete
+    detail on narrow screens
   explicit_po_preferences:
-  - statement: KISS modern initial offering preserving gateway capabilities
+  - statement: Plain understandable language and useful horizontal space
     decision_refs:
-    - D-009
-    - D-010
-  - statement: Single-organization self-hosted product with four fixed roles
+    - PO-FB-016
+    - PO-FB-017
+  - statement: One row per user, detail editing, creation and last login
     decision_refs:
-    - D-001
-    - D-002
-  - statement: Approved the recommended calm, moderately dense direction represented by draft-1 service, edit, review
-      and recovery concepts
+    - PO-FB-023
+    - PO-FB-024
+    - PO-FB-025
+    - PO-FB-026
+    - PO-FB-027
+  - statement: Support unencrypted SMTP; never prefill saved password
     decision_refs:
-    - UX-DESIGN-001
-  - statement: Focused Settings sections with readable summaries, friendly forms and full-draft review as represented
-      by feedback-draft-1
+    - PO-FB-031
+    - PO-FB-034
+  - statement: Actual UX must generally match the appearance of approved mockups; meaningful visual drift needs
+      correction or explicit accepted exception
     decision_refs:
-    - PO-FB-008
-    - PO-FB-011
-    - UX-DESIGN-002
+    - UX-DESIGN-003
   explicit_po_dislikes:
-  - statement: One long page containing all Settings and JSON-heavy routine configuration
+  - statement: Extra viewing/editing steps and inconsistent values/state
     decision_refs:
-    - PO-FB-007
-    - PO-FB-008
-    - PO-FB-010
-    - PO-FB-011
+    - PO-FB-035
+    - PO-FB-039
+    - PO-FB-041
   designer_discretion:
-  - Detailed spacing and type scales
-  - Ordinary component geometry and icons
-  - Exact responsive breakpoints consistent with reflow
-  - Routine field-level layout and microcopy
+  - Routine geometry, spacing and typography refinements within the approved general appearance
+  - Minor rendering differences that do not change composition, hierarchy, density or accessibility
   approval:
     approved: true
     decision_refs:
     - UX-DESIGN-001
     - UX-DESIGN-002
-  revision: web-console-ux-2
+    - UX-DESIGN-003

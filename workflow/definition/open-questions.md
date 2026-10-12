@@ -549,12 +549,13 @@ adopted_by: workflow/reconciliation/REC-RUN-005/reconciliation-result.yaml
 
 ```yaml
 id: REC-DEC-006
-status: open
+status: resolved
 resolution_category: SPECIALIST_RESOLUTION
 resolution_owner:
 - ux
-routing_status: delegated
-depends_on: []
+routing_status: resolved
+depends_on:
+- UX-DESIGN-003
 ask_user: false
 blocking: true
 scope: Develop bounded settings, People, forms, language, and layout direction with
@@ -593,6 +594,7 @@ reason: Existing explicit labels and applied-summary/edit patterns need design r
   preferences and exploratory mechanisms do not select the final design.
 implementation_ready: false
 result: workflow/definition/results/feedback2-ux-resolution.yaml
+adopted_by: workflow/reconciliation/REC-RUN-006/reconciliation-result.yaml
 ```
 
 ## REC-DEC-007
@@ -656,14 +658,14 @@ proposal_paths:
 - workflow/definition/drafts/product-ux/web-console-feedback-002/index.md
 - workflow/definition/drafts/product-ux/web-console-feedback-002/experience-brief.yaml
 - workflow/definition/drafts/product-ux/web-console-feedback-002/design-contract.md
-status: open
+status: resolved
 resolution_category: PRODUCT_DECISION
 resolution_owner: user
-routing_status: awaiting_user
+routing_status: resolved
 depends_on: []
-ask_user: true
+ask_user: false
 derived_from: REC-DEC-006
-proposal_revisions:
+proposal_revisions: &id001
 - path: workflow/definition/drafts/product-ux/web-console-feedback-002/applied-desktop.png
   revision: sha256:88883813822fc62478fdd1f2398868fd30554f69f8485eaae57be99473e3347a
 - path: workflow/definition/drafts/product-ux/web-console-feedback-002/applied.html
@@ -716,4 +718,8 @@ proposal_revisions:
   revision: sha256:7ebeed7cbefedbe77083ba75a6160332bc10e8a271598d7aaa54326833ae484a
 - path: workflow/definition/drafts/product-ux/web-console-feedback-002/styles.css
   revision: sha256:ea601aef177d7644e5a3eab2a02e477b055d73700ed94d3e94b1ac249676fe93
+resolution: approved, this time around, try to make sure the actual UX matches the
+  look in general as shown in the mockups
+approval_scope: feedback-002-draft-1 experience direction and general visual appearance
+approved_proposal_revisions: *id001
 ```

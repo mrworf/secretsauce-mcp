@@ -1,0 +1,484 @@
+schema_version: 1
+feedback_id: PO-FEEDBACK-2026-10-11-002
+product_id: secretsauce-mcp
+source:
+  type: product_owner
+  captured_from: prompt
+  captured_at: '2026-10-12T03:32:55.358576+00:00'
+  references:
+  - workflow/feedback/PO-FEEDBACK-2026-10-11-001/feedback.yaml
+  - workflow/feedback/PO-FEEDBACK-2026-10-11-002/research.md
+  original_prompt: 'using $product-owner-debrief process the following feedback:
+
+    - The language used in the product is too convoluted or complex to understand
+    in many cases
+
+    - The UX should use more of the horizontal screen realestate
+
+    - Adding a service has visual glitches, a list of items are drawn over eachother
+
+    - Mandatory fields lack visual indicator (such as a red asterisk) that they must
+    be provided
+
+    - INput fields use labels, but short description underneath would help the understanding
+
+    - People & Access view, the list of users should be a single row per user, clicking
+    should bring up account information for that user where the admin can edit the
+    properties, change roles, etc. it should also show creation date and last login.
+    Draw inspirtation from other SaaS products
+
+    - Response protection is cool sounding, but for the uninitiated, it doesn''t make
+    sense, response to what? (See first bullet)
+
+    - SMTP settings seem incomplete, why have a dropdown for encryption if I cannot
+    disable it
+
+    - SMTP settings show settings as undefined, perhaps not show it at all, instead
+    prefill the fields with current settings (except password, since that''s a no-no).
+    This is generally a decent approach to avoid have a show option and an edit option,
+    again, research best practices.
+
+    - Setting backup settings keeps talking about draft and nothing seems to save
+
+    - Applied diagnostics in the health section shows a static value, the edit seems
+    to show current. Again, inconsistent and far from best practices
+
+
+    You need to research best practices and common design patterns for settings and
+    viewing vs edit, because it''s very common that edit is there to show current
+    values, cutting down on unnecessary extra steps where it makes sense.'
+status: NEEDS_CONFIRMATION
+transaction:
+  parent_commit: bbbd9e329ad6b9ec3c4bec692c81b7d7d99db49d
+  repository_commit: null
+  pre_existing_dirty_paths:
+  - test-results/
+  owned_paths:
+  - workflow/feedback/PO-FEEDBACK-2026-10-11-002
+items:
+- id: PO-FB-015
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: The language used in the product is too convoluted or complex to understand
+    in many cases
+  normalized: Much of the product language is difficult to understand.
+  scope:
+  - product-language
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-016
+  classification: PREFERENCE
+  confirmation: CONFIRMED
+  original: The language used in the product is too convoluted or complex to understand
+    in many cases
+  normalized: Favor simpler, easier-to-understand product language.
+  scope:
+  - product-language
+  tags: []
+  authority:
+    product_intent: advisory
+  suggestions: []
+  ambiguity: []
+  clarifies:
+  - PO-FB-011
+- id: PO-FB-017
+  classification: PREFERENCE
+  confirmation: CONFIRMED
+  original: The UX should use more of the horizontal screen realestate
+  normalized: Make greater use of available horizontal screen space.
+  scope:
+  - layout
+  tags: []
+  authority:
+    product_intent: advisory
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-018
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: Adding a service has visual glitches, a list of items are drawn over eachother
+  normalized: List items overlap visually while adding a service.
+  scope:
+  - service-creation
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-019
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: Mandatory fields lack visual indicator (such as a red asterisk) that they
+    must be provided
+  normalized: Mandatory fields lack a visible indication that input is required.
+  scope:
+  - forms
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-020
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: Mandatory fields lack visual indicator (such as a red asterisk) that they
+    must be provided
+  normalized: Visually indicate mandatory fields.
+  scope:
+  - forms
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-021
+  classification: IDEA_OR_QUESTION
+  confirmation: CONFIRMED
+  original: Mandatory fields lack visual indicator (such as a red asterisk) that they
+    must be provided
+  normalized: A red asterisk is a suggested required-field indicator.
+  scope:
+  - forms
+  tags: []
+  authority:
+    product_intent: exploratory
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-022
+  classification: IDEA_OR_QUESTION
+  confirmation: CONFIRMED
+  original: INput fields use labels, but short description underneath would help the
+    understanding
+  normalized: Add short descriptions beneath field labels to help explain the inputs.
+  scope:
+  - form-help
+  tags: []
+  authority:
+    product_intent: exploratory
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-023
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: People & Access view, the list of users should be a single row per user,
+    clicking should bring up account information for that user where the admin can
+    edit the properties, change roles, etc. it should also show creation date and
+    last login. Draw inspirtation from other SaaS products
+  normalized: Show one row per user in People & Access.
+  scope:
+  - people-list
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-024
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: People & Access view, the list of users should be a single row per user,
+    clicking should bring up account information for that user where the admin can
+    edit the properties, change roles, etc. it should also show creation date and
+    last login. Draw inspirtation from other SaaS products
+  normalized: Clicking a user opens that user’s account information.
+  scope:
+  - people-detail
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-025
+  classification: DIRECTIVE
+  confirmation: NEEDS_CONFIRMATION
+  original: People & Access view, the list of users should be a single row per user,
+    clicking should bring up account information for that user where the admin can
+    edit the properties, change roles, etc. it should also show creation date and
+    last login. Draw inspirtation from other SaaS products
+  normalized: Provide account-property and role editing in the user detail view; clarify
+    whether “admin” means existing authorized roles or expansion of the named Administrator
+    role.
+  scope:
+  - people-permissions
+  tags: []
+  authority:
+    product_intent: unresolved
+  suggestions: []
+  ambiguity:
+  - The word admin does not establish whether the named Administrator role gains account-property
+    and role-management powers.
+- id: PO-FB-026
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: People & Access view, the list of users should be a single row per user,
+    clicking should bring up account information for that user where the admin can
+    edit the properties, change roles, etc. it should also show creation date and
+    last login. Draw inspirtation from other SaaS products
+  normalized: Show the user’s creation date.
+  scope:
+  - people-detail
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-027
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: People & Access view, the list of users should be a single row per user,
+    clicking should bring up account information for that user where the admin can
+    edit the properties, change roles, etc. it should also show creation date and
+    last login. Draw inspirtation from other SaaS products
+  normalized: Show the user’s last login.
+  scope:
+  - people-detail
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-028
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: People & Access view, the list of users should be a single row per user,
+    clicking should bring up account information for that user where the admin can
+    edit the properties, change roles, etc. it should also show creation date and
+    last login. Draw inspirtation from other SaaS products
+  normalized: Draw inspiration from established SaaS user-management experiences.
+  scope:
+  - design-research
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-029
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: Response protection is cool sounding, but for the uninitiated, it doesn't
+    make sense, response to what? (See first bullet)
+  normalized: The label Response protection does not explain its meaning to an uninitiated
+    user.
+  scope:
+  - product-language
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-030
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: SMTP settings seem incomplete, why have a dropdown for encryption if I
+    cannot disable it
+  normalized: SMTP configuration appears incomplete and offers an encryption dropdown
+    without a way to disable encryption.
+  scope:
+  - smtp-settings
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-031
+  classification: IDEA_OR_QUESTION
+  confirmation: NEEDS_CONFIRMATION
+  original: SMTP settings seem incomplete, why have a dropdown for encryption if I
+    cannot disable it
+  normalized: Clarify whether the encryption comment asks for unencrypted SMTP support
+    or questions a misleading single-choice control.
+  scope:
+  - smtp-settings
+  tags: []
+  authority:
+    product_intent: unresolved
+  suggestions: []
+  ambiguity:
+  - Disabling encryption would change supported behavior; questioning the dropdown
+    alone does not select that change.
+- id: PO-FB-032
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: SMTP settings show settings as undefined, perhaps not show it at all,
+    instead prefill the fields with current settings (except password, since that's
+    a no-no). This is generally a decent approach to avoid have a show option and
+    an edit option, again, research best practices.
+  normalized: SMTP settings display undefined values.
+  scope:
+  - smtp-settings
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-033
+  classification: IDEA_OR_QUESTION
+  confirmation: CONFIRMED
+  original: SMTP settings show settings as undefined, perhaps not show it at all,
+    instead prefill the fields with current settings (except password, since that's
+    a no-no). This is generally a decent approach to avoid have a show option and
+    an edit option, again, research best practices.
+  normalized: Consider omitting the separate SMTP settings display and prefilling
+    editable fields with current values.
+  scope:
+  - settings-editing
+  tags: []
+  authority:
+    product_intent: exploratory
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-034
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: SMTP settings show settings as undefined, perhaps not show it at all,
+    instead prefill the fields with current settings (except password, since that's
+    a no-no). This is generally a decent approach to avoid have a show option and
+    an edit option, again, research best practices.
+  normalized: Do not prefill the SMTP password with its saved value.
+  scope:
+  - smtp-credentials
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-035
+  classification: PREFERENCE
+  confirmation: CONFIRMED
+  original: SMTP settings show settings as undefined, perhaps not show it at all,
+    instead prefill the fields with current settings (except password, since that's
+    a no-no). This is generally a decent approach to avoid have a show option and
+    an edit option, again, research best practices.
+  normalized: Avoid unnecessary separate show and edit steps where a form showing
+    current values is suitable.
+  scope:
+  - settings-editing
+  tags: []
+  authority:
+    product_intent: advisory
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-036
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: Setting backup settings keeps talking about draft and nothing seems to
+    save
+  normalized: Backup configuration repeatedly refers to drafts.
+  scope:
+  - backup-settings
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-037
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: Setting backup settings keeps talking about draft and nothing seems to
+    save
+  normalized: Changes to backup settings do not appear to save.
+  scope:
+  - backup-settings
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-038
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: Applied diagnostics in the health section shows a static value, the edit
+    seems to show current. Again, inconsistent and far from best practices
+  normalized: Applied diagnostics appears static while the edit view appears to show
+    the current value.
+  scope:
+  - health-diagnostics
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-039
+  classification: PREFERENCE
+  confirmation: CONFIRMED
+  original: Applied diagnostics in the health section shows a static value, the edit
+    seems to show current. Again, inconsistent and far from best practices
+  normalized: Use consistent settings displays and editing behavior informed by established
+    practices.
+  scope:
+  - settings-editing
+  tags: []
+  authority:
+    product_intent: advisory
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-040
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: You need to research best practices and common design patterns for settings
+    and viewing vs edit, because it's very common that edit is there to show current
+    values, cutting down on unnecessary extra steps where it makes sense.
+  normalized: Research best practices and common patterns for settings, viewing current
+    values, and editing.
+  scope:
+  - design-research
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-041
+  classification: PREFERENCE
+  confirmation: CONFIRMED
+  original: You need to research best practices and common design patterns for settings
+    and viewing vs edit, because it's very common that edit is there to show current
+    values, cutting down on unnecessary extra steps where it makes sense.
+  normalized: Favor showing current values in editable forms where it reduces unnecessary
+    steps.
+  scope:
+  - settings-editing
+  tags: []
+  authority:
+    product_intent: advisory
+  suggestions: []
+  ambiguity: []
+unresolved:
+- id: PO-UNRESOLVED-002
+  item_ids:
+  - PO-FB-025
+  issue: authority
+  question: Does admin mean the roles already authorized to manage account properties/roles,
+    or should the named Administrator role gain those powers?
+  options:
+  - id: A
+    meaning: Improve the user-detail UX while preserving existing role permissions.
+    classification: DIRECTIVE
+  - id: B
+    meaning: Also give the named Administrator role account-property and role-management
+      powers; exact safeguards require downstream definition.
+    classification: DIRECTIVE
+  blocking_reconciliation: true
+- id: PO-UNRESOLVED-003
+  item_ids:
+  - PO-FB-031
+  issue: authority
+  question: Is unencrypted SMTP a required capability, or is this feedback about a
+    confusing encryption control?
+  options:
+  - id: A
+    meaning: Clarify or simplify the control for existing supported encryption; no
+      unencrypted SMTP requirement.
+    classification: DIRECTIVE
+  - id: B
+    meaning: Add an option to disable SMTP encryption; conditions and safeguards require
+      downstream definition.
+    classification: DIRECTIVE
+  - id: C
+    meaning: Keep this as a question for downstream research; no chosen behavior yet.
+    classification: IDEA_OR_QUESTION
+  blocking_reconciliation: true
+handoff:
+  reconciliation_ready: false
+  next_workflow: null

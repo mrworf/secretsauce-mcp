@@ -4,7 +4,7 @@
 "status": "RESOLVED"
 "transaction":
   "parent_commit": "65c1d45ba19f8dbcfca161bddf8c415f04c40d26"
-  "repository_commit": null
+  "repository_commit": "a57c1ca28615a36770cc1446c4cb71fe21ae5f48"
   "owned_paths":
   - "workflow/reconciliation/REC-RUN-006"
   "pre_existing_dirty_paths":

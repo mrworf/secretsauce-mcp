@@ -479,3 +479,241 @@ approval_scope: feedback-draft-1 focused Settings direction and the recorded rep
   concepts
 approved_proposal_revisions: *id001
 ```
+
+## REC-DEC-004
+
+```yaml
+id: REC-DEC-004
+status: resolved
+resolution_category: SPECIALIST_RESOLUTION
+resolution_owner:
+- security
+routing_status: resolved
+depends_on: []
+ask_user: false
+blocking: true
+scope: Derive Administrator account-management safeguards from confirmed role expansion.
+product_owner_feedback:
+- PO-FB-025
+source: REC-RUN-004 early specialist routing
+source_findings:
+- REC-012
+domain: security
+affected_requirement: AUTHZ-02/03; IDENT-04/05
+resolution_type: SPECIALIST_RESOLUTION
+question: What precise property, target-role, self-management and security-consequence
+  rules realize approved Administrator account management?
+reason: Expansion is settled; older Owner-only rules are stale, but field/contact
+  and escalation boundaries need security/product semantics.
+implementation_ready: false
+resolution_results:
+- workflow/definition/results/feedback2-security-resolution.yaml
+adopted_by: workflow/reconciliation/REC-RUN-005/reconciliation-result.yaml
+```
+
+## REC-DEC-005
+
+```yaml
+id: REC-DEC-005
+status: resolved
+resolution_category: SPECIALIST_RESOLUTION
+resolution_owner:
+- security
+- architecture
+routing_status: resolved
+depends_on: []
+ask_user: false
+blocking: true
+scope: Derive explicit unencrypted SMTP mode safeguards, persistence, and migration.
+product_owner_feedback:
+- PO-FB-030
+- PO-FB-031
+source: REC-RUN-004 early specialist routing
+source_findings:
+- REC-014
+domain: security
+affected_requirement: IDENT-04
+resolution_type: SPECIALIST_RESOLUTION
+question: What explicit transport-mode, credential-use and acknowledgement rules support
+  unencrypted SMTP while retaining secure defaults and no silent downgrade?
+reason: Unencrypted support is settled; persisted modes, transport/auth behavior,
+  compatibility and warning semantics are undefined.
+implementation_ready: false
+resolution_results:
+- workflow/definition/results/feedback2-security-resolution.yaml
+- workflow/definition/results/feedback2-architecture-resolution.yaml
+adopted_by: workflow/reconciliation/REC-RUN-005/reconciliation-result.yaml
+```
+
+## REC-DEC-006
+
+```yaml
+id: REC-DEC-006
+status: open
+resolution_category: SPECIALIST_RESOLUTION
+resolution_owner:
+- ux
+routing_status: delegated
+depends_on: []
+ask_user: false
+blocking: true
+scope: Develop bounded settings, People, forms, language, and layout direction with
+  representative concepts.
+product_owner_feedback:
+- PO-FB-015
+- PO-FB-016
+- PO-FB-017
+- PO-FB-019
+- PO-FB-020
+- PO-FB-021
+- PO-FB-022
+- PO-FB-023
+- PO-FB-024
+- PO-FB-029
+- PO-FB-033
+- PO-FB-035
+- PO-FB-036
+- PO-FB-037
+- PO-FB-038
+- PO-FB-039
+- PO-FB-041
+source: REC-RUN-004 early specialist routing
+source_findings:
+- REC-008
+- REC-010
+- REC-011
+- REC-016
+domain: ux
+affected_requirement: UX-02/03/04; CONFIG-03
+resolution_type: SPECIALIST_RESOLUTION
+question: What coherent language, layout, required-field, People detail and current-value
+  settings pattern addresses this feedback while preserving review and permission
+  safeguards?
+reason: Existing explicit labels and applied-summary/edit patterns need design reconsideration;
+  preferences and exploratory mechanisms do not select the final design.
+implementation_ready: false
+result: workflow/definition/results/feedback2-ux-resolution.yaml
+```
+
+## REC-DEC-007
+
+```yaml
+id: REC-DEC-007
+status: resolved
+resolution_category: SPECIALIST_RESOLUTION
+resolution_owner:
+- architecture
+routing_status: resolved
+depends_on: []
+ask_user: false
+blocking: true
+scope: Define creation and last-login events, legacy unknowns, and restore semantics.
+product_owner_feedback:
+- PO-FB-026
+- PO-FB-027
+source: REC-RUN-004 early specialist routing
+source_findings:
+- REC-013
+domain: architecture
+affected_requirement: IDENT-02/03
+resolution_type: SPECIALIST_RESOLUTION
+question: Which creation and last-login events and unknown/never/restore semantics
+  govern the requested account timestamps?
+reason: Metadata display is settled; historical truth, authenticated event boundaries
+  and portable recovery projection are not defined.
+implementation_ready: false
+resolution_results:
+- workflow/definition/results/feedback2-architecture-resolution.yaml
+adopted_by: workflow/reconciliation/REC-RUN-005/reconciliation-result.yaml
+```
+
+## UX-DESIGN-003 — approve second feedback UX direction
+
+```yaml
+id: UX-DESIGN-003
+kind: UX_DIRECTION_APPROVAL
+blocking: true
+affected_requirement: UX-02/03/04; IDENT-05; BACKUP-02
+affected_surfaces:
+- Settings
+- People & Access
+- service creation
+question: Approve the proposed populated-form Settings and account list/detail direction
+  shown in feedback-002-draft-1?
+reason: Changes editing structure, save-state presentation, terminology and account
+  information hierarchy beyond previously approved UX2.
+recommendation: Populated current-value forms; Review changes then Apply, with existing
+  save-only capability labeled Save for later; useful wider layouts; compact account
+  list and full detail.
+alternatives:
+- option: retain summary-first editing
+  tradeoff: Preserves read-first scanning but keeps a separate Edit step and duplicate
+    value presentation.
+options:
+- approve recommended direction
+- request adjustments
+proposal_paths:
+- workflow/definition/drafts/product-ux/web-console-feedback-002/index.md
+- workflow/definition/drafts/product-ux/web-console-feedback-002/experience-brief.yaml
+- workflow/definition/drafts/product-ux/web-console-feedback-002/design-contract.md
+status: open
+resolution_category: PRODUCT_DECISION
+resolution_owner: user
+routing_status: awaiting_user
+depends_on: []
+ask_user: true
+derived_from: REC-DEC-006
+proposal_revisions:
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/applied-desktop.png
+  revision: sha256:88883813822fc62478fdd1f2398868fd30554f69f8485eaae57be99473e3347a
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/applied.html
+  revision: sha256:a0deb0a1d769360a94faffe3d60656786bfff251e8ea5ef7b5381a8b574564a1
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/backups-desktop.png
+  revision: sha256:24ca35bd839d1638c297294dd3cda9fb6cf96d09fe3dbb78353b61fc52c079fc
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/backups.html
+  revision: sha256:9493546aeea22a5fe6441ff66ee09a9f9d85428156a3499bb0b7d8d96cc77838
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/design-contract.md
+  revision: sha256:03c15ccd3771bf988d69858d8fb3d93dc575f5888add7618d624e3e21b4e55d2
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/email-desktop.png
+  revision: sha256:89cc554c77925c758a6db57e9251015fd0089bfcb3e402333b93210b84e0d70f
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/email-narrow.png
+  revision: sha256:12f01cdfba2c06cc9ae4795e6c8cde6679682881fdeec08bb328982b7153d090
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/email-unencrypted-desktop.png
+  revision: sha256:87addefb645d36a512eb87392c249cbeb2050b57595b2c4de6473a9040bbe5e7
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/email-unencrypted.html
+  revision: sha256:cf83a1cf7c58c1ef32387111d5027a75d46801c56cb3657186652f01e8179c82
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/email.html
+  revision: sha256:8a3190838d961be0a8fdbcec5da7e9835ac7d15350182875d1f52686e63b5ee0
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/experience-brief.yaml
+  revision: sha256:9586ee91923146c2200eefe88ce54052e441edca945c5ec7b938116d77bdd13f
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/health-desktop.png
+  revision: sha256:9658ff4f0a49df664a27534fc1fb589ff76feb77896c7822131403d08e6312dc
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/health.html
+  revision: sha256:a52129cc06c327e4bb9dc6b9cf7ba5212c7d3bd8d527916181b6f54755d4c7a7
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/index.md
+  revision: sha256:6c25aaeb67be2a76cf590b785335c26195b5fb148f256d0983995706021e71e2
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/people-desktop.png
+  revision: sha256:52448c32c4bdd68c9f1fb16a7a68c350dd712117901c8b9068524ee01095c689
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/people-narrow.png
+  revision: sha256:511588b3f86e4d1283976695ae3d4b8f02c2d04d500745d96c5099b5f69a1400
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/people.html
+  revision: sha256:e65f05d878e1dc570d18f58c9454e42966438752f57280b36000324c5ec2dfc9
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/person-desktop.png
+  revision: sha256:62b963894fe5f7b4a7f8be484f0230fb3c0277e2afabc7fbd78fe4dfeae6ccd7
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/person.html
+  revision: sha256:87d27056da0bd3f27aa54703471d4c1bcd06d9b3e682d824f5127ffadae63908
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/render-checks.json
+  revision: sha256:17e6bf6955708a1b5e6cc6749d55d64b8643afc8723c2fa5c216020bd1b874c9
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/research.md
+  revision: sha256:04c1955fe894207d5987741aacd140986d88f3772040608376897052deb49650
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/review-desktop.png
+  revision: sha256:e43a0dce1e32c643e8c3fa4a24a215bc35c9c7b94df6c66a4cc3176173ae24b2
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/review.html
+  revision: sha256:39659ab5d77125174c343bda3eabc28a9f0b130ce22a15ca1e8135f1e7404dc2
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/service-desktop.png
+  revision: sha256:1d31ea296d0bafdfde5db3f872afd33f1f36f074fda109eb9fffbfce1b83ce5d
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/service.html
+  revision: sha256:7ebeed7cbefedbe77083ba75a6160332bc10e8a271598d7aaa54326833ae484a
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/styles.css
+  revision: sha256:ea601aef177d7644e5a3eab2a02e477b055d73700ed94d3e94b1ac249676fe93
+```

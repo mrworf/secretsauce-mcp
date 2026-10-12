@@ -1,0 +1,307 @@
+schema_version: 2
+contract_revision: '2026-08-18'
+audit:
+  audit_id: FEEDBACK-002-SERVICE-OVERLAP
+  generated_at: '2026-10-12T15:24:13.865462+00:00'
+  product: secretsauce-mcp
+  build: 0fc959f5f13b5fb4751788910fdb4c48fcdf442c
+  environment: isolated disposable synthetic HTTPS fixture
+  final_status: MATERIAL_FINDINGS
+  canonical_ux_sources:
+  - path: product/ux/manifest.yaml
+    revision: web-console-ux-2
+    authority: approved
+    product_owner_provenance:
+    - workflow/definition/decisions.md
+  journey_sources:
+  - docs/web-console-prd-user-journey-audit.md
+  surfaces:
+  - responsive-web
+  harness_revision: sha256:c97e3d4b28df41504f219c357746e5eba5648e4701607594263b5261d22f8636
+  execution:
+    mode: headless-container
+    command: docker run --rm --network none --user 1000:1000 --mount type=bind,src="$PWD",dst=/work,readonly
+      --mount type=bind,src="$PWD/evidence/ux-acceptance/secretsauce-mcp/feedback-002-service-overlap",dst=/artifacts
+      --workdir /work --env CONSOLE_BROWSER_EVIDENCE_DIR=/artifacts --entrypoint node
+      mcr.microsoft.com/playwright:v1.62.1-noble /work/evidence/ux-acceptance/secretsauce-mcp/feedback-002-service-overlap/capture.mjs
+    headless: true
+    playwright_version: 1.64.0
+    browser: chromium
+    browser_version: 151.0.7922.34
+    container_image: mcr.microsoft.com/playwright:v1.62.1-noble
+    container_digest: sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e
+    base_url: https://console.example.org:<ephemeral-port>
+    network: none (server and browser share container loopback)
+    artifact_mount: evidence/ux-acceptance/secretsauce-mcp/feedback-002-service-overlap
+    state_reset: capture.mjs finally removes temporary synthetic state
+    seed_fixture: existing verify-console-services-browser.mjs fixture; first three
+      wizard steps
+    locale: en-US
+    timezone: UTC
+    color_scheme: light
+    reduced_motion: reduce
+    browser_versions:
+      chromium: 151.0.7922.34
+transaction:
+  owner: parent
+  parent_commit: 0fc959f5f13b5fb4751788910fdb4c48fcdf442c
+  payload_commit: null
+coverage:
+  total_entries: 6
+  captured_entries: 6
+  blocked_entries: 0
+  unreachable_entries: 0
+  identified_journeys: 1
+  exercised_journeys: 1
+entries:
+- id: UXVIS-001
+  journey_id: SERVICE-CREATE
+  journey: Add service
+  role: Owner
+  surface: responsive-web
+  viewport:
+    name: desktop
+    width: 1280
+    height: 900
+    device_scale_factor: 1
+  route: /console
+  entry_point: Services > Add service
+  state: details
+  interaction_state: wizard step rendered
+  preconditions: Disposable synthetic enrolled Owner, baseline service, empty new
+    service draft
+  interaction: Sign in, activate Add service, Continue through filled valid Details
+    and Destination fields
+  expected_rules: &id001
+  - source: product/ux/03-responsive-and-platform.md
+    section: Reflow and priority
+    rule: UX-R01
+  evidence_origin: seeded
+  navigation_provenance: ui-traversed
+  observed_at: '2026-10-12T15:24:13.865462+00:00'
+  screenshot: screenshots/details-1280.png
+  supporting_evidence:
+  - kind: geometry
+    path: observations.json
+  inspection:
+    visual: inspected
+    interaction: verified
+    accessibility: not-applicable
+    reviewed_at: '2026-10-12T15:24:13.865462+00:00'
+    notes: Inspected visible progress markers and label collisions; keyboard used
+      for sign-in and wizard navigation. Full accessibility audit outside this bounded
+      observation.
+  status: captured
+  path_alignment: documented
+  notes: Numbered progress markers overlap adjacent labels.
+- id: UXVIS-002
+  journey_id: SERVICE-CREATE
+  journey: Add service
+  role: Owner
+  surface: responsive-web
+  viewport:
+    name: narrow
+    width: 320
+    height: 900
+    device_scale_factor: 1
+  route: /console
+  entry_point: Services > Add service
+  state: details
+  interaction_state: wizard step rendered
+  preconditions: Disposable synthetic enrolled Owner, baseline service, empty new
+    service draft
+  interaction: Sign in, activate Add service, Continue through filled valid Details
+    and Destination fields
+  expected_rules: *id001
+  evidence_origin: seeded
+  navigation_provenance: ui-traversed
+  observed_at: '2026-10-12T15:24:13.865462+00:00'
+  screenshot: screenshots/details-320.png
+  supporting_evidence:
+  - kind: geometry
+    path: observations.json
+  inspection:
+    visual: inspected
+    interaction: verified
+    accessibility: not-applicable
+    reviewed_at: '2026-10-12T15:24:13.865462+00:00'
+    notes: Inspected visible progress markers and label collisions; keyboard used
+      for sign-in and wizard navigation. Full accessibility audit outside this bounded
+      observation.
+  status: captured
+  path_alignment: documented
+  notes: Numbered progress markers overlap adjacent labels.
+- id: UXVIS-003
+  journey_id: SERVICE-CREATE
+  journey: Add service
+  role: Owner
+  surface: responsive-web
+  viewport:
+    name: desktop
+    width: 1280
+    height: 900
+    device_scale_factor: 1
+  route: /console
+  entry_point: Services > Add service
+  state: destination
+  interaction_state: wizard step rendered
+  preconditions: Disposable synthetic enrolled Owner, baseline service, empty new
+    service draft
+  interaction: Sign in, activate Add service, Continue through filled valid Details
+    and Destination fields
+  expected_rules: *id001
+  evidence_origin: seeded
+  navigation_provenance: ui-traversed
+  observed_at: '2026-10-12T15:24:13.865462+00:00'
+  screenshot: screenshots/destination-1280.png
+  supporting_evidence:
+  - kind: geometry
+    path: observations.json
+  inspection:
+    visual: inspected
+    interaction: verified
+    accessibility: not-applicable
+    reviewed_at: '2026-10-12T15:24:13.865462+00:00'
+    notes: Inspected visible progress markers and label collisions; keyboard used
+      for sign-in and wizard navigation. Full accessibility audit outside this bounded
+      observation.
+  status: captured
+  path_alignment: documented
+  notes: Numbered progress markers overlap adjacent labels.
+- id: UXVIS-004
+  journey_id: SERVICE-CREATE
+  journey: Add service
+  role: Owner
+  surface: responsive-web
+  viewport:
+    name: narrow
+    width: 320
+    height: 900
+    device_scale_factor: 1
+  route: /console
+  entry_point: Services > Add service
+  state: destination
+  interaction_state: wizard step rendered
+  preconditions: Disposable synthetic enrolled Owner, baseline service, empty new
+    service draft
+  interaction: Sign in, activate Add service, Continue through filled valid Details
+    and Destination fields
+  expected_rules: *id001
+  evidence_origin: seeded
+  navigation_provenance: ui-traversed
+  observed_at: '2026-10-12T15:24:13.865462+00:00'
+  screenshot: screenshots/destination-320.png
+  supporting_evidence:
+  - kind: geometry
+    path: observations.json
+  inspection:
+    visual: inspected
+    interaction: verified
+    accessibility: not-applicable
+    reviewed_at: '2026-10-12T15:24:13.865462+00:00'
+    notes: Inspected visible progress markers and label collisions; keyboard used
+      for sign-in and wizard navigation. Full accessibility audit outside this bounded
+      observation.
+  status: captured
+  path_alignment: documented
+  notes: Numbered progress markers overlap adjacent labels.
+- id: UXVIS-005
+  journey_id: SERVICE-CREATE
+  journey: Add service
+  role: Owner
+  surface: responsive-web
+  viewport:
+    name: desktop
+    width: 1280
+    height: 900
+    device_scale_factor: 1
+  route: /console
+  entry_point: Services > Add service
+  state: authentication
+  interaction_state: wizard step rendered
+  preconditions: Disposable synthetic enrolled Owner, baseline service, empty new
+    service draft
+  interaction: Sign in, activate Add service, Continue through filled valid Details
+    and Destination fields
+  expected_rules: *id001
+  evidence_origin: seeded
+  navigation_provenance: ui-traversed
+  observed_at: '2026-10-12T15:24:13.865462+00:00'
+  screenshot: screenshots/authentication-1280.png
+  supporting_evidence:
+  - kind: geometry
+    path: observations.json
+  inspection:
+    visual: inspected
+    interaction: verified
+    accessibility: not-applicable
+    reviewed_at: '2026-10-12T15:24:13.865462+00:00'
+    notes: Inspected visible progress markers and label collisions; keyboard used
+      for sign-in and wizard navigation. Full accessibility audit outside this bounded
+      observation.
+  status: captured
+  path_alignment: documented
+  notes: Numbered progress markers overlap adjacent labels.
+- id: UXVIS-006
+  journey_id: SERVICE-CREATE
+  journey: Add service
+  role: Owner
+  surface: responsive-web
+  viewport:
+    name: narrow
+    width: 320
+    height: 900
+    device_scale_factor: 1
+  route: /console
+  entry_point: Services > Add service
+  state: authentication
+  interaction_state: wizard step rendered
+  preconditions: Disposable synthetic enrolled Owner, baseline service, empty new
+    service draft
+  interaction: Sign in, activate Add service, Continue through filled valid Details
+    and Destination fields
+  expected_rules: *id001
+  evidence_origin: seeded
+  navigation_provenance: ui-traversed
+  observed_at: '2026-10-12T15:24:13.865462+00:00'
+  screenshot: screenshots/authentication-320.png
+  supporting_evidence:
+  - kind: geometry
+    path: observations.json
+  inspection:
+    visual: inspected
+    interaction: verified
+    accessibility: not-applicable
+    reviewed_at: '2026-10-12T15:24:13.865462+00:00'
+    notes: Inspected visible progress markers and label collisions; keyboard used
+      for sign-in and wizard navigation. Full accessibility audit outside this bounded
+      observation.
+  status: captured
+  path_alignment: documented
+  notes: Numbered progress markers overlap adjacent labels.
+findings:
+- id: UX-VIS-F001
+  category: COMPOSITION_MISMATCH
+  title: Service wizard progress numbers paint over neighboring labels
+  materiality: MEDIUM
+  evidence_ids:
+  - UXVIS-001
+  - UXVIS-002
+  - UXVIS-003
+  - UXVIS-004
+  - UXVIS-005
+  - UXVIS-006
+  observed: "On desktop, the markers 2\u20135 overlap the preceding step labels. At\
+    \ 320px, marker 2 overlaps Details and marker 4 overlaps Authentication. Repeated\
+    \ in the first three wizard steps."
+  governing_rules: *id001
+  targeted_revalidation:
+  - UXVIS-001
+  - UXVIS-002
+  - UXVIS-003
+  - UXVIS-004
+  - UXVIS-005
+  - UXVIS-006
+handoff:
+  workflow: product-reconciliation
+  package_path: evidence/ux-acceptance/secretsauce-mcp/feedback-002-service-overlap

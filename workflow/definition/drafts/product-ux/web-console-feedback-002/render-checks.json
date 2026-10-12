@@ -1,0 +1,109 @@
+{
+  "method": "Local Chromium concept rendering; no live console access",
+  "results": [
+    {
+      "name": "email-unencrypted",
+      "width": 1440,
+      "documentWidth": 1440
+    },
+    {
+      "name": "applied",
+      "width": 1440,
+      "documentWidth": 1440
+    },
+    {
+      "name": "email",
+      "width": 1440,
+      "documentWidth": 1440
+    },
+    {
+      "name": "backups",
+      "width": 1440,
+      "documentWidth": 1440
+    },
+    {
+      "name": "review",
+      "width": 1440,
+      "documentWidth": 1440
+    },
+    {
+      "name": "people",
+      "width": 1440,
+      "documentWidth": 1440
+    },
+    {
+      "name": "person",
+      "width": 1440,
+      "documentWidth": 1440
+    },
+    {
+      "name": "service",
+      "width": 1440,
+      "documentWidth": 1440
+    },
+    {
+      "name": "health",
+      "width": 1440,
+      "documentWidth": 1440
+    },
+    {
+      "name": "email",
+      "width": 390,
+      "documentWidth": 390
+    },
+    {
+      "name": "people",
+      "width": 390,
+      "documentWidth": 390
+    },
+    {
+      "name": "email",
+      "width": 320,
+      "textScale": 2,
+      "documentWidth": 320,
+      "textOverflow": []
+    },
+    {
+      "name": "backups",
+      "width": 320,
+      "textScale": 2,
+      "documentWidth": 320,
+      "textOverflow": []
+    },
+    {
+      "name": "review",
+      "width": 320,
+      "textScale": 2,
+      "documentWidth": 320,
+      "textOverflow": []
+    },
+    {
+      "name": "people",
+      "width": 320,
+      "textScale": 2,
+      "documentWidth": 320,
+      "textOverflow": []
+    },
+    {
+      "name": "person",
+      "width": 320,
+      "textScale": 2,
+      "documentWidth": 320,
+      "textOverflow": []
+    },
+    {
+      "name": "service",
+      "width": 320,
+      "textScale": 2,
+      "documentWidth": 320,
+      "textOverflow": []
+    },
+    {
+      "name": "health",
+      "width": 320,
+      "textScale": 2,
+      "documentWidth": 320,
+      "textOverflow": []
+    }
+  ]
+}

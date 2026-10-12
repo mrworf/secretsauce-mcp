@@ -142,3 +142,71 @@ Audit issuance, denial, reissue/cancellation, restriction, completion and notifi
 OWASP recommends random single-use reset tokens, non-enumerating public requests, ordinary login after reset, session invalidation and separate MFA recovery controls. Its MFA guidance treats factor replacement as a high-risk operation and warns against trusting only an existing session. These sources support the safeguards, not the product-specific target hierarchy or exact transition choices: [OWASP password recovery](https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html), [OWASP MFA guidance](https://cheatsheetseries.owasp.org/cheatsheets/Multifactor_Authentication_Cheat_Sheet.html), verified 2026-10-11.
 
 This bounded resolution supplies security semantics for PRD-owner adoption and reconciliation. It is not an implementation vulnerability assessment or a pass of the full security stage; no CVSS score or runtime-test claim applies.
+
+## SECRES-06 — Account details and bounded Administrator management
+
+**Resolution:** REC-DEC-004; confirmed PO-FB-025, with PO-FB-023/024/026/027. This amendment supersedes SECRES-05's restriction of Administrator visibility to reset selection and its prohibition of role/contact editing. SECRES-05's separate reset ceremonies and target matrix remain unchanged.
+
+The existing account fields are email/contact, role and lifecycle status. Show immutable user ID, creation time and last successful browser login as information; do not invent editable profile fields, expose password/factor material or make recorded activity editable. Non-secret account visibility follows existing configuration visibility. Viewing a user does not grant permission to change that user.
+
+| Operation | Owner | Administrator | Auditor / Member |
+| --- | --- | --- | --- |
+| Change another local user's email/contact | Yes, including another Owner | Other Administrator, Auditor or Member only | No |
+| Change another local user's role | All fixed roles, subject to Owner continuity | Between Administrator, Auditor and Member; never grant Owner or target an Owner | No |
+| Change own role through account administration | Existing Owner transfer/demotion only, with enrolled replacement and continuity | No | No |
+| Change own email/contact through account administration | Yes, with the same sensitive-change checks | Yes, with the same sensitive-change checks | No new permission |
+| Invite, disable/reactivate, delete, review restored users or administer another user's sessions/grants | Existing Owner authority | No expansion | No expansion |
+
+Changes to contact or role require a currently active, enrolled authorized actor, password/TOTP reauthentication within five minutes, explicit confirmation naming the target and change, and durable audit admission. A contact change additionally requires the actor to confirm verification with the person through a previously established trusted channel. This is the same operator verification procedure used for assisted resets, not a new end-user verification workflow or approval chain; store the channel category only. Validate contact format and uniqueness using the existing account rules. Never accept a contact override within a reset operation.
+
+Recheck actor, target, allowed resulting role and lifecycle at commit. Contact/role edits must not change active/enrolled state, password, MFA, immutable identity or restore-review eligibility. They may update a pending/disabled account's permitted fields, but cannot activate it or convert an old invitation/recovery proof into authority for the new contact/role. Explicit Owner invitation reissue or authorized recovery remains available where necessary. External/legacy MCP identities remain under their existing separate management contract.
+
+Each successful role/contact change advances target authorization generation and immediately invalidates target sessions, MCP grants, subject-bound references and outstanding target proofs; issuer-bound proofs also cease to work when the changed user was their issuer. Changes take effect immediately, outside configuration drafts/history. Contact change preserves password and MFA; it does not enroll the account. For a self-contact change, explain that the current session ends and require ordinary login with the new contact. Recheck Owner continuity atomically, including concurrent role changes, disables and MFA resets. Never demote/remove/restrict the final active enrolled Owner or an incompletely enrolled nominated recovery Owner.
+
+Audit actor, target, changed field names, non-secret role transition, generation/correlation and bounded outcome; do not add contact values or credentials to ordinary logs. Where SMTP is available, notify the old and new contact of a committed contact change without including a recovery capability. Notification failure does not undo the committed transition or grant access, and is visible as a separate delivery outcome. Existing durable revocation-intent and uncertainty safeguards apply across restart; a stale form cannot overwrite a newer target revision or revive authority.
+
+### Acceptance additions
+
+| ID | Positive case | Negative/failure case |
+| --- | --- | --- |
+| SECRES-T12 | Administrator edits another non-Owner contact and changes Member/Auditor/Administrator roles; Owner edits another Owner under continuity. | Reject Administrator-to-Owner edits, promotion to Owner, self-role edit, Member/Auditor writes, hidden-field lifecycle changes, direct request bypass, stale target revision and stale/revoked actor. |
+| SECRES-T13 | Verified contact edit preserves password/MFA, changes login contact, invalidates old authority and reports notice outcome; self-edit ends current session. | Reject duplicate/invalid contact, missing recent authentication/verification, old proofs and old grants; no silent activation, enrollment or invitation rebind; audit or uncertain write failure never claims success or revives authority. |
+| SECRES-T14 | Creation and last-login metadata are read-only within existing role visibility. | No secret-bearing account projection, forged metadata write, counting partial/MCP/recovery login as full browser login, or last-Owner removal through concurrent changes. |
+
+### Precise PRD adoption text for REC-DEC-004
+
+- **Role matrix / IDENT-05:** Separate role/contact editing under SECRES-06 from Owner-only invitations, lifecycle and restored-user review. Replace Administrator reset-only visibility and no-contact-change statements with the bounded account-detail authority above; preserve SECRES-05 reset target rules.
+- **AUTHZ-02/03 / IDENT-06:** Apply immediate generation-bound revocation and stale-write protection to contact/role edits, require recent authentication, and preserve Owner continuity and lifecycle state. Existing other-user session administration remains Owner-only.
+- **IDENT-04/05 / UX:** Explain account email/contact editing, verified-channel operator confirmation, old/new-contact notices, read-only creation/last-login metadata and current-role controls without inventing profile fields. No confirmation email approval dependency is added.
+
+## SECRES-07 — Explicit unencrypted SMTP option
+
+**Resolution:** Security portion of REC-DEC-005; confirmed PO-FB-031 and PO-FB-034. Align with Architecture's SMTP transport amendment. This is a supported, explicit Owner choice; it does not weaken browser HTTPS, at-rest encryption, audit, proof lifetime or reset verification.
+
+Offer exactly the existing **TLS (encrypted)** mode and **None (unencrypted)**. Retain TLS as the default for new configuration and older records without a mode. TLS validates the server certificate and identity under the existing transport contract. A TLS failure never retries as unencrypted. A port change, absent field, server advertisement, import or restore cannot silently select None. Reject unknown explicit modes. STARTTLS is not required for this change. As STATE-08 specifies, restoring a recorded None setting preserves its proposal, but requires current Owner review and acknowledgment before unencrypted dispatch; an archived acknowledgment is not fresh authority.
+
+An Owner may deliberately configure None, including on a relay requiring SMTP authentication. No additional host allowlist, SaaS approval process or ban on credentials makes the supported option unusable. Keep a plain-language inline warning: the connection to the mail server is unencrypted, so messages, invitation/reset links and any SMTP login credentials can be read or altered on that network. Recommend TLS or a trusted protected connection; do not describe an IP address or local network alone as proof of confidentiality.
+
+Enabling None, switching to None, or changing the server/authentication destination while None remains selected requires the current Owner's recent password/TOTP authentication and explicit risk acknowledgement in the normal confirmation/review. Bind acknowledgment to the selected endpoint, mode and applicable credential/configuration version; stale confirmation cannot authorize changed settings. Existing operation-specific confirmation remains sufficient—no extra multi-step wizard. A test using None must visibly state the mode and require equivalent acknowledgment before sending; testing never bypasses normal authorization, audit or transport selection. Already-acknowledged unchanged settings need no repeat warning dialog on every email.
+
+Mode and non-secret connection settings are prefilled from current authorized state. Saved passwords remain encrypted and write-only: show only whether a password is configured, retain it on unchanged submission, require deliberate replacement, and retain existing explicit deletion rules. Choosing None never deletes a password or silently switches authentication off. Audit mode changes, the acknowledgment and test/delivery outcome without passwords, proof-bearing links, message bodies or protocol credentials; classify expected connection/authentication errors without echoing server data containing secrets. Existing bounded delivery and current-revision admission remain mandatory.
+
+This intentionally accepts loss of confidentiality/integrity on the SMTP hop when the Owner selects None. It is not a claim of secure email transport or regulatory compliance. The user has expressly authorized support for this mode; no further product decision is needed to implement the bounded exception.
+
+### Acceptance additions
+
+| ID | Positive case | Negative/failure case |
+| --- | --- | --- |
+| SECRES-T15 | Owner explicitly selects and acknowledges None; plaintext SMTP works with and without configured authentication; TLS remains default and works with valid certificate. | TLS failure never falls back; omitted legacy mode remains TLS; reject unauthorized/stale/unacknowledged insecure changes and certificate identity failure in TLS mode. |
+| SECRES-T16 | Current non-secret fields prefill; blank unchanged password retains encrypted value; independent replacement/deletion remains explicit. | No saved password in GET/UI/log/audit/export, no mode-driven credential deletion or auth disabling, no test bypass, no raw SMTP body/proof leakage in failures. |
+
+### Precise PRD adoption text for REC-DEC-005
+
+- **IDENT-04 / SEC-01 / acceptance:** Add explicit TLS default and None transport choice, Owner recent-authenticated acknowledgment and no fallback. Support optional SMTP authentication under either selected mode with honest risk wording. Preserve encrypted storage, write-only credentials, disable-versus-delete semantics and mandatory audit.
+- **CONFIG-03 / UX:** Persist selected transport through normal settings lifecycle; populate non-secret current values and retain unchanged password without redisplay. Align test messages with selected mode and current authorization.
+
+### Evidence and review limits for SECRES-06/07
+
+[OWASP Authentication guidance](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html#changing-a-users-registered-email-address) treats contact changes as security-sensitive, recommends MFA verification and notice to the existing contact. The operator-assisted route here derives from this product's established trusted-channel reset procedure and optional SMTP; it is not a claim that OWASP mandates this exact administrative workflow. [RFC 8314](https://www.rfc-editor.org/rfc/rfc8314.html) recommends encrypted mail submission and prefers implicit TLS; None is an explicit product exception, not the recommended default. Sources checked 2026-10-12.
+
+This is bounded definition resolution, not a runtime security assessment. No implemented vulnerability or CVSS claim is made. SEC-DEF-001's accepted best-effort response-scanning limitation and all existing reset/proof/audit controls remain intact.

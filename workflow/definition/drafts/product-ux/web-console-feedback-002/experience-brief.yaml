@@ -1,0 +1,86 @@
+status: proposed
+product_id: secretsauce-mcp
+sources:
+- path: workflow/feedback/PO-FEEDBACK-2026-10-11-002/feedback.yaml
+  revision: sha256:515a53d2c56f256708cef2fce9add362aa20f2fbcf1f6d34b4ff1a1dfdb9d53b
+- path: workflow/feedback/PO-FEEDBACK-2026-10-11-002/research.md
+  revision: sha256:728ba278ea6d1fb47223e441b54c791de54e3539473916c43033b07bf3bfb277
+- path: docs/web-console-prd.md
+  revision: sha256:bc908afcb8c40184dfcccdf296672bc559f5499236ed37f351a82f34ad0e9843
+- path: docs/web-console-prd-coverage.md
+  revision: sha256:ee1f5e26989ba653c007b67ef5b36d3d06922cc24db49b3c2eb8b4959620bb7e
+- path: docs/web-console-prd-user-journey-audit.md
+  revision: sha256:22f0693cdda9a055ed8013a4a23ccf8710918a89a3417e6a0d902df4a7bef9a2
+- path: product/ux/manifest.yaml
+  revision: sha256:8c2881d271b7ca836fbf9ca28e2687e2c049004fdca9093b7f9f3f6c80f43132
+- path: product/ux/experience-brief.yaml
+  revision: sha256:b8371e8d77f398cd44c205320b7d73f860b0e48c152d0ad2425b5bdc9902121f
+- path: product/ux/01-information-architecture.md
+  revision: sha256:2f7bc646c1f518e424378a4b47df945d5b7eb8c72f1c2aef7f07879929a40ddf
+- path: product/ux/02-interaction-patterns.md
+  revision: sha256:0346e83574043bcac2927c197c5639624d6d405961e9226e4a5f15b02908f331
+- path: product/architecture/web-console-state-contract.md
+  revision: sha256:80835e44cdd550f10638bb757f183868804f9678cac4626a7ac84abb27ff0d32
+- path: product/security/web-console-security-contract.md
+  revision: sha256:2f46343c6d3206b48c46212de6ba84a308b7f2a921cfba7525d2b212f3e4f5bc
+experience:
+  revision: feedback-002-draft-1
+  audience:
+    primary:
+    - Owners
+    - Administrators
+    secondary:
+    - Auditors
+    - Members within existing scope
+  principles:
+  - Show known current values directly in forms
+  - Use plain action and state language
+  - Use desktop width for useful related content
+  - Preserve deliberate review and security boundaries
+  product_character:
+    tone: Plain, calm, precise
+    density: Moderate density; compact one-row account list
+    complexity_strategy: Focused sections and named advanced controls; no routine JSON
+    guidance_level: Short associated help and concrete consequences
+  information_priorities:
+  - Current versus pending versus unsaved state
+  - The next action needed to make changes take effect
+  - Role-permitted account details and current health
+  interaction_direction:
+    navigation: Preserve four primary areas and six focused Settings sections; rename Response protection to Secret
+      detection
+    routine_actions: Populated forms; Review changes saves pending work then opens complete-scope review; Save for
+      later retains existing persistence-only option
+    consequential_actions: Apply reviewed Settings atomically; confirm immediate account operations separately
+    progressive_disclosure: Preserve all advanced capabilities without putting raw structure in routine paths
+  responsive_priority: Use columns on wide screens, reflow forms and keep compact account rows linked to complete
+    detail on narrow screens
+  explicit_po_preferences:
+  - statement: Plain understandable language and useful horizontal space
+    decision_refs:
+    - PO-FB-016
+    - PO-FB-017
+  - statement: One row per user, detail editing, creation and last login
+    decision_refs:
+    - PO-FB-023
+    - PO-FB-024
+    - PO-FB-025
+    - PO-FB-026
+    - PO-FB-027
+  - statement: Support unencrypted SMTP; never prefill saved password
+    decision_refs:
+    - PO-FB-031
+    - PO-FB-034
+  explicit_po_dislikes:
+  - statement: Extra viewing/editing steps and inconsistent values/state
+    decision_refs:
+    - PO-FB-035
+    - PO-FB-039
+    - PO-FB-041
+  designer_discretion:
+  - Spacing, typography, responsive breakpoints
+  - Routine field help and component geometry
+  approval:
+    approved: false
+    decision_refs: []
+    pending_decision: UX-DESIGN-003

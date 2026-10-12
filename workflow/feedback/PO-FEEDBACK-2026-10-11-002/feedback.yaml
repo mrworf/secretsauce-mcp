@@ -50,7 +50,7 @@ source:
 status: NEEDS_CONFIRMATION
 transaction:
   parent_commit: bbbd9e329ad6b9ec3c4bec692c81b7d7d99db49d
-  repository_commit: null
+  repository_commit: e3b847c80a9a9626a869315cfc96eacc963e475f
   pre_existing_dirty_paths:
   - test-results/
   owned_paths:

@@ -12,7 +12,7 @@ import { consoleEvidence } from './consoleEvidence.js';
 import { captureConfigurationRevision } from './consoleHistory.js';
 
 export class SettingsError extends Error {}
-const labels={protection:'Response protection',authentication:'MCP authentication',limits:'Limits',email:'Email',backups:'Backups & restore',health:'Health & retention'};
+const labels={protection:'Secret detection',authentication:'MCP authentication',limits:'Limits',email:'Email',backups:'Backups & restore',health:'Health & retention'};
 type Section=keyof typeof labels;
 interface Review {id:string;actor:string;session:string;fingerprint:string;expires:number;sections:Section[];cutoff:number;deletions:string[];retentionCutoff:number;retentionImpact:number;}
 const reviews=new WeakMap<ConsoleStore,Map<string,Review>>();
@@ -25,7 +25,7 @@ function validateBases(store:ConsoleStore,sections:Section[]){const s=store.stat
 function prepared(store:ConsoleStore,sections:Section[]){const s=store.state,has=(id:Section)=>sections.includes(id);let protection=has('protection')?validateProtection(s.managed!.protection!.draft!.content):undefined;
  const limits=has('limits')?operatingSettingsSchema.parse(s.operating!.draft!.settings):undefined;
  if(limits){const current=consoleProtection(consoleServices(store)).readUncheckedLimits(),changed=limits.scan.maxUniqueSecrets!==current.maxUniqueSecrets||limits.scan.timeoutMs!==current.timeoutMs;
- if(protection&&changed&&(protection.effective.secretlint.limits.maxUniqueSecrets!==limits.scan.maxUniqueSecrets||protection.effective.secretlint.limits.timeoutMs!==limits.scan.timeoutMs))throw new SettingsError('Response protection and Limits propose conflicting shared scanner bounds. Correct one draft before review.');
+ if(protection&&changed&&(protection.effective.secretlint.limits.maxUniqueSecrets!==limits.scan.maxUniqueSecrets||protection.effective.secretlint.limits.timeoutMs!==limits.scan.timeoutMs))throw new SettingsError('Secret detection and Limits propose conflicting shared scanner bounds. Correct one draft before review.');
  const catalog=structuredClone(protection?.content??s.managed!.protection!.applied) as {secretlint:{limits:unknown};sensitiveNames:unknown};if(!protection||changed)catalog.secretlint.limits={max_unique_secrets:limits.scan.maxUniqueSecrets,timeout:limits.scan.timeoutMs+'ms'};protection=validateProtection(catalog);}
  const authentication=has('authentication')?consoleAuthentication(store).prepare(authenticationSettingsSchema.parse(s.authentication!.draft!.settings)):undefined;
  const email=has('email')?smtpSettingsSchema.parse(s.notifications!.draft!.settings):undefined;

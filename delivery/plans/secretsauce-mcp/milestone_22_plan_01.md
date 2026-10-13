@@ -12,7 +12,7 @@ Shared language, shell, input cues and help; then complete service forms and vis
 | Slice | Plan | Outcome | Dependency | Status | Commit | Evidence |
 |---|---|---|---|---|---|---|
 | 01 | [slice 01](milestone_22_plan_01_slice_01.md) | Shared readable forms and shell | none | completed | 0c5da08cc2275f9f6d5fa1307473708d7ad0de50 | shared/focused-settings-browser-report.json |
-| 02 | [slice 02](milestone_22_plan_01_slice_02.md) | Service journey and visual acceptance | 01 | completed | introducing slice-02 commit (root records exact SHA) | milestone22/validation.json; UX comparison.json |
+| 02 | [slice 02](milestone_22_plan_01_slice_02.md) | Service journey and visual acceptance | 01 | completed | 16426e09394e216e2699bb8258205b653cfdf507 | milestone22/validation.json; UX comparison.json |
 ## Cross-slice concerns
 No migration, no authorization changes. Required status follows current control state. No browser secret persistence or new API input schema. Primary host matching uses existing matcher semantics with positive/negative browser checks. Preserve unsaved guards and exact values. Isolated HTTPS synthetic browser only.
 ## Completion gate

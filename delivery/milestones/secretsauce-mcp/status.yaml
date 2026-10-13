@@ -277,24 +277,28 @@ milestones:
 - id: '22'
   title: Readable forms and service configuration
   file: delivery/milestones/secretsauce-mcp/22-readable-forms-and-services.md
-  status: in_progress
+  status: completed
   dependencies:
   - '21'
-  completed_at: null
-  commit_hash: null
-  notes: Autonomous M22–24 goal selected; governing plan milestone_22_plan_01.md; visual mockup fidelity
-    required.
+  completed_at: '2026-10-13T02:16:54.276749+00:00'
+  commit_hash: 16426e09394e216e2699bb8258205b653cfdf507
+  notes: Two slices; 668 tests/71 files, build and five isolated HTTPS browser harnesses pass; actual/reference
+    visual comparison including six overlap states and 320px/200% text. evidence/qa/secretsauce-mcp/milestone22/acceptance.md
+    and evidence/ux-acceptance/secretsauce-mcp/milestone22/comparison.md. Root verified source hashes
+    and inspected desktop/narrow captures.
   started_at: '2026-10-13T01:47:48.051815+00:00'
 - id: '23'
   title: Manage accounts through clear People details
   file: delivery/milestones/secretsauce-mcp/23-people-details-and-account-management.md
-  status: pending
+  status: in_progress
   dependencies:
   - '22'
   - '18'
   completed_at: null
   commit_hash: null
-  notes: null
+  notes: M22/18 complete. Generate milestone_23_plan_01.md and per-slice plans; implement approved
+    People account management, metadata and exact visual acceptance.
+  started_at: '2026-10-13T02:16:54.276749+00:00'
 - id: '24'
   title: Use populated Settings with explicit email transport
   file: delivery/milestones/secretsauce-mcp/24-populated-settings-and-email-modes.md
@@ -362,10 +366,11 @@ delivery_goal:
   - '23'
   - '24'
   execution: autonomous
-  current_milestone: '22'
-  governing_plan: delivery/plans/secretsauce-mcp/milestone_22_plan_01.md
+  current_milestone: '23'
+  governing_plan: delivery/plans/secretsauce-mcp/milestone_23_plan_01.md
   blockers: []
-  resume_point: Generate M22 governing and all slice plans, then implement and validate each slice.
+  resume_point: Generate M23 governing and indexed slice plans; implement and validate within this
+    milestone.
 compiled_from_history:
 - product_id: secretsauce-mcp
   input_mode: PRODUCT_BUILD

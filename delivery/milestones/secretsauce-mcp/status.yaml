@@ -303,19 +303,21 @@ milestones:
 - id: '24'
   title: Use populated Settings with explicit email transport
   file: delivery/milestones/secretsauce-mcp/24-populated-settings-and-email-modes.md
-  status: in_progress
+  status: completed
   dependencies:
   - '22'
   - '19'
   - '20'
-  completed_at: null
-  commit_hash: null
-  notes: M22/19/20 complete. Generate milestone_24_plan_01.md and indexed slice plans; implement populated
-    Settings and explicit email transport with all required local and visual evidence.
+  completed_at: '2026-10-13T03:53:48.528155+00:00'
+  commit_hash: 5ce3d32cddb7a1d2f4bb297d48f8aded471d9736
+  notes: Two committed slices; 721 tests/73 files, build, seven HTTPS browser suites and eight final-image
+    Docker downgrade/SIGKILL recovery checks pass. All seven acceptance criteria mapped in evidence/qa/secretsauce-mcp/milestone24/acceptance.md.
+    Root inspected seven actual/reference visual pairs, verified 210 source hashes, 45 evidence hashes
+    and current packet authority. No required work deferred.
   started_at: '2026-10-13T02:56:44.270644+00:00'
 delivery_goal:
   product_id: secretsauce-mcp
-  status: in_progress
+  status: completed
   packet: delivery/milestones/secretsauce-mcp/status.yaml
   packet_revision: sha256:b0c9723dbc11aee6523ef42b684a312055f7283439bc81eb963940a2064f3e73
   packet_contract_revisions:
@@ -369,10 +371,14 @@ delivery_goal:
   - '23'
   - '24'
   execution: autonomous
-  current_milestone: '24'
+  current_milestone: null
   governing_plan: delivery/plans/secretsauce-mcp/milestone_24_plan_01.md
   blockers: []
-  resume_point: Generate M24 governing and indexed slice plans; implement and validate within this milestone.
+  resume_point: 'GOAL_COMPLETE: fixed M22–M24 scope delivered in five implementation slices with committed
+    acceptance. All required local browser/transport/Docker/recovery checks passed; actual external ChatGPT/Codex
+    validation retains the existing recorded exception. Running local review instance remains on its previous
+    version; deployment is separate.'
+  completed_at: '2026-10-13T03:53:48.528155+00:00'
 compiled_from_history:
 - product_id: secretsauce-mcp
   input_mode: PRODUCT_BUILD

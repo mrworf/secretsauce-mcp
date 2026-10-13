@@ -22,3 +22,5 @@ Meet the scoped requirements and map evidence in milestone acceptance. Commit th
 
 ## Execution
 Implemented; validation in evidence/qa/secretsauce-mcp/milestone24/slice-01.md. Exact commit recorded by root closeout.
+
+Implementation commit: `f83dd1abc01738586ef357cdf0e304f9e430fc6a`. Root accepted the completed slice and milestone evidence.

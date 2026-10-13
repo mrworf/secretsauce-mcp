@@ -1,3 +1,28 @@
+# Current feedback 002 traceability
+
+Current authority is the committed validated definition next_handoff and adopted REC-RM-007–014, not raw findings. See [index](index.md) and compiled_from in [status](status.yaml) for exact source revisions and preservation baseline. Prior maps below are historical, not new work.
+
+| Required remediation | Governing authority | Outcome milestone | Evidence provenance only |
+| --- | --- | --- | --- |
+| REC-RM-007 | UX-02/03, UX-IN05/10, write-only secrets | M24 | REC-015 / PO-FB-032/034 |
+| REC-RM-008 | UX-04/R01/IN11 | M22 | REC-009 / PO-FB-018 |
+| REC-RM-009 | IDENT-02B, AUTHZ-02/03, SECRES-06 | M23 | REC-012 / PO-FB-025 |
+| REC-RM-010 | IDENT-02A, STATE-07, BACKUP-01/05 | M23 | REC-013 / PO-FB-026/027 |
+| REC-RM-011 | IDENT-04, STATE-08, SECRES-07 | M24 | REC-014 / PO-FB-030/031 |
+| REC-RM-012 | UX-IA08/IN11/R05/A06/V05, UX-C37/41/42 | M22; shared constraints M23/M24 | REC-008/010 / PO-FB-015–022/029 |
+| REC-RM-013 | UX-IA07/IN12/R05/V05, UX-C38/39/42 | M23 | REC-011 / PO-FB-023/024/028 |
+| REC-RM-014 | UX-IA05/08, UX-IN10/13, UX-C34–36/40/42 | M24 | REC-016 / PO-FB-033/035–041 |
+
+All 27 feedback records PO-FB-015–041 are accounted for by these mappings, with tentative/advisory mechanisms becoming obligations only where adopted in approved UX3 or companion contracts. Research/inspiration PO-FB-028/040 is already completed definition context, not a separate implementation milestone. PO-FB-034 is preserved explicitly in M24 (and shared secret constraints).
+
+Shared UX-V05/C42 fidelity, UX-A01–06 keyboard/reflow and current authorization/audit apply M22–24. STATE-01/02/03 and approved capability preservation apply every affected path. M23 owns SECRES-T12–14 and STATE-07; M24 owns SECRES-T15–16 and STATE-08. Repeated mapping propagates shared constraints, not duplicate implementation.
+
+Excluded: accepted SEC-DEF-001 best-effort limitation is retained, not “fixed”; explicit None SMTP risk remains user-authorized. No STARTTLS, new role, SaaS tenant model, bulk account editing, custom profile fields, analytics, autosave or partial apply. Findings alone and unadopted recommendations create no work. Existing M10–21 remains preservation baseline. Required deferred: none. Blocked: none. Unmapped: none.
+
+---
+
+## Historical feedback 001 and initial-build map
+
 # Approved feedback delta traceability
 
 Mode: CHANGE_PLAN. Primary authority is the current validated definition package and committed definition `next_handoff`; REC-RUN-003 backlog is the adopted resolved delta. Its historical pending-definition gate has been satisfied without mutating reconciliation. All 7 directives map through 6 remediation items; observations are evidence and the original subtabs suggestion remains exploratory (approved UX independently chooses section links/select).

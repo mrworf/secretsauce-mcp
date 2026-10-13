@@ -1,12 +1,12 @@
 # SecretSauce web console delivery packet
 
-**Mode:** CHANGE_PLAN. **Product:** `secretsauce-mcp`. M10–17 remain completed; new M18–21 are pending. This approved feedback delta preserves the single-organization self-hosted console and gateway. No implementation has begun.
+**Mode:** CHANGE_PLAN. **Product:** `secretsauce-mcp`. Completed M10–21 and earlier legacy history remain preserved; M22–24 are pending. This is the approved second-feedback delta, not a product rebuild or implementation claim.
 
 ## Authority and provenance
 
-The [validated definition package](../../../workflow/definition/definition-package.yaml), revision `sha256:f60ab3efcfca9d95991c023058ee81e61838121275ec482b549fed55a87618f9`, producer `4d46db3fa08a25df52b8d7b0aa2357cf8446b2fd`, and committed [definition handoff](../../../workflow/definition/state.yaml) establish eligibility. All six definition stages passed; their validation is consumed, not rerun. REC-RUN-003/REC-IMPACT-003 is immutable provenance and its six [resolved remediation items](../../../workflow/reconciliation/REC-RUN-003/03-remediation-backlog.md) define the delta. Its historical false readiness concerned definition revalidation, explicitly satisfied in the later definition handoff. [Status](status.yaml) pins exact revisions and retains initial compilation provenance/history.
+The [validated definition package](../../../workflow/definition/definition-package.yaml) at `sha256:82014f66c15c3e7246144c9b44b95c70c7a22aba863d1e8bbd6887ca6afed506`, producer `653ac14f771dc1da7d1d650c577ff439e9b99bce`, and committed [definition next_handoff](../../../workflow/definition/state.yaml) are the effective eligible change handoff. All six definition stages passed and are consumed without revalidation. Immutable REC-RUN-006/REC-IMPACT-006 and its [resolved backlog](../../../workflow/reconciliation/REC-RUN-006/03-remediation-backlog.md) provide eight adopted remediation items; its historical source-closeout/revalidation flag was explicitly satisfied by the later definition transaction. This is not compilation from a stale raw reconciliation handoff. [Status](status.yaml) pins all source hashes and keeps prior compilation provenance.
 
-Implementation obligations: REC-RM-001–006 as adopted by PRD, SECRES-05, STATE SMTP amendment and approved UX2. Governing constraints: full indexed current UX/architecture/security, decisions, accepted risks and AGENTS.md. Evidence: findings, coverage and journey audits. Excluded: original exploratory subtabs mechanism, optional suggestions and already-completed behavior. Blocked required sources: none.
+Implementation authority: adopted REC-RM-007–014 and their PRD/SECRES-06/07/STATE-07/08/approved UX3 contracts. Governing constraints: indexed UX/security/architecture, approved decisions, accepted risks and AGENTS.md. Context/evidence: observations, research, audits and delivered baseline. Exclusions: already-conforming capability, optional unadopted mechanisms, SaaS expansion and unrelated redesign. No unresolved required source work.
 
 ## Milestones and dependencies
 
@@ -20,14 +20,17 @@ Implementation obligations: REC-RM-001–006 as adopted by PRD, SECRES-05, STATE
 | 15 | [Operate and inspect the managed instance](15-operating-evidence-and-limits.md) | 13, 14 | completed |
 | 16 | [Create recoverable encrypted instance backups](16-encrypted-instance-backups.md) | 15 | completed |
 | 17 | [Restore and resume an instance safely](17-safe-instance-recovery.md) | 16 | completed |
-| 18 | [Separate assisted password and Authenticator resets](18-assisted-identity-resets.md) | 12, 14 | pending |
-| 19 | [Delete SMTP credentials independently](19-independent-smtp-deletion.md) | 12 | pending |
-| 20 | [Navigate focused Settings with exact draft review](20-focused-settings-and-navigation.md) | 15, 17 | pending |
-| 21 | [Configure all capabilities with forms and lossless import](21-friendly-configuration-and-import.md) | 20 | pending |
+| 18 | [Separate assisted password and Authenticator resets](18-assisted-identity-resets.md) | 12, 14 | completed |
+| 19 | [Delete SMTP credentials independently](19-independent-smtp-deletion.md) | 12 | completed |
+| 20 | [Navigate focused Settings with exact draft review](20-focused-settings-and-navigation.md) | 15, 17 | completed |
+| 21 | [Configure all capabilities with forms and lossless import](21-friendly-configuration-and-import.md) | 20 | completed |
+| 22 | [Readable forms and service configuration](22-readable-forms-and-services.md) | 21 | pending |
+| 23 | [Manage accounts through clear People details](23-people-details-and-account-management.md) | 22, 18 | pending |
+| 24 | [Use populated Settings with explicit email transport](24-populated-settings-and-email-modes.md) | 22, 19, 20 | pending |
 
-M18 consumes completed identity recovery plus durable grant revocation. M19 consumes existing SMTP/draft infrastructure. M20 consumes completed operating and recovery surfaces so their actions remain reachable. M21 consumes M20 section/draft navigation and existing M13 import semantics. Only M20 → M21 is a new inter-milestone dependency; no artificial sequencing of resets, SMTP deletion and navigation. Import and friendly configuration consolidate one lossless authoring/round-trip outcome. No M0 or implementation slices are generated.
+M22 delivers observable shared form/layout and service-authoring correction, consuming M21's working friendly controls. M23 combines People presentation, authorization and metadata because a detail screen without its bounded edits/dates is incomplete; it consumes M22 visual/form rules and M18 durable reset/revocation. M24 combines populated Settings and explicit SMTP transport so saved values, risk/review and current tests are coherent; it consumes M22 presentation, M19 deletion fences and M20 atomic Settings. M23 and M24 are independent of one another. No M0, standalone test-only milestone or implementation slices generated.
 
-Completed M10–17 contract files and records, historical docs/milestones, and completed delivery_goal remain unchanged. The old goal is historical and must not be mistaken for completion of M18–21. The legacy next-MVP selector still targets the historical packet; downstream uses this explicit manifest.
+Historical completed M10–21 contracts/records and legacy docs/milestones remain unchanged. Existing completed delivery_goal remains historical, not completion of this new scope. Downstream uses this explicit packet manifest, not the legacy next-MVP selector.
 
 ## Shared preservation and delivery rules
 
@@ -40,8 +43,9 @@ Completed M10–17 contract files and records, historical docs/milestones, and c
 7. Finish relevant runbook/docs with each outcome; use `example.org` examples. Separate OAuth origin from full ChatGPT MCP URL. Keep Docker metadata generation local and tested. Operator responsibilities include off-host copies, patching, access review, incident response and host security; software does not establish SOC 2 compliance.
 
 
-## Coverage and handoff
 
-[Traceability](traceability.md) maps all six remediation items and retains the original build map as historical evidence. Every required directive is covered; no blocked, deferred or unmapped required work remains. Canonical UX2 includes exact per-field capabilities and UX-C26–33; each contract carries relevant constraints and positive/negative/browser validation.
+## Visual fidelity and coverage
 
-Compiler structural, source/provenance, preservation and link checks are recorded in `workflow/delivery-planning/results/compiler.yaml`. This documentation-only compilation does not run application acceptance or declare implementation readiness. **Next: milestone-readiness**, automatically invoked by Delivery Planning, owns prerequisites and executable environment audit. Root owns the combined planning commit.
+[Traceability](traceability.md) maps all eight remediations and retains prior maps. UX-V05/UX-C42 apply to every new milestone: actual browser screenshots must match approved concepts in general appearance at equivalent states/viewports. Each milestone names its references and evidence requirements. Functional tests alone cannot pass visual acceptance; fix material differences or obtain explicit scoped approval. No reference rewriting to hide drift.
+
+Compiler checks are recorded in `workflow/delivery-planning/results/compiler.yaml`. No application acceptance was run by documentation compilation. **Next: milestone-readiness**, inside the root-owned planning transaction; only that specialist assesses executable prerequisites and implementation readiness.

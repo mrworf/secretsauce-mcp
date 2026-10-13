@@ -1,91 +1,88 @@
-# Approved feedback milestone readiness report
+# Approved feedback 002 milestone readiness report
 
 ## Overall readiness status
 
-**READY** — all start prerequisites have verified repository or local-environment providers, and M18–21 are ordered with M20 supplying M21's only new prerequisite. This is planning readiness, not feature acceptance; the parent must finalize the combined planning commit before implementation handoff.
+**READY** — M22–24 have verified repository/local facilities and a valid provider order. M22 supplies the shared UX contract to M23 and M24. Parent planning commit/provenance must finish before publishing the implementation handoff; this report is not feature acceptance.
 
 ## Scope and evidence basis
 
-Product `secretsauce-mcp`; selected packet `delivery/milestones/secretsauce-mcp/status.yaml`. Audited M18–21, complete preserved M10–17 contracts, manifest/index/traceability, compiler result, repository instructions, package/lock/CI/Docker/Compose, fixture setup and existing acceptance. Parent transaction starts `9ff135f3299fa36d773c243b72c0185a5fbd7fb5`; committed definition producer `4d46db3fa08a25df52b8d7b0aa2357cf8446b2fd`. Parent compiler/state edits existed at child start. Unrelated `test-results/`, live instance and completed milestone records remain untouched. Exact packet and artifact hashes are in the readiness adapter.
+Product `secretsauce-mcp`, packet `delivery/milestones/secretsauce-mcp/status.yaml`, pending M22–24 and complete preserved M10–21 contracts. Order comes from explicit manifest dependencies and index, not filenames alone. Transaction start `b2b66608908ca1e2dc9f61ce66856780ccf68b8e`; definition producer `653ac14f771dc1da7d1d650c577ff439e9b99bce`. Inspected AGENTS, all milestone contracts, status/index, compiler adapter, package/lock/CI/Docker/Compose and relevant synthetic browser/SMTP/recovery fixtures. Source and all approved concept hashes match, upstream commits exist in history. Pre-existing `test-results/` and root/compiler changes are separate; no user instance accessed.
 
-FACT claims are backed by inspected evidence in the manifest. The future milestone walkthrough is explicitly a provider simulation. Prior baseline runtime acceptance remains evidence at its recorded implementation revision, not freshly executed acceptance. Historical initial readiness is preserved in [readiness-report-initial-build.md](readiness-report-initial-build.md) and the initial manifest section.
+FACTs are cited in the manifest. Clean-environment future execution is a provider simulation. Historical runtime results establish previously delivered baseline only. Exact current packet hashes are in the readiness adapter; exact previous report/manifest are preserved as `*-feedback-001.md`.
 
 ## Automatically completed prerequisites
 
-PRE-020 isolated lockfile installation and build passed; PRE-021 matching Chromium was downloaded to disposable `/tmp/secretsauce-feedback-browsers` and actual headless launch/focus verified. PRE-022 loopback probe passed with narrow permission. PRE-023 Docker client/server/Compose verified read-only. No source/bootstrap/dependency/OS/configuration change, persistent service start or application acceptance run. Four new milestones received readiness-only preconditions/checks.
+No bootstrap remediation required. Verified PRE-028 dependency/tool availability and unchanged setup since previous isolated install/build; PRE-029 actual headless launch, keyboard focus and screenshot; PRE-030 ephemeral loopback; PRE-031 read-only Docker client/server and Compose. Added only readiness contract/documentation. No package installation, source change, persistent service, production request or full acceptance suite.
 
 ## Confirmation-gated work
 
-None. Existing authorization covers local synthetic browser/Docker testing. Restricted DNS/browser/loopback/Docker probes were retried with narrow execution approval; no permissions, memberships or host security settings changed.
+None. Existing authorization permits local headless/Docker validation. Browser and Docker default sandbox probes were denied; identical narrow permission reruns passed. No host security/membership/OS changes.
 
 ## Required user actions
 
-None for M18–21. Historical actual ChatGPT/Codex connections remain NOT RUN under the preserved original local-delivery exception. The delta has no new externally authenticated client acceptance gate: local synthetic OAuth/MCP checks prove its revocation and configuration effects. A later real-client/release claim still requires `docs/m14-real-client-verification.md`; readiness does not claim external interoperability or broaden that exception.
+None for M22–24. Original real ChatGPT/Codex connections remain NOT RUN under the preserved goal-specific exception. The delta has no new external-client gate; local revocation/transport/configuration checks remain mandatory. Before any later real-client interoperability/release claim follow `docs/m14-real-client-verification.md`.
 
 ## Missing or unresolved prerequisites
 
-None. PRE-025 is normal consuming-milestone fixture/feature work; PRE-026 is explicitly supplied by M20. A new checkout must execute the documented lockfile/browser setup rather than assume cached dependencies. No new shared foundation is missing.
+None. PRE-033 is supplied by M22 before M23/M24; PRE-034 belongs to each milestone's implementation and acceptance, using verified existing facilities. New plaintext SMTP and metadata/migration fixtures are feature work, not an external provisioning blocker.
 
 ## Dependency graph
 
-See [active prerequisite graph](prerequisite-manifest.md#active-dependency-graph). Existing M12/M14 supply M18; M12 supplies M19; M15/M17 supply M20; M13 and M20 supply M21. Every completed provider's transitive predecessor exists in the preserved packet. No missing provider, cycle, forward dependency or structural correction. Shared UI files warrant serial work/revalidation, not artificial dependency edges.
+See [feedback 002 graph](prerequisite-manifest.md#feedback-002-dependency-graph). All15 manifest records have backward dependencies; no missing provider, cycle or forward edge. Completed M21 supplies M22; completed M18 supplies M23; completed M19/M20 supply M24. M17 recovery and earlier identity/grant infrastructure are present transitively. Shared files require serial integration/revalidation, not an extra product dependency.
 
 ## Proposed milestone order
 
-Declared pending selection order and proposed order: **M18 → M19 → M20 → M21**. Only M20 → M21 is a new dependency; M18/M19/M20 are otherwise independent atop completed baseline. Completed M10–17 files, records and historical delivery goal are unchanged.
+Declared and proposed: **M22 → M23 → M24**. M23/M24 each depend on M22 and their named completed providers, not each other. No reordering or compiler correction. Completed records/contracts and historical delivery goal remain unchanged.
 
 ## Milestone 0
 
-**Not required.** Runtime/package/build, state/audit, browser fixtures and local Docker facilities already exist. New behavior-specific fixtures/migration checks belong to their consuming milestone. Browser download is documented environment setup, not product bootstrap.
+**Not required.** Existing declared runtime, encrypted state, audit, browser, SMTP and recovery fixtures provide shared foundations. New behavior-specific fixtures belong in consuming milestones.
 
 ## Per-milestone readiness
 
-| Milestone | Preconditions/checks | Current result |
+| Milestone | Preconditions and checks | Result |
 | --- | --- | --- |
-| M10–17 | Preserved historical preconditions and committed acceptance; original external-client exception remains explicit | Completed local baseline, not reopened or newly accepted. |
-| M18 | PRE-019–024; completed M12/M14; own PRE-025 reset roles/proofs/revocation/failure/browser fixtures | Can start after parent commit; no user action. |
-| M19 | PRE-019–024; completed M12; own PRE-025 stale/delete/SMTP/draft/restart/browser fixtures | Ordered and available; no real SMTP account required. |
-| M20 | PRE-019–024; completed M15/M17; own PRE-025 navigation/search/shared review/role/accessibility fixtures | Ordered and available; preserve recovery action reachability. |
-| M21 | PRE-019–025 plus PRE-026 completed M20; existing M13 import/catalog baseline | Starts after M20 acceptance; capability round-trips and bounded hostile inputs owned here. |
+| M10–21 | Preserved original contracts and committed local acceptance; historic external exception remains explicit | Completed providers; not reopened or reaccepted. |
+| M22 | PRE-027–032, completed M21; owns PRE-034 forms/service/visual fixtures | Can start after parent closeout. |
+| M23 | PRE-027–034, completed M18 and accepted M22; own role/contact/dates/revocation/archive fixtures | All providers available before consumption; no real accounts needed. |
+| M24 | PRE-027–034, completed M19/M20 and accepted M22; own populated-settings/TLS/plaintext/restore fixtures | All providers available before consumption; no SMTP vendor needed. |
 
-Each new contract includes executable setup commands and evidence-based harness inspection. Future feature commands are established by each slice rather than invented by readiness. All new external inputs retain positive/negative coverage obligations.
+Each pending contract now has concrete setup/readiness checks. Visual preconditions include hash-verified approved references and an actual screenshot facility. Acceptance requires actual/reference matching-state comparison and correction of material drift under UX-V05/C42; current probe proves facility only.
 
 ## Clean-environment simulation
 
-Start with clean tracked checkout, declared runtime/OpenSSL, lockfile/package retrieval, writable temp space and permission to bind loopback. Install the declared current Chromium into an explicit path; don't use old cached browser versions or a live instance. Repository fixtures generate synthetic identity/key/audit/configuration data. Existing completed console code supplies state, permissions, importer, backups and recovery. Walk M18 and M19 using existing protected store/notification/grant boundaries, M20 using the full completed route set, then M21 after M20 acceptance. Every required internal provider is available before consumption or owned by the consuming acceptance boundary. Docker regression targets remain isolated and use the existing lease launcher.
+A clean tracked checkout has no assumed node_modules, browser cache, running app, credentials or generated feature evidence. Provide Node>=22 (CI22), npm/OpenSSL and authorized writable temp/loopback environment. Run locked `npm ci`, build, install the declared Chromium to an explicit directory and keep its environment variable for harness runs. Synthetic HTTPS fixtures generate their own key/identity/audit/configuration state. M22 consumes completed forms and produces shared layout/copy, which M23 and M24 consume only after committed acceptance. M23 extends durable identity/recovery fixtures; M24 extends local real TLS SMTP with plaintext variants and restore-admission fixtures. Docker drills use isolated temporary mounts and existing leases/launcher, never the running instance.
 
-**Simulation: PASS.** Observed isolated install/build, browser and execution facilities corroborate the setup. Future feature tests, all new browser tasks, container regressions and real external-client flows were not run. Cold registry installation and CI Node22 runtime were not exercised on this Node26 host. These limits are explicit and do not leave an unspecified provider.
+**Simulation PASS.** Current tool/dependency/browser/screenshot/loopback/Docker probes verify facilities. No cold download/install or Node22 execution repeated because package/lock/CI/Docker setup is byte-unchanged from prior verified readiness; the earlier isolated install/build is historical evidence. New feature tests, actual product visual comparisons, archive drills and external-client flows have not run. Reinstall missing temporary browser files after reboot; unavailable OS tools on another host require operator provisioning, not silent assumptions.
 
 ## Commands run and results
 
 | Command/inspection | Result |
 | --- | --- |
-| Git status/HEAD, packet/source/config/fixture/acceptance inspection | Parent ownership and completed baseline verified; pre-existing test-results untouched. |
-| `node --version`, `npm --version`, `openssl version` | Node26.11.1, npm12.2.0, OpenSSL3.6.5. |
-| `git archive HEAD` into disposable `/tmp/secretsauce-feedback-readiness-xo9s1doq`; `npm ci --offline --no-audit --no-fund`; `npm run build` there | PASS215 locked packages and build, no original node_modules; esbuild postinstall blocked by existing npm12 policy but build succeeds. Shell emitted an unrelated missing shell-profile env-file notice; commands completed. |
-| Declared Playwright browser inspection/launch against default and older cached directory | Current1.64.0 requires revision1248; old1234 cache cannot satisfy it. |
-| `PLAYWRIGHT_BROWSERS_PATH=/tmp/secretsauce-feedback-browsers npx playwright install chromium` | Default DNS EAI_AGAIN; identical command with narrow network permission succeeds. Playwright reports unsupported host OS and uses ubuntu24.04 fallback; actual launch succeeds below. |
-| Actual Playwright headless launch, static synthetic button focus, close | Default sandbox SIGTRAP/EPERM; identical permitted command PASS Chromium156.0.8078.4 and focused button true. Not product UI acceptance. |
-| Ephemeral 127.0.0.1 HTTP listener, synthetic request, close | Default EPERM; identical permitted probe PASS. |
-| `docker version --format '{{.Client.Version}} {{.Server.Version}}'`; `docker compose version` | Default socket denied; narrow read-only version succeeds29.9.0/29.9.0; Compose5.6.0. No container started or inspected. |
-| Packet graph, section, local link, history/scope preservation and diff checks | PASS; details in readiness adapter. |
-| `npm test` and product/browser/Docker acceptance | Not run: no executable product changes. Preserved M17 evidence records620tests/67files; new delivery must run required current checks. |
+| Git HEAD/status; complete packet; source/fixture/readiness inspection | Parent ownership identified; test-results and live state untouched. |
+| `node --version`; `npm --version`; `openssl version`; `npm ls --depth=0` | PASS26.11.1/12.2.0/3.6.5, complete declared packages including Playwright1.64.0. |
+| `git diff 84445451c18c5e32f92dc0978beed635d4d5edbf HEAD -- package.json package-lock.json .github/workflows/ci.yml Dockerfile` | Empty: prior verified setup remains unchanged. |
+| Python authority/reference SHA256 and upstream ancestor checks | PASS all authority digests, approved concepts and commits. |
+| Declared Chromium headless static page, Tab focus, screenshot to `/tmp/secretsauce-feedback2-readiness.png`; ephemeral HTTP listener/fetch/close | Default browser sandbox EPERM/SIGTRAP; identical permitted probe PASS Chromium156.0.8078.4, screenshot/focus and loopback. Not product visual acceptance. |
+| `docker version --format '{{.Client.Version}} {{.Server.Version}}'`; `docker compose version` | Default socket denied; narrow read-only retry PASS29.9.0/29.9.0; Compose5.6.0. No container touched. |
+| Initial discovery `docker-compose.yml` / `verify-console-friendly-browser.mjs` | Paths absent; resolved actual `deploy/compose.yaml`, `docker-compose.example.yaml` and `verify-console-friendly-forms-browser.mjs`; no missing facility. |
+| Graph, completed-record/contract preservation, readiness-only scope, reference, local-link and diff checks | PASS; adapter records exact packet hashes. |
+| Full application/browser/Docker acceptance and `npm run build` | Not run: documentation-only readiness, no executable changes. Prior M21 reports668tests/71files; not represented as current execution. |
 
 ## Files changed
 
-- Four new M18–21 contracts: readiness preconditions/checks only; functional scope and dependency records unchanged.
-- `delivery/readiness/secretsauce-mcp/prerequisite-manifest.md`: active PRE-019–026 and preserved initial PRE-001–018.
-- `delivery/readiness/secretsauce-mcp/readiness-report.md`: current result.
-- `delivery/readiness/secretsauce-mcp/readiness-report-initial-build.md`: exact prior report bytes.
-- `workflow/delivery-planning/results/readiness.yaml`: current result/hashes.
-- `workflow/delivery-planning/results/history/readiness-initial-build.yaml`: exact prior adapter bytes.
+- M22–24 contracts: readiness-only preconditions/checks; functional scope/dependencies unchanged.
+- `delivery/readiness/secretsauce-mcp/prerequisite-manifest.md`: active PRE-027–034 and retained historical PRE-001–026.
+- `delivery/readiness/secretsauce-mcp/readiness-report.md`: current status.
+- `delivery/readiness/secretsauce-mcp/prerequisite-manifest-feedback-001.md` and `readiness-report-feedback-001.md`: exact prior bytes.
+- `workflow/delivery-planning/results/readiness.yaml`: canonical parent-consumed adapter and hashes.
 
-No M0, product/bootstrap/AGENTS changes, completed-contract edits or child commit. Parent owns combined transaction and provenance.
+Prior adapter was already archived by parent at `workflow/delivery-planning/results/history/readiness-feedback-001.yaml`; child did not alter it. No bootstrap/M0/AGENTS/product changes or child commit.
 
 ## Remaining blockers
 
-**None.** Parent commit/provenance closeout is the handoff publication boundary, not a user-action prerequisite. Historical external-client NOT RUN is preserved separately.
+**None.** Parent planning payload/provenance closeout is the remaining publication step, not a user-action gate. Historical real-client evidence remains separately NOT RUN.
 
 ## Exact recommended next step
 
-In `/home/ha/projects/secretsauce`, Delivery Planning must commit the combined packet/readiness/state/handoff and finalize provenance; then invoke `milestone-delivery-orchestrator` with `delivery/milestones/secretsauce-mcp/status.yaml`, starting at **M18**. Do not implement inside this readiness transaction.
+In `/home/ha/projects/secretsauce`, the parent Delivery Planning orchestrator validates and commits the combined planning transaction and exact provenance, then hands off to `milestone-delivery-orchestrator` using `delivery/milestones/secretsauce-mcp/status.yaml`, starting at **M22**. Do not implement inside readiness.

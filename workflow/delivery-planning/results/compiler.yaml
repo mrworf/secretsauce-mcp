@@ -3,13 +3,13 @@ specialist: delivery-milestone-compiler
 product_id: secretsauce-mcp
 input_mode: CHANGE_PLAN
 outcome: COMPILED
-summary: Four complete follow-on outcome milestones cover all six adopted feedback
-  remediations; completed M10–17 and earlier history preserved. Complete for milestone-readiness,
-  not implementation.
+summary: "Three coherent outcome milestones cover all eight adopted second-feedback remediations. Completed\
+  \ M10\u201321 and earlier history preserved; mandatory matched-browser visual conformance included.\
+  \ Complete for milestone-readiness, not implementation."
 source:
   path: workflow/definition/definition-package.yaml
-  revision: sha256:f60ab3efcfca9d95991c023058ee81e61838121275ec482b549fed55a87618f9
-  repository_commit: 4d46db3fa08a25df52b8d7b0aa2357cf8446b2fd
+  revision: sha256:82014f66c15c3e7246144c9b44b95c70c7a22aba863d1e8bbd6887ca6afed506
+  repository_commit: 653ac14f771dc1da7d1d650c577ff439e9b99bce
 eligibility:
   definition_package_status: ready_for_delivery_planning
   effective_handoff: workflow/definition/state.yaml#next_handoff
@@ -17,45 +17,46 @@ eligibility:
   producer_commit_in_history: true
   passed_definition_validation_consumed: true
   canonical_reconciliation_is_provenance: true
-  revalidation_resolution: REC-RUN-003 historical definition gate explicitly satisfied
-    by later committed all-six-stage PASS definition adoption; raw result unchanged.
+  revalidation_resolution: Committed all-six-stage PASS definition adoption satisfies immutable REC-RUN-006
+    revalidation/source-closeout gate; raw result remains provenance.
   effective_implementation_required: true
   effective_implementation_ready: true
   effective_delivery_planning_ready: true
   unresolved_authority: []
 reconciliation:
-  result: workflow/reconciliation/REC-RUN-003/reconciliation-result.yaml
-  revision: sha256:2f24571fcc26f6819689dc241fc4214a2979569e1d06a1ca9d72201659f001e2
-  repository_commit: fb901edc2d5d226a9685c16ecbc5bbb5e85dfb97
+  result: workflow/reconciliation/REC-RUN-006/reconciliation-result.yaml
+  revision: sha256:66907c2a791c0c794e600f3b3b1dd1d9167ebe7ea804fe24d759f0d309edeb93
+  repository_commit: a57c1ca28615a36770cc1446c4cb71fe21ae5f48
   schema_version: 1
-  reconciliation_id: REC-RUN-003
-  change_id: REC-IMPACT-003
-  remediation_ids: &id001
-  - REC-RM-001
-  - REC-RM-002
-  - REC-RM-003
-  - REC-RM-004
-  - REC-RM-005
-  - REC-RM-006
-  remediation: workflow/reconciliation/REC-RUN-003/03-remediation-backlog.md
-  remediation_revision: sha256:d3bc968eee07adb18d54a2727d41558baab71c5a9f15518938365a52f2d4770c
+  reconciliation_id: REC-RUN-006
+  change_id: REC-IMPACT-006
+  remediation_ids:
+  - REC-RM-007
+  - REC-RM-008
+  - REC-RM-009
+  - REC-RM-010
+  - REC-RM-011
+  - REC-RM-012
+  - REC-RM-013
+  - REC-RM-014
+  remediation: workflow/reconciliation/REC-RUN-006/03-remediation-backlog.md
+  remediation_revision: sha256:5268fbba238424f02585450f433ca545d6ff64befad57f3ae258f2167d13dbda
 packet:
   complete: true
   path: delivery/milestones/secretsauce-mcp
   manifest: delivery/milestones/secretsauce-mcp/status.yaml
-  manifest_revision: sha256:5bcf9942c24945d9b0793ac7a205c92b06858b6dffcfaade4ab1da5ba3a0f898
-  revision: sha256:ef5ac5285860c20f70df161413849909f4ff06f1ca80fa295d8f7fb68e6e6611
-  revision_method: SHA-256 of sorted packet path + NUL + sha256:file-digest lines,
-    joined with newline; all packet files included.
+  manifest_revision: sha256:e5480636caa8a3abd714be0453074afc2c04c45c86ae17935609fe945e9a8a0b
+  revision: sha256:e3e889fa5d548d6bcb46a27aa12bd894b495d8ca69ca81217c22f1d7ddc0b00c
+  revision_method: SHA-256 of sorted packet path + NUL + sha256:file-digest lines, joined with newline;
+    all packet files included.
   index: delivery/milestones/secretsauce-mcp/index.md
   traceability: delivery/milestones/secretsauce-mcp/traceability.md
-  milestone_count: 4
+  milestone_count: 3
   milestone_ids:
-  - '18'
-  - '19'
-  - '20'
-  - '21'
-  total_manifest_records: 12
+  - '22'
+  - '23'
+  - '24'
+  total_manifest_records: 15
   ready_for_milestone_readiness: true
   artifacts:
   - path: delivery/milestones/secretsauce-mcp/10-secure-audited-setup.md
@@ -75,19 +76,25 @@ packet:
   - path: delivery/milestones/secretsauce-mcp/17-safe-instance-recovery.md
     revision: sha256:397eefccf9a35158fa20ed5fb9b474c3ceb2760f6127a50f07d7537e99f52b1d
   - path: delivery/milestones/secretsauce-mcp/18-assisted-identity-resets.md
-    revision: sha256:c6c647a4d77b099f720ef4717b4e082039116bee572f0469229af64e3757a4cf
+    revision: sha256:058282a2f57040e6d907714380c0bd3dc822bac5ae22163bde4f0e50c21869d3
   - path: delivery/milestones/secretsauce-mcp/19-independent-smtp-deletion.md
-    revision: sha256:488bf452cf18fa8df373e8ce665b10ba3ad15a27ecb9858355d0062831fc2012
+    revision: sha256:75391b813f07ef093ad984bbd128688371098c6213222a83e080e7dc3c254e65
   - path: delivery/milestones/secretsauce-mcp/20-focused-settings-and-navigation.md
-    revision: sha256:d41d93dd12c72c1fd5f183e686e05ea6a5af4e364f502f3aa0bbce68bf57804c
+    revision: sha256:ba3abebf8cc2d5f0ca224aa09528a01eb115b97b259d9f4c85ecffba2d5b51d4
   - path: delivery/milestones/secretsauce-mcp/21-friendly-configuration-and-import.md
-    revision: sha256:b5dd9e288406153a161883b6d6cda9067b1019831cfaf6354d0dbf1ffb7c1cdf
+    revision: sha256:3c798a833efec4ca41eeccad00c59f940bb8489eef91c10b36403a52ce90858c
+  - path: delivery/milestones/secretsauce-mcp/22-readable-forms-and-services.md
+    revision: sha256:e7aa871edb05a70f49fcbd42e4167ace0a8da29f0afc23addcda3c7bc8a61dde
+  - path: delivery/milestones/secretsauce-mcp/23-people-details-and-account-management.md
+    revision: sha256:901b071c72944228d3bb22f75050fa84b8c6b4757c78f0f2ed2233a2a7e5588b
+  - path: delivery/milestones/secretsauce-mcp/24-populated-settings-and-email-modes.md
+    revision: sha256:413f7c166627830498f747f421a496df3d07bf66bf7174e7df4dde16ba3c559c
   - path: delivery/milestones/secretsauce-mcp/index.md
-    revision: sha256:3fbd9ac0f73c62bdfb750c8a0983f36d5a77f74c2c0deb9f36033005685a19a8
+    revision: sha256:646e262b0a7ef23389bc5d5d29ca91e6022bc1cdaa241c0e7a5a0411cfec266e
   - path: delivery/milestones/secretsauce-mcp/status.yaml
-    revision: sha256:5bcf9942c24945d9b0793ac7a205c92b06858b6dffcfaade4ab1da5ba3a0f898
+    revision: sha256:e5480636caa8a3abd714be0453074afc2c04c45c86ae17935609fe945e9a8a0b
   - path: delivery/milestones/secretsauce-mcp/traceability.md
-    revision: sha256:2544355abae98decaa4fe92e08c78dcac2de5ece760006c68e985efb03395eef
+    revision: sha256:ba910c0db08042acc07589c75947be3c26895e3d60f95142c14ee0ba54dca611
 preservation:
   completed_contracts_and_records_unchanged:
   - '10'
@@ -98,36 +105,56 @@ preservation:
   - '15'
   - '16'
   - '17'
+  - '18'
+  - '19'
+  - '20'
+  - '21'
   historical_manifest_unchanged: docs/milestones/status.yaml
   delivery_goal_preserved_as_historical: true
   prior_compiled_from_preserved: delivery/milestones/secretsauce-mcp/status.yaml#compiled_from_history
-  prior_compiler_adapter: workflow/delivery-planning/results/history/compiler-initial-build.yaml
+  prior_compiler_adapter: workflow/delivery-planning/results/history/compiler-feedback-001.yaml
   legacy_selector_unchanged: true
 coverage:
-  required_remediation_ids: *id001
-  required_directives: 7
+  required_remediation_ids:
+  - REC-RM-007
+  - REC-RM-008
+  - REC-RM-009
+  - REC-RM-010
+  - REC-RM-011
+  - REC-RM-012
+  - REC-RM-013
+  - REC-RM-014
   mapping:
-    REC-RM-001:
-    - '20'
-    REC-RM-002:
-    - '21'
-    REC-RM-003:
-    - '18'
-    REC-RM-004:
-    - '19'
-    REC-RM-005:
-    - '20'
-    REC-RM-006:
-    - '21'
+    REC-RM-007:
+    - '24'
+    REC-RM-008:
+    - '22'
+    REC-RM-009:
+    - '23'
+    REC-RM-010:
+    - '23'
+    REC-RM-011:
+    - '24'
+    REC-RM-012:
+    - '22'
+    - '23'
+    - '24'
+    REC-RM-013:
+    - '23'
+    REC-RM-014:
+    - '24'
+  shared_constraint_mapping: REC-RM-012 shared presentation constraints repeat in M23/M24; implementation
+    owned M22. UX-V05/C42 required every milestone.
   new_dependency_edges:
-  - - '20'
-    - '21'
+  - - '22'
+    - '23'
+  - - '22'
+    - '24'
   unmapped: []
   blocked: []
   deferred_required_work: []
 validation:
-  installed_structural_validator: 'PASS: validated 12 milestone records and document
-    contracts'
+  installed_structural_validator: 'PASS: validated 15 milestone records and document contracts'
   source_revision_and_commit_checks: PASS
   remediation_authority_and_ux_mapping: PASS
   backward_dependencies_and_pending_status: PASS
@@ -136,8 +163,7 @@ validation:
   historical_packet_and_authority_unchanged: PASS
   git_diff_check: PASS
   packet_readiness_checklist: PASS for compilation boundary only
-  application_tests: 'Not run: documentation-only planning; no executable tooling
-    or configuration changed.'
+  application_tests: 'Not run: documentation-only planning; no executable tooling or configuration changed.'
 blockers: []
 next_workflow:
   skill: milestone-readiness
@@ -146,18 +172,20 @@ next_workflow:
   owner: delivery-planning-orchestrator
   implementation_authorized_by_this_result: false
 changed_paths:
-- delivery/milestones/secretsauce-mcp/18-assisted-identity-resets.md
-- delivery/milestones/secretsauce-mcp/19-independent-smtp-deletion.md
-- delivery/milestones/secretsauce-mcp/20-focused-settings-and-navigation.md
-- delivery/milestones/secretsauce-mcp/21-friendly-configuration-and-import.md
+- delivery/milestones/secretsauce-mcp/22-readable-forms-and-services.md
+- delivery/milestones/secretsauce-mcp/23-people-details-and-account-management.md
+- delivery/milestones/secretsauce-mcp/24-populated-settings-and-email-modes.md
 - delivery/milestones/secretsauce-mcp/index.md
 - delivery/milestones/secretsauce-mcp/traceability.md
 - delivery/milestones/secretsauce-mcp/status.yaml
 - workflow/delivery-planning/results/compiler.yaml
-- workflow/delivery-planning/results/history/compiler-initial-build.yaml
 transaction:
   ownership: parent_delivery_planning
-  parent_commit: 9ff135f3299fa36d773c243b72c0185a5fbd7fb5
+  parent_commit: b2b66608908ca1e2dc9f61ce66856780ccf68b8e
   pre_existing_dirty_paths:
   - test-results/
+  parent_owned_concurrent_paths:
+  - workflow/delivery-planning/state.yaml
+  - workflow/delivery-planning/handoff.yaml
+  - workflow/delivery-planning/results/history/
   child_commits_created: false

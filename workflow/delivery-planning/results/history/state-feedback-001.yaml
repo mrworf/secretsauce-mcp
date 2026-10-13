@@ -1,0 +1,83 @@
+schema_version: 1
+workflow: delivery-planning
+product_id: secretsauce-mcp
+status: ready
+transaction:
+  parent_commit: 9ff135f3299fa36d773c243b72c0185a5fbd7fb5
+  repository_commit: 84445451c18c5e32f92dc0978beed635d4d5edbf
+  pre_existing_dirty_paths:
+  - test-results/
+  owned_paths:
+  - delivery/milestones/secretsauce-mcp/18-assisted-identity-resets.md
+  - delivery/milestones/secretsauce-mcp/19-independent-smtp-deletion.md
+  - delivery/milestones/secretsauce-mcp/20-focused-settings-and-navigation.md
+  - delivery/milestones/secretsauce-mcp/21-friendly-configuration-and-import.md
+  - delivery/milestones/secretsauce-mcp/index.md
+  - delivery/milestones/secretsauce-mcp/status.yaml
+  - delivery/milestones/secretsauce-mcp/traceability.md
+  - delivery/readiness/secretsauce-mcp/prerequisite-manifest.md
+  - delivery/readiness/secretsauce-mcp/readiness-report-initial-build.md
+  - delivery/readiness/secretsauce-mcp/readiness-report.md
+  - workflow/delivery-planning/handoff.yaml
+  - workflow/delivery-planning/results/compiler.yaml
+  - workflow/delivery-planning/results/history/compiler-initial-build.yaml
+  - workflow/delivery-planning/results/history/handoff-initial-build.yaml
+  - workflow/delivery-planning/results/history/readiness-initial-build.yaml
+  - workflow/delivery-planning/results/readiness.yaml
+  - workflow/delivery-planning/state.yaml
+source:
+  mode: CHANGE_PLAN
+  type: validated-definition-change-handoff
+  path: workflow/definition/definition-package.yaml
+  revision: sha256:f60ab3efcfca9d95991c023058ee81e61838121275ec482b549fed55a87618f9
+  repository_commit: 4d46db3fa08a25df52b8d7b0aa2357cf8446b2fd
+  handoff: workflow/definition/state.yaml#next_handoff
+  reconciliation:
+    id: REC-RUN-003
+    path: workflow/reconciliation/REC-RUN-003/reconciliation-result.yaml
+    result_revision: sha256:2f24571fcc26f6819689dc241fc4214a2979569e1d06a1ca9d72201659f001e2
+    repository_commit: fb901edc2d5d226a9685c16ecbc5bbb5e85dfb97
+    change_ids:
+    - REC-IMPACT-003
+    remediation_ids:
+    - REC-RM-001
+    - REC-RM-002
+    - REC-RM-003
+    - REC-RM-004
+    - REC-RM-005
+    - REC-RM-006
+stages:
+  compilation:
+    status: passed
+    packet_manifest: delivery/milestones/secretsauce-mcp/status.yaml
+    result: workflow/delivery-planning/results/compiler.yaml
+    packet_revision: sha256:ef5ac5285860c20f70df161413849909f4ff06f1ca80fa295d8f7fb68e6e6611
+  readiness:
+    status: READY
+    prerequisite_manifest: delivery/readiness/secretsauce-mcp/prerequisite-manifest.md
+    result: delivery/readiness/secretsauce-mcp/readiness-report.md
+    adapter: workflow/delivery-planning/results/readiness.yaml
+    packet_revision: sha256:6379e6627db6d1b723948386f90b01c421229fad5b3f77af8586a5379e47a36c
+blockers: []
+corrections: []
+resume:
+  stage: complete
+handoff:
+  status: ready_for_implementation
+  path: workflow/delivery-planning/handoff.yaml
+  packet_revision: sha256:6379e6627db6d1b723948386f90b01c421229fad5b3f77af8586a5379e47a36c
+transaction_history:
+- parent_commit: 7a102a4787585119130f9f00329d13cedeed8993
+  repository_commit: 0600b849c1f1d1ec211a5cefca0f6a0be04a8b22
+  pre_existing_dirty_paths:
+  - test-results/
+  owned_paths:
+  - workflow/delivery-planning/
+- parent_commit: bb6f29cd318b77c2cf70efa5b1f9adaf25fdf2cb
+  repository_commit: 865aa5710bcb9ff6c4641e177452ab9c50619a19
+  pre_existing_dirty_paths:
+  - test-results/
+  owned_paths:
+  - workflow/delivery-planning/
+  - delivery/milestones/secretsauce-mcp/
+  - delivery/readiness/secretsauce-mcp/

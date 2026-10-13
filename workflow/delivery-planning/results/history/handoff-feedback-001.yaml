@@ -1,0 +1,55 @@
+schema_version: 1
+workflow: delivery-planning
+product_id: secretsauce-mcp
+status: ready_for_implementation
+source:
+  mode: CHANGE_PLAN
+  type: validated-definition-change-handoff
+  path: workflow/definition/definition-package.yaml
+  revision: sha256:f60ab3efcfca9d95991c023058ee81e61838121275ec482b549fed55a87618f9
+  repository_commit: 4d46db3fa08a25df52b8d7b0aa2357cf8446b2fd
+  handoff: workflow/definition/state.yaml#next_handoff
+  reconciliation:
+    id: REC-RUN-003
+    path: workflow/reconciliation/REC-RUN-003/reconciliation-result.yaml
+    result_revision: sha256:2f24571fcc26f6819689dc241fc4214a2979569e1d06a1ca9d72201659f001e2
+    repository_commit: fb901edc2d5d226a9685c16ecbc5bbb5e85dfb97
+    change_ids:
+    - REC-IMPACT-003
+    remediation_ids:
+    - REC-RM-001
+    - REC-RM-002
+    - REC-RM-003
+    - REC-RM-004
+    - REC-RM-005
+    - REC-RM-006
+planning:
+  repository_commit: 84445451c18c5e32f92dc0978beed635d4d5edbf
+milestones:
+  manifest: delivery/milestones/secretsauce-mcp/status.yaml
+  packet_revision: sha256:6379e6627db6d1b723948386f90b01c421229fad5b3f77af8586a5379e47a36c
+  manifest_revision: sha256:5bcf9942c24945d9b0793ac7a205c92b06858b6dffcfaade4ab1da5ba3a0f898
+  start_milestone: '18'
+readiness:
+  status: READY
+  prerequisite_manifest: delivery/readiness/secretsauce-mcp/prerequisite-manifest.md
+  result: delivery/readiness/secretsauce-mcp/readiness-report.md
+  adapter: workflow/delivery-planning/results/readiness.yaml
+  packet_revision: sha256:6379e6627db6d1b723948386f90b01c421229fad5b3f77af8586a5379e47a36c
+m0:
+  present: false
+  milestone: null
+  rationale: Existing completed console/runtime/test/bootstrap providers suffice;
+    fixtures belong to consuming outcomes.
+external_dependencies: []
+historical_external_evidence:
+  real_client_integration_status: deferred_NOT_RUN
+  authorization: workflow/delivery/local-validation-authorization.md
+  scope: "Original M14/M17 actual LLM connection exception preserved; M18\u201321\
+    \ contain no new real-client acceptance gate. No release/interoperability claim\
+    \ or expanded waiver."
+next:
+  workflow: implementation
+  recommended_skill: milestone-delivery-orchestrator
+  manifest: delivery/milestones/secretsauce-mcp/status.yaml
+  start_milestone: '18'

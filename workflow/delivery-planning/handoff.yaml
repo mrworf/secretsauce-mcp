@@ -6,50 +6,55 @@ source:
   mode: CHANGE_PLAN
   type: validated-definition-change-handoff
   path: workflow/definition/definition-package.yaml
-  revision: sha256:f60ab3efcfca9d95991c023058ee81e61838121275ec482b549fed55a87618f9
-  repository_commit: 4d46db3fa08a25df52b8d7b0aa2357cf8446b2fd
+  revision: sha256:82014f66c15c3e7246144c9b44b95c70c7a22aba863d1e8bbd6887ca6afed506
+  repository_commit: 653ac14f771dc1da7d1d650c577ff439e9b99bce
   handoff: workflow/definition/state.yaml#next_handoff
   reconciliation:
-    id: REC-RUN-003
-    path: workflow/reconciliation/REC-RUN-003/reconciliation-result.yaml
-    result_revision: sha256:2f24571fcc26f6819689dc241fc4214a2979569e1d06a1ca9d72201659f001e2
-    repository_commit: fb901edc2d5d226a9685c16ecbc5bbb5e85dfb97
+    id: REC-RUN-006
+    path: workflow/reconciliation/REC-RUN-006/reconciliation-result.yaml
+    result_revision: sha256:66907c2a791c0c794e600f3b3b1dd1d9167ebe7ea804fe24d759f0d309edeb93
+    repository_commit: a57c1ca28615a36770cc1446c4cb71fe21ae5f48
     change_ids:
-    - REC-IMPACT-003
+    - REC-IMPACT-006
     remediation_ids:
-    - REC-RM-001
-    - REC-RM-002
-    - REC-RM-003
-    - REC-RM-004
-    - REC-RM-005
-    - REC-RM-006
+    - REC-RM-007
+    - REC-RM-008
+    - REC-RM-009
+    - REC-RM-010
+    - REC-RM-011
+    - REC-RM-012
+    - REC-RM-013
+    - REC-RM-014
 planning:
-  repository_commit: 84445451c18c5e32f92dc0978beed635d4d5edbf
+  parent_commit: b2b66608908ca1e2dc9f61ce66856780ccf68b8e
+  repository_commit: null
 milestones:
   manifest: delivery/milestones/secretsauce-mcp/status.yaml
-  packet_revision: sha256:6379e6627db6d1b723948386f90b01c421229fad5b3f77af8586a5379e47a36c
-  manifest_revision: sha256:5bcf9942c24945d9b0793ac7a205c92b06858b6dffcfaade4ab1da5ba3a0f898
-  start_milestone: '18'
+  packet_revision: sha256:b0c9723dbc11aee6523ef42b684a312055f7283439bc81eb963940a2064f3e73
+  active_milestones:
+  - '22'
+  - '23'
+  - '24'
 readiness:
   status: READY
   prerequisite_manifest: delivery/readiness/secretsauce-mcp/prerequisite-manifest.md
   result: delivery/readiness/secretsauce-mcp/readiness-report.md
   adapter: workflow/delivery-planning/results/readiness.yaml
-  packet_revision: sha256:6379e6627db6d1b723948386f90b01c421229fad5b3f77af8586a5379e47a36c
 m0:
   present: false
   milestone: null
-  rationale: Existing completed console/runtime/test/bootstrap providers suffice;
-    fixtures belong to consuming outcomes.
+  rationale: Existing foundations and fixtures suffice; new feature fixtures belong to consuming
+    outcomes.
 external_dependencies: []
-historical_external_evidence:
-  real_client_integration_status: deferred_NOT_RUN
-  authorization: workflow/delivery/local-validation-authorization.md
-  scope: "Original M14/M17 actual LLM connection exception preserved; M18\u201321\
-    \ contain no new real-client acceptance gate. No release/interoperability claim\
-    \ or expanded waiver."
+visual_acceptance:
+  requirements:
+  - UX-V05
+  - UX-C42
+  approved_reference: workflow/definition/drafts/product-ux/web-console-feedback-002/index.md
+  required: Match general mockup appearance; compare actual browser screenshots at matching states/viewports;
+    fix material differences or obtain explicit scoped acceptance. Functional tests alone are insufficient.
 next:
   workflow: implementation
   recommended_skill: milestone-delivery-orchestrator
-  manifest: delivery/milestones/secretsauce-mcp/status.yaml
-  start_milestone: '18'
+  start_milestone: '22'
+implementation_started: false

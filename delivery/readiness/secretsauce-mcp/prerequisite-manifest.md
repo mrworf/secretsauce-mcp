@@ -1,3 +1,55 @@
+# Milestone prerequisite manifest — approved feedback 002
+
+- Packet: `delivery/milestones/secretsauce-mcp/status.yaml`
+- Product ID: `secretsauce-mcp`
+- Audited revision: compiler packet `sha256:e3e889fa5d548d6bcb46a27aa12bd894b495d8ca69ca81217c22f1d7ddc0b00c`; post-readiness packet pinned in `workflow/delivery-planning/results/readiness.yaml`.
+- Source transaction: `653ac14f771dc1da7d1d650c577ff439e9b99bce`
+- Planning transaction: parent-owned, pending finalization in `workflow/delivery-planning/handoff.yaml`; start `b2b66608908ca1e2dc9f61ce66856780ccf68b8e`.
+- Intended pending order: M22, M23, M24. M22 supplies both later milestones; M23 and M24 are independent of each other.
+- Order evidence: packet `status.yaml` dependencies and `index.md#milestones-and-dependencies`.
+- Last audit: 2026-10-12.
+
+## Active feedback 002 prerequisites
+
+These rows govern M22–24. Historical PRE-001–026 below retain their original evidence and then-current statuses; they do not reopen completed milestones or establish current readiness. No real SMTP account, deployment secret, external identity provider or live user instance is needed.
+
+| ID | Description | Consumers | Classification | Current status | Proposed provider | Class | Verification | Commands executed | Files changed | Blocking | Evidence |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| PRE-027 | Committed approved definition, UX3 references and current packet | M22–24 | Already satisfied | All source/reference digests and upstream commits verified; parent planning closeout pending | Repository definition and parent transaction | AUTO | Inspect committed parent handoff and pinned sources before delivery | Hash/history check PASS | None | Yes before delivery handoff | FACT: workflow/definition/definition-package.yaml; status.yaml compiled_from; product/ux/manifest.yaml |
+| PRE-028 | Locked Node/npm packages and HTTPS fixture tooling | M22–24 | Already satisfied | Node26.11.1, npm12.2.0, OpenSSL3.6.5; npm ls complete; lock/package/CI/Docker unchanged since prior verified isolated install/build | package.json, lockfile, CI Node22 and Dockerfile | AUTO | Fresh checkout npm ci; npm run build; node/npm/openssl versions | Versions/npm ls PASS; setup-file diff empty | None | Yes before build/validation | FACT: package.json; package-lock.json; .github/workflows/ci.yml; prior readiness report isolated install |
+| PRE-029 | Declared Chromium and real rendered screenshot/keyboard facility | M22–24 | Already satisfied | Playwright1.64.0 Chromium156.0.8078.4 launch, focus and screenshot PASS | Declared package and documented browser download | AUTO | Install matching Chromium, use same PLAYWRIGHT_BROWSERS_PATH for harness | Default sandbox SIGTRAP/EPERM; identical permitted static probe PASS | None | Yes before visual acceptance | FACT: docs/console-operations.md; scripts/verify-console-friendly-forms-browser.mjs; current static probe |
+| PRE-030 | Disposable storage and permitted local HTTP/HTTPS/SMTP listeners | M22–24 | Already satisfied | Ephemeral loopback request PASS; writable temporary screenshot; OpenSSL available | Authorized local runner and synthetic repository fixtures | AUTO | Ephemeral local listener/request/close; inspect synthetic temp paths | Permitted loopback PASS | None | Yes before local validation | FACT: test/console-notifications.test.ts actual TLS fixture; test/setupAudit.ts; scripts/verify-console-browser.mjs |
+| PRE-031 | Docker/Compose, lease launcher and isolated recovery mounts | M23–24; M22 if affected container regression | Already satisfied | Client/server29.9.0 and Compose5.6.0 verified; no container started or user state inspected | Local Docker and existing launcher/drill scripts | AUTO | docker version; docker compose version; inspect isolation before required drills | Default socket denied; permitted read-only version PASS | None | Yes before required container validation | FACT: Dockerfile; deploy/compose.yaml; scripts/verify-console-recovery-launcher-docker.mjs; scripts/verify-console-backups-docker.mjs |
+| PRE-032 | Completed console, identity/revocation, SMTP deletion, Settings and recovery baseline | M22–24 | Already satisfied | M10–21 completed records and committed evidence preserved | Existing M10–21 repository | AUTO | Inspect completed provider records, evidence and relevant harnesses | Complete packet and provider facilities inspected | None | Yes before dependent implementation | FACT: status.yaml M10–21; evidence/qa/secretsauce-mcp/milestone21/acceptance.md; milestone18/acceptance.md; milestone19/acceptance.md; milestone20/acceptance.md |
+| PRE-033 | Shared readable forms/layout/copy delivered by M22 | M23–24 | Provided by an earlier milestone | Pending M22 implementation; explicitly ordered before both consumers | M22 | AUTO | M22 completed with committed functional and matching-reference visual evidence | Not run: future feature delivery | None | Yes before M23/M24 start | FACT: status.yaml dependencies; M22 Scope; M23/M24 Preconditions |
+| PRE-034 | Feature-specific tests, migrations, fault/restart/archive fixtures and screenshot comparison evidence | M22–24 | Owned by the consuming milestone | Existing harnesses support extension; new behavior and acceptance evidence are owned by each outcome | Each consuming milestone | AUTO | Slice plans name exact isolated fixtures and commands; compare actual screenshots to approved references at matching states/viewports under UX-V05/C42 | Not run: future feature acceptance | None | Yes before owning milestone acceptance | FACT: M22–24 Required Validation and UX Constraints; scripts/verify-console-*-browser.mjs; test/console-notifications.test.ts; recovery Docker fixtures |
+
+## Feedback 002 dependency graph
+
+```mermaid
+flowchart LR
+  R[Declared repository and local execution facilities] -->|PRE-027–031| M22[22]
+  R -->|PRE-027–031| M23[23]
+  R -->|PRE-027–031| M24[24]
+  B[Completed M10–21 baseline] -->|PRE-032: M21 forms| M22
+  B -->|PRE-032: M18 identities; M17 recovery| M23
+  B -->|PRE-032: M19 deletion; M20 settings; M17 recovery| M24
+  M22 -->|PRE-033| M23
+  M22 -->|PRE-033| M24
+```
+
+PRE-034 belongs inside each milestone; it is not a dependency cycle. All completed providers' transitive predecessors exist. Shared console files favor serial M22 → M23 → M24 execution and regression testing, without inventing an M23 → M24 dependency. No new external or unresolved node is required. Historical actual ChatGPT/Codex evidence remains NOT RUN under `workflow/delivery/local-validation-authorization.md`; these new milestones require no new real-client connection. A release/interoperability claim still needs `docs/m14-real-client-verification.md`.
+
+## Setup and visual evidence boundary
+
+On a fresh checkout provide declared Node (CI/Docker use22), npm, OpenSSL, writable temp storage and loopback execution; run `npm ci` and `npm run build`. Provision Chromium with `PLAYWRIGHT_BROWSERS_PATH=/tmp/secretsauce-feedback-browsers npx playwright install chromium`, then retain that same environment variable for browser commands. Downloads may require network permission. This cache is disposable: a successful current launch does not make it a hidden clean-checkout dependency. Do not install OS packages or change host security implicitly.
+
+Browser harnesses use actual HTTPS, synthetic state/identities and isolated temp directories. Extend them for exact 1440px/390px mockup states plus mandatory 320px/enlarged-text checks. Approved references and their hashes are available in `product/ux/manifest.yaml`; all were verified in this audit. Each milestone must record actual images, reference hash/path, role/state/viewport and differences/resolution. Functional assertions or a generic browser smoke cannot pass visual acceptance. Output new evidence to milestone-specific paths; do not overwrite historical captures. SMTP TLS and plaintext/auth variants, restore acknowledgment and identity metadata cases are consuming-milestone fixture work, not missing shared infrastructure.
+
+## Historical readiness (unchanged prior content)
+
+The following original material is retained for old milestone links. Exact original copies are also in `prerequisite-manifest-feedback-001.md` and `readiness-report-feedback-001.md`.
+
 # Milestone prerequisite manifest — approved feedback
 
 - Packet: `delivery/milestones/secretsauce-mcp/status.yaml`

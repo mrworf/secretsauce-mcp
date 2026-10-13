@@ -28,3 +28,5 @@ Focused Vitest test files while iterating; adapted actual HTTPS browser scripts 
 
 ## Delivered and verified
 The governing milestone outcome is complete. See QA acceptance/validation and UX comparison artifacts for all six criterion mappings, exact source hashes and commands. One coherent commit includes production, tests, plans, docs and evidence. Root records the resulting SHA without squashing. Format 3 and legacy role endpoint migration are documented; no remaining M23 blocker.
+
+Implementation commit: `7f9b64c733d5fa22b28a1d5e0e0e913596b5860f`. Root accepted all six criteria and verified recorded source/report hashes.

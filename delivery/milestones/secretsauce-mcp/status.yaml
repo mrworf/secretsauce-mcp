@@ -15,8 +15,8 @@ compiled_from:
   effective_handoff:
     path: workflow/definition/state.yaml#next_handoff
     revision: sha256:283a61f2c7f56aaac531a7759097fcffaed28d40164f990adc9b174d83f1d998
-    revalidation_resolution: Committed all-six-stage PASS definition adoption satisfies immutable
-      REC-RUN-006 revalidation/source-closeout gate; raw result remains provenance.
+    revalidation_resolution: Committed all-six-stage PASS definition adoption satisfies immutable REC-RUN-006
+      revalidation/source-closeout gate; raw result remains provenance.
   reconciliation:
     result: workflow/reconciliation/REC-RUN-006/reconciliation-result.yaml
     revision: sha256:66907c2a791c0c794e600f3b3b1dd1d9167ebe7ea804fe24d759f0d309edeb93
@@ -124,8 +124,8 @@ milestones:
   completed_at: 2026-10-10 04:27:14.850000+00:00
   commit_hash: 53bd2a4
   notes: '406 tests/37 files, build and diff check passed; actual HTTPS Chromium keyboard/320px browser
-    checks passed. Acceptance: evidence/qa/secretsauce-mcp/milestone10/acceptance.md. Slice commits:
-    42128e5, 1c3f10f, 53bd2a4.'
+    checks passed. Acceptance: evidence/qa/secretsauce-mcp/milestone10/acceptance.md. Slice commits: 42128e5,
+    1c3f10f, 53bd2a4.'
   started_at: 2026-10-10 03:43:12.099000+00:00
 - id: '11'
   title: Configure and activate services safely
@@ -135,8 +135,8 @@ milestones:
   - '10'
   completed_at: 2026-10-10 04:58:27.684000+00:00
   commit_hash: d038170a7c0ab5d7bfe3d1a93c28743cb15f1183
-  notes: 'All four acceptance criteria verified: 427 tests across 41 files, build, 7 service browser
-    groups and 7 retained authentication browser groups; keyboard and 320px checks. Evidence: evidence/qa/secretsauce-mcp/milestone11/acceptance.md.
+  notes: 'All four acceptance criteria verified: 427 tests across 41 files, build, 7 service browser groups
+    and 7 retained authentication browser groups; keyboard and 320px checks. Evidence: evidence/qa/secretsauce-mcp/milestone11/acceptance.md.
     Slice commits: cd3872440b060a726ff129e83a409989048fda68, 419e42e6784e09151a305275701aacbfad7bc87d,
     d038170a7c0ab5d7bfe3d1a93c28743cb15f1183.'
   started_at: 2026-10-10 04:27:14.851000+00:00
@@ -193,11 +193,10 @@ milestones:
   - '14'
   completed_at: 2026-10-10 18:03:04.154000+00:00
   commit_hash: aa9405a10591838365de541845f1a49f4402aa79
-  notes: 'All four acceptance criteria verified:558 tests/58 files and build; actual HTTPS browser
-    operations6/advanced6/clients5; actual Docker/nginx12groups including crash restart and cross-container
-    leases;50users100services10411retained events. Root acceptance: evidence/qa/secretsauce-mcp/milestone15/acceptance.md.
-    Four independent slice commits preserved; inherited dependency advisories recorded as operational
-    follow-up.'
+  notes: 'All four acceptance criteria verified:558 tests/58 files and build; actual HTTPS browser operations6/advanced6/clients5;
+    actual Docker/nginx12groups including crash restart and cross-container leases;50users100services10411retained
+    events. Root acceptance: evidence/qa/secretsauce-mcp/milestone15/acceptance.md. Four independent slice
+    commits preserved; inherited dependency advisories recorded as operational follow-up.'
   started_at: 2026-10-10 17:07:13.336000+00:00
 - id: '16'
   title: Create recoverable encrypted instance backups
@@ -207,10 +206,10 @@ milestones:
   - '15'
   completed_at: 2026-10-10 18:53:12.145000+00:00
   commit_hash: 87a87f2fab8d5b5ea6e38c731414f78263e826c6
-  notes: All four acceptance criteria verified:585 tests/61 files and build; HTTPS backup7 groups
-    plus17 preserved-flow groups; Docker11 groups including independent clean-container decryption
-    and5 SIGKILL boundaries. Root acceptance:evidence/qa/secretsauce-mcp/milestone16/acceptance.md.
-    Three independent slice commits preserved; actual LLM checks deferred under user exception.
+  notes: All four acceptance criteria verified:585 tests/61 files and build; HTTPS backup7 groups plus17
+    preserved-flow groups; Docker11 groups including independent clean-container decryption and5 SIGKILL
+    boundaries. Root acceptance:evidence/qa/secretsauce-mcp/milestone16/acceptance.md. Three independent
+    slice commits preserved; actual LLM checks deferred under user exception.
   started_at: 2026-10-10 18:03:04.154000+00:00
 - id: '17'
   title: Restore and resume an instance safely
@@ -220,8 +219,8 @@ milestones:
   - '16'
   completed_at: 2026-10-10 20:27:28.440000+00:00
   commit_hash: 987b3996ab4e87eb365ac2df57edb6233dd3ade4
-  notes: All four acceptance criteria verified:620 tests/67 files and build;50 HTTPS browser groups
-    with keyboard/320px/200% recovery text; final-image Docker94 actual SIGKILL,9 launcher and5 clean-host
+  notes: All four acceptance criteria verified:620 tests/67 files and build;50 HTTPS browser groups with
+    keyboard/320px/200% recovery text; final-image Docker94 actual SIGKILL,9 launcher and5 clean-host
     groups. One reviewed service usable in55.970s with99Disabled. Root acceptance:evidence/qa/secretsauce-mcp/milestone17/acceptance.md.
     Three independent slice commits preserved; actual LLM connections deferred under user exception.
   started_at: 2026-10-10 18:53:12.145000+00:00
@@ -236,8 +235,8 @@ milestones:
   - '14'
   completed_at: '2026-10-11T23:08:28.346693+00:00'
   commit_hash: eb25cb3621fca84d76341d74d29b5327921267b3
-  notes: Two committed slices; 641 tests/69 files and build pass; actual HTTPS 33 reset + 8 retained
-    people checks; all acceptance criteria mapped in evidence/qa/secretsauce-mcp/milestone18/acceptance.md.
+  notes: Two committed slices; 641 tests/69 files and build pass; actual HTTPS 33 reset + 8 retained people
+    checks; all acceptance criteria mapped in evidence/qa/secretsauce-mcp/milestone18/acceptance.md.
   started_at: '2026-10-11T22:51:08.355105+00:00'
 - id: '19'
   title: Delete SMTP credentials independently
@@ -259,8 +258,8 @@ milestones:
   - '17'
   completed_at: '2026-10-11T23:38:05.308529+00:00'
   commit_hash: abf03d02746922ce5a524ff105e13595acd7b999
-  notes: Three committed slices; 662 tests/71 files and build pass; nine acceptance clauses mapped
-    with focused HTTPS and retained regressions in evidence/qa/secretsauce-mcp/milestone20/acceptance.md.
+  notes: Three committed slices; 662 tests/71 files and build pass; nine acceptance clauses mapped with
+    focused HTTPS and retained regressions in evidence/qa/secretsauce-mcp/milestone20/acceptance.md.
   started_at: '2026-10-11T23:15:18.518804+00:00'
 - id: '21'
   title: Configure all capabilities with forms and lossless import
@@ -290,26 +289,30 @@ milestones:
 - id: '23'
   title: Manage accounts through clear People details
   file: delivery/milestones/secretsauce-mcp/23-people-details-and-account-management.md
-  status: in_progress
+  status: completed
   dependencies:
   - '22'
   - '18'
-  completed_at: null
-  commit_hash: null
-  notes: M22/18 complete. Generate milestone_23_plan_01.md and per-slice plans; implement approved
-    People account management, metadata and exact visual acceptance.
+  completed_at: '2026-10-13T02:56:44.270644+00:00'
+  commit_hash: 7f9b64c733d5fa22b28a1d5e0e0e913596b5860f
+  notes: One slice; 710 tests/72 files, build, four HTTPS browser harnesses and eight Docker recovery/downgrade
+    checks pass. All six criteria mapped in evidence/qa/secretsauce-mcp/milestone23/acceptance.md; root
+    verified source/report hashes and final matching reference visuals. Unchanged timing fixture requires
+    two-worker full suite under host load.
   started_at: '2026-10-13T02:16:54.276749+00:00'
 - id: '24'
   title: Use populated Settings with explicit email transport
   file: delivery/milestones/secretsauce-mcp/24-populated-settings-and-email-modes.md
-  status: pending
+  status: in_progress
   dependencies:
   - '22'
   - '19'
   - '20'
   completed_at: null
   commit_hash: null
-  notes: null
+  notes: M22/19/20 complete. Generate milestone_24_plan_01.md and indexed slice plans; implement populated
+    Settings and explicit email transport with all required local and visual evidence.
+  started_at: '2026-10-13T02:56:44.270644+00:00'
 delivery_goal:
   product_id: secretsauce-mcp
   status: in_progress
@@ -366,11 +369,10 @@ delivery_goal:
   - '23'
   - '24'
   execution: autonomous
-  current_milestone: '23'
-  governing_plan: delivery/plans/secretsauce-mcp/milestone_23_plan_01.md
+  current_milestone: '24'
+  governing_plan: delivery/plans/secretsauce-mcp/milestone_24_plan_01.md
   blockers: []
-  resume_point: Generate M23 governing and indexed slice plans; implement and validate within this
-    milestone.
+  resume_point: Generate M24 governing and indexed slice plans; implement and validate within this milestone.
 compiled_from_history:
 - product_id: secretsauce-mcp
   input_mode: PRODUCT_BUILD
@@ -469,9 +471,9 @@ compiled_from_history:
     repository_commit: 4d46db3fa08a25df52b8d7b0aa2357cf8446b2fd
     definition_revalidation_satisfied: true
     delivery_planning_ready: true
-    explanation: Committed definition adoption restores validated package and explicitly satisfies
-      REC-RUN-003 pending architecture/security gate; immutable reconciliation remains provenance,
-      not standalone entry.
+    explanation: Committed definition adoption restores validated package and explicitly satisfies REC-RUN-003
+      pending architecture/security gate; immutable reconciliation remains provenance, not standalone
+      entry.
   reconciliation:
     result: workflow/reconciliation/REC-RUN-003/reconciliation-result.yaml
     revision: sha256:2f24571fcc26f6819689dc241fc4214a2979569e1d06a1ca9d72201659f001e2
@@ -617,9 +619,9 @@ delivery_goal_history:
   current_milestone: null
   governing_plan: delivery/plans/secretsauce-mcp/milestone_17_plan_01.md
   blockers: []
-  resume_point: Fixed M10–M17 goal completed with committed implementation and local acceptance.
-    Actual ChatGPT/Codex connection/reconnect remains NOT RUN under the recorded user exception;
-    inherited dependency advisories remain separate follow-up.
+  resume_point: Fixed M10–M17 goal completed with committed implementation and local acceptance. Actual
+    ChatGPT/Codex connection/reconnect remains NOT RUN under the recorded user exception; inherited dependency
+    advisories remain separate follow-up.
   prerequisite_observations:
   - evidence_id: PRE-016
     checked_at: 2026-10-10 18:03:04.154000+00:00
@@ -638,17 +640,16 @@ delivery_goal_history:
     slice: 04 (external acceptance only)
     requirement: Authorized tester and reachable isolated HTTPS synthetic service; real consent/discovery/reference/request/denial/revoke/normal
       restart/reconnect on BOTH ChatGPT and Codex.
-    expected_artifact: evidence/platform/secretsauce-mcp/milestone14/ dated authorized sanitized
-      client records
+    expected_artifact: evidence/platform/secretsauce-mcp/milestone14/ dated authorized sanitized client
+      records
     required_action: Run docs/m14-real-client-verification.md on an already authorized isolated endpoint
-      with synthetic identities/services. Provide both dated records and safe screenshots/results;
-      never share credentials, tokens, cookies, opaque references or raw bodies.
-    unblock_condition: Both actual authorized platform records cover PRE-015 against the delivered
-      implementation revision and pass targeted acceptance review.
+      with synthetic identities/services. Provide both dated records and safe screenshots/results; never
+      share credentials, tokens, cookies, opaque references or raw bodies.
+    unblock_condition: Both actual authorized platform records cover PRE-015 against the delivered implementation
+      revision and pass targeted acceptance review.
     implementation_commit: 1eb00d117664858d81252543b46c53cb8b46638d
     resolved_at: 2026-10-10 17:07:13.336000+00:00
-    resolution: User-authorized local-delivery exception; actual real-client checks deferred NOT
-      RUN.
+    resolution: User-authorized local-delivery exception; actual real-client checks deferred NOT RUN.
     authorization: workflow/delivery/local-validation-authorization.md
   acceptance_exceptions:
   - evidence_id: PRE-015
@@ -657,8 +658,8 @@ delivery_goal_history:
     - '17'
     status: deferred_NOT_RUN
     authorization: workflow/delivery/local-validation-authorization.md
-    scope: Actual LLM system MCP connection/reconnect only; all local protocol/browser/Docker tests
-      remain required.
+    scope: Actual LLM system MCP connection/reconnect only; all local protocol/browser/Docker tests remain
+      required.
   completed_at: 2026-10-10 20:27:28.440000+00:00
 - product_id: secretsauce-mcp
   status: completed
@@ -713,7 +714,7 @@ delivery_goal_history:
   current_milestone: null
   governing_plan: delivery/plans/secretsauce-mcp/milestone_21_plan_01.md
   blockers: []
-  resume_point: 'GOAL_COMPLETE: fixed M18–M21 scope delivered in nine implementation slices with
-    committed local acceptance. No required work remains. Running user instance was not redeployed;
-    actual external ChatGPT/Codex validation retains the recorded exception.'
+  resume_point: 'GOAL_COMPLETE: fixed M18–M21 scope delivered in nine implementation slices with committed
+    local acceptance. No required work remains. Running user instance was not redeployed; actual external
+    ChatGPT/Codex validation retains the recorded exception.'
   completed_at: '2026-10-12T00:03:46.337315+00:00'

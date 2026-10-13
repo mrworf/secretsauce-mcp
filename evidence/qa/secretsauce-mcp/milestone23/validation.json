@@ -3,7 +3,7 @@
   "milestone": "23",
   "product_id": "secretsauce-mcp",
   "parent_commit": "54881d61e03cc848d57bdea9d550f53a83a88c2e",
-  "commit_reference": "Recorded by orchestrator closeout after slice payload commit; no self-referential SHA",
+  "commit_reference": "7f9b64c733d5fa22b28a1d5e0e0e913596b5860f",
   "environment": {
     "node": "v26.11.1",
     "npm": "12.2.0",

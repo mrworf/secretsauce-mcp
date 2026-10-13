@@ -1,0 +1,7 @@
+# M24 slice 01 validation
+
+Explicit email transport and authorization completed. Focused suite: 85/85 across seven files (notifications, SMTP deletion/modes, Settings, account details, backup domains, restore recovery). Three additional encrypted restore cases pass for None, TLS and legacy missing mode through actual fresh Owner enrollment and acknowledgment. Build passed. Actual HTTPS browser selection/review/acknowledgment and blank password checks passed. Real TLS/plaintext transport checks exercise both authentication modes; invalid trust/identity fail with no downgrade. Docker report verifies immediate-prior M23 reader rejection and seven SIGKILL install/rollback/cleanup boundaries using launcher leases.
+
+Initial loopback EPERM rerun with permission. Existing exact-object deletion assertion updated to include materialized TLS. SMTP IP servername handling corrected to retain certificate identity checks without invalid IP SNI. Browser form selection serialization corrected because shared choice controls have IDs but no FormData names; cleanup now closes runtime workers. No tests weakened. No live review state touched.
+
+Mode-bearing sanitized audit activity and admitted delivery outcomes supply SMTP history; no new rollback authority or credential history introduced. Screenshot/composition acceptance belongs slice 02 after common Settings integration. Full suite is required at milestone completion.

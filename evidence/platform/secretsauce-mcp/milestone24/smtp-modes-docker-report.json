@@ -1,0 +1,69 @@
+{
+  "result": "PASS",
+  "image": "sha256:c26e33ab7ac648497f560a9689c0cd6b9be4f5ca28d0864649f580af0362a6d9",
+  "checks": [
+    {
+      "check": "Older binary rejects new format-4 state without overwriting it",
+      "oldImage": "sha256:ff3d2e3c88fb72592aa1789100d6076221126169d9b0d7aef961083c124d0be6",
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "prepare-next-after-rename",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "install-after-state-rename",
+      "occurrence": 1,
+      "selection": "Recovered",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "complete-after-rename",
+      "occurrence": 1,
+      "selection": "Recovered",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "cleanup-after-namespace-rename",
+      "occurrence": 1,
+      "selection": "Recovered",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "prepare-next-after-rename",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "complete-after-rename",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "cleanup-after-namespace-rename",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    }
+  ],
+  "scope": "Actual SIGKILL for representative authenticated installer/rollback publication and cleanup hooks; SMTP exact None preservation and archived acknowledgment exclusion assertions; real startup load and kernel-held app/audit mount leases; coherent prior fresh-login or restricted all-disabled new state; protected synthetic state only",
+  "cleanup": "Owned ephemeral containers auto-removed and temporary mounts deleted"
+}

@@ -1,3 +1,4 @@
+import { normalizeNotifications } from './consoleNotifications.js';
 import { closeSync, existsSync, fsyncSync, mkdirSync, openSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
@@ -51,7 +52,7 @@ export interface ConsoleState {
     gatewayAuditIdentity?: string;
     operating?: import("./consoleOperations.js").OperatingState;
     retention?: import("./consoleEvidence.js").RetentionState;
-    v: 1 | 2 | 3;
+    v: 1 | 2 | 3 | 4;
     id: string;
     revision: number;
     initialized: boolean;
@@ -137,8 +138,9 @@ export class ConsoleStore {
             if (existsSync(join(directory, 'managed')) && !existsSync(this.file))
                 throw new Error('Managed state missing');
             this.state = existsSync(this.file) ? decrypt<ConsoleState>(readFileSync(this.file, 'utf8'), this.key) : { v: 1, id: randomUUID(), revision: 0, initialized: false, origin: '', name: '', users: [], sessions: [], ...(options.config ? { config: options.config } : {}) };
-            if (![1,2,3].includes(this.state.v) || !Array.isArray(this.state.users) || !Array.isArray(this.state.sessions))
+            if (![1,2,3,4].includes(this.state.v) || !Array.isArray(this.state.users) || !Array.isArray(this.state.sessions))
                 throw new Error('Invalid managed state');
+            normalizeNotifications(this.state.notifications);
             if (this.state.config) { if(this.state.managed?.protection)this.state.config.responseProtection=validateProtection(this.state.managed.protection.applied).effective;hydrateManagedConfig(this.state.config);normalizeManagedOAuthPath(this.state.config,this.directory); }
             this.journal = new ConsoleJournal(join(directory, 'audit.chain'), this.key, options.faultAudit);
             if(recovered)this.journal.append({id:randomSecret(),phase:'recovery',actor:'host',action:'restore.restart_'+recovered,target:'Crash recovery selected coherent '+recovered+' installation; prior sessions and grants remain invalid.',time:Date.now(),revision:this.state.revision});
@@ -153,7 +155,7 @@ export class ConsoleStore {
                 this.commit('system',intent.action==='identity.account_update'?'identity.uncertain_account_revoke':'identity.uncertain_reset_restrict',user.id,s=>{
                     s.v=Math.max(s.v,2) as ConsoleState['v'];const u=s.users.find(v=>v.id===user.id)!;u.authorizationGeneration=generation;
                     if(intent.action!=='identity.account_update'){u.enrolled=false;u.assistedFactorPending=true;u.seed='';u.recoveryHashes=[];u.lastCounter=-1;}
-                    else {s.v=3;u.accountRevision=(u.accountRevision??0)+1;}
+                    else {s.v=Math.max(s.v,3) as ConsoleState['v'];u.accountRevision=(u.accountRevision??0)+1;}
                     s.sessions=s.sessions.filter(v=>v.userId!==u.id);if(s.people)s.people.proofs=s.people.proofs.filter(p=>p.target!==u.id && p.issuer!==u.id);
                 });
             }
@@ -266,7 +268,7 @@ export class ConsoleStore {
             this.commit('host', 'setup.code_rejected', 'instance', s => { s.enrollment!.attempts++; });
             throw new Error('Authenticator code was not accepted.');
         }
-        return this.commit('host', 'setup.complete', 'instance', s => { s.v=3; s.users = [{ createdAt: now, lastConsoleSignIn: null, id: randomUUID(), email: e.email, role: 'Owner', active: true, password: e.password, seed: e.seed, lastCounter: Math.floor(now / 30000), recoveryHashes: e.recovery.map(digest), attempts: 0, blockedUntil: 0 }]; s.name = e.name; s.origin = e.origin; s.backupHash = digest(e.backup); s.backupPublicKey = backupPublicKey(e.backup); s.initialized = true; delete s.enrollment; delete s.proof; });
+        return this.commit('host', 'setup.complete', 'instance', s => { s.v=Math.max(s.v,3) as ConsoleState['v']; s.users = [{ createdAt: now, lastConsoleSignIn: null, id: randomUUID(), email: e.email, role: 'Owner', active: true, password: e.password, seed: e.seed, lastCounter: Math.floor(now / 30000), recoveryHashes: e.recovery.map(digest), attempts: 0, blockedUntil: 0 }]; s.name = e.name; s.origin = e.origin; s.backupHash = digest(e.backup); s.backupPublicKey = backupPublicKey(e.backup); s.initialized = true; delete s.enrollment; delete s.proof; });
     }
     private verify(user: ConsoleUser | undefined, password: unknown, code: unknown, now: number): number {
         if (!this.storageReliable)
@@ -334,7 +336,7 @@ export class ConsoleStore {
             if(!target.active || target.enrolled===false)throw new Error('Sign-in details were not accepted.');
             target.lastCounter = Math.max(target.lastCounter,counter);
             if(recoveryIndex>=0)target.recoveryHashes.splice(recoveryIndex,1);
-            if(!restricted){s.v=3;target.lastConsoleSignIn=Math.max(target.lastConsoleSignIn??0,now);delete target.signInHistorical;}
+            if(!restricted){s.v=Math.max(s.v,3) as ConsoleState['v'];target.lastConsoleSignIn=Math.max(target.lastConsoleSignIn??0,now);delete target.signInHistorical;}
             target.attempts = 0;
             target.blockedUntil = 0;
             s.sessions = s.sessions.filter(session => session.created + 43200000 > now && session.lastSeen + 1800000 > now);
@@ -425,7 +427,7 @@ export function loadManagedConfig(directory: string, keyFile: string): GatewayCo
     if (!existsSync(join(directory, 'managed')))
         throw new Error('Managed marker missing');
     const key=readConsoleKey(keyFile);const state = pendingRecoveryState(directory,key)??decrypt<ConsoleState>(readFileSync(join(directory, 'state.enc'), 'utf8'),key);
-    if (![1,2,3].includes(state.v) || !state.config)
+    if (![1,2,3,4].includes(state.v) || !state.config)
         throw new Error('Managed configuration missing');
     const config=hydrateManagedConfig(state.config);
     normalizeManagedOAuthPath(config,directory);

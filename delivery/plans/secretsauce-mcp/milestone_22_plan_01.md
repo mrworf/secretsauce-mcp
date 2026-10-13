@@ -11,13 +11,15 @@ Shared language, shell, input cues and help; then complete service forms and vis
 ## Slice index
 | Slice | Plan | Outcome | Dependency | Status | Commit | Evidence |
 |---|---|---|---|---|---|---|
-| 01 | [slice 01](milestone_22_plan_01_slice_01.md) | Shared readable forms and shell | none | completed | introducing slice commit; recorded at next checkpoint | shared/focused-settings-browser-report.json |
-| 02 | [slice 02](milestone_22_plan_01_slice_02.md) | Service journey and visual acceptance | 01 | pending | | |
+| 01 | [slice 01](milestone_22_plan_01_slice_01.md) | Shared readable forms and shell | none | completed | 0c5da08cc2275f9f6d5fa1307473708d7ad0de50 | shared/focused-settings-browser-report.json |
+| 02 | [slice 02](milestone_22_plan_01_slice_02.md) | Service journey and visual acceptance | 01 | completed | introducing slice-02 commit (root records exact SHA) | milestone22/validation.json; UX comparison.json |
 ## Cross-slice concerns
-No migration, no authorization changes. Required status follows current control state. No browser secret persistence or new external inputs. Preserve unsaved guards and exact values. Isolated HTTPS synthetic browser only.
+No migration, no authorization changes. Required status follows current control state. No browser secret persistence or new API input schema. Primary host matching uses existing matcher semantics with positive/negative browser checks. Preserve unsaved guards and exact values. Isolated HTTPS synthetic browser only.
 ## Completion gate
 Focused forms/unit/browser regressions; service five steps, six overlap states at 1280/320, add/remove/error/help/long strings, keyboard, 200% text and document/text-range bounds. Actual/ref screenshot comparisons 1440/390 where provided, including service-desktop and shared Email composition. npm test and npm run build. Inspect cumulative diff and evidence before root acceptance.
 ## Rollback
 Revert presentation commits; no stored-state migration.
 ## Execution notes
 Planning persisted before production edits. Root owns goal/status transition. Slice hashes recorded by next commit/root closeout to avoid self-reference.
+
+Final evidence: `evidence/qa/secretsauce-mcp/milestone22/acceptance.md` and `validation.json`; `evidence/ux-acceptance/secretsauce-mcp/milestone22/comparison.md/json`. Full suite 668/668 and build pass; five isolated HTTPS browser harnesses pass. No deferred M22 requirement. Root owns final milestone acceptance/status.

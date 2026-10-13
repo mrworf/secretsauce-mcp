@@ -1,0 +1,114 @@
+{
+  "milestone": 22,
+  "parent_commit": "6f4cb32",
+  "slice_01_commit": "0c5da08cc2275f9f6d5fa1307473708d7ad0de50",
+  "slice_02_commit": "Introducing commit; exact SHA recorded by root milestone closeout",
+  "result": "PASS",
+  "checks": [
+    {
+      "command": "npm run build",
+      "result": "PASS (also canonical npm test pretest)"
+    },
+    {
+      "command": "npm test",
+      "result": "PASS: 668 tests, 71 files; final sequential run 41.72s"
+    },
+    {
+      "command": "npx vitest run test/console-settings.test.ts",
+      "result": "PASS: 12 tests"
+    },
+    {
+      "command": "npx vitest run test/gateway.test.ts -t 'reports downstream timeouts'",
+      "result": "PASS: unchanged 10ms timing test in isolation"
+    },
+    {
+      "command": "PLAYWRIGHT_BROWSERS_PATH=/tmp/secretsauce-feedback-browsers CONSOLE_BROWSER_EVIDENCE_DIR=evidence/qa/secretsauce-mcp/milestone22/services node scripts/verify-console-services-browser.mjs",
+      "result": "PASS; isolated actual HTTPS synthetic state"
+    },
+    {
+      "command": "PLAYWRIGHT_BROWSERS_PATH=/tmp/secretsauce-feedback-browsers CONSOLE_BROWSER_EVIDENCE_DIR=evidence/qa/secretsauce-mcp/milestone22/shared node scripts/verify-console-focused-settings-browser.mjs",
+      "result": "PASS; isolated actual HTTPS synthetic state"
+    },
+    {
+      "command": "PLAYWRIGHT_BROWSERS_PATH=/tmp/secretsauce-feedback-browsers CONSOLE_BROWSER_EVIDENCE_DIR=evidence/qa/secretsauce-mcp/milestone22/forms node scripts/verify-console-friendly-forms-browser.mjs",
+      "result": "PASS; isolated actual HTTPS synthetic state"
+    },
+    {
+      "command": "PLAYWRIGHT_BROWSERS_PATH=/tmp/secretsauce-feedback-browsers CONSOLE_BROWSER_EVIDENCE_DIR=evidence/qa/secretsauce-mcp/milestone22/import node scripts/verify-console-friendly-import-browser.mjs",
+      "result": "PASS; isolated actual HTTPS synthetic state"
+    },
+    {
+      "command": "PLAYWRIGHT_BROWSERS_PATH=/tmp/secretsauce-feedback-browsers CONSOLE_BROWSER_EVIDENCE_DIR=evidence/qa/secretsauce-mcp/milestone22/recovery node scripts/verify-console-recovery-browser.mjs",
+      "result": "PASS; isolated actual HTTPS synthetic state"
+    }
+  ],
+  "source_revisions": [
+    {
+      "path": "scripts/verify-console-advanced-browser.mjs",
+      "revision": "sha256:ff65ea78169b19f5a3ea770372b9e9e921abe7a630a8ec043d642284bb1b1f17"
+    },
+    {
+      "path": "scripts/verify-console-focused-settings-browser.mjs",
+      "revision": "sha256:11f85d58bf7dbcf406bc40b1c4cd07cea017c740150cdee17c70caa213ed6060"
+    },
+    {
+      "path": "scripts/verify-console-friendly-forms-browser.mjs",
+      "revision": "sha256:30a1631395be099e6b9f762d4b3f041c12ef829d7b67c72c94cead39a849d628"
+    },
+    {
+      "path": "scripts/verify-console-services-browser.mjs",
+      "revision": "sha256:9f7b8467ea95e3515e78c996067f232e704a384703da75779860ab1d1a70725f"
+    },
+    {
+      "path": "src/consoleAuthenticationPage.ts",
+      "revision": "sha256:64042a2a94ea5cd798ce939c4ca63a5480d7d759178ea83bbf0c10aa05575bd7"
+    },
+    {
+      "path": "src/consoleOperations.ts",
+      "revision": "sha256:3c6cfda8b18bb78206e0d66cc03ce3782c1251dc7db3f736fe0c1899dddd207f"
+    },
+    {
+      "path": "src/consolePage.ts",
+      "revision": "sha256:84388098d5c478324d6e1a6352ba75fb13a6e8dd36715cbc8ad5eb85c4ee132f"
+    },
+    {
+      "path": "src/consolePeoplePage.ts",
+      "revision": "sha256:4ed86a4780a4d1dc2d2322592f3f4204496d62ceb37fdb7676f7165bef210c7b"
+    },
+    {
+      "path": "src/consolePresentation.ts",
+      "revision": "sha256:2c24ab536fac39ac64eb190fcb731587167ae076d9798e5a408122328a5ca3cb"
+    },
+    {
+      "path": "src/consoleProtection.ts",
+      "revision": "sha256:5dd84bdbbdfc20007d9a63cb91910509fae0ead696aa038bad86156789b91cc9"
+    },
+    {
+      "path": "src/consoleServicePage.ts",
+      "revision": "sha256:d44f7ca4f2c122d1469efe81a8b478b9769073b4c241134ba1d38213d412056f"
+    },
+    {
+      "path": "src/consoleSettings.ts",
+      "revision": "sha256:bc3e0f63a4d22e6495b4a4035d1d8c8810533d05359fbcda58970aa03e01c919"
+    },
+    {
+      "path": "src/consoleSettingsPage.ts",
+      "revision": "sha256:88fc2f5a763aa5380fea2b283f23d4fe6d6b623fda882476fb24b375d0516d1f"
+    },
+    {
+      "path": "test/console-settings.test.ts",
+      "revision": "sha256:1a3b7833a2312f1e3e320f3da256b67f39d69206ae1d764c58144866014329e1"
+    }
+  ],
+  "failure_history": [
+    "Initial sandbox npm test: listener EPERM; rerun same command with loopback permission.",
+    "First network full-suite attempt: 667/668, unchanged 10ms echo timeout during concurrent browser workload. Targeted test passed; subsequent full suites passed without concurrent browsers; no timeout change.",
+    "Friendly form navigation updated for grouped advanced connection disclosure.",
+    "Real required/optional duplicate-ID decoration loop discovered in external OAuth mode; repaired local label association and unique external resource field, proved independent endpoint/resource persistence."
+  ],
+  "visual_acceptance": "evidence/ux-acceptance/secretsauce-mcp/milestone22/comparison.json",
+  "not_run": "No deployment, external ChatGPT/Codex integration or live owner-instance testing; gateway transport and persistence are unchanged.",
+  "unrelated_dirty_paths": [
+    "test-results/"
+  ]
+}

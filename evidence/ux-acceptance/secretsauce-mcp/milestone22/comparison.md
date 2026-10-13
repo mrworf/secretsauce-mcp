@@ -1,0 +1,19 @@
+# M22 visual acceptance
+
+Approved authority: `product/ux/manifest.yaml`, web-console-ux-3, UX-V05 / UX-C42. Actual images are synthetic Owner sessions in the real console over isolated loopback HTTPS; no live review instance, mock DOM, or real credentials. Reference images were not modified. Machine-readable pairs and SHA-256 hashes are in `comparison.json`.
+
+| Reference / actual | State and viewport | Inspection and resolution |
+|---|---|---|
+| feedback-002/service-desktop.png / milestone22/services/service-reference-1440.png | Owner, Add service Destination, two exact destinations, 1440 × 1131 | Same 200px primary rail, fluid canvas, 1.6:1 form/help columns, paired server/matching fields, neutral background/white cards, orange current step and primary action, restrained borders, shared 15px body / 29px title hierarchy. Initial actual cards were excessively tall; identifiers and connection options now remain reachable under grouped advanced settings. Title/remove share a row, two destination cards are approximately 218px tall, and the footer spans the canvas. Header now carries location and account controls. Root separately inspected final image and confirmed the material gaps were corrected. |
+| feedback-002/email-desktop.png / milestone22/shared/email-shared-1440.png | Owner, Email editor, 1440 × 1100 | Shared rail, fluid canvas, secondary Settings navigation, neutral surfaces, input/button typography and accent agree. This pair accepts only shared shell/form treatment. Existing applied-summary/draft workflow and exact Email content remain explicitly M24 scope; this does not accept those old behaviors as final UX3 conformance. |
+| feedback-002/email-narrow.png / milestone22/shared/email-shared-390.png | Owner, Email editor, 390 × 844 | Rails transform to wrapping primary navigation and labeled section selector. Related content stacks; consistent 16px main inset and readable controls. Account/location precede the menu rather than following it; all remain above the content and reachable. Sample text, proposal ribbon, implementation search and existing M24-owned content differ. |
+
+The production service screenshot retains real change-state text and a Back to Services action absent from the illustrative mockup. Exact sample labels/counts, focus rings during keyboard captures and the absent proposal ribbon are not pixel-parity targets. These differences do not change the approved composition. No material visual exception is claimed or needed for the accepted M22 surfaces. Populated Email, People and other M23/M24 states still require their own matched comparisons.
+
+## Responsive and interaction evidence
+
+`services/details-desktop.png`, `destination-desktop.png`, `authentication-desktop.png` and their `-320.png` counterparts capture the six reproduced overlap states. Explicit numeric marker spans stay in normal flow, separate from wrapping text. All five steps are exercised with keyboard, including Back, review/apply, invalid input and linked errors, add/remove destination and credential rows, and expanded advanced controls.
+
+`*-320-text200.png` captures Details, Destination, Authentication, expanded destinations and credential metadata at 200% text. The script checks document width **and actual visible text ranges**, in addition to marker bounds. Native input contents may scroll within the input. Intentionally offscreen unfocused skip navigation is excluded from text-range measurement. The narrow footer initially passed geometric bounds while words became vertical fragments; visual inspection caught this and controls now wrap into readable full-width rows.
+
+Existing Settings/typed-form scripts exercise 320px and 200% text with visible text-range checks, permission-safe controls, unsaved navigation and exact values. Recovery captures provide a representative unchanged sensitive-flow regression. Screenshots supplement these behavioral checks; neither substitutes for the other.

@@ -1,0 +1,7 @@
+{
+  "result": "PASS",
+  "checks": [
+    "Actual HTTPS guided file upload, explicit identity selector, blank optional defaults, punctuation legacy ID and readable draft result; malformed source fails safely.",
+    "Both optional catalog uploads, exact registered external selector and two separately supplied env/file credential values create only missing encrypted values; constructor identity retained and values absent from readable result."
+  ]
+}

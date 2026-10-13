@@ -14,4 +14,13 @@ Actual HTTPS service five steps plus retained round-trip/import tests; invalid r
 ## Acceptance
 Every scoped observable behavior passes positive and negative checks; retained functionality reachable; no material approved visual drift remains. Required tests pass.
 ## Commit boundary
-One coherent commit including implementation, focused tests, this plan and evidence. Status pending; evidence and hash recorded after validation.
+One coherent commit including implementation, focused tests, this plan and evidence. Status completed. Introducing slice commit owns this plan and evidence; root closeout records exact SHA.
+
+## Execution and evidence
+- Slice 01 prerequisite: 0c5da08cc2275f9f6d5fa1307473708d7ad0de50.
+- Same five-step service state/validation and API; explicit marker spans, fluid columns, compact destination cards, retained advanced connection controls, full-width action footer and readable narrow actions.
+- New primary host matching uses existing host matcher schema; invalid URL leaves draft unchanged, valid suffix/exact choice is verified, no existing literals silently normalized.
+- Visual review corrected card density, title/remove alignment, header account/location and footer placement. Real screenshots match general approved composition; references unchanged.
+- Investigation discovered duplicate auth-resource IDs in existing external OAuth form. Required/optional decoration oscillated on the wrong label and stalled the renderer. Local-label lookup is idempotent; external resource now uses unique ID/FormData name and independent round-trip assertions. No backend authority changed.
+- `npm test` final PASS: 668 tests/71 files; build PASS. Isolated HTTPS services, focused Settings, friendly forms, friendly import and recovery browsers PASS. Exact evidence/hashes and failure classification: evidence/qa/secretsauce-mcp/milestone22/validation.json; acceptance mapping: acceptance.md. Visual pairs: evidence/ux-acceptance/secretsauce-mcp/milestone22/comparison.json.
+- Preexisting test-results/ remains excluded. No live user instance or external MCP service touched.

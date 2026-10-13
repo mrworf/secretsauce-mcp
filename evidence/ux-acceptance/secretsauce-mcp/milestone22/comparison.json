@@ -1,0 +1,50 @@
+{
+  "ux_revision": "web-console-ux-3",
+  "transport": "Actual isolated synthetic HTTPS browser",
+  "pairs": [
+    {
+      "reference": "workflow/definition/drafts/product-ux/web-console-feedback-002/service-desktop.png",
+      "reference_revision": "sha256:1d31ea296d0bafdfde5db3f872afd33f1f36f074fda109eb9fffbfce1b83ce5d",
+      "actual": "evidence/qa/secretsauce-mcp/milestone22/services/service-reference-1440.png",
+      "actual_revision": "sha256:813a1706446ed2cea6d91f77ff63ca9162bcee45c5296a9158c37e709c3407dc",
+      "viewport": {
+        "width": 1440,
+        "height": 1131
+      },
+      "role": "Owner",
+      "scope": "Complete M22 service Destination state; two exact destinations",
+      "comparison": "comparison.md",
+      "result": "PASS for specified M22 scope"
+    },
+    {
+      "reference": "workflow/definition/drafts/product-ux/web-console-feedback-002/email-desktop.png",
+      "reference_revision": "sha256:89cc554c77925c758a6db57e9251015fd0089bfcb3e402333b93210b84e0d70f",
+      "actual": "evidence/qa/secretsauce-mcp/milestone22/shared/email-shared-1440.png",
+      "actual_revision": "sha256:8aebfdf1381e09e095b15254e0ce83fd1424c693c6aacb7cdb7997271c8600b0",
+      "viewport": {
+        "width": 1440,
+        "height": 1100
+      },
+      "role": "Owner",
+      "scope": "Shared desktop shell and form treatment only; M24 lifecycle/content excluded",
+      "comparison": "comparison.md",
+      "result": "PASS for specified M22 scope"
+    },
+    {
+      "reference": "workflow/definition/drafts/product-ux/web-console-feedback-002/email-narrow.png",
+      "reference_revision": "sha256:12f01cdfba2c06cc9ae4795e6c8cde6679682881fdeec08bb328982b7153d090",
+      "actual": "evidence/qa/secretsauce-mcp/milestone22/shared/email-shared-390.png",
+      "actual_revision": "sha256:9f1ed36249e2c119d06b43d35487f098a04d6e3f0931fb50eb84dd9b7d006055",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "role": "Owner",
+      "scope": "Shared narrow shell and form treatment only; M24 lifecycle/content excluded",
+      "comparison": "comparison.md",
+      "result": "PASS for specified M22 scope"
+    }
+  ],
+  "material_exceptions": [],
+  "remaining_visual_coverage": "M23 and M24 own their complete workflow comparisons; these are not accepted by this M22 evidence."
+}

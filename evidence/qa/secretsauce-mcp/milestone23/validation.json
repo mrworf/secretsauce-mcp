@@ -1,0 +1,144 @@
+{
+  "result": "PASS",
+  "milestone": "23",
+  "product_id": "secretsauce-mcp",
+  "parent_commit": "54881d61e03cc848d57bdea9d550f53a83a88c2e",
+  "commit_reference": "Recorded by orchestrator closeout after slice payload commit; no self-referential SHA",
+  "environment": {
+    "node": "v26.11.1",
+    "npm": "12.2.0",
+    "docker_runtime": "Node 22 Alpine, isolated synthetic mounts, existing launcher/kernel leases"
+  },
+  "commands": [
+    {
+      "command": "npm test -- --maxWorkers=2 --minWorkers=1",
+      "result": "PASS",
+      "files": 72,
+      "tests": 710,
+      "duration_seconds": 95.56,
+      "reason_for_worker_bound": "Unchanged 10 ms gateway echo timing test passed isolated after one default-concurrency load failure; all tests/timeouts retained."
+    },
+    {
+      "command": "npm run build",
+      "result": "PASS"
+    },
+    {
+      "command": "npx vitest run test/gateway.test.ts",
+      "result": "PASS",
+      "tests": 35
+    },
+    {
+      "command": "PLAYWRIGHT_BROWSERS_PATH=/tmp/secretsauce-feedback-browsers node scripts/verify-console-people-details-browser.mjs",
+      "result": "PASS",
+      "groups": 8
+    },
+    {
+      "command": "CONSOLE_BROWSER_EVIDENCE_DIR=evidence/qa/secretsauce-mcp/milestone23/people PLAYWRIGHT_BROWSERS_PATH=/tmp/secretsauce-feedback-browsers node scripts/verify-console-people-browser.mjs",
+      "result": "PASS",
+      "groups": 8
+    },
+    {
+      "command": "CONSOLE_BROWSER_EVIDENCE_DIR=evidence/qa/secretsauce-mcp/milestone23/assisted-resets PLAYWRIGHT_BROWSERS_PATH=/tmp/secretsauce-feedback-browsers node scripts/verify-console-assisted-resets-browser.mjs",
+      "result": "PASS",
+      "groups": 33
+    },
+    {
+      "command": "CONSOLE_BROWSER_EVIDENCE_DIR=evidence/qa/secretsauce-mcp/milestone23/clients PLAYWRIGHT_BROWSERS_PATH=/tmp/secretsauce-feedback-browsers node scripts/verify-console-clients-browser.mjs",
+      "result": "PASS",
+      "groups": 5
+    },
+    {
+      "command": "node scripts/verify-console-account-metadata-docker.mjs",
+      "result": "PASS",
+      "checks": 8,
+      "scope": "Metadata backend, format-3 installation/rollback/startup, exact old-binary rejection; UI fidelity is separately evidenced by final actual runtime bundle/style hashes."
+    }
+  ],
+  "source_sha256": {
+    "scripts/verify-console-assisted-resets-browser.mjs": "9141f07b1bd3a4bf8350e9320d325097eb2faa33339791c04b1d72c217fd7659",
+    "scripts/verify-console-people-browser.mjs": "57320916030196154b2583cb86720763351740e86e65a5972137c6cd54595a55",
+    "src/consoleBackupArchive.ts": "39f5900db59d01097d263af8780513bc5837504cdefd36c14b885fba2f6a7b13",
+    "src/consoleHttp.ts": "732d3b97720b40621f71b36f92d55cd42eb20ed80d94de1f3a0a607bb3f54226",
+    "src/consoleJournal.ts": "7ca6a8981cebd952515a5bbc27876d09e343b17b170290834a82a61c99bbd600",
+    "src/consolePage.ts": "af7988d072527cbca9102fcf9acfa456abf11030ef0a0dfa06d601b26deb244c",
+    "src/consolePeople.ts": "337e97d3ee054843155129e9c5b957523b6a651d133c79d4bdcc52b63ede6bd8",
+    "src/consolePeoplePage.ts": "fcd28cd43ead4dd20e3b29121a690e4dd721114acd5af95e080827fc31b7ccbb",
+    "src/consolePresentation.ts": "2d3f694d482d9a7f185635dc14c15fe7bdb50e6179ea73cb0a7e126893f1a2fd",
+    "src/consoleRestore.ts": "44caa7aa6b624669898baa72e4ee3b8ffd1c294b0a9345387e7a37e12cbcdf01",
+    "src/consoleRestoreInstall.ts": "6f119e21bf37015f84ba0045010735b4cae7aed2fe592a069d01123ce90cdda3",
+    "src/consoleServicePage.ts": "10875c77703975818de2199177530468b8ee2b228a6cade816651bc194ecfa7a",
+    "src/consoleSettingsPage.ts": "acc5e8adc09f33a4bb50eb625cd3b708284b84723091e3e4cf3ae8508d552908",
+    "src/consoleStore.ts": "34a680d812c73f9592b4d5215d12f6855dbb9fafa96849d92db519ae59d1190d",
+    "test/console-assisted-reset-oauth.test.ts": "47e3508d7863bb927b433edd7e8aa303f59f44e95101deee7c2b073dec017848",
+    "test/console-assisted-resets.test.ts": "7b912a5cac21bf607891c20218bd1d532cd5d2fb38b88f889a20ead0008d5527",
+    "test/console-people-http.test.ts": "da4a9bb1e73d5f419753c48917c1aa7685488a6e3f711aed70ab6e43dbc09cc8",
+    "test/console-people.test.ts": "377984e074d15d684fd488704e0c95c46b27db1a81317b712af71761b19986c0",
+    "test/console-restore-recovery.test.ts": "f35e340e5ea4746d08bd2656060372969e2f805e39b575dd15e6107b9b70d4ca",
+    "test/console-account-details.test.ts": "8040b60e351d9565d3faca05d62c827406ab06a3b5810c926aa268886d0efdae",
+    "scripts/console-account-metadata-docker-fixture.mjs": "ddebd641259b3c668c045362cc87ddf009eccdcd4be9b67aeaaa360805516a88",
+    "scripts/verify-console-account-metadata-docker.mjs": "0ba9ac28c440212edef80ff739fc61ac95b8a137b5b5a459305aa5c33a4fca0c",
+    "scripts/verify-console-people-details-browser.mjs": "92afd501f56a8b1232761686a5924e1bd262c1b642a488705d7ebbc2ebe2c7f7"
+  },
+  "report_sha256": {
+    "evidence/qa/secretsauce-mcp/milestone23/people/browser-report.json": "104b08891fb550667237f13c13a55e3e59d82f2861cb399984bf2b2bfae88578",
+    "evidence/qa/secretsauce-mcp/milestone23/assisted-resets/assisted-reset-browser-report.json": "fd0946f3301cf4f962284749adabe3c0dd50c821c2a799781776cd666f8bd92f",
+    "evidence/qa/secretsauce-mcp/milestone23/clients/browser-report.json": "118fec6d1e4ee0de30e81e72549e89225f80d51aba475029e5bb95804e3a65ca",
+    "evidence/ux-acceptance/secretsauce-mcp/milestone23/people-details-browser-report.json": "5a63ca1a128fa4beec02608f6962efc1eb9daec6eadca174a431b7e00700f709",
+    "evidence/platform/secretsauce-mcp/milestone23/account-metadata-docker-report.json": "99c2f9da925e34deb9b79bbc000545c9731ae377cd6648f1275505341382221b"
+  },
+  "runtime_browser": {
+    "appSha256": "1532ae58a96d48fba8bd09d7d1f696bed527ba4ec336f27fae39c68b7453bebc",
+    "styleSha256": "144ffb2a433a767a26ee2424d9199f4ad35e78cf7df1e2e15bf5fa0697be68aa"
+  },
+  "reference_pairs": [
+    {
+      "state": "people-desktop",
+      "role": "Owner",
+      "viewport": {
+        "width": 1440,
+        "height": 931
+      },
+      "actual": "/home/ha/projects/secretsauce/evidence/ux-acceptance/secretsauce-mcp/milestone23/people-desktop.png",
+      "reference": "workflow/definition/drafts/product-ux/web-console-feedback-002/people-desktop.png",
+      "referenceSha256": "52448c32c4bdd68c9f1fb16a7a68c350dd712117901c8b9068524ee01095c689",
+      "actualSha256": "02223d6c56a08790a964110c9d1392b1fec8210c321be0635ced78ebfb8ba336"
+    },
+    {
+      "state": "people-narrow",
+      "role": "Owner",
+      "viewport": {
+        "width": 390,
+        "height": 895
+      },
+      "actual": "/home/ha/projects/secretsauce/evidence/ux-acceptance/secretsauce-mcp/milestone23/people-narrow.png",
+      "reference": "workflow/definition/drafts/product-ux/web-console-feedback-002/people-narrow.png",
+      "referenceSha256": "511588b3f86e4d1283976695ae3d4b8f02c2d04d500745d96c5099b5f69a1400",
+      "actualSha256": "9c4bf236ecb613d85e52accee2b7114aec9d90db86b80a95eba6459a02ab8373"
+    },
+    {
+      "state": "person-desktop",
+      "role": "Owner",
+      "viewport": {
+        "width": 1440,
+        "height": 1111
+      },
+      "actual": "/home/ha/projects/secretsauce/evidence/ux-acceptance/secretsauce-mcp/milestone23/person-desktop.png",
+      "reference": "workflow/definition/drafts/product-ux/web-console-feedback-002/person-desktop.png",
+      "referenceSha256": "62b963894fe5f7b4a7f8be484f0230fb3c0277e2afabc7fbd78fe4dfeae6ccd7",
+      "actualSha256": "9f1e809724580fab58c763f153c18da71b879dd8f66f22611b9acad5c8c1a642"
+    }
+  ],
+  "evidence": {
+    "acceptance": "evidence/qa/secretsauce-mcp/milestone23/acceptance.md",
+    "visual_comparison": "evidence/ux-acceptance/secretsauce-mcp/milestone23/comparison.md"
+  },
+  "unrelated_paths_preserved": [
+    "test-results/"
+  ],
+  "required_work_deferred": [],
+  "limitations": [
+    "No deployment to the live review instance.",
+    "Format 3 intentionally rejects older format-1/2 binaries; operator migration documented.",
+    "View service assignments enters the existing Services management journey; no new assignment authority."
+  ]
+}

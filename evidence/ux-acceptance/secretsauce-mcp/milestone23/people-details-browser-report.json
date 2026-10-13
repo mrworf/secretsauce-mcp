@@ -1,0 +1,56 @@
+{
+  "result": "PASS",
+  "transport": "Actual synthetic HTTPS loopback",
+  "runtime": {
+    "appSha256": "1532ae58a96d48fba8bd09d7d1f696bed527ba4ec336f27fae39c68b7453bebc",
+    "styleSha256": "144ffb2a433a767a26ee2424d9199f4ad35e78cf7df1e2e15bf5fa0697be68aa"
+  },
+  "checks": [
+    "Compact named-link/row navigation, retained filter/focus, all reference viewports and 320/200% text ranges",
+    "Unsaved account edits require deliberate Stay or Discard before primary navigation",
+    "Verified Owner contact edit preserves factor and displays independent notice result",
+    "Administrator permitted non-Owner role edit preserves pending enrollment",
+    "Administrator Owner-target denial, own-role denial and verified self-contact sign-out with normal new-contact login",
+    "Full console admission using the explicit recovery-code factor updates truthful sign-in metadata",
+    "Pending account shows Never and retains Owner invitation lifecycle actions",
+    "Complete four-role actor/target/result browser control matrix; Member has no People entry, Auditor read-only, Administrator bounded targets/results and self-role exclusion"
+  ],
+  "pairs": [
+    {
+      "state": "people-desktop",
+      "role": "Owner",
+      "viewport": {
+        "width": 1440,
+        "height": 931
+      },
+      "actual": "/home/ha/projects/secretsauce/evidence/ux-acceptance/secretsauce-mcp/milestone23/people-desktop.png",
+      "reference": "workflow/definition/drafts/product-ux/web-console-feedback-002/people-desktop.png",
+      "referenceSha256": "52448c32c4bdd68c9f1fb16a7a68c350dd712117901c8b9068524ee01095c689",
+      "actualSha256": "02223d6c56a08790a964110c9d1392b1fec8210c321be0635ced78ebfb8ba336"
+    },
+    {
+      "state": "people-narrow",
+      "role": "Owner",
+      "viewport": {
+        "width": 390,
+        "height": 895
+      },
+      "actual": "/home/ha/projects/secretsauce/evidence/ux-acceptance/secretsauce-mcp/milestone23/people-narrow.png",
+      "reference": "workflow/definition/drafts/product-ux/web-console-feedback-002/people-narrow.png",
+      "referenceSha256": "511588b3f86e4d1283976695ae3d4b8f02c2d04d500745d96c5099b5f69a1400",
+      "actualSha256": "9c4bf236ecb613d85e52accee2b7114aec9d90db86b80a95eba6459a02ab8373"
+    },
+    {
+      "state": "person-desktop",
+      "role": "Owner",
+      "viewport": {
+        "width": 1440,
+        "height": 1111
+      },
+      "actual": "/home/ha/projects/secretsauce/evidence/ux-acceptance/secretsauce-mcp/milestone23/person-desktop.png",
+      "reference": "workflow/definition/drafts/product-ux/web-console-feedback-002/person-desktop.png",
+      "referenceSha256": "62b963894fe5f7b4a7f8be484f0230fb3c0277e2afabc7fbd78fe4dfeae6ccd7",
+      "actualSha256": "9f1e809724580fab58c763f153c18da71b879dd8f66f22611b9acad5c8c1a642"
+    }
+  ]
+}

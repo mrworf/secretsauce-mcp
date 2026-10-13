@@ -13,6 +13,10 @@ import { hydrateManagedConfig } from './config.js';
 import type { ManagedConfiguration } from './consoleServices.js';
 export type HumanRole = 'Owner' | 'Administrator' | 'Auditor' | 'Member';
 export interface ConsoleUser {
+    createdAt?: number;
+    lastConsoleSignIn?: number | null;
+    signInHistorical?: boolean;
+    accountRevision?: number;
     authorizationGeneration?: number;
     enrolled?: boolean;
     assistedFactorPending?: boolean;
@@ -47,7 +51,7 @@ export interface ConsoleState {
     gatewayAuditIdentity?: string;
     operating?: import("./consoleOperations.js").OperatingState;
     retention?: import("./consoleEvidence.js").RetentionState;
-    v: 1 | 2;
+    v: 1 | 2 | 3;
     id: string;
     revision: number;
     initialized: boolean;
@@ -133,7 +137,7 @@ export class ConsoleStore {
             if (existsSync(join(directory, 'managed')) && !existsSync(this.file))
                 throw new Error('Managed state missing');
             this.state = existsSync(this.file) ? decrypt<ConsoleState>(readFileSync(this.file, 'utf8'), this.key) : { v: 1, id: randomUUID(), revision: 0, initialized: false, origin: '', name: '', users: [], sessions: [], ...(options.config ? { config: options.config } : {}) };
-            if (![1,2].includes(this.state.v) || !Array.isArray(this.state.users) || !Array.isArray(this.state.sessions))
+            if (![1,2,3].includes(this.state.v) || !Array.isArray(this.state.users) || !Array.isArray(this.state.sessions))
                 throw new Error('Invalid managed state');
             if (this.state.config) { if(this.state.managed?.protection)this.state.config.responseProtection=validateProtection(this.state.managed.protection.applied).effective;hydrateManagedConfig(this.state.config);normalizeManagedOAuthPath(this.state.config,this.directory); }
             this.journal = new ConsoleJournal(join(directory, 'audit.chain'), this.key, options.faultAudit);
@@ -142,13 +146,15 @@ export class ConsoleStore {
             // A durable reset intent may outlive a failed pre-rename identity write.
             // Fence that authority before accepting any new session or MCP grant.
             const records=this.journal.entries(),rejected=new Set(records.filter(r=>r.phase==='complete'&&r.result==='failed').map(r=>r.id));
-            const intents = records.filter(r=>!rejected.has(r.id) && r.phase==='start' && /^identity\.(password_reset|factor_reset_(issue|reissue)|enrollment_complete)$/.test(r.action) && Number.isSafeInteger(r.details?.authorizationGeneration));
+            const intents = records.filter(r=>!rejected.has(r.id) && r.phase==='start' && /^identity\.(password_reset|factor_reset_(issue|reissue)|enrollment_complete|account_update)$/.test(r.action) && Number.isSafeInteger(r.details?.authorizationGeneration));
             for (const intent of intents) {
                 const user=this.state.users.find(u=>u.id===intent.target),generation=intent.details!.authorizationGeneration!;
                 if (!user || generation <= (user.authorizationGeneration??0)) continue;
-                this.commit('system','identity.uncertain_reset_restrict',user.id,s=>{
-                    s.v=2;const u=s.users.find(v=>v.id===user.id)!;u.authorizationGeneration=generation;u.enrolled=false;u.assistedFactorPending=true;u.seed='';u.recoveryHashes=[];u.lastCounter=-1;
-                    s.sessions=s.sessions.filter(v=>v.userId!==u.id);if(s.people)s.people.proofs=s.people.proofs.filter(p=>p.target!==u.id);
+                this.commit('system',intent.action==='identity.account_update'?'identity.uncertain_account_revoke':'identity.uncertain_reset_restrict',user.id,s=>{
+                    s.v=Math.max(s.v,2) as ConsoleState['v'];const u=s.users.find(v=>v.id===user.id)!;u.authorizationGeneration=generation;
+                    if(intent.action!=='identity.account_update'){u.enrolled=false;u.assistedFactorPending=true;u.seed='';u.recoveryHashes=[];u.lastCounter=-1;}
+                    else {s.v=3;u.accountRevision=(u.accountRevision??0)+1;}
+                    s.sessions=s.sessions.filter(v=>v.userId!==u.id);if(s.people)s.people.proofs=s.people.proofs.filter(p=>p.target!==u.id && p.issuer!==u.id);
                 });
             }
             if (!existsSync(this.file)) {
@@ -260,7 +266,7 @@ export class ConsoleStore {
             this.commit('host', 'setup.code_rejected', 'instance', s => { s.enrollment!.attempts++; });
             throw new Error('Authenticator code was not accepted.');
         }
-        return this.commit('host', 'setup.complete', 'instance', s => { s.users = [{ id: randomUUID(), email: e.email, role: 'Owner', active: true, password: e.password, seed: e.seed, lastCounter: Math.floor(now / 30000), recoveryHashes: e.recovery.map(digest), attempts: 0, blockedUntil: 0 }]; s.name = e.name; s.origin = e.origin; s.backupHash = digest(e.backup); s.backupPublicKey = backupPublicKey(e.backup); s.initialized = true; delete s.enrollment; delete s.proof; });
+        return this.commit('host', 'setup.complete', 'instance', s => { s.v=3; s.users = [{ createdAt: now, lastConsoleSignIn: null, id: randomUUID(), email: e.email, role: 'Owner', active: true, password: e.password, seed: e.seed, lastCounter: Math.floor(now / 30000), recoveryHashes: e.recovery.map(digest), attempts: 0, blockedUntil: 0 }]; s.name = e.name; s.origin = e.origin; s.backupHash = digest(e.backup); s.backupPublicKey = backupPublicKey(e.backup); s.initialized = true; delete s.enrollment; delete s.proof; });
     }
     private verify(user: ConsoleUser | undefined, password: unknown, code: unknown, now: number): number {
         if (!this.storageReliable)
@@ -301,20 +307,34 @@ export class ConsoleStore {
         });
         return { subject: user!.id, generation: user!.authorizationGeneration ?? 0 };
     }
-    login(email: unknown, password: unknown, code: unknown, now = Date.now()): {
+    login(email: unknown, password: unknown, code: unknown, now = Date.now(), kind: unknown = 'totp'): {
         token: string;
         csrf: string;
         restricted: boolean;
     } {
+        if(!this.storageReliable)throw new Error('Identity storage unavailable.');
         if (this.mutationsBlocked() || !this.state.initialized || typeof email !== 'string' || email.length > 254)
             throw new Error('Sign-in details were not accepted.');
         const user = this.state.users.find(u => u.email === email.toLowerCase());
-        const counter = this.verify(user, password, code, now);
+        if(kind!=='totp' && kind!=='recovery')throw new Error('Sign-in details were not accepted.');
+        let recoveryIndex=-1;
+        if(kind==='recovery') {
+            const valid=typeof password==='string' && password.length<=4096 && passwordMatches(password,user?.password??dummyPassword);
+            if(user && typeof code==='string' && code.length<=128) recoveryIndex=user.recoveryHashes.findIndex(h=>equal(h,digest(code)));
+            if(!user?.active || user.enrolled===false || user.blockedUntil>now || !valid || recoveryIndex<0){
+                if(user && user.blockedUntil<=now){const next=structuredClone(this.state),u=next.users.find(u=>u.id===user.id)!;if(++u.attempts>=5){u.blockedUntil=now+60000;u.attempts=0;}this.save(next);}
+                throw new Error('Sign-in details were not accepted.');
+            }
+        }
+        const counter = kind==='totp'?this.verify(user, password, code, now):user!.lastCounter;
         const token = randomSecret(), csrf = randomSecret();
         const restricted = this.journal.degraded || this.externalAudit?.degraded === true || !this.materialAvailable();
         const update = (s: ConsoleState) => {
             const target = s.users.find(u => u.id === user!.id)!;
-            target.lastCounter = counter;
+            if(!target.active || target.enrolled===false)throw new Error('Sign-in details were not accepted.');
+            target.lastCounter = Math.max(target.lastCounter,counter);
+            if(recoveryIndex>=0)target.recoveryHashes.splice(recoveryIndex,1);
+            if(!restricted){s.v=3;target.lastConsoleSignIn=Math.max(target.lastConsoleSignIn??0,now);delete target.signInHistorical;}
             target.attempts = 0;
             target.blockedUntil = 0;
             s.sessions = s.sessions.filter(session => session.created + 43200000 > now && session.lastSeen + 1800000 > now);
@@ -405,7 +425,7 @@ export function loadManagedConfig(directory: string, keyFile: string): GatewayCo
     if (!existsSync(join(directory, 'managed')))
         throw new Error('Managed marker missing');
     const key=readConsoleKey(keyFile);const state = pendingRecoveryState(directory,key)??decrypt<ConsoleState>(readFileSync(join(directory, 'state.enc'), 'utf8'),key);
-    if (![1,2].includes(state.v) || !state.config)
+    if (![1,2,3].includes(state.v) || !state.config)
         throw new Error('Managed configuration missing');
     const config=hydrateManagedConfig(state.config);
     normalizeManagedOAuthPath(config,directory);

@@ -60,7 +60,7 @@ describe('people lifecycle', () => {
         expect(() => p.change(f.session, { id: r.id, role: 'Owner', active: true, confirmed: true })).toThrow(/enrollment/);
         const proof = value(r.link), e = p.begin({ ...proof, password });
         p.complete({ ...proof, code: totp(e.seed, Date.now()), saved: true });
-        f.clock.mockReturnValue(Date.now()+30000);const secondLogin=f.store.login('second@example.org',password,totp(e.seed,Date.now()));const secondSession=f.store.session(secondLogin.token)!;f.store.state.sessions.find(s=>s.id===secondSession.id)!.recent={action:'people.change',expires:Date.now()+300000};const results=await Promise.allSettled([[f.session,owner],[secondSession,r.id]].map(([session,target])=>Promise.resolve().then(()=>p.change(session as typeof f.session,{id:target,role:'Member',active:true,confirmed:true}))));
+        f.clock.mockReturnValue(Date.now()+30000);const secondLogin=f.store.login('second@example.org',password,totp(e.seed,Date.now()));const secondSession=f.store.session(secondLogin.token)!;recent(f,'people.account');f.store.state.sessions.find(s=>s.id===secondSession.id)!.recent={action:'people.account',expires:Date.now()+300000};const results=await Promise.allSettled([[f.session,owner],[secondSession,r.id]].map(([session,target])=>Promise.resolve().then(()=>p.updateAccount(session as typeof f.session,{id:target,revision:f.store.state.users.find(u=>u.id===target)!.authorizationGeneration??0,role:'Member',confirmed:true}))));
         expect(results.filter(r => r.status === 'fulfilled')).toHaveLength(1);
         expect(f.store.state.users.filter(u => u.role === 'Owner' && u.active && u.enrolled !== false)).toHaveLength(1);
         expect(f.store.session(f.token)).toBeUndefined();

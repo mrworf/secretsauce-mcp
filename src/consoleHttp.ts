@@ -146,7 +146,7 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
         if(path === '/console/api/link/begin'){const r=consolePeople(store).begin(data);const qr=await QRCode.toDataURL('otpauth://totp/SecretSauce?secret='+r.seed+'&issuer=SecretSauce');consolePeople(store).confirmEnrollmentAuthority({purpose:data.purpose,target:data.target,proof:data.proof});reply(200,{...r,qr});return;}
         if(path === '/console/api/link/complete'){reply(200,consolePeople(store).complete(data));return;}
         if (path === '/console/api/login') {
-            const result = store.login(data.email, data.password, data.code);
+            const result = store.login(data.email, data.password, data.code, Date.now(), data.kind??'totp');
             response.setHeader('set-cookie', '__Host-ss-console=' + result.token + '; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=43200');
             reply(200, { status: 'success', csrf: result.csrf, restricted: result.restricted });
             return;
@@ -197,6 +197,7 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
         if(path==='/console/api/factor/replace'){consolePeople(store).attempt(source,session.userId,'factor');reply(200,consolePeople(store).replaceFactor(session,data));return;}
         if(path==='/console/api/people/invite'){reply(200,consolePeople(store).invite(session,data));return;}
         if(path==='/console/api/people/invitation'){reply(200,consolePeople(store).invitation(session,data));return;}
+        if(path==='/console/api/people/account'){reply(200,await consolePeople(store).updateAccount(session,data));return;}
         if(path==='/console/api/people/change'){reply(200,consolePeople(store).change(session,data));return;}
         if(path==='/console/api/people/revoke'){reply(200,consolePeople(store).revoke(session,data));return;}
         if(path==='/console/api/people/external'){reply(200,consolePeople(store).register(session,data));return;}

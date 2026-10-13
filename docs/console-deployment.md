@@ -23,3 +23,14 @@ Local acceptance uses synthetic accounts/services and loopback only:
 `npm run build` then `node scripts/verify-console-envelope.mjs`
 
 Scripts clean only created container/temp mounts. The local acceptance image remains available for review; remove that named image explicitly afterward if desired. No actual ChatGPT/Codex connection is implied by local protocol fixtures. See milestone15 evidence for retained-disk costs, task timings and inherited dependency advisories.
+
+
+### Account details and identity-format compatibility
+
+People & Access now opens each local account in a full detail page. Owners can edit contact and role; Administrators can edit other non-Owner contacts and roles among Administrator, Auditor and Member. Both may edit their own contact; an Administrator cannot change their own role. These immediate actions require recent password/Authenticator confirmation, a current account revision, and trusted-channel verification for a contact change. They revoke existing sessions, client grants and outstanding target/issuer invitation or recovery links while retaining password, Authenticator and lifecycle. Self-contact changes require normal sign-in at the new contact. Old/new-contact email delivery is reported separately from the committed change.
+
+The revision-bound `POST /console/api/people/account` endpoint owns contact and role editing. The older `people/change` endpoint retains Owner lifecycle enable/disable behavior, but rejects attempts to change a role: clients must review the current account revision through the account endpoint. This deliberately closes the stale-role-write bypass; no UI account-management capability is removed.
+
+Identity state format 3 records server-owned creation and last console sign-in dates. A successful full password plus Authenticator or unused recovery-code console admission counts; recent authentication, OAuth/MCP activity, restricted diagnostics, enrollment and reset completion do not. Dates display UTC. Legacy missing dates remain Unknown; tracked accounts with no sign-in show Never. Restored sign-ins are labeled historical until a new full console sign-in. Backup and failed-install rollback retain coherent dates without exporting factors or sessions.
+
+A successful new account creation, full sign-in, account edit or recovery installation writes format 3. Older binaries that support only formats 1/2 reject that installation rather than erase metadata or new security authority. Do not downgrade in place. Preserve the protected app/audit/key directories and a known-good encrypted backup before upgrading; use a compatible binary for recovery. Uncertain account writes replay durable generation revocation on restart without claiming the requested contact/role was committed or deleting the person's retained factors.

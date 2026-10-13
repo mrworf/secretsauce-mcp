@@ -27,7 +27,7 @@ source:
     - REC-RM-014
 planning:
   parent_commit: b2b66608908ca1e2dc9f61ce66856780ccf68b8e
-  repository_commit: null
+  repository_commit: 1569b93e0dc5461f18c09386c6095279db91a222
 milestones:
   manifest: delivery/milestones/secretsauce-mcp/status.yaml
   packet_revision: sha256:b0c9723dbc11aee6523ef42b684a312055f7283439bc81eb963940a2064f3e73

@@ -31,7 +31,7 @@ export class ConsoleEvidence {
   const done=new Map(operations.filter(r=>r.phase==='complete').map(r=>[r.id,r]));
   const started=new Set(operations.filter(r=>r.phase==='start').map(r=>r.id));
   const entries:EvidenceEntry[]=operations.filter(r=>r.phase!=='complete'||!started.has(r.id)).map(r=>{
-   const completion=done.get(r.id);return {id:'operation:'+r.id,operation:r.id,time:r.time,actor:r.actor,service:Object.hasOwn(this.store.state.managed?.services??{},r.target)?r.target:'',action:r.action,result:completion?.result??(r.phase==='start'?'uncertain':r.result??'success'),revision:r.revision,reason:r.target,provenance:'local'};
+   const completion=done.get(r.id);return {id:'operation:'+r.id,operation:r.id,time:r.time,actor:r.actor,service:Object.hasOwn(this.store.state.managed?.services??{},r.target)?r.target:'',action:r.action,result:completion?.result??(r.phase==='start'?'uncertain':r.result??'success'),revision:r.revision,reason:r.target+(r.details?.smtpMode?' · SMTP: '+(r.details.smtpMode==='none'?'None (unencrypted)':'TLS (encrypted)')+(r.details.unencryptedAcknowledged?' · Risk acknowledged':''):''),provenance:'local'};
   });
   for(const [index,event] of (gateway?.events??[]).entries()){
    const e=event as unknown as Record<string,unknown>;

@@ -1,0 +1,9 @@
+{
+  "result": "PASS",
+  "transport": "Actual HTTPS loopback using example.org mapping",
+  "checks": [
+    "Document and text-range reflow at desktop/320px and 200% text: delete-confirmation",
+    "Document and text-range reflow at desktop/320px and 200% text: deleted-settings",
+    "Actual HTTPS keyboard save/review/apply; enabled dependency rejected; disable retains credential; cancel unchanged with focus return; independent delete retains configuration; secret field blank and browser storage empty"
+  ]
+}

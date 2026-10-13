@@ -1,6 +1,6 @@
 {
   "result": "PASS",
-  "image": "sha256:c26e33ab7ac648497f560a9689c0cd6b9be4f5ca28d0864649f580af0362a6d9",
+  "image": "sha256:60e64d7125ffcb7adac946a922baa87e317beae3b4071eab4fdd6c499d60d5f3",
   "checks": [
     {
       "check": "Older binary rejects new format-4 state without overwriting it",

@@ -22,8 +22,8 @@ Includes all M24 requirements, retained advanced controls and M22/M23 behavior. 
 ## Slice index
 | Slice | Plan | Outcome | Dependencies | Status | Commit | Evidence |
 |---|---|---|---|---|---|---|
-| 01 | [slice 01](milestone_24_plan_01_slice_01.md) | Explicit secure/default and acknowledged unencrypted email end to end | M22/M19/M20 | completed | slice commit (recorded by root closeout) | evidence/qa/secretsauce-mcp/milestone24/ |
-| 02 | [slice 02](milestone_24_plan_01_slice_02.md) | Populated Settings and truthful complete review lifecycle | 01 | pending | | evidence/ux-acceptance/secretsauce-mcp/milestone24/ |
+| 01 | [slice 01](milestone_24_plan_01_slice_01.md) | Explicit secure/default and acknowledged unencrypted email end to end | M22/M19/M20 | completed | f83dd1a | evidence/qa/secretsauce-mcp/milestone24/ |
+| 02 | [slice 02](milestone_24_plan_01_slice_02.md) | Populated Settings and truthful complete review lifecycle | 01 | completed | containing slice 02 commit | evidence/ux-acceptance/secretsauce-mcp/milestone24/ |
 
 ## Cross-slice concerns
 Legacy missing mode means TLS; unknown rejects. New state format must make older readers reject explicit None. Restore excludes live acknowledgment and retains proposal. All changes preserve current permission/revision/credential/audit fences. No credentials or bodies in evidence. Browser fixtures synthetic HTTPS; Docker fixtures isolated and launcher-leased. Full-suite runs after browsers to avoid resource contention.
@@ -36,3 +36,5 @@ Older binaries cannot read the new format. Restore compatible prior coherent sta
 
 ## Execution notes
 Planning inspection found no product ambiguity. No tests run or production files edited at plan creation.
+
+Slice 02 completed populated forms, truthful current/pending/unsaved states, scoped discard, complete review/apply, live Health, backup cards and approved screenshot composition. Required final checks and hashes are recorded in evidence/qa/secretsauce-mcp/milestone24/validation.json; acceptance maps every criterion. Root reviewed final visual pairs. No requirements deferred.

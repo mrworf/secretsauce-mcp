@@ -1,4 +1,4 @@
-import {reviewSettings,applySettings,SettingsError} from './consoleSettings.js';
+import {reviewSettings,applySettings,settingsState,discardSettings,SettingsError} from './consoleSettings.js';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import QRCode from 'qrcode';
 import {consoleRestore,RestoreError} from './consoleRestore.js';
@@ -86,6 +86,7 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
             reply(200, { operation: id, status: store.journal.status(id) === 'unknown' ? store.externalAudit?.operationStatus(id) ?? 'unknown' : store.journal.status(id) });
             return;
         }
+        if(request.method==='GET'&&path==='/console/api/settings/state'){if(!session){reply(401,{message:'Sign in again.'});return;}reply(200,settingsState(store,session));return;}
         if(request.method==='GET'&&path==='/console/api/configuration/history'){if(!session){reply(401,{message:'Sign in again.'});return;}reply(200,configurationHistory(consoleServices(store),session));return;}
         if(request.method==='GET'&&path==='/console/api/protection'){if(!session){reply(401,{message:'Sign in again.'});return;}reply(200,consoleProtection(consoleServices(store)).read(session));return;}
         if (request.method === 'GET' && (path === '/console/api/services' || path?.startsWith('/console/api/services/'))) {
@@ -178,6 +179,7 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
         if(path==='/console/api/retention/save'){reply(200,consoleEvidence(store).saveRetention(session,data));return;}
         if(path==='/console/api/retention/review'){reply(200,consoleEvidence(store).reviewRetention(session,data));return;}
         if(path==='/console/api/retention/apply'){reply(200,consoleEvidence(store).applyRetention(session,data));return;}
+        if(path==='/console/api/settings/discard'){reply(200,discardSettings(store,session,data));return;}
         if(path==='/console/api/settings/review'){reply(200,reviewSettings(store,session,data));return;}
         if(path==='/console/api/settings/apply'){reply(200,applySettings(store,session,data));return;}
         if(path?.startsWith('/console/api/authentication/')){const a=consoleAuthentication(store);if(path==='/console/api/authentication/save'){reply(200,a.save(session,data));return;}if(path==='/console/api/authentication/import-proposal'){reply(200,a.importProposal(session,data));return;}if(path==='/console/api/authentication/review'){reply(200,a.review(session,data));return;}if(path==='/console/api/authentication/apply'){reply(200,a.apply(session,data));return;}}

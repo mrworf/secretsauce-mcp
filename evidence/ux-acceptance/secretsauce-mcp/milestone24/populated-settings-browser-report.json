@@ -1,0 +1,22 @@
+{
+  "result": "PASS",
+  "checks": [
+    "Document and text-range reflow at desktop/320px and 200% text: email-current",
+    "Document and text-range reflow at desktop/320px and 200% text: email-unencrypted-desktop",
+    "Populated current Email, blank saved password, no-op disabled controls, explicit None warning, navigation Stay and exact reversal",
+    "Document and text-range reflow at desktop/320px and 200% text: health-desktop",
+    "Both Health forms save together without activation; current values survive reload",
+    "Document and text-range reflow at desktop/320px and 200% text: backups-desktop",
+    "Document and text-range reflow at desktop/320px and 200% text: review-desktop",
+    "Document and text-range reflow at desktop/320px and 200% text: applied-desktop",
+    "Backup save/reload retains pending values and full review applies backups, diagnostics and audit retention atomically",
+    "All six Settings sections open directly and never show undefined",
+    "Immediate external registry action guards other unsaved Settings edits; Stay preserves input and explicit discard authorizes only registration",
+    "Review changes durably saves edits; pending-banner Review includes unsaved changes",
+    "Document and text-range reflow at desktop/320px and 200% text: email-final",
+    "Failure after one of two form saves preserves second input; editing/retrying first form uses refreshed generations without partial activation",
+    "Changed configuration dependency rejects stale full-scope apply",
+    "Lost save response preserves safe input and labels unknown; reload discovers durable pending values without activation",
+    "Offline load has no invented fields; Auditor sees current read-only settings; absent Email is explicit"
+  ]
+}

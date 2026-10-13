@@ -1,0 +1,168 @@
+{
+  "result": "PASS",
+  "manifest": "product/ux/manifest.yaml",
+  "manifestSha256": "7331cb34170fa5f35d6790c4be5825b21cd9ba00b66be88caab3409de7c56563",
+  "pairs": [
+    {
+      "name": "email-desktop",
+      "role": "Owner",
+      "state": "Current configured TLS; saved password blank",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "reference": "workflow/definition/drafts/product-ux/web-console-feedback-002/email-desktop.png",
+      "referenceSha256": "89cc554c77925c758a6db57e9251015fd0089bfcb3e402333b93210b84e0d70f",
+      "referenceImageDimensions": [
+        1440,
+        1111
+      ],
+      "actual": "evidence/ux-acceptance/secretsauce-mcp/milestone24/email-desktop.png",
+      "actualSha256": "c0400904a4692d4a9e2981d5e443f243d3fc757f9603a696edab778c60659e4b",
+      "actualImageDimensions": [
+        1440,
+        1171
+      ],
+      "result": "PASS",
+      "resolution": "See comparison.md; independently reviewed by root; no material exception"
+    },
+    {
+      "name": "email-narrow",
+      "role": "Owner",
+      "state": "Current configured TLS; saved password blank",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "reference": "workflow/definition/drafts/product-ux/web-console-feedback-002/email-narrow.png",
+      "referenceSha256": "12f01cdfba2c06cc9ae4795e6c8cde6679682881fdeec08bb328982b7153d090",
+      "referenceImageDimensions": [
+        390,
+        2198
+      ],
+      "actual": "evidence/ux-acceptance/secretsauce-mcp/milestone24/email-narrow.png",
+      "actualSha256": "021ff7d0fd8bcdc3c1da34600555812b0df3ed19a2ac1621f60508b0f3c21c3a",
+      "actualImageDimensions": [
+        390,
+        2371
+      ],
+      "result": "PASS",
+      "resolution": "See comparison.md; independently reviewed by root; no material exception"
+    },
+    {
+      "name": "email-unencrypted-desktop",
+      "role": "Owner",
+      "state": "Unsaved None selection and warning",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "reference": "workflow/definition/drafts/product-ux/web-console-feedback-002/email-unencrypted-desktop.png",
+      "referenceSha256": "87addefb645d36a512eb87392c249cbeb2050b57595b2c4de6473a9040bbe5e7",
+      "referenceImageDimensions": [
+        1440,
+        1234
+      ],
+      "actual": "evidence/ux-acceptance/secretsauce-mcp/milestone24/email-unencrypted-desktop.png",
+      "actualSha256": "4eeef2d3258d0bf5561ef9cc7defe67a6c6f6813dc54f7740d1d33a4d8a96a57",
+      "actualImageDimensions": [
+        1440,
+        1369
+      ],
+      "result": "PASS",
+      "resolution": "See comparison.md; independently reviewed by root; no material exception"
+    },
+    {
+      "name": "backups-desktop",
+      "role": "Owner",
+      "state": "Saved retention14; current30; latest completed backup",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "reference": "workflow/definition/drafts/product-ux/web-console-feedback-002/backups-desktop.png",
+      "referenceSha256": "24ca35bd839d1638c297294dd3cda9fb6cf96d09fe3dbb78353b61fc52c079fc",
+      "referenceImageDimensions": [
+        1440,
+        1031
+      ],
+      "actual": "evidence/ux-acceptance/secretsauce-mcp/milestone24/backups-desktop.png",
+      "actualSha256": "ad81f30e0595372d67578263e431f59358a1e594aa5c25f813e770642955e974",
+      "actualImageDimensions": [
+        1440,
+        1002
+      ],
+      "result": "PASS",
+      "resolution": "See comparison.md; independently reviewed by root; no material exception"
+    },
+    {
+      "name": "review-desktop",
+      "role": "Owner",
+      "state": "Whole Settings review of diagnostic detail and backup retention",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "reference": "workflow/definition/drafts/product-ux/web-console-feedback-002/review-desktop.png",
+      "referenceSha256": "e43a0dce1e32c643e8c3fa4a24a215bc35c9c7b94df6c66a4cc3176173ae24b2",
+      "referenceImageDimensions": [
+        1440,
+        931
+      ],
+      "actual": "evidence/ux-acceptance/secretsauce-mcp/milestone24/review-desktop.png",
+      "actualSha256": "6581739d9ed84a6f39e055a9084e843b0f06366d32aadd69dcf69a36aedc9c24",
+      "actualImageDimensions": [
+        1440,
+        1002
+      ],
+      "result": "PASS",
+      "resolution": "See comparison.md; independently reviewed by root; no material exception"
+    },
+    {
+      "name": "applied-desktop",
+      "role": "Owner",
+      "state": "Fresh current values after atomic apply; separate cleanup",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "reference": "workflow/definition/drafts/product-ux/web-console-feedback-002/applied-desktop.png",
+      "referenceSha256": "88883813822fc62478fdd1f2398868fd30554f69f8485eaae57be99473e3347a",
+      "referenceImageDimensions": [
+        1440,
+        931
+      ],
+      "actual": "evidence/ux-acceptance/secretsauce-mcp/milestone24/applied-desktop.png",
+      "actualSha256": "4cb001bc3073a73541a74966dde49d83e36a36473d403ce8d82e8e51237b958e",
+      "actualImageDimensions": [
+        1440,
+        1002
+      ],
+      "result": "PASS",
+      "resolution": "See comparison.md; independently reviewed by root; no material exception"
+    },
+    {
+      "name": "health-desktop",
+      "role": "Owner",
+      "state": "Current diagnostic detail; independent current health",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "reference": "workflow/definition/drafts/product-ux/web-console-feedback-002/health-desktop.png",
+      "referenceSha256": "9658ff4f0a49df664a27534fc1fb589ff76feb77896c7822131403d08e6312dc",
+      "referenceImageDimensions": [
+        1440,
+        931
+      ],
+      "actual": "evidence/ux-acceptance/secretsauce-mcp/milestone24/health-desktop.png",
+      "actualSha256": "3b9c96bd9f81fd8897d262c8e5bdfde1d4bd64010269db3d27b94d306f6ec074",
+      "actualImageDimensions": [
+        1440,
+        1002
+      ],
+      "result": "PASS",
+      "resolution": "See comparison.md; independently reviewed by root; no material exception"
+    }
+  ]
+}

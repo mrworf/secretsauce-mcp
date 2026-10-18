@@ -1,0 +1,101 @@
+{
+  "prototypeOnly": true,
+  "checks": [
+    {
+      "name": "services",
+      "width": 1440,
+      "document": false,
+      "text": []
+    },
+    {
+      "name": "overview",
+      "width": 1440,
+      "document": false,
+      "text": []
+    },
+    {
+      "name": "destinations",
+      "width": 1440,
+      "document": false,
+      "text": []
+    },
+    {
+      "name": "authentication",
+      "width": 1440,
+      "document": false,
+      "text": []
+    },
+    {
+      "name": "policy",
+      "width": 1440,
+      "document": false,
+      "text": []
+    },
+    {
+      "name": "import-recovery",
+      "width": 1440,
+      "document": false,
+      "text": []
+    },
+    {
+      "name": "create",
+      "width": 1440,
+      "document": false,
+      "text": []
+    },
+    {
+      "name": "services",
+      "width": 390,
+      "document": false,
+      "text": []
+    },
+    {
+      "name": "overview",
+      "width": 390,
+      "document": false,
+      "text": []
+    },
+    {
+      "name": "destinations",
+      "width": 390,
+      "document": false,
+      "text": []
+    },
+    {
+      "name": "authentication",
+      "width": 390,
+      "document": false,
+      "text": []
+    },
+    {
+      "name": "policy",
+      "width": 390,
+      "document": false,
+      "text": []
+    },
+    {
+      "name": "import-recovery",
+      "width": 390,
+      "document": false,
+      "text": []
+    },
+    {
+      "name": "create",
+      "width": 390,
+      "document": false,
+      "text": []
+    },
+    {
+      "dialog": "replace",
+      "escapeCloses": true
+    },
+    {
+      "dialog": "clear",
+      "escapeCloses": true
+    },
+    {
+      "dialog": "rule",
+      "escapeCloses": true
+    }
+  ]
+}

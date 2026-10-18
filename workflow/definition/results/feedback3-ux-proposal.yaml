@@ -1,0 +1,170 @@
+stage: product-ux
+status: DECISION_REQUIRED
+validated_inputs:
+- path: docs/web-console-prd.md
+  revision: sha256:00e6e2a9ec4661695f6aa4f01f86e8963739579bd147c7d73fa67870dda41e4b
+- path: docs/web-console-prd-user-journey-audit.md
+  revision: sha256:7f0f3e3159a06e867aeabdadacdd73915c1c1a11ad0a4a8e6d597304efc1ff67
+- path: product/ux/manifest.yaml
+  revision: sha256:7331cb34170fa5f35d6790c4be5825b21cd9ba00b66be88caab3409de7c56563
+- path: product/ux/experience-brief.yaml
+  revision: sha256:401e66e9ac595a78b84a0838e632a6ee124dcebef8c198ba2e80fdcad67e81b5
+- path: product/ux/01-information-architecture.md
+  revision: sha256:598d58ff99579c25797744d955519c9c611735a79c2a8c49154e1fee2486b2db
+- path: product/ux/04-visual-system.md
+  revision: sha256:7c68c82b60d81c638d521eb6d03d28b4cba08f13244276bff1d43295f078937b
+- path: workflow/feedback/PO-FEEDBACK-2026-10-17-001/feedback.yaml
+  revision: sha256:9b50a7d3dc87a3f2d45832b0deee4402b6e84b65092680a57f5bfbf8c7fbe0bf
+- path: product/architecture/web-console-state-contract.md
+  revision: sha256:c8e22b5013d89090cc451cb2ef0290d7517b05bebae746faa15b65f10fca9848
+- path: product/security/web-console-security-contract.md
+  revision: sha256:8f66520798094a2638f006c9f3145e263e96008fdf63480fc6b98c2b0ccddc35
+- path: workflow/definition/results/feedback3-product-resolution.yaml
+  revision: sha256:08c04fd2635a0d78d9960cf68214504ae52b98d961bb8a1c9992106ec3d02b2f
+artifact_changes:
+- path: workflow/definition/drafts/product-ux/web-console-feedback-003
+  change: Created unapproved service configuration experience brief, interaction contract, primary-source research,
+    linked HTML concepts, rendered desktop/narrow/dialog visuals and reproducible rendering evidence.
+changed_paths:
+- workflow/definition/drafts/product-ux/web-console-feedback-003/access.html
+- workflow/definition/drafts/product-ux/web-console-feedback-003/advanced.html
+- workflow/definition/drafts/product-ux/web-console-feedback-003/authentication-desktop.png
+- workflow/definition/drafts/product-ux/web-console-feedback-003/authentication-narrow.png
+- workflow/definition/drafts/product-ux/web-console-feedback-003/authentication.html
+- workflow/definition/drafts/product-ux/web-console-feedback-003/clear-dialog.png
+- workflow/definition/drafts/product-ux/web-console-feedback-003/create-desktop.png
+- workflow/definition/drafts/product-ux/web-console-feedback-003/create-narrow.png
+- workflow/definition/drafts/product-ux/web-console-feedback-003/create.html
+- workflow/definition/drafts/product-ux/web-console-feedback-003/design-contract.md
+- workflow/definition/drafts/product-ux/web-console-feedback-003/destination-options.html
+- workflow/definition/drafts/product-ux/web-console-feedback-003/destinations-desktop.png
+- workflow/definition/drafts/product-ux/web-console-feedback-003/destinations-narrow.png
+- workflow/definition/drafts/product-ux/web-console-feedback-003/destinations.html
+- workflow/definition/drafts/product-ux/web-console-feedback-003/details.html
+- workflow/definition/drafts/product-ux/web-console-feedback-003/detection.html
+- workflow/definition/drafts/product-ux/web-console-feedback-003/experience-brief.yaml
+- workflow/definition/drafts/product-ux/web-console-feedback-003/import-recovery-desktop.png
+- workflow/definition/drafts/product-ux/web-console-feedback-003/import-recovery-narrow.png
+- workflow/definition/drafts/product-ux/web-console-feedback-003/import-recovery.html
+- workflow/definition/drafts/product-ux/web-console-feedback-003/index.md
+- workflow/definition/drafts/product-ux/web-console-feedback-003/overview-desktop.png
+- workflow/definition/drafts/product-ux/web-console-feedback-003/overview-narrow.png
+- workflow/definition/drafts/product-ux/web-console-feedback-003/overview.html
+- workflow/definition/drafts/product-ux/web-console-feedback-003/policy-desktop.png
+- workflow/definition/drafts/product-ux/web-console-feedback-003/policy-narrow.png
+- workflow/definition/drafts/product-ux/web-console-feedback-003/policy.html
+- workflow/definition/drafts/product-ux/web-console-feedback-003/render-checks.json
+- workflow/definition/drafts/product-ux/web-console-feedback-003/render-concepts.mjs
+- workflow/definition/drafts/product-ux/web-console-feedback-003/replace-dialog.png
+- workflow/definition/drafts/product-ux/web-console-feedback-003/research.md
+- workflow/definition/drafts/product-ux/web-console-feedback-003/review.html
+- workflow/definition/drafts/product-ux/web-console-feedback-003/rule-dialog.png
+- workflow/definition/drafts/product-ux/web-console-feedback-003/services-desktop.png
+- workflow/definition/drafts/product-ux/web-console-feedback-003/services-narrow.png
+- workflow/definition/drafts/product-ux/web-console-feedback-003/services.html
+- workflow/definition/drafts/product-ux/web-console-feedback-003/styles.css
+- workflow/definition/results/feedback3-ux-proposal.yaml
+findings: []
+questions:
+- id: UX-DESIGN-004
+  kind: UX_DIRECTION_APPROVAL
+  blocking: true
+  affected_requirement: UX-01 / UX-02 / UX-03 / UX-04 / CONFIG-01 / CONFIG-02 / POLICY-02 / MIGRATE-02
+  affected_surfaces:
+  - service-list
+  - service-overview
+  - service-configuration
+  - guided-creation
+  - credential-dialogs
+  - policy-rules
+  - import-recovery
+  question: 'Approve the service configuration direction shown in the proposal: clear status rows, focused configuration
+    sections, a global Guided/Advanced switch, and focused credential/rule dialogs?'
+  reason: The confirmed feedback establishes required outcomes, but the new configuration hierarchy, navigation
+    and interaction composition need explicit visual-direction approval before canonical UX synthesis. Earlier UX3
+    approval does not approve this new proposal.
+  recommendation: Approve feedback-003-draft-1, retaining the approved shell and the represented focused service
+    editing experience.
+  alternatives: []
+  options:
+  - Approve the proposed direction
+  - Revise the proposed direction
+  proposal_paths:
+  - workflow/definition/drafts/product-ux/web-console-feedback-003/index.md
+  - workflow/definition/drafts/product-ux/web-console-feedback-003/experience-brief.yaml
+  - workflow/definition/drafts/product-ux/web-console-feedback-003/services-desktop.png
+  - workflow/definition/drafts/product-ux/web-console-feedback-003/destinations-desktop.png
+  - workflow/definition/drafts/product-ux/web-console-feedback-003/policy-desktop.png
+  - workflow/definition/drafts/product-ux/web-console-feedback-003/import-recovery-desktop.png
+  - workflow/definition/drafts/product-ux/web-console-feedback-003/clear-dialog.png
+  related_decision_refs:
+  - REC-DEC-009
+  approval_consequence: Synthesize canonical UX, then return to targeted definition validation. No product implementation
+    or canonical UX revision change is authorized by this unapproved proposal alone.
+affected_requirements:
+- UX-01
+- UX-02
+- UX-03
+- UX-04
+- CONFIG-01
+- CONFIG-02
+- CONFIG-03
+- CONFIG-05
+- POLICY-01
+- POLICY-02
+- POLICY-03
+- MIGRATE-02
+- AUTHZ-01
+- STATE-09
+- SECRES-08
+affected_artifacts:
+- product/ux/manifest.yaml
+- product/ux/experience-brief.yaml
+- product/ux/01-information-architecture.md
+- product/ux/02-interaction-patterns.md
+- product/ux/03-responsive-and-platform.md
+- product/ux/04-visual-system.md
+- product/ux/05-accessibility.md
+- product/ux/07-acceptance-checklist.md
+reconciliation_required: false
+change_impact:
+  product: false
+  user_journeys: false
+  ux: false
+  architecture: false
+  security: false
+ux_handoff:
+  manifest:
+    path: product/ux/manifest.yaml
+    revision: web-console-ux-3
+  experience_brief:
+    path: workflow/definition/drafts/product-ux/web-console-feedback-003/experience-brief.yaml
+    revision: feedback-003-draft-1
+    status: proposal
+  approval:
+    status: pending
+    decision_refs: []
+  authoritative_artifacts_changed: []
+  downstream_freshness:
+    affected_domains: []
+    potentially_stale_artifacts: []
+  proposal_only: true
+  transaction:
+    owner: product-definition-orchestrator
+    starting_head: 4703c56c17020bc04f8a58c90c1ae0f23ca3886e
+    child_commit: null
+    ownership: Only this draft directory and this result; no canonical or production edits.
+  validation:
+    rendered_views: 14
+    rendered_dialogs: 3
+    viewports:
+    - 1440x1000
+    - 390x1000
+    document_overflow: false
+    text_range_overflow: false
+    dialog_escape_checks: 3
+    visual_inspection: Services, destinations desktop/narrow, policy, import recovery and credential clear inspected
+      directly; typography, hierarchy, white cards, neutral surfaces and orange shell direction preserved.
+    evidence_path: workflow/definition/drafts/product-ux/web-console-feedback-003/render-checks.json
+    boundary: Static design concepts only; no runtime conformance, exhaustive accessibility or implementation acceptance
+      claim.

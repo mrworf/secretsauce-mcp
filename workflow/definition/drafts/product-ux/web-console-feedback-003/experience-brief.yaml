@@ -1,0 +1,45 @@
+status: proposal
+product_id: secretsauce-mcp
+experience:
+  revision: feedback-003-draft-1
+  audience:
+    primary: [Owners, Administrators]
+    secondary: [Auditors within non-secret read scope, Members within assigned-service scope]
+  principles:
+    - Show lifecycle and pending changes separately
+    - Make configuration understandable one focused section at a time
+    - Keep every supported capability without making JSON routine
+    - Explain consequences where actions happen
+  product_character:
+    tone: Plain, calm, specific
+    density: Moderate; compact resource/rule rows and paired related fields
+    complexity_strategy: Direct section navigation, focused advanced destination settings, one full-service Advanced mode
+    guidance_level: Short local help with concrete examples and actionable recovery
+  information_priorities:
+    - What configuration is in use and what prevents execution
+    - Which changes are pending and how to review them
+    - The exact service, key or rule affected by an action
+  interaction_direction:
+    navigation: Preserve global and service navigation; focused Configuration sections; clickable creation steps
+    routine_actions: Populated non-secret fields; preserve work through section and mode changes
+    consequential_actions: Explicit immediate credential and lifecycle confirmations, separate reviewed configuration apply
+    progressive_disclosure: Focused advanced destinations and rule settings; no nested accordion stacks
+  responsive_priority: Keep identity, state, navigation, actions and recovery usable without horizontal overflow
+  explicit_po_preferences:
+    - statement: Global Guided/Advanced mode and clickable guide steps
+      decision_refs: [PO-FB-076, PO-FB-087]
+    - statement: Set/Replace credential dialogs, last-changed actor, referenced Delete clears value and retains key
+      decision_refs: [PO-FB-060, PO-FB-062, PO-FB-065, PO-FB-066, PO-FB-098]
+    - statement: Recognizable rule list, Add modal and concise contextual row actions
+      decision_refs: [PO-FB-107, PO-FB-108, PO-FB-110]
+  explicit_po_dislikes:
+    - statement: Long flattened configuration, confusing technical labels and nested foldouts
+      decision_refs: [PO-FB-055, PO-FB-058, PO-FB-059, PO-FB-084]
+  designer_discretion:
+    - Inherited shell geometry, spacing, typography and restrained status accents
+    - Exact helper wording consistent with settled behavior
+  approval:
+    approved: false
+    decision_refs: []
+  proposed_direction_decision: UX-DESIGN-004
+preserved_authority: product/ux/manifest.yaml at web-console-ux-3

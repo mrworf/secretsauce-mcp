@@ -1,40 +1,20 @@
 workflow: product-definition
 product_id: secretsauce-mcp
-status: ready_for_delivery_planning
+status: in_progress
 scope: Self-hosted single-organization web console initial release
 transaction:
-  parent_commit: 65c1d45ba19f8dbcfca161bddf8c415f04c40d26
-  repository_commit: 653ac14f771dc1da7d1d650c577ff439e9b99bce
+  parent_commit: 4703c56c17020bc04f8a58c90c1ae0f23ca3886e
+  repository_commit: null
   pre_existing_dirty_paths:
   - test-results/
   owned_paths:
-  - AGENTS.md
-  - docs/web-console-prd-coverage.md
-  - docs/web-console-prd-user-journey-audit.md
-  - docs/web-console-prd.md
-  - product/architecture/web-console-architecture-review.md
-  - product/security/web-console-security-review.md
-  - product/ux/00-overview.md
-  - product/ux/01-information-architecture.md
-  - product/ux/02-interaction-patterns.md
-  - product/ux/03-responsive-and-platform.md
-  - product/ux/04-visual-system.md
-  - product/ux/05-accessibility.md
-  - product/ux/06-feature-exceptions.md
-  - product/ux/07-acceptance-checklist.md
-  - product/ux/experience-brief.yaml
-  - product/ux/manifest.yaml
-  - workflow/definition/decisions.md
-  - workflow/definition/definition-package.yaml
-  - workflow/definition/open-questions.md
-  - workflow/definition/results/architecture.yaml
-  - workflow/definition/results/coverage.yaml
-  - workflow/definition/results/journeys.yaml
-  - workflow/definition/results/prd-review.md
-  - workflow/definition/results/prd.yaml
-  - workflow/definition/results/security.yaml
-  - workflow/definition/results/ux.yaml
   - workflow/definition/state.yaml
+  - workflow/definition/decisions.md
+  - workflow/definition/open-questions.md
+  - workflow/definition/results/feedback3-*
+  - workflow/definition/drafts/product-ux/web-console-feedback-003/
+  - product/architecture/web-console-state-contract.md
+  - product/security/web-console-security-contract.md
 authoritative_artifacts:
   product:
     path: docs/web-console-prd.md
@@ -97,7 +77,7 @@ specialists:
   security: /home/ha/.codex/skills/security-code-reviewer/SKILL.md
 stages:
   prd:
-    status: passed
+    status: stale
     validated_inputs:
     - path: docs/web-console-prd.md
       revision: sha256:00e6e2a9ec4661695f6aa4f01f86e8963739579bd147c7d73fa67870dda41e4b
@@ -133,8 +113,10 @@ stages:
       - IDENT-05
       - IDENT-06
       - AUDIT-01
+    stale_reasons:
+    - REC-IMPACT-007
   coverage:
-    status: passed
+    status: stale
     validated_inputs:
     - path: docs/web-console-prd.md
       revision: sha256:00e6e2a9ec4661695f6aa4f01f86e8963739579bd147c7d73fa67870dda41e4b
@@ -172,8 +154,10 @@ stages:
       revision: sha256:36af3429ba960eaa2adf42777c7bc7a0d8cae12b62cac3ba63d228f14eee037e
     result: workflow/definition/results/coverage.yaml
     mode: targeted_revalidation
+    stale_reasons:
+    - REC-IMPACT-007
   journeys:
-    status: passed
+    status: stale
     validated_inputs:
     - path: docs/web-console-prd.md
       revision: sha256:00e6e2a9ec4661695f6aa4f01f86e8963739579bd147c7d73fa67870dda41e4b
@@ -211,8 +195,10 @@ stages:
       revision: sha256:7331cb34170fa5f35d6790c4be5825b21cd9ba00b66be88caab3409de7c56563
     result: workflow/definition/results/journeys.yaml
     mode: targeted_revalidation
+    stale_reasons:
+    - REC-IMPACT-007
   ux:
-    status: passed
+    status: decision_required
     mode: targeted_revalidation
     validated_inputs:
     - path: docs/web-console-prd.md
@@ -306,8 +292,10 @@ stages:
     - path: product/ux/manifest.yaml
       revision: sha256:7331cb34170fa5f35d6790c4be5825b21cd9ba00b66be88caab3409de7c56563
     result: workflow/definition/results/ux.yaml
+    stale_reasons:
+    - REC-IMPACT-007
   architecture:
-    status: passed
+    status: stale
     mode: targeted_revalidation
     validated_inputs:
     - path: docs/web-console-prd.md
@@ -346,8 +334,10 @@ stages:
     - path: workflow/reconciliation/REC-RUN-006/reconciliation-result.yaml
       revision: sha256:66907c2a791c0c794e600f3b3b1dd1d9167ebe7ea804fe24d759f0d309edeb93
     result: workflow/definition/results/architecture.yaml
+    stale_reasons:
+    - REC-IMPACT-007
   security:
-    status: passed
+    status: stale
     mode: targeted_revalidation
     validated_inputs:
     - path: docs/web-console-prd.md
@@ -386,6 +376,8 @@ stages:
     - path: workflow/reconciliation/REC-RUN-006/reconciliation-result.yaml
       revision: sha256:66907c2a791c0c794e600f3b3b1dd1d9167ebe7ea804fe24d759f0d309edeb93
     result: workflow/definition/results/security.yaml
+    stale_reasons:
+    - REC-IMPACT-007
 reconciliation_cycles:
   F-PRD-001:
     attempts: 1
@@ -416,8 +408,8 @@ reconciliation_cycles:
     attempts: 1
     status: resolved
     progress:
-    - Derived coverage now includes feedback-authorized reset roles, separate SMTP deletion, and
-      focused Settings requirements
+    - Derived coverage now includes feedback-authorized reset roles, separate SMTP deletion,
+      and focused Settings requirements
   F-JOURNEY-FEEDBACK-001:
     attempts: 1
     status: resolved
@@ -478,8 +470,11 @@ reconciliation_cycles:
       current. Architecture/security final review in progress.
     status: resolved
     last_result_revision: sha256:2f24571fcc26f6819689dc241fc4214a2979569e1d06a1ca9d72201659f001e2
-blocking_questions: []
-unresolved_decisions: []
+blocking_questions:
+- UX-DESIGN-004
+unresolved_decisions:
+- REC-DEC-009
+- UX-DESIGN-004
 decision_graph:
   nodes:
     RES-PRD-SEC-01:
@@ -529,14 +524,15 @@ decision_graph:
       - IDENT-05
       - BASE-01
       affected_artifact: docs/web-console-prd.md
-      question: Derive the narrow URL/token exposure contract preserving enrollment/recovery links,
-        OAuth flows, and supported gateway query placement.
+      question: Derive the narrow URL/token exposure contract preserving enrollment/recovery
+        links, OAuth flows, and supported gateway query placement.
       reason: Distinct implementations could prohibit required links or remove existing downstream
         placement, or leak management secrets.
       options:
       - Define purpose-bound short-lived capability exceptions with leakage controls while prohibiting
         ordinary credential exposure
-      - Return a precise remaining product choice only if the established requirements cannot coexist
+      - Return a precise remaining product choice only if the established requirements cannot
+        coexist
       resolution_category: SPECIALIST_RESOLUTION
       resolution_owner:
       - security
@@ -562,12 +558,13 @@ decision_graph:
       - IDENT-01
       - IDENT-05
       affected_artifact: docs/web-console-prd.md
-      question: Derive recovery proof, restricted Owner enrollment, and activation transitions for
-        clean-host and in-place restore.
-      reason: Recovery may deadlock or allow unauthenticated takeover; final Owner and service resumption
-        cannot be tested.
+      question: Derive recovery proof, restricted Owner enrollment, and activation transitions
+        for clean-host and in-place restore.
+      reason: Recovery may deadlock or allow unauthenticated takeover; final Owner and service
+        resumption cannot be tested.
       options:
-      - Use established host/bootstrap and backup recovery authority in a restricted restore ceremony
+      - Use established host/bootstrap and backup recovery authority in a restricted restore
+        ceremony
       - Identify only any residual consequential product tradeoff that cannot be derived
       resolution_category: SPECIALIST_RESOLUTION
       resolution_owner:
@@ -595,13 +592,13 @@ decision_graph:
       - IDENT-05
       - SEC-03
       affected_artifact: docs/web-console-prd.md
-      question: Specify allowed read-only/recovery access and prohibited changes while durable audit
-        is unavailable, plus verified resumption.
-      reason: Implementers could enable unaudited privileged mutation or eliminate the promised recovery
-        access.
+      question: Specify allowed read-only/recovery access and prohibited changes while durable
+        audit is unavailable, plus verified resumption.
+      reason: Implementers could enable unaudited privileged mutation or eliminate the promised
+        recovery access.
       options:
-      - Restrict outage access to diagnosis and operator repair with durable recording before sensitive
-        work resumes
+      - Restrict outage access to diagnosis and operator repair with durable recording before
+        sensitive work resumes
       - Identify only any residual safety-versus-availability product choice
       resolution_category: SPECIALIST_RESOLUTION
       resolution_owner:
@@ -632,15 +629,15 @@ decision_graph:
       - SEC-03
       - OPS-02
       affected_artifact: docs/web-console-prd.md
-      question: Derive draft transaction and immediate-operation boundaries, apply-time actor checks,
-        scoped rollback and related lifecycle invalidation.
+      question: Derive draft transaction and immediate-operation boundaries, apply-time actor
+        checks, scoped rollback and related lifecycle invalidation.
       reason: Revocation could wait for apply, or an Administrator could apply/rollback Owner-only
         settings through a mixed draft.
       options:
-      - Preserve immediate security actions and restrict draft/apply/rollback to the acting role
-        permitted configuration
-      - Surface a remaining product choice only if simpler safe semantics cannot satisfy the existing
-        matrix
+      - Preserve immediate security actions and restrict draft/apply/rollback to the acting
+        role permitted configuration
+      - Surface a remaining product choice only if simpler safe semantics cannot satisfy the
+        existing matrix
       resolution_category: SPECIALIST_RESOLUTION
       resolution_owner:
       - architecture
@@ -675,16 +672,17 @@ decision_graph:
       - apply-review
       - recovery-review
       - narrow-recovery
-      question: Approve the proposed calm, moderately dense visual and interaction direction shown
-        in the service, edit, review and recovery concepts?
-      reason: The PRD settles navigation and behavior; explicit Owner approval of consequential composition,
-        disclosure, risk prominence and visual character is required before canonical UX synthesis.
+      question: Approve the proposed calm, moderately dense visual and interaction direction
+        shown in the service, edit, review and recovery concepts?
+      reason: The PRD settles navigation and behavior; explicit Owner approval of consequential
+        composition, disclosure, risk prominence and visual character is required before canonical
+        UX synthesis.
       recommendation: 'Approve this direction: aligned service lists, grouped forms with advanced
         disclosure, explicit impact review, and calm guided recovery that reflows to one column.'
       alternatives:
       - option: Refine the proposal
-        tradeoff: Name a consequential concern in hierarchy, density, disclosure or character; revise
-          these draft concepts before synthesis.
+        tradeoff: Name a consequential concern in hierarchy, density, disclosure or character;
+          revise these draft concepts before synthesis.
       options:
       - Approve this direction
       - Refine the proposal
@@ -696,8 +694,8 @@ decision_graph:
       - workflow/definition/drafts/product-ux/web-console-initial/recovery-narrow.png
       - workflow/definition/drafts/product-ux/web-console-initial/review-desktop.png
       - workflow/definition/drafts/product-ux/web-console-initial/services-desktop.png
-      approval_consequence: Publish canonical UX system and observable conformance criteria; enables
-        downstream architecture/security review without authorizing implementation.
+      approval_consequence: Publish canonical UX system and observable conformance criteria;
+        enables downstream architecture/security review without authorizing implementation.
       status: accepted
       routing_status: resolved
       ask_user: false
@@ -730,9 +728,9 @@ decision_graph:
       domain: security
       affected_requirement: IDENT-05
       blocking: true
-      question: Derive the permitted target matrix and revocation/enrollment/issuer-continuity checks
-        for Owner and Administrator password and MFA reset initiation, keeping unrelated identity
-        administration Owner-only.
+      question: Derive the permitted target matrix and revocation/enrollment/issuer-continuity
+        checks for Owner and Administrator password and MFA reset initiation, keeping unrelated
+        identity administration Owner-only.
       reason: Current authority explicitly permits Owner only. Role expansion is settled; target
         hierarchy, final Owner restriction, password-versus-factor transitions and pending proof
         issuer eligibility need precise safe semantics.
@@ -768,9 +766,9 @@ decision_graph:
       question: Specify focused Settings navigation, search/draft transitions and minimum friendly
         control/read-summary coverage for existing configuration, preserving advanced capabilities
         and role scopes.
-      reason: No-long-page and friendly controls are settled; subtabs are exploratory. Derive bounded
-        UX within the approved calm grouped design, without adding features or assuming a new global
-        redesign.
+      reason: No-long-page and friendly controls are settled; subtabs are exploratory. Derive
+        bounded UX within the approved calm grouped design, without adding features or assuming
+        a new global redesign.
       resolution_category: SPECIALIST_RESOLUTION
       implementation_ready: true
       affected_requirements:
@@ -799,9 +797,9 @@ decision_graph:
       blocking: true
       question: Define independent confirmed deletion for SMTP credentials and the audit/dependency/current-state/stale-draft/history
         behavior needed to prevent later apply from restoring deleted values.
-      reason: Independent deletion is settled, but active SMTP dependency handling and stored draft
-        credentials cross existing configuration and immediate-value boundaries; the existing service-value
-        contract cannot simply be assumed complete for SMTP.
+      reason: Independent deletion is settled, but active SMTP dependency handling and stored
+        draft credentials cross existing configuration and immediate-value boundaries; the existing
+        service-value contract cannot simply be assumed complete for SMTP.
       resolution_category: SPECIALIST_RESOLUTION
       implementation_ready: false
       affected_requirements:
@@ -841,20 +839,20 @@ decision_graph:
       - settings-draft-review
       - configuration-forms
       question: 'Approve the focused Settings direction shown in the concepts: six named sections,
-        one visible at a time, readable summaries and friendly forms, with all draft changes shown
-        together before applying?'
+        one visible at a time, readable summaries and friendly forms, with all draft changes
+        shown together before applying?'
       reason: Existing feedback establishes focused sections and friendly controls; the proposed
-        secondary navigation, responsive selection and cross-section review composition are consequential
-        experience choices not explicitly covered by UX-DESIGN-001.
-      recommendation: Approve this bounded direction; retain the existing calm visual language and
-        all advanced capabilities.
+        secondary navigation, responsive selection and cross-section review composition are
+        consequential experience choices not explicitly covered by UX-DESIGN-001.
+      recommendation: Approve this bounded direction; retain the existing calm visual language
+        and all advanced capabilities.
       options:
       - Approve this direction
       - Refine this direction
       alternatives:
       - option: Refine this direction
-        tradeoff: Identify a material concern with section navigation, disclosure or review; revise
-          only this bounded proposal.
+        tradeoff: Identify a material concern with section navigation, disclosure or review;
+          revise only this bounded proposal.
       proposal_paths:
       - workflow/definition/drafts/product-ux/web-console-feedback-001/index.md
       - workflow/definition/drafts/product-ux/web-console-feedback-001/experience-brief.yaml
@@ -863,9 +861,9 @@ decision_graph:
       - workflow/definition/drafts/product-ux/web-console-feedback-001/settings-narrow.png
       - workflow/definition/drafts/product-ux/web-console-feedback-001/settings-review.png
       - workflow/definition/drafts/product-ux/web-console-feedback-001/design-contract.md
-      approval_consequence: Allows synthesis of this Settings direction into canonical UX after current
-        product reconciliation is adopted; does not approve new roles, reset semantics or deletion
-        mechanisms beyond their authoritative contracts.
+      approval_consequence: Allows synthesis of this Settings direction into canonical UX after
+        current product reconciliation is adopted; does not approve new roles, reset semantics
+        or deletion mechanisms beyond their authoritative contracts.
       derived_from: REC-DEC-002
       status: accepted
       stage: ux
@@ -909,10 +907,10 @@ decision_graph:
       domain: security
       affected_requirement: AUTHZ-02/03; IDENT-04/05
       resolution_type: SPECIALIST_RESOLUTION
-      question: What precise property, target-role, self-management and security-consequence rules
-        realize approved Administrator account management?
-      reason: Expansion is settled; older Owner-only rules are stale, but field/contact and escalation
-        boundaries need security/product semantics.
+      question: What precise property, target-role, self-management and security-consequence
+        rules realize approved Administrator account management?
+      reason: Expansion is settled; older Owner-only rules are stale, but field/contact and
+        escalation boundaries need security/product semantics.
       implementation_ready: false
       resolution_results:
       - workflow/definition/results/feedback2-security-resolution.yaml
@@ -938,8 +936,8 @@ decision_graph:
       domain: security
       affected_requirement: IDENT-04
       resolution_type: SPECIALIST_RESOLUTION
-      question: What explicit transport-mode, credential-use and acknowledgement rules support unencrypted
-        SMTP while retaining secure defaults and no silent downgrade?
+      question: What explicit transport-mode, credential-use and acknowledgement rules support
+        unencrypted SMTP while retaining secure defaults and no silent downgrade?
       reason: Unencrypted support is settled; persisted modes, transport/auth behavior, compatibility
         and warning semantics are undefined.
       implementation_ready: false
@@ -987,8 +985,8 @@ decision_graph:
       domain: ux
       affected_requirement: UX-02/03/04; CONFIG-03
       resolution_type: SPECIALIST_RESOLUTION
-      question: What coherent language, layout, required-field, People detail and current-value settings
-        pattern addresses this feedback while preserving review and permission safeguards?
+      question: What coherent language, layout, required-field, People detail and current-value
+        settings pattern addresses this feedback while preserving review and permission safeguards?
       reason: Existing explicit labels and applied-summary/edit patterns need design reconsideration;
         preferences and exploratory mechanisms do not select the final design.
       implementation_ready: false
@@ -1014,10 +1012,10 @@ decision_graph:
       domain: architecture
       affected_requirement: IDENT-02/03
       resolution_type: SPECIALIST_RESOLUTION
-      question: Which creation and last-login events and unknown/never/restore semantics govern the
-        requested account timestamps?
-      reason: Metadata display is settled; historical truth, authenticated event boundaries and portable
-        recovery projection are not defined.
+      question: Which creation and last-login events and unknown/never/restore semantics govern
+        the requested account timestamps?
+      reason: Metadata display is settled; historical truth, authenticated event boundaries
+        and portable recovery projection are not defined.
       implementation_ready: false
       resolution_results:
       - workflow/definition/results/feedback2-architecture-resolution.yaml
@@ -1031,16 +1029,17 @@ decision_graph:
       - Settings
       - People & Access
       - service creation
-      question: Approve the proposed populated-form Settings and account list/detail direction shown
-        in feedback-002-draft-1?
+      question: Approve the proposed populated-form Settings and account list/detail direction
+        shown in feedback-002-draft-1?
       reason: Changes editing structure, save-state presentation, terminology and account information
         hierarchy beyond previously approved UX2.
-      recommendation: Populated current-value forms; Review changes then Apply, with existing save-only
-        capability labeled Save for later; useful wider layouts; compact account list and full detail.
+      recommendation: Populated current-value forms; Review changes then Apply, with existing
+        save-only capability labeled Save for later; useful wider layouts; compact account list
+        and full detail.
       alternatives:
       - option: retain summary-first editing
-        tradeoff: Preserves read-first scanning but keeps a separate Edit step and duplicate value
-          presentation.
+        tradeoff: Preserves read-first scanning but keeps a separate Edit step and duplicate
+          value presentation.
       options:
       - approve recommended direction
       - request adjustments
@@ -1108,11 +1107,272 @@ decision_graph:
         revision: sha256:7ebeed7cbefedbe77083ba75a6160332bc10e8a271598d7aaa54326833ae484a
       - path: workflow/definition/drafts/product-ux/web-console-feedback-002/styles.css
         revision: sha256:ea601aef177d7644e5a3eab2a02e477b055d73700ed94d3e94b1ac249676fe93
-      resolution: approved, this time around, try to make sure the actual UX matches the look in
-        general as shown in the mockups
+      resolution: approved, this time around, try to make sure the actual UX matches the look
+        in general as shown in the mockups
       approval_scope: feedback-002-draft-1 experience direction and general visual appearance
       approved_proposal_revisions: *id002
-  ready: []
+    REC-DEC-008:
+      id: REC-DEC-008
+      source_findings:
+      - REC-022
+      - REC-024
+      product_owner_feedback:
+      - PO-FB-060
+      - PO-FB-063
+      - PO-FB-064
+      - PO-FB-065
+      - PO-FB-066
+      - PO-FB-067
+      domain: architecture
+      affected_requirement: CONFIG-02/03/04; STATE-01/02/03; AUDIT-01
+      blocking: true
+      resolution_category: SPECIALIST_RESOLUTION
+      question: What safe durable credential state and attribution contract realizes clear-value/retain-key
+        deletion and last-changed-by display?
+      reason: The Product Owner has settled clearing an in-use value and retaining its key.
+        Existing authority blocks referenced deletion; current storage conflates value presence
+        with metadata. Derive current authorization/version/dependency checks, immediate reference/admission
+        effects, failure/restart, restore/history, missing-value behavior and honest legacy
+        actor attribution without reopening that intent. Security and architecture boundaries
+        both need resolution.
+      status: accepted
+      resolution_owner:
+      - architecture
+      - security
+      routing_status: resolved_pending_reconciliation_adoption
+      depends_on: []
+      ask_user: false
+      resolved_behavior: Referenced service credential Delete clears only value, retains key
+        and exact references, reports consequence, and follows STATE-09/SECRES-08 for durable
+        failure, execution fencing, recovery and actor provenance. SMTP remains separate.
+      resolution_artifacts:
+      - product/architecture/web-console-state-contract.md
+      - product/security/web-console-security-contract.md
+      - workflow/definition/results/feedback3-architecture-resolution.yaml
+      - workflow/definition/results/feedback3-security-resolution.yaml
+    REC-DEC-009:
+      id: REC-DEC-009
+      source_findings:
+      - REC-020
+      - REC-021
+      - REC-023
+      - REC-025
+      - REC-026
+      - REC-027
+      - REC-028
+      - REC-029
+      - REC-030
+      - REC-031
+      - REC-034
+      product_owner_feedback:
+      - PO-FB-043
+      - PO-FB-044
+      - PO-FB-045
+      - PO-FB-046
+      - PO-FB-047
+      - PO-FB-048
+      - PO-FB-049
+      - PO-FB-050
+      - PO-FB-051
+      - PO-FB-052
+      - PO-FB-053
+      - PO-FB-054
+      - PO-FB-055
+      - PO-FB-056
+      - PO-FB-057
+      - PO-FB-058
+      - PO-FB-059
+      - PO-FB-061
+      - PO-FB-062
+      - PO-FB-096
+      - PO-FB-097
+      - PO-FB-098
+      - PO-FB-068
+      - PO-FB-101
+      - PO-FB-071
+      - PO-FB-072
+      - PO-FB-073
+      - PO-FB-074
+      - PO-FB-075
+      - PO-FB-076
+      - PO-FB-077
+      - PO-FB-087
+      - PO-FB-124
+      - PO-FB-078
+      - PO-FB-079
+      - PO-FB-080
+      - PO-FB-089
+      - PO-FB-090
+      - PO-FB-091
+      - PO-FB-092
+      - PO-FB-093
+      - PO-FB-094
+      - PO-FB-095
+      - PO-FB-102
+      - PO-FB-103
+      - PO-FB-105
+      - PO-FB-082
+      - PO-FB-083
+      - PO-FB-084
+      - PO-FB-085
+      - PO-FB-086
+      - PO-FB-099
+      - PO-FB-100
+      - PO-FB-104
+      - PO-FB-106
+      - PO-FB-107
+      - PO-FB-108
+      - PO-FB-109
+      - PO-FB-110
+      - PO-FB-117
+      - PO-FB-118
+      - PO-FB-111
+      - PO-FB-112
+      - PO-FB-115
+      - PO-FB-120
+      - PO-FB-123
+      domain: ux
+      affected_requirement: CONFIG-01/02/05; POLICY-01/02/03; UX-01/02/03/04; MIGRATE-01
+      blocking: true
+      resolution_category: SPECIALIST_RESOLUTION
+      question: What coherent researched service configuration design realizes the confirmed
+        directives while preserving existing capabilities, current versus draft state and safe
+        navigation?
+      reason: Individual directives settle interaction outcomes but not the full layout, responsive
+        states, composition or approved mockups. Existing authority needs selective service
+        UX refinement. Color bars, tester modal and speculative identifier hiding remain advisory/exploratory.
+        Any required approval is for a concrete design, not reauthorization of the directives.
+      status: pending
+      resolution_owner:
+      - ux
+      routing_status: awaiting_proposal_approval
+      depends_on:
+      - UX-DESIGN-004
+      ask_user: false
+    REC-DEC-010:
+      id: REC-DEC-010
+      source_findings:
+      - REC-020
+      product_owner_feedback:
+      - PO-FB-048
+      - PO-FB-049
+      domain: product
+      affected_requirement: CONFIG-05; STATE-01; AUDIT-01
+      blocking: true
+      resolution_category: SPECIALIST_RESOLUTION
+      question: How should the requested row-level Delete action map to existing retained-history
+        Archive lifecycle without silently inventing permanent deletion or misleading the operator?
+      reason: The feedback confirms a Delete action and confirmation, but existing authority
+        specifies archive/restore-to-Disabled and retained audit/history. First derive the smallest
+        faithful lifecycle contract; only a remaining material retention/destruction tradeoff
+        requires a Product Owner choice. Do not infer purge or erase audit from a label.
+      status: accepted
+      resolution_owner:
+      - prd
+      routing_status: resolved_pending_reconciliation_adoption
+      depends_on: []
+      ask_user: false
+      resolved_behavior: Service Delete uses existing archive lifecycle with explicit retention
+        and restore-to-Disabled explanation; no permanent purge inferred.
+      resolution_artifacts:
+      - workflow/definition/results/feedback3-product-resolution.yaml
+    UX-DESIGN-004:
+      id: UX-DESIGN-004
+      status: open
+      stage: ux
+      derived_from: REC-DEC-009
+      affected_requirement: CONFIG-01/02/05; POLICY-01/02/03; UX-01/02/03/04; MIGRATE-01
+      affected_artifact: workflow/definition/drafts/product-ux/web-console-feedback-003/index.md
+      blocking: true
+      question: Approve feedback-003-draft-1 experience direction and representative visual
+        appearance, or specify changes.
+      reason: The revised service configuration hierarchy and navigation require explicit visual-direction
+        approval under product-ux; earlier approval covered UX3.
+      options:
+      - Approve proposed direction and appearance
+      - Request changes before approval
+      resolution_category: PRODUCT_DECISION
+      resolution_owner: user
+      routing_status: asked
+      depends_on: []
+      ask_user: true
+      proposal_revisions:
+      - path: workflow/definition/drafts/product-ux/web-console-feedback-003/access.html
+        revision: sha256:2fca9dfe7d01bff6f9e332d5377e3cd3a263df1a4ce728a2dba40b6355d4caaa
+      - path: workflow/definition/drafts/product-ux/web-console-feedback-003/advanced.html
+        revision: sha256:a7ba0cf076ba534bb5cc89b2135ac2a9f154553e223ea86b75198a3458045d56
+      - path: workflow/definition/drafts/product-ux/web-console-feedback-003/authentication-desktop.png
+        revision: sha256:2a768226fe2f3a9bc16b1ff1d075205e724e3dba9eaae085e2dccad8790acf6c
+      - path: workflow/definition/drafts/product-ux/web-console-feedback-003/authentication-narrow.png
+        revision: sha256:c5f906859a1bd14e5b04ab57584236ca930d427cd0e123401e262e89ab4daf2c
+      - path: workflow/definition/drafts/product-ux/web-console-feedback-003/authentication.html
+        revision: sha256:cb43ac3091c6e87345d7c57f7d77054b1b878a2079452f7a40c1ded1d1e8816b
+      - path: workflow/definition/drafts/product-ux/web-console-feedback-003/clear-dialog.png
+        revision: sha256:8dd879a51113b26e791319207b7170cca0dff495bc0e9db1300f618ea7c1327b
+      - path: workflow/definition/drafts/product-ux/web-console-feedback-003/create-desktop.png
+        revision: sha256:0d065d6b1cf8932f8a7dfbdbf162abf84805042dfbb36d61a16409e43fb03303
+      - path: workflow/definition/drafts/product-ux/web-console-feedback-003/create-narrow.png
+        revision: sha256:a625844084afd66e45102a877dd353955c1bf2c3a82935c4597c41af291074e6
+      - path: workflow/definition/drafts/product-ux/web-console-feedback-003/create.html
+        revision: sha256:c10ac93657bddd031692b89b7638625ee7115663e969a8d45e3cdeae6a072faf
+      - path: workflow/definition/drafts/product-ux/web-console-feedback-003/design-contract.md
+        revision: sha256:58912bc6fdaa7be64cb57be6998450c4436ca35a34d52bb624a0ef5798e7e381
+      - path: workflow/definition/drafts/product-ux/web-console-feedback-003/destination-options.html
+        revision: sha256:5434c9994bc76229cbc0a499963019d8ddb4af68ab2f5b1043cef6f515ed0390
+      - path: workflow/definition/drafts/product-ux/web-console-feedback-003/destinations-desktop.png
+        revision: sha256:f456eccb47caf5f7dc3e53ef29b8303aac0eac51f7bf190d6a8fe1c8475078f1
+      - path: workflow/definition/drafts/product-ux/web-console-feedback-003/destinations-narrow.png
+        revision: sha256:4ac958db88e62cb8afd6de7f3c2344cf828089783aed7bddf83822f6aa65e00c
+      - path: workflow/definition/drafts/product-ux/web-console-feedback-003/destinations.html
+        revision: sha256:e497597f48cd5e3bcb07e14391717b1109ef81336577f38adaf3f631511fce84
+      - path: workflow/definition/drafts/product-ux/web-console-feedback-003/details.html
+        revision: sha256:96f10bd2dd20bb7289ea8e2354b9d0ac0cd72f772ef1b0e38796a462e970f8f0
+      - path: workflow/definition/drafts/product-ux/web-console-feedback-003/detection.html
+        revision: sha256:2a52416c9b5a0f51347c3df0d89bd044a3a1cbac7d749270e8040f82ea5bbece
+      - path: workflow/definition/drafts/product-ux/web-console-feedback-003/experience-brief.yaml
+        revision: sha256:884a94552be4077add3c54ad4d559a0d6e5d53c3c7829d5890e033dc91d66aab
+      - path: workflow/definition/drafts/product-ux/web-console-feedback-003/import-recovery-desktop.png
+        revision: sha256:42a1fbfcb127bb431d7feb3c0f84642cbab2a2a2f4c132977af1107026cd8938
+      - path: workflow/definition/drafts/product-ux/web-console-feedback-003/import-recovery-narrow.png
+        revision: sha256:d9843f1637ad38206b7be942f682c4d7393dc1d14d88be4f0db79478b18420ac
+      - path: workflow/definition/drafts/product-ux/web-console-feedback-003/import-recovery.html
+        revision: sha256:60164ee50351fb072738fb023a4feb4937764deb6174d198bfec7f7651c627ce
+      - path: workflow/definition/drafts/product-ux/web-console-feedback-003/index.md
+        revision: sha256:8a0b44e651e80eb124475c72575b15bd536068714f18b73da9d8966cde463cb6
+      - path: workflow/definition/drafts/product-ux/web-console-feedback-003/overview-desktop.png
+        revision: sha256:2b1e0028d2d900115d0be8b9fc245c70ed1874fe93e3b4aaab9188b3eebf370c
+      - path: workflow/definition/drafts/product-ux/web-console-feedback-003/overview-narrow.png
+        revision: sha256:c485be9194ffa402e9bfdaf4c48471a39811fc45d669f678d18040cb6d13b635
+      - path: workflow/definition/drafts/product-ux/web-console-feedback-003/overview.html
+        revision: sha256:aa996a619a55a70b045339a8493639ff9bc9768301f2e36195920d7ce9d8e931
+      - path: workflow/definition/drafts/product-ux/web-console-feedback-003/policy-desktop.png
+        revision: sha256:6726143cff615118463c83504d334acb801efc91951dd6be1273d3509291c633
+      - path: workflow/definition/drafts/product-ux/web-console-feedback-003/policy-narrow.png
+        revision: sha256:05bdb549aa0de16c3e72b762fcbe5288e715863bb189f9a926da96020d122582
+      - path: workflow/definition/drafts/product-ux/web-console-feedback-003/policy.html
+        revision: sha256:10414461a628e1a7f1b350c31be563ea85dbe47b14c9f880137bb08b5e5f49e1
+      - path: workflow/definition/drafts/product-ux/web-console-feedback-003/render-checks.json
+        revision: sha256:be68de04473cb6a2134fae89577ca3242ccd26a3f3c887cd7790b871b21187ea
+      - path: workflow/definition/drafts/product-ux/web-console-feedback-003/render-concepts.mjs
+        revision: sha256:7429c2aacd434dd9b493cf6ce5eac949823fc3dc8fa70fb0952d2ba914de7256
+      - path: workflow/definition/drafts/product-ux/web-console-feedback-003/replace-dialog.png
+        revision: sha256:e44c825c7e9225767409aa11e1f9669bf327d05ec6d49a4093af2bb8988a3c37
+      - path: workflow/definition/drafts/product-ux/web-console-feedback-003/research.md
+        revision: sha256:083c93e8da761489cebf686841c071a620f88fb9ce7d5b242276f2b3165327ad
+      - path: workflow/definition/drafts/product-ux/web-console-feedback-003/review.html
+        revision: sha256:a84cd0eaefac24d6425529a1d34112b9a2eb7601332e6a024bf5c39db563c576
+      - path: workflow/definition/drafts/product-ux/web-console-feedback-003/rule-dialog.png
+        revision: sha256:cc8226b21762cf5fd1401010a63f3cdecda1b42725bde8bf3ea8a8f34640d571
+      - path: workflow/definition/drafts/product-ux/web-console-feedback-003/services-desktop.png
+        revision: sha256:850d6d4e6dd422cd57a842adbeb0f489d55881d4bec73022e967e874116c8342
+      - path: workflow/definition/drafts/product-ux/web-console-feedback-003/services-narrow.png
+        revision: sha256:31c7d7f7881c4ccbf23956f4329e2010a5e4b2cf75511cad921e800545ec495d
+      - path: workflow/definition/drafts/product-ux/web-console-feedback-003/services.html
+        revision: sha256:3265bfef2a354de761436d0189165327006b8fc588ebf4fcde033f267099f59a
+      - path: workflow/definition/drafts/product-ux/web-console-feedback-003/styles.css
+        revision: sha256:1de78d96aee168f9d0a356a45bef9fbb7ae16a9c088343fdf0a24ff57663596d
+  ready:
+  - UX-DESIGN-004
 accepted_risks:
 - id: SEC-DEF-001
   summary: Trusted destination authors and best-effort response scanning are not universal credential
@@ -1224,36 +1484,57 @@ transaction_history:
   - workflow/definition/results/feedback2-ux-resolution.yaml
   - workflow/definition/drafts/product-ux/web-console-feedback-002/
   - evidence/ux-acceptance/secretsauce-mcp/feedback-002-service-overlap/
+- parent_commit: 65c1d45ba19f8dbcfca161bddf8c415f04c40d26
+  repository_commit: 653ac14f771dc1da7d1d650c577ff439e9b99bce
+  pre_existing_dirty_paths:
+  - test-results/
+  owned_paths:
+  - AGENTS.md
+  - docs/web-console-prd-coverage.md
+  - docs/web-console-prd-user-journey-audit.md
+  - docs/web-console-prd.md
+  - product/architecture/web-console-architecture-review.md
+  - product/security/web-console-security-review.md
+  - product/ux/00-overview.md
+  - product/ux/01-information-architecture.md
+  - product/ux/02-interaction-patterns.md
+  - product/ux/03-responsive-and-platform.md
+  - product/ux/04-visual-system.md
+  - product/ux/05-accessibility.md
+  - product/ux/06-feature-exceptions.md
+  - product/ux/07-acceptance-checklist.md
+  - product/ux/experience-brief.yaml
+  - product/ux/manifest.yaml
+  - workflow/definition/decisions.md
+  - workflow/definition/definition-package.yaml
+  - workflow/definition/open-questions.md
+  - workflow/definition/results/architecture.yaml
+  - workflow/definition/results/coverage.yaml
+  - workflow/definition/results/journeys.yaml
+  - workflow/definition/results/prd-review.md
+  - workflow/definition/results/prd.yaml
+  - workflow/definition/results/security.yaml
+  - workflow/definition/results/ux.yaml
+  - workflow/definition/state.yaml
 last_reconciliation:
-  id: REC-RUN-006
-  path: workflow/reconciliation/REC-RUN-006/reconciliation-result.yaml
+  id: REC-RUN-007
+  path: workflow/reconciliation/REC-RUN-007/reconciliation-result.yaml
   schema_version: 1
-  result_revision: sha256:66907c2a791c0c794e600f3b3b1dd1d9167ebe7ea804fe24d759f0d309edeb93
-  repository_commit: a57c1ca28615a36770cc1446c4cb71fe21ae5f48
-  status: RESOLVED
-  adoption_status: complete
-  definition_action: TARGETED_REVALIDATION
-  change_ids: &id004
-  - REC-IMPACT-006
-  remediation_ids: &id005
-  - REC-RM-007
-  - REC-RM-008
-  - REC-RM-009
-  - REC-RM-010
-  - REC-RM-011
-  - REC-RM-012
-  - REC-RM-013
-  - REC-RM-014
+  result_revision: sha256:2ff9aa27c26362e5b9de490ef201279bbf341e22f3162ddd86ec04f885b02ea3
+  repository_commit: abfa50b2cfdc4ad9762274df860353a6a40a66a5
+  status: PARTIALLY_RESOLVED
+  adoption_status: in_progress
+  definition_action: RESOLUTION_REQUIRED
+  change_ids:
+  - REC-IMPACT-007
   implementation_required: true
-  implementation_ready: true
-  delivery_planning_ready: true
-  readiness_basis: REC006 resolved remediation; all six definition stages validate current authoritative
-    revisions. Root-owned sources committed in this transaction.
+  implementation_ready: false
+  delivery_planning_ready: false
   definition_package:
-    status: current
+    status: historical_pending_revalidation
     path: workflow/definition/definition-package.yaml
     revision: sha256:82014f66c15c3e7246144c9b44b95c70c7a22aba863d1e8bbd6887ca6afed506
-feedback_source: workflow/feedback/PO-FEEDBACK-2026-10-11-002/feedback.yaml
+feedback_source: workflow/feedback/PO-FEEDBACK-2026-10-17-001/feedback.yaml
 reconciliation_history:
 - id: REC-RUN-001
   path: workflow/reconciliation/REC-RUN-001/reconciliation-result.yaml
@@ -1317,9 +1598,9 @@ reconciliation_history:
     status: current
     path: workflow/definition/definition-package.yaml
     revision: sha256:f60ab3efcfca9d95991c023058ee81e61838121275ec482b549fed55a87618f9
-  readiness_basis: REC-RUN-003 is resolved and implementation-ready; its sole remaining gate, targeted
-    architecture/security definition revalidation, passed. Earlier REC-RUN-001/002 authority changes
-    and approved UX-2 now have a current complete package.
+  readiness_basis: REC-RUN-003 is resolved and implementation-ready; its sole remaining gate,
+    targeted architecture/security definition revalidation, passed. Earlier REC-RUN-001/002
+    authority changes and approved UX-2 now have a current complete package.
 - id: REC-RUN-004
   path: workflow/reconciliation/REC-RUN-004/reconciliation-result.yaml
   schema_version: 1
@@ -1346,44 +1627,105 @@ reconciliation_history:
   implementation_required: true
   implementation_ready: false
   delivery_planning_ready: false
-checkpoint:
-  reason: Approved UX3 and all second feedback definition checks complete; exact current stage inputs
-    pass.
-  product_code_changed: false
-  delivery_planning_ready: true
-next_actions:
-- Run delivery-planning-orchestrator in CHANGE_PLAN mode using this package and REC006; preserve
-  mandatory mockup visual-fidelity acceptance.
-next_handoff:
-  next: delivery-planning-orchestrator
-  mode: CHANGE_PLAN
-  ready: true
-  primary_input: workflow/definition/definition-package.yaml
-  definition_package_revision: sha256:82014f66c15c3e7246144c9b44b95c70c7a22aba863d1e8bbd6887ca6afed506
-  repository_commit: 653ac14f771dc1da7d1d650c577ff439e9b99bce
-  reconciliation:
-    id: REC-RUN-006
-    path: workflow/reconciliation/REC-RUN-006/reconciliation-result.yaml
-    result_revision: sha256:66907c2a791c0c794e600f3b3b1dd1d9167ebe7ea804fe24d759f0d309edeb93
-    repository_commit: a57c1ca28615a36770cc1446c4cb71fe21ae5f48
-    change_ids: *id004
-    remediation_ids: *id005
+- id: REC-RUN-006
+  path: workflow/reconciliation/REC-RUN-006/reconciliation-result.yaml
+  schema_version: 1
+  result_revision: sha256:66907c2a791c0c794e600f3b3b1dd1d9167ebe7ea804fe24d759f0d309edeb93
+  repository_commit: a57c1ca28615a36770cc1446c4cb71fe21ae5f48
+  status: RESOLVED
+  adoption_status: complete
+  definition_action: TARGETED_REVALIDATION
+  change_ids:
+  - REC-IMPACT-006
+  remediation_ids:
+  - REC-RM-007
+  - REC-RM-008
+  - REC-RM-009
+  - REC-RM-010
+  - REC-RM-011
+  - REC-RM-012
+  - REC-RM-013
+  - REC-RM-014
   implementation_required: true
   implementation_ready: true
   delivery_planning_ready: true
-  readiness_basis: All six definition stages pass. REC006 pending definition validation/source-closeout
-    gate satisfied by this transaction.
-  visual_acceptance:
-    requirements:
-    - UX-V05
-    - UX-C42
-    reference: workflow/definition/drafts/product-ux/web-console-feedback-002/index.md
-    required: Compare real implementation screenshots with approved mockups at matching states/viewports;
-      fix material differences or obtain explicit scoped acceptance. Functional tests alone do not
-      pass visual acceptance.
+  readiness_basis: REC006 resolved remediation; all six definition stages validate current authoritative
+    revisions. Root-owned sources committed in this transaction.
+  definition_package:
+    status: current
+    path: workflow/definition/definition-package.yaml
+    revision: sha256:82014f66c15c3e7246144c9b44b95c70c7a22aba863d1e8bbd6887ca6afed506
+checkpoint:
+  reason: Credential architecture/security and service Delete lifecycle resolved; concrete feedback-003
+    UX proposal awaits UX-DESIGN-004 approval.
+  product_code_changed: false
+  delivery_planning_ready: false
+next_actions:
+- Obtain UX-DESIGN-004 approval or refine proposal from feedback.
+- On approval, synthesize canonical UX and converge accepted specialist contracts through product
+  reconciliation.
+- Targeted PRD/coverage/journey/UX/architecture/security validation, then automatically run
+  delivery-planning-orchestrator and milestone-delivery-orchestrator under existing user authorization
+  if no input remains.
+next_handoff:
+  next: product-definition-orchestrator
+  ready: false
+  reason: Awaiting UX-DESIGN-004 representative design approval.
+  resume_point: workflow/definition/drafts/product-ux/web-console-feedback-003/index.md
+  authorized_downstream:
+  - delivery-planning-orchestrator
+  - milestone-delivery-orchestrator
 evidence_collection:
   REC-009:
     specialist: feedback2_overlap_evidence
     status: complete
     path: evidence/ux-acceptance/secretsauce-mcp/feedback-002-service-overlap/
     result: evidence/ux-acceptance/secretsauce-mcp/feedback-002-service-overlap/manifest.yaml
+active_feedback_adoption:
+  feedback_path: workflow/feedback/PO-FEEDBACK-2026-10-17-001/feedback.yaml
+  status: awaiting_visual_approval
+  specialist: reconcile_services
+  requested_transitions:
+  - product-definition-orchestrator
+  - delivery-planning-orchestrator
+  - milestone-delivery-orchestrator
+  transition_condition: Proceed automatically when no user input or approval gate remains.
+  parent_commit: 4703c56c17020bc04f8a58c90c1ae0f23ca3886e
+  pre_existing_dirty_paths:
+  - test-results/
+  definition_state_preservation: Existing package and validated stages retained pending canonical
+    reconciliation impact.
+  parallel_proposal:
+    specialist: service_ux_proposal
+    status: complete_awaiting_approval
+    scope: Draft service setup UX proposal using confirmed feedback; no canonical UX changes
+      before reconciliation and any required approval.
+    result_path: workflow/definition/results/feedback3-ux-proposal.yaml
+    depends_on: []
+  specialist_resolutions:
+  - id: REC-DEC-008
+    resolution_category: SPECIALIST_RESOLUTION
+    resolution_owner:
+    - architecture
+    - security
+    routing_status: resolved_pending_reconciliation_adoption
+    depends_on: []
+    result_paths:
+    - workflow/definition/results/feedback3-architecture-resolution.yaml
+    - workflow/definition/results/feedback3-security-resolution.yaml
+  - id: REC-DEC-009
+    resolution_category: SPECIALIST_RESOLUTION
+    resolution_owner:
+    - ux
+    routing_status: awaiting_proposal_approval
+    depends_on: []
+    result_paths:
+    - workflow/definition/results/feedback3-ux-proposal.yaml
+  - id: REC-DEC-010
+    resolution_category: SPECIALIST_RESOLUTION
+    resolution_owner:
+    - prd
+    routing_status: resolved_pending_reconciliation_adoption
+    depends_on: []
+    result_paths:
+    - workflow/definition/results/feedback3-product-resolution.yaml

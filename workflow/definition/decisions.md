@@ -752,3 +752,274 @@ resolution: approved, this time around, try to make sure the actual UX matches t
 approval_scope: feedback-002-draft-1 experience direction and general visual appearance
 approved_proposal_revisions: *id001
 ```
+
+## Service setup feedback — REC-RUN-007
+
+```yaml
+id: REC-DEC-008
+source_findings:
+- REC-022
+- REC-024
+product_owner_feedback:
+- PO-FB-060
+- PO-FB-063
+- PO-FB-064
+- PO-FB-065
+- PO-FB-066
+- PO-FB-067
+domain: architecture
+affected_requirement: CONFIG-02/03/04; STATE-01/02/03; AUDIT-01
+blocking: true
+resolution_category: SPECIALIST_RESOLUTION
+question: What safe durable credential state and attribution contract realizes clear-value/retain-key
+  deletion and last-changed-by display?
+reason: The Product Owner has settled clearing an in-use value and retaining its key. Existing
+  authority blocks referenced deletion; current storage conflates value presence with metadata.
+  Derive current authorization/version/dependency checks, immediate reference/admission effects,
+  failure/restart, restore/history, missing-value behavior and honest legacy actor attribution
+  without reopening that intent. Security and architecture boundaries both need resolution.
+status: accepted
+resolution_owner:
+- architecture
+- security
+routing_status: resolved_pending_reconciliation_adoption
+depends_on: []
+ask_user: false
+resolved_behavior: Referenced service credential Delete clears only value, retains key and exact
+  references, reports consequence, and follows STATE-09/SECRES-08 for durable failure, execution
+  fencing, recovery and actor provenance. SMTP remains separate.
+resolution_artifacts:
+- product/architecture/web-console-state-contract.md
+- product/security/web-console-security-contract.md
+- workflow/definition/results/feedback3-architecture-resolution.yaml
+- workflow/definition/results/feedback3-security-resolution.yaml
+```
+
+```yaml
+id: REC-DEC-009
+source_findings:
+- REC-020
+- REC-021
+- REC-023
+- REC-025
+- REC-026
+- REC-027
+- REC-028
+- REC-029
+- REC-030
+- REC-031
+- REC-034
+product_owner_feedback:
+- PO-FB-043
+- PO-FB-044
+- PO-FB-045
+- PO-FB-046
+- PO-FB-047
+- PO-FB-048
+- PO-FB-049
+- PO-FB-050
+- PO-FB-051
+- PO-FB-052
+- PO-FB-053
+- PO-FB-054
+- PO-FB-055
+- PO-FB-056
+- PO-FB-057
+- PO-FB-058
+- PO-FB-059
+- PO-FB-061
+- PO-FB-062
+- PO-FB-096
+- PO-FB-097
+- PO-FB-098
+- PO-FB-068
+- PO-FB-101
+- PO-FB-071
+- PO-FB-072
+- PO-FB-073
+- PO-FB-074
+- PO-FB-075
+- PO-FB-076
+- PO-FB-077
+- PO-FB-087
+- PO-FB-124
+- PO-FB-078
+- PO-FB-079
+- PO-FB-080
+- PO-FB-089
+- PO-FB-090
+- PO-FB-091
+- PO-FB-092
+- PO-FB-093
+- PO-FB-094
+- PO-FB-095
+- PO-FB-102
+- PO-FB-103
+- PO-FB-105
+- PO-FB-082
+- PO-FB-083
+- PO-FB-084
+- PO-FB-085
+- PO-FB-086
+- PO-FB-099
+- PO-FB-100
+- PO-FB-104
+- PO-FB-106
+- PO-FB-107
+- PO-FB-108
+- PO-FB-109
+- PO-FB-110
+- PO-FB-117
+- PO-FB-118
+- PO-FB-111
+- PO-FB-112
+- PO-FB-115
+- PO-FB-120
+- PO-FB-123
+domain: ux
+affected_requirement: CONFIG-01/02/05; POLICY-01/02/03; UX-01/02/03/04; MIGRATE-01
+blocking: true
+resolution_category: SPECIALIST_RESOLUTION
+question: What coherent researched service configuration design realizes the confirmed directives
+  while preserving existing capabilities, current versus draft state and safe navigation?
+reason: Individual directives settle interaction outcomes but not the full layout, responsive
+  states, composition or approved mockups. Existing authority needs selective service UX refinement.
+  Color bars, tester modal and speculative identifier hiding remain advisory/exploratory. Any
+  required approval is for a concrete design, not reauthorization of the directives.
+status: pending
+resolution_owner:
+- ux
+routing_status: awaiting_proposal_approval
+depends_on:
+- UX-DESIGN-004
+ask_user: false
+```
+
+```yaml
+id: REC-DEC-010
+source_findings:
+- REC-020
+product_owner_feedback:
+- PO-FB-048
+- PO-FB-049
+domain: product
+affected_requirement: CONFIG-05; STATE-01; AUDIT-01
+blocking: true
+resolution_category: SPECIALIST_RESOLUTION
+question: How should the requested row-level Delete action map to existing retained-history
+  Archive lifecycle without silently inventing permanent deletion or misleading the operator?
+reason: The feedback confirms a Delete action and confirmation, but existing authority specifies
+  archive/restore-to-Disabled and retained audit/history. First derive the smallest faithful
+  lifecycle contract; only a remaining material retention/destruction tradeoff requires a Product
+  Owner choice. Do not infer purge or erase audit from a label.
+status: accepted
+resolution_owner:
+- prd
+routing_status: resolved_pending_reconciliation_adoption
+depends_on: []
+ask_user: false
+resolved_behavior: Service Delete uses existing archive lifecycle with explicit retention and
+  restore-to-Disabled explanation; no permanent purge inferred.
+resolution_artifacts:
+- workflow/definition/results/feedback3-product-resolution.yaml
+```
+
+
+## Service UX proposal review
+
+```yaml
+id: UX-DESIGN-004
+status: pending
+stage: ux
+derived_from: REC-DEC-009
+affected_requirement: CONFIG-01/02/05; POLICY-01/02/03; UX-01/02/03/04; MIGRATE-01
+affected_artifact: workflow/definition/drafts/product-ux/web-console-feedback-003/index.md
+blocking: true
+question: Approve feedback-003-draft-1 experience direction and representative visual appearance,
+  or specify changes.
+reason: The revised service configuration hierarchy and navigation require explicit visual-direction
+  approval under product-ux; earlier approval covered UX3.
+options:
+- Approve proposed direction and appearance
+- Request changes before approval
+resolution_category: PRODUCT_DECISION
+resolution_owner: user
+routing_status: asked
+depends_on: []
+ask_user: true
+proposal_revisions:
+- path: workflow/definition/drafts/product-ux/web-console-feedback-003/access.html
+  revision: sha256:2fca9dfe7d01bff6f9e332d5377e3cd3a263df1a4ce728a2dba40b6355d4caaa
+- path: workflow/definition/drafts/product-ux/web-console-feedback-003/advanced.html
+  revision: sha256:a7ba0cf076ba534bb5cc89b2135ac2a9f154553e223ea86b75198a3458045d56
+- path: workflow/definition/drafts/product-ux/web-console-feedback-003/authentication-desktop.png
+  revision: sha256:2a768226fe2f3a9bc16b1ff1d075205e724e3dba9eaae085e2dccad8790acf6c
+- path: workflow/definition/drafts/product-ux/web-console-feedback-003/authentication-narrow.png
+  revision: sha256:c5f906859a1bd14e5b04ab57584236ca930d427cd0e123401e262e89ab4daf2c
+- path: workflow/definition/drafts/product-ux/web-console-feedback-003/authentication.html
+  revision: sha256:cb43ac3091c6e87345d7c57f7d77054b1b878a2079452f7a40c1ded1d1e8816b
+- path: workflow/definition/drafts/product-ux/web-console-feedback-003/clear-dialog.png
+  revision: sha256:8dd879a51113b26e791319207b7170cca0dff495bc0e9db1300f618ea7c1327b
+- path: workflow/definition/drafts/product-ux/web-console-feedback-003/create-desktop.png
+  revision: sha256:0d065d6b1cf8932f8a7dfbdbf162abf84805042dfbb36d61a16409e43fb03303
+- path: workflow/definition/drafts/product-ux/web-console-feedback-003/create-narrow.png
+  revision: sha256:a625844084afd66e45102a877dd353955c1bf2c3a82935c4597c41af291074e6
+- path: workflow/definition/drafts/product-ux/web-console-feedback-003/create.html
+  revision: sha256:c10ac93657bddd031692b89b7638625ee7115663e969a8d45e3cdeae6a072faf
+- path: workflow/definition/drafts/product-ux/web-console-feedback-003/design-contract.md
+  revision: sha256:58912bc6fdaa7be64cb57be6998450c4436ca35a34d52bb624a0ef5798e7e381
+- path: workflow/definition/drafts/product-ux/web-console-feedback-003/destination-options.html
+  revision: sha256:5434c9994bc76229cbc0a499963019d8ddb4af68ab2f5b1043cef6f515ed0390
+- path: workflow/definition/drafts/product-ux/web-console-feedback-003/destinations-desktop.png
+  revision: sha256:f456eccb47caf5f7dc3e53ef29b8303aac0eac51f7bf190d6a8fe1c8475078f1
+- path: workflow/definition/drafts/product-ux/web-console-feedback-003/destinations-narrow.png
+  revision: sha256:4ac958db88e62cb8afd6de7f3c2344cf828089783aed7bddf83822f6aa65e00c
+- path: workflow/definition/drafts/product-ux/web-console-feedback-003/destinations.html
+  revision: sha256:e497597f48cd5e3bcb07e14391717b1109ef81336577f38adaf3f631511fce84
+- path: workflow/definition/drafts/product-ux/web-console-feedback-003/details.html
+  revision: sha256:96f10bd2dd20bb7289ea8e2354b9d0ac0cd72f772ef1b0e38796a462e970f8f0
+- path: workflow/definition/drafts/product-ux/web-console-feedback-003/detection.html
+  revision: sha256:2a52416c9b5a0f51347c3df0d89bd044a3a1cbac7d749270e8040f82ea5bbece
+- path: workflow/definition/drafts/product-ux/web-console-feedback-003/experience-brief.yaml
+  revision: sha256:884a94552be4077add3c54ad4d559a0d6e5d53c3c7829d5890e033dc91d66aab
+- path: workflow/definition/drafts/product-ux/web-console-feedback-003/import-recovery-desktop.png
+  revision: sha256:42a1fbfcb127bb431d7feb3c0f84642cbab2a2a2f4c132977af1107026cd8938
+- path: workflow/definition/drafts/product-ux/web-console-feedback-003/import-recovery-narrow.png
+  revision: sha256:d9843f1637ad38206b7be942f682c4d7393dc1d14d88be4f0db79478b18420ac
+- path: workflow/definition/drafts/product-ux/web-console-feedback-003/import-recovery.html
+  revision: sha256:60164ee50351fb072738fb023a4feb4937764deb6174d198bfec7f7651c627ce
+- path: workflow/definition/drafts/product-ux/web-console-feedback-003/index.md
+  revision: sha256:8a0b44e651e80eb124475c72575b15bd536068714f18b73da9d8966cde463cb6
+- path: workflow/definition/drafts/product-ux/web-console-feedback-003/overview-desktop.png
+  revision: sha256:2b1e0028d2d900115d0be8b9fc245c70ed1874fe93e3b4aaab9188b3eebf370c
+- path: workflow/definition/drafts/product-ux/web-console-feedback-003/overview-narrow.png
+  revision: sha256:c485be9194ffa402e9bfdaf4c48471a39811fc45d669f678d18040cb6d13b635
+- path: workflow/definition/drafts/product-ux/web-console-feedback-003/overview.html
+  revision: sha256:aa996a619a55a70b045339a8493639ff9bc9768301f2e36195920d7ce9d8e931
+- path: workflow/definition/drafts/product-ux/web-console-feedback-003/policy-desktop.png
+  revision: sha256:6726143cff615118463c83504d334acb801efc91951dd6be1273d3509291c633
+- path: workflow/definition/drafts/product-ux/web-console-feedback-003/policy-narrow.png
+  revision: sha256:05bdb549aa0de16c3e72b762fcbe5288e715863bb189f9a926da96020d122582
+- path: workflow/definition/drafts/product-ux/web-console-feedback-003/policy.html
+  revision: sha256:10414461a628e1a7f1b350c31be563ea85dbe47b14c9f880137bb08b5e5f49e1
+- path: workflow/definition/drafts/product-ux/web-console-feedback-003/render-checks.json
+  revision: sha256:be68de04473cb6a2134fae89577ca3242ccd26a3f3c887cd7790b871b21187ea
+- path: workflow/definition/drafts/product-ux/web-console-feedback-003/render-concepts.mjs
+  revision: sha256:7429c2aacd434dd9b493cf6ce5eac949823fc3dc8fa70fb0952d2ba914de7256
+- path: workflow/definition/drafts/product-ux/web-console-feedback-003/replace-dialog.png
+  revision: sha256:e44c825c7e9225767409aa11e1f9669bf327d05ec6d49a4093af2bb8988a3c37
+- path: workflow/definition/drafts/product-ux/web-console-feedback-003/research.md
+  revision: sha256:083c93e8da761489cebf686841c071a620f88fb9ce7d5b242276f2b3165327ad
+- path: workflow/definition/drafts/product-ux/web-console-feedback-003/review.html
+  revision: sha256:a84cd0eaefac24d6425529a1d34112b9a2eb7601332e6a024bf5c39db563c576
+- path: workflow/definition/drafts/product-ux/web-console-feedback-003/rule-dialog.png
+  revision: sha256:cc8226b21762cf5fd1401010a63f3cdecda1b42725bde8bf3ea8a8f34640d571
+- path: workflow/definition/drafts/product-ux/web-console-feedback-003/services-desktop.png
+  revision: sha256:850d6d4e6dd422cd57a842adbeb0f489d55881d4bec73022e967e874116c8342
+- path: workflow/definition/drafts/product-ux/web-console-feedback-003/services-narrow.png
+  revision: sha256:31c7d7f7881c4ccbf23956f4329e2010a5e4b2cf75511cad921e800545ec495d
+- path: workflow/definition/drafts/product-ux/web-console-feedback-003/services.html
+  revision: sha256:3265bfef2a354de761436d0189165327006b8fc588ebf4fcde033f267099f59a
+- path: workflow/definition/drafts/product-ux/web-console-feedback-003/styles.css
+  revision: sha256:1de78d96aee168f9d0a356a45bef9fbb7ae16a9c088343fdf0a24ff57663596d
+```

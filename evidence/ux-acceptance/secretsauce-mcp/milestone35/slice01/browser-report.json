@@ -1,0 +1,6 @@
+{
+  "result": "PASS",
+  "checks": [
+    "Guided saved draft reaches Changes; keyboard tabs are read-only and preserve exact bound server review; returning to edit does not dirty."
+  ]
+}

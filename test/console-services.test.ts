@@ -86,3 +86,12 @@ it('binds lifecycle confirmations to current dependencies and retains archive/re
  f.manager.lifecycle(f.session,{...input,action:'unarchive',fingerprint:f.manager.fingerprint('baseline')});expect(f.manager.state.services.baseline!.lifecycle).toBe('Disabled');expect(f.cfg.services.baseline).toBeUndefined();expect(()=>f.manager.lifecycle(f.session,{...input,action:'enable'})).toThrow('Invalid');
  expect(()=>f.manager.review(f.session,{id:'baseline'})).toThrow('Stale');expect(f.store.journal.entries().some(e=>e.action==='service.archive')).toBe(true);
 }finally{f.close();}});
+
+it('preserves exact destination references and inheritance through authorized drafts and requires current exception review',()=>{const f=managedFixture();try{
+ const service={...draft(),tls:{verify:false},destinations:[{name:'_legacy/primary:v1',base_url:'https://api.example.org/base',schemes:['https','http'],ports:[443,8443],hosts:[{exact:'api.example.org'},{suffix:'.example.org'},{regex:'^api[0-9]+\\.example\\.org$'}]},{id:'constructor',base_url:'http://internal.example.org',tls:{verify:true}}]};
+ f.store.state.users[0]!.role='Administrator';save(f,service);expect(f.manager.state.services.new!.draft!.content.destinations).toEqual(service.destinations);expect(f.cfg.services.new).toBeUndefined();
+ const review=f.manager.review(f.session,{id:'new'});expect(review.exceptions.length).toBeGreaterThan(0);expect(()=>f.manager.apply(f.session,{id:'new',review:review.review,acknowledgments:[]})).toThrow('Acknowledge');
+ f.store.state.users[0]!.role='Auditor';expect(f.manager.detail(f.session,'new').draft!.content.destinations).toEqual(service.destinations);expect(()=>save(f,service)).toThrow('Forbidden');f.store.state.users[0]!.role='Member';expect(()=>f.manager.detail(f.session,'new')).toThrow('Forbidden');expect(()=>save(f,service)).toThrow('Forbidden');
+ f.store.state.users[0]!.role='Owner';apply(f);expect(f.cfg.services.new!.destinations[0]).toMatchObject({id:'_legacy/primary:v1',tls:{verify:false},tlsInherited:true});expect(f.cfg.services.new!.destinations[1]).toMatchObject({id:'constructor',tls:{verify:true},tlsInherited:false});
+ expect(()=>f.manager.save(f.session,{id:'new',base:0,generation:1,service})).toThrow('Stale');
+}finally{f.close();}});

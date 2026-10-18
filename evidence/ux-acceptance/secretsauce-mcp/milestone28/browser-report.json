@@ -1,0 +1,21 @@
+{
+  "result": "PASS",
+  "checks": [
+    "Visible TLS default; inherit/on/off effective scope updates. Focused selected options keep/cancel preserve work; invalid ports, regex and DNS suffix link to fields. Keyboard and return focus passed.",
+    "Exact/suffix/regex multiple matchers, legacy name reference, custom rule literal, ports and schemes survived options and global modes/save. HTTP and broad matching remain review-acknowledged capabilities; draft not activated.",
+    "Admitted save with lost response reports unknown and offers durable service inspection; never treats close/navigation as save success.",
+    "Saving through the leave guard includes selected destination work; no clone edits are silently lost.",
+    "Auditor retains read-only destination inspection; direct role/stale/malformed command checks covered by managed-service HTTP/domain tests."
+  ],
+  "inputs": {
+    "src/consoleServicePage.ts": "sha256:01f2a5eeaa785d7e31f2a92510d67c81c9cfd7cbc9b6162ebe10f0fb1e64900f",
+    "src/consolePresentation.ts": "sha256:f84c075b62ac7f6309a72fc519cef73daf038dacbb3cd01bdcc232944ea770e0",
+    "src/consolePage.ts": "sha256:a4112ece64fde68ab4efab8396bb62ba5f8382e27db31144f4257525125686ec",
+    "scripts/verify-console-destinations-browser.mjs": "sha256:866b2bdcee6f2d961b69466378762a11a18cda54dd6a10f155bdde4a35758a6c",
+    "workflow/definition/drafts/product-ux/web-console-feedback-003/destinations-desktop.png": "sha256:f456eccb47caf5f7dc3e53ef29b8303aac0eac51f7bf190d6a8fe1c8475078f1",
+    "workflow/definition/drafts/product-ux/web-console-feedback-003/destinations-narrow.png": "sha256:4ac958db88e62cb8afd6de7f3c2344cf828089783aed7bddf83822f6aa65e00c",
+    "workflow/definition/drafts/product-ux/web-console-feedback-003/destinations.html": "sha256:e497597f48cd5e3bcb07e14391717b1109ef81336577f38adaf3f631511fce84",
+    "workflow/definition/drafts/product-ux/web-console-feedback-003/destination-options.html": "sha256:5434c9994bc76229cbc0a499963019d8ddb4af68ab2f5b1043cef6f515ed0390",
+    "workflow/definition/drafts/product-ux/web-console-feedback-003/styles.css": "sha256:1de78d96aee168f9d0a356a45bef9fbb7ae16a9c088343fdf0a24ff57663596d"
+  }
+}

@@ -1,11 +1,11 @@
 # Advanced configuration and migration
 
-Forms and **Advanced editor (same draft)** edit one service object. Saving changes creates a draft; the current applied revision keeps running. Review shows exact current/proposed scope and security exceptions. A stale base, role, credential version, lifecycle or identity security generation requires fresh review. Credential values are separate immediate write-only actions.
+**Guided** and **Advanced** modes edit one complete service draft. Saving changes creates a draft; the current applied revision keeps running. Review shows exact current/proposed scope and security exceptions. A stale base, role, credential version, lifecycle or identity security generation requires fresh review. Credential values are separate immediate write-only actions.
 
 | Configuration capability | M13 placement / preservation | Evidence |
 | --- | --- | --- |
 | Service type, identifier, name, description, API documentation URL | Details, same-draft advanced editor; existing identifiers retained | console-services/config/migration tests, browser shared editor |
-| Multiple destination IDs/names, base URL, schemes, ports, exact/suffix/regex hosts | Destinations; named advanced disclosure; regex source retained | config/migration tests; M11 rendered destinations |
+| Multiple destination IDs/names, base URL, schemes, ports, exact/suffix/regex hosts | Destinations → selected server’s Advanced settings; exact references and regex source retained | config/migration tests; M11 rendered destinations |
 | Service TLS default, inherited/overridden destination TLS | Destinations; effective source and exceptions shown | config/runtime tests including actual self-signed HTTPS |
 | No downstream authentication; multiple credential identities; generic placement kind/name/prefix/suffix/header ownership | Authentication; immediate write-only values and metadata; advanced editor preserves all placement fields | console-services/runtime/migration tests; M11 rendered authentication |
 | Default policy, rule identifiers/effects/priorities/methods/hosts/paths/reasons | Access & policy; Edit rule; exact/prefix/regex guided path choice; advanced editor | policy/basic-policy/advanced/migration tests; M13 rendered tester/editor |
@@ -37,3 +37,11 @@ The service list shows lifecycle separately from saved draft changes and configu
 Owner and Administrator row actions require confirmation. Disable stops new requests and revokes references while keeping drafts; already-dispatched work may complete. Delete archives the service, retaining configuration, history and audit records. Use the Archived filter and Restore to return it as Disabled. Enable opens configuration for explicit review of current dependencies; it does not silently apply saved changes. Resolve the indicated mapping or configuration issue when Enable is unavailable.
 
 If a confirmation becomes stale or an action’s response is lost, refresh service state before trying again. A lost response is not proof that the change failed. Auditors have read-only service links; Members see only their permitted discovery, without administration controls.
+
+## Allowed servers and certificates
+
+In **Configuration → Destinations**, enter the servers and base paths that may receive requests and credentials. Exact matching allows one hostname; suffix matching includes the named DNS domain and its subdomains; regular expressions match hostname text. Broad matching is an explicit security exception reviewed before activation.
+
+**Verify HTTPS certificates by default** applies to every destination without an override. It checks server identity; disabling verification does not disable HTTPS encryption. Each server shows its effective setting and whether it comes from the service default or a destination override. HTTP is explicitly unencrypted and does not use certificates.
+
+A server’s **Advanced settings** opens only that destination. Connection settings retain schemes, ports, certificate override and the exact destination reference. Host matching retains multiple exact/suffix/regex literals. **Keep destination changes** returns them to the unsaved service draft; **Cancel** discards only this visit’s destination edits. Neither action saves or applies configuration. Use **Save draft**, then explicit **Review & apply** when ready. Invalid fields link to the needed correction. Existing imported `name`/`id` references remain unchanged unless deliberately edited; the MCP service reference is visible and copyable in Details.

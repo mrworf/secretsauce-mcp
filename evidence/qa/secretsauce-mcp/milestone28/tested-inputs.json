@@ -1,0 +1,15 @@
+{
+  "src/consoleServicePage.ts": "01f2a5eeaa785d7e31f2a92510d67c81c9cfd7cbc9b6162ebe10f0fb1e64900f",
+  "src/consolePresentation.ts": "f84c075b62ac7f6309a72fc519cef73daf038dacbb3cd01bdcc232944ea770e0",
+  "src/consolePage.ts": "a4112ece64fde68ab4efab8396bb62ba5f8382e27db31144f4257525125686ec",
+  "src/consoleServices.ts": "039df82e3752811addedc7bb572da25dfb445d2bb7e7720c9340633ce2ec78e8",
+  "src/config.ts": "1fb86cd20be29160e5dd1de12fcc97dfb57d6769672f3abd641727610da466c9",
+  "test/console-services.test.ts": "fefe9a3ee50dd73a238aa677cdfc8fb1035d7bb99ca13c58e0e87769f0eb4af0",
+  "test/console-services-http.test.ts": "898f64a66b1184aeb315bb833363270f052b515d1559eda110fb9498750f1ec3",
+  "scripts/verify-console-destinations-browser.mjs": "866b2bdcee6f2d961b69466378762a11a18cda54dd6a10f155bdde4a35758a6c",
+  "scripts/verify-console-focused-service-browser.mjs": "672b4ebb2fb7fe9f50da400903ed65976b7774fc101b8762545693974d5cf017",
+  "scripts/verify-console-friendly-forms-browser.mjs": "0d87ebad79be909372398ee87763801b18165523e0c03cc246944cf51e0aceb0",
+  "scripts/verify-console-services-browser.mjs": "d17b8bbbef3312847e37cd2762b9799ef84b591c225d7efb6439ce6d86ffbfc1",
+  "package.json": "885ec1afee9dfc4f1d5f8ec2986fdd7e41e4fb3c39ad789c2b6dde4eb58f9a2d",
+  "package-lock.json": "0b96e72aa34aa005030ce4fb83b86a6c584e0dfedb6eff10d33970676da3a9d2"
+}

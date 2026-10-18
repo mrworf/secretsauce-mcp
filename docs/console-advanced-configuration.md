@@ -51,3 +51,11 @@ A server’s **Advanced settings** opens only that destination. Connection setti
 Authentication keeps placement edits separate from values. Choose **Set value** or **Replace value** beside the key to enter a new write-only value in a dialog. **Save value** takes effect immediately; **Cancel** or Escape discards only the temporary entry. Saving the first value for a new service also saves its configuration as an inactive draft. Continuing through setup never requires a replacement value. Availability, version, last successful actor and time remain beside the key.
 
 If a command result is unknown, check current state before reopening the value dialog. Re-enter and confirm only after reviewing current metadata; closing the dialog is not proof that a value changed. Existing unsaved placement edits remain. Delete confirms whether it clears a referenced value while retaining the key or removes an unreferenced key.
+
+## Request rules
+
+In **Configuration → Access & policy**, the list shows the effective evaluation order: higher priority first, Deny before Allow at a tie, then the saved order of rules with the same effect. **Default policy** applies only when no rule matches; either default can contain both Allow and Deny rules. Move earlier/later is available only within the same priority and effect and never changes numeric priorities.
+
+**Add rule** and each row’s **Edit** open the same dialog. Select common HTTP methods, choose exact path, path prefix or a literal regular expression, and enter an explanation shown with the decision. **Advanced rule settings** contains the exact rule reference, custom methods, additional path and host patterns, and scanner/binary exceptions. Existing imported literals remain unchanged unless edited. No common or custom method selections means every method; no path patterns means every path. Shared typed scanner catalog options remain in Settings and are not replaced by rule edits.
+
+**Keep rule changes** updates your unsaved configuration work. Cancel or Escape leaves the rule unchanged. Deleting a rule removes it only from the draft; the active configuration remains in use until explicit review and apply. Save the draft separately. After a stale save, compare with current state; after a lost response, inspect the durable draft before trying again.

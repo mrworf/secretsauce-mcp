@@ -95,3 +95,18 @@ it('preserves exact destination references and inheritance through authorized dr
  f.store.state.users[0]!.role='Owner';apply(f);expect(f.cfg.services.new!.destinations[0]).toMatchObject({id:'_legacy/primary:v1',tls:{verify:false},tlsInherited:true});expect(f.cfg.services.new!.destinations[1]).toMatchObject({id:'constructor',tls:{verify:true},tlsInherited:false});
  expect(()=>f.manager.save(f.session,{id:'new',base:0,generation:1,service})).toThrow('Stale');
 }finally{f.close();}});
+
+it('keeps authored rule literals and custom method ordering in drafts and rejects malformed protection without replacing the draft',()=>{
+ const f=managedFixture();try{
+  const service=structuredClone(f.manager.state.services.baseline!.applied!);
+  const rule={id:'constructor',effect:'deny' as const,priority:2000,methods:['GET','PROPFIND','POST'],hosts:['^api\\.example\\.org$'],paths:['^/v1\\.0/\\[item\\]$','/api/users.*'],reason:'Protect accounts',secretlint:{enabled:false as const},binary_response:{scan:false,max_size:'unlimited'}};
+  service.policy={mode:'allow',rules:[rule]};
+  f.manager.save(f.session,{id:'baseline',base:0,generation:0,service});
+  expect(f.manager.state.services.baseline!.draft!.content.policy!.rules).toEqual([rule]);
+  for(const change of [(r:any)=>r.paths=['['],(r:any)=>r.priority=1.5,(r:any)=>r.binary_response={scan:'invalid',max_size:'100kb'},(r:any)=>r.secretlint={disabled_rules:[]}]){
+   const bad=structuredClone(service);change(bad.policy!.rules[0]);expect(()=>f.manager.save(f.session,{id:'baseline',base:0,generation:1,service:bad})).toThrow();
+   expect(f.manager.state.services.baseline!.draft!.generation).toBe(1);expect(f.manager.state.services.baseline!.draft!.content.policy!.rules).toEqual([rule]);
+  }
+  expect(f.manager.state.services.baseline!.applied!.policy).not.toEqual(service.policy);
+ }finally{f.close();}
+});

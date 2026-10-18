@@ -1,0 +1,10 @@
+{
+  "src/consoleServicePage.ts": "d51e80babe7919891d3151b14b02d252f50ab1967b33513e79a02c30b9cd2274",
+  "src/consolePage.ts": "c526b2861afd2067c79f2b559bb1576072a0c0e6718106eefb397b3908cf5bf3",
+  "src/consolePresentation.ts": "67beae4fa13bc6f102d223cd48f63b1ea435a19c12483faad543d1cea846ba9d",
+  "test/console-services.test.ts": "b14c9fe5fec48e16135d7aaba9be5b925e5f38033e02131f84db950a82251d56",
+  "scripts/verify-console-policy-dialogs-browser.mjs": "8c80232974ea9ec93d10b382ac3c599a6afedfe3c8e62d20122ecaf70e00a9c2",
+  "scripts/verify-console-services-browser.mjs": "bb7c7f14418e76c30d6cedd6d2581956a331dd31930acbec9f17f9010b413ec4",
+  "scripts/verify-console-friendly-forms-browser.mjs": "0b19a08b2310190b9396155fed272eadf56d505feab90ff6c86a54542f527c4d",
+  "docs/console-advanced-configuration.md": "6bf66933e6d5961c3c9998d2444c4d5c356487bea18213a4c1b39560d94e9479"
+}

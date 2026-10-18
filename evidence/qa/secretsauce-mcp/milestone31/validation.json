@@ -1,0 +1,21 @@
+{
+  "full_suite": {
+    "command": "npm test -- --maxWorkers=2",
+    "result": "PASS",
+    "files": 74,
+    "tests": 749,
+    "duration_seconds": 106.46,
+    "browser_or_docker_concurrent": false,
+    "consolePresentation_sha256_at_start": "721220b63d9c543267f3cb14a71a665df917cfa326128e7257e12ad34a3393ce"
+  },
+  "final_build": {
+    "command": "npm run build",
+    "result": "PASS"
+  },
+  "post_suite_change": "CSS only: stack narrow rule description, effect/priority and actions; Edit/Delete equal width. Final browser suite covers the changed layout and reflow; unrelated suite results reused.",
+  "reference_sha256": {
+    "workflow/definition/drafts/product-ux/web-console-feedback-003/policy-desktop.png": "6726143cff615118463c83504d334acb801efc91951dd6be1273d3509291c633",
+    "workflow/definition/drafts/product-ux/web-console-feedback-003/policy-narrow.png": "05bdb549aa0de16c3e72b762fcbe5288e715863bb189f9a926da96020d122582",
+    "workflow/definition/drafts/product-ux/web-console-feedback-003/rule-dialog.png": "cc8226b21762cf5fd1401010a63f3cdecda1b42725bde8bf3ea8a8f34640d571"
+  }
+}

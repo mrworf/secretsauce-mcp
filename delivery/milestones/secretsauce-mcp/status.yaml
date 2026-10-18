@@ -422,7 +422,7 @@ milestones:
 - id: '34'
   title: Recover credential absence and historical attribution coherently
   file: delivery/milestones/secretsauce-mcp/34-credential-recovery-compatibility.md
-  status: in_progress
+  status: completed
   dependencies:
   - '17'
   - '25'
@@ -431,13 +431,17 @@ milestones:
   - '30'
   - '32'
   - '33'
-  completed_at: null
-  evidence: null
-  notes: Feedback 003; REC-RM-026
+  completed_at: '2026-10-18T17:28:50.590742+00:00'
+  evidence: evidence/qa/secretsauce-mcp/milestone34/acceptance.md
+  notes: 'Accepted coherent credential recovery and final integrated local validation:
+    757 tests across 75 files, build, ten browser suites, clean-host 7 groups, launcher
+    9 cases and 94 SIGKILL boundaries passed. External real-client connection exception
+    retained; no live deployment changed.'
   started_at: '2026-10-18T17:05:36.166527+00:00'
+  commit_hash: ff20d0e773bab4e84ef5e98db2c8d44767ab6f1e
 delivery_goal:
   product_id: secretsauce-mcp
-  status: in_progress
+  status: completed
   packet: delivery/milestones/secretsauce-mcp/status.yaml
   packet_revision: sha256:c300ee773a8934d6249351dc6d1aa68774d7474ae20fdefef313bab0df0cd3de
   packet_contract_revisions:
@@ -518,12 +522,12 @@ delivery_goal:
   - '33'
   - '34'
   execution: autonomous
-  current_milestone: '34'
+  current_milestone: null
   governing_plan: delivery/plans/secretsauce-mcp/milestone_34_plan_01.md
   blockers: []
-  resume_point: Deliver M34 using its minimal-slice transaction; prior milestones
-    accepted.
+  resume_point: All fixed-scope milestones accepted.
   started_at: '2026-10-18T15:00:58.296201+00:00'
+  completed_at: '2026-10-18T17:28:50.590742+00:00'
 compiled_from_history:
 - product_id: secretsauce-mcp
   input_mode: PRODUCT_BUILD

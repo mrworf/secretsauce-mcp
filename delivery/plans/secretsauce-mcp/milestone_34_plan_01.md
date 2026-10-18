@@ -12,3 +12,7 @@ Final gate: complete bounded full suite and build after all production changes; 
 
 ## Completion
 Both slices delivered. Slice 1 commit `9323aa7`; final slice commit recorded by root at acceptance. Required encrypted compatibility/fault tests, all ten browser suites including one joined journey, final-image Docker recovery/launcher/94 SIGKILL boundaries, 757-test full suite and build passed. See `evidence/qa/secretsauce-mcp/milestone34/acceptance.md`.
+
+## Root acceptance
+
+Accepted complete. Slice 1: `9323aa76862a791384298b7a60ddd3f6eaedbda6`; slice 2: `ff20d0e773bab4e84ef5e98db2c8d44767ab6f1e`. Root verified all 269 tested-input hashes, 105 image-input hashes, final acceptance evidence and fixed packet freshness. M25–34 delivery goal completed; no remaining fixed-scope milestone.

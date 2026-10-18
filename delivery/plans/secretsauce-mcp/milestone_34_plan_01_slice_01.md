@@ -17,3 +17,7 @@ Acceptance: every new input has positive/negative evidence; no secret metadata o
 Delivered: archive manifests now opt into explicit credential generation/absence dependencies, while legacy manifests retain their earlier validation shape. Owned schema rejects missing generation, future generation and contradictory clear/present metadata. Existing historical restore projection remains unchanged.
 
 Validation: `npm test -- --maxWorkers=2 test/console-credential-recovery.test.ts test/console-credential-clearing.test.ts test/console-backups.test.ts test/console-restore-recovery.test.ts` PASS, 61 tests/4 files, 59.34s, including build. Initial restricted run hit subprocess EPERM; identical permitted command passed. Tests cover actual encrypted worker restoration, legacy present recovery after current clear, Unknown/historical attribution, mixed generation/projection rejection and existing uncertain-intent replay/fault/rollback/permission paths. Final source production files tested; no production edits afterward.
+
+## Root acceptance
+
+Accepted commit: `9323aa76862a791384298b7a60ddd3f6eaedbda6`. Subsequent integrated recovery corrections and final qualification recorded in slice 2.

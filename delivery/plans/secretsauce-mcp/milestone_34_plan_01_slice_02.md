@@ -21,3 +21,7 @@ Operational validation PASS on final immutable image `sha256:89c15ec2d582bd20ce9
 Full-suite fixture correction: existing backup-domain exact dependency assertion expected only service/id/version. Added the now-required marker and exact generation expectation. Focused file: 4/4 PASS; full rerun required. Production/image/browser evidence is unchanged by this test-only correction. No assertion/timeout weakened.
 
 Final validation: PASS — `npm test -- --maxWorkers=2`, 757 tests across 75 files, 113.66 seconds; then `npm run build` PASS. No concurrent browser or Docker workload. Tested inputs and summarized results are recorded in `evidence/qa/secretsauce-mcp/milestone34/{tested-inputs.json,validation.json}`. All M34 criteria are satisfied; no new waiver, external action or deployment.
+
+## Root acceptance
+
+Accepted commit: `ff20d0e773bab4e84ef5e98db2c8d44767ab6f1e`. Root verified evidence and exact current source/image hashes; final acceptance completes M34 and the fixed M25–34 goal.

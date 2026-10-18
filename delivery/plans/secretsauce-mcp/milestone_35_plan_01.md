@@ -19,7 +19,7 @@ Only service review presentation. Exclude M36 approval dialog/TLS wording, globa
 | Slice | Plan | Outcome | Dependencies | Status | Commit | Evidence |
 |---|---|---|---|---|---|---|
 |01|milestone_35_plan_01_slice_01.md|Grouped changes and local tabs|none|complete|7816f7ccd002089e00043378bd04deec83529a3d|slice01 browser +5 focused tests|
-|02|milestone_35_plan_01_slice_02.md|Complete grouped new settings|01|complete|parent records exact SHA|final browser +765 tests/build|
+|02|milestone_35_plan_01_slice_02.md|Complete grouped new settings|01|complete|4ccf40f9d5d2e826c229aa959a74a75a0e1ab3f0|final browser +765 tests/build|
 
 ## Cross-slice concerns
 No storage/API migration. Retain server authorization, sanitized read model, review identity/dependencies and exact exceptions. No new network calls on tabs. Immediate credential/access metadata stays outside pending changes. Existing audit and atomic publication untouched. Synthetic local HTTPS only; no external clients/live instance.

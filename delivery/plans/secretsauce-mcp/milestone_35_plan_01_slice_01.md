@@ -23,3 +23,5 @@ Positive grouped values, common/custom typed options and complete proposal; nega
 All slice behavior and focused evidence pass; source plan/tests/evidence committed together. Existing full proposal rendering deliberately retained until02. Status: complete; commit recorded by parent acceptance.
 
 Validation: focused5 tests PASS; build PASS; disposable HTTPS browser PASS (keyboard/read-only/return-to-edit,1440/390/320/text200). Evidence evidence/ux-acceptance/secretsauce-mcp/milestone35/slice01/. First sandbox EPERM rerun unchanged with loopback permission. Existing full proposal renderer deliberately remains for slice02.
+
+Accepted implementation commit: `7816f7ccd002089e00043378bd04deec83529a3d`.

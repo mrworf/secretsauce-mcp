@@ -27,3 +27,5 @@ One commit contains shared UI, focused tests/harness, operator guidance, plans a
 ## Completion and evidence
 
 Shared dialog, metadata, unknown-state lookup and new-row focus delivered. All eight M30 criteria mapped in [acceptance](../../../evidence/qa/secretsauce-mcp/milestone30/acceptance.md); matching approved-surface review in [visual review](../../../evidence/ux-acceptance/secretsauce-mcp/milestone30/visual-review.md). Full suite: 748/748 tests, 74 files, 106.48s; build PASS. New credential dialog browser and affected existing clear/services journeys PASS. No source change after full-suite validation; final hashes are in tested-inputs.json. Remaining background placement help belongs M32; M30 dialogs and metadata are complete. Root records exact slice commit in acceptance closeout.
+
+Accepted commit provenance: `dede1136853e32456878dbc2c59f35e8afb73e54`.

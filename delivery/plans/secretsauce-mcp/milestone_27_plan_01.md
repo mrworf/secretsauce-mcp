@@ -1,0 +1,15 @@
+# M27 focused service editing
+
+Parent HEAD: 0b09efaddcb314d0c908d561fbf480cf1c7904e0. Product: secretsauce-mcp. Source: milestone 27, definition d0dffc6, planning 49a58c3; approved UX4 feedback003. Pre-existing `test-results/` is excluded.
+
+## Outcome and boundary
+Deliver grouped actual Overview and focused role-permitted configuration with one lossless whole-draft mode switch. Preserve all domain algorithms and fields. No destination/credential/policy specialized redesign, lifecycle semantics, authority edits, deployment or goal-status changes.
+
+## Slice index
+1. milestone_27_plan_01_slice_01.md — Grouped applied overview and read-only focused sections.
+2. milestone_27_plan_01_slice_02.md — Populated focused editor, global modes and directly navigable creation.
+
+## Validation
+Dedicated synthetic HTTPS browser harness covers positive/negative state and permissions, exact advanced roundtrips, unsaved/invalid transitions, approved desktop/narrow screenshots, keyboard and 200% text range overflow. Focused service tests per slice; build and complete `npm test -- --maxWorkers=2` at final milestone. Run applicable browser regressions sequentially. Preserve no-secret metadata and local-only disposable fixtures. Evidence under evidence/ux-acceptance/secretsauce-mcp/milestone27.
+
+Planning inspection: slices independently useful; only selected section renders; specialized controls remain existing until their milestones. Final review is explicit, save remains draft-only, server authorization unchanged.

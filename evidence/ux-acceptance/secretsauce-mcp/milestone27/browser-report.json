@@ -1,0 +1,9 @@
+{
+  "result": "PASS",
+  "checks": [
+    "Overview groups actual applied configuration independently from pending name; no flattened duplicate.",
+    "Auditor has focused readable sections and no mutation affordances.",
+    "Draft-only service never claims current executable configuration.",
+    "Load failure surfaces error rather than empty success."
+  ]
+}

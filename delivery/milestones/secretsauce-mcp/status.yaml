@@ -1,6 +1,5 @@
 product_id: secretsauce-mcp
-scope: "Approved feedback 003 delta M25\u201334; completed M10\u201324 and historical delivery\
-  \ goal preserved"
+scope: Approved feedback 003 delta M25–34; completed M10–24 and historical delivery goal preserved
 status_values:
 - pending
 - in_progress
@@ -16,10 +15,9 @@ compiled_from:
   effective_handoff:
     path: workflow/definition/state.yaml#next_handoff
     revision: sha256:4c272ab7c00811e70c74b72183de927be880e0b70e1d4f716b4ac9bf169cebdd
-    revalidation_resolution: Committed selective journeys/UX revalidation and UX-DESIGN-005
-      approval satisfy immutable REC009 historical revalidation gate; unchanged domains retain
-      documented preservation bases. Compile effective current handoff, preserve canonical result
-      unchanged.
+    revalidation_resolution: Committed selective journeys/UX revalidation and UX-DESIGN-005 approval satisfy
+      immutable REC009 historical revalidation gate; unchanged domains retain documented preservation
+      bases. Compile effective current handoff, preserve canonical result unchanged.
   reconciliation:
     result: workflow/reconciliation/REC-RUN-009/reconciliation-result.yaml
     revision: sha256:abe2992d0c00437f54a8770d353c1da255188d7aeee123046407d4c403d97185
@@ -127,9 +125,9 @@ milestones:
   dependencies: []
   completed_at: 2026-10-10 04:27:14.850000+00:00
   commit_hash: 53bd2a4
-  notes: '406 tests/37 files, build and diff check passed; actual HTTPS Chromium keyboard/320px
-    browser checks passed. Acceptance: evidence/qa/secretsauce-mcp/milestone10/acceptance.md.
-    Slice commits: 42128e5, 1c3f10f, 53bd2a4.'
+  notes: '406 tests/37 files, build and diff check passed; actual HTTPS Chromium keyboard/320px browser
+    checks passed. Acceptance: evidence/qa/secretsauce-mcp/milestone10/acceptance.md. Slice commits: 42128e5,
+    1c3f10f, 53bd2a4.'
   started_at: 2026-10-10 03:43:12.099000+00:00
 - id: '11'
   title: Configure and activate services safely
@@ -139,10 +137,10 @@ milestones:
   - '10'
   completed_at: 2026-10-10 04:58:27.684000+00:00
   commit_hash: d038170a7c0ab5d7bfe3d1a93c28743cb15f1183
-  notes: 'All four acceptance criteria verified: 427 tests across 41 files, build, 7 service
-    browser groups and 7 retained authentication browser groups; keyboard and 320px checks.
-    Evidence: evidence/qa/secretsauce-mcp/milestone11/acceptance.md. Slice commits: cd3872440b060a726ff129e83a409989048fda68,
-    419e42e6784e09151a305275701aacbfad7bc87d, d038170a7c0ab5d7bfe3d1a93c28743cb15f1183.'
+  notes: 'All four acceptance criteria verified: 427 tests across 41 files, build, 7 service browser groups
+    and 7 retained authentication browser groups; keyboard and 320px checks. Evidence: evidence/qa/secretsauce-mcp/milestone11/acceptance.md.
+    Slice commits: cd3872440b060a726ff129e83a409989048fda68, 419e42e6784e09151a305275701aacbfad7bc87d,
+    d038170a7c0ab5d7bfe3d1a93c28743cb15f1183.'
   started_at: 2026-10-10 04:27:14.851000+00:00
 - id: '12'
   title: Manage people and recover accounts
@@ -152,10 +150,10 @@ milestones:
   - '11'
   completed_at: 2026-10-10 05:29:02.951000+00:00
   commit_hash: fb89017fd3b6cec1cf01bc14f639b3eebc4680ca
-  notes: 'All four acceptance criteria verified: 452 tests across45files, build, 8 actualHTTPS
-    keyboard/320px browser checks, 6 protected host-recovery checks and syntheticTLS SMTP. Evidence:
-    evidence/qa/secretsauce-mcp/milestone12/acceptance.md. Slice commits: bb1281082c59273fc494c8575ef748c030af7e89,
-    c30dc9e7383ce722ed1b7082528d0a8071aec9ec, fb89017fd3b6cec1cf01bc14f639b3eebc4680ca.'
+  notes: 'All four acceptance criteria verified: 452 tests across45files, build, 8 actualHTTPS keyboard/320px
+    browser checks, 6 protected host-recovery checks and syntheticTLS SMTP. Evidence: evidence/qa/secretsauce-mcp/milestone12/acceptance.md.
+    Slice commits: bb1281082c59273fc494c8575ef748c030af7e89, c30dc9e7383ce722ed1b7082528d0a8071aec9ec,
+    fb89017fd3b6cec1cf01bc14f639b3eebc4680ca.'
   started_at: 2026-10-10 04:58:27.685000+00:00
 - id: '13'
   title: Author advanced policy and migrate configuration
@@ -165,8 +163,8 @@ milestones:
   - '12'
   completed_at: 2026-10-10 05:59:52.467000+00:00
   commit_hash: 851bda679771d4b3d9bfa7decc7f60adcff8166f
-  notes: 'All four acceptance criteria verified: 481 tests across48files, build, 6 actualHTTPS
-    browser taskgroups/eight320px screenshots. Evidence: evidence/qa/secretsauce-mcp/milestone13/acceptance.md.
+  notes: 'All four acceptance criteria verified: 481 tests across48files, build, 6 actualHTTPS browser
+    taskgroups/eight320px screenshots. Evidence: evidence/qa/secretsauce-mcp/milestone13/acceptance.md.
     Slice commits: 698b051634fb156679defbed85793296447ab2f3, b4a60344deccf11e8912b7de9a7ce442cfc157e1,
     5e3f0eb6efe4edb1dc0131e4120f0de05db266e6, 851bda679771d4b3d9bfa7decc7f60adcff8166f.'
   started_at: 2026-10-10 05:29:02.951000+00:00
@@ -178,11 +176,11 @@ milestones:
   - '12'
   completed_at: 2026-10-10 17:07:13.336000+00:00
   commit_hash: 1eb00d117664858d81252543b46c53cb8b46638d
-  notes: 'Local acceptance passed: four slice commits, 511 tests/53 files, build, actual HTTPS
-    headless browser five groups/fourteen sanitized screens. User authorized local delivery
-    and deferred actual LLM/MCP connections on 2026-10-10. PRE-015 real ChatGPT/Codex checks
-    remain NOT RUN under explicit goal-specific exception workflow/delivery/local-validation-authorization.md.
-    Evidence: evidence/qa/secretsauce-mcp/milestone14/local-coverage.md and acceptance-status.md.'
+  notes: 'Local acceptance passed: four slice commits, 511 tests/53 files, build, actual HTTPS headless
+    browser five groups/fourteen sanitized screens. User authorized local delivery and deferred actual
+    LLM/MCP connections on 2026-10-10. PRE-015 real ChatGPT/Codex checks remain NOT RUN under explicit
+    goal-specific exception workflow/delivery/local-validation-authorization.md. Evidence: evidence/qa/secretsauce-mcp/milestone14/local-coverage.md
+    and acceptance-status.md.'
   started_at: 2026-10-10 05:59:52.467000+00:00
   implementation_commit_hash: 1eb00d117664858d81252543b46c53cb8b46638d
   blocked_at: 2026-10-10 06:51:52.136000+00:00
@@ -197,11 +195,10 @@ milestones:
   - '14'
   completed_at: 2026-10-10 18:03:04.154000+00:00
   commit_hash: aa9405a10591838365de541845f1a49f4402aa79
-  notes: 'All four acceptance criteria verified:558 tests/58 files and build; actual HTTPS browser
-    operations6/advanced6/clients5; actual Docker/nginx12groups including crash restart and
-    cross-container leases;50users100services10411retained events. Root acceptance: evidence/qa/secretsauce-mcp/milestone15/acceptance.md.
-    Four independent slice commits preserved; inherited dependency advisories recorded as operational
-    follow-up.'
+  notes: 'All four acceptance criteria verified:558 tests/58 files and build; actual HTTPS browser operations6/advanced6/clients5;
+    actual Docker/nginx12groups including crash restart and cross-container leases;50users100services10411retained
+    events. Root acceptance: evidence/qa/secretsauce-mcp/milestone15/acceptance.md. Four independent slice
+    commits preserved; inherited dependency advisories recorded as operational follow-up.'
   started_at: 2026-10-10 17:07:13.336000+00:00
 - id: '16'
   title: Create recoverable encrypted instance backups
@@ -211,10 +208,10 @@ milestones:
   - '15'
   completed_at: 2026-10-10 18:53:12.145000+00:00
   commit_hash: 87a87f2fab8d5b5ea6e38c731414f78263e826c6
-  notes: All four acceptance criteria verified:585 tests/61 files and build; HTTPS backup7 groups
-    plus17 preserved-flow groups; Docker11 groups including independent clean-container decryption
-    and5 SIGKILL boundaries. Root acceptance:evidence/qa/secretsauce-mcp/milestone16/acceptance.md.
-    Three independent slice commits preserved; actual LLM checks deferred under user exception.
+  notes: All four acceptance criteria verified:585 tests/61 files and build; HTTPS backup7 groups plus17
+    preserved-flow groups; Docker11 groups including independent clean-container decryption and5 SIGKILL
+    boundaries. Root acceptance:evidence/qa/secretsauce-mcp/milestone16/acceptance.md. Three independent
+    slice commits preserved; actual LLM checks deferred under user exception.
   started_at: 2026-10-10 18:03:04.154000+00:00
 - id: '17'
   title: Restore and resume an instance safely
@@ -224,9 +221,9 @@ milestones:
   - '16'
   completed_at: 2026-10-10 20:27:28.440000+00:00
   commit_hash: 987b3996ab4e87eb365ac2df57edb6233dd3ade4
-  notes: All four acceptance criteria verified:620 tests/67 files and build;50 HTTPS browser
-    groups with keyboard/320px/200% recovery text; final-image Docker94 actual SIGKILL,9 launcher
-    and5 clean-host groups. One reviewed service usable in55.970s with99Disabled. Root acceptance:evidence/qa/secretsauce-mcp/milestone17/acceptance.md.
+  notes: All four acceptance criteria verified:620 tests/67 files and build;50 HTTPS browser groups with
+    keyboard/320px/200% recovery text; final-image Docker94 actual SIGKILL,9 launcher and5 clean-host
+    groups. One reviewed service usable in55.970s with99Disabled. Root acceptance:evidence/qa/secretsauce-mcp/milestone17/acceptance.md.
     Three independent slice commits preserved; actual LLM connections deferred under user exception.
   started_at: 2026-10-10 18:53:12.145000+00:00
   acceptance_exception: workflow/delivery/local-validation-authorization.md
@@ -240,8 +237,8 @@ milestones:
   - '14'
   completed_at: '2026-10-11T23:08:28.346693+00:00'
   commit_hash: eb25cb3621fca84d76341d74d29b5327921267b3
-  notes: Two committed slices; 641 tests/69 files and build pass; actual HTTPS 33 reset + 8
-    retained people checks; all acceptance criteria mapped in evidence/qa/secretsauce-mcp/milestone18/acceptance.md.
+  notes: Two committed slices; 641 tests/69 files and build pass; actual HTTPS 33 reset + 8 retained people
+    checks; all acceptance criteria mapped in evidence/qa/secretsauce-mcp/milestone18/acceptance.md.
   started_at: '2026-10-11T22:51:08.355105+00:00'
 - id: '19'
   title: Delete SMTP credentials independently
@@ -263,8 +260,8 @@ milestones:
   - '17'
   completed_at: '2026-10-11T23:38:05.308529+00:00'
   commit_hash: abf03d02746922ce5a524ff105e13595acd7b999
-  notes: Three committed slices; 662 tests/71 files and build pass; nine acceptance clauses
-    mapped with focused HTTPS and retained regressions in evidence/qa/secretsauce-mcp/milestone20/acceptance.md.
+  notes: Three committed slices; 662 tests/71 files and build pass; nine acceptance clauses mapped with
+    focused HTTPS and retained regressions in evidence/qa/secretsauce-mcp/milestone20/acceptance.md.
   started_at: '2026-10-11T23:15:18.518804+00:00'
 - id: '21'
   title: Configure all capabilities with forms and lossless import
@@ -274,8 +271,8 @@ milestones:
   - '20'
   completed_at: '2026-10-12T00:03:46.337293+00:00'
   commit_hash: c0aba3904a9039d650d913445ac0bc63c6fdfd4b
-  notes: Three committed slices; 668 tests/71 files and build pass; nine actual HTTPS scenarios
-    pass. All20 UX-IA06 rows and ten acceptance criteria mapped in evidence/qa/secretsauce-mcp/milestone21/capability-coverage.md;
+  notes: Three committed slices; 668 tests/71 files and build pass; nine actual HTTPS scenarios pass.
+    All20 UX-IA06 rows and ten acceptance criteria mapped in evidence/qa/secretsauce-mcp/milestone21/capability-coverage.md;
     exact source/report revisions in validation.json.
   started_at: '2026-10-11T23:38:05.308547+00:00'
 - id: '22'
@@ -286,10 +283,10 @@ milestones:
   - '21'
   completed_at: '2026-10-13T02:16:54.276749+00:00'
   commit_hash: 16426e09394e216e2699bb8258205b653cfdf507
-  notes: Two slices; 668 tests/71 files, build and five isolated HTTPS browser harnesses pass;
-    actual/reference visual comparison including six overlap states and 320px/200% text. evidence/qa/secretsauce-mcp/milestone22/acceptance.md
-    and evidence/ux-acceptance/secretsauce-mcp/milestone22/comparison.md. Root verified source
-    hashes and inspected desktop/narrow captures.
+  notes: Two slices; 668 tests/71 files, build and five isolated HTTPS browser harnesses pass; actual/reference
+    visual comparison including six overlap states and 320px/200% text. evidence/qa/secretsauce-mcp/milestone22/acceptance.md
+    and evidence/ux-acceptance/secretsauce-mcp/milestone22/comparison.md. Root verified source hashes
+    and inspected desktop/narrow captures.
   started_at: '2026-10-13T01:47:48.051815+00:00'
 - id: '23'
   title: Manage accounts through clear People details
@@ -300,10 +297,10 @@ milestones:
   - '18'
   completed_at: '2026-10-13T02:56:44.270644+00:00'
   commit_hash: 7f9b64c733d5fa22b28a1d5e0e0e913596b5860f
-  notes: One slice; 710 tests/72 files, build, four HTTPS browser harnesses and eight Docker
-    recovery/downgrade checks pass. All six criteria mapped in evidence/qa/secretsauce-mcp/milestone23/acceptance.md;
-    root verified source/report hashes and final matching reference visuals. Unchanged timing
-    fixture requires two-worker full suite under host load.
+  notes: One slice; 710 tests/72 files, build, four HTTPS browser harnesses and eight Docker recovery/downgrade
+    checks pass. All six criteria mapped in evidence/qa/secretsauce-mcp/milestone23/acceptance.md; root
+    verified source/report hashes and final matching reference visuals. Unchanged timing fixture requires
+    two-worker full suite under host load.
   started_at: '2026-10-13T02:16:54.276749+00:00'
 - id: '24'
   title: Use populated Settings with explicit email transport
@@ -315,11 +312,10 @@ milestones:
   - '20'
   completed_at: '2026-10-13T03:53:48.528155+00:00'
   commit_hash: 5ce3d32cddb7a1d2f4bb297d48f8aded471d9736
-  notes: Two committed slices; 721 tests/73 files, build, seven HTTPS browser suites and eight
-    final-image Docker downgrade/SIGKILL recovery checks pass. All seven acceptance criteria
-    mapped in evidence/qa/secretsauce-mcp/milestone24/acceptance.md. Root inspected seven actual/reference
-    visual pairs, verified 210 source hashes, 45 evidence hashes and current packet authority.
-    No required work deferred.
+  notes: Two committed slices; 721 tests/73 files, build, seven HTTPS browser suites and eight final-image
+    Docker downgrade/SIGKILL recovery checks pass. All seven acceptance criteria mapped in evidence/qa/secretsauce-mcp/milestone24/acceptance.md.
+    Root inspected seven actual/reference visual pairs, verified 210 source hashes, 45 evidence hashes
+    and current packet authority. No required work deferred.
   started_at: '2026-10-13T02:56:44.270644+00:00'
 - id: '25'
   title: Resolve imported identities without reupload
@@ -352,8 +348,8 @@ milestones:
   - '22'
   completed_at: '2026-10-18T15:46:06.992752+00:00'
   evidence: evidence/ux-acceptance/secretsauce-mcp/milestone27/acceptance.md
-  notes: Two slices 46528c5/58686d0; 730 tests across 73 files, build, six browser suites and
-    matching visual checks passed.
+  notes: Two slices 46528c5/58686d0; 730 tests across 73 files, build, six browser suites and matching
+    visual checks passed.
   started_at: '2026-10-18T15:28:48.533589+00:00'
   commit_hash: 58686d04b39880df3b86f0634d5bd7d4a874a0b7
 - id: '28'
@@ -364,8 +360,7 @@ milestones:
   - '27'
   completed_at: '2026-10-18T15:58:38.666173+00:00'
   evidence: evidence/qa/secretsauce-mcp/milestone28/acceptance.md
-  notes: One slice; 731 tests across 73 files, build, four browser suites and matching visual
-    checks passed.
+  notes: One slice; 731 tests across 73 files, build, four browser suites and matching visual checks passed.
   started_at: '2026-10-18T15:46:06.992752+00:00'
   commit_hash: f9fcbb408eec065210e42099ee92c1a5e4624353
 - id: '29'
@@ -389,8 +384,8 @@ milestones:
   - '29'
   completed_at: '2026-10-18T16:29:35.354790+00:00'
   evidence: evidence/qa/secretsauce-mcp/milestone30/acceptance.md
-  notes: One shared-dialog slice; 748 tests across 74 files, build and three browser suites
-    with visual/keyboard/responsive checks passed.
+  notes: One shared-dialog slice; 748 tests across 74 files, build and three browser suites with visual/keyboard/responsive
+    checks passed.
   started_at: '2026-10-18T16:19:56.784270+00:00'
   commit_hash: dede1136853e32456878dbc2c59f35e8afb73e54
 - id: '31'
@@ -401,8 +396,8 @@ milestones:
   - '27'
   completed_at: '2026-10-18T16:40:34.318194+00:00'
   evidence: evidence/qa/secretsauce-mcp/milestone31/acceptance.md
-  notes: One rule-authoring slice; 749 tests across 74 files, build and three browser suites
-    passed. Final narrow CSS separately browser/build verified.
+  notes: One rule-authoring slice; 749 tests across 74 files, build and three browser suites passed. Final
+    narrow CSS separately browser/build verified.
   started_at: '2026-10-18T16:29:35.354790+00:00'
   commit_hash: af876cd48c10c497bcf4e436f8a60a0d53178b4a
 - id: '32'
@@ -426,8 +421,8 @@ milestones:
   - '31'
   completed_at: '2026-10-18T17:05:36.166527+00:00'
   evidence: evidence/qa/secretsauce-mcp/milestone33/acceptance.md
-  notes: Two slices cf54365/d8686a2; 752 tests across 74 files, build and four browser suites
-    with visual/history/keyboard checks passed.
+  notes: Two slices cf54365/d8686a2; 752 tests across 74 files, build and four browser suites with visual/history/keyboard
+    checks passed.
   started_at: '2026-10-18T16:50:38.368768+00:00'
   commit_hash: d8686a24d58297b1f30d4f2612320be039035b66
 - id: '34'
@@ -444,22 +439,22 @@ milestones:
   - '33'
   completed_at: '2026-10-18T17:28:50.590742+00:00'
   evidence: evidence/qa/secretsauce-mcp/milestone34/acceptance.md
-  notes: 'Accepted coherent credential recovery and final integrated local validation: 757 tests
-    across 75 files, build, ten browser suites, clean-host 7 groups, launcher 9 cases and 94
-    SIGKILL boundaries passed. External real-client connection exception retained; no live deployment
-    changed.'
+  notes: 'Accepted coherent credential recovery and final integrated local validation: 757 tests across
+    75 files, build, ten browser suites, clean-host 7 groups, launcher 9 cases and 94 SIGKILL boundaries
+    passed. External real-client connection exception retained; no live deployment changed.'
   started_at: '2026-10-18T17:05:36.166527+00:00'
   commit_hash: ff20d0e773bab4e84ef5e98db2c8d44767ab6f1e
 - id: '35'
   title: Compare service changes and inspect complete new settings
   file: delivery/milestones/secretsauce-mcp/35-grouped-service-review.md
-  status: pending
+  status: in_progress
   dependencies:
   - '27'
   - '33'
   completed_at: null
   evidence: null
   notes: null
+  started_at: '2026-10-18T21:31:08.141046+00:00'
 - id: '36'
   title: Confirm reviewed changes with understandable security exceptions
   file: delivery/milestones/secretsauce-mcp/36-service-approval-and-exception-scope.md
@@ -472,9 +467,9 @@ milestones:
   notes: null
 delivery_goal:
   product_id: secretsauce-mcp
-  status: completed
+  status: in_progress
   packet: delivery/milestones/secretsauce-mcp/status.yaml
-  packet_revision: sha256:c300ee773a8934d6249351dc6d1aa68774d7474ae20fdefef313bab0df0cd3de
+  packet_revision: sha256:cb97bdc03c03bd5b0a6974e3ae5d39efa58b6b1f75cda08a7d2826e30b18f4f9
   packet_contract_revisions:
   - path: delivery/milestones/secretsauce-mcp/10-secure-audited-setup.md
     revision: sha256:75dfd4caf24033efbc4ab14117b3245bf73439d34ed448c1c75a3700dafaa450
@@ -526,39 +521,34 @@ delivery_goal:
     revision: sha256:a735038c10018854917eab261496330169c5ab8bb534bc6448518ea63b33b438
   - path: delivery/milestones/secretsauce-mcp/34-credential-recovery-compatibility.md
     revision: sha256:856b8ca1292721da166d7f6d4d054b6bca183bdf16b8c327041d0e8c06142f5b
+  - path: delivery/milestones/secretsauce-mcp/35-grouped-service-review.md
+    revision: sha256:a0f1b8b1f274f7136d968fff9cca64fbc4e9528e2c3050492e0315fb27da2bdf
+  - path: delivery/milestones/secretsauce-mcp/36-service-approval-and-exception-scope.md
+    revision: sha256:e520293cd424e876623b0b11de46908f2486403bf3feeea13a8c5767e4c38999
   - path: delivery/milestones/secretsauce-mcp/index.md
-    revision: sha256:3f33dd8208f81cc9acb469ffdc70cb6913b5c69091ec9bcc2d2e9757ef51715b
+    revision: sha256:a121b055c99d6618311a07e9d2fb5c05e9bf3e368099d359e315cb7434c48769
   - path: delivery/milestones/secretsauce-mcp/traceability.md
-    revision: sha256:e9d7684b6752b39f86338f17930e80b8e2402e3da608c0c50ee6d96d4b25c5ff
-  compiled_from_revision: sha256:74619b842c090a79ad2a96dcb5904ead8c475455ec0034ab1af2cb0ab3e1c2a5
+    revision: sha256:7a1bbb5239bb7ce3bb8a0248bbac274174867b3cddab7fe218cfab89556b6e57
+  compiled_from_revision: sha256:436bc658c53ec759dfe26aa1fead8d69a65261074d9daa5bcd80ab389f65acae
   source_path: workflow/definition/definition-package.yaml
-  source_revision: sha256:7f417f6965b95f3451144126133831ec1d5c62daee6a148d3606e7552f0b134c
-  source_commit: d0dffc6ffbc47f114dc232abedf40f50db3e52f3
-  planning_commit: 49a58c37bfea8b0c3e47bd2f7b8919375c2cfa52
-  transaction_start_commit: 30d0860deb5f292beac7114d302cab49f393ea3e
+  source_revision: sha256:a8282a031ef8c76e5b80f620e30b26eb202763b5eb65b4a091fd2435ac6e449b
+  source_commit: d84ac2265bd6c055a6da5edfe5f3d586137d30e9
+  planning_commit: 209e0fdef777ab9b31f1014bc335868ee9cbd44c
+  transaction_start_commit: 58210e80d379063e54e87098f989094c84d5fc63
   pre_existing_dirty_paths:
   - test-results/
   scope: remaining
-  start: '25'
+  start: '35'
   end: null
   milestone_ids:
-  - '25'
-  - '26'
-  - '27'
-  - '28'
-  - '29'
-  - '30'
-  - '31'
-  - '32'
-  - '33'
-  - '34'
+  - '35'
+  - '36'
   execution: autonomous
-  current_milestone: null
-  governing_plan: delivery/plans/secretsauce-mcp/milestone_34_plan_01.md
+  current_milestone: '35'
+  governing_plan: delivery/plans/secretsauce-mcp/milestone_35_plan_01.md
   blockers: []
-  resume_point: All fixed-scope milestones accepted.
-  started_at: '2026-10-18T15:00:58.296201+00:00'
-  completed_at: '2026-10-18T17:28:50.590742+00:00'
+  resume_point: Generate M35 governing and slice plans, then implement under minimal-slice-delivery.
+  started_at: '2026-10-18T21:31:08.141046+00:00'
 compiled_from_history:
 - product_id: secretsauce-mcp
   input_mode: PRODUCT_BUILD
@@ -625,8 +615,8 @@ compiled_from_history:
     revision: sha256:e01485496c7d0fa914f1349967f0b2e819f4a32bc5f33001c92e8f8af22cdf7e
   accepted_risks:
   - id: SEC-DEF-001
-    summary: Trusted destination authors and best-effort response scanning are not universal
-      credential non-exfiltration controls.
+    summary: Trusted destination authors and best-effort response scanning are not universal credential
+      non-exfiltration controls.
     decision_refs:
     - D-012
     result: workflow/definition/results/security.yaml
@@ -657,9 +647,9 @@ compiled_from_history:
     repository_commit: 4d46db3fa08a25df52b8d7b0aa2357cf8446b2fd
     definition_revalidation_satisfied: true
     delivery_planning_ready: true
-    explanation: Committed definition adoption restores validated package and explicitly satisfies
-      REC-RUN-003 pending architecture/security gate; immutable reconciliation remains provenance,
-      not standalone entry.
+    explanation: Committed definition adoption restores validated package and explicitly satisfies REC-RUN-003
+      pending architecture/security gate; immutable reconciliation remains provenance, not standalone
+      entry.
   reconciliation:
     result: workflow/reconciliation/REC-RUN-003/reconciliation-result.yaml
     revision: sha256:2f24571fcc26f6819689dc241fc4214a2979569e1d06a1ca9d72201659f001e2
@@ -735,8 +725,8 @@ compiled_from_history:
     revision: sha256:ba86caeb840d8fbe1b0e6f28b5a3d5099da8654fa5cb5828a4d96ed7e226faf2
   accepted_risks:
   - id: SEC-DEF-001
-    summary: Trusted destination authors and best-effort response scanning are not universal
-      credential non-exfiltration controls.
+    summary: Trusted destination authors and best-effort response scanning are not universal credential
+      non-exfiltration controls.
     decision_refs:
     - D-012
     result: workflow/definition/results/security.yaml
@@ -764,8 +754,8 @@ compiled_from_history:
   effective_handoff:
     path: workflow/definition/state.yaml#next_handoff
     revision: sha256:283a61f2c7f56aaac531a7759097fcffaed28d40164f990adc9b174d83f1d998
-    revalidation_resolution: Committed all-six-stage PASS definition adoption satisfies immutable
-      REC-RUN-006 revalidation/source-closeout gate; raw result remains provenance.
+    revalidation_resolution: Committed all-six-stage PASS definition adoption satisfies immutable REC-RUN-006
+      revalidation/source-closeout gate; raw result remains provenance.
   reconciliation:
     result: workflow/reconciliation/REC-RUN-006/reconciliation-result.yaml
     revision: sha256:66907c2a791c0c794e600f3b3b1dd1d9167ebe7ea804fe24d759f0d309edeb93
@@ -843,8 +833,8 @@ compiled_from_history:
     revision: sha256:b995316b9e860e62cd77af4b8f581acfc4a0adf67a9c83274fe8f4d41c96b911
   accepted_risks:
   - id: SEC-DEF-001
-    summary: Trusted destination authors and best-effort response scanning are not universal
-      credential non-exfiltration controls.
+    summary: Trusted destination authors and best-effort response scanning are not universal credential
+      non-exfiltration controls.
     decision_refs:
     - D-012
     result: workflow/definition/results/security.yaml
@@ -873,9 +863,9 @@ compiled_from_history:
   effective_handoff:
     path: workflow/definition/state.yaml#next_handoff
     revision: sha256:7b304512140ce6cacef69af4c5a8903bef53967d0489aff3930c9d3275492b56
-    revalidation_resolution: All six definition stages passed and committed in d0dffc6; immutable
-      REC-RUN-008 historical definition/source gate fulfilled. Compile effective validated handoff,
-      not stale raw handoff.
+    revalidation_resolution: All six definition stages passed and committed in d0dffc6; immutable REC-RUN-008
+      historical definition/source gate fulfilled. Compile effective validated handoff, not stale raw
+      handoff.
   reconciliation:
     result: workflow/reconciliation/REC-RUN-008/reconciliation-result.yaml
     revision: sha256:1018e24f89041935175c94108faa5339c6d09f2c4f9a15c244df5378d4177432
@@ -1008,9 +998,9 @@ delivery_goal_history:
   current_milestone: null
   governing_plan: delivery/plans/secretsauce-mcp/milestone_17_plan_01.md
   blockers: []
-  resume_point: "Fixed M10\u2013M17 goal completed with committed implementation and local acceptance.\
-    \ Actual ChatGPT/Codex connection/reconnect remains NOT RUN under the recorded user exception;\
-    \ inherited dependency advisories remain separate follow-up."
+  resume_point: Fixed M10–M17 goal completed with committed implementation and local acceptance. Actual
+    ChatGPT/Codex connection/reconnect remains NOT RUN under the recorded user exception; inherited dependency
+    advisories remain separate follow-up.
   prerequisite_observations:
   - evidence_id: PRE-016
     checked_at: 2026-10-10 18:03:04.154000+00:00
@@ -1029,17 +1019,16 @@ delivery_goal_history:
     slice: 04 (external acceptance only)
     requirement: Authorized tester and reachable isolated HTTPS synthetic service; real consent/discovery/reference/request/denial/revoke/normal
       restart/reconnect on BOTH ChatGPT and Codex.
-    expected_artifact: evidence/platform/secretsauce-mcp/milestone14/ dated authorized sanitized
-      client records
-    required_action: Run docs/m14-real-client-verification.md on an already authorized isolated
-      endpoint with synthetic identities/services. Provide both dated records and safe screenshots/results;
-      never share credentials, tokens, cookies, opaque references or raw bodies.
-    unblock_condition: Both actual authorized platform records cover PRE-015 against the delivered
-      implementation revision and pass targeted acceptance review.
+    expected_artifact: evidence/platform/secretsauce-mcp/milestone14/ dated authorized sanitized client
+      records
+    required_action: Run docs/m14-real-client-verification.md on an already authorized isolated endpoint
+      with synthetic identities/services. Provide both dated records and safe screenshots/results; never
+      share credentials, tokens, cookies, opaque references or raw bodies.
+    unblock_condition: Both actual authorized platform records cover PRE-015 against the delivered implementation
+      revision and pass targeted acceptance review.
     implementation_commit: 1eb00d117664858d81252543b46c53cb8b46638d
     resolved_at: 2026-10-10 17:07:13.336000+00:00
-    resolution: User-authorized local-delivery exception; actual real-client checks deferred
-      NOT RUN.
+    resolution: User-authorized local-delivery exception; actual real-client checks deferred NOT RUN.
     authorization: workflow/delivery/local-validation-authorization.md
   acceptance_exceptions:
   - evidence_id: PRE-015
@@ -1048,8 +1037,8 @@ delivery_goal_history:
     - '17'
     status: deferred_NOT_RUN
     authorization: workflow/delivery/local-validation-authorization.md
-    scope: Actual LLM system MCP connection/reconnect only; all local protocol/browser/Docker
-      tests remain required.
+    scope: Actual LLM system MCP connection/reconnect only; all local protocol/browser/Docker tests remain
+      required.
   completed_at: 2026-10-10 20:27:28.440000+00:00
 - product_id: secretsauce-mcp
   status: completed
@@ -1104,9 +1093,9 @@ delivery_goal_history:
   current_milestone: null
   governing_plan: delivery/plans/secretsauce-mcp/milestone_21_plan_01.md
   blockers: []
-  resume_point: "GOAL_COMPLETE: fixed M18\u2013M21 scope delivered in nine implementation slices\
-    \ with committed local acceptance. No required work remains. Running user instance was not\
-    \ redeployed; actual external ChatGPT/Codex validation retains the recorded exception."
+  resume_point: 'GOAL_COMPLETE: fixed M18–M21 scope delivered in nine implementation slices with committed
+    local acceptance. No required work remains. Running user instance was not redeployed; actual external
+    ChatGPT/Codex validation retains the recorded exception.'
   completed_at: '2026-10-12T00:03:46.337315+00:00'
 - product_id: secretsauce-mcp
   status: completed
@@ -1166,8 +1155,96 @@ delivery_goal_history:
   current_milestone: null
   governing_plan: delivery/plans/secretsauce-mcp/milestone_24_plan_01.md
   blockers: []
-  resume_point: "GOAL_COMPLETE: fixed M22\u2013M24 scope delivered in five implementation slices\
-    \ with committed acceptance. All required local browser/transport/Docker/recovery checks\
-    \ passed; actual external ChatGPT/Codex validation retains the existing recorded exception.\
-    \ Running local review instance remains on its previous version; deployment is separate."
+  resume_point: 'GOAL_COMPLETE: fixed M22–M24 scope delivered in five implementation slices with committed
+    acceptance. All required local browser/transport/Docker/recovery checks passed; actual external ChatGPT/Codex
+    validation retains the existing recorded exception. Running local review instance remains on its previous
+    version; deployment is separate.'
   completed_at: '2026-10-13T03:53:48.528155+00:00'
+- product_id: secretsauce-mcp
+  status: completed
+  packet: delivery/milestones/secretsauce-mcp/status.yaml
+  packet_revision: sha256:c300ee773a8934d6249351dc6d1aa68774d7474ae20fdefef313bab0df0cd3de
+  packet_contract_revisions:
+  - path: delivery/milestones/secretsauce-mcp/10-secure-audited-setup.md
+    revision: sha256:75dfd4caf24033efbc4ab14117b3245bf73439d34ed448c1c75a3700dafaa450
+  - path: delivery/milestones/secretsauce-mcp/11-managed-service-configuration.md
+    revision: sha256:0974e1d0fc81faf4ae5f4377ca7fce379e46ae18b4a414cba5140d1f8f255d46
+  - path: delivery/milestones/secretsauce-mcp/12-people-and-account-recovery.md
+    revision: sha256:57194362bc790482574d6d431b2eeb13a9884b12635bcb601bbe76b8e665e6b6
+  - path: delivery/milestones/secretsauce-mcp/13-advanced-policy-and-migration.md
+    revision: sha256:31df199c8c7e8b0c1841fd46c5db92a1a46e72a7e6ace1eda707db4c710b5576
+  - path: delivery/milestones/secretsauce-mcp/14-mcp-client-access.md
+    revision: sha256:76083d3d4e6aa6ca3c117c4f85ba7058bec36cc1091da5333adee74bc12963fc
+  - path: delivery/milestones/secretsauce-mcp/15-operating-evidence-and-limits.md
+    revision: sha256:e97bae18495226b48f04cc8d22f083fab302077d272a060f18eeaaa63cab4f85
+  - path: delivery/milestones/secretsauce-mcp/16-encrypted-instance-backups.md
+    revision: sha256:e61b86ca883a0f8c00a3747f1a85a8f5bdf5abe60c27c9c4184843ccebeaeacf
+  - path: delivery/milestones/secretsauce-mcp/17-safe-instance-recovery.md
+    revision: sha256:397eefccf9a35158fa20ed5fb9b474c3ceb2760f6127a50f07d7537e99f52b1d
+  - path: delivery/milestones/secretsauce-mcp/18-assisted-identity-resets.md
+    revision: sha256:058282a2f57040e6d907714380c0bd3dc822bac5ae22163bde4f0e50c21869d3
+  - path: delivery/milestones/secretsauce-mcp/19-independent-smtp-deletion.md
+    revision: sha256:75391b813f07ef093ad984bbd128688371098c6213222a83e080e7dc3c254e65
+  - path: delivery/milestones/secretsauce-mcp/20-focused-settings-and-navigation.md
+    revision: sha256:ba3abebf8cc2d5f0ca224aa09528a01eb115b97b259d9f4c85ecffba2d5b51d4
+  - path: delivery/milestones/secretsauce-mcp/21-friendly-configuration-and-import.md
+    revision: sha256:3c798a833efec4ca41eeccad00c59f940bb8489eef91c10b36403a52ce90858c
+  - path: delivery/milestones/secretsauce-mcp/22-readable-forms-and-services.md
+    revision: sha256:7c341cedcd473371608a52ca10df6d2db4a92550606d9085beec700db3f85c92
+  - path: delivery/milestones/secretsauce-mcp/23-people-details-and-account-management.md
+    revision: sha256:e5a464cd4790f190968bfd3f178608047de0bdbd4ec3718bc095d60d3de8e4fa
+  - path: delivery/milestones/secretsauce-mcp/24-populated-settings-and-email-modes.md
+    revision: sha256:ac9202e661897b1a91b7d6c25ec9104bf80f413f9c731a04c1fddfe38591ae0e
+  - path: delivery/milestones/secretsauce-mcp/25-import-identity-recovery.md
+    revision: sha256:acae48dfee0a26b9d27844d2f9de3efa9a396d5e9c23c8ab0688693d7566daeb
+  - path: delivery/milestones/secretsauce-mcp/26-service-lifecycle-rows.md
+    revision: sha256:5f3dfea789b48b3af7a1eb6c6fae202021007abad4e3213cf114a580aaecdab4
+  - path: delivery/milestones/secretsauce-mcp/27-focused-service-editing.md
+    revision: sha256:0d370a4620fe2735c0dadf72ffefd3dac461d8c623fc8a524de66354d7032508
+  - path: delivery/milestones/secretsauce-mcp/28-destination-configuration.md
+    revision: sha256:cde93a45dd1875b91457607e6ca99ba4ed5e1c7c91fa3b6a0f1effb1bc86b58e
+  - path: delivery/milestones/secretsauce-mcp/29-durable-credential-clearing.md
+    revision: sha256:296fa434a3f9c1a56eb91c563a799e17ce2435844e7209febd61d8ab391cd86b
+  - path: delivery/milestones/secretsauce-mcp/30-credential-value-dialogs.md
+    revision: sha256:e286f937e8a65f3a15f9c18f47099429cbf381adec110d82ee44090d238cd0f7
+  - path: delivery/milestones/secretsauce-mcp/31-policy-rule-dialogs.md
+    revision: sha256:091b568d4f2cc62229e64b75ba7fcbdb70d4b5a4d8e79c2fc82cca04b1b8e786
+  - path: delivery/milestones/secretsauce-mcp/32-service-help-and-access.md
+    revision: sha256:4d17d6c5b9edab77e19c53edd65d378e53f4cb6c847251e0abc5189734498037
+  - path: delivery/milestones/secretsauce-mcp/33-service-navigation-and-testing.md
+    revision: sha256:a735038c10018854917eab261496330169c5ab8bb534bc6448518ea63b33b438
+  - path: delivery/milestones/secretsauce-mcp/34-credential-recovery-compatibility.md
+    revision: sha256:856b8ca1292721da166d7f6d4d054b6bca183bdf16b8c327041d0e8c06142f5b
+  - path: delivery/milestones/secretsauce-mcp/index.md
+    revision: sha256:3f33dd8208f81cc9acb469ffdc70cb6913b5c69091ec9bcc2d2e9757ef51715b
+  - path: delivery/milestones/secretsauce-mcp/traceability.md
+    revision: sha256:e9d7684b6752b39f86338f17930e80b8e2402e3da608c0c50ee6d96d4b25c5ff
+  compiled_from_revision: sha256:74619b842c090a79ad2a96dcb5904ead8c475455ec0034ab1af2cb0ab3e1c2a5
+  source_path: workflow/definition/definition-package.yaml
+  source_revision: sha256:7f417f6965b95f3451144126133831ec1d5c62daee6a148d3606e7552f0b134c
+  source_commit: d0dffc6ffbc47f114dc232abedf40f50db3e52f3
+  planning_commit: 49a58c37bfea8b0c3e47bd2f7b8919375c2cfa52
+  transaction_start_commit: 30d0860deb5f292beac7114d302cab49f393ea3e
+  pre_existing_dirty_paths:
+  - test-results/
+  scope: remaining
+  start: '25'
+  end: null
+  milestone_ids:
+  - '25'
+  - '26'
+  - '27'
+  - '28'
+  - '29'
+  - '30'
+  - '31'
+  - '32'
+  - '33'
+  - '34'
+  execution: autonomous
+  current_milestone: null
+  governing_plan: delivery/plans/secretsauce-mcp/milestone_34_plan_01.md
+  blockers: []
+  resume_point: All fixed-scope milestones accepted.
+  started_at: '2026-10-18T15:00:58.296201+00:00'
+  completed_at: '2026-10-18T17:28:50.590742+00:00'

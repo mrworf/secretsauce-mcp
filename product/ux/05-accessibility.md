@@ -37,3 +37,10 @@ Mandatory indicators include visible symbol and legend plus required semantics; 
 Service row links and action buttons are independent focus targets; full-row clicking cannot trigger a nested lifecycle action. Selected configuration destinations and creation steps expose current location with navigation semantics. Required cues apply to the task actually being submitted; a secret dialog’s required field cannot mislabel the unrelated wizard Continue task. Each repeated control uses its own local label/help/error association.
 
 Set/Replace, Clear/Delete, rule editing and policy test dialogs have an accessible name, bounded keyboard focus, safe Escape/Cancel and return to the originating control or a sensible successor. Do not persist secrets on cancellation or announce their content. New repeated items receive visible focus, scroll into view and a concise announcement. Imported identity errors link from a focused summary to their mapping field; unavailable actions explain how to proceed. Status and operation uncertainty always have words, not color alone. Preserve existing skip navigation, contrast, zoom and touch requirements.
+
+
+## UX-A08 — Review tabs, comparisons and confirmation
+
+Use semantic tabs with selected state, associated panels and one tab stop. ArrowLeft/Right and Home/End move among the two tabs; preloaded panels may activate with focus. Give each comparison a field/item label and Before/After reading order. Change labels/symbols supplement tint. Preserve exact values at text enlargement and test both document and text-range overflow.
+
+Use a named modal with inert background and trapped focus. Initially focus the heading so consequence and risk text precede the action. Cancel/Escape before submission restores the invoking control and context. Required checkboxes have associated specific risk/scope labels; announce remaining acknowledgments and submission outcomes. Every required acknowledgment must be checked before Continue is enabled. A pending operation cannot be dismissed with wording that implies cancellation or rollback of an admitted request. UX-IN17 governs stale/unknown outcomes.

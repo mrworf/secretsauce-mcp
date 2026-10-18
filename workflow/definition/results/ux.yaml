@@ -1,5 +1,5 @@
 stage: product-ux
-status: DECISION_REQUIRED
+status: PASS
 mode: targeted_revalidation
 validated_inputs:
 - path: docs/web-console-prd.md
@@ -10,97 +10,49 @@ validated_inputs:
   revision: sha256:790a7d0c0485559591f8d768436b5137474a5df1b5e3b0100c670497fa59a8d7
 - path: workflow/reconciliation/REC-RUN-009/reconciliation-result.yaml
   revision: sha256:abe2992d0c00437f54a8770d353c1da255188d7aeee123046407d4c403d97185
-- path: product/ux/manifest.yaml
-  revision: sha256:4c5851fd985e7fa83f5d902eaf0100f983cb5e3da240c28d7b4a789b80d0f8b2
-- path: product/ux/experience-brief.yaml
-  revision: sha256:859e7e6cd056f37a9682df291f0daa6d292d361b5a711fbbb824be2f1806c4e6
-- path: product/ux/02-interaction-patterns.md
-  revision: sha256:1ba0ba8765f82c832658848db8b78c8b11002d700f85bf37ec38e2e594c064d0
-artifact_changes:
-- path: workflow/definition/drafts/product-ux/web-console-feedback-004/changes-desktop.png
-  revision: sha256:0670f8ac334e541fb980c1061082a2971b86de10617220a421f1389e11e9226a
-  change: Non-authoritative bounded service-review proposal and rendered evidence.
-- path: workflow/definition/drafts/product-ux/web-console-feedback-004/changes-narrow.png
-  revision: sha256:cb7e22782a8f46ad11f07492fc10a9c5f99c2148d367e247db5fd2fb50c787da
-  change: Non-authoritative bounded service-review proposal and rendered evidence.
+- path: workflow/definition/decisions.md
+  revision: sha256:63c476c74fefc60bcd3d925b2c32d6d127804460a4dd9f06d90be053cc4c1711
+- path: workflow/definition/drafts/product-ux/web-console-feedback-004/approval.yaml
+  revision: sha256:c51e619fb0f0a82ec9c7180f5976626655cacdba5cc76758654824fd780d5fe5
 - path: workflow/definition/drafts/product-ux/web-console-feedback-004/design-contract.md
   revision: sha256:ba98da8c4c0bfa213a2b0179c397510d260613ab297355f7433d2be92878605b
-  change: Non-authoritative bounded service-review proposal and rendered evidence.
-- path: workflow/definition/drafts/product-ux/web-console-feedback-004/exception-dialog-desktop.png
-  revision: sha256:b4ba634c88e5c47064cc18afde67a5aadf906a542e0ae949b21ec1668680e9b8
-  change: Non-authoritative bounded service-review proposal and rendered evidence.
-- path: workflow/definition/drafts/product-ux/web-console-feedback-004/exception-dialog-narrow.png
-  revision: sha256:01e65edb9a11aeb14083f2294aa36b0bf14f5591fab459b006aeb39c445a70dd
-  change: Non-authoritative bounded service-review proposal and rendered evidence.
-- path: workflow/definition/drafts/product-ux/web-console-feedback-004/experience-brief.yaml
-  revision: sha256:8053df7b2c95f0185cad11a72d6e076755f93423365655a0e257d4460ff5fb4b
-  change: Non-authoritative bounded service-review proposal and rendered evidence.
-- path: workflow/definition/drafts/product-ux/web-console-feedback-004/index.md
-  revision: sha256:ddef8b50c8e8e96a6b1f857c1f62f8aaa3a332f3a85f85fdb3229beeacf66762
-  change: Non-authoritative bounded service-review proposal and rendered evidence.
-- path: workflow/definition/drafts/product-ux/web-console-feedback-004/new-desktop.png
-  revision: sha256:2fc1c09b62fe37d10df57b17cbb7d3da2b5b6133b2232d50fa21d4f527f3173a
-  change: Non-authoritative bounded service-review proposal and rendered evidence.
-- path: workflow/definition/drafts/product-ux/web-console-feedback-004/new-narrow.png
-  revision: sha256:7b941f05cf86b82ec48652b335da35952f291d34f13a8b78f5234f60c8eec2bf
-  change: Non-authoritative bounded service-review proposal and rendered evidence.
-- path: workflow/definition/drafts/product-ux/web-console-feedback-004/no-exception-dialog-desktop.png
-  revision: sha256:aed90e00d185eef63f3e2f61dc37d577b54a33f9ad765cd86935016c438b4c8b
-  change: Non-authoritative bounded service-review proposal and rendered evidence.
-- path: workflow/definition/drafts/product-ux/web-console-feedback-004/render-checks.json
-  revision: sha256:5c8cb4094174568da9d7f0ba136aca2eb3eabc9206c0ddf0710652144b43337b
-  change: Non-authoritative bounded service-review proposal and rendered evidence.
-- path: workflow/definition/drafts/product-ux/web-console-feedback-004/render-concepts.mjs
-  revision: sha256:1c59a98299fa9b7faaf7a0cb3fac637b1ddbb03f4ea68a12462dcd93d16cb313
-  change: Non-authoritative bounded service-review proposal and rendered evidence.
-- path: workflow/definition/drafts/product-ux/web-console-feedback-004/review.html
-  revision: sha256:c8edaac1ed5822c40a4f2b14c002a18ce95f4237ae4e8486c5efb770ef2f04a5
-  change: Non-authoritative bounded service-review proposal and rendered evidence.
-- path: workflow/definition/drafts/product-ux/web-console-feedback-004/styles.css
-  revision: sha256:7edddbf29407d4cf1b3a407b4f7080631fec4a6fa275be1edc5cfedc2005f1b9
-  change: Non-authoritative bounded service-review proposal and rendered evidence.
+artifact_changes:
+- path: product/ux/00-overview.md
+  revision: sha256:1d6853fb734a3217a8c95a658e5d161e150c0023369269d5ef9b16324ed29145
+  change: Synthesize approved bounded UX5 service-review direction; preserve unrelated UX.
+- path: product/ux/02-interaction-patterns.md
+  revision: sha256:9d945862fc0f60bbee51953abc928d000b65a09c94c3a2b17538f67f829a79c1
+  change: Synthesize approved bounded UX5 service-review direction; preserve unrelated UX.
+- path: product/ux/03-responsive-and-platform.md
+  revision: sha256:1a8cbf98b774198ffecae33998af41ddae8f0dd850fbac35acc5e243bfde0eb6
+  change: Synthesize approved bounded UX5 service-review direction; preserve unrelated UX.
+- path: product/ux/04-visual-system.md
+  revision: sha256:6cd3c20e2a08c50d308cebb53b7e6c2d4219069afc3fa0799c5a3f29978ff31a
+  change: Synthesize approved bounded UX5 service-review direction; preserve unrelated UX.
+- path: product/ux/05-accessibility.md
+  revision: sha256:88ab0bded86f172517ea99ddd19c99aa2162ce3bee9660696017cb5509fd2292
+  change: Synthesize approved bounded UX5 service-review direction; preserve unrelated UX.
+- path: product/ux/07-acceptance-checklist.md
+  revision: sha256:c0a0886500d23ce0a5ea26cc652e8ec2b9c09651d30f0787d175ec0ee8c65f6d
+  change: Synthesize approved bounded UX5 service-review direction; preserve unrelated UX.
+- path: product/ux/experience-brief.yaml
+  revision: sha256:2fecc4327bcd07ebf0383778c5fce787c017fd7827a7ff8a18640b8efc3f8264
+  change: Synthesize approved bounded UX5 service-review direction; preserve unrelated UX.
+- path: product/ux/manifest.yaml
+  revision: sha256:42f02fd625ca192179e701519168a1b07ef4f4366ac963215f42a0d7e3d64e1a
+  change: Synthesize approved bounded UX5 service-review direction; preserve unrelated UX.
 changed_paths:
-- workflow/definition/drafts/product-ux/web-console-feedback-004/changes-desktop.png
-- workflow/definition/drafts/product-ux/web-console-feedback-004/changes-narrow.png
-- workflow/definition/drafts/product-ux/web-console-feedback-004/design-contract.md
-- workflow/definition/drafts/product-ux/web-console-feedback-004/exception-dialog-desktop.png
-- workflow/definition/drafts/product-ux/web-console-feedback-004/exception-dialog-narrow.png
-- workflow/definition/drafts/product-ux/web-console-feedback-004/experience-brief.yaml
-- workflow/definition/drafts/product-ux/web-console-feedback-004/index.md
-- workflow/definition/drafts/product-ux/web-console-feedback-004/new-desktop.png
-- workflow/definition/drafts/product-ux/web-console-feedback-004/new-narrow.png
-- workflow/definition/drafts/product-ux/web-console-feedback-004/no-exception-dialog-desktop.png
-- workflow/definition/drafts/product-ux/web-console-feedback-004/render-checks.json
-- workflow/definition/drafts/product-ux/web-console-feedback-004/render-concepts.mjs
-- workflow/definition/drafts/product-ux/web-console-feedback-004/review.html
-- workflow/definition/drafts/product-ux/web-console-feedback-004/styles.css
+- product/ux/00-overview.md
+- product/ux/02-interaction-patterns.md
+- product/ux/03-responsive-and-platform.md
+- product/ux/04-visual-system.md
+- product/ux/05-accessibility.md
+- product/ux/07-acceptance-checklist.md
+- product/ux/experience-brief.yaml
+- product/ux/manifest.yaml
 - workflow/definition/results/ux.yaml
 findings: []
-questions:
-- id: UX-DESIGN-005
-  kind: UX_DIRECTION_APPROVAL
-  blocking: true
-  affected_requirement: CONFIG-03
-  affected_surfaces:
-  - service-review
-  question: 'Approve this service-review design: paired Before/After groups in Changes, complete section cards in
-    New settings, and the shown confirmation dialog with individual security acknowledgments?'
-  reason: This is the only new consequential composition/responsive realization. Existing UX4 appearance and explicit
-    feedback intent are preserved; Product UX requires explicit approval covering representative visual concepts
-    before canonical publication.
-  recommendation: Approve feedback-004-draft-1 as rendered; retain UX4 styling and stack each comparison pair on
-    narrow screens.
-  alternatives: []
-  options:
-  - Approve this design
-  - Request a specific revision
-  proposal_paths:
-  - workflow/definition/drafts/product-ux/web-console-feedback-004/index.md
-  - workflow/definition/drafts/product-ux/web-console-feedback-004/changes-desktop.png
-  - workflow/definition/drafts/product-ux/web-console-feedback-004/new-desktop.png
-  - workflow/definition/drafts/product-ux/web-console-feedback-004/exception-dialog-desktop.png
-  - workflow/definition/drafts/product-ux/web-console-feedback-004/changes-narrow.png
-  - workflow/definition/drafts/product-ux/web-console-feedback-004/design-contract.md
+questions: []
 affected_requirements:
 - CONFIG-03
 - POLICY-04
@@ -108,44 +60,67 @@ affected_requirements:
 - UX-02
 - UX-03
 - UX-04
-affected_artifacts:
+affected_artifacts: &id001
+- product/ux/00-overview.md
 - product/ux/02-interaction-patterns.md
 - product/ux/03-responsive-and-platform.md
 - product/ux/04-visual-system.md
 - product/ux/05-accessibility.md
 - product/ux/07-acceptance-checklist.md
-- product/ux/manifest.yaml
 - product/ux/experience-brief.yaml
+- product/ux/manifest.yaml
 reconciliation_required: false
 change_impact:
   product: false
   user_journeys: false
-  ux: false
+  ux: true
   architecture: false
   security: false
 ux_handoff:
   manifest:
     path: product/ux/manifest.yaml
-    revision: web-console-ux-4
+    revision: web-console-ux-5
   experience_brief:
     path: product/ux/experience-brief.yaml
-    revision: web-console-ux-4
+    revision: web-console-ux-5
   approval:
-    status: proposal_pending_approval
+    status: approved
     decision_refs:
-    - UX-DESIGN-004
-    pending_question: UX-DESIGN-005
-  authoritative_artifacts_changed: []
+    - UX-DESIGN-005
+    evidence_path: workflow/definition/drafts/product-ux/web-console-feedback-004/approval.yaml
+  authoritative_artifacts_changed: *id001
   downstream_freshness:
     affected_domains: []
     potentially_stale_artifacts: []
+  impact_hints:
+    architecture: Existing reviewed-scope and dependency controls preserved; parent owns validation.
+    security: Distinct required exception acknowledgments, sanitization and atomic activation retained; parent owns
+      validation.
   transaction:
     owner: product-definition-orchestrator
-    starting_head: 443fe8ee3af7843e9d30e9714e9c1ad97c13314c
+    starting_head: 57eaebe24fd13a10d2b12f688515b307c47ac8ba
     child_commit: null
   validation:
-    scope: "REC-RUN-009 findings035\u2013037; no production or canonical UX edits"
-    prototype_checks: workflow/definition/drafts/product-ux/web-console-feedback-004/render-checks.json
-    boundary: Visual proposal and interaction contract only; implementation and release acceptance remain downstream
-    remaining_work: After approval, synthesize bounded canonical UX5 rules/manifest and return PASS. No other UX
-      question or authority conflict remains.
+    approved_concept_bytes_preserved: true
+    canonical_rules_added:
+    - UX-G06
+    - UX-IN17
+    - UX-R07
+    - UX-V07
+    - UX-A08
+    - UX-C54
+    - UX-C55
+    - UX-C56
+    - UX-C57
+    - UX-C58
+    resolved_findings:
+    - REC-035
+    - REC-036
+    - REC-037
+    boundary: Design synthesis only, not runtime acceptance or whole-definition readiness.
+    semantic_preservation: 'No product, architecture, security or coverage source was edited. CONFIG-03.a and POLICY-04
+      coverage obligations remain: scoped sanitized review, current authorization, atomic activation, dependency
+      fencing, required exception acknowledgments and audited apply. UX5 changes presentation within those obligations;
+      it does not add permissions, persistence, activation semantics or collapse existing exception identities.
+      Global Settings/SMTP and immediate access/credential actions remain unchanged. These are bounded preservation
+      facts, not a replacement architecture/security review or downstream freshness decision.'

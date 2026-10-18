@@ -1030,7 +1030,7 @@ approved_proposal_revisions: *id001
 ```
 
 
-## UX-DESIGN-005 — Review & Apply visual direction
+## UX-DESIGN-005 — Approved service review direction
 
 ```yaml
 id: UX-DESIGN-005
@@ -1058,15 +1058,15 @@ proposal_paths:
 - workflow/definition/drafts/product-ux/web-console-feedback-004/exception-dialog-desktop.png
 - workflow/definition/drafts/product-ux/web-console-feedback-004/changes-narrow.png
 - workflow/definition/drafts/product-ux/web-console-feedback-004/design-contract.md
-status: pending
+status: accepted
 stage: ux
 resolution_category: PRODUCT_DECISION
 resolution_owner: user
-routing_status: awaiting_user_approval
+routing_status: resolved
 depends_on: []
-ask_user: true
+ask_user: false
 affected_artifact: workflow/definition/drafts/product-ux/web-console-feedback-004/index.md
-proposal_revisions:
+proposal_revisions: &id001
 - path: workflow/definition/drafts/product-ux/web-console-feedback-004/changes-desktop.png
   revision: sha256:0670f8ac334e541fb980c1061082a2971b86de10617220a421f1389e11e9226a
 - path: workflow/definition/drafts/product-ux/web-console-feedback-004/changes-narrow.png
@@ -1095,4 +1095,8 @@ proposal_revisions:
   revision: sha256:c8edaac1ed5822c40a4f2b14c002a18ce95f4237ae4e8486c5efb770ef2f04a5
 - path: workflow/definition/drafts/product-ux/web-console-feedback-004/styles.css
   revision: sha256:7edddbf29407d4cf1b3a407b4f7080631fec4a6fa275be1edc5cfedc2005f1b9
+resolution: approved
+approval_scope: feedback-004-draft-1 representative service-review layout and dialog
+  direction
+approved_proposal_revisions: *id001
 ```

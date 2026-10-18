@@ -31,3 +31,10 @@ Match representative 1440px desktop and 390px narrow concepts in composition; al
 ## UX-R06 — Service sections and focused tasks
 
 Feedback 003 extends the approved wide shell: compact full-width service rows, secondary Configuration navigation and paired related fields. At narrow width use wrapping section navigation and stacked field groups; preserve identity, independent status, all permitted row actions and import recovery. Dialogs fit the viewport and scroll within usable bounds, keeping their title, action context and focused inputs accessible. No nested fold-outs or stacked modal tasks. Verify 320 CSS px, 390px and desktop concepts plus enlarged text; inspect both element boxes and text ranges, not only document width. Keep literal hosts/patterns inspectable without losing distinguishing content.
+
+
+## UX-R07 — Service comparison reflow
+
+Changes uses aligned Before/After columns at wide widths. At narrow widths stack Before then After within each field/item pair; never collect all Before values separately from all After values. Repeat labels so scope remains clear. New settings uses two columns of named section cards when space permits and one column otherwise. Retain complete values, section headings, review identity, exception summary and action bar; wrap exact unbroken literals without clipping or horizontal page scrolling. Compare 1440px and 390px representative states and enlarged text against approved feedback 004 concepts.
+
+Confirmation fits the viewport with reachable Cancel and Continue. A long list may scroll inside the bounded dialog; every exception remains individually visible/reachable without nested accordions or hidden acknowledgment controls. Narrow layout does not remove supported settings or weaken acknowledgment requirements.

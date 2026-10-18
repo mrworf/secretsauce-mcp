@@ -6,7 +6,7 @@ validated_inputs:
 - path: docs/web-console-prd.md
   revision: sha256:eddf4eabe2589d5ea8d235c267e722cf9b7ba9d5b93db89e3062be210716f9a1
 - path: product/ux/02-interaction-patterns.md
-  revision: sha256:1ba0ba8765f82c832658848db8b78c8b11002d700f85bf37ec38e2e594c064d0
+  revision: sha256:9d945862fc0f60bbee51953abc928d000b65a09c94c3a2b17538f67f829a79c1
 - path: product/architecture/web-console-state-contract.md
   revision: sha256:c8e22b5013d89090cc451cb2ef0290d7517b05bebae746faa15b65f10fca9848
 - path: product/security/web-console-security-contract.md
@@ -58,4 +58,12 @@ validation:
   - REC-035
   - REC-036
   - REC-037
+  ux5_equivalence:
+    checked_at: '2026-10-18T21:20:18+00:00'
+    prior_interaction_revision: sha256:1ba0ba8765f82c832658848db8b78c8b11002d700f85bf37ec38e2e594c064d0
+    status: PASS
+    scope: 'UX-IN02/17 approved UX-DESIGN-005 refinement preserves ACT-020/021/123-125: immutable grouped comparison/full
+      proposal, explicit zero/all-exception confirmation, cancellation/focus, stale/unknown/permission controls
+      and effective TLS override scope. Responsive paired columns and exact-value display refine presentation without
+      changing journey transitions. Audit document remains the prior bounded review record.'
 workflow_readiness: "Journey-stage PASS for REC-035\u2013037; Product UX validation and overall handoff remain orchestrator-owned."

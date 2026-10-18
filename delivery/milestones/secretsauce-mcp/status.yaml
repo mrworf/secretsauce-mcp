@@ -303,22 +303,25 @@ milestones:
 - id: '25'
   title: Resolve imported identities without reupload
   file: delivery/milestones/secretsauce-mcp/25-import-identity-recovery.md
-  status: in_progress
+  status: completed
   dependencies:
   - '21'
-  completed_at: null
-  evidence: null
-  notes: Feedback 003; REC-RM-015
+  completed_at: '2026-10-18T15:18:14.297451+00:00'
+  evidence: evidence/qa/secretsauce-mcp/milestone25/acceptance.md
+  notes: M25 single slice complete; 728 tests/73 files + build + actual HTTPS visual/keyboard/narrow/200%
+    checks PASS. No implicit grants; legacy source-index absence explicit.
   started_at: '2026-10-18T15:00:58.296201+00:00'
+  commit_hash: 721712567d22f0a8974381859f6c6805201727ca
 - id: '26'
   title: See service state and confirm lifecycle actions
   file: delivery/milestones/secretsauce-mcp/26-service-lifecycle-rows.md
-  status: pending
+  status: in_progress
   dependencies:
   - '22'
   completed_at: null
   evidence: null
   notes: Feedback 003; REC-RM-016
+  started_at: '2026-10-18T15:18:14.297451+00:00'
 - id: '27'
   title: Edit focused service sections in Guided or Advanced mode
   file: delivery/milestones/secretsauce-mcp/27-focused-service-editing.md
@@ -482,10 +485,10 @@ delivery_goal:
   - '33'
   - '34'
   execution: autonomous
-  current_milestone: '25'
-  governing_plan: delivery/plans/secretsauce-mcp/milestone_25_plan_01.md
+  current_milestone: '26'
+  governing_plan: delivery/plans/secretsauce-mcp/milestone_26_plan_01.md
   blockers: []
-  resume_point: Generate M25 governing and slice plans, then implement under minimal-slice-delivery.
+  resume_point: Generate M26 plans, then deliver service lifecycle rows; M25 accepted.
   started_at: '2026-10-18T15:00:58.296201+00:00'
 compiled_from_history:
 - product_id: secretsauce-mcp

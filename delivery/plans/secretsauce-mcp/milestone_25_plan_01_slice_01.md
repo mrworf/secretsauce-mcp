@@ -18,7 +18,7 @@ Positive: multi-service import, two unresolved subjects, partial local then exac
 Commands: focused vitest migration/services/HTTP/backup-schema affected tests during iteration; npm test and npm run build at completed milestone; PLAYWRIGHT_BROWSERS_PATH=/tmp/secretsauce-feedback-browsers node scripts/verify-console-import-recovery-browser.mjs. Rerun permission failures with loopback permission, never weaken tests.
 
 ## Acceptance and commit
-Every M25 criterion must have direct evidence before commit. Commit implementation, tests, operator notes, sanitized screenshots/report and plans together; preserve pre-existing test-results/. Root records completion after inspecting evidence. Status: completed.
+Every M25 criterion must have direct evidence before commit. Commit implementation, tests, operator notes, sanitized screenshots/report and plans together; preserve pre-existing test-results/. Root accepted completion after checking current source hashes and evidence. Status: completed.
 
 ## Execution and validation
 Implemented the complete recovery journey, including current-target eligibility, source metadata, HTTP permissions, independent pending blockers, partial corrections, preserved edits/selections, archived/read-only views and uncertain-result inspection. No later milestone behavior implemented.
@@ -31,3 +31,5 @@ Implemented the complete recovery journey, including current-target eligibility,
 - Final source hashes in evidence/qa/secretsauce-mcp/milestone25/validation.json. No production changes after this final validation. Documentation-only closeout does not invalidate evidence.
 
 This plan, implementation and evidence belong to the containing slice commit. Root records its exact SHA during milestone acceptance; no separate implementation commit is needed for bookkeeping.
+
+Commit provenance: `721712567d22f0a8974381859f6c6805201727ca`.

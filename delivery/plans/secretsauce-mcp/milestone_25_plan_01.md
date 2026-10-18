@@ -21,7 +21,7 @@ One vertical slice: mapping inspection, admitted correction, preservation, revie
 ## Slice index
 | Slice | Plan | Outcome | Dependencies | Status | Commit | Evidence |
 |---|---|---|---|---|---|---|
-| 01 | [slice 01](milestone_25_plan_01_slice_01.md) | Resolve imported identities in a saved draft | M21 | completed | containing slice commit; finalized SHA recorded by root | evidence/qa/secretsauce-mcp/milestone25/acceptance.md |
+| 01 | [slice 01](milestone_25_plan_01_slice_01.md) | Resolve imported identities in a saved draft | M21 | completed | 721712567d22f0a8974381859f6c6805201727ca | evidence/qa/secretsauce-mcp/milestone25/acceptance.md |
 
 ## Cross-slice concerns
 Keep source literals and own-property-safe keys; authorized Auditor inspection without writes, Member denied inspection. Mapping revision/generation and identity dependency fingerprints reject stale targets. Audit admission gates mutation, unknown outcomes trigger durable-state inspection before retry. No execution or value mutation. Recovery schema preserves safe source metadata. Browser validation uses disposable HTTPS state only.

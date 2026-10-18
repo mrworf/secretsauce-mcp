@@ -1,0 +1,16 @@
+{
+  "result": "PASS",
+  "browser": "Declared Playwright Chromium",
+  "transport": "Actual loopback HTTPS, example.org certificate and resolver mapping",
+  "setupMilliseconds": 2258,
+  "checks": [
+    "M22: Required and conditional controls, invalid URL with linked help/error, exact/suffix selector, two-destination reference state, removal, six overlap states and 200% text-range reflow passed.",
+    "UX-C03/C25: first five-step no-auth service, explicit Owner assignment and acknowledged default-allow review completed using keyboard; Back preserved fields; measured 2258 ms",
+    "UX-C05/C06/C15: saved draft stays distinct from applied state; concurrent disable produces sanitized stale comparison with focused error and explicit reload/review",
+    "UX-C02/C07/C08/C21: list search/Archived filter; immediate disable/archive/unarchive consequences; Cancel restores focus; unarchive Disabled",
+    "Multiple destinations, base paths/ports/schemes, exact/suffix/regex hosts, inherited/overridden TLS and multiple header/query identities with prefix/suffix/default-off or explicit header ownership were represented in grouped forms and acknowledged review",
+    "Basic policy literal metacharacter-prefix creation validates absolute prefixes and preserves exact regex escaping; backend policy checks are covered by basic-policy.test.ts",
+    "UX-C10/C07/C08: immediate write-only credential save clears the field, metadata version is visible, review contains no value, dependency deletion gives safe guidance",
+    "UX-C15/C20/C21/C22: desktop and 320px list/forms/review/confirmation/error/metadata reflow with no page overflow; keyboard focus, status, safe unsaved dialog, Auditor and audit-outage writes hidden; account/logout remain reachable; no persistent browser state"
+  ]
+}

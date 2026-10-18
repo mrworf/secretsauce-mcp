@@ -23,3 +23,11 @@ The console opens a searchable Services list with lifecycle filtering, descripti
 Unsaved navigation offers Stay, Save draft or Discard. Confirmations identify the target and immediate consequences; Cancel restores focus. Stale work retains permitted non-secret proposed configuration, displays Current and Proposed and offers an explicit reload/review path. Narrow views retain My account, logout, state and consequential controls.
 
 Reproducible browser verification uses the declared `@playwright/test` Chromium dependency: `PLAYWRIGHT_BROWSERS_PATH=/tmp/secretsauce-m10-browsers node scripts/verify-console-services-browser.mjs` after `npm run build` in this sandbox. Other installations can use their declared Playwright browser path. The harness uses actual local HTTPS, synthetic `example.org` certificates, keyboard completion and 320px screenshots without persisting browser secrets.
+
+### Focused service configuration
+
+Overview groups the configuration currently in use into connections, authentication, request policy, and access/exceptions. A separate notice identifies a saved draft; a service without current configuration cannot run yet.
+
+Configuration opens populated Details, Destinations, Authentication, Access & policy, Secret detection, and Review changes sections. Select one section at a time. Auditor views use the same grouping without mutation actions. Guided and Advanced are two representations of the entire service draft; Advanced retains exact imported fields and patterns. Invalid JSON stays visible for correction and cannot overwrite the guided draft or be saved.
+
+Creation step links can be visited directly. Switching sections retains safe edits without saving or applying. Save draft stores non-secret work for later; Review & apply validates the entire service and requires explicit activation. Incomplete configuration can be saved but cannot activate. Leaving unsaved work offers Stay, Save draft, or Discard; immediate credential operations are not undone by discard.

@@ -1,0 +1,33 @@
+{
+  "milestone": "27",
+  "result": "PASS",
+  "full_suite": {
+    "command": "npm test -- --maxWorkers=2",
+    "files": 73,
+    "tests": 730,
+    "seconds": 105.5
+  },
+  "build": "PASS (standalone and full-suite pretest)",
+  "browser_suites": [
+    "focused-service",
+    "services",
+    "lifecycle",
+    "import-recovery",
+    "friendly-forms",
+    "advanced"
+  ],
+  "final_inputs": {
+    "src/consoleServicePage.ts": "sha256:d7ad2af4e3baf91bb4d5ae7e3b24ea0e8fcfe46693ed08576c663f5f4c181d36",
+    "src/consolePage.ts": "sha256:883734eac52ba8f5ce13a4f793a8e8784bdaac37877e6e224f205d5c9deab831",
+    "src/consolePresentation.ts": "sha256:c7ef5bfee0d4e848b8c74ef28afa14038b6da90e1528ff5c7cd72d0a24b0db82",
+    "docs/managed-service-configuration.md": "sha256:3f513e860401595b3902c97e8a57095b355b5a7b5f7776f1cc2927f836a677a7",
+    "scripts/verify-console-friendly-forms-browser.mjs": "sha256:1cd68a83417bffbb49ef340625e5d212be1775a668a24f8bde12ff6e6b35c8dd",
+    "scripts/verify-console-advanced-browser.mjs": "sha256:ed91b9db7dbba45909c5998a4372a66bbf4c21a653525b7f6502fea7faadfece",
+    "scripts/verify-console-import-recovery-browser.mjs": "sha256:58ba0ed4071d06c4ceadd50f7fa53f1fe963eee3dce5dbf6a285ab3597ce32b8",
+    "scripts/verify-console-lifecycle-browser.mjs": "sha256:ef5dfcda4fc0bf1568f768ee196470f591f25555816d6acb3255ce5f2c24f725",
+    "scripts/verify-console-services-browser.mjs": "sha256:19de2924716c6c3c62c71e91237208e63af0bac182d1976b7aea476c5274d5b2",
+    "scripts/verify-console-focused-service-browser.mjs": "sha256:672b4ebb2fb7fe9f50da400903ed65976b7774fc101b8762545693974d5cf017"
+  },
+  "secret_handling": "Synthetic fixtures; no values in stored read metadata; password fields masked; no browser storage",
+  "operational_scope": "No live deployment, Docker lease, backup/recovery, gateway transport or authorization changes"
+}

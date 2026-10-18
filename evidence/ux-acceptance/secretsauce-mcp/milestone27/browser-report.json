@@ -2,8 +2,23 @@
   "result": "PASS",
   "checks": [
     "Overview groups actual applied configuration independently from pending name; no flattened duplicate.",
-    "Auditor has focused readable sections and no mutation affordances.",
+    "Whole-draft Guided/Advanced preserves exact custom methods, regex, binary options and safe edits; invalid/empty JSON retains context and cannot save. Draft save never activates.",
+    "Direct creation steps keep non-secret inputs, incomplete review fails, explicit leave guard keeps or discards without hidden activation. Browser Back/Forward restores selected editor section.",
+    "Auditor has focused readable sections and complete read-only advanced values without mutation affordances.",
     "Draft-only service never claims current executable configuration.",
     "Load failure surfaces error rather than empty success."
-  ]
+  ],
+  "inputs": {
+    "src/consoleServicePage.ts": "sha256:d7ad2af4e3baf91bb4d5ae7e3b24ea0e8fcfe46693ed08576c663f5f4c181d36",
+    "src/consolePresentation.ts": "sha256:c7ef5bfee0d4e848b8c74ef28afa14038b6da90e1528ff5c7cd72d0a24b0db82",
+    "src/consolePage.ts": "sha256:883734eac52ba8f5ce13a4f793a8e8784bdaac37877e6e224f205d5c9deab831",
+    "scripts/verify-console-focused-service-browser.mjs": "sha256:672b4ebb2fb7fe9f50da400903ed65976b7774fc101b8762545693974d5cf017",
+    "workflow/definition/drafts/product-ux/web-console-feedback-003/overview-desktop.png": "sha256:2b1e0028d2d900115d0be8b9fc245c70ed1874fe93e3b4aaab9188b3eebf370c",
+    "workflow/definition/drafts/product-ux/web-console-feedback-003/overview-narrow.png": "sha256:c485be9194ffa402e9bfdaf4c48471a39811fc45d669f678d18040cb6d13b635",
+    "workflow/definition/drafts/product-ux/web-console-feedback-003/create-desktop.png": "sha256:0d065d6b1cf8932f8a7dfbdbf162abf84805042dfbb36d61a16409e43fb03303",
+    "workflow/definition/drafts/product-ux/web-console-feedback-003/create-narrow.png": "sha256:a625844084afd66e45102a877dd353955c1bf2c3a82935c4597c41af291074e6",
+    "workflow/definition/drafts/product-ux/web-console-feedback-003/details.html": "sha256:96f10bd2dd20bb7289ea8e2354b9d0ac0cd72f772ef1b0e38796a462e970f8f0",
+    "workflow/definition/drafts/product-ux/web-console-feedback-003/advanced.html": "sha256:a7ba0cf076ba534bb5cc89b2135ac2a9f154553e223ea86b75198a3458045d56",
+    "workflow/definition/drafts/product-ux/web-console-feedback-003/styles.css": "sha256:1de78d96aee168f9d0a356a45bef9fbb7ae16a9c088343fdf0a24ff57663596d"
+  }
 }

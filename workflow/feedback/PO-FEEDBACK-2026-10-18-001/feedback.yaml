@@ -9,7 +9,7 @@ source:
 status: CONFIRMED
 transaction:
   parent_commit: 0a61db338023f3e41ef3e2d57f691bb0c0cbd068
-  repository_commit: null
+  repository_commit: bf67d59146f7a06dfa6122001859519a78c53a05
   pre_existing_dirty_paths:
   - test-results/
 items:
@@ -203,5 +203,5 @@ items:
   ambiguity: []
 unresolved: []
 handoff:
-  reconciliation_ready: false
-  next_workflow: null
+  reconciliation_ready: true
+  next_workflow: product-reconciliation

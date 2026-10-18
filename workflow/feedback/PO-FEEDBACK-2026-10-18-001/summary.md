@@ -20,6 +20,8 @@ Source: Product Owner prompt. Status: CONFIRMED.
 
 No unresolved authority questions. Proposed comparison columns and destination naming remain exploratory mechanisms for specialist evaluation.
 
-Reconciliation ready: false.
+Reconciliation ready: true.
 
 Authority: confirmed directives establish product intent; preferences are advisory; observations are evidence; ideas/questions are exploratory.
+
+Run product-reconciliation using workflow/feedback/PO-FEEDBACK-2026-10-18-001/feedback.yaml.

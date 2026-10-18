@@ -66,7 +66,7 @@ accepted_risks:
   - D-012
   result: workflow/definition/results/security.yaml
 validation:
-  repository_commit: null
+  repository_commit: d0dffc6ffbc47f114dc232abedf40f50db3e52f3
   prd:
     status: passed
     result: workflow/definition/results/prd.yaml

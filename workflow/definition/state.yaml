@@ -4,7 +4,7 @@ status: ready_for_delivery_planning
 scope: Self-hosted single-organization web console initial release
 transaction:
   parent_commit: 9351c2d39124f9c40d4884ca51b2db2a19db2d3e
-  repository_commit: null
+  repository_commit: d0dffc6ffbc47f114dc232abedf40f50db3e52f3
   pre_existing_dirty_paths:
   - test-results/
   owned_paths:
@@ -1494,7 +1494,7 @@ last_reconciliation:
   definition_package:
     status: current
     path: workflow/definition/definition-package.yaml
-    revision: sha256:e617bd503627501103913751ef52985ddbaea4f2afe2d4f74ad8df8d3eb7568b
+    revision: sha256:7f417f6965b95f3451144126133831ec1d5c62daee6a148d3606e7552f0b134c
 feedback_source: workflow/feedback/PO-FEEDBACK-2026-10-17-001/feedback.yaml
 reconciliation_history:
 - id: REC-RUN-001
@@ -1646,8 +1646,8 @@ next_handoff:
   mode: CHANGE_PLAN
   ready: true
   primary_input: workflow/definition/definition-package.yaml
-  definition_package_revision: sha256:e617bd503627501103913751ef52985ddbaea4f2afe2d4f74ad8df8d3eb7568b
-  repository_commit: null
+  definition_package_revision: sha256:7f417f6965b95f3451144126133831ec1d5c62daee6a148d3606e7552f0b134c
+  repository_commit: d0dffc6ffbc47f114dc232abedf40f50db3e52f3
   reconciliation:
     id: REC-RUN-008
     path: workflow/reconciliation/REC-RUN-008/reconciliation-result.yaml

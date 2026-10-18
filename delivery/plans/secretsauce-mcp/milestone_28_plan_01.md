@@ -15,6 +15,8 @@ Preserve existing draft/review/apply, role/audit/dependency enforcement, destina
 
 Focused destination input and managed service tests during iteration. Actual local HTTPS browser covers ordinary/options, inheritance, invalid inputs, roles/stale/unknown outcomes, keyboard and 320px/200% text, comparison to approved references. Final full suite `npm test -- --maxWorkers=2`, build, applicable browser regressions sequentially. No concurrent full suite/browser workload. No downstream transport changes expected; if required, actual self-signed transport test becomes mandatory. Record QA/visual evidence and tested source hashes. Parent records final exact slice commit after acceptance; root owns milestone status.
 
-Status: implemented and validated; root acceptance pending. One slice commit contains the complete destination journey. Exact SHA will be recorded by parent after commit.
+Status: completed and accepted. One slice commit contains the complete destination journey. Exact SHA will be recorded by parent after commit.
 
 Evidence: [acceptance](../../../evidence/qa/secretsauce-mcp/milestone28/acceptance.md), [visual review](../../../evidence/ux-acceptance/secretsauce-mcp/milestone28/visual-review.md). Full suite: 731 tests / 73 files PASS (104.04s), build PASS; destination and three relevant browser regressions PASS.
+
+Accepted commit provenance: `f9fcbb408eec065210e42099ee92c1a5e4624353`.

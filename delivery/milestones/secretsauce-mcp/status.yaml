@@ -348,22 +348,25 @@ milestones:
 - id: '28'
   title: Configure destinations with explicit TLS scope
   file: delivery/milestones/secretsauce-mcp/28-destination-configuration.md
-  status: in_progress
+  status: completed
   dependencies:
   - '27'
-  completed_at: null
-  evidence: null
-  notes: Feedback 003; REC-RM-019
+  completed_at: '2026-10-18T15:58:38.666173+00:00'
+  evidence: evidence/qa/secretsauce-mcp/milestone28/acceptance.md
+  notes: One slice; 731 tests across 73 files, build, four browser suites and matching
+    visual checks passed.
   started_at: '2026-10-18T15:46:06.992752+00:00'
+  commit_hash: f9fcbb408eec065210e42099ee92c1a5e4624353
 - id: '29'
   title: Clear in-use credential values with durable attribution
   file: delivery/milestones/secretsauce-mcp/29-durable-credential-clearing.md
-  status: pending
+  status: in_progress
   dependencies:
   - '11'
   completed_at: null
   evidence: null
   notes: Feedback 003; REC-RM-020, REC-RM-021
+  started_at: '2026-10-18T15:58:38.666173+00:00'
 - id: '30'
   title: Manage write-only values through focused dialogs
   file: delivery/milestones/secretsauce-mcp/30-credential-value-dialogs.md
@@ -500,11 +503,11 @@ delivery_goal:
   - '33'
   - '34'
   execution: autonomous
-  current_milestone: '28'
-  governing_plan: delivery/plans/secretsauce-mcp/milestone_28_plan_01.md
+  current_milestone: '29'
+  governing_plan: delivery/plans/secretsauce-mcp/milestone_29_plan_01.md
   blockers: []
-  resume_point: "Generate M28 plans and deliver destination configuration. M25\u2013\
-    27 accepted."
+  resume_point: Deliver M29 using its minimal-slice transaction; prior milestones
+    accepted.
   started_at: '2026-10-18T15:00:58.296201+00:00'
 compiled_from_history:
 - product_id: secretsauce-mcp

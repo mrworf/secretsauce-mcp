@@ -33,7 +33,7 @@ Linked local errors for URL, host matcher/regex and integer port bounds; preserv
 
 All seven M28 criteria mapped in evidence/qa/secretsauce-mcp/milestone28/acceptance.md and matching visual review with final input hashes. One commit includes this plan, implementation, tests, operator documentation and evidence, excluding pre-existing test-results. Parent records final SHA without self-reference.
 
-Status: implemented and validated; commit pending.
+Status: completed and accepted.
 
 ## Execution and evidence
 
@@ -46,3 +46,5 @@ The runtime already supported inheritance; no transport/schema changes were need
 - [Acceptance criterion map](../../../evidence/qa/secretsauce-mcp/milestone28/acceptance.md), [visual comparison](../../../evidence/ux-acceptance/secretsauce-mcp/milestone28/visual-review.md), [tested source hashes](../../../evidence/qa/secretsauce-mcp/milestone28/tested-inputs.json).
 
 Parent records final exact commit SHA after acceptance. No extra user decision, waived requirement, live deployment or new external-client claim.
+
+Accepted commit provenance: `f9fcbb408eec065210e42099ee92c1a5e4624353`.

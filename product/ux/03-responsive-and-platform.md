@@ -26,3 +26,8 @@ Use the approved secondary section rail on desktop and an ordinary labeled Setti
 Use the desktop width like feedback 002: persistent primary rail, Settings section rail when relevant, then substantial form content with related status/help alongside where useful. Avoid an unnecessarily narrow centered column, stretched short inputs or empty filler panels. At reduced width move related panels below forms, then stack fields; account detail remains a full page. On narrow screens preserve one row per account with Account and Role, keeping secondary status/date in reachable detail rather than expanding each list row into an edit card. All role-permitted actions stay reachable.
 
 Match representative 1440px desktop and 390px narrow concepts in composition; also verify 320 CSS px and enlarged text using both document width and visible text ranges. Headings, action groups, step labels and help must wrap without clipping or overlap. Review before/after labels remain unambiguous when stacked.
+
+
+## UX-R06 — Service sections and focused tasks
+
+Feedback 003 extends the approved wide shell: compact full-width service rows, secondary Configuration navigation and paired related fields. At narrow width use wrapping section navigation and stacked field groups; preserve identity, independent status, all permitted row actions and import recovery. Dialogs fit the viewport and scroll within usable bounds, keeping their title, action context and focused inputs accessible. No nested fold-outs or stacked modal tasks. Verify 320 CSS px, 390px and desktop concepts plus enlarged text; inspect both element boxes and text ranges, not only document width. Keep literal hosts/patterns inspectable without losing distinguishing content.

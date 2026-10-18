@@ -16,13 +16,13 @@ Initial Add service follows the PRD's five steps: Details → Destination → Au
 
 ## UX-IA03 — Configuration coverage and disclosure
 
-Keep ordinary fields visible and advanced capabilities one named disclosure away. A settings search matches field labels/help and opens the containing section; it searches non-secret labels, never credential values. Guided forms and advanced editor operate on the same draft without lossy conversions. Existing regex rules remain regexes unless the user deliberately replaces them. No service-specific templates or profile packs are introduced.
+Keep ordinary fields visible and advanced capabilities one named, focused action away; do not nest multiple fold-outs in service configuration. A settings search matches field labels/help and opens the containing section; it searches non-secret labels, never credential values. Guided forms and advanced editor operate on the same draft without lossy conversions. Existing regex rules remain regexes unless the user deliberately replaces them. No service-specific templates or profile packs are introduced.
 
 | Location | Required capability placement |
 | --- | --- |
-| Service Configuration → Details | Stable service identifier (read-only after creation), name, description, documentation links |
-| Destinations | Multiple destination entries, base URLs, schemes and ports; exact host default; suffix/regex matching under Advanced; service-default TLS verification plus visible destination inheritance/overrides |
-| Authentication | Multiple credential identities with availability/version/last-change metadata; explicit No downstream authentication choice; placement/name/prefix/suffix/header-ownership controls; separate write-only value creation/replacement/deletion |
+| Service Configuration → Details | Name, description, documentation link with its LLM-use explanation; stable MCP service reference remains discoverable/copyable and read-only after creation |
+| Destinations | Multiple server cards with base URL and explained host matching; always-visible service-default certificate verification; focused per-destination advanced settings for schemes, ports, matching, exact reference and inherit/on/off verification override |
+| Authentication | Multiple credential identities with availability/version/last-successful-change actor and time; explicit No downstream authentication choice; placement/name/prefix/suffix/header-ownership controls; separate write-only value creation/replacement/deletion |
 | Request policy | Default allow/deny, ordered rules, explicit numeric priority, methods, host/path matching, reasons; exact/prefix/regex path choices; safe policy tester |
 | Secret detection | Effective Secretlint and sensitive-name settings, catalogs, extend/replace modes, rule options, custom patterns/exclusions and allow patterns; per-rule exceptions; binary controls |
 | Configuration tools | Same-draft advanced editor, sanitized export, import validation and revision history; historic configuration opens as a fresh permitted draft |
@@ -98,3 +98,24 @@ Creation and last sign-in show timezone and STATE-07 meanings. Never, Unknown an
 Use **Secret detection** for the former Response protection destination and service group. Explain immediately: “Checks data returned by services for credentials before sending it to your MCP client.” Keep best-effort limitations and destination trust readable; do not imply universal prevention. Search accepts the old term and exact technical aliases. Other ordinary labels/actions use concrete verbs and explain unavoidable technical terms. Copy across navigation, hints, review, validation, errors and outcomes must agree. All UX-IA06 capabilities remain accessible, including exact patterns/options and advanced fields.
 
 Settings shows loaded current values or explicitly pending values, never literal undefined or made-up sample defaults. Loading, unavailable, unconfigured and unreadable state are distinct. Health/jobs remain status views; editable diagnostics/retention use current-value forms. Do not duplicate a stale “applied diagnostics” summary beside a newer editor.
+
+
+## UX-IA09 — Focused service configuration and lifecycle navigation
+
+Service rows show name/description, lifecycle, separate pending changes and configuration attention. A real service link supports keyboard navigation and a full-row pointer hit area excluding sibling actions. Place permitted Enable/Disable and Delete on the right; unavailable activation has a nearby explanation and corrective route, never an apparently usable activation for an incomplete imported service. Active is a lifecycle state, not proof of reachability or executable readiness. Active plus Draft changes is represented simultaneously; Active plus Value missing explains blocked execution independently.
+
+Service Delete uses the existing archive lifecycle: confirmation explains removal from normal use, immediate blocking of new requests, retention of configuration/history/audit and the ability to restore as Disabled. Retain Archived filtering and explicit review before re-enabling. No permanent purge is introduced.
+
+Keep Overview, Configuration, Access and Activity. Overview summarizes the configuration actually in use using connection, authentication availability, policy and access/exception groups; do not flatten raw object structure. No applied configuration says “No configuration is in use. This service cannot run yet.” A pending-draft notice provides a specific review route. Current exceptions remain visible.
+
+Configuration opens directly in populated role-permitted non-secret fields, grouped into Details, Destinations, Authentication, Access & policy, Secret detection and Review changes. Render one section at a time. Show one editing-state context rather than redundant draft/unchanged banners. For read-only roles retain identical grouping as readable values. A single service-wide Guided/Advanced switch changes the complete draft representation; do not repeat Advanced Editor links in individual sections. Existing services use directly navigable sections; creation retains its five linked steps. Review follows the same groups. Never discard literals or unsupported advanced values on mode/section transition.
+
+Technical references are not deleted or renamed for presentation. Preserve imported service, destination, credential and rule identifiers exactly. Service ID is MCP-visible and remains discoverable/copyable with an explanation. System-only destination/rule identifiers may move to focused advanced settings; explicit technical editing remains reachable. No automatic identifier migration is implied.
+
+## UX-IA10 — Explicit access and imported identity recovery
+
+Access explains who may use this service through an MCP client, that an administrative role alone grants no execution, and that request rules still apply. Existing-service assignments have permitted immediate confirmed add/remove controls; initial activation identifies proposed assignments awaiting review. Read-only actors get labeled values without mutation controls. Do not confuse assignment selection with resolving an imported identity reference.
+
+An unresolved import identifies each original subject, its exact non-secret source location and affected services, and provides a direct mapping route inside the saved draft. An eligible account selector requires explicit selection; no email/name inference. Saving a mapping preserves unrelated draft edits and does not itself grant execution. Show remaining issues and a path to review; re-upload is not the only recovery. If an identity needs registration, explain the appropriate permitted registration route. Stale/ineligible selections require correction without silently granting access or losing safe work.
+
+Shared Secret detection defaults remain in Settings. Service pages show their source and effective value; a separate link explicitly names the Settings destination and wider impact. Guard unsaved service work before leaving. No unexpected global-settings jump within the ordinary policy-rule task.

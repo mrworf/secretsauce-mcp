@@ -1,33 +1,38 @@
 product_id: secretsauce-mcp
 ux:
-  revision: web-console-ux-3
+  revision: web-console-ux-4
   authority:
     status: approved
     decision_refs:
     - UX-DESIGN-001
     - UX-DESIGN-002
     - UX-DESIGN-003
+    - UX-DESIGN-004
     decision_ledger: workflow/definition/decisions.md
-    approved_proposal_revision: feedback-002-draft-1
-    approval_scope: Approved populated-form Settings, account list/detail, plain-language and wider-layout direction,
-      including general visual fidelity to feedback 002 concepts; unaffected UX1/2 preserved
+    approved_proposal_revision: feedback-003-draft-1
+    approval_scope: "Approved focused service configuration direction and visual appearance including credential/rule\
+      \ dialogs, lifecycle/draft/readiness status and import recovery; unaffected UX1\u20133 preserved"
     preserved_proposal_revision: draft-1
   source_revisions:
   - path: docs/web-console-prd.md
-    revision: sha256:00e6e2a9ec4661695f6aa4f01f86e8963739579bd147c7d73fa67870dda41e4b
+    revision: sha256:48194cfbc4e55756649820a411aa0675c2a6be87c577bdd920b0aaf06e21b617
   - path: product/security/web-console-security-contract.md
-    revision: sha256:2f46343c6d3206b48c46212de6ba84a308b7f2a921cfba7525d2b212f3e4f5bc
+    revision: sha256:8f66520798094a2638f006c9f3145e263e96008fdf63480fc6b98c2b0ccddc35
   - path: product/architecture/web-console-state-contract.md
-    revision: sha256:80835e44cdd550f10638bb757f183868804f9678cac4626a7ac84abb27ff0d32
+    revision: sha256:c8e22b5013d89090cc451cb2ef0290d7517b05bebae746faa15b65f10fca9848
   - path: workflow/feedback/PO-FEEDBACK-2026-10-11-002/feedback.yaml
     revision: sha256:515a53d2c56f256708cef2fce9add362aa20f2fbcf1f6d34b4ff1a1dfdb9d53b
   - path: workflow/definition/decisions.md
-    revision: sha256:e0e4789d9d7f3d624cefb8642fde62e7c7d7d8059dc30f37c2925b029f433ba1
+    revision: sha256:af25870e99593839902fd05c2630b948ca3746f49dff6c294e4f13351c6d6762
   - path: workflow/reconciliation/REC-RUN-005/reconciliation-result.yaml
     revision: sha256:fbcfc50401f03cf2360fe0b6c68aca0c9439a5cdb0becb21d595c0f533f0dfbf
+  - path: workflow/feedback/PO-FEEDBACK-2026-10-17-001/feedback.yaml
+    revision: sha256:9b50a7d3dc87a3f2d45832b0deee4402b6e84b65092680a57f5bfbf8c7fbe0bf
+  - path: workflow/definition/results/feedback3-product-resolution.yaml
+    revision: sha256:08c04fd2635a0d78d9960cf68214504ae52b98d961bb8a1c9992106ec3d02b2f
   experience_brief:
     path: product/ux/experience-brief.yaml
-    revision: web-console-ux-3
+    revision: web-console-ux-4
   supported_surfaces:
   - desktop-web-console
   - narrow-web-monitoring-and-recovery
@@ -46,23 +51,23 @@ ux:
     acceptance_checklist: product/ux/07-acceptance-checklist.md
   artifact_revisions:
   - path: product/ux/00-overview.md
-    revision: sha256:c7764e530cee91d697dc99d91c59367bb390dde11a8e5588056abee6977f8ce8
+    revision: sha256:7cb20e4112c013d3188b307f4f91205e2edea977dc5f08d7231ae58bcfb8f51c
   - path: product/ux/01-information-architecture.md
-    revision: sha256:598d58ff99579c25797744d955519c9c611735a79c2a8c49154e1fee2486b2db
+    revision: sha256:46a44b43f12e8fec32e97abcf659581bc3c2d6b4c57c176038e495277a69c159
   - path: product/ux/02-interaction-patterns.md
-    revision: sha256:7e9090b32ffeab812989a467e9aa7f1d574928b66f61056fd2a4a724a0885928
+    revision: sha256:49afe01f26e05cb51e1a0183283ff07f16fdc4cb238cedc1bb85b35e0c6b5539
   - path: product/ux/03-responsive-and-platform.md
-    revision: sha256:e277c6634a9c2e240da30cd3c82026676b53b3dcd242218a7a254d321f2ad914
+    revision: sha256:ee4e4b2edecb8f56677145f3ea90c482334527c7e4d6356bf64220b7d3149b8f
   - path: product/ux/04-visual-system.md
-    revision: sha256:7c68c82b60d81c638d521eb6d03d28b4cba08f13244276bff1d43295f078937b
+    revision: sha256:9c30c4e67669f43a14234727d7bebf3e5a309f6915333aaf5c3827e79ce0590a
   - path: product/ux/05-accessibility.md
-    revision: sha256:c638c001079626f71876d60ef8075f9e5d682e4a62fabf8800f8ed1e3eea969e
+    revision: sha256:82b0463ee026354d14e01d925e5c734317774cac88396c103748f2d907e54dd1
   - path: product/ux/06-feature-exceptions.md
-    revision: sha256:4dfbfc09ff7e131672922ef83ec81106b4ae38407ee21f9aabff8bdc19aaac2f
+    revision: sha256:427142201d4c4d0e6fc17c19d957f6f4eb8355c651554f0892aefcc1590468cd
   - path: product/ux/07-acceptance-checklist.md
-    revision: sha256:e37fd2617fc4ac140a8df33990a067d6e8ffdb6a5ffbd419d0aa9988584e58f0
+    revision: sha256:7852a01661c26abc1868250219f85410857b0ce216b3c50cb71a5b79ec4162f5
   - path: product/ux/experience-brief.yaml
-    revision: sha256:401e66e9ac595a78b84a0838e632a6ee124dcebef8c198ba2e80fdcad67e81b5
+    revision: sha256:859e7e6cd056f37a9682df291f0daa6d292d361b5a711fbbb824be2f1806c4e6
   approved_concept_evidence:
   - path: workflow/definition/drafts/product-ux/web-console-initial/experience-brief.yaml
     revision: sha256:1f06ace4bfa0d7a64f15cf32adbe80ada89ebae427a73e3c3e9e860ad4ef5e6e
@@ -148,7 +153,81 @@ ux:
     revision: sha256:7ebeed7cbefedbe77083ba75a6160332bc10e8a271598d7aaa54326833ae484a
   - path: workflow/definition/drafts/product-ux/web-console-feedback-002/styles.css
     revision: sha256:ea601aef177d7644e5a3eab2a02e477b055d73700ed94d3e94b1ac249676fe93
+  - path: workflow/definition/drafts/product-ux/web-console-feedback-003/access.html
+    revision: sha256:2fca9dfe7d01bff6f9e332d5377e3cd3a263df1a4ce728a2dba40b6355d4caaa
+  - path: workflow/definition/drafts/product-ux/web-console-feedback-003/advanced.html
+    revision: sha256:a7ba0cf076ba534bb5cc89b2135ac2a9f154553e223ea86b75198a3458045d56
+  - path: workflow/definition/drafts/product-ux/web-console-feedback-003/approval.yaml
+    revision: sha256:30fafe8cdec532c1451a32ce0c090c8bcd6f02685fc37b6d75c0540933ded603
+  - path: workflow/definition/drafts/product-ux/web-console-feedback-003/authentication-desktop.png
+    revision: sha256:2a768226fe2f3a9bc16b1ff1d075205e724e3dba9eaae085e2dccad8790acf6c
+  - path: workflow/definition/drafts/product-ux/web-console-feedback-003/authentication-narrow.png
+    revision: sha256:c5f906859a1bd14e5b04ab57584236ca930d427cd0e123401e262e89ab4daf2c
+  - path: workflow/definition/drafts/product-ux/web-console-feedback-003/authentication.html
+    revision: sha256:cb43ac3091c6e87345d7c57f7d77054b1b878a2079452f7a40c1ded1d1e8816b
+  - path: workflow/definition/drafts/product-ux/web-console-feedback-003/clear-dialog.png
+    revision: sha256:8dd879a51113b26e791319207b7170cca0dff495bc0e9db1300f618ea7c1327b
+  - path: workflow/definition/drafts/product-ux/web-console-feedback-003/create-desktop.png
+    revision: sha256:0d065d6b1cf8932f8a7dfbdbf162abf84805042dfbb36d61a16409e43fb03303
+  - path: workflow/definition/drafts/product-ux/web-console-feedback-003/create-narrow.png
+    revision: sha256:a625844084afd66e45102a877dd353955c1bf2c3a82935c4597c41af291074e6
+  - path: workflow/definition/drafts/product-ux/web-console-feedback-003/create.html
+    revision: sha256:c10ac93657bddd031692b89b7638625ee7115663e969a8d45e3cdeae6a072faf
+  - path: workflow/definition/drafts/product-ux/web-console-feedback-003/design-contract.md
+    revision: sha256:58912bc6fdaa7be64cb57be6998450c4436ca35a34d52bb624a0ef5798e7e381
+  - path: workflow/definition/drafts/product-ux/web-console-feedback-003/destination-options.html
+    revision: sha256:5434c9994bc76229cbc0a499963019d8ddb4af68ab2f5b1043cef6f515ed0390
+  - path: workflow/definition/drafts/product-ux/web-console-feedback-003/destinations-desktop.png
+    revision: sha256:f456eccb47caf5f7dc3e53ef29b8303aac0eac51f7bf190d6a8fe1c8475078f1
+  - path: workflow/definition/drafts/product-ux/web-console-feedback-003/destinations-narrow.png
+    revision: sha256:4ac958db88e62cb8afd6de7f3c2344cf828089783aed7bddf83822f6aa65e00c
+  - path: workflow/definition/drafts/product-ux/web-console-feedback-003/destinations.html
+    revision: sha256:e497597f48cd5e3bcb07e14391717b1109ef81336577f38adaf3f631511fce84
+  - path: workflow/definition/drafts/product-ux/web-console-feedback-003/details.html
+    revision: sha256:96f10bd2dd20bb7289ea8e2354b9d0ac0cd72f772ef1b0e38796a462e970f8f0
+  - path: workflow/definition/drafts/product-ux/web-console-feedback-003/detection.html
+    revision: sha256:2a52416c9b5a0f51347c3df0d89bd044a3a1cbac7d749270e8040f82ea5bbece
+  - path: workflow/definition/drafts/product-ux/web-console-feedback-003/experience-brief.yaml
+    revision: sha256:884a94552be4077add3c54ad4d559a0d6e5d53c3c7829d5890e033dc91d66aab
+  - path: workflow/definition/drafts/product-ux/web-console-feedback-003/import-recovery-desktop.png
+    revision: sha256:42a1fbfcb127bb431d7feb3c0f84642cbab2a2a2f4c132977af1107026cd8938
+  - path: workflow/definition/drafts/product-ux/web-console-feedback-003/import-recovery-narrow.png
+    revision: sha256:d9843f1637ad38206b7be942f682c4d7393dc1d14d88be4f0db79478b18420ac
+  - path: workflow/definition/drafts/product-ux/web-console-feedback-003/import-recovery.html
+    revision: sha256:60164ee50351fb072738fb023a4feb4937764deb6174d198bfec7f7651c627ce
+  - path: workflow/definition/drafts/product-ux/web-console-feedback-003/index.md
+    revision: sha256:8a0b44e651e80eb124475c72575b15bd536068714f18b73da9d8966cde463cb6
+  - path: workflow/definition/drafts/product-ux/web-console-feedback-003/overview-desktop.png
+    revision: sha256:2b1e0028d2d900115d0be8b9fc245c70ed1874fe93e3b4aaab9188b3eebf370c
+  - path: workflow/definition/drafts/product-ux/web-console-feedback-003/overview-narrow.png
+    revision: sha256:c485be9194ffa402e9bfdaf4c48471a39811fc45d669f678d18040cb6d13b635
+  - path: workflow/definition/drafts/product-ux/web-console-feedback-003/overview.html
+    revision: sha256:aa996a619a55a70b045339a8493639ff9bc9768301f2e36195920d7ce9d8e931
+  - path: workflow/definition/drafts/product-ux/web-console-feedback-003/policy-desktop.png
+    revision: sha256:6726143cff615118463c83504d334acb801efc91951dd6be1273d3509291c633
+  - path: workflow/definition/drafts/product-ux/web-console-feedback-003/policy-narrow.png
+    revision: sha256:05bdb549aa0de16c3e72b762fcbe5288e715863bb189f9a926da96020d122582
+  - path: workflow/definition/drafts/product-ux/web-console-feedback-003/policy.html
+    revision: sha256:10414461a628e1a7f1b350c31be563ea85dbe47b14c9f880137bb08b5e5f49e1
+  - path: workflow/definition/drafts/product-ux/web-console-feedback-003/render-checks.json
+    revision: sha256:be68de04473cb6a2134fae89577ca3242ccd26a3f3c887cd7790b871b21187ea
+  - path: workflow/definition/drafts/product-ux/web-console-feedback-003/replace-dialog.png
+    revision: sha256:e44c825c7e9225767409aa11e1f9669bf327d05ec6d49a4093af2bb8988a3c37
+  - path: workflow/definition/drafts/product-ux/web-console-feedback-003/research.md
+    revision: sha256:083c93e8da761489cebf686841c071a620f88fb9ce7d5b242276f2b3165327ad
+  - path: workflow/definition/drafts/product-ux/web-console-feedback-003/review.html
+    revision: sha256:a84cd0eaefac24d6425529a1d34112b9a2eb7601332e6a024bf5c39db563c576
+  - path: workflow/definition/drafts/product-ux/web-console-feedback-003/rule-dialog.png
+    revision: sha256:cc8226b21762cf5fd1401010a63f3cdecda1b42725bde8bf3ea8a8f34640d571
+  - path: workflow/definition/drafts/product-ux/web-console-feedback-003/services-desktop.png
+    revision: sha256:850d6d4e6dd422cd57a842adbeb0f489d55881d4bec73022e967e874116c8342
+  - path: workflow/definition/drafts/product-ux/web-console-feedback-003/services-narrow.png
+    revision: sha256:31c7d7f7881c4ccbf23956f4329e2010a5e4b2cf75511cad921e800545ec495d
+  - path: workflow/definition/drafts/product-ux/web-console-feedback-003/services.html
+    revision: sha256:3265bfef2a354de761436d0189165327006b8fc588ebf4fcde033f267099f59a
+  - path: workflow/definition/drafts/product-ux/web-console-feedback-003/styles.css
+    revision: sha256:1de78d96aee168f9d0a356a45bef9fbb7ae16a9c088343fdf0a24ff57663596d
   implementation_status: not_validated_by_this_definition_revision
   scope_boundary: UX authority only; Product Definition controls cross-domain freshness and downstream handoff
-  validation_boundary: Coverage and journeys require bounded refresh for UX3; no freshness declaration for their
-    prior revisions
+  validation_boundary: UX4 synthesized against adopted PRD and recorded sources; Product Definition owns reconciliation
+    closeout, bounded domain reviews and downstream freshness.

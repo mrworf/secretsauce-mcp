@@ -2,19 +2,23 @@ status: approved
 product_id: secretsauce-mcp
 sources:
 - path: docs/web-console-prd.md
-  revision: sha256:00e6e2a9ec4661695f6aa4f01f86e8963739579bd147c7d73fa67870dda41e4b
+  revision: sha256:48194cfbc4e55756649820a411aa0675c2a6be87c577bdd920b0aaf06e21b617
 - path: product/security/web-console-security-contract.md
-  revision: sha256:2f46343c6d3206b48c46212de6ba84a308b7f2a921cfba7525d2b212f3e4f5bc
+  revision: sha256:8f66520798094a2638f006c9f3145e263e96008fdf63480fc6b98c2b0ccddc35
 - path: product/architecture/web-console-state-contract.md
-  revision: sha256:80835e44cdd550f10638bb757f183868804f9678cac4626a7ac84abb27ff0d32
+  revision: sha256:c8e22b5013d89090cc451cb2ef0290d7517b05bebae746faa15b65f10fca9848
 - path: workflow/feedback/PO-FEEDBACK-2026-10-11-002/feedback.yaml
   revision: sha256:515a53d2c56f256708cef2fce9add362aa20f2fbcf1f6d34b4ff1a1dfdb9d53b
 - path: workflow/definition/decisions.md
-  revision: sha256:e0e4789d9d7f3d624cefb8642fde62e7c7d7d8059dc30f37c2925b029f433ba1
+  revision: sha256:af25870e99593839902fd05c2630b948ca3746f49dff6c294e4f13351c6d6762
 - path: workflow/reconciliation/REC-RUN-005/reconciliation-result.yaml
   revision: sha256:fbcfc50401f03cf2360fe0b6c68aca0c9439a5cdb0becb21d595c0f533f0dfbf
+- path: workflow/feedback/PO-FEEDBACK-2026-10-17-001/feedback.yaml
+  revision: sha256:9b50a7d3dc87a3f2d45832b0deee4402b6e84b65092680a57f5bfbf8c7fbe0bf
+- path: workflow/definition/results/feedback3-product-resolution.yaml
+  revision: sha256:08c04fd2635a0d78d9960cf68214504ae52b98d961bb8a1c9992106ec3d02b2f
 experience:
-  revision: web-console-ux-3
+  revision: web-console-ux-4
   audience:
     primary:
     - Owners
@@ -27,6 +31,8 @@ experience:
   - Use plain action and state language
   - Use desktop width for useful related content
   - Preserve deliberate review and security boundaries
+  - Separate service lifecycle, credential readiness and pending configuration
+  - Use focused service sections and contextual credential/rule dialogs
   product_character:
     tone: Plain, calm, precise
     density: Moderate density; compact one-row account list
@@ -43,6 +49,8 @@ experience:
       later retains existing persistence-only option
     consequential_actions: Apply reviewed Settings atomically; confirm immediate account operations separately
     progressive_disclosure: Preserve all advanced capabilities without putting raw structure in routine paths
+    service_configuration: Focused populated sections, clickable creation steps, one global Guided/Advanced mode,
+      compact rule list and explicit in-draft import recovery
   responsive_priority: Use columns on wide screens, reflow forms and keep compact account rows linked to complete
     detail on narrow screens
   explicit_po_preferences:
@@ -65,6 +73,14 @@ experience:
       correction or explicit accepted exception
     decision_refs:
     - UX-DESIGN-003
+  - statement: Approved feedback 003 service configuration direction and representative visual appearance
+    decision_refs:
+    - UX-DESIGN-004
+  - statement: Referenced credential Delete clears its value and retains its key, with the consequence explained
+      before confirmation
+    decision_refs:
+    - PO-FB-065
+    - PO-FB-066
   explicit_po_dislikes:
   - statement: Extra viewing/editing steps and inconsistent values/state
     decision_refs:
@@ -80,3 +96,4 @@ experience:
     - UX-DESIGN-001
     - UX-DESIGN-002
     - UX-DESIGN-003
+    - UX-DESIGN-004

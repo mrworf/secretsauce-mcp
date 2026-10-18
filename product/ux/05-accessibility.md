@@ -30,3 +30,10 @@ Settings destinations are navigation links with current-page semantics, not ARIA
 ## UX-A06 — Required input and account-list semantics
 
 Mandatory indicators include visible symbol and legend plus required semantics; help and errors are associated with their controls. Account rows have real named account links and keyboard access, with table relationships and unambiguous focus; row clicking cannot consume nested control actions. No hover-only discovery. Narrow omission of secondary columns preserves their values and actions in linked detail. Populated-form state announcements distinguish unsaved, saved pending and applied without repeating unchanged status or exposing secrets. Screenshot comparison supplements, never replaces, keyboard, reflow and accessibility evidence.
+
+
+## UX-A07 — Service rows, dialogs and recovery focus
+
+Service row links and action buttons are independent focus targets; full-row clicking cannot trigger a nested lifecycle action. Selected configuration destinations and creation steps expose current location with navigation semantics. Required cues apply to the task actually being submitted; a secret dialog’s required field cannot mislabel the unrelated wizard Continue task. Each repeated control uses its own local label/help/error association.
+
+Set/Replace, Clear/Delete, rule editing and policy test dialogs have an accessible name, bounded keyboard focus, safe Escape/Cancel and return to the originating control or a sensible successor. Do not persist secrets on cancellation or announce their content. New repeated items receive visible focus, scroll into view and a concise announcement. Imported identity errors link from a focused summary to their mapping field; unavailable actions explain how to proceed. Status and operation uncertainty always have words, not color alone. Preserve existing skip navigation, contrast, zoom and touch requirements.

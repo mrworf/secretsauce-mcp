@@ -1,48 +1,47 @@
-stage: architecture
+stage: software-architect-review
 status: PASS
 validated_inputs:
 - path: docs/web-console-prd.md
-  revision: sha256:00e6e2a9ec4661695f6aa4f01f86e8963739579bd147c7d73fa67870dda41e4b
+  revision: sha256:48194cfbc4e55756649820a411aa0675c2a6be87c577bdd920b0aaf06e21b617
 - path: product/security/web-console-security-contract.md
-  revision: sha256:2f46343c6d3206b48c46212de6ba84a308b7f2a921cfba7525d2b212f3e4f5bc
+  revision: sha256:8f66520798094a2638f006c9f3145e263e96008fdf63480fc6b98c2b0ccddc35
 - path: product/architecture/web-console-state-contract.md
-  revision: sha256:80835e44cdd550f10638bb757f183868804f9678cac4626a7ac84abb27ff0d32
-- path: docs/web-console-prd-coverage.md
-  revision: sha256:36af3429ba960eaa2adf42777c7bc7a0d8cae12b62cac3ba63d228f14eee037e
-- path: docs/web-console-prd-user-journey-audit.md
-  revision: sha256:7f0f3e3159a06e867aeabdadacdd73915c1c1a11ad0a4a8e6d597304efc1ff67
+  revision: sha256:c8e22b5013d89090cc451cb2ef0290d7517b05bebae746faa15b65f10fca9848
 - path: product/ux/manifest.yaml
-  revision: sha256:7331cb34170fa5f35d6790c4be5825b21cd9ba00b66be88caab3409de7c56563
-  declared_revision: web-console-ux-3
+  revision: sha256:4c5851fd985e7fa83f5d902eaf0100f983cb5e3da240c28d7b4a789b80d0f8b2
 - path: product/ux/experience-brief.yaml
-  revision: sha256:401e66e9ac595a78b84a0838e632a6ee124dcebef8c198ba2e80fdcad67e81b5
+  revision: sha256:859e7e6cd056f37a9682df291f0daa6d292d361b5a711fbbb824be2f1806c4e6
 - path: product/ux/00-overview.md
-  revision: sha256:c7764e530cee91d697dc99d91c59367bb390dde11a8e5588056abee6977f8ce8
+  revision: sha256:7cb20e4112c013d3188b307f4f91205e2edea977dc5f08d7231ae58bcfb8f51c
 - path: product/ux/01-information-architecture.md
-  revision: sha256:598d58ff99579c25797744d955519c9c611735a79c2a8c49154e1fee2486b2db
+  revision: sha256:46a44b43f12e8fec32e97abcf659581bc3c2d6b4c57c176038e495277a69c159
 - path: product/ux/02-interaction-patterns.md
-  revision: sha256:7e9090b32ffeab812989a467e9aa7f1d574928b66f61056fd2a4a724a0885928
+  revision: sha256:49afe01f26e05cb51e1a0183283ff07f16fdc4cb238cedc1bb85b35e0c6b5539
 - path: product/ux/03-responsive-and-platform.md
-  revision: sha256:e277c6634a9c2e240da30cd3c82026676b53b3dcd242218a7a254d321f2ad914
+  revision: sha256:ee4e4b2edecb8f56677145f3ea90c482334527c7e4d6356bf64220b7d3149b8f
 - path: product/ux/04-visual-system.md
-  revision: sha256:7c68c82b60d81c638d521eb6d03d28b4cba08f13244276bff1d43295f078937b
+  revision: sha256:9c30c4e67669f43a14234727d7bebf3e5a309f6915333aaf5c3827e79ce0590a
 - path: product/ux/05-accessibility.md
-  revision: sha256:c638c001079626f71876d60ef8075f9e5d682e4a62fabf8800f8ed1e3eea969e
+  revision: sha256:82b0463ee026354d14e01d925e5c734317774cac88396c103748f2d907e54dd1
 - path: product/ux/06-feature-exceptions.md
-  revision: sha256:4dfbfc09ff7e131672922ef83ec81106b4ae38407ee21f9aabff8bdc19aaac2f
+  revision: sha256:427142201d4c4d0e6fc17c19d957f6f4eb8355c651554f0892aefcc1590468cd
 - path: product/ux/07-acceptance-checklist.md
-  revision: sha256:e37fd2617fc4ac140a8df33990a067d6e8ffdb6a5ffbd419d0aa9988584e58f0
-- path: workflow/feedback/PO-FEEDBACK-2026-10-11-002/feedback.yaml
-  revision: sha256:515a53d2c56f256708cef2fce9add362aa20f2fbcf1f6d34b4ff1a1dfdb9d53b
-- path: workflow/reconciliation/REC-RUN-006/reconciliation-result.yaml
-  revision: sha256:66907c2a791c0c794e600f3b3b1dd1d9167ebe7ea804fe24d759f0d309edeb93
+  revision: sha256:7852a01661c26abc1868250219f85410857b0ce216b3c50cb71a5b79ec4162f5
+- path: workflow/feedback/PO-FEEDBACK-2026-10-17-001/feedback.yaml
+  revision: sha256:9b50a7d3dc87a3f2d45832b0deee4402b6e84b65092680a57f5bfbf8c7fbe0bf
+- path: workflow/reconciliation/REC-RUN-008/reconciliation-result.yaml
+  revision: sha256:1018e24f89041935175c94108faa5339c6d09f2c4f9a15c244df5378d4177432
+- path: workflow/definition/decisions.md
+  revision: sha256:af25870e99593839902fd05c2630b948ca3746f49dff6c294e4f13351c6d6762
+- path: workflow/definition/drafts/product-ux/web-console-feedback-003/design-contract.md
+  revision: sha256:58912bc6fdaa7be64cb57be6998450c4436ca35a34d52bb624a0ef5798e7e381
 artifact_changes:
 - path: product/architecture/web-console-architecture-review.md
-  summary: Final second-feedback architecture PASS; preserved prior risks and reviewed adopted roles/contact, metadata,
-    SMTP transport, populated settings and visual evidence boundaries.
-  revision: sha256:8418f51a7b9fefe3248901aee83dd5111c87613684f9c9e6a59263cd34aea92b
+  summary: Targeted third-feedback architecture PASS; preserved previous conclusions and validated canonical lifecycle,
+    clearing, provenance, recovery, import and UI boundaries.
+  revision: sha256:45fef6181a75575800555c4da62a7c460a24b32f4673d8fe4c20885a63aeb08c
 - path: workflow/definition/results/architecture.yaml
-  summary: Final exact-input architecture stage PASS without upstream authority changes.
+  summary: Exact stable canonical-input stage adapter; excludes concurrently refreshed trace-only mappings.
 changed_paths:
 - product/architecture/web-console-architecture-review.md
 - workflow/definition/results/architecture.yaml
@@ -146,6 +145,14 @@ affected_requirements:
 - BACKUP-01
 - BACKUP-04
 - BACKUP-05
+- CONFIG-01
+- CONFIG-05
+- POLICY-01
+- POLICY-02
+- POLICY-03
+- POLICY-04
+- STATE-09
+- SECRES-08
 affected_artifacts:
 - product/architecture/web-console-architecture-review.md
 reconciliation_required: false
@@ -156,37 +163,34 @@ change_impact:
   architecture: false
   security: false
 validation:
-  scope: Final bounded second-feedback architecture definition revalidation after REC-RUN-006 resolution and UX3
-    approval; no implementation audit.
+  scope: Targeted third-feedback architecture definition validation against resolved REC-RUN-008 and approved UX4;
+    no implementation acceptance.
   checks:
-  - All recorded source revisions and approved UX manifest artifact hashes match current files.
-  - PRD, SECRES-06, journeys and UX agree on bounded Administrator edits, recent-auth contact verification, immediate
-    generation invalidation, continuity, stale writes and notice failure.
-  - STATE-07 metadata events, legacy Unknown/Never and historical restore semantics agree with PRD, coverage and
-    journeys.
-  - TLS/None defaults, explicit acknowledgment, write-only credentials, persistence, restored proposal and no-downgrade
-    behavior align across STATE-08/SECRES-07/PRD/UX.
-  - Populated forms preserve existing one-draft atomic review/apply and immediate security action separation; diagnostic
-    freshness and post-commit cleanup outcomes remain explicit.
-  - UX-V05/C42 requires matching-state approved-reference visual comparisons in addition to functional/accessibility
-    evidence.
-  - Historical architecture observations and accepted trust boundaries preserved without speculative refactors.
-  - Result YAML, exact hashes, local report links and whitespace checks passed.
-  application_tests: 'Not run: documentation-only stage, no implementation mutation or re-audit.'
+  - Current PRD, STATE-09, SECRES-08 and UX4 agree on value clearing, durable dependencies, mutation confirmation,
+    missing-value admission, later Set and unchanged lifecycle.
+  - Durable uncertainty/restart fencing, older-reader rejection, consistent missing-value backup projections and
+    restricted restore are explicit and coherent.
+  - Successful actor metadata remains server-owned, legacy Unknown and historical/source-qualified after restore.
+  - Service Delete is archive, enable reviews dependencies, independent lifecycle/draft/readiness remains honest.
+  - Imported mapping correction preserves draft edits, requires explicit eligible identity and cannot silently grant
+    access.
+  - Focused service forms, Guided/Advanced, rule/credential/test dialogs and browser navigation preserve one draft
+    and all protocol capabilities.
+  - UX manifest source/artifact/concept hashes and adapter input hashes match. Provenance-only follow-up verified
+    old manifest/brief byte hashes by reversing only ledger and brief hash substitutions; no semantic delta. Prior
+    ledger provenance note resolved. Trace-only coverage/journey refresh excluded.
+  - YAML and whitespace diff checks passed.
+  application_tests: 'Not run: documentation-only definition validation.'
   upstream_authority_changes: false
   commit_owner: product-definition-orchestrator
 mode: targeted_revalidation
 scope_findings:
-- REC-DEC-004
-- REC-DEC-005
-- REC-DEC-007
-- F-ARCH-FB2-001
-- F-ARCH-FB2-002
-- REC-RUN-006
+- REC-DEC-008
+- REC-DEC-009
+- REC-DEC-010
+- F-ARCH-FB3-001
+- REC-RUN-008
 resolved_findings:
-- id: F-ARCH-FB2-001
-  resolution: STATE-07 adopted in IDENT-02A and corresponding UX, coverage and journeys; no remaining metadata contract
-    gap.
-- id: F-ARCH-FB2-002
-  resolution: STATE-08 and SECRES-07 adopted in IDENT-04 and corresponding UX, coverage and journeys; no remaining
-    SMTP transport contract gap.
+- id: F-ARCH-FB3-001
+  resolution: Referenced service clear, actor provenance and recovery semantics adopted in CONFIG-02/03 and canonical
+    UX4 under STATE-09/SECRES-08; no residual authority contradiction.

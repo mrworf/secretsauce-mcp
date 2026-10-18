@@ -1,13 +1,13 @@
-stage: coverage
+stage: generate-prd-coverage-matrix
 status: PASS
 mode: targeted_revalidation
 validated_inputs:
 - path: docs/web-console-prd.md
-  revision: sha256:00e6e2a9ec4661695f6aa4f01f86e8963739579bd147c7d73fa67870dda41e4b
+  revision: sha256:48194cfbc4e55756649820a411aa0675c2a6be87c577bdd920b0aaf06e21b617
 - path: product/security/web-console-security-contract.md
-  revision: sha256:2f46343c6d3206b48c46212de6ba84a308b7f2a921cfba7525d2b212f3e4f5bc
+  revision: sha256:8f66520798094a2638f006c9f3145e263e96008fdf63480fc6b98c2b0ccddc35
 - path: product/architecture/web-console-state-contract.md
-  revision: sha256:80835e44cdd550f10638bb757f183868804f9678cac4626a7ac84abb27ff0d32
+  revision: sha256:c8e22b5013d89090cc451cb2ef0290d7517b05bebae746faa15b65f10fca9848
 - path: workflow/feedback/PO-FEEDBACK-2026-10-11-002/feedback.yaml
   revision: sha256:515a53d2c56f256708cef2fce9add362aa20f2fbcf1f6d34b4ff1a1dfdb9d53b
 - path: workflow/reconciliation/REC-RUN-004/reconciliation-result.yaml
@@ -15,110 +15,74 @@ validated_inputs:
 - path: workflow/reconciliation/REC-RUN-005/reconciliation-result.yaml
   revision: sha256:fbcfc50401f03cf2360fe0b6c68aca0c9439a5cdb0becb21d595c0f533f0dfbf
 - path: product/ux/00-overview.md
-  revision: sha256:c7764e530cee91d697dc99d91c59367bb390dde11a8e5588056abee6977f8ce8
+  revision: sha256:7cb20e4112c013d3188b307f4f91205e2edea977dc5f08d7231ae58bcfb8f51c
 - path: product/ux/01-information-architecture.md
-  revision: sha256:598d58ff99579c25797744d955519c9c611735a79c2a8c49154e1fee2486b2db
+  revision: sha256:46a44b43f12e8fec32e97abcf659581bc3c2d6b4c57c176038e495277a69c159
 - path: product/ux/02-interaction-patterns.md
-  revision: sha256:7e9090b32ffeab812989a467e9aa7f1d574928b66f61056fd2a4a724a0885928
+  revision: sha256:49afe01f26e05cb51e1a0183283ff07f16fdc4cb238cedc1bb85b35e0c6b5539
 - path: product/ux/03-responsive-and-platform.md
-  revision: sha256:e277c6634a9c2e240da30cd3c82026676b53b3dcd242218a7a254d321f2ad914
+  revision: sha256:ee4e4b2edecb8f56677145f3ea90c482334527c7e4d6356bf64220b7d3149b8f
 - path: product/ux/04-visual-system.md
-  revision: sha256:7c68c82b60d81c638d521eb6d03d28b4cba08f13244276bff1d43295f078937b
+  revision: sha256:9c30c4e67669f43a14234727d7bebf3e5a309f6915333aaf5c3827e79ce0590a
 - path: product/ux/05-accessibility.md
-  revision: sha256:c638c001079626f71876d60ef8075f9e5d682e4a62fabf8800f8ed1e3eea969e
+  revision: sha256:82b0463ee026354d14e01d925e5c734317774cac88396c103748f2d907e54dd1
 - path: product/ux/06-feature-exceptions.md
-  revision: sha256:4dfbfc09ff7e131672922ef83ec81106b4ae38407ee21f9aabff8bdc19aaac2f
+  revision: sha256:427142201d4c4d0e6fc17c19d957f6f4eb8355c651554f0892aefcc1590468cd
 - path: product/ux/07-acceptance-checklist.md
-  revision: sha256:e37fd2617fc4ac140a8df33990a067d6e8ffdb6a5ffbd419d0aa9988584e58f0
+  revision: sha256:7852a01661c26abc1868250219f85410857b0ce216b3c50cb71a5b79ec4162f5
 - path: product/ux/experience-brief.yaml
-  revision: sha256:401e66e9ac595a78b84a0838e632a6ee124dcebef8c198ba2e80fdcad67e81b5
+  revision: sha256:859e7e6cd056f37a9682df291f0daa6d292d361b5a711fbbb824be2f1806c4e6
 - path: product/ux/manifest.yaml
-  revision: sha256:7331cb34170fa5f35d6790c4be5825b21cd9ba00b66be88caab3409de7c56563
+  revision: sha256:4c5851fd985e7fa83f5d902eaf0100f983cb5e3da240c28d7b4a789b80d0f8b2
+- path: workflow/feedback/PO-FEEDBACK-2026-10-17-001/feedback.yaml
+  revision: sha256:9b50a7d3dc87a3f2d45832b0deee4402b6e84b65092680a57f5bfbf8c7fbe0bf
+- path: workflow/reconciliation/REC-RUN-008/reconciliation-result.yaml
+  revision: sha256:1018e24f89041935175c94108faa5339c6d09f2c4f9a15c244df5378d4177432
+- path: workflow/reconciliation/REC-RUN-008/03-remediation-backlog.md
+  revision: sha256:b0f794d637023bbd4c1431db72fb1b7a5558f62317d2e1960caca0d7adcfe64c
+- path: workflow/reconciliation/REC-RUN-008/04-impact-map.md
+  revision: sha256:9c781a6f82f7dad8bac86e19f05cf91736ae8f734fe977006abd6fb8f4e5e485
+- path: workflow/definition/decisions.md
+  revision: sha256:af25870e99593839902fd05c2630b948ca3746f49dff6c294e4f13351c6d6762
 - path: docs/web-console-prd-coverage.md
-  revision: sha256:36af3429ba960eaa2adf42777c7bc7a0d8cae12b62cac3ba63d228f14eee037e
+  revision: sha256:db1dc7d715ff3704c3d211e4edbcd99aa8ec3f77cce3fdc40bc148aa31237379
 artifact_changes:
 - path: docs/web-console-prd-coverage.md
-  summary: Preserved all capability rows; updated bounded account authority, metadata/recovery, TLS/None
-    SMTP, populated forms and current-state accuracy; mapped approved UX3 and mandatory actual screenshot
-    comparison.
+  summary: Preserved all prior rows; corrected changed credential/lifecycle semantics
+    and added bounded role/surface/state/authorization/error/test coverage for REC-RM-015–026
+    and approved UX4.
 - path: workflow/definition/results/coverage.yaml
-  summary: Exact-input targeted revalidation adapter for feedback 002 and approved UX3.
+  summary: Exact-input feedback003 targeted coverage validation adapter.
 changed_paths:
 - docs/web-console-prd-coverage.md
 - workflow/definition/results/coverage.yaml
 findings: []
 questions: []
 affected_requirements:
-- AUDIT-01
-- AUDIT-02
-- AUDIT-03
-- AUDIT-04
+- BASE-01
 - AUTHZ-01
 - AUTHZ-02
-- AUTHZ-03
-- AUTHZ-04
-- BACKUP-01
-- BACKUP-02
-- BACKUP-03
-- BACKUP-04
-- BACKUP-05
-- BACKUP-06
-- BASE-01
-- BASE-02
-- BASE-03
 - CONFIG-01
 - CONFIG-02
 - CONFIG-03
 - CONFIG-04
 - CONFIG-05
-- IDENT-01
-- IDENT-02
-- IDENT-02A
-- IDENT-02B
-- IDENT-03
-- IDENT-04
-- IDENT-05
-- IDENT-06
-- MCP-01
-- MCP-02
-- MCP-03
-- MCP-04
-- MIGRATE-01
-- MIGRATE-02
-- MIGRATE-03
-- MIGRATE-04
-- OPS-01
-- OPS-02
-- OPS-03
-- OPS-04
-- OPS-05
-- OPS-06
 - POLICY-01
 - POLICY-02
 - POLICY-03
 - POLICY-04
-- SEC-01
-- SEC-02
-- SEC-03
-- SECRES-01
-- SECRES-02
-- SECRES-03
-- SECRES-04
-- SECRES-05
-- SECRES-06
-- SECRES-07
-- STATE-01
-- STATE-02
-- STATE-03
-- STATE-04
-- STATE-05
-- STATE-06
-- STATE-07
-- STATE-08
+- MIGRATE-01
+- MIGRATE-02
+- AUDIT-01
+- AUDIT-03
+- BACKUP-01
+- BACKUP-05
 - UX-01
 - UX-02
 - UX-03
 - UX-04
+- STATE-09
+- SECRES-08
 affected_artifacts:
 - docs/web-console-prd-coverage.md
 reconciliation_required: false
@@ -129,26 +93,27 @@ change_impact:
   architecture: false
   security: false
 validation:
-  matrix_rows: 121
+  matrix_rows: 141
   primary_columns: 8
-  unique_capability_families: 77
+  unique_capability_families: 79
   prd_ids_mapped: 55
-  normative_companion_ids_mapped: 15
+  normative_companion_ids_mapped: 17
   derived_capability_ids: 7
+  feedback_dispositions_traced: 83
+  remediation_outcomes_mapped: 12
   specification_gaps: 0
   implementation_gaps_asserted: 0
-  unverified_cells: 242
+  unverified_cells: 282
   unmapped_requirements: 0
   implementation_tests_run: false
-  reason: Definition-only targeted revalidation; retained historical gateway evidence is not a current
-    implementation verdict. UX-C42 requires downstream actual screenshots compared with unchanged
-    approved mockups.
+  reason: Definition-only targeted mapping. Required runtime/security/recovery/browser/visual
+    evidence remains downstream; retained historical gateway citations are not a current
+    implementation verdict.
 decision_provenance:
-- D-001–D-012
-- REC-DEC-004
-- REC-DEC-005
-- REC-DEC-007
-- UX-DESIGN-003
-- PO-FB-015–041
-workflow_readiness: Coverage-stage PASS against exact PRD, security/state and approved web-console-ux-3;
-  remaining reconciliation and downstream review/package readiness owned by orchestrator.
+- UX-DESIGN-004
+- REC-DEC-008
+- REC-DEC-010
+- PO-FB-042–124
+- REC-RUN-008
+workflow_readiness: Coverage-stage PASS only; no implementation or final definition
+  readiness claim.

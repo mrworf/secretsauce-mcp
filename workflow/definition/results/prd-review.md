@@ -1,58 +1,31 @@
-# Web console PRD targeted revalidation — feedback 002
+# PRD targeted revalidation — feedback 003
 
-**Current PRD stage: PASS. Implementation-ready: yes for the PRD product-contract gate.** This is not whole-workflow readiness or implementation authorization. Canonical UX synthesis, coverage, journeys and full architecture/security revalidation remain separate gates.
+**Implementation-ready: yes**, for the bounded adopted product contract. This is a PRD-stage PASS, not a completed definition-package, delivery, UX implementation or release acceptance. Other required specialist stages and committed package provenance remain the orchestrator's completion gates.
 
-Rechecked REC005 adoption and approved UX-DESIGN-003 against confirmed feedback 002, SECRES-06/07 and STATE-07/08. Exact source hashes are in `prd.yaml`. Account permissions, contact verification and revocation, immutable timestamps and legacy/restore meaning, and explicit unencrypted SMTP are settled. No new product question is needed.
+## Scope and authority
 
-| Scope | Result |
+Reviewed all feedback PO-FB-042–124, settled REC-DEC-008/009/010, approved UX-DESIGN-004 direction, adopted CONFIG-01–05, AUDIT-01, backup and migration changes, and directly affected authorization/policy boundaries. Preserved existing single-organization scope, roles, client compatibility and unrelated passed requirements. The historical proposal's Unapproved label is superseded by the exact-proposal approval ledger and canonical UX4; it is not a new product question. The reconciler confirmed PRD content stable before this result.
+
+## Contract checks
+
+| Scope | Result and concrete authority |
 | --- | --- |
-| Administrator account management | Contact/role edits cover other non-Owners, never grant Owner or permit own-role editing; own contact allowed. Lifecycle, invitation and other-user session/grant administration remain Owner-only. Recent authentication, trusted-channel contact verification, immediate generation revocation, continuity and uncertainty safeguards are explicit. |
-| Creation and sign-in dates | Durable identity creation and full console session admission define timestamps. Never, Unknown, Not applicable and restored snapshot history remain distinct; dates grant no authority. |
-| SMTP | TLS default and explicit None preserve independent authentication/custom ports; no fallback or mode inference. Owner acknowledgment, current dependency checks, secret-safe fields and fresh restored review are explicit. |
-| UX-02 correction | Removed stale summary-first/pending-approval prose using already-approved populated forms and same-group read-only values. Exact final text rechecked against approved design contract; CONFIG-03 still requires reviewed atomic activation. Visual fidelity belongs canonical UX acceptance. |
-| Preservation | Existing gateway capability, manual email fallback, write-only secrets, independent deletion, whole-instance backup, four fixed roles and single-organization deployment remain intact. |
+| Service rows and lifecycle | CONFIG-05 plus UX-IA09/C43 distinguish lifecycle, draft and executable readiness. Row navigation and actions coexist; Delete confirms existing retained-history archive and restoration to Disabled. Enable still reviews current dependencies. No purge or health-check claim was invented. |
+| Configuration structure and navigation | CONFIG-01 and UX-IA09/IN15/C44–46 define focused populated sections, one full-service Guided/Advanced switch, linked creation steps, history navigation, actual-change guards and repeated-item focus. Existing literal/advanced capabilities survive. |
+| Help and technical identifiers | UX-IN15 explains API documentation, allowed hosts, matching modes, certificate default/override scope and placement prefixes/suffixes without secrets. MCP-visible service IDs remain discoverable; imported identifiers are never silently changed. The conditional hiding request is preserved. |
+| Credential entry and attribution | CONFIG-02/03 and UX-IN14/C47–48 consistently separate immediate write-only Set/Replace dialogs from metadata drafts. Last successful actor/time is durable and honest for legacy, removed and restored identities. Navigation cannot submit or require an unrelated replacement secret. |
+| Clear versus delete | CONFIG-02/03 and STATE-09/SECRES-08 agree on current plus saved-draft dependencies, exact retained key, current/draft-only impact, missing-value dispatch gating, stale confirmation, no-op, cancellation and current permission. Set restores only otherwise eligible Active use; no lifecycle/grant/authentication change is implicit. |
+| Uncertainty and recovery | CONFIG-03/04, AUDIT-01 and backup clauses incorporate audit admission, removal of normalized copies, generation/restart fencing, late-response protection, no resurrection through history and coherent absence/attribution in snapshots. Older archives remain explicitly recoverable only under disabled-and-reviewed whole-instance restore. SMTP retains its distinct dependency block and draft replacement semantics. |
+| Policies and tester | POLICY-01–04 plus UX-IN16/C49–50 preserve highest-priority/equal-priority deny rules, mixed effects under either default, custom methods and exact patterns/options. Common methods are selectable; Add/Edit share dialogs; test is no-I/O and returns without spurious dirty state. The user's allow-default inference was not turned into a new policy restriction. |
+| Access and import repair | AUTHZ-01/02, CONFIG-03, MIGRATE-01/02 and UX-IA10/C51–52 distinguish explicit current grants, proposed first activation and legacy-subject mapping. Errors name unresolved subject/context with in-draft repair; no guessing identity, implicit grant or loss of unrelated safe work. |
+| Visual and accessibility acceptance | Existing UX-04 and UX-C43–53 require text statuses, keyboard/focus, dialogs, narrow layouts, matching-state screenshot comparison and preserved exact distinguishing literals. UX approval is not a substitute for later implementation evidence. |
 
-All applicable product-level readiness gates pass in this bounded scope; companion acceptance contracts include positive, unauthorized, stale/concurrent, failure and recovery cases. Existing 53 IDs remain and adopted IDENT-02A/B add two IDs. Local PRD links resolve. No code or runtime tests were changed/run. Remaining technical mechanisms belong downstream specialists; missing implementation is not a definition defect. Historical findings below retain their original review-time context, including previously pending approvals and older Owner-only boundaries now explicitly superseded by SECRES-06.
+## Readiness gates and traceability
 
-Changed paths: `docs/web-console-prd.md`, `workflow/definition/results/prd.yaml`, `workflow/definition/results/prd-review.md`. No commits by this specialist.
+All twelve PRD gates were considered proportionally. Product purpose and unchanged operating/client boundaries retain prior validated authority. Changed actor/lifecycle/data/security/recovery contracts are explicit above. Positive, denial, stale, no-op, uncertainty/restart and backup cases are specified by STATE-09 and SECRES-T17–T21; service interaction cases are UX-C43–53. No material product choice or unconfirmed assumption remains in this scope. REC008 is RESOLVED with no required decisions and correctly requires definition revalidation before delivery.
 
----
+Architecture and security retain their independent final review responsibilities; internal persistence mechanisms remain their concern, not a new owner decision. Coverage/journey validation must trace the newly adopted requirements. No PRD correction was necessary, no behavior was implemented, and no live-system test was claimed. Exact validated hashes are recorded in prd.yaml; unchanged historical review results remain in version control rather than being reopened.
 
-## Historical earlier PRD review
+## Provenance freshness check
 
-# Web console PRD targeted revalidation
-
-**Current feedback PRD revalidation: PASS.** Targeted recheck of UX-02 passed at the exact recorded revision. The initial refinement evidence below remains historical; this update does not claim whole-workflow readiness.
-
-**Implementation-ready: no** at the whole-product workflow level: coverage, journey, UX and full Architecture/Security review remain separate required gates managed by the orchestrator. Their status does not prevent this PRD stage from passing. Missing application code is not a definition blocker.
-
-## Scope and evidence
-
-Revalidated F-PRD-001–004 and direct effects against the current PRD, the normative Security resolution contract SECRES-01–04, and the normative state/recovery contract STATE-01–06. Exact SHA-256 revisions are recorded in `prd.yaml`. No normative source was edited in this validation pass.
-
-| Finding and question | Result and evidence |
-| --- | --- |
-| F-PRD-001 / Q-PRD-001 | Resolved. SEC-01 and IDENT-03/05 incorporate SECRES-01. Management-secret exposure is prohibited; narrowly bound proof links and OAuth code redirects remain possible; approved downstream query placement remains supported without exposing substituted URLs in product output. |
-| F-PRD-002 / Q-PRD-002 | Resolved. AUTHZ-03, IDENT-01 and BACKUP-02/03/04/05/06 incorporate SECRES-02 and STATE-04/05/06. Clean-host authority does not depend on absent MFA, old password or old session. Current initiator and archived recovery Owner are distinct. Installation rollback has protected local live state rather than relying on an export that excludes MFA. Fresh recovery enrollment unlocks management only; other users and services require review. |
-| F-PRD-003 / Q-PRD-003 | Resolved. AUDIT-04 and SEC-03 incorporate SECRES-04. Sensitive operations and jobs fail closed; restricted diagnostic login is a deliberate best-effort audit exception with reliable authentication/replay state required. Host repair does not authorize unaudited product mutation. Normal admission follows a durable recovery record; uncertain downstream effects remain explicit. |
-| F-PRD-004 / Q-PRD-004 | Resolved. AUTHZ-02, CONFIG-02/03/04/05 and SEC-03 incorporate STATE-01/02/03. Identity/grant/secret/lifecycle actions take effect independently of drafts while retaining audit/authorization gates. Apply rechecks current permissions and dependencies, and history cannot revive access, services or secret values. Admission uses coherent current authority; dispatched work retains appropriate response protection. |
-
-## Preservation and checks
-
-All 53 requirement IDs remain in their original order. D-001–D-012 are preserved: hosting, fixed roles, write-only managed credentials, fail-closed audit, optional SMTP, backup scope, fresh post-restore MFA, KISS limits, supported clients/authentication modes and administrative trust are unchanged. No new wire schema, storage engine, SSO, tenancy, approval chain, implementation slice or feature pack was introduced.
-
-All local PRD links resolve. Normative hashes match those at correction completion. Companion acceptance scenarios cover positive, negative, replay, stale-permission, outage and recovery boundaries. Static/diff validation is proportionate; runtime tests were not run because no product code changed.
-
-Remaining mechanism choices (durable storage implementation, encryption/key handling, audit integrity construction and crash-safe installation mechanics) remain with the full specialist reviews under the already-settled observable contracts. This result does not pass those separate stages or claim SOC 2 compliance.
-
-Changed only `workflow/definition/results/prd-review.md` and `workflow/definition/results/prd.yaml`. Earlier full-review and correction evidence remains in the orchestrator's history directory.
-
-## REC-RUN-002 feedback revalidation
-
-Scoped review of REC-001, REC-002 and REC-006 confirms the PRD adopts SECRES-05 and the SMTP STATE-01/02/03 amendment. Owners and Administrators can initiate distinct password and MFA resets within the target matrix; invitations and unrelated user administration remain Owner-only. Password issuance retains access while completion revokes it; MFA issuance immediately restricts the target and invalidates factors/access. Both-lost recovery, issuer continuity, final enrolled Owner protection, concurrency, audit failure and ordinary-login completion remain explicit.
-
-SMTP deletion is separately confirmed and immediate, requires current Owner authority and recent authentication, rejects an enabled credential dependency, and cannot be undone through stale drafts, pending values, browser submissions or history. Creation/replacement retain draft/review/apply. Non-secret settings survive deletion; queued work rechecks admission and already-dispatched work cannot resurrect credentials. Migration still covers existing YAML and both scanner catalogs, explicit subject mapping, safe credential resolution and managed-source precedence.
-
-**Narrow correction F-PRD-005:** UX-02 previously supplied only general progressive-disclosure language. Added the already-confirmed focused Settings sections/no-long-page and friendly configuration control outcomes from PO-FB-008/011. It preserves advanced capability and existing values and chooses no layout, section names or navigation mechanism. The concrete UX-DESIGN-002 proposal remains pending approval. The subsequent targeted recheck of this exact addition passed against PRD SHA-256 `bc908afcb8c40184dfcccdf296672bc559f5499236ed37f351a82f34ad0e9843` and unchanged companion/source revisions. F-PRD-005 is resolved; the earlier FIX_LOCAL correction and this recheck are distinct steps. The wording faithfully captures PO-FB-008/011 and grants no proposed layout authority.
-
-Requirement identifiers are preserved; source revisions are recorded in `prd.yaml`. Historical F-PRD-001–004 remain resolved and were not reopened. Static checks cover local PRD links and requirement IDs; no code changed or runtime tests ran. Current changed paths are the PRD and the two PRD result files only. The overall workflow remains not implementation-ready while UX direction and dependent specialist revalidation remain outstanding.
+Verified by exact reconstruction of the previous validated hashes that subsequent central ledger changes only close REC-DEC-008/009/010 routing/adoption; manifest and brief changes only refresh the ledger and dependent brief hashes. All substantive validated inputs remain byte-identical. PASS retained; no renewed product review or authority mutation.

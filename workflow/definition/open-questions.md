@@ -749,11 +749,11 @@ reason: The Product Owner has settled clearing an in-use value and retaining its
   Derive current authorization/version/dependency checks, immediate reference/admission effects,
   failure/restart, restore/history, missing-value behavior and honest legacy actor attribution
   without reopening that intent. Security and architecture boundaries both need resolution.
-status: accepted
+status: resolved
 resolution_owner:
 - architecture
 - security
-routing_status: resolved_pending_reconciliation_adoption
+routing_status: resolved
 depends_on: []
 ask_user: false
 resolved_behavior: Referenced service credential Delete clears only value, retains key and exact
@@ -857,13 +857,15 @@ reason: Individual directives settle interaction outcomes but not the full layou
   states, composition or approved mockups. Existing authority needs selective service UX refinement.
   Color bars, tester modal and speculative identifier hiding remain advisory/exploratory. Any
   required approval is for a concrete design, not reauthorization of the directives.
-status: pending
+status: resolved
 resolution_owner:
 - ux
-routing_status: awaiting_proposal_approval
+routing_status: resolved
 depends_on:
 - UX-DESIGN-004
 ask_user: false
+resolved_behavior: Approved UX4 synthesized and validated against adopted PRD; REC008 resolves
+  source findings.
 ```
 
 ```yaml
@@ -883,10 +885,10 @@ reason: The feedback confirms a Delete action and confirmation, but existing aut
   archive/restore-to-Disabled and retained audit/history. First derive the smallest faithful
   lifecycle contract; only a remaining material retention/destruction tradeoff requires a Product
   Owner choice. Do not infer purge or erase audit from a label.
-status: accepted
+status: resolved
 resolution_owner:
 - prd
-routing_status: resolved_pending_reconciliation_adoption
+routing_status: resolved
 depends_on: []
 ask_user: false
 resolved_behavior: Service Delete uses existing archive lifecycle with explicit retention and
@@ -900,7 +902,7 @@ resolution_artifacts:
 
 ```yaml
 id: UX-DESIGN-004
-status: open
+status: resolved
 stage: ux
 derived_from: REC-DEC-009
 affected_requirement: CONFIG-01/02/05; POLICY-01/02/03; UX-01/02/03/04; MIGRATE-01
@@ -915,10 +917,10 @@ options:
 - Request changes before approval
 resolution_category: PRODUCT_DECISION
 resolution_owner: user
-routing_status: asked
+routing_status: resolved
 depends_on: []
-ask_user: true
-proposal_revisions:
+ask_user: false
+proposal_revisions: &id001
 - path: workflow/definition/drafts/product-ux/web-console-feedback-003/access.html
   revision: sha256:2fca9dfe7d01bff6f9e332d5377e3cd3a263df1a4ce728a2dba40b6355d4caaa
 - path: workflow/definition/drafts/product-ux/web-console-feedback-003/advanced.html
@@ -993,4 +995,7 @@ proposal_revisions:
   revision: sha256:3265bfef2a354de761436d0189165327006b8fc588ebf4fcde033f267099f59a
 - path: workflow/definition/drafts/product-ux/web-console-feedback-003/styles.css
   revision: sha256:1de78d96aee168f9d0a356a45bef9fbb7ae16a9c088343fdf0a24ff57663596d
+resolution: yes, approved
+approval_scope: feedback-003-draft-1 experience direction and general visual appearance
+approved_proposal_revisions: *id001
 ```

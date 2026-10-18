@@ -63,3 +63,22 @@ These additions supplement stable UX-C01–25 and inherit their authorization, e
 | UX-C42 | Matching-state/viewport implementation screenshots are directly compared with approved manifest-hashed mockups for composition, width, density, typography, spacing, controls, colors/hierarchy, rails and responsive layouts. Meaningful discrepancies are fixed or explicitly accepted and scoped; functional tests alone cannot satisfy visual conformance. | UX-G04, UX-V05, UX-R05 | UX-02/04, UX-DESIGN-003 |
 
 UX-C42 requires visual implementation evidence, not new release or platform certification. Record reference image, actual screenshot, viewport, state/role, observed differences and resolution. Prototype sample values and inert controls are not production fixtures; preserved capabilities and accessibility remain required.
+
+
+## Feedback 003 conformance additions
+
+| ID | Observable check | Governing UX rules | Product trace |
+| --- | --- | --- | --- |
+| UX-C43 | Service rows expose real links and independent action targets, Active plus Draft changes/readiness, explicit unavailable activation and confirmed Delete with retained archive/history and restore-as-Disabled consequence. | UX-IA09, UX-A07, UX-V06 | CONFIG-05, UX-01/03, REC-DEC-010 |
+| UX-C44 | Overview shows grouped actual current values; Configuration shows one populated section with a single full-service Guided/Advanced switch; all exact literals/custom options and imported references survive representation changes. | UX-IA09, UX-IN15 | CONFIG-01/03, BASE-01, POLICY-02 |
+| UX-C45 | Creation steps and browser Back/Forward restore safe input/location; adding repeated items focuses the new item; unchanged navigation/testing produces no false dirty warning. | UX-IN15, UX-A07 | CONFIG-01/03, UX-03/04 |
+| UX-C46 | Destinations explain matching and visibly scope certificate defaults/overrides; focused advanced settings retain all options without nested fold-outs; API-doc and placement help explains its purpose with secret-free examples. | UX-IN15, UX-IA09 | BASE-01, CONFIG-01, AUTHZ-04 |
+| UX-C47 | Credential Set/Replace opens a write-only dialog, no inline secret requirement leaks into wizard navigation; actor/time/version show truthful successful or historical attribution and Unknown where absent. | UX-IN14, UX-A07 | CONFIG-02, STATE-09, SECRES-08 |
+| UX-C48 | Referenced Delete confirms clear-only and retained key; applied missing value blocks new execution without lifecycle change, draft-only absence blocks activation only; stale confirmation requires renewed review and uncertainty is not success. | UX-IN14 | CONFIG-02/03, STATE-09, SECRES-08 |
+| UX-C49 | Rules form a compact list with consistent Add/Edit dialogs, contextual actions, selected common methods and preserved custom methods/options; default policy, priority and movement boundaries are explained. | UX-IN16 | POLICY-01/02, BASE-01 |
+| UX-C50 | Policy tester is focused, has no downstream effect and returns to exact editing context without dirtying it; no modal stacking or lost safe work. | UX-IN04/16, UX-A07 | POLICY-03, UX-03/04 |
+| UX-C51 | Imported identity errors name original subject/source/affected services and link to explicit local mapping; mapping preserves work, proposes no implicit grant and yields an actionable review path. | UX-IA10, UX-A07 | MIGRATE-01–04, AUTHZ-01 |
+| UX-C52 | Existing-service access distinguishes immediate assignments from proposed first-activation grants; shared settings links name their destination/scope and guard local work. | UX-IA10 | AUTHZ-01/02, CONFIG-03 |
+| UX-C53 | Matching-state screenshots cover service list, focused sections, dialogs, import recovery and narrow transformations against approved feedback 003 evidence; material drift is corrected or explicitly scoped and accepted. | UX-G05, UX-V06, UX-R06 | UX-02/04, UX-DESIGN-004 |
+
+UX-C43–53 supplement UX-C01–42; they do not mark implementation passed. STATE-09/SECRES-08 constrain clear/recovery behavior as adopted in the PRD; Product Definition owns cross-domain validation. Preserve unchanged roles, audits, history, Settings, accounts and recovery requirements.

@@ -5,57 +5,57 @@ generated_from_state: workflow/definition/state.yaml
 artifacts:
   prd:
     path: docs/web-console-prd.md
-    revision: sha256:00e6e2a9ec4661695f6aa4f01f86e8963739579bd147c7d73fa67870dda41e4b
+    revision: sha256:48194cfbc4e55756649820a411aa0675c2a6be87c577bdd920b0aaf06e21b617
   security_contract:
     path: product/security/web-console-security-contract.md
-    revision: sha256:2f46343c6d3206b48c46212de6ba84a308b7f2a921cfba7525d2b212f3e4f5bc
+    revision: sha256:8f66520798094a2638f006c9f3145e263e96008fdf63480fc6b98c2b0ccddc35
   architecture_contract:
     path: product/architecture/web-console-state-contract.md
-    revision: sha256:80835e44cdd550f10638bb757f183868804f9678cac4626a7ac84abb27ff0d32
+    revision: sha256:c8e22b5013d89090cc451cb2ef0290d7517b05bebae746faa15b65f10fca9848
   coverage:
     path: docs/web-console-prd-coverage.md
-    revision: sha256:36af3429ba960eaa2adf42777c7bc7a0d8cae12b62cac3ba63d228f14eee037e
+    revision: sha256:db1dc7d715ff3704c3d211e4edbcd99aa8ec3f77cce3fdc40bc148aa31237379
   journeys:
     path: docs/web-console-prd-user-journey-audit.md
-    revision: sha256:7f0f3e3159a06e867aeabdadacdd73915c1c1a11ad0a4a8e6d597304efc1ff67
+    revision: sha256:794fe648f7003de6759d0bf93a0a061f761e5de29d84c43adb6ff2473e0428da
   ux:
     path: product/ux/manifest.yaml
-    revision: sha256:7331cb34170fa5f35d6790c4be5825b21cd9ba00b66be88caab3409de7c56563
-    declared_revision: web-console-ux-3
+    revision: sha256:4c5851fd985e7fa83f5d902eaf0100f983cb5e3da240c28d7b4a789b80d0f8b2
+    declared_revision: web-console-ux-4
     manifest: product/ux/manifest.yaml
   ux_experience_brief:
     path: product/ux/experience-brief.yaml
-    revision: sha256:401e66e9ac595a78b84a0838e632a6ee124dcebef8c198ba2e80fdcad67e81b5
+    revision: sha256:859e7e6cd056f37a9682df291f0daa6d292d361b5a711fbbb824be2f1806c4e6
   ux_overview:
     path: product/ux/00-overview.md
-    revision: sha256:c7764e530cee91d697dc99d91c59367bb390dde11a8e5588056abee6977f8ce8
+    revision: sha256:7cb20e4112c013d3188b307f4f91205e2edea977dc5f08d7231ae58bcfb8f51c
   ux_information_architecture:
     path: product/ux/01-information-architecture.md
-    revision: sha256:598d58ff99579c25797744d955519c9c611735a79c2a8c49154e1fee2486b2db
+    revision: sha256:46a44b43f12e8fec32e97abcf659581bc3c2d6b4c57c176038e495277a69c159
   ux_interaction_patterns:
     path: product/ux/02-interaction-patterns.md
-    revision: sha256:7e9090b32ffeab812989a467e9aa7f1d574928b66f61056fd2a4a724a0885928
+    revision: sha256:49afe01f26e05cb51e1a0183283ff07f16fdc4cb238cedc1bb85b35e0c6b5539
   ux_responsive_and_platform:
     path: product/ux/03-responsive-and-platform.md
-    revision: sha256:e277c6634a9c2e240da30cd3c82026676b53b3dcd242218a7a254d321f2ad914
+    revision: sha256:ee4e4b2edecb8f56677145f3ea90c482334527c7e4d6356bf64220b7d3149b8f
   ux_visual_system:
     path: product/ux/04-visual-system.md
-    revision: sha256:7c68c82b60d81c638d521eb6d03d28b4cba08f13244276bff1d43295f078937b
+    revision: sha256:9c30c4e67669f43a14234727d7bebf3e5a309f6915333aaf5c3827e79ce0590a
   ux_accessibility:
     path: product/ux/05-accessibility.md
-    revision: sha256:c638c001079626f71876d60ef8075f9e5d682e4a62fabf8800f8ed1e3eea969e
+    revision: sha256:82b0463ee026354d14e01d925e5c734317774cac88396c103748f2d907e54dd1
   ux_feature_exceptions:
     path: product/ux/06-feature-exceptions.md
-    revision: sha256:4dfbfc09ff7e131672922ef83ec81106b4ae38407ee21f9aabff8bdc19aaac2f
+    revision: sha256:427142201d4c4d0e6fc17c19d957f6f4eb8355c651554f0892aefcc1590468cd
   ux_acceptance_checklist:
     path: product/ux/07-acceptance-checklist.md
-    revision: sha256:e37fd2617fc4ac140a8df33990a067d6e8ffdb6a5ffbd419d0aa9988584e58f0
+    revision: sha256:7852a01661c26abc1868250219f85410857b0ce216b3c50cb71a5b79ec4162f5
   security:
     path: product/security/web-console-security-review.md
-    revision: sha256:90a64236b9e53698c550cdef879934f4dfaecc4704427a0c0694329293b31dc3
+    revision: sha256:f5eee5bf9488489330c2632d7eabbd45c836ae2263ea2de9601ba789f99ede91
   architecture:
     path: product/architecture/web-console-architecture-review.md
-    revision: sha256:8418f51a7b9fefe3248901aee83dd5111c87613684f9c9e6a59263cd34aea92b
+    revision: sha256:45fef6181a75575800555c4da62a7c460a24b32f4673d8fe4c20885a63aeb08c
 decisions:
   path: workflow/definition/decisions.md
 accepted_risks:
@@ -66,7 +66,7 @@ accepted_risks:
   - D-012
   result: workflow/definition/results/security.yaml
 validation:
-  repository_commit: 653ac14f771dc1da7d1d650c577ff439e9b99bce
+  repository_commit: null
   prd:
     status: passed
     result: workflow/definition/results/prd.yaml

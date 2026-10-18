@@ -1,16 +1,16 @@
-stage: journeys
+stage: prd-to-user-journey-audit
 status: PASS
 mode: targeted_revalidation
-generated_at: '2026-10-12T23:48:31+00:00'
+generated_at: '2026-10-18T14:49:45+00:00'
 validated_inputs:
 - path: docs/web-console-prd.md
-  revision: sha256:00e6e2a9ec4661695f6aa4f01f86e8963739579bd147c7d73fa67870dda41e4b
+  revision: sha256:48194cfbc4e55756649820a411aa0675c2a6be87c577bdd920b0aaf06e21b617
 - path: product/security/web-console-security-contract.md
-  revision: sha256:2f46343c6d3206b48c46212de6ba84a308b7f2a921cfba7525d2b212f3e4f5bc
+  revision: sha256:8f66520798094a2638f006c9f3145e263e96008fdf63480fc6b98c2b0ccddc35
 - path: product/architecture/web-console-state-contract.md
-  revision: sha256:80835e44cdd550f10638bb757f183868804f9678cac4626a7ac84abb27ff0d32
+  revision: sha256:c8e22b5013d89090cc451cb2ef0290d7517b05bebae746faa15b65f10fca9848
 - path: docs/web-console-prd-coverage.md
-  revision: sha256:36af3429ba960eaa2adf42777c7bc7a0d8cae12b62cac3ba63d228f14eee037e
+  revision: sha256:db1dc7d715ff3704c3d211e4edbcd99aa8ec3f77cce3fdc40bc148aa31237379
 - path: workflow/feedback/PO-FEEDBACK-2026-10-11-002/feedback.yaml
   revision: sha256:515a53d2c56f256708cef2fce9add362aa20f2fbcf1f6d34b4ff1a1dfdb9d53b
 - path: workflow/reconciliation/REC-RUN-004/reconciliation-result.yaml
@@ -18,57 +18,62 @@ validated_inputs:
 - path: workflow/reconciliation/REC-RUN-005/reconciliation-result.yaml
   revision: sha256:fbcfc50401f03cf2360fe0b6c68aca0c9439a5cdb0becb21d595c0f533f0dfbf
 - path: product/ux/00-overview.md
-  revision: sha256:c7764e530cee91d697dc99d91c59367bb390dde11a8e5588056abee6977f8ce8
+  revision: sha256:7cb20e4112c013d3188b307f4f91205e2edea977dc5f08d7231ae58bcfb8f51c
 - path: product/ux/01-information-architecture.md
-  revision: sha256:598d58ff99579c25797744d955519c9c611735a79c2a8c49154e1fee2486b2db
+  revision: sha256:46a44b43f12e8fec32e97abcf659581bc3c2d6b4c57c176038e495277a69c159
 - path: product/ux/02-interaction-patterns.md
-  revision: sha256:7e9090b32ffeab812989a467e9aa7f1d574928b66f61056fd2a4a724a0885928
+  revision: sha256:49afe01f26e05cb51e1a0183283ff07f16fdc4cb238cedc1bb85b35e0c6b5539
 - path: product/ux/03-responsive-and-platform.md
-  revision: sha256:e277c6634a9c2e240da30cd3c82026676b53b3dcd242218a7a254d321f2ad914
+  revision: sha256:ee4e4b2edecb8f56677145f3ea90c482334527c7e4d6356bf64220b7d3149b8f
 - path: product/ux/04-visual-system.md
-  revision: sha256:7c68c82b60d81c638d521eb6d03d28b4cba08f13244276bff1d43295f078937b
+  revision: sha256:9c30c4e67669f43a14234727d7bebf3e5a309f6915333aaf5c3827e79ce0590a
 - path: product/ux/05-accessibility.md
-  revision: sha256:c638c001079626f71876d60ef8075f9e5d682e4a62fabf8800f8ed1e3eea969e
+  revision: sha256:82b0463ee026354d14e01d925e5c734317774cac88396c103748f2d907e54dd1
 - path: product/ux/06-feature-exceptions.md
-  revision: sha256:4dfbfc09ff7e131672922ef83ec81106b4ae38407ee21f9aabff8bdc19aaac2f
+  revision: sha256:427142201d4c4d0e6fc17c19d957f6f4eb8355c651554f0892aefcc1590468cd
 - path: product/ux/07-acceptance-checklist.md
-  revision: sha256:e37fd2617fc4ac140a8df33990a067d6e8ffdb6a5ffbd419d0aa9988584e58f0
+  revision: sha256:7852a01661c26abc1868250219f85410857b0ce216b3c50cb71a5b79ec4162f5
 - path: product/ux/experience-brief.yaml
-  revision: sha256:401e66e9ac595a78b84a0838e632a6ee124dcebef8c198ba2e80fdcad67e81b5
+  revision: sha256:859e7e6cd056f37a9682df291f0daa6d292d361b5a711fbbb824be2f1806c4e6
 - path: product/ux/manifest.yaml
-  revision: sha256:7331cb34170fa5f35d6790c4be5825b21cd9ba00b66be88caab3409de7c56563
+  revision: sha256:4c5851fd985e7fa83f5d902eaf0100f983cb5e3da240c28d7b4a789b80d0f8b2
+- path: workflow/feedback/PO-FEEDBACK-2026-10-17-001/feedback.yaml
+  revision: sha256:9b50a7d3dc87a3f2d45832b0deee4402b6e84b65092680a57f5bfbf8c7fbe0bf
+- path: workflow/reconciliation/REC-RUN-008/reconciliation-result.yaml
+  revision: sha256:1018e24f89041935175c94108faa5339c6d09f2c4f9a15c244df5378d4177432
 artifact_changes:
 - path: docs/web-console-prd-user-journey-audit.md
-  summary: Preserve all 59 existing journeys and add five role-specific People viewing/account-edit
-    journeys; update populated settings, SMTP modes, metadata, responsive errors and mockup-fidelity
-    acceptance.
+  summary: Preserve 64 prior journeys; add Owner/Admin referenced-clear journeys and 12 action chains; refresh UX4
+    navigation, lifecycle, policy, import recovery and STATE-09 attribution/restore contracts.
 - path: workflow/definition/results/journeys.yaml
-  summary: Current authority hashes and bounded journey-stage PASS; runtime remains unverified.
+  summary: Exact current authority hashes and bounded journey-stage PASS; runtime unverified.
 changed_paths:
 - docs/web-console-prd-user-journey-audit.md
 - workflow/definition/results/journeys.yaml
 findings: []
 questions: []
 affected_requirements:
-- IDENT-02A
-- IDENT-02B
-- IDENT-04
-- IDENT-06
-- AUTHZ-02
-- AUTHZ-03
+- CONFIG-01
+- CONFIG-02
 - CONFIG-03
+- CONFIG-04
+- CONFIG-05
+- AUTHZ-01
+- AUTHZ-02
+- POLICY-01
+- POLICY-02
+- POLICY-03
+- MIGRATE-01
+- MIGRATE-02
+- AUDIT-01
+- BACKUP-01
+- BACKUP-05
+- UX-01
 - UX-02
 - UX-03
 - UX-04
-- BACKUP-01
-- BACKUP-02
-- BACKUP-05
-- OPS-03
-- OPS-04
-- SECRES-06
-- SECRES-07
-- STATE-07
-- STATE-08
+- STATE-09
+- SECRES-08
 affected_artifacts:
 - docs/web-console-prd-user-journey-audit.md
 reconciliation_required: false
@@ -81,15 +86,15 @@ change_impact:
 validation:
   actors: 10
   actor_context_rows: 25
-  capability_families: 77
-  journeys: 64
+  capability_families: 79
+  journeys: 66
   entry_points: 25
-  action_mappings: 110
-  coverage_rows: 64
+  action_mappings: 122
+  coverage_rows: 66
   specification_gaps: 0
   implementation_tests_run: false
   implementation_evidence: Not verified; definition-only review
-  visual_acceptance: UX-V05/UX-C42 matching-state/viewport implementation/reference comparison required;
-    no runtime acceptance claim.
-workflow_readiness: Journey-stage PASS against current PRD/companions and approved UX3. Reconciliation
-  convergence, final domain reviews and delivery planning remain orchestrator-owned.
+  visual_acceptance: UX-V05/UX-C42 matching-state/viewport implementation/reference comparison required; no runtime
+    acceptance claim.
+workflow_readiness: Journey-stage PASS against current authority and approved UX4; downstream domain validation
+  and delivery handoff remain orchestrator-owned.

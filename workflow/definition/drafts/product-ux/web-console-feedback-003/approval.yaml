@@ -1,0 +1,9 @@
+proposal_revision: feedback-003-draft-1
+status: approved
+decision_refs:
+- UX-DESIGN-004
+decision_ledger: workflow/definition/decisions.md
+user_answer: yes, approved
+approved_scope: Service configuration experience direction and representative visual
+  appearance; existing security and configuration capabilities retained.
+canonical_revision: web-console-ux-4

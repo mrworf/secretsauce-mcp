@@ -3,13 +3,12 @@ specialist: delivery-milestone-compiler
 product_id: secretsauce-mcp
 input_mode: CHANGE_PLAN
 outcome: COMPILED
-summary: "Three coherent outcome milestones cover all eight adopted second-feedback remediations. Completed\
-  \ M10\u201321 and earlier history preserved; mandatory matched-browser visual conformance included.\
-  \ Complete for milestone-readiness, not implementation."
+summary: "Ten bounded outcomes cover twelve adopted third-feedback remediations; completed M10\u201324 and\
+  \ delivery history preserved. Complete for readiness only."
 source:
   path: workflow/definition/definition-package.yaml
-  revision: sha256:82014f66c15c3e7246144c9b44b95c70c7a22aba863d1e8bbd6887ca6afed506
-  repository_commit: 653ac14f771dc1da7d1d650c577ff439e9b99bce
+  revision: sha256:7f417f6965b95f3451144126133831ec1d5c62daee6a148d3606e7552f0b134c
+  repository_commit: d0dffc6ffbc47f114dc232abedf40f50db3e52f3
 eligibility:
   definition_package_status: ready_for_delivery_planning
   effective_handoff: workflow/definition/state.yaml#next_handoff
@@ -17,46 +16,57 @@ eligibility:
   producer_commit_in_history: true
   passed_definition_validation_consumed: true
   canonical_reconciliation_is_provenance: true
-  revalidation_resolution: Committed all-six-stage PASS definition adoption satisfies immutable REC-RUN-006
-    revalidation/source-closeout gate; raw result remains provenance.
+  revalidation_resolution: All six definition stages passed and committed in d0dffc6; immutable REC-RUN-008
+    historical definition/source gate fulfilled. Compile effective validated handoff, not stale raw handoff.
   effective_implementation_required: true
   effective_implementation_ready: true
   effective_delivery_planning_ready: true
   unresolved_authority: []
 reconciliation:
-  result: workflow/reconciliation/REC-RUN-006/reconciliation-result.yaml
-  revision: sha256:66907c2a791c0c794e600f3b3b1dd1d9167ebe7ea804fe24d759f0d309edeb93
-  repository_commit: a57c1ca28615a36770cc1446c4cb71fe21ae5f48
+  result: workflow/reconciliation/REC-RUN-008/reconciliation-result.yaml
+  revision: sha256:1018e24f89041935175c94108faa5339c6d09f2c4f9a15c244df5378d4177432
+  repository_commit: 78b333eda885731abf3e9f99c401c64c5f00f148
   schema_version: 1
-  reconciliation_id: REC-RUN-006
-  change_id: REC-IMPACT-006
+  reconciliation_id: REC-RUN-008
+  change_id: REC-IMPACT-008
   remediation_ids:
-  - REC-RM-007
-  - REC-RM-008
-  - REC-RM-009
-  - REC-RM-010
-  - REC-RM-011
-  - REC-RM-012
-  - REC-RM-013
-  - REC-RM-014
-  remediation: workflow/reconciliation/REC-RUN-006/03-remediation-backlog.md
-  remediation_revision: sha256:5268fbba238424f02585450f433ca545d6ff64befad57f3ae258f2167d13dbda
+  - REC-RM-015
+  - REC-RM-016
+  - REC-RM-017
+  - REC-RM-018
+  - REC-RM-019
+  - REC-RM-020
+  - REC-RM-021
+  - REC-RM-022
+  - REC-RM-023
+  - REC-RM-024
+  - REC-RM-025
+  - REC-RM-026
+  remediation: workflow/reconciliation/REC-RUN-008/03-remediation-backlog.md
+  remediation_revision: sha256:b0f794d637023bbd4c1431db72fb1b7a5558f62317d2e1960caca0d7adcfe64c
 packet:
   complete: true
   path: delivery/milestones/secretsauce-mcp
   manifest: delivery/milestones/secretsauce-mcp/status.yaml
-  manifest_revision: sha256:e5480636caa8a3abd714be0453074afc2c04c45c86ae17935609fe945e9a8a0b
-  revision: sha256:e3e889fa5d548d6bcb46a27aa12bd894b495d8ca69ca81217c22f1d7ddc0b00c
-  revision_method: SHA-256 of sorted packet path + NUL + sha256:file-digest lines, joined with newline;
-    all packet files included.
+  manifest_revision: sha256:7d60c36667512ec2a16a5a7d83b15d0eeb6e424add8d364dd3596bbb0d459793
+  revision: sha256:ad65556e68f94d8507bff72c249af80727b4932955d80a506e231a1b5b6dd6f7
+  revision_method: SHA-256 of sorted packet path + NUL + sha256:file-digest lines joined with newline; all
+    packet files included.
   index: delivery/milestones/secretsauce-mcp/index.md
   traceability: delivery/milestones/secretsauce-mcp/traceability.md
-  milestone_count: 3
+  milestone_count: 10
   milestone_ids:
-  - '22'
-  - '23'
-  - '24'
-  total_manifest_records: 15
+  - '25'
+  - '26'
+  - '27'
+  - '28'
+  - '29'
+  - '30'
+  - '31'
+  - '32'
+  - '33'
+  - '34'
+  total_manifest_records: 25
   ready_for_milestone_readiness: true
   artifacts:
   - path: delivery/milestones/secretsauce-mcp/10-secure-audited-setup.md
@@ -84,17 +94,124 @@ packet:
   - path: delivery/milestones/secretsauce-mcp/21-friendly-configuration-and-import.md
     revision: sha256:3c798a833efec4ca41eeccad00c59f940bb8489eef91c10b36403a52ce90858c
   - path: delivery/milestones/secretsauce-mcp/22-readable-forms-and-services.md
-    revision: sha256:e7aa871edb05a70f49fcbd42e4167ace0a8da29f0afc23addcda3c7bc8a61dde
+    revision: sha256:7c341cedcd473371608a52ca10df6d2db4a92550606d9085beec700db3f85c92
   - path: delivery/milestones/secretsauce-mcp/23-people-details-and-account-management.md
-    revision: sha256:901b071c72944228d3bb22f75050fa84b8c6b4757c78f0f2ed2233a2a7e5588b
+    revision: sha256:e5a464cd4790f190968bfd3f178608047de0bdbd4ec3718bc095d60d3de8e4fa
   - path: delivery/milestones/secretsauce-mcp/24-populated-settings-and-email-modes.md
-    revision: sha256:413f7c166627830498f747f421a496df3d07bf66bf7174e7df4dde16ba3c559c
+    revision: sha256:ac9202e661897b1a91b7d6c25ec9104bf80f413f9c731a04c1fddfe38591ae0e
+  - path: delivery/milestones/secretsauce-mcp/25-import-identity-recovery.md
+    revision: sha256:faa81736384253d6a3deb8564662ad70eb77f91d18d1a31444a6d539ec8f24f3
+  - path: delivery/milestones/secretsauce-mcp/26-service-lifecycle-rows.md
+    revision: sha256:eda4ddc57c4245b4c2d079fcdd8b47c9e21e24143ec87a6ecfd2d972d17f1628
+  - path: delivery/milestones/secretsauce-mcp/27-focused-service-editing.md
+    revision: sha256:ff9500e1d69f67bb841d9d41afc929f51eabda682d9d31d24de3858b05c2d5da
+  - path: delivery/milestones/secretsauce-mcp/28-destination-configuration.md
+    revision: sha256:9fbb353f2e5553ab58c41dc9348101302f473fd7eac3147de33f70b31b94875c
+  - path: delivery/milestones/secretsauce-mcp/29-durable-credential-clearing.md
+    revision: sha256:ef8f63960754a944f052fd370dd633fbbe313f81b09617d2e37500d2e9628519
+  - path: delivery/milestones/secretsauce-mcp/30-credential-value-dialogs.md
+    revision: sha256:3e6eba89468900d6930f4860191981d0e997a76e2f3de6fa030d85e917b66533
+  - path: delivery/milestones/secretsauce-mcp/31-policy-rule-dialogs.md
+    revision: sha256:4cfb25b812cf9aef56d7158387cfae352f9e6cdf74951569f028b9e575c9841e
+  - path: delivery/milestones/secretsauce-mcp/32-service-help-and-access.md
+    revision: sha256:24fc93d7fe36113b67061efb3e94b0ce93b653ffc42856fa2993f49f3cc74ca5
+  - path: delivery/milestones/secretsauce-mcp/33-service-navigation-and-testing.md
+    revision: sha256:ae90075d26645c1ca99d08ed28723e37d49138d257be35f1e095c7e5e60c8363
+  - path: delivery/milestones/secretsauce-mcp/34-credential-recovery-compatibility.md
+    revision: sha256:050a5fbc7c6094b7b4c437896e3e5f74b0b4761bbda06787d642628bf721a1a8
   - path: delivery/milestones/secretsauce-mcp/index.md
-    revision: sha256:646e262b0a7ef23389bc5d5d29ca91e6022bc1cdaa241c0e7a5a0411cfec266e
+    revision: sha256:3f33dd8208f81cc9acb469ffdc70cb6913b5c69091ec9bcc2d2e9757ef51715b
   - path: delivery/milestones/secretsauce-mcp/status.yaml
-    revision: sha256:e5480636caa8a3abd714be0453074afc2c04c45c86ae17935609fe945e9a8a0b
+    revision: sha256:7d60c36667512ec2a16a5a7d83b15d0eeb6e424add8d364dd3596bbb0d459793
   - path: delivery/milestones/secretsauce-mcp/traceability.md
-    revision: sha256:ba910c0db08042acc07589c75947be3c26895e3d60f95142c14ee0ba54dca611
+    revision: sha256:e9d7684b6752b39f86338f17930e80b8e2402e3da608c0c50ee6d96d4b25c5ff
+granularity_assessment:
+  status: PASS
+  milestones:
+  - milestone: '25'
+    observable_checkpoint: Import a representative multi-service YAML fixture, explicitly repair two unresolved
+      subjects in place, retain unrelated edits and reach review without granting execution.
+    scope_boundary: Mapping inspection and correction are inseparable parts of this recovery journey; no generic
+      importer rebuild.
+    separable_capabilities_kept_separate: true
+    granularity_findings: []
+  - milestone: '26'
+    observable_checkpoint: Inspect Active plus draft and unavailable activation, then confirm Disable/Delete
+      and restore as Disabled from the list.
+    scope_boundary: Rows and their lifecycle actions share one state/confirmation contract; no configuration
+      editor or network health subsystem.
+    separable_capabilities_kept_separate: true
+    granularity_findings: []
+  - milestone: '27'
+    observable_checkpoint: Open an imported service, inspect actual current Overview, edit one populated section,
+      switch whole-draft representations losslessly and navigate creation steps directly.
+    scope_boundary: Focused sections and the global mode switch govern the same draft representation/navigation
+      boundary; separating them would temporarily duplicate editors or risk losing hidden data. Destination/rule/secret
+      dialogs remain later independently acceptable outcomes.
+    separable_capabilities_kept_separate: true
+    granularity_findings: []
+  - milestone: '28'
+    observable_checkpoint: Edit a destination with inherited certificate verification and an explicit override,
+      use focused advanced matching and return without losing literals.
+    scope_boundary: One destination editing journey including ordinary and advanced representations; transport
+      changes are excluded unless necessary to preserve semantics.
+    separable_capabilities_kept_separate: true
+    granularity_findings: []
+  - milestone: '29'
+    observable_checkpoint: Clear an applied key through confirmed UI, observe blocked new execution with unchanged
+      lifecycle, deliberately Set it, and verify stable last-successful attribution after restart.
+    scope_boundary: Clear, generation fencing, current projection coherence and successful actor/time persistence
+      form one atomic mutation outcome. Splitting attribution storage would create newly written records without
+      required attribution. Full entry-dialog redesign and archive qualification are separate.
+    separable_capabilities_kept_separate: true
+    granularity_findings: []
+  - milestone: '30'
+    observable_checkpoint: Open Set/Replace from Configuration and creation Authentication, cancel without
+      mutation, save immediately, and focus a newly added credential.
+    scope_boundary: Shared entry dialogs must agree in both contexts; no new credential storage or admission
+      design is assigned here.
+    separable_capabilities_kept_separate: true
+    granularity_findings: []
+  - milestone: '31'
+    observable_checkpoint: Add and edit a representative imported rule through the same dialog, select common
+      methods and retain custom methods/regex/options while preserving effective order.
+    scope_boundary: List and shared Add/Edit are one rule-authoring outcome; safe testing/history are separate.
+    separable_capabilities_kept_separate: true
+    granularity_findings: []
+  - milestone: '32'
+    observable_checkpoint: Read context-specific guidance, distinguish a proposed assignment from current execution
+      access, and confirm an authorized existing-service access change.
+    scope_boundary: Plain guidance is tied to actual field/access consequences rather than a standalone copy
+      sweep; it preserves all advanced capabilities and does not repeat destination/rule redesign.
+    separable_capabilities_kept_separate: true
+    granularity_findings: []
+  - milestone: '33'
+    observable_checkpoint: Use actual browser Back/Forward and a deep link, run no-I/O policy testing in context,
+      return with focus/scroll and safe edits intact.
+    scope_boundary: History, tool return and dirty guards share the same editing-context contract; no router-wide
+      rewrite or global Settings redesign.
+    separable_capabilities_kept_separate: true
+    granularity_findings: []
+  - milestone: '34'
+    observable_checkpoint: Create an encrypted post-clear snapshot and restore it on isolated supported Docker
+      mounts, proving absence, historical attribution and Disabled lifecycle.
+    scope_boundary: Snapshot projection, bounded validation and restore admission must agree end-to-end; unrelated
+      backup scheduling and recovery UI redesign are excluded.
+    separable_capabilities_kept_separate: true
+    granularity_findings: []
+  unresolved_findings: []
+  earliest_integrated_checkpoint: M25 import to mapping correction to review with representative multi-service
+    YAML fixture; no prerequisite full editor rewrite.
+  validation_distribution: Focused changed-domain and browser evidence per milestone; full npm test/build at
+    every milestone; M34 integrates all new browser and supported Docker recovery/restart evidence. Existing
+    external client exception preserved.
+  structural_corrections:
+  - id: PRE-043
+    cycle: 1
+    status: resolved
+    finding: "M34 final integrated acceptance consumed M25\u201333 without declaring all providers."
+    correction: Declare minimal terminal provider prerequisites 17,25,26,28,30,32,33; transitive closure includes
+      27,29,31. No scope or completed milestone changed.
 preservation:
   completed_contracts_and_records_unchanged:
   - '10'
@@ -109,61 +226,67 @@ preservation:
   - '19'
   - '20'
   - '21'
+  - '22'
+  - '23'
+  - '24'
   historical_manifest_unchanged: docs/milestones/status.yaml
   delivery_goal_preserved_as_historical: true
   prior_compiled_from_preserved: delivery/milestones/secretsauce-mcp/status.yaml#compiled_from_history
-  prior_compiler_adapter: workflow/delivery-planning/results/history/compiler-feedback-001.yaml
   legacy_selector_unchanged: true
 coverage:
   required_remediation_ids:
-  - REC-RM-007
-  - REC-RM-008
-  - REC-RM-009
-  - REC-RM-010
-  - REC-RM-011
-  - REC-RM-012
-  - REC-RM-013
-  - REC-RM-014
+  - REC-RM-015
+  - REC-RM-016
+  - REC-RM-017
+  - REC-RM-018
+  - REC-RM-019
+  - REC-RM-020
+  - REC-RM-021
+  - REC-RM-022
+  - REC-RM-023
+  - REC-RM-024
+  - REC-RM-025
+  - REC-RM-026
   mapping:
-    REC-RM-007:
-    - '24'
-    REC-RM-008:
-    - '22'
-    REC-RM-009:
-    - '23'
-    REC-RM-010:
-    - '23'
-    REC-RM-011:
-    - '24'
-    REC-RM-012:
-    - '22'
-    - '23'
-    - '24'
-    REC-RM-013:
-    - '23'
-    REC-RM-014:
-    - '24'
-  shared_constraint_mapping: REC-RM-012 shared presentation constraints repeat in M23/M24; implementation
-    owned M22. UX-V05/C42 required every milestone.
-  new_dependency_edges:
-  - - '22'
-    - '23'
-  - - '22'
-    - '24'
+    REC-RM-015:
+    - '25'
+    REC-RM-016:
+    - '26'
+    REC-RM-017:
+    - '27'
+    REC-RM-018:
+    - '27'
+    REC-RM-019:
+    - '28'
+    REC-RM-020:
+    - '29'
+    REC-RM-021:
+    - '29'
+    REC-RM-022:
+    - '30'
+    REC-RM-023:
+    - '31'
+    REC-RM-024:
+    - '32'
+    REC-RM-025:
+    - '33'
+    REC-RM-026:
+    - '34'
   unmapped: []
   blocked: []
   deferred_required_work: []
 validation:
-  installed_structural_validator: 'PASS: validated 15 milestone records and document contracts'
   source_revision_and_commit_checks: PASS
   remediation_authority_and_ux_mapping: PASS
-  backward_dependencies_and_pending_status: PASS
-  local_markdown_links: PASS
-  completed_contract_record_and_goal_preservation: PASS
-  historical_packet_and_authority_unchanged: PASS
+  granularity: PASS
+  structural_validator: 'PASS: validated 25 milestone records and document contracts'
+  completed_contract_record_and_goal_preservation: "PASS: all M10\u201324 records/documents and current completed\
+    \ goal exactly match HEAD"
   git_diff_check: PASS
-  packet_readiness_checklist: PASS for compilation boundary only
-  application_tests: 'Not run: documentation-only planning; no executable tooling or configuration changed.'
+  application_tests: 'Not run: documentation-only planning.'
+  local_markdown_links: 'PASS: all packet local targets resolve'
+  packet_readiness_checklist: PASS for compilation boundary only; no prerequisite readiness claim
+  final_integrated_provider_closure: "PASS: M34 dependency closure covers every M25\u201333 provider"
 blockers: []
 next_workflow:
   skill: milestone-readiness
@@ -172,20 +295,25 @@ next_workflow:
   owner: delivery-planning-orchestrator
   implementation_authorized_by_this_result: false
 changed_paths:
-- delivery/milestones/secretsauce-mcp/22-readable-forms-and-services.md
-- delivery/milestones/secretsauce-mcp/23-people-details-and-account-management.md
-- delivery/milestones/secretsauce-mcp/24-populated-settings-and-email-modes.md
+- delivery/milestones/secretsauce-mcp/25-import-identity-recovery.md
+- delivery/milestones/secretsauce-mcp/26-service-lifecycle-rows.md
+- delivery/milestones/secretsauce-mcp/27-focused-service-editing.md
+- delivery/milestones/secretsauce-mcp/28-destination-configuration.md
+- delivery/milestones/secretsauce-mcp/29-durable-credential-clearing.md
+- delivery/milestones/secretsauce-mcp/30-credential-value-dialogs.md
+- delivery/milestones/secretsauce-mcp/31-policy-rule-dialogs.md
+- delivery/milestones/secretsauce-mcp/32-service-help-and-access.md
+- delivery/milestones/secretsauce-mcp/33-service-navigation-and-testing.md
+- delivery/milestones/secretsauce-mcp/34-credential-recovery-compatibility.md
+- delivery/milestones/secretsauce-mcp/status.yaml
 - delivery/milestones/secretsauce-mcp/index.md
 - delivery/milestones/secretsauce-mcp/traceability.md
-- delivery/milestones/secretsauce-mcp/status.yaml
 - workflow/delivery-planning/results/compiler.yaml
 transaction:
   ownership: parent_delivery_planning
-  parent_commit: b2b66608908ca1e2dc9f61ce66856780ccf68b8e
+  parent_commit: e975b171fac96167f0909cf588b5022842a6950b
   pre_existing_dirty_paths:
   - test-results/
-  parent_owned_concurrent_paths:
   - workflow/delivery-planning/state.yaml
-  - workflow/delivery-planning/handoff.yaml
   - workflow/delivery-planning/results/history/
   child_commits_created: false

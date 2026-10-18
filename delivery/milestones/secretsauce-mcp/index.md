@@ -1,12 +1,12 @@
 # SecretSauce web console delivery packet
 
-**Mode:** CHANGE_PLAN. **Product:** `secretsauce-mcp`. Completed M10–21 and earlier legacy history remain preserved; M22–24 are pending. This is the approved second-feedback delta, not a product rebuild or implementation claim.
+**Mode:** CHANGE_PLAN. **Product:** `secretsauce-mcp`. Completed M10–24 and earlier legacy history are preserved; M25–34 are pending. Only adopted feedback 003 remediation is new scope.
 
 ## Authority and provenance
 
-The [validated definition package](../../../workflow/definition/definition-package.yaml) at `sha256:82014f66c15c3e7246144c9b44b95c70c7a22aba863d1e8bbd6887ca6afed506`, producer `653ac14f771dc1da7d1d650c577ff439e9b99bce`, and committed [definition next_handoff](../../../workflow/definition/state.yaml) are the effective eligible change handoff. All six definition stages passed and are consumed without revalidation. Immutable REC-RUN-006/REC-IMPACT-006 and its [resolved backlog](../../../workflow/reconciliation/REC-RUN-006/03-remediation-backlog.md) provide eight adopted remediation items; its historical source-closeout/revalidation flag was explicitly satisfied by the later definition transaction. This is not compilation from a stale raw reconciliation handoff. [Status](status.yaml) pins all source hashes and keeps prior compilation provenance.
+The [validated package](../../../workflow/definition/definition-package.yaml) at `sha256:7f417f6965b95f3451144126133831ec1d5c62daee6a148d3606e7552f0b134c`, producer `d0dffc6ffbc47f114dc232abedf40f50db3e52f3`, and committed [definition next_handoff](../../../workflow/definition/state.yaml) establish eligibility. All six passed definition validations are consumed, not repeated. Immutable REC-RUN-008/REC-IMPACT-008 and its [resolved backlog](../../../workflow/reconciliation/REC-RUN-008/03-remediation-backlog.md) supply REC-RM-015–026. Its historical definition/source-closeout gate is fulfilled by the later definition transaction; raw historical flags are not rewritten. [Status](status.yaml) pins all hashes and preserves previous compilation provenance.
 
-Implementation authority: adopted REC-RM-007–014 and their PRD/SECRES-06/07/STATE-07/08/approved UX3 contracts. Governing constraints: indexed UX/security/architecture, approved decisions, accepted risks and AGENTS.md. Context/evidence: observations, research, audits and delivered baseline. Exclusions: already-conforming capability, optional unadopted mechanisms, SaaS expansion and unrelated redesign. No unresolved required source work.
+Implementation authority is adopted REC-RM-015–026 and corrected PRD requirements. Governing constraints are UX4/UX-DESIGN-004, STATE-09, SECRES-08, existing architecture/security/roles/audit and AGENTS.md. Research, observations, prototype samples and findings are context, not independent work. Approved prototype references constrain general appearance without removing omitted capabilities. No unresolved required work or product decision remains.
 
 ## Milestones and dependencies
 
@@ -24,15 +24,41 @@ Implementation authority: adopted REC-RM-007–014 and their PRD/SECRES-06/07/ST
 | 19 | [Delete SMTP credentials independently](19-independent-smtp-deletion.md) | 12 | completed |
 | 20 | [Navigate focused Settings with exact draft review](20-focused-settings-and-navigation.md) | 15, 17 | completed |
 | 21 | [Configure all capabilities with forms and lossless import](21-friendly-configuration-and-import.md) | 20 | completed |
-| 22 | [Readable forms and service configuration](22-readable-forms-and-services.md) | 21 | pending |
-| 23 | [Manage accounts through clear People details](23-people-details-and-account-management.md) | 22, 18 | pending |
-| 24 | [Use populated Settings with explicit email transport](24-populated-settings-and-email-modes.md) | 22, 19, 20 | pending |
+| 22 | [Readable forms and service configuration](22-readable-forms-and-services.md) | 21 | completed |
+| 23 | [Manage accounts through clear People details](23-people-details-and-account-management.md) | 22, 18 | completed |
+| 24 | [Use populated Settings with explicit email transport](24-populated-settings-and-email-modes.md) | 22, 19, 20 | completed |
+| 25 | [Resolve imported identities without reupload](25-import-identity-recovery.md) | 21 | pending |
+| 26 | [See service state and confirm lifecycle actions](26-service-lifecycle-rows.md) | 22 | pending |
+| 27 | [Edit focused service sections in Guided or Advanced mode](27-focused-service-editing.md) | 22 | pending |
+| 28 | [Configure destinations with explicit TLS scope](28-destination-configuration.md) | 27 | pending |
+| 29 | [Clear in-use credential values with durable attribution](29-durable-credential-clearing.md) | 11 | pending |
+| 30 | [Manage write-only values through focused dialogs](30-credential-value-dialogs.md) | 27, 29 | pending |
+| 31 | [Author policy rules in a clear list and shared dialog](31-policy-rule-dialogs.md) | 27 | pending |
+| 32 | [Understand service settings and explicit execution access](32-service-help-and-access.md) | 27 | pending |
+| 33 | [Navigate service history and test policy without losing work](33-service-navigation-and-testing.md) | 27, 31 | pending |
+| 34 | [Recover credential absence and historical attribution coherently](34-credential-recovery-compatibility.md) | 17, 25, 26, 28, 30, 32, 33 | pending |
 
-M22 delivers observable shared form/layout and service-authoring correction, consuming M21's working friendly controls. M23 combines People presentation, authorization and metadata because a detail screen without its bounded edits/dates is incomplete; it consumes M22 visual/form rules and M18 durable reset/revocation. M24 combines populated Settings and explicit SMTP transport so saved values, risk/review and current tests are coherent; it consumes M22 presentation, M19 deletion fences and M20 atomic Settings. M23 and M24 are independent of one another. No M0, standalone test-only milestone or implementation slices generated.
+M25 is the earliest integrated checkpoint: representative YAML import, explicit mapping correction and fresh review with preserved edits. It runs before broad editor changes and proves the reported blocked journey. Synthetic fixtures use realistic multi-service structures/custom options; they do not prove a real deployment or real ChatGPT/Codex connection. Every later milestone has its own usable checkpoint and focused evidence; M34 adds complete integrated local browser/protocol/Docker qualification. No M0 or implementation slices are generated.
 
-Historical completed M10–21 contracts/records and legacy docs/milestones remain unchanged. Existing completed delivery_goal remains historical, not completion of this new scope. Downstream uses this explicit packet manifest, not the legacy next-MVP selector.
+## Granularity assessment
+
+| Milestone | Observable checkpoint | Scope boundary and coupling rationale |
+| --- | --- | --- |
+| M25 | Import a representative multi-service YAML fixture, explicitly repair two unresolved subjects in place, retain unrelated edits and reach review without granting execution. | Mapping inspection and correction are inseparable parts of this recovery journey; no generic importer rebuild. |
+| M26 | Inspect Active plus draft and unavailable activation, then confirm Disable/Delete and restore as Disabled from the list. | Rows and their lifecycle actions share one state/confirmation contract; no configuration editor or network health subsystem. |
+| M27 | Open an imported service, inspect actual current Overview, edit one populated section, switch whole-draft representations losslessly and navigate creation steps directly. | Focused sections and the global mode switch govern the same draft representation/navigation boundary; separating them would temporarily duplicate editors or risk losing hidden data. Destination/rule/secret dialogs remain later independently acceptable outcomes. |
+| M28 | Edit a destination with inherited certificate verification and an explicit override, use focused advanced matching and return without losing literals. | One destination editing journey including ordinary and advanced representations; transport changes are excluded unless necessary to preserve semantics. |
+| M29 | Clear an applied key through confirmed UI, observe blocked new execution with unchanged lifecycle, deliberately Set it, and verify stable last-successful attribution after restart. | Clear, generation fencing, current projection coherence and successful actor/time persistence form one atomic mutation outcome. Splitting attribution storage would create newly written records without required attribution. Full entry-dialog redesign and archive qualification are separate. |
+| M30 | Open Set/Replace from Configuration and creation Authentication, cancel without mutation, save immediately, and focus a newly added credential. | Shared entry dialogs must agree in both contexts; no new credential storage or admission design is assigned here. |
+| M31 | Add and edit a representative imported rule through the same dialog, select common methods and retain custom methods/regex/options while preserving effective order. | List and shared Add/Edit are one rule-authoring outcome; safe testing/history are separate. |
+| M32 | Read context-specific guidance, distinguish a proposed assignment from current execution access, and confirm an authorized existing-service access change. | Plain guidance is tied to actual field/access consequences rather than a standalone copy sweep; it preserves all advanced capabilities and does not repeat destination/rule redesign. |
+| M33 | Use actual browser Back/Forward and a deep link, run no-I/O policy testing in context, return with focus/scroll and safe edits intact. | History, tool return and dirty guards share the same editing-context contract; no router-wide rewrite or global Settings redesign. |
+| M34 | Create an encrypted post-clear snapshot and restore it on isolated supported Docker mounts, proving absence, historical attribution and Disabled lifecycle. | Snapshot projection, bounded validation and restore admission must agree end-to-end; unrelated backup scheduling and recovery UI redesign are excluded. |
+
+No unresolved oversized milestone findings. PRE-043 correction: M34 explicitly depends on the terminal provider milestones for its full integrated acceptance; M27/M29/M31 are covered transitively. Numeric order is not relied on. The focused draft representation and mode switch stay together; atomic credential clearing and successful actor storage stay together. Destination editing, value-entry presentation, rule authoring, access guidance, navigation/testing and recovery retain independent acceptance boundaries. Shared files or validation cost are not dependencies. Completed provider prerequisites and genuine new dependencies are explicit in the manifest; implementation must not infer a chain from numeric order.
 
 ## Shared preservation and delivery rules
+
 
 1. Preserve the five MCP tools and supported schemas; per-POST authentication; subject/service-bound ephemeral references; no trusted transport session ID; cookies, Base64/binary, tolerant JSON source-range replacement and header enforcement. Keep destination/current authorization/canonical policy before substitution or downstream I/O. Actual self-signed TLS regression is mandatory when transport changes.
 2. Role permissions, explicit execution assignments, current admission and mandatory durable audit apply on server interfaces, background jobs, imports/history and UI. No permission solely enforced by hiding controls. Every new event excludes raw credentials/tokens/headers/cookies/proofs/seeds and bodies by default.
@@ -44,8 +70,9 @@ Historical completed M10–21 contracts/records and legacy docs/milestones remai
 
 
 
-## Visual fidelity and coverage
 
-[Traceability](traceability.md) maps all eight remediations and retains prior maps. UX-V05/UX-C42 apply to every new milestone: actual browser screenshots must match approved concepts in general appearance at equivalent states/viewports. Each milestone names its references and evidence requirements. Functional tests alone cannot pass visual acceptance; fix material differences or obtain explicit scoped approval. No reference rewriting to hide drift.
+## Visual fidelity, coverage and handoff
 
-Compiler checks are recorded in `workflow/delivery-planning/results/compiler.yaml`. No application acceptance was run by documentation compilation. **Next: milestone-readiness**, inside the root-owned planning transaction; only that specialist assesses executable prerequisites and implementation readiness.
+[Traceability](traceability.md) maps all twelve remediations and every feedback record to its adopted authority or non-implementation disposition. UX-V05/V06 and UX-C42/C53 require actual matching-state browser screenshots against approved feedback 003 concepts, at desktop/narrow states with keyboard/text enlargement checks. Functional tests alone cannot establish acceptance. Repair material differences or obtain explicit scoped approval; do not change reference designs to hide drift.
+
+Completed M10–24 documents/status records and existing completed delivery_goal remain history. New scope is not yet a delivery goal. Compiler result: workflow/delivery-planning/results/compiler.yaml. Packet is complete for **milestone-readiness**, not a claim of executable readiness or implemented behavior. Parent Delivery Planning owns the combined transaction; no child commit.

@@ -3,20 +3,20 @@ specialist: milestone-readiness
 product_id: secretsauce-mcp
 input_mode: CHANGE_PLAN
 status: READY
-summary: M22–24 are executable in order with verified local browser/screenshot and Docker facilities;
-  M22 supplies M23/M24. Parent commit required before handoff.
+summary: "M25\u201334 executable in declared order; PRE-043 final integration dependency corrected and re-audited;\
+  \ local facilities verified. Parent closeout required."
 source:
   path: workflow/definition/definition-package.yaml
-  revision: sha256:82014f66c15c3e7246144c9b44b95c70c7a22aba863d1e8bbd6887ca6afed506
-  repository_commit: 653ac14f771dc1da7d1d650c577ff439e9b99bce
+  revision: sha256:7f417f6965b95f3451144126133831ec1d5c62daee6a148d3606e7552f0b134c
+  repository_commit: d0dffc6ffbc47f114dc232abedf40f50db3e52f3
 packet:
   path: delivery/milestones/secretsauce-mcp
   manifest: delivery/milestones/secretsauce-mcp/status.yaml
-  manifest_revision: sha256:e5480636caa8a3abd714be0453074afc2c04c45c86ae17935609fe945e9a8a0b
-  compiler_revision: sha256:e3e889fa5d548d6bcb46a27aa12bd894b495d8ca69ca81217c22f1d7ddc0b00c
-  revision: sha256:b0c9723dbc11aee6523ef42b684a312055f7283439bc81eb963940a2064f3e73
-  revision_method: SHA-256 of sorted packet path + NUL + sha256:file-digest lines, joined with newline;
-    all packet files included.
+  manifest_revision: sha256:7d60c36667512ec2a16a5a7d83b15d0eeb6e424add8d364dd3596bbb0d459793
+  compiler_revision: sha256:ad65556e68f94d8507bff72c249af80727b4932955d80a506e231a1b5b6dd6f7
+  revision: sha256:c300ee773a8934d6249351dc6d1aa68774d7474ae20fdefef313bab0df0cd3de
+  revision_method: SHA-256 of sorted packet path + NUL + sha256:file-digest lines joined with newline; all packet
+    files included.
   artifacts:
   - path: delivery/milestones/secretsauce-mcp/10-secure-audited-setup.md
     revision: sha256:75dfd4caf24033efbc4ab14117b3245bf73439d34ed448c1c75a3700dafaa450
@@ -48,16 +48,43 @@ packet:
     revision: sha256:e5a464cd4790f190968bfd3f178608047de0bdbd4ec3718bc095d60d3de8e4fa
   - path: delivery/milestones/secretsauce-mcp/24-populated-settings-and-email-modes.md
     revision: sha256:ac9202e661897b1a91b7d6c25ec9104bf80f413f9c731a04c1fddfe38591ae0e
+  - path: delivery/milestones/secretsauce-mcp/25-import-identity-recovery.md
+    revision: sha256:acae48dfee0a26b9d27844d2f9de3efa9a396d5e9c23c8ab0688693d7566daeb
+  - path: delivery/milestones/secretsauce-mcp/26-service-lifecycle-rows.md
+    revision: sha256:5f3dfea789b48b3af7a1eb6c6fae202021007abad4e3213cf114a580aaecdab4
+  - path: delivery/milestones/secretsauce-mcp/27-focused-service-editing.md
+    revision: sha256:0d370a4620fe2735c0dadf72ffefd3dac461d8c623fc8a524de66354d7032508
+  - path: delivery/milestones/secretsauce-mcp/28-destination-configuration.md
+    revision: sha256:cde93a45dd1875b91457607e6ca99ba4ed5e1c7c91fa3b6a0f1effb1bc86b58e
+  - path: delivery/milestones/secretsauce-mcp/29-durable-credential-clearing.md
+    revision: sha256:296fa434a3f9c1a56eb91c563a799e17ce2435844e7209febd61d8ab391cd86b
+  - path: delivery/milestones/secretsauce-mcp/30-credential-value-dialogs.md
+    revision: sha256:e286f937e8a65f3a15f9c18f47099429cbf381adec110d82ee44090d238cd0f7
+  - path: delivery/milestones/secretsauce-mcp/31-policy-rule-dialogs.md
+    revision: sha256:091b568d4f2cc62229e64b75ba7fcbdb70d4b5a4d8e79c2fc82cca04b1b8e786
+  - path: delivery/milestones/secretsauce-mcp/32-service-help-and-access.md
+    revision: sha256:4d17d6c5b9edab77e19c53edd65d378e53f4cb6c847251e0abc5189734498037
+  - path: delivery/milestones/secretsauce-mcp/33-service-navigation-and-testing.md
+    revision: sha256:a735038c10018854917eab261496330169c5ab8bb534bc6448518ea63b33b438
+  - path: delivery/milestones/secretsauce-mcp/34-credential-recovery-compatibility.md
+    revision: sha256:856b8ca1292721da166d7f6d4d054b6bca183bdf16b8c327041d0e8c06142f5b
   - path: delivery/milestones/secretsauce-mcp/index.md
-    revision: sha256:646e262b0a7ef23389bc5d5d29ca91e6022bc1cdaa241c0e7a5a0411cfec266e
+    revision: sha256:3f33dd8208f81cc9acb469ffdc70cb6913b5c69091ec9bcc2d2e9757ef51715b
   - path: delivery/milestones/secretsauce-mcp/status.yaml
-    revision: sha256:e5480636caa8a3abd714be0453074afc2c04c45c86ae17935609fe945e9a8a0b
+    revision: sha256:7d60c36667512ec2a16a5a7d83b15d0eeb6e424add8d364dd3596bbb0d459793
   - path: delivery/milestones/secretsauce-mcp/traceability.md
-    revision: sha256:ba910c0db08042acc07589c75947be3c26895e3d60f95142c14ee0ba54dca611
+    revision: sha256:e9d7684b6752b39f86338f17930e80b8e2402e3da608c0c50ee6d96d4b25c5ff
   order:
-  - '22'
-  - '23'
-  - '24'
+  - '25'
+  - '26'
+  - '27'
+  - '28'
+  - '29'
+  - '30'
+  - '31'
+  - '32'
+  - '33'
+  - '34'
   completed_ids_preserved:
   - '10'
   - '11'
@@ -71,99 +98,118 @@ packet:
   - '19'
   - '20'
   - '21'
-  dependencies_unchanged: true
+  - '22'
+  - '23'
+  - '24'
+  dependencies_unchanged: false
+  dependency_change: Compiler-owned PRE-043 correction only
 artifacts:
   prerequisite_manifest:
     path: delivery/readiness/secretsauce-mcp/prerequisite-manifest.md
-    revision: sha256:f72a464c7c2c47d0f4d24660596a79cd6f8892d41b259f3372354d0851733c66
+    revision: sha256:0bc40190c1082f14962aa2e15b21271240cbb10ab606bd3cb3ce0b9b6f595dc3
   readiness_report:
     path: delivery/readiness/secretsauce-mcp/readiness-report.md
-    revision: sha256:b532feb2a9c19c73d53abc07dfe62d2a659383df866b53f772364097e3c319bf
+    revision: sha256:32e78fa184f3ef9bffbb0c1d47ac368487add8c2d72498138f49dc9339b6f791
   historical_feedback_manifest:
-    path: delivery/readiness/secretsauce-mcp/prerequisite-manifest-feedback-001.md
-    revision: sha256:e475f18e17c8311fe3830aac0fc7f54a7f3c64e544658fd95b54666f616ec50f
+    path: delivery/readiness/secretsauce-mcp/prerequisite-manifest-feedback-002.md
+    revision: sha256:f72a464c7c2c47d0f4d24660596a79cd6f8892d41b259f3372354d0851733c66
   historical_feedback_report:
-    path: delivery/readiness/secretsauce-mcp/readiness-report-feedback-001.md
-    revision: sha256:28b2a66778037cdfb69bf209cc71a1e86a6b8840753b2b0ac6fcaa5cbcdd5df6
-prerequisite_count: 8
+    path: delivery/readiness/secretsauce-mcp/readiness-report-feedback-002.md
+    revision: sha256:b532feb2a9c19c73d53abc07dfe62d2a659383df866b53f772364097e3c319bf
+prerequisite_count: 10
 active_prerequisite_ids:
-- PRE-027
-- PRE-028
-- PRE-029
-- PRE-030
-- PRE-031
-- PRE-032
-- PRE-033
-- PRE-034
-historical_prerequisites_preserved: PRE-001–026 original content retained; prior report/manifest archived
-  exactly
-automatic_changes: Readiness documentation only; static headless screenshot/focus, loopback and read-only
-  Docker probes. No bootstrap remediation.
+- PRE-035
+- PRE-036
+- PRE-037
+- PRE-038
+- PRE-039
+- PRE-040
+- PRE-041
+- PRE-042
+- PRE-043
+- PRE-044
+historical_prerequisites_preserved: "PRE-001\u2013034 retained with exact feedback002 archive"
+automatic_changes: Readiness documentation and ephemeral facility probes only; compiler separately corrected PRE-043
 confirmation_requests: []
 user_actions: []
 external_dependencies: []
 unresolved_internal_prerequisites: []
 blockers: []
-next_milestone: '22'
+next_milestone: '25'
 affected_milestones:
-- '22'
-- '23'
-- '24'
+- '25'
+- '26'
+- '27'
+- '28'
+- '29'
+- '30'
+- '31'
+- '32'
+- '33'
+- '34'
 historical_external_evidence:
   real_client_integration_status: deferred_NOT_RUN
   authorization: workflow/delivery/local-validation-authorization.md
-  scope: Original M14/M17 exception preserved; M22–24 no new external-client gate. No release/interoperability
-    claim.
+  scope: No new external-client gate; local protocol evidence required; no real interoperability claim
 m0:
   disposition: Not required
-  reason: Existing foundations and fixtures suffice; new feature fixtures belong to consuming outcomes.
+  reason: Existing shared foundations suffice
 corrections:
   required: false
-  issue_ids: []
-  attempts: 0
+  issue_ids:
+  - PRE-043
+  attempts: 1
+  resolved: true
+  resolution: "Compiler added terminal M34 providers; transitive closure contains all M25\u201333"
 checks:
-  dependency_order: 'PASS: all15 backward records; M22 supplies M23/M24'
-  scope_preservation: 'PASS: only readiness additions to three new contracts; compiler content retained'
-  history_preserved: 'PASS: M10–21 docs/records and old delivery goal unchanged'
-  local_links: PASS
-  preconditions_and_readiness_sections: PASS all3pending contracts
-  clean_environment_simulation: PASS with documented lockfile/browser install and local permissions
-  baseline_install: 'Not repeated: setup/lockfiles unchanged; npm ls complete; previous isolated install/build
-    retained as historical evidence'
-  baseline_tests: 'Not run: no executable changes; new feature acceptance belongs to implementation'
-  current_browser: PASS declared Chromium156.0.8078.4 static screenshot and keyboard focus with permitted
-    execution
-  mockup_assets: PASS approved reference paths/hashes available; UX-V05/C42 actual comparison mandatory
-    in each milestone
-  loopback: PASS ephemeral listener/request/close
-  docker: PASS read-only client/server29.9.0 and Compose5.6.0; no container touched
-  diff_check: PASS
+  dependency_order: "PASS all25 records; M34 closure all25\u201333"
+  history_preserved: "PASS M10\u201324 docs/records and historical completed goal"
+  local_links: PASS new milestone targets
+  preconditions_and_readiness_sections: PASS all10 new contracts
+  clean_environment_simulation: PASS; documented install and permission facilities
+  current_browser: PASS Chromium156.0.8078.4 keyboard/screenshot
+  loopback: PASS permitted ephemeral request
+  docker: PASS read-only29.9.0 client/server; Compose5.6.0
+  mockup_assets: PASS96 authority/reference hashes; actual product comparison remains mandatory
+  application_acceptance: 'Not run: feature evidence belongs to implementation'
+  working_tree_diff_check: PASS after whitespace-only trim of new milestone contracts; parent must restage and check
+    index
 changed_paths:
-- delivery/milestones/secretsauce-mcp/22-readable-forms-and-services.md
-- delivery/milestones/secretsauce-mcp/23-people-details-and-account-management.md
-- delivery/milestones/secretsauce-mcp/24-populated-settings-and-email-modes.md
+- delivery/milestones/secretsauce-mcp/25-import-identity-recovery.md
+- delivery/milestones/secretsauce-mcp/26-service-lifecycle-rows.md
+- delivery/milestones/secretsauce-mcp/27-focused-service-editing.md
+- delivery/milestones/secretsauce-mcp/28-destination-configuration.md
+- delivery/milestones/secretsauce-mcp/29-durable-credential-clearing.md
+- delivery/milestones/secretsauce-mcp/30-credential-value-dialogs.md
+- delivery/milestones/secretsauce-mcp/31-policy-rule-dialogs.md
+- delivery/milestones/secretsauce-mcp/32-service-help-and-access.md
+- delivery/milestones/secretsauce-mcp/33-service-navigation-and-testing.md
+- delivery/milestones/secretsauce-mcp/34-credential-recovery-compatibility.md
 - delivery/readiness/secretsauce-mcp/prerequisite-manifest.md
 - delivery/readiness/secretsauce-mcp/readiness-report.md
-- delivery/readiness/secretsauce-mcp/prerequisite-manifest-feedback-001.md
-- delivery/readiness/secretsauce-mcp/readiness-report-feedback-001.md
+- delivery/readiness/secretsauce-mcp/prerequisite-manifest-feedback-002.md
+- delivery/readiness/secretsauce-mcp/readiness-report-feedback-002.md
 - workflow/delivery-planning/results/readiness.yaml
 execution_facilities:
   browser_path: /tmp/secretsauce-feedback-browsers
   browser_setup: PLAYWRIGHT_BROWSERS_PATH=/tmp/secretsauce-feedback-browsers npx playwright install chromium
-  note: Temporary browser cache; reinstall if removed. Narrow permission needed for browser/loopback/Docker,
-    no host change.
+  note: Reinstall disposable cache as needed; narrow local permissions; no live state
 transaction:
   owner: delivery-planning-orchestrator
-  parent_commit: b2b66608908ca1e2dc9f61ce66856780ccf68b8e
+  parent_commit: e975b171fac96167f0909cf588b5022842a6950b
   repository_commit: null
   child_commit: false
   pre_existing_unrelated_paths:
   - test-results/
+  pre_existing_parent_paths:
+  - delivery/milestones/secretsauce-mcp/
+  - workflow/delivery-planning/state.yaml
+  - workflow/delivery-planning/results/compiler.yaml
+  - workflow/delivery-planning/results/history/
 handoff:
-  parent_action: Validate/commit combined planning transaction and finalize provenance before handoff
+  parent_action: Validate/commit combined planning transaction and finalize provenance
   next_skill: milestone-delivery-orchestrator
   manifest: delivery/milestones/secretsauce-mcp/status.yaml
-  start_milestone: '22'
-  retain_external_dependency_ids: []
+  start_milestone: '25'
   implementation_started: false
   ready_handoff_requires_parent_commit: true

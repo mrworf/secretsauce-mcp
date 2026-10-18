@@ -1,3 +1,47 @@
+# Milestone prerequisite manifest — approved feedback 003
+
+- Packet: `delivery/milestones/secretsauce-mcp/status.yaml`
+- Product ID: `secretsauce-mcp`
+- Audited revision: exact post-readiness packet pinned in `workflow/delivery-planning/results/readiness.yaml`.
+- Source transaction: `d0dffc6ffbc47f114dc232abedf40f50db3e52f3`
+- Planning transaction: parent-owned, pending finalization in `workflow/delivery-planning/handoff.yaml`; start `e975b171fac96167f0909cf588b5022842a6950b`.
+- Intended order: M25 → M26 → M27 → M28 → M29 → M30 → M31 → M32 → M33 → M34.
+- Order evidence: manifest explicit dependencies and index; numeric order is a valid selected topological order, not dependency evidence.
+- Last audit: 2026-10-18.
+
+## Active feedback 003 prerequisites
+
+| ID | Description | Consumers | Classification | Current status | Proposed provider | Class | Verification | Commands executed | Files changed | Blocking | Evidence |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| PRE-035 | Committed definition, approved UX4/reference assets and current packet | M25–34 | Already satisfied | 96 source/reference digests and upstream producers verified; parent publication pending | Definition producer and parent planning transaction | AUTO | Hash approved artifacts; check upstream commit ancestry | Python hash/history PASS | None | Before delivery handoff | FACT: workflow/definition/definition-package.yaml; product/ux/manifest.yaml |
+| PRE-036 | Declared Node/npm dependencies, compiler and HTTPS certificate tooling | M25–34 | Already satisfied | Node26.11.1/npm12.2.0/OpenSSL3.6.5; packages complete; setup unchanged since isolated install | package.json/lockfile, CI Node22, Dockerfile | AUTO | Fresh checkout npm ci; npm run build; inspect versions | Version/npm ls PASS; setup diff empty | None | Before build/validation | FACT: package.json; package-lock.json; .github/workflows/ci.yml; prior feedback001 isolated install |
+| PRE-037 | Matching Chromium, keyboard, screenshot and visual reference facility | M25–34 | Already satisfied | Chromium156.0.8078.4 headless launch/focus/screenshot PASS | Declared Playwright and documented Chromium install | AUTO | Install matching Chromium; run actual browser and compare matching states during acceptance | Permitted static browser probe PASS | None | Before browser acceptance | FACT: docs/console-operations.md:23; approved UX manifest; scripts/verify-console-friendly-import-browser.mjs |
+| PRE-038 | Disposable writable state and local HTTP/HTTPS fixtures | M25–34 | Already satisfied | Ephemeral loopback request and temporary screenshot succeeded | Authorized local runner; synthetic fixtures | AUTO | Listen/fetch/close; inspect synthetic isolated fixture setup | Default EPERM; identical permitted probe PASS | None | Before integration acceptance | FACT: AGENTS.md; test/setupAudit.ts; scripts/verify-console-friendly-import-browser.mjs |
+| PRE-039 | Docker, managed launcher/leases and isolated recovery facilities | M29, M34; other affected container regressions | Already satisfied | Docker client/server29.9.0; Compose5.6.0; launcher and recovery harness available | Local Docker; Dockerfile; existing recovery scripts | AUTO | Read-only docker version/compose; build current test image for actual acceptance | Default socket denied; permitted docker version PASS | None | Before required operational validation | FACT: scripts/docker-launcher.mjs; scripts/verify-console-recovery-{crashes,launcher,cleanhost}-docker.mjs |
+| PRE-040 | Completed managed state, import, identity, service/policy, audit and recovery foundations | M25–34 | Already satisfied | M10–24 completed providers retained; tests/harnesses exist | Existing completed repository milestones | AUTO | Inspect manifest and acceptance; no reacceptance of unchanged history | Inspected status and source/fixture facilities | None | Before dependent implementation | FACT: status.yaml M10–24; test/console-{services,migration,backups,recovery}.test.ts |
+| PRE-041 | Focused same-draft sections and applicable rule editor | M28, M30–33 | Provided by an earlier milestone | M27 supplies focused sections; M31 supplies M33 rule editor | M27; M31 for M33 | AUTO | Require named provider completed with current committed acceptance | Not run: future feature delivery | None | Before dependent milestone start | FACT: status.yaml dependencies; M27/M31 contracts |
+| PRE-042 | Durable clear, absence/generation and successful actor metadata | M30, M34 | Provided by an earlier milestone | M29 precedes both consumers | M29 | AUTO | M29 completed with actual dispatch/restart and format compatibility evidence | Not run: future feature delivery | None | Before dependent milestone start | FACT: M29 functional requirements; M30/M34 dependencies |
+| PRE-043 | All new service outcomes for final integrated acceptance | M34 | Provided by an earlier milestone | Compiler correction makes all M25–33 providers explicit directly or transitively | M25–33 | AUTO | Traverse corrected dependencies and verify earlier completion before M34 | Post-correction graph audit | M34/index/status/compiler dependency correction by compiler | Before M34 final integrated acceptance | FACT: M34 Required Validation; corrected status dependencies |
+| PRE-044 | New input, fault/race, compatibility, browser and recovery acceptance fixtures | M25–34 | Owned by the consuming milestone | Existing harnesses provide extension points; new behavior evidence not yet produced | Each consuming milestone | AUTO | Positive/negative and boundary fixtures; actual matching-reference visual comparisons; full npm test/build at completion | Not run: implementation-owned acceptance | None | Before each milestone acceptance | FACT: Each Required Validation; STATE-09; SECRES-T17–T21; UX-V05/C42/C53 |
+
+## Feedback 003 dependency graph
+
+Provider edges use PRE-040 for completed foundations, PRE-041 for focused/rule editing, PRE-042 for durable credential mutation, and PRE-043 for final integration. PRE-035–039 provide the common repository/local facilities to all applicable consumers; PRE-044 belongs inside each milestone and is not a startup cycle. The exact corrected adjacency graph is in the current readiness report. No external/unresolved node remains for this local delta.
+
+## Setup and evidence boundary
+
+A clean checkout needs Node >=22 (CI/container use22), npm, OpenSSL, permitted loopback, writable temporary storage and Docker for operational checks. Run `npm ci` and `npm run build`. Use `PLAYWRIGHT_BROWSERS_PATH=/tmp/secretsauce-feedback-browsers npx playwright install chromium` and the same variable for browser runs. Downloads require network permission; OS provisioning on another host is operator-owned. The temporary cache is disposable, never an undeclared prerequisite.
+
+Existing browser fixtures create synthetic HTTPS/identity/audit state and clean their own temporary directories. Actual product screenshots must match approved state/viewport/reference hashes and be examined for width, spacing, density, typography, controls, colors and hierarchy; a static facility probe is not visual acceptance. Include keyboard, narrow-width and 200%-text/document/text-range overflow checks. Keep evidence in new milestone-specific paths, preserving historical evidence.
+
+Docker acceptance must build the current source image and record its immutable ID, using isolated synthetic app/audit/backup/restore mounts and the managed launcher/kernel leases. Existing configurable harnesses accept M15_DOCKER_IMAGE/M16_DOCKER_IMAGE/M17_DOCKER_IMAGE/M23_DOCKER_IMAGE/M24_DOCKER_IMAGE. The legacy launcher harness fixes `secretsauce-m17-local:acceptance`; consuming-milestone fixture adaptation must avoid trusting stale tags or overwriting historical evidence. Prior-reader tests must separately pin the actual prior reader, not mistake new helpers/import failures for format rejection. No running review instance or its mounts are a test prerequisite.
+
+Historical real ChatGPT/Codex connection evidence remains NOT RUN under `workflow/delivery/local-validation-authorization.md`; no new external-client gate is added. Local protocol/authorization checks stay mandatory, and real interoperability/release claims require `docs/m14-real-client-verification.md`.
+
+## Historical readiness
+
+Exact previous active artifacts are preserved as `prerequisite-manifest-feedback-002.md` and `readiness-report-feedback-002.md`. The original content below remains for historical links only; its statuses do not govern M25–34.
+
 # Milestone prerequisite manifest — approved feedback 002
 
 - Packet: `delivery/milestones/secretsauce-mcp/status.yaml`

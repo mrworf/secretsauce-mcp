@@ -6,55 +6,84 @@ source:
   mode: CHANGE_PLAN
   type: validated-definition-change-handoff
   path: workflow/definition/definition-package.yaml
-  revision: sha256:82014f66c15c3e7246144c9b44b95c70c7a22aba863d1e8bbd6887ca6afed506
-  repository_commit: 653ac14f771dc1da7d1d650c577ff439e9b99bce
+  revision: sha256:7f417f6965b95f3451144126133831ec1d5c62daee6a148d3606e7552f0b134c
+  repository_commit: d0dffc6ffbc47f114dc232abedf40f50db3e52f3
   handoff: workflow/definition/state.yaml#next_handoff
   reconciliation:
-    id: REC-RUN-006
-    path: workflow/reconciliation/REC-RUN-006/reconciliation-result.yaml
-    result_revision: sha256:66907c2a791c0c794e600f3b3b1dd1d9167ebe7ea804fe24d759f0d309edeb93
-    repository_commit: a57c1ca28615a36770cc1446c4cb71fe21ae5f48
+    id: REC-RUN-008
+    path: workflow/reconciliation/REC-RUN-008/reconciliation-result.yaml
+    result_revision: sha256:1018e24f89041935175c94108faa5339c6d09f2c4f9a15c244df5378d4177432
+    repository_commit: 78b333eda885731abf3e9f99c401c64c5f00f148
     change_ids:
-    - REC-IMPACT-006
+    - REC-IMPACT-008
     remediation_ids:
-    - REC-RM-007
-    - REC-RM-008
-    - REC-RM-009
-    - REC-RM-010
-    - REC-RM-011
-    - REC-RM-012
-    - REC-RM-013
-    - REC-RM-014
+    - REC-RM-015
+    - REC-RM-016
+    - REC-RM-017
+    - REC-RM-018
+    - REC-RM-019
+    - REC-RM-020
+    - REC-RM-021
+    - REC-RM-022
+    - REC-RM-023
+    - REC-RM-024
+    - REC-RM-025
+    - REC-RM-026
 planning:
-  parent_commit: b2b66608908ca1e2dc9f61ce66856780ccf68b8e
-  repository_commit: 1569b93e0dc5461f18c09386c6095279db91a222
+  parent_commit: e975b171fac96167f0909cf588b5022842a6950b
+  repository_commit: null
 milestones:
   manifest: delivery/milestones/secretsauce-mcp/status.yaml
-  packet_revision: sha256:b0c9723dbc11aee6523ef42b684a312055f7283439bc81eb963940a2064f3e73
+  packet_revision: sha256:c300ee773a8934d6249351dc6d1aa68774d7474ae20fdefef313bab0df0cd3de
   active_milestones:
-  - '22'
-  - '23'
-  - '24'
+  - '25'
+  - '26'
+  - '27'
+  - '28'
+  - '29'
+  - '30'
+  - '31'
+  - '32'
+  - '33'
+  - '34'
 readiness:
   status: READY
   prerequisite_manifest: delivery/readiness/secretsauce-mcp/prerequisite-manifest.md
   result: delivery/readiness/secretsauce-mcp/readiness-report.md
   adapter: workflow/delivery-planning/results/readiness.yaml
+  packet_revision: sha256:c300ee773a8934d6249351dc6d1aa68774d7474ae20fdefef313bab0df0cd3de
 m0:
   present: false
   milestone: null
-  rationale: Existing foundations and fixtures suffice; new feature fixtures belong to consuming
-    outcomes.
+  rationale: Existing shared foundations suffice
 external_dependencies: []
+delivery_constraints:
+  granularity: prefer_more_bounded_milestones_and_slices
+  slice_boundary: one_independently_verifiable_behavior
+  split_trigger: newly_discovered_independently_verifiable_behavior
+  validation: focused_during_iteration_broader_at_required_checkpoint
+  contract:
+  - Before production edits persist governing and all slice plans with one observable behavior, exclusions,
+    positive/negative evidence and commit boundary per slice.
+  - Split newly discovered independent behavior into a subsequent slice before absorbing it; keep strictly
+    necessary supporting work with its behavior.
+  - Milestone scope/dependency changes return to planning; preserve completed work and every acceptance
+    requirement.
+  - Use focused iteration checks, broader checks at mandated milestones; repeat passing tests only on
+    relevant changes/failures/unresolved risks or explicit gates.
+  - Demonstrate integrated outcomes at earliest dependency-safe checkpoint; synthetic fixture success
+    does not establish real external interoperability.
 visual_acceptance:
   requirements:
   - UX-V05
   - UX-C42
-  approved_reference: workflow/definition/drafts/product-ux/web-console-feedback-002/index.md
-  required: Match general mockup appearance; compare actual browser screenshots at matching states/viewports;
-    fix material differences or obtain explicit scoped acceptance. Functional tests alone are insufficient.
+  - UX-C43
+  - UX-C53
+  approved_reference: workflow/definition/drafts/product-ux/web-console-feedback-003/index.md
+  required: Actual browser screenshots at matching approved states and viewports; fix material deviations
+    or obtain scoped approval. Functional checks alone insufficient.
 next:
   workflow: implementation
   recommended_skill: milestone-delivery-orchestrator
-  start_milestone: '22'
+  start_milestone: '25'
 implementation_started: false

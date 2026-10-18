@@ -1,3 +1,32 @@
+# Current feedback 003 traceability
+
+Authority: committed validated Product Definition next_handoff and adopted REC-RM-015–026. Exact source revisions and producer commits are in [status](status.yaml). Findings/feedback are provenance; only their adopted desired outcomes create obligations. No source authority was rewritten by compilation.
+
+| Required remediation | Outcome milestone | Governing authority | Feedback provenance |
+| --- | --- | --- | --- |
+| REC-RM-015 | M25 | MIGRATE-01/02, UX-IA10; corrected PRD, approved UX4, STATE-09/SECRES-08; see exact source hashes. | PO-FEEDBACK-2026-10-17-001 / PO-FB-116, PO-FB-119, PO-FB-121, PO-FB-122 |
+| REC-RM-016 | M26 | CONFIG-05, UX-IA09, UX-IN03; corrected PRD, approved UX4, STATE-09/SECRES-08; see exact source hashes. | PO-FEEDBACK-2026-10-17-001 / PO-FB-043, PO-FB-044, PO-FB-045, PO-FB-046, PO-FB-047, PO-FB-048, PO-FB-049 |
+| REC-RM-017 | M27 | CONFIG-01/03, UX-IA09, UX-IN15; corrected PRD, approved UX4, STATE-09/SECRES-08; see exact source hashes. | PO-FEEDBACK-2026-10-17-001 / PO-FB-050, PO-FB-051, PO-FB-052, PO-FB-053, PO-FB-054, PO-FB-055, PO-FB-056, PO-FB-057, PO-FB-058, PO-FB-059 |
+| REC-RM-018 | M27 | CONFIG-01, POLICY-02, UX-IA09, UX-IN15; corrected PRD, approved UX4, STATE-09/SECRES-08; see exact source hashes. | PO-FEEDBACK-2026-10-17-001 / PO-FB-071, PO-FB-072, PO-FB-073, PO-FB-074, PO-FB-075, PO-FB-076, PO-FB-077, PO-FB-087, PO-FB-124 |
+| REC-RM-019 | M28 | BASE-01, POLICY-04, UX-IN15; corrected PRD, approved UX4, STATE-09/SECRES-08; see exact source hashes. | PO-FEEDBACK-2026-10-17-001 / PO-FB-082, PO-FB-083, PO-FB-084, PO-FB-085, PO-FB-086 |
+| REC-RM-020 | M29 | CONFIG-02/03, STATE-09, SECRES-08; corrected PRD, approved UX4, STATE-09/SECRES-08; see exact source hashes. | PO-FEEDBACK-2026-10-17-001 / PO-FB-063, PO-FB-064, PO-FB-065, PO-FB-066, PO-FB-067 |
+| REC-RM-021 | M29 | CONFIG-02, AUDIT-01, STATE-09, SECRES-T21; corrected PRD, approved UX4, STATE-09/SECRES-08; see exact source hashes. | PO-FEEDBACK-2026-10-17-001 / PO-FB-060 |
+| REC-RM-022 | M30 | CONFIG-02, UX-IN14, SECRES-T21; corrected PRD, approved UX4, STATE-09/SECRES-08; see exact source hashes. | PO-FEEDBACK-2026-10-17-001 / PO-FB-061, PO-FB-062, PO-FB-096, PO-FB-097, PO-FB-098, PO-FB-099, PO-FB-100 |
+| REC-RM-023 | M31 | POLICY-01/02, UX-IN16; corrected PRD, approved UX4, STATE-09/SECRES-08; see exact source hashes. | PO-FEEDBACK-2026-10-17-001 / PO-FB-104, PO-FB-106, PO-FB-107, PO-FB-108, PO-FB-109, PO-FB-110, PO-FB-117, PO-FB-118 |
+| REC-RM-024 | M32 | AUTHZ-01, POLICY-01, UX-IA10, UX-IN15/16; corrected PRD, approved UX4, STATE-09/SECRES-08; see exact source hashes. | PO-FEEDBACK-2026-10-17-001 / PO-FB-068, PO-FB-078, PO-FB-079, PO-FB-080, PO-FB-089, PO-FB-090, PO-FB-091, PO-FB-092, PO-FB-093, PO-FB-094, PO-FB-095, PO-FB-101, PO-FB-102, PO-FB-103, PO-FB-105 |
+| REC-RM-025 | M33 | UX-IN15/16, POLICY-01/03, UX-IA10; corrected PRD, approved UX4, STATE-09/SECRES-08; see exact source hashes. | PO-FEEDBACK-2026-10-17-001 / PO-FB-111, PO-FB-112, PO-FB-113, PO-FB-114, PO-FB-115, PO-FB-120 |
+| REC-RM-026 | M34 | BACKUP-01/05, CONFIG-04, STATE-09, SECRES-T20; corrected PRD, approved UX4, STATE-09/SECRES-08; see exact source hashes. | PO-FEEDBACK-2026-10-17-001 / PO-FB-060, PO-FB-063, PO-FB-064, PO-FB-065, PO-FB-066, PO-FB-067 |
+
+UX-C44 maps M27; UX-C43 M26; UX-C45 M27/M30/M33; UX-C46 M28/M32; UX-C47 M29/M30/M34; UX-C48 M29/M30/M34; UX-C49 M31; UX-C50 M33; UX-C51 M25; UX-C52 M32/M33. UX-C42/C53 and responsive/accessibility/visual preservation constrain every affected milestone. STATE-09/SECRES-T17–19 are implemented M29, T21 M29/M30, T20 M34; existing audit and stale-authorization controls apply all mutations. Repeated mapping means shared invariant coverage, not duplicate implementation.
+
+All PO-FB-042–124 remain traceable through the full confirmed package and REC-RUN-008 finding/backlog dispositions. Positive import/tester/guided/Activity observations preserve working behavior; unresolved-decision inference about default allow implying deny-only rules was not adopted. Tentative color/location/identifier mechanisms create work only where approved UX4 adopts them. Exploratory nested section-local Advanced tabs were superseded by the global-mode direction. Research and design work are already completed context. Full item accounting is retained in the canonical reconciliation source and below so no observed issue is silently promoted into authority.
+
+Excluded: permanent service purge, SMTP clearing changes, auto-grants, hidden apply, API/configuration feature removal, new roles/SaaS tenancy, unadopted recommendations and generic rebuilds. Existing SEC-DEF-001 scanning limitation remains accepted, not repair work. Actual external ChatGPT/Codex connection retains the existing user-authorized NOT RUN exception; local tests remain mandatory. Required deferred: none. Blocked: none. Unmapped: none.
+
+---
+
+## Historical feedback 002 and earlier maps
+
 # Current feedback 002 traceability
 
 Current authority is the committed validated definition next_handoff and adopted REC-RM-007–014, not raw findings. See [index](index.md) and compiled_from in [status](status.yaml) for exact source revisions and preservation baseline. Prior maps below are historical, not new work.

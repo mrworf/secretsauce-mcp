@@ -1,0 +1,6 @@
+{
+  "result": "PASS",
+  "checks": [
+    "Local LLM help; Header/Query/Body and visible generic placement; exact prefix/suffix preserved through sections; live placeholder-only preview; action-specific enforced-header required cue; accurate ownership and policy fallback help; no inline secret. Desktop/390/320/200% text and keyboard section controls."
+  ]
+}

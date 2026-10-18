@@ -315,22 +315,24 @@ milestones:
 - id: '26'
   title: See service state and confirm lifecycle actions
   file: delivery/milestones/secretsauce-mcp/26-service-lifecycle-rows.md
+  status: completed
+  dependencies:
+  - '22'
+  completed_at: '2026-10-18T15:28:48.533589+00:00'
+  evidence: evidence/qa/secretsauce-mcp/milestone26/acceptance.md
+  notes: Two slices172210a/288809e;730tests73files+build+threebrowserjourneys+matchingvisual/narrow/200%PASS.
+  started_at: '2026-10-18T15:18:14.297451+00:00'
+  commit_hash: 288809e1e0f35367d4449e87ae8b1d011513d080
+- id: '27'
+  title: Edit focused service sections in Guided or Advanced mode
+  file: delivery/milestones/secretsauce-mcp/27-focused-service-editing.md
   status: in_progress
   dependencies:
   - '22'
   completed_at: null
   evidence: null
-  notes: Feedback 003; REC-RM-016
-  started_at: '2026-10-18T15:18:14.297451+00:00'
-- id: '27'
-  title: Edit focused service sections in Guided or Advanced mode
-  file: delivery/milestones/secretsauce-mcp/27-focused-service-editing.md
-  status: pending
-  dependencies:
-  - '22'
-  completed_at: null
-  evidence: null
   notes: Feedback 003; REC-RM-017, REC-RM-018
+  started_at: '2026-10-18T15:28:48.533589+00:00'
 - id: '28'
   title: Configure destinations with explicit TLS scope
   file: delivery/milestones/secretsauce-mcp/28-destination-configuration.md
@@ -485,10 +487,10 @@ delivery_goal:
   - '33'
   - '34'
   execution: autonomous
-  current_milestone: '26'
-  governing_plan: delivery/plans/secretsauce-mcp/milestone_26_plan_01.md
+  current_milestone: '27'
+  governing_plan: delivery/plans/secretsauce-mcp/milestone_27_plan_01.md
   blockers: []
-  resume_point: Generate M26 plans, then deliver service lifecycle rows; M25 accepted.
+  resume_point: Generate M27 plans, deliver focused service editing. M25–26 accepted.
   started_at: '2026-10-18T15:00:58.296201+00:00'
 compiled_from_history:
 - product_id: secretsauce-mcp

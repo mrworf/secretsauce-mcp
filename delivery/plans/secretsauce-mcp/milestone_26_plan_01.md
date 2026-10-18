@@ -7,7 +7,7 @@ Two independently reviewable outcomes: readable linked lifecycle rows; then guar
 
 ## Slices
 1. [Linked lifecycle/readiness rows](milestone_26_plan_01_slice_01.md) — complete, 172210a.
-2. [Confirmed lifecycle actions](milestone_26_plan_01_slice_02.md) — complete (final commit recorded by parent).
+2. [Confirmed lifecycle actions](milestone_26_plan_01_slice_02.md) — complete, 288809e1e0f35367d4449e87ae8b1d011513d080.
 
 ## Validation
 Focused service tests per slice. At final milestone npm test -- --maxWorkers=2 and npm run build, sequentially from browser work. Actual HTTPS browser role/state/action journeys, 1440×1000 and 390×844 screenshots against approved services references, keyboard and 320px/200% text ranges. Evidence under evidence/ux-acceptance/secretsauce-mcp/milestone26 and evidence/qa/secretsauce-mcp/milestone26. No downstream transport change or new Docker-specific behavior.

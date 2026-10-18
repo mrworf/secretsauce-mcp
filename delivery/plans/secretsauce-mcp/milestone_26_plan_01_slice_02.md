@@ -20,3 +20,5 @@ One coherent behavior commit with supporting tests/docs and this plan. Status: c
 
 ## Final evidence
 Focused 27 service/API/runtime tests pass; npm run build passes. Final full npm test -- --maxWorkers=2: 730/730 tests, 73 files, 105.77s; pretest build passes. Actual lifecycle browser plus predecessor import-recovery and existing services journey pass. Screenshot comparison and all criteria mapping: evidence/qa/secretsauce-mcp/milestone26/acceptance.md and evidence/ux-acceptance/secretsauce-mcp/milestone26/visual-review.md. No material unapproved drift. Review-only Enable preserves existing explicit save/review semantics; lifecycle optional fingerprint preserves legacy callers while all authorization/current lifecycle checks remain. New UI binds confirmation to fingerprint including draft generation. A direct service link required removing its query on return to list; broader browser-history behavior stays M32. Prior browser selectors were updated to link roles.
+
+Final slice commit: `288809e1e0f35367d4449e87ae8b1d011513d080`.

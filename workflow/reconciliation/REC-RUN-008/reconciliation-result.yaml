@@ -1,0 +1,3098 @@
+{
+  "schema_version": 1,
+  "reconciliation_id": "REC-RUN-008",
+  "product_id": "secretsauce-mcp",
+  "status": "RESOLVED",
+  "transaction": {
+    "parent_commit": "9351c2d39124f9c40d4884ca51b2db2a19db2d3e",
+    "repository_commit": null
+  },
+  "source": {
+    "invocation": "product-definition-orchestrator",
+    "originating_stage": "approved-feedback3-adoption",
+    "triggering_findings": [
+      "PO-FB-042",
+      "PO-FB-043",
+      "PO-FB-044",
+      "PO-FB-045",
+      "PO-FB-046",
+      "PO-FB-047",
+      "PO-FB-048",
+      "PO-FB-049",
+      "PO-FB-050",
+      "PO-FB-051",
+      "PO-FB-052",
+      "PO-FB-053",
+      "PO-FB-054",
+      "PO-FB-055",
+      "PO-FB-056",
+      "PO-FB-057",
+      "PO-FB-058",
+      "PO-FB-059",
+      "PO-FB-060",
+      "PO-FB-061",
+      "PO-FB-062",
+      "PO-FB-063",
+      "PO-FB-064",
+      "PO-FB-065",
+      "PO-FB-066",
+      "PO-FB-067",
+      "PO-FB-068",
+      "PO-FB-069",
+      "PO-FB-070",
+      "PO-FB-071",
+      "PO-FB-072",
+      "PO-FB-073",
+      "PO-FB-074",
+      "PO-FB-075",
+      "PO-FB-076",
+      "PO-FB-077",
+      "PO-FB-078",
+      "PO-FB-079",
+      "PO-FB-080",
+      "PO-FB-081",
+      "PO-FB-082",
+      "PO-FB-083",
+      "PO-FB-084",
+      "PO-FB-085",
+      "PO-FB-086",
+      "PO-FB-087",
+      "PO-FB-088",
+      "PO-FB-089",
+      "PO-FB-090",
+      "PO-FB-091",
+      "PO-FB-092",
+      "PO-FB-093",
+      "PO-FB-094",
+      "PO-FB-095",
+      "PO-FB-096",
+      "PO-FB-097",
+      "PO-FB-098",
+      "PO-FB-099",
+      "PO-FB-100",
+      "PO-FB-101",
+      "PO-FB-102",
+      "PO-FB-103",
+      "PO-FB-104",
+      "PO-FB-105",
+      "PO-FB-106",
+      "PO-FB-107",
+      "PO-FB-108",
+      "PO-FB-109",
+      "PO-FB-110",
+      "PO-FB-111",
+      "PO-FB-112",
+      "PO-FB-113",
+      "PO-FB-114",
+      "PO-FB-115",
+      "PO-FB-116",
+      "PO-FB-117",
+      "PO-FB-118",
+      "PO-FB-119",
+      "PO-FB-120",
+      "PO-FB-121",
+      "PO-FB-122",
+      "PO-FB-123",
+      "PO-FB-124"
+    ],
+    "affected_requirements": [
+      "AUDIT-01",
+      "AUTHZ-01",
+      "BASE-01",
+      "CONFIG-01",
+      "CONFIG-02",
+      "CONFIG-03",
+      "CONFIG-04",
+      "CONFIG-05",
+      "MIGRATE-01",
+      "MIGRATE-02",
+      "POLICY-01",
+      "POLICY-02",
+      "POLICY-03",
+      "POLICY-04",
+      "UX-01",
+      "UX-02",
+      "UX-03",
+      "UX-04"
+    ],
+    "artifact_revisions": [
+      {
+        "artifact": "docs/web-console-prd.md",
+        "revision": "sha256:48194cfbc4e55756649820a411aa0675c2a6be87c577bdd920b0aaf06e21b617"
+      },
+      {
+        "artifact": "product/ux/01-information-architecture.md",
+        "revision": "sha256:46a44b43f12e8fec32e97abcf659581bc3c2d6b4c57c176038e495277a69c159"
+      },
+      {
+        "artifact": "product/ux/02-interaction-patterns.md",
+        "revision": "sha256:49afe01f26e05cb51e1a0183283ff07f16fdc4cb238cedc1bb85b35e0c6b5539"
+      },
+      {
+        "artifact": "docs/web-console-prd-user-journey-audit.md",
+        "revision": "sha256:7f0f3e3159a06e867aeabdadacdd73915c1c1a11ad0a4a8e6d597304efc1ff67"
+      },
+      {
+        "artifact": "product/architecture/web-console-state-contract.md",
+        "revision": "sha256:c8e22b5013d89090cc451cb2ef0290d7517b05bebae746faa15b65f10fca9848"
+      },
+      {
+        "artifact": "product/security/web-console-security-contract.md",
+        "revision": "sha256:8f66520798094a2638f006c9f3145e263e96008fdf63480fc6b98c2b0ccddc35"
+      },
+      {
+        "artifact": "docs/web-console-prd-coverage.md",
+        "revision": "sha256:36af3429ba960eaa2adf42777c7bc7a0d8cae12b62cac3ba63d228f14eee037e"
+      },
+      {
+        "artifact": "workflow/feedback/PO-FEEDBACK-2026-10-17-001/feedback.yaml",
+        "revision": "sha256:9b50a7d3dc87a3f2d45832b0deee4402b6e84b65092680a57f5bfbf8c7fbe0bf"
+      },
+      {
+        "artifact": "product/ux/manifest.yaml",
+        "revision": "sha256:e5b65e4108a77eb7cc2d85742f3dcbaf8de58dafc662978014f947fdea94355b"
+      },
+      {
+        "artifact": "product/ux/03-responsive-and-platform.md",
+        "revision": "sha256:ee4e4b2edecb8f56677145f3ea90c482334527c7e4d6356bf64220b7d3149b8f"
+      },
+      {
+        "artifact": "product/ux/04-visual-system.md",
+        "revision": "sha256:9c30c4e67669f43a14234727d7bebf3e5a309f6915333aaf5c3827e79ce0590a"
+      },
+      {
+        "artifact": "product/ux/05-accessibility.md",
+        "revision": "sha256:82b0463ee026354d14e01d925e5c734317774cac88396c103748f2d907e54dd1"
+      },
+      {
+        "artifact": "product/ux/06-feature-exceptions.md",
+        "revision": "sha256:427142201d4c4d0e6fc17c19d957f6f4eb8355c651554f0892aefcc1590468cd"
+      },
+      {
+        "artifact": "product/ux/07-acceptance-checklist.md",
+        "revision": "sha256:7852a01661c26abc1868250219f85410857b0ce216b3c50cb71a5b79ec4162f5"
+      },
+      {
+        "artifact": "workflow/definition/results/feedback3-product-resolution.md",
+        "revision": "sha256:24a1d134c8445c542a052fd1db76e792dd5ee03c5442b3e34d7dc3930f62a869"
+      },
+      {
+        "artifact": "workflow/definition/results/feedback3-architecture-resolution.md",
+        "revision": "sha256:0fc19c869da609e5e86deb2beaac843cfcf6e4d96305fbefaa912090f6c7c57f"
+      },
+      {
+        "artifact": "workflow/definition/results/feedback3-security-resolution.md",
+        "revision": "sha256:b1c0fab5bca433f1b0c6485a4bbcc43d58d88b9cb427f91118d644264d77f18b"
+      },
+      {
+        "artifact": "workflow/definition/decisions.md",
+        "revision": "sha256:834e8cd62a7abb4a3f931acf339e8f607b3fc43d8d18bef50fc4853717225f47"
+      }
+    ],
+    "product_owner_feedback": [
+      {
+        "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+        "path": "workflow/feedback/PO-FEEDBACK-2026-10-17-001/feedback.yaml",
+        "schema_version": 1,
+        "status": "CONFIRMED",
+        "transaction": {
+          "parent_commit": "369a379b016664017d2d7c3ccd7c0d92cc4286c3",
+          "repository_commit": "facc26dcf8cb488ff1204091b18a5a9179a7ba51",
+          "pre_existing_dirty_paths": [
+            "test-results/"
+          ],
+          "owned_paths": [
+            "workflow/feedback/PO-FEEDBACK-2026-10-17-001"
+          ]
+        },
+        "provenance": {
+          "type": "product_owner",
+          "captured_from": "prompt: two timestamped service-setup transcripts",
+          "references": [
+            "workflow/feedback/PO-FEEDBACK-2026-10-11-002/feedback.yaml"
+          ],
+          "recordings": [
+            {
+              "id": 1,
+              "scope": "Service list, overview, configuration, guided editor, destinations, authentication; 00:00:01–00:18:03"
+            },
+            {
+              "id": 2,
+              "scope": "Access and policy, rule management, tester, import blocker, browser navigation; 00:00:01–00:08:42"
+            }
+          ],
+          "excerpt_convention": "Exact excerpts; blank lines separate successive transcript cues. Locators use recording-local times. No audio or runtime inspection performed.",
+          "clarifications": [
+            {
+              "original": "its required, ie, if the key is still in-use, delete would only clear, and the message should state that",
+              "resolves": [
+                "PO-UNRESOLVED-004"
+              ],
+              "meaning": "Referenced-value clearing is required: Delete clears only the value, retains the in-use key, and explains that behavior."
+            }
+          ]
+        }
+      }
+    ],
+    "inspected_commit": "9351c2d39124f9c40d4884ca51b2db2a19db2d3e",
+    "evidence_limitations": [
+      "Implementation source remains the M24 baseline; no new implementation, browser reproduction or runtime acceptance is claimed.",
+      "Approved UX4 synthesis is a parent-owned definition input; parent owns its commit and stage validation. This reconciliation commits only its PRD correction and result artifacts.",
+      "Pending definition validation and parent-owned UX provenance must complete before delivery planning. Source hashes identify the exact reviewed inputs rather than implying upstream work is committed."
+    ],
+    "prior_result": "workflow/reconciliation/REC-RUN-007/reconciliation-result.yaml",
+    "resolution_evidence": [
+      "729f9df",
+      "workflow/definition/results/feedback3-product-resolution.md",
+      "workflow/definition/results/feedback3-architecture-resolution.md",
+      "workflow/definition/results/feedback3-security-resolution.md",
+      "workflow/definition/decisions.md#UX-DESIGN-004"
+    ]
+  },
+  "findings": {
+    "resolved": [
+      "REC-019",
+      "REC-020",
+      "REC-021",
+      "REC-022",
+      "REC-023",
+      "REC-024",
+      "REC-025",
+      "REC-026",
+      "REC-027",
+      "REC-028",
+      "REC-029",
+      "REC-030",
+      "REC-031",
+      "REC-032",
+      "REC-033",
+      "REC-034"
+    ],
+    "unresolved": []
+  },
+  "feedback_dispositions": [
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-042",
+      "classification": "OBSERVATION",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "evidence",
+      "original": "and that worked really well. I'm pretty happy with that.",
+      "normalized": "YAML import worked well for the Product Owner.",
+      "disposition": "EVIDENCE_CORRELATED",
+      "source_findings": [
+        "REC-019"
+      ],
+      "source_changes": [],
+      "remediation": [],
+      "decisions_required": [],
+      "affected_artifacts": [],
+      "rationale": "Preserve successful capability; no implementation change from this observation.",
+      "scope": [
+        "yaml-import"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-043",
+      "classification": "OBSERVATION",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "evidence",
+      "original": "doesn't really indicate that which ones that are working,",
+      "normalized": "The service list does not clearly communicate which services are active.",
+      "disposition": "EVIDENCE_CORRELATED",
+      "source_findings": [
+        "REC-020"
+      ],
+      "source_changes": [
+        "REC-CHANGE-020"
+      ],
+      "remediation": [
+        "REC-RM-016"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "service-list"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-044",
+      "classification": "IDEA_OR_QUESTION",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "exploratory",
+      "original": "I think the boxes showing the services should probably have a color bar on the, the left that can be red when it's off, yellow when it needs to be configured, like basically there's a draft or something, and green when they're active.",
+      "normalized": "Consider left status bars: red for off, yellow for configuration/draft, green for active.",
+      "disposition": "EXPLORATORY_RECORDED",
+      "source_findings": [
+        "REC-020"
+      ],
+      "source_changes": [
+        "REC-CHANGE-020"
+      ],
+      "remediation": [
+        "REC-RM-016"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "service-list"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-045",
+      "classification": "DIRECTIVE",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "authoritative",
+      "original": "That also means that you get a conflict because you can have a draft while it's active,",
+      "normalized": "Service status must accommodate an active service that also has a draft.",
+      "disposition": "FULLY_RESOLVED",
+      "source_findings": [
+        "REC-020"
+      ],
+      "source_changes": [
+        "REC-CHANGE-020"
+      ],
+      "remediation": [
+        "REC-RM-016"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "service-list"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-046",
+      "classification": "IDEA_OR_QUESTION",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "exploratory",
+      "original": "uh, in which case probably needs to show both yellow and green to show that it's both active and has, uh,",
+      "normalized": "Consider showing both yellow and green for an active service with a draft.",
+      "disposition": "EXPLORATORY_RECORDED",
+      "source_findings": [
+        "REC-020"
+      ],
+      "source_changes": [
+        "REC-CHANGE-020"
+      ],
+      "remediation": [
+        "REC-RM-016"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "service-list"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-047",
+      "classification": "DIRECTIVE",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "authoritative",
+      "original": "Uh, also, I would love to see and like see that you can click anywhere on the bar to open its settings,",
+      "normalized": "Make the service row clickable to open its settings.",
+      "disposition": "FULLY_RESOLVED",
+      "source_findings": [
+        "REC-020"
+      ],
+      "source_changes": [
+        "REC-CHANGE-020"
+      ],
+      "remediation": [
+        "REC-RM-016"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "service-list"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-048",
+      "classification": "DIRECTIVE",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "authoritative",
+      "original": "and then on the right, you would have,\n\nuh, like a delete, like an enable, disable, and a delete.",
+      "normalized": "Provide enable, disable, and delete actions on the right of each service row.",
+      "disposition": "FULLY_RESOLVED",
+      "source_findings": [
+        "REC-020"
+      ],
+      "source_changes": [
+        "REC-CHANGE-020"
+      ],
+      "remediation": [
+        "REC-RM-016"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "service-list"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-049",
+      "classification": "DIRECTIVE",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "authoritative",
+      "original": "Uh, delete would prompt the user, \"Are you sure?\"\n\nEnable and, uh, disable would do similarly.",
+      "normalized": "Ask for confirmation for service delete, enable, and disable actions.",
+      "disposition": "FULLY_RESOLVED",
+      "source_findings": [
+        "REC-020"
+      ],
+      "source_changes": [
+        "REC-CHANGE-020"
+      ],
+      "remediation": [
+        "REC-RM-016"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "service-actions"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-050",
+      "classification": "OBSERVATION",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "evidence",
+      "original": "you get the overview, and it says, \"Applied overview. No applied configuration. Incomplete services cannot execute.\" That's very cryptic.",
+      "normalized": "The empty applied overview message is cryptic.",
+      "disposition": "EVIDENCE_CORRELATED",
+      "source_findings": [
+        "REC-021"
+      ],
+      "source_changes": [
+        "REC-CHANGE-021"
+      ],
+      "remediation": [
+        "REC-RM-017"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "service-overview"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-051",
+      "classification": "IDEA_OR_QUESTION",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "exploratory",
+      "original": "it's probably to show me the current configuration, so perhaps just simplify it and say that there is no current configuration. It's not running.",
+      "normalized": "Consider explaining an empty overview as no current configuration and not running.",
+      "disposition": "EXPLORATORY_RECORDED",
+      "source_findings": [
+        "REC-021"
+      ],
+      "source_changes": [
+        "REC-CHANGE-021"
+      ],
+      "remediation": [
+        "REC-RM-017"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "service-overview"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-052",
+      "classification": "OBSERVATION",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "evidence",
+      "original": "There's also this bar at the top where it says yellow bar, there's a save draft, apply configuration, it's unchanged. Really not useful",
+      "normalized": "The top draft/apply/unchanged bar does not communicate useful information to the Product Owner.",
+      "disposition": "EVIDENCE_CORRELATED",
+      "source_findings": [
+        "REC-021"
+      ],
+      "source_changes": [
+        "REC-CHANGE-021"
+      ],
+      "remediation": [
+        "REC-RM-017"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "service-overview"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-053",
+      "classification": "OBSERVATION",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "evidence",
+      "original": "in my opinion. And then there's a white bar underneath. Don't get that either.",
+      "normalized": "The white bar below the top bar has no understandable purpose.",
+      "disposition": "EVIDENCE_CORRELATED",
+      "source_findings": [
+        "REC-021"
+      ],
+      "source_changes": [
+        "REC-CHANGE-021"
+      ],
+      "remediation": [
+        "REC-RM-017"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "service-overview"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-054",
+      "classification": "OBSERVATION",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "evidence",
+      "original": "to understand. It is just one long box that says, \"Save draft, name, Portainer, TLS disabled, destination, primary.\" What does that mean, primary? What are we talking about?",
+      "normalized": "The long configuration display and labels such as primary are difficult to understand.",
+      "disposition": "EVIDENCE_CORRELATED",
+      "source_findings": [
+        "REC-021"
+      ],
+      "source_changes": [
+        "REC-CHANGE-021"
+      ],
+      "remediation": [
+        "REC-RM-017"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "configuration-view"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-055",
+      "classification": "DIRECTIVE",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "authoritative",
+      "original": "This needs to be\n\nmore human-friendly,\n\nuh, and needs to be broken up in\n\nsome kind of structure that is easy to, to see,",
+      "normalized": "Organize the configuration view into understandable, distinguishable sections.",
+      "disposition": "FULLY_RESOLVED",
+      "source_findings": [
+        "REC-021"
+      ],
+      "source_changes": [
+        "REC-CHANGE-021"
+      ],
+      "remediation": [
+        "REC-RM-017"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "configuration-view"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": [],
+      "clarifies": [
+        "PO-FB-016"
+      ]
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-056",
+      "classification": "OBSERVATION",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "evidence",
+      "original": "some rules. Again, this is, it just flows into each other, so you don't really see it.",
+      "normalized": "Rules run together visually instead of appearing as distinct items.",
+      "disposition": "EVIDENCE_CORRELATED",
+      "source_findings": [
+        "REC-021"
+      ],
+      "source_changes": [
+        "REC-CHANGE-021"
+      ],
+      "remediation": [
+        "REC-RM-017"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "policy-rules"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-057",
+      "classification": "OBSERVATION",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "evidence",
+      "original": "And at this point, it's actually easier for me to read a JSON than it is to read the sup- supposedly human structure.",
+      "normalized": "The Product Owner finds JSON easier to read than the current human-facing configuration display.",
+      "disposition": "EVIDENCE_CORRELATED",
+      "source_findings": [
+        "REC-021"
+      ],
+      "source_changes": [
+        "REC-CHANGE-021"
+      ],
+      "remediation": [
+        "REC-RM-017"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "configuration-view"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-058",
+      "classification": "DIRECTIVE",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "authoritative",
+      "original": "I think we need to iterate a lot more on what is a good UX design for this, because this is an extremely complicated tool, or at least that's the feeling you get.",
+      "normalized": "Further iterate on service configuration UX to address its perceived complexity.",
+      "disposition": "FULLY_RESOLVED",
+      "source_findings": [
+        "REC-021"
+      ],
+      "source_changes": [
+        "REC-CHANGE-021"
+      ],
+      "remediation": [
+        "REC-RM-017"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "configuration-view"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-059",
+      "classification": "PREFERENCE",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "advisory",
+      "original": "these fold-out UI elements when you click and it opens up. It just makes the page really long.",
+      "normalized": "Use fewer fold-out controls that produce long pages, especially for single settings.",
+      "disposition": "ADVISORY_CONSIDERED",
+      "source_findings": [
+        "REC-021"
+      ],
+      "source_changes": [
+        "REC-CHANGE-021"
+      ],
+      "remediation": [
+        "REC-RM-017"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "progressive-disclosure"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-060",
+      "classification": "DIRECTIVE",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "authoritative",
+      "original": "We should show last changed by whom, by the way.",
+      "normalized": "Show who last changed a credential value alongside its change information.",
+      "disposition": "FULLY_RESOLVED",
+      "source_findings": [
+        "REC-022"
+      ],
+      "source_changes": [
+        "REC-CHANGE-022"
+      ],
+      "remediation": [
+        "REC-RM-021",
+        "REC-RM-026"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "credential-values"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-061",
+      "classification": "DIRECTIVE",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "authoritative",
+      "original": "And then don't, don't have an input field here.",
+      "normalized": "Remove the inline credential value input from the configuration display.",
+      "disposition": "FULLY_RESOLVED",
+      "source_findings": [
+        "REC-023"
+      ],
+      "source_changes": [
+        "REC-CHANGE-023"
+      ],
+      "remediation": [
+        "REC-RM-022"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "credential-values"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-062",
+      "classification": "DIRECTIVE",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "authoritative",
+      "original": "or in, if there is none, you can have one that's called set value key. But either way, you click a button, then it pops up a dialog where you can input the value, and then you can say save or cancel, um,",
+      "normalized": "Use Set or Replace value actions that open a credential entry dialog with Save and Cancel.",
+      "disposition": "FULLY_RESOLVED",
+      "source_findings": [
+        "REC-023"
+      ],
+      "source_changes": [
+        "REC-CHANGE-023"
+      ],
+      "remediation": [
+        "REC-RM-022"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "credential-values"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-063",
+      "classification": "OBSERVATION",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "evidence",
+      "original": "So can I delete it, or can I? I can't, I... It's very unclear what this is actually supposed to do.",
+      "normalized": "Credential deletion wording does not make clear whether deletion is possible or what it does.",
+      "disposition": "EVIDENCE_CORRELATED",
+      "source_findings": [
+        "REC-024"
+      ],
+      "source_changes": [
+        "REC-CHANGE-024"
+      ],
+      "remediation": [
+        "REC-RM-020",
+        "REC-RM-026"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "credential-deletion"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-064",
+      "classification": "DIRECTIVE",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "authoritative",
+      "original": "If I can't delete it because there is dependencies, then don't say something like this.",
+      "normalized": "When dependencies prevent deletion, clearly say that deletion is blocked.",
+      "disposition": "FULLY_RESOLVED",
+      "source_findings": [
+        "REC-024"
+      ],
+      "source_changes": [
+        "REC-CHANGE-024"
+      ],
+      "remediation": [
+        "REC-RM-020",
+        "REC-RM-026"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "credential-deletion"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-065",
+      "classification": "DIRECTIVE",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "authoritative",
+      "original": "discarding a draft never undoes creation, replacement, or deletion. So deleting the value, if it's still referenced,\n\nthen we should probably just wipe out the value instead.",
+      "normalized": "When a credential key is still in use, Delete clears only its value and retains the key.",
+      "disposition": "FULLY_RESOLVED",
+      "source_findings": [
+        "REC-024"
+      ],
+      "source_changes": [
+        "REC-CHANGE-024"
+      ],
+      "remediation": [
+        "REC-RM-020",
+        "REC-RM-026"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "credential-deletion"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-066",
+      "classification": "DIRECTIVE",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "authoritative",
+      "original": "it should say some- something to the effect that this, uh, this key is in use, so proceeding with the delete will simply wipe out the value, but the key will persist.",
+      "normalized": "Before proceeding with Delete on an in-use credential key, explain that only its value will be cleared and the key will remain.",
+      "disposition": "FULLY_RESOLVED",
+      "source_findings": [
+        "REC-024"
+      ],
+      "source_changes": [
+        "REC-CHANGE-024"
+      ],
+      "remediation": [
+        "REC-RM-020",
+        "REC-RM-026"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "credential-deletion"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-067",
+      "classification": "DIRECTIVE",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "authoritative",
+      "original": "Only when it's unreferenced can you actually delete it.",
+      "normalized": "Only allow deletion of the credential key itself when it is unreferenced.",
+      "disposition": "FULLY_RESOLVED",
+      "source_findings": [
+        "REC-024"
+      ],
+      "source_changes": [
+        "REC-CHANGE-024"
+      ],
+      "remediation": [
+        "REC-RM-020",
+        "REC-RM-026"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "credential-deletion"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-068",
+      "classification": "OBSERVATION",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "evidence",
+      "original": "Explicit assignments control execution separately for end- end- What is Access? I can't do anything here?",
+      "normalized": "The Access view is unclear and appears to offer no usable action.",
+      "disposition": "EVIDENCE_CORRELATED",
+      "source_findings": [
+        "REC-025"
+      ],
+      "source_changes": [
+        "REC-CHANGE-025"
+      ],
+      "remediation": [
+        "REC-RM-024"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "service-access"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-069",
+      "classification": "OBSERVATION",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "evidence",
+      "original": "And then we have Activity, and it shows me what, what was done for this service, which is fine.",
+      "normalized": "The service Activity view is satisfactory.",
+      "disposition": "EVIDENCE_CORRELATED",
+      "source_findings": [
+        "REC-019"
+      ],
+      "source_changes": [],
+      "remediation": [],
+      "decisions_required": [],
+      "affected_artifacts": [],
+      "rationale": "Preserve successful capability; no implementation change from this observation.",
+      "scope": [
+        "service-activity"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-070",
+      "classification": "OBSERVATION",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "evidence",
+      "original": "If I hit click Edit Configuration, you go into this wizard-like, which is actually not bad. I kinda like it. I also like that you have Advanced Editor.",
+      "normalized": "The guided editor and availability of advanced editing are liked.",
+      "disposition": "EVIDENCE_CORRELATED",
+      "source_findings": [
+        "REC-019"
+      ],
+      "source_changes": [],
+      "remediation": [],
+      "decisions_required": [],
+      "affected_artifacts": [],
+      "rationale": "Preserve successful capability; no implementation change from this observation.",
+      "scope": [
+        "editor-modes"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-071",
+      "classification": "DIRECTIVE",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "authoritative",
+      "original": "Uh, you don't have to say same draft. I think that's implied, like if you go Advanced.",
+      "normalized": "Remove the redundant same draft wording from the Advanced Editor entry.",
+      "disposition": "FULLY_RESOLVED",
+      "source_findings": [
+        "REC-026"
+      ],
+      "source_changes": [
+        "REC-CHANGE-026"
+      ],
+      "remediation": [
+        "REC-RM-018"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "editor-modes"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-072",
+      "classification": "IDEA_OR_QUESTION",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "exploratory",
+      "original": "it would make sense to just have a simple as the tab that's default selected. Oh, and not simple, maybe whatever isn't demeaning, uh, to have, like...",
+      "normalized": "An initial idea was nested guided/advanced tabs within Details; the speaker subsequently revises the placement because Advanced edits the whole configuration.",
+      "disposition": "EXPLORATORY_RECORDED",
+      "source_findings": [
+        "REC-026"
+      ],
+      "source_changes": [
+        "REC-CHANGE-026"
+      ],
+      "remediation": [
+        "REC-RM-018"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "editor-modes"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-073",
+      "classification": "PREFERENCE",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "advisory",
+      "original": "Oh, and not simple, maybe whatever isn't demeaning,",
+      "normalized": "Avoid demeaning terminology such as simple for the guided editing mode.",
+      "disposition": "ADVISORY_CONSIDERED",
+      "source_findings": [
+        "REC-026"
+      ],
+      "source_changes": [
+        "REC-CHANGE-026"
+      ],
+      "remediation": [
+        "REC-RM-018"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "product-language"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-074",
+      "classification": "DIRECTIVE",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "authoritative",
+      "original": "because that's the other thing. You are repeating the menu. I, I can see that Details is selected, but then within the white box, I'm seeing Details as a header.",
+      "normalized": "Avoid repeating the selected wizard step label as a redundant content heading.",
+      "disposition": "FULLY_RESOLVED",
+      "source_findings": [
+        "REC-026"
+      ],
+      "source_changes": [
+        "REC-CHANGE-026"
+      ],
+      "remediation": [
+        "REC-RM-018"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "guided-editor"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-075",
+      "classification": "IDEA_OR_QUESTION",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "exploratory",
+      "original": "Next to Save Draft, perhaps you could have Advanced Editor, uh, and then that switches over to",
+      "normalized": "Consider placing the full Advanced Editor switch beside Save Draft in the footer.",
+      "disposition": "EXPLORATORY_RECORDED",
+      "source_findings": [
+        "REC-026"
+      ],
+      "source_changes": [
+        "REC-CHANGE-026"
+      ],
+      "remediation": [
+        "REC-RM-018"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "editor-modes"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-076",
+      "classification": "DIRECTIVE",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "authoritative",
+      "original": "please let me click on the headers.",
+      "normalized": "Make wizard step headers clickable for navigation between steps.",
+      "disposition": "FULLY_RESOLVED",
+      "source_findings": [
+        "REC-026"
+      ],
+      "source_changes": [
+        "REC-CHANGE-026"
+      ],
+      "remediation": [
+        "REC-RM-018"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "guided-navigation"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-077",
+      "classification": "OBSERVATION",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "evidence",
+      "original": "Instead, I have to scroll to the bottom and click Back to backtrack through the different tabs,",
+      "normalized": "Backtracking through the wizard currently requires scrolling to bottom navigation.",
+      "disposition": "EVIDENCE_CORRELATED",
+      "source_findings": [
+        "REC-026"
+      ],
+      "source_changes": [
+        "REC-CHANGE-026"
+      ],
+      "remediation": [
+        "REC-RM-018"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "guided-navigation"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-078",
+      "classification": "DIRECTIVE",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "authoritative",
+      "original": "Uh, link to the API documentation for this service. You probably wanna call out that that is, that can be, that an LLM can utilize to understand how to use it.",
+      "normalized": "Explain that the API documentation link can help an LLM understand how to use the service.",
+      "disposition": "FULLY_RESOLVED",
+      "source_findings": [
+        "REC-027"
+      ],
+      "source_changes": [
+        "REC-CHANGE-027"
+      ],
+      "remediation": [
+        "REC-RM-024"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "field-help"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-079",
+      "classification": "DIRECTIVE",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "authoritative",
+      "original": "You probably need to put a little description here explaining what allowed destinations are, because this is a very strange",
+      "normalized": "Explain what allowed destinations mean.",
+      "disposition": "FULLY_RESOLVED",
+      "source_findings": [
+        "REC-027"
+      ],
+      "source_changes": [
+        "REC-CHANGE-027"
+      ],
+      "remediation": [
+        "REC-RM-024"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "destinations"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-080",
+      "classification": "DIRECTIVE",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "authoritative",
+      "original": "then it has to be that. If it's a suffix, you need to explain what host matching is here,",
+      "normalized": "Explain host matching and its exact, suffix, and regular-expression choices.",
+      "disposition": "FULLY_RESOLVED",
+      "source_findings": [
+        "REC-027"
+      ],
+      "source_changes": [
+        "REC-CHANGE-027"
+      ],
+      "remediation": [
+        "REC-RM-024"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "destinations"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-081",
+      "classification": "OBSERVATION",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "evidence",
+      "original": "I can click Add Another Destination.\n\nThat's correct.",
+      "normalized": "Adding another destination behaves as expected.",
+      "disposition": "EVIDENCE_CORRELATED",
+      "source_findings": [
+        "REC-019"
+      ],
+      "source_changes": [],
+      "remediation": [],
+      "decisions_required": [],
+      "affected_artifacts": [],
+      "rationale": "Preserve successful capability; no implementation change from this observation.",
+      "scope": [
+        "destinations"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-082",
+      "classification": "DIRECTIVE",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "authoritative",
+      "original": "I, I would just show verify TLS by default always, and I would make it clear whether that applies to every destination or just...",
+      "normalized": "Show the TLS verification control without a fold-out and make its scope explicit.",
+      "disposition": "FULLY_RESOLVED",
+      "source_findings": [
+        "REC-028"
+      ],
+      "source_changes": [
+        "REC-CHANGE-028"
+      ],
+      "remediation": [
+        "REC-RM-019"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "destinations"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-083",
+      "classification": "DIRECTIVE",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "authoritative",
+      "original": "If it's per destination, it belongs together with per destination.",
+      "normalized": "If TLS verification is per destination, place it with that destination.",
+      "disposition": "FULLY_RESOLVED",
+      "source_findings": [
+        "REC-028"
+      ],
+      "source_changes": [
+        "REC-CHANGE-028"
+      ],
+      "remediation": [
+        "REC-RM-019"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "destinations"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-084",
+      "classification": "DIRECTIVE",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "authoritative",
+      "original": "Oh, and you're hiding, so you have multiple layers of foldable.\n\nThat's terrible. Don't have multiple.",
+      "normalized": "Do not nest multiple fold-out layers in destination settings.",
+      "disposition": "FULLY_RESOLVED",
+      "source_findings": [
+        "REC-028"
+      ],
+      "source_changes": [
+        "REC-CHANGE-028"
+      ],
+      "remediation": [
+        "REC-RM-019"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "progressive-disclosure"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-085",
+      "classification": "IDEA_OR_QUESTION",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "exploratory",
+      "original": "You probably need to add a button\n\nnext to, like, in the destination one, like, in the destination area, called advanced settings that you can click, and that takes you to the men- to another, uh, page where you can start doing advanced destination matching, allowed schemas, allowed port, host matching, destination identifier.",
+      "normalized": "Consider a per-destination Advanced settings action opening a focused page for advanced matching and identifiers.",
+      "disposition": "EXPLORATORY_RECORDED",
+      "source_findings": [
+        "REC-028"
+      ],
+      "source_changes": [
+        "REC-CHANGE-028"
+      ],
+      "remediation": [
+        "REC-RM-019"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "destinations"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-086",
+      "classification": "DIRECTIVE",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "authoritative",
+      "original": "If the stable service identifier is something more for the system to be able to relate to things, and me as a user will never actually interact with this piece because I interact with the service name, and likewise under destination, I don't even\n\ncare about primary, secondary, or whatever name I gave it, we should not expose that to the end user. That just adds confusion.",
+      "normalized": "Do not expose service and destination identifiers in ordinary user interaction if they are only system references; retain the stated conditional nature of this request.",
+      "disposition": "FULLY_RESOLVED",
+      "source_findings": [
+        "REC-028"
+      ],
+      "source_changes": [
+        "REC-CHANGE-028"
+      ],
+      "remediation": [
+        "REC-RM-019"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "identifiers"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-087",
+      "classification": "DIRECTIVE",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "authoritative",
+      "original": "That's why it should just be part of, like, you can switch between guided and advanced.",
+      "normalized": "Offer a global Guided/Advanced editing mode switch, rather than repeating full-configuration Advanced Editor entries in individual sections.",
+      "disposition": "FULLY_RESOLVED",
+      "source_findings": [
+        "REC-026"
+      ],
+      "source_changes": [
+        "REC-CHANGE-026"
+      ],
+      "remediation": [
+        "REC-RM-018"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "editor-modes"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": [],
+      "clarifies": [
+        "PO-FB-072",
+        "PO-FB-075"
+      ]
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-088",
+      "classification": "OBSERVATION",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "evidence",
+      "original": "Anyway, so in authentication, uh, downstream authentication. Choose whether the service needs credentials to make request.\n\nOkay, that makes sense.",
+      "normalized": "The explanation of whether a downstream service needs credentials is understandable.",
+      "disposition": "EVIDENCE_CORRELATED",
+      "source_findings": [
+        "REC-019"
+      ],
+      "source_changes": [],
+      "remediation": [],
+      "decisions_required": [],
+      "affected_artifacts": [],
+      "rationale": "Preserve successful capability; no implementation change from this observation.",
+      "scope": [
+        "authentication"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-089",
+      "classification": "PREFERENCE",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "advisory",
+      "original": "Not keen on placement name, but I don't have a better name.",
+      "normalized": "Improve the placement name label; no replacement wording has been selected.",
+      "disposition": "ADVISORY_CONSIDERED",
+      "source_findings": [
+        "REC-027"
+      ],
+      "source_changes": [
+        "REC-CHANGE-027"
+      ],
+      "remediation": [
+        "REC-RM-024"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "authentication"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-090",
+      "classification": "OBSERVATION",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "evidence",
+      "original": "Usage prefix, text placed before the value, such as bearer, followed by a space. This one is very confusing. What does it do?",
+      "normalized": "The meaning of usage prefix is unclear.",
+      "disposition": "EVIDENCE_CORRELATED",
+      "source_findings": [
+        "REC-027"
+      ],
+      "source_changes": [
+        "REC-CHANGE-027"
+      ],
+      "remediation": [
+        "REC-RM-024"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "authentication"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-091",
+      "classification": "DIRECTIVE",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "authoritative",
+      "original": "that needs to\n\nbe explained a little bit better or\n\nshown.",
+      "normalized": "Explain or illustrate how prefix and suffix relate to a credential value.",
+      "disposition": "FULLY_RESOLVED",
+      "source_findings": [
+        "REC-027"
+      ],
+      "source_changes": [
+        "REC-CHANGE-027"
+      ],
+      "remediation": [
+        "REC-RM-024"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "authentication"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-092",
+      "classification": "DIRECTIVE",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "authoritative",
+      "original": "Oh, yeah, and again, you, you're doing advanced placement hint, and it's just one single field. Then just show it. It doesn't matter.",
+      "normalized": "Show the single placement hint field directly instead of hiding it in a fold-out.",
+      "disposition": "FULLY_RESOLVED",
+      "source_findings": [
+        "REC-027"
+      ],
+      "source_changes": [
+        "REC-CHANGE-027"
+      ],
+      "remediation": [
+        "REC-RM-024"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "authentication"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-093",
+      "classification": "OBSERVATION",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "evidence",
+      "original": "And also placement kind, exist, this existing generic hints.\n\nThis, as a user, I have no idea.",
+      "normalized": "Placement kind and generic hint terminology are not understandable.",
+      "disposition": "EVIDENCE_CORRELATED",
+      "source_findings": [
+        "REC-027"
+      ],
+      "source_changes": [
+        "REC-CHANGE-027"
+      ],
+      "remediation": [
+        "REC-RM-024"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "authentication"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-094",
+      "classification": "OBSERVATION",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "evidence",
+      "original": "you are not distinguishing between the advanced setting that I'm manipulating and the next step.",
+      "normalized": "Visual boundaries between advanced placement hints and subsequent controls are unclear.",
+      "disposition": "EVIDENCE_CORRELATED",
+      "source_findings": [
+        "REC-027"
+      ],
+      "source_changes": [
+        "REC-CHANGE-027"
+      ],
+      "remediation": [
+        "REC-RM-024"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "authentication"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-095",
+      "classification": "OBSERVATION",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "evidence",
+      "original": "Um, enforce gateway owned header. What does that mean?",
+      "normalized": "The enforce gateway owned header option is unexplained to the Product Owner.",
+      "disposition": "EVIDENCE_CORRELATED",
+      "source_findings": [
+        "REC-027"
+      ],
+      "source_changes": [
+        "REC-CHANGE-027"
+      ],
+      "remediation": [
+        "REC-RM-024"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "authentication"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-096",
+      "classification": "OBSERVATION",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "evidence",
+      "original": "It says available version one last change. So this is the credential that is being associated.",
+      "normalized": "The relationship between the displayed credential metadata and the configured credential is not immediately apparent.",
+      "disposition": "EVIDENCE_CORRELATED",
+      "source_findings": [
+        "REC-023"
+      ],
+      "source_changes": [
+        "REC-CHANGE-023"
+      ],
+      "remediation": [
+        "REC-RM-022"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "credential-values"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-097",
+      "classification": "OBSERVATION",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "evidence",
+      "original": "and it's one of those that actually if I hit continue, that I can do that even though it was marked as required, because this is actually required for it to replace value immediately underneath,",
+      "normalized": "An inline required credential value field is confusing because Continue works without it and the requirement applies to immediate replacement.",
+      "disposition": "EVIDENCE_CORRELATED",
+      "source_findings": [
+        "REC-023"
+      ],
+      "source_changes": [
+        "REC-CHANGE-023"
+      ],
+      "remediation": [
+        "REC-RM-022"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "credential-values"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-098",
+      "classification": "DIRECTIVE",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "authoritative",
+      "original": "You should have a button that says set, set credential,\n\nand when you click it, you open up a dialog where you can enter the credential and hit save or cancel.",
+      "normalized": "Use the credential entry dialog pattern in the authentication wizard as well.",
+      "disposition": "FULLY_RESOLVED",
+      "source_findings": [
+        "REC-023"
+      ],
+      "source_changes": [
+        "REC-CHANGE-023"
+      ],
+      "remediation": [
+        "REC-RM-022"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "credential-values"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": [],
+      "clarifies": [
+        "PO-FB-062"
+      ]
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-099",
+      "classification": "OBSERVATION",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "evidence",
+      "original": "Oh, and the screen reloaded and I ended up on top.",
+      "normalized": "Adding another credential jumps the view to the top.",
+      "disposition": "EVIDENCE_CORRELATED",
+      "source_findings": [
+        "REC-029"
+      ],
+      "source_changes": [
+        "REC-CHANGE-029"
+      ],
+      "remediation": [
+        "REC-RM-022"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "guided-navigation"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-100",
+      "classification": "DIRECTIVE",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "authoritative",
+      "original": "When I add another credential identity, I expect to actually have the screen scroll to where it was created.",
+      "normalized": "Scroll to the newly added credential when it is created.",
+      "disposition": "FULLY_RESOLVED",
+      "source_findings": [
+        "REC-029"
+      ],
+      "source_changes": [
+        "REC-CHANGE-029"
+      ],
+      "remediation": [
+        "REC-RM-022"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "guided-navigation"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-101",
+      "classification": "OBSERVATION",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "evidence",
+      "original": "It says explicit service access, and I can click my name.\n\nThat doesn't make sense. What am I doing here?",
+      "normalized": "The meaning of selecting a user under explicit service access is unclear.",
+      "disposition": "EVIDENCE_CORRELATED",
+      "source_findings": [
+        "REC-025"
+      ],
+      "source_changes": [
+        "REC-CHANGE-025"
+      ],
+      "remediation": [
+        "REC-RM-024"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "service-access"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-102",
+      "classification": "DIRECTIVE",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "authoritative",
+      "original": "I think\n\nyou need to clarify that. It is much easier to understand, like, default,\n\ndefault is allow, default is deny.",
+      "normalized": "Explain the default policy using clear allow/deny wording.",
+      "disposition": "FULLY_RESOLVED",
+      "source_findings": [
+        "REC-027"
+      ],
+      "source_changes": [
+        "REC-CHANGE-027"
+      ],
+      "remediation": [
+        "REC-RM-024"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "policy-default"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-103",
+      "classification": "IDEA_OR_QUESTION",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "exploratory",
+      "original": "because that means that the rules below, if default is allowed, then all the rules below are deny,\n\nright?",
+      "normalized": "Question: does an allow default mean all individual rules are deny rules? This is an inference to clarify, not a requested restriction on rule effects.",
+      "disposition": "EXPLORATORY_RECORDED",
+      "source_findings": [
+        "REC-027"
+      ],
+      "source_changes": [
+        "REC-CHANGE-027"
+      ],
+      "remediation": [
+        "REC-RM-024"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "policy-default"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-104",
+      "classification": "DIRECTIVE",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "authoritative",
+      "original": "Methods is comma separated. That should be something I pick from a list. That should not be something I type,",
+      "normalized": "Select HTTP methods from a list instead of typing comma-separated values.",
+      "disposition": "FULLY_RESOLVED",
+      "source_findings": [
+        "REC-030"
+      ],
+      "source_changes": [
+        "REC-CHANGE-030"
+      ],
+      "remediation": [
+        "REC-RM-023"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "policy-rules"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-105",
+      "classification": "DIRECTIVE",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "authoritative",
+      "original": "Is that the reason why it was allowed or the reason it was denied? You need to clarify that.",
+      "normalized": "Explain what a policy rule reason means.",
+      "disposition": "FULLY_RESOLVED",
+      "source_findings": [
+        "REC-027"
+      ],
+      "source_changes": [
+        "REC-CHANGE-027"
+      ],
+      "remediation": [
+        "REC-RM-024"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "policy-rules"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-106",
+      "classification": "OBSERVATION",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "evidence",
+      "original": "It's very hard to understand that this is actually a list of rules.",
+      "normalized": "The existing policy rules are not visually recognizable as a list.",
+      "disposition": "EVIDENCE_CORRELATED",
+      "source_findings": [
+        "REC-030"
+      ],
+      "source_changes": [
+        "REC-CHANGE-030"
+      ],
+      "remediation": [
+        "REC-RM-023"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "policy-rules"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-107",
+      "classification": "DIRECTIVE",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "authoritative",
+      "original": "There should just be a button to add a new rule, and then it should list other rules, and for each rule, there should be, like, an edit or delete.",
+      "normalized": "Show a rule list with an Add rule button and Edit/Delete actions per rule, instead of an always-visible blank add form.",
+      "disposition": "FULLY_RESOLVED",
+      "source_findings": [
+        "REC-030"
+      ],
+      "source_changes": [
+        "REC-CHANGE-030"
+      ],
+      "remediation": [
+        "REC-RM-023"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "policy-rules"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-108",
+      "classification": "DIRECTIVE",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "authoritative",
+      "original": "You don't need to continuously repeat yourself with\n\nedit rule, deny identity and access,\n\nremove rule, uh, deny identity and access if it's a single line\n\nwith the, with the rule.",
+      "normalized": "Avoid repeating the rule identifier in visible action labels when the row supplies context.",
+      "disposition": "FULLY_RESOLVED",
+      "source_findings": [
+        "REC-030"
+      ],
+      "source_changes": [
+        "REC-CHANGE-030"
+      ],
+      "remediation": [
+        "REC-RM-023"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "policy-rules"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-109",
+      "classification": "PREFERENCE",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "advisory",
+      "original": "I'm torn. I honestly don't think it makes\n\na ton of sense having, uh,\n\nthe identifier exposed to end user,",
+      "normalized": "Prefer not exposing policy rule identifiers in ordinary user interaction; the speaker remains uncertain.",
+      "disposition": "ADVISORY_CONSIDERED",
+      "source_findings": [
+        "REC-030"
+      ],
+      "source_changes": [
+        "REC-CHANGE-030"
+      ],
+      "remediation": [
+        "REC-RM-023"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "identifiers"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-110",
+      "classification": "DIRECTIVE",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "authoritative",
+      "original": "if I wanna add, it should open a modal to do so.",
+      "normalized": "Open a modal to add a policy rule.",
+      "disposition": "FULLY_RESOLVED",
+      "source_findings": [
+        "REC-030"
+      ],
+      "source_changes": [
+        "REC-CHANGE-030"
+      ],
+      "remediation": [
+        "REC-RM-023"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "policy-rules"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-111",
+      "classification": "OBSERVATION",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "evidence",
+      "original": "there's a shared secret detection settings,\n\nand then when I click that, I get to the main, like, the global settings,",
+      "normalized": "The shared secret detection settings link unexpectedly leaves service editing for global settings.",
+      "disposition": "EVIDENCE_CORRELATED",
+      "source_findings": [
+        "REC-031"
+      ],
+      "source_changes": [
+        "REC-CHANGE-031"
+      ],
+      "remediation": [
+        "REC-RM-025"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "guided-navigation"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-112",
+      "classification": "OBSERVATION",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "evidence",
+      "original": "Why can't I move the first one?",
+      "normalized": "Rule movement controls appear inconsistent: the first rule cannot be moved while subsequent rules offer movement.",
+      "disposition": "EVIDENCE_CORRELATED",
+      "source_findings": [
+        "REC-031"
+      ],
+      "source_changes": [
+        "REC-CHANGE-031"
+      ],
+      "remediation": [
+        "REC-RM-025"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "policy-rules"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-113",
+      "classification": "OBSERVATION",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "evidence",
+      "original": "So I like this, but this should probably be a modal,",
+      "normalized": "The policy tester is liked.",
+      "disposition": "EVIDENCE_CORRELATED",
+      "source_findings": [
+        "REC-033"
+      ],
+      "source_changes": [],
+      "remediation": [
+        "REC-RM-025"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [],
+      "rationale": "Preserve safe preview. Modal is now adopted through separately approved UX-DESIGN-004, not by promoting the original exploratory item.",
+      "scope": [
+        "policy-tester"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-114",
+      "classification": "IDEA_OR_QUESTION",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "exploratory",
+      "original": "So I like this, but this should probably be a modal,",
+      "normalized": "Consider presenting the policy tester in a modal.",
+      "disposition": "EXPLORATORY_RECORDED",
+      "source_findings": [
+        "REC-033"
+      ],
+      "source_changes": [],
+      "remediation": [
+        "REC-RM-025"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [],
+      "rationale": "Preserve safe preview. Modal is now adopted through separately approved UX-DESIGN-004, not by promoting the original exploratory item.",
+      "scope": [
+        "policy-tester"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-115",
+      "classification": "OBSERVATION",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "evidence",
+      "original": "especially since return to services, this brings me back.\n\nAnd when I click this, now I'm getting unsaved draft changes.",
+      "normalized": "Returning to services from policy testing produces an unexpected unsaved draft warning.",
+      "disposition": "EVIDENCE_CORRELATED",
+      "source_findings": [
+        "REC-031"
+      ],
+      "source_changes": [
+        "REC-CHANGE-031"
+      ],
+      "remediation": [
+        "REC-RM-025"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "policy-tester"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-116",
+      "classification": "OBSERVATION",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "evidence",
+      "original": "I c- I can't do that, because it says import has unresolved identities. Please supply explicit mappings and import, and import again. That doesn't tell me what to do.",
+      "normalized": "Unresolved imported identities block review/apply without explaining the required action.",
+      "disposition": "EVIDENCE_CORRELATED",
+      "source_findings": [
+        "REC-032"
+      ],
+      "source_changes": [
+        "REC-CHANGE-032"
+      ],
+      "remediation": [
+        "REC-RM-015"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "import-recovery"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-117",
+      "classification": "OBSERVATION",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "evidence",
+      "original": "So when I edit a rule, it looks much different than when I add a basic rule.",
+      "normalized": "Policy rule add and edit forms look substantially different.",
+      "disposition": "EVIDENCE_CORRELATED",
+      "source_findings": [
+        "REC-030"
+      ],
+      "source_changes": [
+        "REC-CHANGE-030"
+      ],
+      "remediation": [
+        "REC-RM-023"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "policy-rules"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-118",
+      "classification": "PREFERENCE",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "advisory",
+      "original": "That's another reason why not to have\n\nbasic r-request rule and then add basic re-press rule, uh, like built in. It would be better to,\n\nto have a button and then open up a window or a modal.",
+      "normalized": "Use a consistent focused interaction for adding and editing rules.",
+      "disposition": "ADVISORY_CONSIDERED",
+      "source_findings": [
+        "REC-030"
+      ],
+      "source_changes": [
+        "REC-CHANGE-030"
+      ],
+      "remediation": [
+        "REC-RM-023"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "policy-rules"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-119",
+      "classification": "OBSERVATION",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "evidence",
+      "original": "why I can't proceed. I have checked my account as the owner.",
+      "normalized": "Selecting the Product Owner account does not resolve the reported import blocker.",
+      "disposition": "EVIDENCE_CORRELATED",
+      "source_findings": [
+        "REC-032"
+      ],
+      "source_changes": [
+        "REC-CHANGE-032"
+      ],
+      "remediation": [
+        "REC-RM-015"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "import-recovery"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-120",
+      "classification": "OBSERVATION",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "evidence",
+      "original": "Also, back and forth doesn't work at all reliably. You are not pushing the changes to the browser, so back and forward on the, on the, on the browser doesn't actually work the way one, one would e-expect.",
+      "normalized": "Browser Back and Forward are unreliable in this workflow; lack of browser history updates is the speaker’s explanation, not a verified root cause.",
+      "disposition": "EVIDENCE_CORRELATED",
+      "source_findings": [
+        "REC-031"
+      ],
+      "source_changes": [
+        "REC-CHANGE-031"
+      ],
+      "remediation": [
+        "REC-RM-025"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "browser-navigation"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-121",
+      "classification": "OBSERVATION",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "evidence",
+      "original": "Which ones?\n\nAnd I don't see how I can pick an identity\n\nonce I hit edit.",
+      "normalized": "The blocker does not identify unresolved identities or reveal a way to map them while editing.",
+      "disposition": "EVIDENCE_CORRELATED",
+      "source_findings": [
+        "REC-032"
+      ],
+      "source_changes": [
+        "REC-CHANGE-032"
+      ],
+      "remediation": [
+        "REC-RM-015"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "import-recovery"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-122",
+      "classification": "DIRECTIVE",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "authoritative",
+      "original": "So when there are er- uh, uh, issues with a rule\n\nor with a service, you need to say more than just that it's wrong. You're not explaining it sufficiently.",
+      "normalized": "Explain service and rule errors sufficiently for users to understand the problem and how to proceed, including unresolved imported identities.",
+      "disposition": "FULLY_RESOLVED",
+      "source_findings": [
+        "REC-032"
+      ],
+      "source_changes": [
+        "REC-CHANGE-032"
+      ],
+      "remediation": [
+        "REC-RM-015"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "validation-errors"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-123",
+      "classification": "DIRECTIVE",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "authoritative",
+      "original": "or, or, or, you know, look, look into best practices here.",
+      "normalized": "Research established UX practices when refining service configuration editing.",
+      "disposition": "FULLY_RESOLVED",
+      "source_findings": [
+        "REC-034"
+      ],
+      "source_changes": [
+        "REC-CHANGE-034"
+      ],
+      "remediation": [],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Research completed in approved UX proposal; definition-only requirement satisfied, so no implementation remediation is invented.",
+      "scope": [
+        "design-research"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": [],
+      "clarifies": [
+        "PO-FB-040"
+      ]
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-17-001",
+      "item_id": "PO-FB-124",
+      "classification": "IDEA_OR_QUESTION",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "exploratory",
+      "original": "Since that actually edits all of it, I think it would make more sense to have, like, a mode so you could... Like, right now it's guided by default, and then you can switch it to advanced, and then you just get to edit the JSON as it stands.",
+      "normalized": "The final suggested presentation is Guided by default with a switch to full-configuration JSON editing.",
+      "disposition": "EXPLORATORY_RECORDED",
+      "source_findings": [
+        "REC-026"
+      ],
+      "source_changes": [
+        "REC-CHANGE-026"
+      ],
+      "remediation": [
+        "REC-RM-018"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/01-information-architecture.md"
+      ],
+      "rationale": "Approved UX-DESIGN-004 plus STATE-09/SECRES-08 and accepted product resolution settle desired behavior; apply exact original class authority. Remediation is linked only to adopted outcomes, not to an unselected feedback suggestion. Definition validation/commit remains a separate planning prerequisite.",
+      "scope": [
+        "editor-modes"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": [],
+      "clarifies": [
+        "PO-FB-087"
+      ]
+    }
+  ],
+  "authoritative_changes": {
+    "changed": true,
+    "entries": [
+      {
+        "change_id": "REC-CHANGE-020",
+        "source_findings": [
+          "REC-020"
+        ],
+        "path": "docs/web-console-prd.md",
+        "requirements": [
+          "UX-01",
+          "CONFIG-05"
+        ],
+        "status": "APPLIED_AFTER_DECISION"
+      },
+      {
+        "change_id": "REC-CHANGE-021",
+        "source_findings": [
+          "REC-021"
+        ],
+        "path": "product/ux/01-information-architecture.md",
+        "requirements": [
+          "UX-02",
+          "UX-03",
+          "CONFIG-01"
+        ],
+        "status": "NO_SOURCE_MUTATION"
+      },
+      {
+        "change_id": "REC-CHANGE-022",
+        "source_findings": [
+          "REC-022"
+        ],
+        "path": "docs/web-console-prd.md",
+        "requirements": [
+          "CONFIG-02",
+          "AUDIT-01"
+        ],
+        "status": "APPLIED_AFTER_DECISION"
+      },
+      {
+        "change_id": "REC-CHANGE-023",
+        "source_findings": [
+          "REC-023"
+        ],
+        "path": "docs/web-console-prd.md",
+        "requirements": [
+          "CONFIG-02",
+          "UX-02",
+          "UX-04"
+        ],
+        "status": "APPLIED_AFTER_DECISION"
+      },
+      {
+        "change_id": "REC-CHANGE-024",
+        "source_findings": [
+          "REC-024"
+        ],
+        "path": "docs/web-console-prd.md",
+        "requirements": [
+          "CONFIG-02",
+          "CONFIG-03",
+          "CONFIG-04"
+        ],
+        "status": "APPLIED_AFTER_DECISION"
+      },
+      {
+        "change_id": "REC-CHANGE-025",
+        "source_findings": [
+          "REC-025"
+        ],
+        "path": "product/ux/01-information-architecture.md",
+        "requirements": [
+          "AUTHZ-01",
+          "CONFIG-03"
+        ],
+        "status": "NO_SOURCE_MUTATION"
+      },
+      {
+        "change_id": "REC-CHANGE-026",
+        "source_findings": [
+          "REC-026"
+        ],
+        "path": "docs/web-console-prd.md",
+        "requirements": [
+          "CONFIG-01",
+          "POLICY-02",
+          "UX-02"
+        ],
+        "status": "APPLIED_AFTER_DECISION"
+      },
+      {
+        "change_id": "REC-CHANGE-027",
+        "source_findings": [
+          "REC-027"
+        ],
+        "path": "product/ux/01-information-architecture.md",
+        "requirements": [
+          "UX-02",
+          "POLICY-01",
+          "BASE-01"
+        ],
+        "status": "NO_SOURCE_MUTATION"
+      },
+      {
+        "change_id": "REC-CHANGE-028",
+        "source_findings": [
+          "REC-028"
+        ],
+        "path": "product/ux/01-information-architecture.md",
+        "requirements": [
+          "BASE-01",
+          "POLICY-02",
+          "POLICY-04"
+        ],
+        "status": "NO_SOURCE_MUTATION"
+      },
+      {
+        "change_id": "REC-CHANGE-029",
+        "source_findings": [
+          "REC-029"
+        ],
+        "path": "product/ux/01-information-architecture.md",
+        "requirements": [
+          "UX-03",
+          "UX-04"
+        ],
+        "status": "NO_SOURCE_MUTATION"
+      },
+      {
+        "change_id": "REC-CHANGE-030",
+        "source_findings": [
+          "REC-030"
+        ],
+        "path": "product/ux/01-information-architecture.md",
+        "requirements": [
+          "POLICY-01",
+          "POLICY-02",
+          "BASE-01"
+        ],
+        "status": "NO_SOURCE_MUTATION"
+      },
+      {
+        "change_id": "REC-CHANGE-031",
+        "source_findings": [
+          "REC-031"
+        ],
+        "path": "product/ux/01-information-architecture.md",
+        "requirements": [
+          "UX-03",
+          "POLICY-01",
+          "POLICY-03"
+        ],
+        "status": "NO_SOURCE_MUTATION"
+      },
+      {
+        "change_id": "REC-CHANGE-032",
+        "source_findings": [
+          "REC-032"
+        ],
+        "path": "docs/web-console-prd.md",
+        "requirements": [
+          "MIGRATE-01",
+          "MIGRATE-02",
+          "UX-03"
+        ],
+        "status": "APPLIED_AFTER_DECISION"
+      },
+      {
+        "change_id": "REC-CHANGE-034",
+        "source_findings": [
+          "REC-034"
+        ],
+        "path": "product/ux/01-information-architecture.md",
+        "requirements": [
+          "UX-02",
+          "UX-04"
+        ],
+        "status": "NO_SOURCE_MUTATION"
+      }
+    ]
+  },
+  "definition_changed": true,
+  "implementation_required": true,
+  "implementation_ready": true,
+  "decisions_required": [],
+  "change_impact": {
+    "change_id": "REC-IMPACT-008",
+    "source_findings": [
+      "REC-019",
+      "REC-020",
+      "REC-021",
+      "REC-022",
+      "REC-023",
+      "REC-024",
+      "REC-025",
+      "REC-026",
+      "REC-027",
+      "REC-028",
+      "REC-029",
+      "REC-030",
+      "REC-031",
+      "REC-032",
+      "REC-033",
+      "REC-034"
+    ],
+    "changed_artifacts": [
+      "docs/web-console-prd.md"
+    ],
+    "changed_requirements": [
+      "CONFIG-01",
+      "CONFIG-02",
+      "CONFIG-03",
+      "CONFIG-04",
+      "CONFIG-05",
+      "AUDIT-01",
+      "BACKUP-01",
+      "MIGRATE-01",
+      "MIGRATE-02"
+    ],
+    "change_types": [
+      "ux_interaction",
+      "user_behavior",
+      "data_model",
+      "security_control",
+      "migration"
+    ],
+    "affected_domains": {
+      "product": true,
+      "user_journeys": true,
+      "ux": true,
+      "architecture": true,
+      "security": true
+    },
+    "potentially_stale": [
+      "docs/web-console-prd.md",
+      "product/ux/01-information-architecture.md",
+      "product/ux/02-interaction-patterns.md",
+      "docs/web-console-prd-user-journey-audit.md",
+      "product/architecture/web-console-state-contract.md",
+      "product/security/web-console-security-contract.md",
+      "docs/web-console-prd-coverage.md"
+    ],
+    "revalidation_required": true
+  },
+  "handoff": {
+    "category": "DEFINITION_REVALIDATION",
+    "definition_revalidation_required": true,
+    "delivery_planning_ready": false,
+    "next_workflow": "product-definition-orchestrator",
+    "prerequisites": [
+      "Complete selective definition validation against corrected PRD and approved UX4.",
+      "Commit and finalize provenance for parent-owned UX4 synthesis, approval and definition package; do not consume its current uncommitted artifacts as a delivery handoff."
+    ]
+  },
+  "resolved_decisions": [
+    "REC-DEC-008",
+    "REC-DEC-009",
+    "REC-DEC-010",
+    "UX-DESIGN-004"
+  ],
+  "remediation_ids": [
+    "REC-RM-015",
+    "REC-RM-016",
+    "REC-RM-017",
+    "REC-RM-018",
+    "REC-RM-019",
+    "REC-RM-020",
+    "REC-RM-021",
+    "REC-RM-022",
+    "REC-RM-023",
+    "REC-RM-024",
+    "REC-RM-025",
+    "REC-RM-026"
+  ]
+}

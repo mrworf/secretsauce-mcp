@@ -1,0 +1,207 @@
+schema_version: 1
+feedback_id: PO-FEEDBACK-2026-10-18-001
+product_id: secretsauce-mcp
+source:
+  type: product_owner
+  captured_from: prompt
+  captured_at: '2026-10-18T17:47:51.943122+00:00'
+  references: []
+status: CONFIRMED
+transaction:
+  parent_commit: 0a61db338023f3e41ef3e2d57f691bb0c0cbd068
+  repository_commit: null
+  pre_existing_dirty_paths:
+  - test-results/
+items:
+- id: PO-FB-125
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: This was a HUGE improvement from last version, the only remaining issue
+    is when I clicked on "Review & Apply", I'm one again shown a massive wall of text.
+  normalized: The updated version is a major improvement.
+  scope:
+  - service-review-and-apply
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-126
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: This was a HUGE improvement from last version, the only remaining issue
+    is when I clicked on "Review & Apply", I'm one again shown a massive wall of text.
+  normalized: Review & Apply still presents an overwhelming wall of text.
+  scope:
+  - service-review-and-apply
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-127
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: I think it would be helpful to show them as two columns, "Before" and
+    "After" and then group per section, so it's easy to see.
+  normalized: Make the review easy to compare, grouping settings by section.
+  scope:
+  - service-review-and-apply
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-128
+  classification: IDEA_OR_QUESTION
+  confirmation: CONFIRMED
+  original: I think it would be helpful to show them as two columns, "Before" and
+    "After" and then group per section, so it's easy to see.
+  normalized: Use Before and After columns for the grouped comparison.
+  scope:
+  - service-review-and-apply
+  tags: []
+  authority:
+    product_intent: exploratory
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-129
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: Also use Green to indicate addition, red to indicate removal and yellow
+    to indicate changed (if this is feasible).
+  normalized: If feasible, distinguish additions in green, removals in red, and changes
+    in yellow.
+  scope:
+  - service-review-and-apply
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-130
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: Having it as a tabbed view where one tab is "Changes" and the 2nd tab
+    is "New settings" (or similar).
+  normalized: Provide separate tabs for Changes and the complete new settings; the
+    second tab label may be refined.
+  scope:
+  - service-review-and-apply
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-131
+  classification: PREFERENCE
+  confirmation: CONFIRMED
+  original: I like the final box with security exceptions, but I'd inStead show a
+    "Approve changes" button that opens a modal which says "This will apply changes
+    and make this the active configuration", "Continue", "Cancel".
+  normalized: Retain the useful security-exception information.
+  scope:
+  - service-review-and-apply
+  tags: []
+  authority:
+    product_intent: advisory
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-132
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: I like the final box with security exceptions, but I'd inStead show a
+    "Approve changes" button that opens a modal which says "This will apply changes
+    and make this the active configuration", "Continue", "Cancel".
+  normalized: Provide an Approve changes button that opens a confirmation modal explaining
+    that continuing applies the changes as the active configuration, with Continue
+    and Cancel actions.
+  scope:
+  - service-review-and-apply
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-133
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: However, if there's security exceptions, then it says "Before change can
+    be applied, please review and acknowledge the following" and list the security
+    exceptions and checkboxes, meaning continue only works if all boxes are checked.
+  normalized: When security exceptions exist, the confirmation modal must ask the
+    user to review and acknowledge each listed exception; Continue is enabled only
+    after all checkboxes are checked.
+  scope:
+  - service-review-and-apply
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-134
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: 'Lastly, in the security exceptions list, you m,ake references saying
+    that "TLS verification disabled: primary" which doesn''t make sense since a) I
+    believe it''s for all endpoints? and b) user has never seen "primary", so perhaps
+    show its name instead.'
+  normalized: The TLS exception text uses primary, an identifier the user has not
+    encountered and does not understand.
+  scope:
+  - service-review-and-apply
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-135
+  classification: IDEA_OR_QUESTION
+  confirmation: CONFIRMED
+  original: 'Lastly, in the security exceptions list, you m,ake references saying
+    that "TLS verification disabled: primary" which doesn''t make sense since a) I
+    believe it''s for all endpoints? and b) user has never seen "primary", so perhaps
+    show its name instead.'
+  normalized: Clarify whether disabled TLS verification applies to all endpoints.
+  scope:
+  - service-review-and-apply
+  tags: []
+  authority:
+    product_intent: exploratory
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-136
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: 'Lastly, in the security exceptions list, you m,ake references saying
+    that "TLS verification disabled: primary" which doesn''t make sense since a) I
+    believe it''s for all endpoints? and b) user has never seen "primary", so perhaps
+    show its name instead.'
+  normalized: Identify the affected scope of security exceptions in terms the user
+    understands.
+  scope:
+  - service-review-and-apply
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-137
+  classification: IDEA_OR_QUESTION
+  confirmation: CONFIRMED
+  original: 'Lastly, in the security exceptions list, you m,ake references saying
+    that "TLS verification disabled: primary" which doesn''t make sense since a) I
+    believe it''s for all endpoints? and b) user has never seen "primary", so perhaps
+    show its name instead.'
+  normalized: Use the affected destination name instead of primary in exception descriptions.
+  scope:
+  - service-review-and-apply
+  tags: []
+  authority:
+    product_intent: exploratory
+  suggestions: []
+  ambiguity: []
+unresolved: []
+handoff:
+  reconciliation_ready: false
+  next_workflow: null

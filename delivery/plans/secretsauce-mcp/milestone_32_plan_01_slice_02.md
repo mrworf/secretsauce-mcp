@@ -22,3 +22,5 @@ Final suite result and exact SHA recorded at acceptance below.
 
 ## Acceptance
 Complete. Final `npm test -- --maxWorkers=2`:751 tests/74 files PASS in105.84s. Final `npm run build`:PASS. Browser workloads stopped before full suite. Approved HTML-only access/details rendered independently after suite for actual screenshot comparison; general appearance conforms. Final source hashes in evidence/qa/secretsauce-mcp/milestone32/tested-inputs.json. Criterion map and regression reports in acceptance directory. Exact slice02 SHA recorded by parent, not self-referentially embedded.
+
+Accepted commit provenance: `ff87637d6cda9a5744cb3c96d62db93758e2ff18`.

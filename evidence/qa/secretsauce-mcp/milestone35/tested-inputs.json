@@ -1,0 +1,12 @@
+{
+  "src/consoleServiceReview.ts": "386c043a6b1e363fb0c93e9d8f79dc789350a35291f893384f92ecf3fbdeb910",
+  "src/consoleServicePage.ts": "5e1cb481665e5dcf9e78da96e9bd0a2d36ba159f96c835ec88137d029e6749ed",
+  "src/consolePage.ts": "68d5d195df3f0219d3b25a32fa4b340e63e64d0513f9696a233e95fcedc82680",
+  "src/consoleFriendlyPage.ts": "2ca37d0f23be613014e20174dda7c73a6d7a32bad468397f6f273e967ee62c90",
+  "src/consolePresentation.ts": "e83ca65365f63230e63ec840f350cd121c7059ea30f702a749a07a7026bb7c1e",
+  "src/consoleServices.ts": "f63176a5fc6454de9088c41441168a88351fdc7be7815191e616bb8aba0c8ffc",
+  "scripts/verify-console-review-browser.mjs": "7fa84737479f4c525935b1aad8ec321ba2fe7875ec1d18e8cd65c72c9e211bf2",
+  "test/console-service-review.test.ts": "d18ffe7406b30faacf37e792e03bcae26fbfefabbb072c1555c22cf79f035d8e",
+  "package.json": "885ec1afee9dfc4f1d5f8ec2986fdd7e41e4fb3c39ad789c2b6dde4eb58f9a2d",
+  "package-lock.json": "0b96e72aa34aa005030ce4fb83b86a6c584e0dfedb6eff10d33970676da3a9d2"
+}

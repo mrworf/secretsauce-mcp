@@ -13,11 +13,11 @@ import { createGatewayServer } from '../dist/server.js';
 import { consolePeople } from '../dist/consolePeople.js';
 import { consoleNotifications } from '../dist/consoleNotifications.js';
 import { consoleServices } from '../dist/consoleServices.js';
-const directory=mkdtempSync(join(tmpdir(),'advanced-browser-')),evidence=resolve(process.env.CONSOLE_BROWSER_EVIDENCE_DIR??'evidence/ux-acceptance/secretsauce-mcp/milestone35/slice01');mkdirSync(evidence,{recursive:true});
+const directory=mkdtempSync(join(tmpdir(),'advanced-browser-')),evidence=resolve(process.env.CONSOLE_BROWSER_EVIDENCE_DIR??'evidence/ux-acceptance/secretsauce-mcp/milestone35/final');mkdirSync(evidence,{recursive:true});
 const savedNow=Date.now;let clock=savedNow();Date.now=()=>clock;let store,gateway,server,browser;const checks=[],errors=[];const password='Synthetic browser long passphrase 2026';
 try{
 process.env.AUDIT_STORAGE_DIR=join(directory,'audit');const key=join(directory,'key');writeFileSync(key,'ab'.repeat(32),{mode:0o600});execFileSync('openssl',['req','-x509','-newkey','rsa:2048','-nodes','-keyout',join(directory,'tls.key'),'-out',join(directory,'tls.crt'),'-days','1','-subj','/CN=console.example.org'],{stdio:'ignore'});
-const cfg=validateConfig({server:{listen:'127.0.0.1:8080',mcp_path:'/mcp'},auth:{mode:'bearer',bearer:{token_env:'SYNTHETIC'}},services:{baseline:{name:'Assigned example',no_auth:true,destinations:[{id:'primary',base_url:'https://api.example.org'}],access:{users:[]},policy:{mode:'deny',rules:[]}}}},{SYNTHETIC:'synthetic-browser-gateway'});
+const cfg=validateConfig({server:{listen:'127.0.0.1:8080',mcp_path:'/mcp'},auth:{mode:'bearer',bearer:{token_env:'SYNTHETIC'}},services:{baseline:{name:'Container manager',description:'Container API',no_auth:false,credentials:[{id:'api_key',usage:{kind:'header',name:'X-API-Key',prefix:'',suffix:'',enforce:true},source:{kind:'env',name:'EXAMPLE_KEY'}}],destinations:[{id:'primary',base_url:'https://api.example.org'}],access:{users:[]},policy:{mode:'deny',rules:[{id:'old',effect:'deny',priority:1000,methods:['POST'],paths:['/api/legacy/settings'],reason:'Block legacy settings'}]}}}},{SYNTHETIC:'synthetic-browser-gateway',EXAMPLE_KEY:'synthetic-only-sensitive-value'});
 store=new ConsoleStore(join(directory,'console'),key,{config:cfg});gateway=createGatewayServer(cfg,{consoleStore:store});server=createServer({key:readFileSync(join(directory,'tls.key')),cert:readFileSync(join(directory,'tls.crt'))},(req,res)=>gateway.emit('request',req,res));server.listen(0,'127.0.0.1');await once(server,'listening');const origin='https://console.example.org:'+server.address().port;
 const proof=store.issueProof(origin,clock-30000),setup=store.beginSetup({proof,name:'Example instance',origin,email:'owner@example.org',password},clock-30000);store.completeSetup(setup.token,totp(setup.seed,clock-30000),true,clock-30000);
 browser=await chromium.launch({headless:true,args:['--host-resolver-rules=MAP console.example.org 127.0.0.1','--no-proxy-server']});
@@ -38,6 +38,11 @@ const owner=await context();await login(owner.page,'owner@example.org',setup.see
 
 await page.goto(origin+'/console?service=baseline&edit=0&mode=guided');
 await page.locator('#service-description').fill('Manage containers and view server health');
+await page.getByRole('link',{name:'Advanced',exact:true}).click();
+const proposed=JSON.parse(await page.locator('#advanced-json').inputValue());
+proposed.destinations[0].base_url='https://containers.example.org';proposed.destinations[0].hosts=[{exact:'containers.example.org'}];
+proposed.policy.rules=[{id:'settings',effect:'deny',priority:1000,methods:['POST','PUT','CUSTOM'],paths:['^/api/settings(?:/.*)?$'],reason:'Protect server settings',binary_response:{scan:false,max_size:'1kb'}}];
+await page.locator('#advanced-json').fill(JSON.stringify(proposed,null,2));await page.getByRole('button',{name:'Return to guided forms',exact:true}).click();
 await page.getByRole('button',{name:'Review & apply',exact:true}).click();
 await expect(page.getByRole('tab',{name:'Changes',exact:true})).toHaveAttribute('aria-selected','true');
 await expect(page.locator('#review-panel-0')).toContainText('Manage containers and view server health');
@@ -47,7 +52,33 @@ await expect(page.getByRole('tab',{name:'New settings',exact:true})).toBeFocused
 await page.keyboard.press('Home');await expect(page.locator('#review-panel-0')).toBeVisible();
 if(snapshot!==JSON.stringify(store.state.managed))throw Error('Tabs mutated review');
 await shot(page,'changes-desktop');await narrow(page,'changes');await text200(page,'changes');
+await page.getByRole('tab',{name:'New settings',exact:true}).click();
+const rendered=await page.locator('#review-panel-1 code').allTextContents();const expected=[];function leaves(v){if(v===null||typeof v!=='object'){expected.push(typeof v==='string'?JSON.stringify(v):String(v));return;}if(!Object.keys(v).length){expected.push(Array.isArray(v)?'[]':'{}');return;}for(const child of Object.values(v))leaves(child);}leaves(store.state.managed.services.baseline.review.candidate);if(JSON.stringify(rendered.sort())!==JSON.stringify(expected.sort()))throw Error('Complete proposal lost or invented literal values');
+await expect(page.locator('#review-panel-0')).not.toContainText('X-API-Key');
+await expect(page.locator('#review-panel-1')).toContainText('CUSTOM');await expect(page.locator('#review-panel-1')).toContainText('false');await expect(page.locator('#review-panel-1')).toContainText('^/api/settings(?:/.*)?$');
+await shot(page,'new-desktop');await narrow(page,'new');await text200(page,'new');
+if(snapshot!==JSON.stringify(store.state.managed))throw Error('New settings mutated review');
+if((await page.locator('body').innerText()).includes('synthetic-only-sensitive-value'))throw Error('Review exposed credential');
 await page.getByRole('button',{name:'Back to edit',exact:true}).click();await expect(page.locator('#service-edit-state')).not.toContainText('Unsaved');
 checks.push('Guided saved draft reaches Changes; keyboard tabs are read-only and preserve exact bound server review; returning to edit does not dirty.');
+// Existing apply checks stay authoritative after tab navigation.
+await page.getByRole('button',{name:'Review & apply',exact:true}).click();
+await expect(page.getByRole('button',{name:'Apply reviewed changes',exact:true})).toBeVisible();
+const bound=store.state.managed.services.baseline.review;
+await page.locator('form input[type=checkbox]').check();store.state.managed.revision++;
+await page.getByRole('button',{name:'Apply reviewed changes',exact:true}).click();await expect(page.locator('#errors')).toContainText('Stale');
+store.state.managed.revision--;store.state.users[0].role='Auditor';
+let denied=false;try{manager.review(session,{id:'baseline'});}catch{denied=true;}if(!denied)throw Error('Read-only review allowed');store.state.users[0].role='Owner';
+checks.push('Guided plus Advanced exact custom methods/regex/binary options retained in both views; stale apply and Auditor review rejected.');
+// Isolated rendering boundaries do not perform writes or leak secret-bearing storage.
+await page.evaluate(()=>{renderReview({...serviceEditor.detail,review:'synthetic',current:null,proposed:{name:'New service',no_auth:true,destinations:[{id:'primary',base_url:'https://api.example.org'}]},scope:{services:['baseline'],settings:[]},base:0,grants:[],exceptions:[],disruption:''});});
+await expect(page.locator('#review-panel-0')).toContainText('No active configuration yet');
+await page.evaluate(()=>{const data={name:'Same',no_auth:true};renderReview({review:'synthetic',current:data,proposed:data,scope:{services:['baseline'],settings:[]},base:0,grants:[],exceptions:[],disruption:''});});await expect(page.locator('#review-panel-0')).toContainText('No configuration changes');await page.getByRole('tab',{name:'New settings'}).click();await expect(page.locator('#review-panel-1')).toContainText('Same');
+if(!await page.evaluate(()=>localStorage.length===0&&sessionStorage.length===0))throw Error('Persistent review storage');
+checks.push('No-baseline additions/no-change full proposal reachable; no browser persistent review state.');
+await page.evaluate(()=>{const proposed=JSON.parse('{"name":"Typed boundary","custom":{"mode":false,"__proto__":0,"constructor":null,"empty":"","array":[],"object":{},"text":"Removed","ordered":["second","first"]}}');renderReview({review:'synthetic',current:{name:'Typed boundary'},proposed,scope:{services:['baseline'],settings:[]},base:0,grants:[],exceptions:[],disruption:''});});
+await page.getByRole('tab',{name:'New settings'}).click();const typed=await page.locator('#review-panel-1').innerText();for(const literal of ['mode','__proto__','constructor','false','0','null','""','[]','{}','"Removed"','"second", "first"'])if(!typed.includes(literal))throw Error('Typed proposal lost literal');
+checks.push('Renderer boundary preserves typed false/zero/null/empty collections/text markers, exact custom own-property names and array order.');
+
 if(errors.length)throw Error('Browser runtime errors: '+errors.join(';'));writeFileSync(join(evidence,'browser-report.json'),JSON.stringify({result:'PASS',checks},null,2)+'\n');console.log('Service review browser PASS');
 }finally{Date.now=savedNow;await browser?.close();if(server?.listening)await new Promise(r=>server.close(r));gateway?.emit('close');store?.close();rmSync(directory,{recursive:true,force:true});}

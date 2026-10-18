@@ -1,0 +1,9 @@
+{
+  "result": "PASS",
+  "checks": [
+    "Guided saved draft reaches Changes; keyboard tabs are read-only and preserve exact bound server review; returning to edit does not dirty.",
+    "Guided plus Advanced exact custom methods/regex/binary options retained in both views; stale apply and Auditor review rejected.",
+    "No-baseline additions/no-change full proposal reachable; no browser persistent review state.",
+    "Renderer boundary preserves typed false/zero/null/empty collections/text markers, exact custom own-property names and array order."
+  ]
+}

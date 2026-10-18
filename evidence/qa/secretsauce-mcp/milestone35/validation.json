@@ -1,0 +1,18 @@
+{
+  "result": "PASS",
+  "full_suite": {
+    "command": "npm test -- --maxWorkers=2",
+    "files": 76,
+    "tests": 765,
+    "duration_seconds": 113.91,
+    "concurrent_browser_or_docker": false
+  },
+  "build": {
+    "command": "npm run build",
+    "result": "PASS"
+  },
+  "focused_tests": 8,
+  "browser": "evidence/ux-acceptance/secretsauce-mcp/milestone35/final/browser-report.json",
+  "inputs": "tested-inputs.json",
+  "previous_run": "Superseded mixed test/source snapshot while literal Order repair was introduced; final frozen run is authoritative."
+}

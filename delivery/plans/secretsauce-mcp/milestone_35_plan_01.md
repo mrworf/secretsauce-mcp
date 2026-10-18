@@ -18,8 +18,8 @@ Only service review presentation. Exclude M36 approval dialog/TLS wording, globa
 ## Slice index
 | Slice | Plan | Outcome | Dependencies | Status | Commit | Evidence |
 |---|---|---|---|---|---|---|
-|01|milestone_35_plan_01_slice_01.md|Grouped changes and local tabs|none|complete|parent records exact SHA|slice01 browser +5 focused tests|
-|02|milestone_35_plan_01_slice_02.md|Complete grouped new settings|01|planned||final browser/full suite|
+|01|milestone_35_plan_01_slice_01.md|Grouped changes and local tabs|none|complete|7816f7ccd002089e00043378bd04deec83529a3d|slice01 browser +5 focused tests|
+|02|milestone_35_plan_01_slice_02.md|Complete grouped new settings|01|complete|parent records exact SHA|final browser +765 tests/build|
 
 ## Cross-slice concerns
 No storage/API migration. Retain server authorization, sanitized read model, review identity/dependencies and exact exceptions. No new network calls on tabs. Immediate credential/access metadata stays outside pending changes. Existing audit and atomic publication untouched. Synthetic local HTTPS only; no external clients/live instance.
@@ -32,3 +32,5 @@ Revert presentation commits; no data migration or retained configuration change.
 
 ## Execution notes
 Planning completed before production edits. Baseline accepted M34:757 tests/75files and build. No known baseline failure.
+
+Final milestone evidence: evidence/qa/secretsauce-mcp/milestone35/acceptance.md and tested-inputs.json; evidence/ux-acceptance/secretsauce-mcp/milestone35/visual-review.md. All five criterion groups delivered and validated. No production schema/runtime or live-instance change. Parent owns milestone acceptance/status.

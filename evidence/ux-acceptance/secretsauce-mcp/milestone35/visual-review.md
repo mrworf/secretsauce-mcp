@@ -1,0 +1,11 @@
+# M35 actual visual acceptance
+
+Approved authority: UX5 / UX-DESIGN-005; reference workflow/definition/drafts/product-ux/web-console-feedback-004/{changes-desktop,changes-narrow,new-desktop,new-narrow}.png. Actual synthetic HTTPS browser evidence: final/ with 1440×1031 desktop,390×844 narrow,320×800 boundary and320×800 at200% text. The harness records positive behavioral checks in browser-report.json; page and text-range overflow assertions pass.
+
+Inspected final actual desktop and narrow compositions against the matching approved review states. Warm accent tabs, pale neutral shell, white bordered cards, section hierarchy, equal Before/After columns and per-pair narrow stacking are retained. Added/removed/changed use green/red/amber plus explicit symbols/text. New settings uses two-column section cards with domain-specific server/host/TLS/credential/rule rows, and one-column narrow layout. Values wrap without clipping. Keyboard tabs use one tab stop, arrows/Home/End, selected state, associated panels and visible focus.
+
+Fixture intentionally includes more exact supported data than the prototype: custom HTTP method, regex, binary scan/size options, explicit header ownership, exact empty prefix/suffix and retained normalized fields. Hence it is taller than the short illustrative prototype. Removed/added rule identities are paired explicitly, never claimed to be a rename. Stable order changes have separate explicit labels. Additional custom values keep exact typed literals and own-property names; no whole-object JSON dump or nested accordion is used.
+
+The final inline acknowledgment/apply footer remains the existing M35-compatible interface. Its replacement and readable security exception scope are explicitly M36 scope, not a visual waiver. Header now has service display name/revision, return-to-edit link and concise truthful scope/disruption. Final parent visual inspection accepted this general direction before the final full suite.
+
+Review iterations corrected generic nested full-proposal and rule trees into domain-specific compact rows, removed duplicate header warnings, and clarified stable identity/ordering labels. Historical slice01 evidence is retained as that commit's evidence; final/ is the cumulative milestone evidence.

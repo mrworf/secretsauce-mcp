@@ -1,3 +1,90 @@
+# Readiness report — approved service review feedback 004
+
+## 1. Overall readiness status
+
+**READY** — M35 then M36 form an executable bounded delta with verified local facilities and explicit completed providers; parent planning commit/provenance closeout is still required before implementation handoff.
+
+## 2. Scope and evidence basis
+
+Packet `delivery/milestones/secretsauce-mcp`, manifest `status.yaml`, approved UX5 source transaction `d84ac2265bd6c055a6da5edfe5f3d586137d30e9`; transaction start `c83135ab09113dde5ffd39b134a0ef3e9dec5fc4`. All 27 contracts were loaded for prerequisite/section inventory and dependency traversal; completed M10–34 documents/records and prior goal compared byte-for-byte to HEAD and preserved. Active additions are M35–36 only. Existing compiler/root dirty paths and unrelated `test-results/` are excluded from child ownership. Facts below come from actual commands or referenced source; clean execution is a conceptual simulation, not fresh feature acceptance.
+
+## 3. Automatically completed prerequisites
+
+PRE-045–048 verified using source hashes/history, complete dependency graph, package/CI/harness inspection, installed versions/dependencies and disposable actual HTTPS/Chromium keyboard/screenshot probe. Added only readiness documentation to M35/M36; no bootstrap/product changes, live service action or independent child commit.
+
+## 4. Confirmation-gated work
+
+None. Existing user authorization covers isolated local headless testing. Expected sandbox EPERM required a narrow permission retry of the same disposable facility probe, which passed.
+
+## 5. Required user actions
+
+None for this delta. No account, secret, DNS or live-instance setup required.
+
+## 6. Missing or unresolved prerequisites
+
+None. M35 output (PRE-049) is explicitly earlier-owned; new feature fixtures (PRE-050) are consuming-milestone work, not unresolved bootstrap.
+
+## 7. Dependency graph
+
+```mermaid
+flowchart LR
+  R[Declared repository/local facilities] -->|PRE-045–047| M35
+  R -->|PRE-045–047| M36
+  A[Completed M27/M33] -->|PRE-048| M35
+  B[Completed M28] -->|PRE-048| M36
+  M35 -->|PRE-049| M36
+```
+
+PRE-050 is local to both consumers. No external/unresolved node. Whole manifest traversal confirms every provider exists earlier, no cycle or missing transitive provider; no dependency correction needed.
+
+## 8. Proposed milestone order
+
+Declared and proposed M35 → M36 unchanged. M35 depends on completed27/33; M36 depends on35/completed28. Completed M10–34 remain immutable history.
+
+## 9. Milestone 0
+
+Not required. Shared facilities already exist; comparison/dialog fixtures belong in their consuming milestones.
+
+## 10. Per-milestone readiness
+
+- M10–34: completed contracts and accepted provider records unchanged; existing Preconditions/Readiness checks retained. No reacceptance or new gates.
+- M35: PRE-045–048 available; PRE-050 owned during implementation. Preconditions and executable inspections now present. Ready first; no blocker.
+- M36: PRE-045–048 available; PRE-049 supplied by prior M35; PRE-050 owned during implementation. Ready in sequence after M35 acceptance; no external blocker.
+
+## 11. Clean-environment simulation
+
+PASS (conceptual). Fresh checkout installs locked packages using documented Node/npm; OpenSSL creates temporary HTTPS certificate, writable temp storage holds isolated synthetic state; declared Playwright installs Chromium into disposable explicit cache. Actual facility probe confirms this host can run it under authorized loopback permissions. M35 uses completed repository editing/navigation/review providers. M36 starts only after committed M35 evidence and retains completed M28 scope semantics. Tests/fixtures require no undeclared service, credentials, prior local cache or running review instance. Full suite uses two workers and runs separately from browser/Docker. No fresh full suite, build, or Docker recovery drill was run as planning ceremony; milestone acceptance owns those required checks. Real-client exception remains unchanged; no live interoperability claim.
+
+## 12. Commands run and results
+
+- `git status --short`, `git rev-parse HEAD`: recorded transaction/dirty ownership.
+- `node --version`, `npm --version`, `openssl version`: v26.11.1,12.2.0,3.6.5.
+- `npm ls --depth=0`: PASS all declared packages including Playwright1.64.0.
+- Python YAML/SHA256/ancestry/preservation graph checks: PASS27 records,17 authority artifacts, upstream commit, unchanged completed history/goal.
+- `git diff d0dffc6 HEAD -- package.json package-lock.json Dockerfile .github/workflows/ci.yml`: empty; prior isolated install evidence remains relevant.
+- Disposable Node HTTPS + Chromium probe: initial default loopback EPERM; identical narrow permitted invocation PASS HTTPS navigation, keyboard focus, screenshot, Chromium156.0.8078.4; temporary files removed and server/browser closed.
+- `git diff --check`: PASS.
+
+## 13. Files changed
+
+- `delivery/milestones/secretsauce-mcp/35-grouped-service-review.md`: prerequisite IDs and checks.
+- `delivery/milestones/secretsauce-mcp/36-service-approval-and-exception-scope.md`: prerequisite IDs and checks.
+- `delivery/readiness/secretsauce-mcp/prerequisite-manifest.md`: current PRE-045–050, historical text preserved.
+- `delivery/readiness/secretsauce-mcp/readiness-report.md`: current audit, historical text preserved.
+- `workflow/delivery-planning/results/readiness.yaml`: machine-readable parent adapter and final packet digests.
+
+## 14. Remaining blockers
+
+None. Parent owns combined planning publication; no child commit was created.
+
+## 15. Exact recommended next step
+
+In `/home/ha/projects/secretsauce`, parent Delivery Planning validates and commits its combined compiler/readiness transaction, finalizes handoff provenance, then invokes `milestone-delivery-orchestrator` on M35–36 starting M35 under the user's existing autonomous authorization.
+
+## Historical readiness
+
+Unchanged earlier report follows for historical provenance only.
+
 # Approved feedback 003 milestone readiness report
 
 ## Overall readiness status

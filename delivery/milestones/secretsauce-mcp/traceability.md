@@ -1,3 +1,19 @@
+# Current feedback 004 traceability
+
+Only adopted REC-RM-027–029 create implementation obligations. Exact source revisions/commits: [status](status.yaml). UX-DESIGN-005 approves UX5; historical prototype pending banners are superseded. Existing M10–34 behavior and history are preservation baseline.
+
+| Required remediation | Milestone | Authority | Evidence provenance |
+| --- | --- | --- | --- |
+| REC-RM-027 | M35 | CONFIG-03, BASE-01; UX-IN17 comparison, UX-C54/55/58 | REC-035; PO-FB-125–130 |
+| REC-RM-028 | M36 | CONFIG-03, POLICY-04, STATE-02; UX-IN17 confirmation, UX-C56/58 | REC-036; PO-FB-131–133 |
+| REC-RM-029 | M36 | POLICY-04, AUTHZ-04; UX-IN17 TLS language, UX-C57/58 | REC-037; PO-FB-134–137 |
+
+UX-C54/55 belongs to M35 and is regression-qualified at M36, not duplicate implementation. UX-C56/57 belongs to M36. UX-C58 and UX-V05/C42 matching visual acceptance constrain both. SEC-01/02/03, AUDIT-01/04, STATE-01/02 and exact sanitization/authorization/atomic apply govern both. UX-R07/V07/A08 provides responsive, visual and accessible mechanics. Required scope, grants and disruption remain visible; current immediate values/access are not pending changes.
+
+Implementation required: all three resolved remediations mapped above. Governing constraints: validated UX5 and preserved architecture/security/compatibility. Context: observations, research, example screenshots and findings, with no independent implementation. Excluded: unadopted mechanisms, global Settings/SMTP, new permissions, runtime TLS, credential lifecycle, recovery or deployment changes; accepted scanning limitation is not new repair work. No blocked, deferred required or unmapped item remains. Earlier feedback mappings follow unchanged as historical evidence.
+
+---
+
 # Current feedback 003 traceability
 
 Authority: committed validated Product Definition next_handoff and adopted REC-RM-015–026. Exact source revisions and producer commits are in [status](status.yaml). Findings/feedback are provenance; only their adopted desired outcomes create obligations. No source authority was rewritten by compilation.

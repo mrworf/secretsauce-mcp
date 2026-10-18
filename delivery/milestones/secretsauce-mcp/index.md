@@ -1,3 +1,37 @@
+# Service review delivery delta — feedback 004
+
+Mode: **CHANGE_PLAN**, product `secretsauce-mcp`. M10–34 are completed and unchanged; M35–36 are pending. [Status](status.yaml) is authoritative for current execution status; tables under historical sections reflect their compilation date.
+
+## Authority and source classes
+
+[Validated definition package](../../../workflow/definition/definition-package.yaml), revision `sha256:a8282a031ef8c76e5b80f620e30b26eb202763b5eb65b4a091fd2435ac6e449b`, producer `d84ac2265bd6c055a6da5edfe5f3d586137d30e9`, and [effective handoff](../../../workflow/definition/state.yaml#next_handoff) establish current eligibility. Required work is adopted REC-RM-027–029 from [REC009](../../../workflow/reconciliation/REC-RUN-009/03-remediation-backlog.md). Immutable REC009 historical revalidation flags are satisfied by committed targeted definition revalidation, not rewritten. UX5/UX-DESIGN-005, CONFIG-03/POLICY-04, architecture/security and AGENTS.md are governing constraints. Findings, screenshots and observations are context; prototype omissions do not remove capabilities. No blocked or unresolved required item.
+
+## Current milestones and dependencies
+
+| ID | Outcome | Direct providers | Initial status |
+| --- | --- | --- | --- |
+| M35 | [Compare service changes and inspect complete new settings](35-grouped-service-review.md) | M27, M33 | pending |
+| M36 | [Confirm reviewed changes with understandable security exceptions](36-service-approval-and-exception-scope.md) | M35, M28 | pending |
+
+M35 → M36: confirmation consumes the reviewed comparison context. M27/M33 supply existing editing/navigation; M28 supplies effective destination TLS semantics. Completed providers are not reopened. No generic foundation or M0. M35 is the earliest integrated checkpoint; no confirmation redesign must be completed before demonstrating its comparison outcome.
+
+## Granularity assessment
+
+| Milestone | Observable checkpoint | Boundary and coupling |
+| --- | --- | --- |
+| M35 | Edit a representative imported service, save and open review; compare changed section pairs, inspect the complete proposal, then return to edit without mutation. | Comparison and complete-proposal tabs share one immutable reviewed scope and must agree; confirmation and exception wording remain a separate independently acceptable outcome. |
+| M36 | From the grouped review, open and cancel confirmation, then acknowledge every effective exception and apply exactly the reviewed service; stale or unauthorized attempts remain rejected. | The confirmation and readable exception scope are one approval decision: each visible risk must map to its existing exact acknowledgment identity. TLS transport and independent comparison rendering are not rebuilt. |
+
+PASS: no unresolved granularity findings. Shared code/testing does not justify merging both outcomes. TLS scope and exact risk identities remain inseparable from the acknowledgment decision; no standalone copy sweep or lower-layer scaffolding milestone. No implementation slices are prescribed.
+
+## Validation and exclusions
+
+Each milestone owns focused tests, positive/negative external-input and state evidence, actual HTTPS screenshots against approved feedback004 at matching desktop/narrow states, keyboard and 200% text checks, then full bounded-worker suite/build. M36 owns combined review-to-activation acceptance, with prior functionality regression; no deployment/real-user data. Synthetic representative inputs include custom methods, nested options, regex and array reorder; they do not certify external client connections. Existing explicit real-LLM exception remains. All supported capability/literal and review security contracts survive. Global Settings/SMTP, TLS runtime, backup/recovery redesign, new permissions/tenancy and unrelated repairs are excluded. Readiness auditing is delegated; this is only a complete compilation packet.
+
+---
+
+## Historical compilation index (status at its compilation date)
+
 # SecretSauce web console delivery packet
 
 **Mode:** CHANGE_PLAN. **Product:** `secretsauce-mcp`. Completed M10–24 and earlier legacy history are preserved; M25–34 are pending. Only adopted feedback 003 remediation is new scope.

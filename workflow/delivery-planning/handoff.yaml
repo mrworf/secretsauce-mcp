@@ -6,52 +6,35 @@ source:
   mode: CHANGE_PLAN
   type: validated-definition-change-handoff
   path: workflow/definition/definition-package.yaml
-  revision: sha256:7f417f6965b95f3451144126133831ec1d5c62daee6a148d3606e7552f0b134c
-  repository_commit: d0dffc6ffbc47f114dc232abedf40f50db3e52f3
+  revision: sha256:a8282a031ef8c76e5b80f620e30b26eb202763b5eb65b4a091fd2435ac6e449b
+  repository_commit: d84ac2265bd6c055a6da5edfe5f3d586137d30e9
   handoff: workflow/definition/state.yaml#next_handoff
   reconciliation:
-    id: REC-RUN-008
-    path: workflow/reconciliation/REC-RUN-008/reconciliation-result.yaml
-    result_revision: sha256:1018e24f89041935175c94108faa5339c6d09f2c4f9a15c244df5378d4177432
-    repository_commit: 78b333eda885731abf3e9f99c401c64c5f00f148
+    id: REC-RUN-009
+    path: workflow/reconciliation/REC-RUN-009/reconciliation-result.yaml
+    result_revision: sha256:abe2992d0c00437f54a8770d353c1da255188d7aeee123046407d4c403d97185
+    repository_commit: 7399233a321218da5cbef765d4183824b56de966
     change_ids:
-    - REC-IMPACT-008
+    - REC-IMPACT-009
     remediation_ids:
-    - REC-RM-015
-    - REC-RM-016
-    - REC-RM-017
-    - REC-RM-018
-    - REC-RM-019
-    - REC-RM-020
-    - REC-RM-021
-    - REC-RM-022
-    - REC-RM-023
-    - REC-RM-024
-    - REC-RM-025
-    - REC-RM-026
+    - REC-RM-027
+    - REC-RM-028
+    - REC-RM-029
 planning:
-  parent_commit: e975b171fac96167f0909cf588b5022842a6950b
-  repository_commit: 49a58c37bfea8b0c3e47bd2f7b8919375c2cfa52
+  parent_commit: c83135ab09113dde5ffd39b134a0ef3e9dec5fc4
+  repository_commit: null
 milestones:
   manifest: delivery/milestones/secretsauce-mcp/status.yaml
-  packet_revision: sha256:c300ee773a8934d6249351dc6d1aa68774d7474ae20fdefef313bab0df0cd3de
+  packet_revision: sha256:cb97bdc03c03bd5b0a6974e3ae5d39efa58b6b1f75cda08a7d2826e30b18f4f9
   active_milestones:
-  - '25'
-  - '26'
-  - '27'
-  - '28'
-  - '29'
-  - '30'
-  - '31'
-  - '32'
-  - '33'
-  - '34'
+  - '35'
+  - '36'
 readiness:
   status: READY
   prerequisite_manifest: delivery/readiness/secretsauce-mcp/prerequisite-manifest.md
   result: delivery/readiness/secretsauce-mcp/readiness-report.md
   adapter: workflow/delivery-planning/results/readiness.yaml
-  packet_revision: sha256:c300ee773a8934d6249351dc6d1aa68774d7474ae20fdefef313bab0df0cd3de
+  packet_revision: sha256:cb97bdc03c03bd5b0a6974e3ae5d39efa58b6b1f75cda08a7d2826e30b18f4f9
 m0:
   present: false
   milestone: null
@@ -77,13 +60,16 @@ visual_acceptance:
   requirements:
   - UX-V05
   - UX-C42
-  - UX-C43
-  - UX-C53
-  approved_reference: workflow/definition/drafts/product-ux/web-console-feedback-003/index.md
+  - UX-C54
+  - UX-C55
+  - UX-C56
+  - UX-C57
+  - UX-C58
+  approved_reference: workflow/definition/drafts/product-ux/web-console-feedback-004/index.md
   required: Actual browser screenshots at matching approved states and viewports; fix material deviations
     or obtain scoped approval. Functional checks alone insufficient.
 next:
   workflow: implementation
   recommended_skill: milestone-delivery-orchestrator
-  start_milestone: '25'
+  start_milestone: '35'
 implementation_started: false

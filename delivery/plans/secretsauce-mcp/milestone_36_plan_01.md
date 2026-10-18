@@ -8,7 +8,7 @@ Deliver REC-RM-028/029 and all requirements of milestone36. Preserve M35, exact 
 ## Slice index
 |Slice|Plan|Outcome|Status|Commit|
 |---|---|---|---|---|
-|01|milestone_36_plan_01_slice_01.md|Confirm exact reviewed changes with individually explained exceptions and truthful completion recovery|complete|slice payload; exact SHA recorded by root acceptance|
+|01|milestone_36_plan_01_slice_01.md|Confirm exact reviewed changes with individually explained exceptions and truthful completion recovery|complete|c7b2a1dd9c9542f922d49549907d7f62be5c29d0|
 
 One coherent vertical slice: exception labels and approval belong to the same decision and cannot be split without duplicating acceptance. Written planning gate completed before production.
 

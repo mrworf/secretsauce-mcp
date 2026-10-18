@@ -23,7 +23,7 @@ source:
 status: CONFIRMED
 transaction:
   parent_commit: 369a379b016664017d2d7c3ccd7c0d92cc4286c3
-  repository_commit: null
+  repository_commit: facc26dcf8cb488ff1204091b18a5a9179a7ba51
   pre_existing_dirty_paths:
   - test-results/
   owned_paths:
@@ -1276,5 +1276,5 @@ items:
   - PO-FB-087
 unresolved: []
 handoff:
-  reconciliation_ready: false
-  next_workflow: null
+  reconciliation_ready: true
+  next_workflow: product-reconciliation

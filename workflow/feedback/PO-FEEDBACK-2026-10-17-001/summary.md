@@ -111,4 +111,8 @@ No unresolved questions remain.
 - Observations are reported evidence.
 - Ideas and questions are exploratory.
 
-Reconciliation ready: **false** pending producer commit and provenance closeout. No product, UX, or implementation changes are included.
+Reconciliation ready: **true**. No product, UX, or implementation changes are included.
+
+Transaction payload: `facc26dcf8cb488ff1204091b18a5a9179a7ba51`.
+
+Run product-reconciliation using `workflow/feedback/PO-FEEDBACK-2026-10-17-001/feedback.yaml`.

@@ -13,7 +13,14 @@ source:
     scope: Access and policy, rule management, tester, import blocker, browser navigation; 00:00:01–00:08:42
   excerpt_convention: Exact excerpts; blank lines separate successive transcript cues. Locators use recording-local
     times. No audio or runtime inspection performed.
-status: NEEDS_CONFIRMATION
+  clarifications:
+  - original: its required, ie, if the key is still in-use, delete would only clear, and the message should
+      state that
+    resolves:
+    - PO-UNRESOLVED-004
+    meaning: 'Referenced-value clearing is required: Delete clears only the value, retains the in-use
+      key, and explains that behavior.'
+status: CONFIRMED
 transaction:
   parent_commit: 369a379b016664017d2d7c3ccd7c0d92cc4286c3
   repository_commit: null
@@ -355,40 +362,37 @@ items:
   suggestions: []
   ambiguity: []
 - id: PO-FB-065
-  classification: IDEA_OR_QUESTION
-  confirmation: NEEDS_CONFIRMATION
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
   original: 'discarding a draft never undoes creation, replacement, or deletion. So deleting the value,
     if it''s still referenced,
 
 
     then we should probably just wipe out the value instead.'
   source_locator: Recording 1 00:06:21–00:06:50
-  normalized: Consider clearing a referenced credential value while retaining its key instead of blocking
-    deletion.
+  normalized: When a credential key is still in use, Delete clears only its value and retains the key.
   scope:
   - credential-deletion
   tags: []
   authority:
-    product_intent: unresolved
+    product_intent: authoritative
   suggestions: []
-  ambiguity:
-  - Confirm whether clearing a referenced value is required behavior or only an option to evaluate.
+  ambiguity: []
 - id: PO-FB-066
-  classification: IDEA_OR_QUESTION
-  confirmation: NEEDS_CONFIRMATION
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
   original: it should say some- something to the effect that this, uh, this key is in use, so proceeding
     with the delete will simply wipe out the value, but the key will persist.
   source_locator: Recording 1 00:06:30–00:06:50
-  normalized: If referenced-value clearing is selected, explain that the key remains and only its value
-    is cleared.
+  normalized: Before proceeding with Delete on an in-use credential key, explain that only its value will
+    be cleared and the key will remain.
   scope:
   - credential-deletion
   tags: []
   authority:
-    product_intent: unresolved
+    product_intent: authoritative
   suggestions: []
-  ambiguity:
-  - Confirm whether clearing a referenced value is required behavior or only an option to evaluate.
+  ambiguity: []
 - id: PO-FB-067
   classification: DIRECTIVE
   confirmation: CONFIRMED
@@ -1270,23 +1274,7 @@ items:
   ambiguity: []
   clarifies:
   - PO-FB-087
-unresolved:
-- id: PO-UNRESOLVED-004
-  item_ids:
-  - PO-FB-065
-  - PO-FB-066
-  issue: authority
-  question: Should clearing a credential value that is still referenced be required behavior, or an option
-    to evaluate while retaining a clear blocked-delete explanation?
-  options:
-  - id: A
-    meaning: Require clearing the referenced value while keeping the key, with an explanation before proceeding.
-    classification: DIRECTIVE
-  - id: B
-    meaning: Treat referenced-value clearing as an idea; require clear messaging when dependencies block
-      deletion.
-    classification: IDEA_OR_QUESTION
-  blocking_reconciliation: true
+unresolved: []
 handoff:
   reconciliation_ready: false
   next_workflow: null

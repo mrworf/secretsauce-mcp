@@ -1,12 +1,12 @@
 # PO-FEEDBACK-2026-10-17-001
 
-Status: **NEEDS_CONFIRMATION**. Source: two Product Owner transcripts covering service setup, import, and editing.
+Status: **CONFIRMED**. Source: two Product Owner transcripts and a clarification covering service setup, import, and editing.
 
 Canonical source: [feedback.yaml](feedback.yaml). Excerpts have recording-local timestamp locators. Reported behavior has not been independently verified.
 
 ## Captured feedback
 
-33 observation, 11 idea or question, 34 directive, 5 preference.
+33 observation, 9 idea or question, 36 directive, 5 preference.
 
 | ID | Class | Confirmation | Meaning |
 | --- | --- | --- | --- |
@@ -33,8 +33,8 @@ Canonical source: [feedback.yaml](feedback.yaml). Excerpts have recording-local 
 | PO-FB-062 | DIRECTIVE | CONFIRMED | Use Set or Replace value actions that open a credential entry dialog with Save and Cancel. |
 | PO-FB-063 | OBSERVATION | CONFIRMED | Credential deletion wording does not make clear whether deletion is possible or what it does. |
 | PO-FB-064 | DIRECTIVE | CONFIRMED | When dependencies prevent deletion, clearly say that deletion is blocked. |
-| PO-FB-065 | IDEA_OR_QUESTION | NEEDS_CONFIRMATION | Consider clearing a referenced credential value while retaining its key instead of blocking deletion. |
-| PO-FB-066 | IDEA_OR_QUESTION | NEEDS_CONFIRMATION | If referenced-value clearing is selected, explain that the key remains and only its value is cleared. |
+| PO-FB-065 | DIRECTIVE | CONFIRMED | When a credential key is still in use, Delete clears only its value and retains the key. |
+| PO-FB-066 | DIRECTIVE | CONFIRMED | Before proceeding with Delete on an in-use credential key, explain that only its value will be cleared and the key will remain. |
 | PO-FB-067 | DIRECTIVE | CONFIRMED | Only allow deletion of the credential key itself when it is unreferenced. |
 | PO-FB-068 | OBSERVATION | CONFIRMED | The Access view is unclear and appears to offer no usable action. |
 | PO-FB-069 | OBSERVATION | CONFIRMED | The service Activity view is satisfactory. |
@@ -98,12 +98,11 @@ Canonical source: [feedback.yaml](feedback.yaml). Excerpts have recording-local 
 
 Exploratory items retain the status-bar colors, dual colors, overview wording, initial nested tabs, footer switch placement, focused destination settings, policy tester modal, and final Guided-default presentation as suggestions. The later global mode request clarifies the initial section-level Advanced idea. The question about default allow implying only deny rules remains a question, not a rule restriction.
 
-## Confirmation needed
+## Clarification resolved
 
-Should clearing a credential value that is still referenced be required behavior, or an option to evaluate while retaining a clear blocked-delete explanation?
+Referenced-value clearing is required: Delete clears only the value, retains the in-use key, and explains that behavior.
 
-- **A:** Require clearing the referenced value while keeping the key, with an explanation before proceeding. (DIRECTIVE)
-- **B:** Treat referenced-value clearing as an idea; require clear messaging when dependencies block deletion. (IDEA_OR_QUESTION)
+No unresolved questions remain.
 
 ## Authority and handoff
 
@@ -112,4 +111,4 @@ Should clearing a credential value that is still referenced be required behavior
 - Observations are reported evidence.
 - Ideas and questions are exploratory.
 
-Reconciliation ready: **false**. Referenced-value clearing awaits confirmation; no product, UX, or implementation changes are included.
+Reconciliation ready: **false** pending producer commit and provenance closeout. No product, UX, or implementation changes are included.

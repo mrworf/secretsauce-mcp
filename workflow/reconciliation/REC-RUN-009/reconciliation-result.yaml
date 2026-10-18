@@ -5,7 +5,7 @@
   "status": "RESOLVED",
   "transaction": {
     "parent_commit": "35e6226b5a734b46bbc4b291e93ec103d8eee77c",
-    "repository_commit": null,
+    "repository_commit": "7399233a321218da5cbef765d4183824b56de966",
     "pre_existing_dirty_paths": [
       "test-results/"
     ]

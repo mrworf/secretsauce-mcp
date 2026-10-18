@@ -15,3 +15,5 @@ Status: implemented and validated; parent records final slice commit after accep
 
 ## Delivered validation
 Shared authoring dialog and effective-order list delivered. Focused 32 tests passed; final full suite 749/749 across 74 files and build passed. HTTPS M31 authoring browser and affected service/friendly-form regressions pass. Final narrow CSS correction separately covered by final browser/build; no unrelated retest. See [acceptance](../../../evidence/qa/secretsauce-mcp/milestone31/acceptance.md), final source hashes and visual comparison. No new durable AGENTS lesson; existing browser-concurrency and text-range checks followed. Commit SHA is recorded by the parent after this single slice commit.
+
+Accepted commit provenance: `af876cd48c10c497bcf4e436f8a60a0d53178b4a`.

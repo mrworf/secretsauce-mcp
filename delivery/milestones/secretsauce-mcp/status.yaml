@@ -385,22 +385,25 @@ milestones:
 - id: '31'
   title: Author policy rules in a clear list and shared dialog
   file: delivery/milestones/secretsauce-mcp/31-policy-rule-dialogs.md
+  status: completed
+  dependencies:
+  - '27'
+  completed_at: '2026-10-18T16:40:34.318194+00:00'
+  evidence: evidence/qa/secretsauce-mcp/milestone31/acceptance.md
+  notes: One rule-authoring slice; 749 tests across 74 files, build and three browser
+    suites passed. Final narrow CSS separately browser/build verified.
+  started_at: '2026-10-18T16:29:35.354790+00:00'
+  commit_hash: af876cd48c10c497bcf4e436f8a60a0d53178b4a
+- id: '32'
+  title: Understand service settings and explicit execution access
+  file: delivery/milestones/secretsauce-mcp/32-service-help-and-access.md
   status: in_progress
   dependencies:
   - '27'
   completed_at: null
   evidence: null
-  notes: Feedback 003; REC-RM-023
-  started_at: '2026-10-18T16:29:35.354790+00:00'
-- id: '32'
-  title: Understand service settings and explicit execution access
-  file: delivery/milestones/secretsauce-mcp/32-service-help-and-access.md
-  status: pending
-  dependencies:
-  - '27'
-  completed_at: null
-  evidence: null
   notes: Feedback 003; REC-RM-024
+  started_at: '2026-10-18T16:40:34.318194+00:00'
 - id: '33'
   title: Navigate service history and test policy without losing work
   file: delivery/milestones/secretsauce-mcp/33-service-navigation-and-testing.md
@@ -509,10 +512,10 @@ delivery_goal:
   - '33'
   - '34'
   execution: autonomous
-  current_milestone: '31'
-  governing_plan: delivery/plans/secretsauce-mcp/milestone_31_plan_01.md
+  current_milestone: '32'
+  governing_plan: delivery/plans/secretsauce-mcp/milestone_32_plan_01.md
   blockers: []
-  resume_point: Deliver M31 using its minimal-slice transaction; prior milestones
+  resume_point: Deliver M32 using its minimal-slice transaction; prior milestones
     accepted.
   started_at: '2026-10-18T15:00:58.296201+00:00'
 compiled_from_history:

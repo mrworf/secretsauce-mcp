@@ -409,18 +409,20 @@ milestones:
 - id: '33'
   title: Navigate service history and test policy without losing work
   file: delivery/milestones/secretsauce-mcp/33-service-navigation-and-testing.md
-  status: in_progress
+  status: completed
   dependencies:
   - '27'
   - '31'
-  completed_at: null
-  evidence: null
-  notes: Feedback 003; REC-RM-025
+  completed_at: '2026-10-18T17:05:36.166527+00:00'
+  evidence: evidence/qa/secretsauce-mcp/milestone33/acceptance.md
+  notes: Two slices cf54365/d8686a2; 752 tests across 74 files, build and four browser
+    suites with visual/history/keyboard checks passed.
   started_at: '2026-10-18T16:50:38.368768+00:00'
+  commit_hash: d8686a24d58297b1f30d4f2612320be039035b66
 - id: '34'
   title: Recover credential absence and historical attribution coherently
   file: delivery/milestones/secretsauce-mcp/34-credential-recovery-compatibility.md
-  status: pending
+  status: in_progress
   dependencies:
   - '17'
   - '25'
@@ -432,6 +434,7 @@ milestones:
   completed_at: null
   evidence: null
   notes: Feedback 003; REC-RM-026
+  started_at: '2026-10-18T17:05:36.166527+00:00'
 delivery_goal:
   product_id: secretsauce-mcp
   status: in_progress
@@ -515,10 +518,10 @@ delivery_goal:
   - '33'
   - '34'
   execution: autonomous
-  current_milestone: '33'
-  governing_plan: delivery/plans/secretsauce-mcp/milestone_33_plan_01.md
+  current_milestone: '34'
+  governing_plan: delivery/plans/secretsauce-mcp/milestone_34_plan_01.md
   blockers: []
-  resume_point: Deliver M33 using its minimal-slice transaction; prior milestones
+  resume_point: Deliver M34 using its minimal-slice transaction; prior milestones
     accepted.
   started_at: '2026-10-18T15:00:58.296201+00:00'
 compiled_from_history:

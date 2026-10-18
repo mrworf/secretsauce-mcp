@@ -5,7 +5,7 @@
   "status": "PARTIALLY_RESOLVED",
   "transaction": {
     "parent_commit": "4703c56c17020bc04f8a58c90c1ae0f23ca3886e",
-    "repository_commit": null
+    "repository_commit": "abfa50b2cfdc4ad9762274df860353a6a40a66a5"
   },
   "source": {
     "invocation": "product-definition-orchestrator",

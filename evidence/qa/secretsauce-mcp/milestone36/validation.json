@@ -1,0 +1,28 @@
+{
+  "result": "PASS",
+  "tested_inputs": "tested-inputs.json",
+  "full_suite": {
+    "command": "npm test -- --maxWorkers=2",
+    "tests": 772,
+    "files": 77,
+    "duration_seconds": 115.05,
+    "result": "PASS",
+    "concurrent_browser_or_docker": false
+  },
+  "build": {
+    "command": "npm run build",
+    "result": "PASS"
+  },
+  "browser": {
+    "command": "PLAYWRIGHT_BROWSERS_PATH=/tmp/secretsauce-feedback-browsers node scripts/verify-console-approval-browser.mjs",
+    "result": "PASS",
+    "evidence": "evidence/ux-acceptance/secretsauce-mcp/milestone36/final/browser-report.json"
+  },
+  "frozen_hashes_verified": 13,
+  "syntax_checks": [
+    "scripts/verify-console-review-browser.mjs",
+    "scripts/verify-console-approval-browser.mjs"
+  ],
+  "git_diff_check": "PASS",
+  "deployment": "Not requested; local review instance unchanged"
+}

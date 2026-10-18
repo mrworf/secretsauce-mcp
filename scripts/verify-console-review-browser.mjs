@@ -63,10 +63,10 @@ await page.getByRole('button',{name:'Back to edit',exact:true}).click();await ex
 checks.push('Guided saved draft reaches Changes; keyboard tabs are read-only and preserve exact bound server review; returning to edit does not dirty.');
 // Existing apply checks stay authoritative after tab navigation.
 await page.getByRole('button',{name:'Review & apply',exact:true}).click();
-await expect(page.getByRole('button',{name:'Apply reviewed changes',exact:true})).toBeVisible();
+await page.getByRole('button',{name:'Approve changes',exact:true}).click();
 const bound=store.state.managed.services.baseline.review;
-await page.locator('form input[type=checkbox]').check();store.state.managed.revision++;
-await page.getByRole('button',{name:'Apply reviewed changes',exact:true}).click();await expect(page.locator('#errors')).toContainText('Stale');
+await page.locator('.service-approval input[type=checkbox]').check();store.state.managed.revision++;
+await page.getByRole('button',{name:'Continue',exact:true}).click();await expect(page.locator('.approval-status')).toContainText('Stale');await page.getByRole('button',{name:'Close',exact:true}).click();
 store.state.managed.revision--;store.state.users[0].role='Auditor';
 let denied=false;try{manager.review(session,{id:'baseline'});}catch{denied=true;}if(!denied)throw Error('Read-only review allowed');store.state.users[0].role='Owner';
 checks.push('Guided plus Advanced exact custom methods/regex/binary options retained in both views; stale apply and Auditor review rejected.');

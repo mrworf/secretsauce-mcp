@@ -1,0 +1,26 @@
+{
+  "parent": "09ae25e7ee6a6aec7d66e76f84a875c67d0776a9",
+  "state": "Final frozen source after renewed-review return-section correction; cumulative browser PASS; final full suite uses same hashes",
+  "sha256": {
+    "src/consoleServiceApproval.ts": "a79318039d6326da31815f4dcfdb4f6ed0cf23d11dd9b50fad2e7d9bf55d9142",
+    "src/consoleServiceReview.ts": "889597833c3a0be1ad18b05ec0ac43627966e4c95d54dbb7f7ea45b51e2d9215",
+    "src/consoleServicePage.ts": "2f69a78e3ede76d5c95726db4a29cf3ebd410948e136f816f023581b86d26dab",
+    "src/consolePage.ts": "5c6bc77a18692fbff3ed0967844b5ba68fe7adf9f74acd9104673589dc3fa8a2",
+    "src/consoleServices.ts": "f63176a5fc6454de9088c41441168a88351fdc7be7815191e616bb8aba0c8ffc",
+    "src/consoleHttp.ts": "c1587d3dbbc541e8848644e432edeb62603c2a434713742d035597f9bf882abf",
+    "test/console-service-approval.test.ts": "59023f23290c031ee0dc72770ad2cd3833405e2be5ab05b239e8190c229760e6",
+    "test/console-service-review.test.ts": "d18ffe7406b30faacf37e792e03bcae26fbfefabbb072c1555c22cf79f035d8e",
+    "test/console-services.test.ts": "f6e8f53abc7be078ffa0281afb9559376587696417bdc69850ce1dedc673dc49",
+    "scripts/verify-console-approval-browser.mjs": "8889daecc7cd182cf26a24aaff13647e06b9ebd426c9ec9da6416986d25487c2",
+    "scripts/verify-console-review-browser.mjs": "2697199362755eb4031af6190236e851cba46f25c7402920d6d7f4d99f80f95a",
+    "package.json": "885ec1afee9dfc4f1d5f8ec2986fdd7e41e4fb3c39ad789c2b6dde4eb58f9a2d",
+    "package-lock.json": "0b96e72aa34aa005030ce4fb83b86a6c584e0dfedb6eff10d33970676da3a9d2"
+  },
+  "superseded_full_suite": {
+    "result": "PASS",
+    "files": 77,
+    "tests": 772,
+    "duration_seconds": 115.19,
+    "reason": "Subsequent renewed-review return-section correction invalidates this as final evidence."
+  }
+}

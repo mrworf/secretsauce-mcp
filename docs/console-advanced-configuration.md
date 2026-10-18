@@ -59,3 +59,24 @@ In **Configuration → Access & policy**, the list shows the effective evaluatio
 **Add rule** and each row’s **Edit** open the same dialog. Select common HTTP methods, choose exact path, path prefix or a literal regular expression, and enter an explanation shown with the decision. **Advanced rule settings** contains the exact rule reference, custom methods, additional path and host patterns, and scanner/binary exceptions. Existing imported literals remain unchanged unless edited. No common or custom method selections means every method; no path patterns means every path. Shared typed scanner catalog options remain in Settings and are not replaced by rule edits.
 
 **Keep rule changes** updates your unsaved configuration work. Cancel or Escape leaves the rule unchanged. Deleting a rule removes it only from the draft; the active configuration remains in use until explicit review and apply. Save the draft separately. After a stale save, compare with current state; after a lost response, inspect the durable draft before trying again.
+
+### Service navigation and policy testing
+
+Service links include the selected tab, configuration section or creation step,
+and Guided/Advanced mode. Browser Back and Forward keep safe edits while moving
+within the current editor. Leaving unsaved work offers Stay, Save draft or
+Discard. Refresh reopens the selected location using saved configuration; save a
+draft before refreshing to retain edits. Unsaved configuration is kept in memory,
+not browser storage or the URL.
+
+Open **Test a request** in Access & policy to test a request in a dialog.
+Select the identity, applied configuration or saved draft, destination, HTTP
+method and request path. Unsaved form edits are not tested. The result separates
+current access eligibility from the policy decision and shows the canonical
+request target, winning rule or default, and effective protection. Testing does
+not contact the service, substitute credentials or grant access. Close the tester
+to return to the same editor. Finish or cancel a rule dialog before another task.
+
+**Open shared secret detection in Settings** leaves the service editor and opens
+shared defaults affecting other services. It uses the same unsaved-work guard;
+per-rule exceptions remain in each service's policy editor.

@@ -1,0 +1,17 @@
+{
+  "src/consoleServicePage.ts": "08274b1a09bf1ad6fc2a3c4d9303cb369b0512bad586dc5de37289d436d4eb1a",
+  "src/consolePage.ts": "2ccd916ec95c93eb032b58e51e28a4778edc06f1a3b6cf2ca0200daae6ad6ca4",
+  "src/consolePresentation.ts": "e83ca65365f63230e63ec840f350cd121c7059ea30f702a749a07a7026bb7c1e",
+  "src/policyPreview.ts": "f4feae8f43ed352ee10143440fe975ed8747a3382ac8a243783a94f4861bad3d",
+  "src/policyPreviewWorker.ts": "266d5e60207e79116deb8ab5a021312db9c1a4fa0205f1857eecb05f8395abf2",
+  "test/console-advanced.test.ts": "96239d0369df8681a058c9634546cdeb9f95a2c9c88ae48bca79bd17fd95a6c2",
+  "scripts/verify-console-navigation-browser.mjs": "ac7ec1adf29ae7b99c41d782d010f1db247e5ac9af694a19988ac834a318460f",
+  "scripts/verify-console-focused-service-browser.mjs": "eb463bfef7f8001892bb9e78178df0b4445cdb28849cf0d14ec775bc40d1e95f",
+  "scripts/verify-console-policy-dialogs-browser.mjs": "8c80232974ea9ec93d10b382ac3c599a6afedfe3c8e62d20122ecaf70e00a9c2",
+  "scripts/verify-console-advanced-browser.mjs": "454db2b835c990701ac0dff83a59ccea585561e0188b0f8bb418bfed35746b09",
+  "docs/console-advanced-configuration.md": "f916b2e9a333e283eca282ff36f2d16ab10af33cb8ab9ca2e14109181136a5d4",
+  "workflow/definition/drafts/product-ux/web-console-feedback-003/policy.html": "10414461a628e1a7f1b350c31be563ea85dbe47b14c9f880137bb08b5e5f49e1",
+  "workflow/definition/drafts/product-ux/web-console-feedback-003/detection.html": "2a52416c9b5a0f51347c3df0d89bd044a3a1cbac7d749270e8040f82ea5bbece",
+  "workflow/definition/drafts/product-ux/web-console-feedback-003/rule-dialog.png": "cc8226b21762cf5fd1401010a63f3cdecda1b42725bde8bf3ea8a8f34640d571",
+  "workflow/definition/drafts/product-ux/web-console-feedback-003/styles.css": "1de78d96aee168f9d0a356a45bef9fbb7ae16a9c088343fdf0a24ff57663596d"
+}

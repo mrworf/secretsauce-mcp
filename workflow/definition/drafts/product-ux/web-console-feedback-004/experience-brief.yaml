@@ -1,0 +1,36 @@
+product_id: secretsauce-mcp
+status: proposal
+experience:
+  revision: feedback-004-draft-1
+  audience:
+    primary: [Owners, Administrators]
+    secondary: []
+  principles:
+    - Make changed values easy to compare without scanning a configuration dump.
+    - Keep complete proposed values available without mixing them into Changes.
+    - Acknowledge specific security exceptions only at final confirmation.
+  product_character:
+    tone: Plain and concise
+    density: Preserve approved UX4; grouped comparison pairs and section cards
+    complexity_strategy: Named domain sections with complete exact advanced values when present
+    guidance_level: Brief local consequence and risk explanations
+  information_priorities: [Service and reviewed revision, Changed values, Complete proposed settings, Actual security consequences]
+  interaction_direction:
+    navigation: Changes and New settings tabs inside existing service review
+    routine_actions: Read-only tab switching and return to editing
+    consequential_actions: Approve changes opens Continue/Cancel with per-exception acknowledgment
+    progressive_disclosure: No nested accordion maze; complete values remain readable
+  responsive_priority: Stack each Before/After pair and retain both labels and all actions
+  explicit_po_preferences:
+    - statement: Group comparison, use change colors, two tabs and confirmation with every exception acknowledged
+      decision_refs: [PO-FB-127, PO-FB-129, PO-FB-130, PO-FB-132, PO-FB-133]
+    - statement: Explain actual affected TLS scope in recognizable terms
+      decision_refs: [PO-FB-136]
+  explicit_po_dislikes:
+    - statement: Current review wall of text is overwhelming
+      decision_refs: [PO-FB-126]
+  designer_discretion: [Spacing within approved visual system, Accessible color variants, Tab mechanics, Focus management, Safe destination label fallback]
+  approval:
+    approved: false
+    decision_refs: []
+    pending_question: UX-DESIGN-005

@@ -1028,3 +1028,71 @@ resolution: yes, approved
 approval_scope: feedback-003-draft-1 experience direction and general visual appearance
 approved_proposal_revisions: *id001
 ```
+
+
+## UX-DESIGN-005 — Review & Apply visual direction
+
+```yaml
+id: UX-DESIGN-005
+kind: UX_DIRECTION_APPROVAL
+blocking: true
+affected_requirement: CONFIG-03
+affected_surfaces:
+- service-review
+question: 'Approve this service-review design: paired Before/After groups in Changes,
+  complete section cards in New settings, and the shown confirmation dialog with individual
+  security acknowledgments?'
+reason: This is the only new consequential composition/responsive realization. Existing
+  UX4 appearance and explicit feedback intent are preserved; Product UX requires explicit
+  approval covering representative visual concepts before canonical publication.
+recommendation: Approve feedback-004-draft-1 as rendered; retain UX4 styling and stack
+  each comparison pair on narrow screens.
+alternatives: []
+options:
+- Approve this design
+- Request a specific revision
+proposal_paths:
+- workflow/definition/drafts/product-ux/web-console-feedback-004/index.md
+- workflow/definition/drafts/product-ux/web-console-feedback-004/changes-desktop.png
+- workflow/definition/drafts/product-ux/web-console-feedback-004/new-desktop.png
+- workflow/definition/drafts/product-ux/web-console-feedback-004/exception-dialog-desktop.png
+- workflow/definition/drafts/product-ux/web-console-feedback-004/changes-narrow.png
+- workflow/definition/drafts/product-ux/web-console-feedback-004/design-contract.md
+status: pending
+stage: ux
+resolution_category: PRODUCT_DECISION
+resolution_owner: user
+routing_status: awaiting_user_approval
+depends_on: []
+ask_user: true
+affected_artifact: workflow/definition/drafts/product-ux/web-console-feedback-004/index.md
+proposal_revisions:
+- path: workflow/definition/drafts/product-ux/web-console-feedback-004/changes-desktop.png
+  revision: sha256:0670f8ac334e541fb980c1061082a2971b86de10617220a421f1389e11e9226a
+- path: workflow/definition/drafts/product-ux/web-console-feedback-004/changes-narrow.png
+  revision: sha256:cb7e22782a8f46ad11f07492fc10a9c5f99c2148d367e247db5fd2fb50c787da
+- path: workflow/definition/drafts/product-ux/web-console-feedback-004/design-contract.md
+  revision: sha256:ba98da8c4c0bfa213a2b0179c397510d260613ab297355f7433d2be92878605b
+- path: workflow/definition/drafts/product-ux/web-console-feedback-004/exception-dialog-desktop.png
+  revision: sha256:b4ba634c88e5c47064cc18afde67a5aadf906a542e0ae949b21ec1668680e9b8
+- path: workflow/definition/drafts/product-ux/web-console-feedback-004/exception-dialog-narrow.png
+  revision: sha256:01e65edb9a11aeb14083f2294aa36b0bf14f5591fab459b006aeb39c445a70dd
+- path: workflow/definition/drafts/product-ux/web-console-feedback-004/experience-brief.yaml
+  revision: sha256:8053df7b2c95f0185cad11a72d6e076755f93423365655a0e257d4460ff5fb4b
+- path: workflow/definition/drafts/product-ux/web-console-feedback-004/index.md
+  revision: sha256:ddef8b50c8e8e96a6b1f857c1f62f8aaa3a332f3a85f85fdb3229beeacf66762
+- path: workflow/definition/drafts/product-ux/web-console-feedback-004/new-desktop.png
+  revision: sha256:2fc1c09b62fe37d10df57b17cbb7d3da2b5b6133b2232d50fa21d4f527f3173a
+- path: workflow/definition/drafts/product-ux/web-console-feedback-004/new-narrow.png
+  revision: sha256:7b941f05cf86b82ec48652b335da35952f291d34f13a8b78f5234f60c8eec2bf
+- path: workflow/definition/drafts/product-ux/web-console-feedback-004/no-exception-dialog-desktop.png
+  revision: sha256:aed90e00d185eef63f3e2f61dc37d577b54a33f9ad765cd86935016c438b4c8b
+- path: workflow/definition/drafts/product-ux/web-console-feedback-004/render-checks.json
+  revision: sha256:5c8cb4094174568da9d7f0ba136aca2eb3eabc9206c0ddf0710652144b43337b
+- path: workflow/definition/drafts/product-ux/web-console-feedback-004/render-concepts.mjs
+  revision: sha256:1c59a98299fa9b7faaf7a0cb3fac637b1ddbb03f4ea68a12462dcd93d16cb313
+- path: workflow/definition/drafts/product-ux/web-console-feedback-004/review.html
+  revision: sha256:c8edaac1ed5822c40a4f2b14c002a18ce95f4237ae4e8486c5efb770ef2f04a5
+- path: workflow/definition/drafts/product-ux/web-console-feedback-004/styles.css
+  revision: sha256:7edddbf29407d4cf1b3a407b4f7080631fec4a6fa275be1edc5cfedc2005f1b9
+```

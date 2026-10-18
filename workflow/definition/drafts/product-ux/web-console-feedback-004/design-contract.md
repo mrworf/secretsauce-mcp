@@ -1,0 +1,40 @@
+# Service review proposal — feedback 004
+
+Status: proposal awaiting UX-DESIGN-005. This document is not canonical UX authority.
+Scope: service Review & apply only. Preserve approved UX4 shell, colors, typography, density and ordinary editing. Global Settings review and SMTP acknowledgment are unchanged.
+
+## Direction and authority
+
+Confirmed PO-FB-127/129/130/132/133/136 establish grouped comparison, labeled colors, two tabs, an approval modal with individual acknowledgments, and comprehensible exception scope. PO-FB-128/137 suggest columns and destination names without selecting their exact realization. Recommend paired Before/After columns on wide screens, stacked Before then After within each change on narrow screens, and recognizable safe destination addresses. This affects comparison hierarchy and responsive reading, so explicit visual approval remains required. No second behavioral decision is needed.
+
+## Comparison
+
+Changes is the default tab. Show only changed fields, grouped using existing configuration sections: Details, Allowed servers, Authentication, Request rules, Secret detection, and Additional configuration when needed. Each aligned pair names its field or existing item and shows Before/After. Green + Added, red − Removed, amber ~ Changed have visible text and symbols; use light tints behind dark readable values. Preserve equal column widths, shared row alignment and exact sanitized values. Do not clip, truncate or normalize literals. Empty strings, false, zero, null, empty collections and absent properties remain distinguishable. Added items have Before “Not configured”; removed items have After “Removed”. An absence marker is not a literal value.
+
+Treat list identity and order accurately: matching stable identities may compare field changes; added and removed identities remain distinct even when shown alongside each other. The synthetic rule replacement illustrates one removal plus one addition, not a rename or fabricated identity match. Position/order changes are explicit; never sort arrays to hide differences. Preserve exact regex, custom methods, options, nested typed values and own-property-safe identifiers. Display advanced values in named rows and bounded readable substructure, not a whole-object dump or nested accordion tree. A no-baseline service says “No active configuration yet” and proposed content is additions; no changes says “No configuration changes” and still permits viewing New settings. Do not invent a no-op Apply when existing lifecycle has a separate enable/review action; preserve that action’s actual consequences.
+
+New settings presents the complete sanitized proposal in named section cards, using two columns at wide sizes and one column when space is insufficient. Common values use domain labels. Additional supported values remain available with exact types and ordering. Metadata about credential availability is distinct from configuration values; raw credentials never appear. Immediate credential/access changes are not presented as pending draft changes. Existing review data sanitization applies before either tab is rendered.
+
+Both tabs refer to the same immutable reviewed scope, base and dependencies; switching is read-only and never saves, applies, resets input, dirties the draft or changes the confirmation target. Keep service identity, reviewed revision, effect summary and return-to-edit action visible. No filtering removes required review information. Keep tab selection in local view state, not credential-bearing persistent storage.
+
+## Confirmation and outcomes
+
+Retain a concise security-exception summary at the end, and place Approve changes in the existing bottom action bar. It opens a focused modal; it performs no mutation. Copy: “This will apply changes and make this the active configuration.” Name the service and current reviewed revision. With no security exceptions, Continue is enabled after the existing valid review prerequisites, and Cancel is available. With exceptions, add “Before changes can be applied, please review and acknowledge the following:” and one unchecked checkbox for each required exception. No acknowledge-all shortcut. Continue stays disabled until every required checkbox is selected. Show the remaining count for multiple exceptions. Checkbox labels describe the risk and readable affected scope; acknowledgments bind the exact reviewed state and are not stored across reopened/stale reviews.
+
+Cancel or Escape before submission closes the modal without mutation, preserves review/tab/scroll and returns focus to Approve changes. Continue sends only the exact reviewed scope through existing authorization, dependency, audit and atomic activation controls. Pending submission disables duplicate Continue and announces Applying; it must not offer a cancellation that claims to undo an admitted request. Known success names the new active revision; known rejection explains why and preserves safe work. A changed dependency, permission or revision invalidates acknowledgments and requires renewed review. Unknown outcome shows status verification, never a guessed rollback or blind retry. Existing readiness blockers remain actionable before approval and cannot be acknowledged away.
+
+## TLS exception language
+
+TLS verification has a service default and destination overrides. Never claim it is always per-service or always per-destination. For inherited off: “Server certificate verification is off — https://api.example.org inherits the service default. The server’s identity will not be verified.” For an explicit destination override, say “Overridden for [safe destination label]”; list only the actually affected destinations. An on override is not included in an off list. Explain the default separately if relevant; avoid “all servers” unless it is true of the reviewed effective scope. A destination permitting both HTTP and HTTPS describes TLS as applying to HTTPS requests and HTTP as a separate cleartext exception.
+
+Use safe familiar configured labels when meaningful, otherwise sanitized host/base address and, if necessary, an ordinal to disambiguate. Do not expose URL userinfo/query secrets or rely on internal primary/secondary identifiers as the only label. Do not fabricate a destination display-name capability. Retain existing exception classification and acknowledgment identities; improve presentation without weakening or silently merging required acknowledgments.
+
+## Accessibility and responsive behavior
+
+Use semantic tabs with selected state, associated panels, one tab stop and ArrowLeft/Right plus Home/End navigation. Both panels are already available, so automatic activation is appropriate. Use named sections and field labels; preserve Before then After reading order. At narrow widths stack each pair, not all Before values followed by all After values. Wrap unbroken literals without losing characters. No horizontal page scrolling at 390px or 200% text enlargement.
+
+Use a named modal with inert background, trapped keyboard focus, visible Cancel, and initial focus on its heading so risk text is encountered before action. Restore focus on dismissal. Long exception lists may scroll inside the bounded dialog with all checkboxes and footer reachable; do not hide exceptions in accordions. Color is redundant to text/symbols. Check contrast and document/text-range overflow during implementation acceptance; prototype checks do not certify production accessibility.
+
+## Observable acceptance after approval
+
+Compare implementation with the seven matching prototype screenshots for hierarchy, density, width, spacing, typography, state tint and dialog prominence. Verify changed-only versus full proposed data, added/removed/changed/absent/no-baseline/no-change, exact uncommon options/order, multiple exceptions and all-checkbox gating, no-exception confirmation, Cancel/Escape/focus, pending/stale/unknown outcomes, and inherited versus overridden TLS with safe readable labels. Existing role and secret-handling boundaries must hold. Prototype Continue deliberately only closes the dialog; no backend or activation semantics are implemented here.

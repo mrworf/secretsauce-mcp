@@ -1,0 +1,76 @@
+{
+  "prototypeOnly": true,
+  "checks": [
+    {
+      "name": "changes",
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "name": "new",
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "name": "exception-dialog",
+      "width": 1440,
+      "initiallyDisabled": true
+    },
+    {
+      "name": "partial-acknowledgment",
+      "width": 1440,
+      "stillDisabled": true
+    },
+    {
+      "name": "acknowledged",
+      "width": 1440,
+      "enabled": true
+    },
+    {
+      "name": "cancel",
+      "width": 1440,
+      "focusReturned": true
+    },
+    {
+      "name": "changes",
+      "width": 390,
+      "overflow": false
+    },
+    {
+      "name": "new",
+      "width": 390,
+      "overflow": false
+    },
+    {
+      "name": "exception-dialog",
+      "width": 390,
+      "initiallyDisabled": true
+    },
+    {
+      "name": "partial-acknowledgment",
+      "width": 390,
+      "stillDisabled": true
+    },
+    {
+      "name": "acknowledged",
+      "width": 390,
+      "enabled": true
+    },
+    {
+      "name": "cancel",
+      "width": 390,
+      "focusReturned": true
+    },
+    {
+      "name": "no-exception-dialog",
+      "enabled": true
+    },
+    {
+      "name": "200percent-text",
+      "overflow": {
+        "document": false,
+        "text": false
+      }
+    }
+  ]
+}

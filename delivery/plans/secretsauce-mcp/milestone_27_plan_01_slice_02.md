@@ -22,3 +22,5 @@ Existing services, lifecycle, import-recovery, friendly-forms, advanced browser 
 `npm run build` PASS. Final `npm test -- --maxWorkers=2`: 73 files / 730 tests PASS (105.50s), without browser concurrency. Exact final hashes, command summary, visual comparison and all-criteria coverage: `evidence/ux-acceptance/secretsauce-mcp/milestone27/{acceptance.md,validation.json,browser-report.json}`.
 
 Commit boundary includes this plan, source, operator help, browser fixture compatibility and sanitized evidence. No authority or milestone status edits; root owns acceptance. Commit provenance is the slice commit itself and parent closeout, avoiding self-referential SHA.
+
+Accepted commit provenance: `58686d04b39880df3b86f0634d5bd7d4a874a0b7`.

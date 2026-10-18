@@ -16,3 +16,5 @@ Run focused service unit tests and actual HTTPS harness. Final slice also full b
 All scoped behavior observable and evidence recorded before one slice commit. Inspect exact owned diff; exclude test-results.
 ## Evidence
 Completed grouped Overview and Auditor section selection. `npm run build` PASS. Focused service/domain HTTP tests 12 PASS after unchanged loopback rerun. Synthetic HTTPS browser harness PASS: populated applied versus pending values, draft-only no-current state, Auditor grouping/no controls, failed load error; desktop/narrow screenshots reviewed. Final comprehensive evidence and source hashes will be recorded in slice 2.
+
+Accepted commit provenance: `46528c58fa2f6408443350df65fadf66bc54b165`.

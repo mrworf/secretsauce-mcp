@@ -16,3 +16,5 @@ Planning inspection: slices independently useful; only selected section renders;
 
 ## Final outcome
 All M27 acceptance rows are mapped in evidence/ux-acceptance/secretsauce-mcp/milestone27/acceptance.md. Full suite 730 tests / 73 files PASS; build and six actual HTTPS browser suites PASS. No live instance mutations or product authority changes. Later specialized destination/credential/rule/review redesign remains outside this milestone.
+
+Accepted commit provenance: `58686d04b39880df3b86f0634d5bd7d4a874a0b7`.

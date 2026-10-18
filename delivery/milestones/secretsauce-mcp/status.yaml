@@ -360,23 +360,26 @@ milestones:
 - id: '29'
   title: Clear in-use credential values with durable attribution
   file: delivery/milestones/secretsauce-mcp/29-durable-credential-clearing.md
-  status: in_progress
+  status: completed
   dependencies:
   - '11'
-  completed_at: null
-  evidence: null
-  notes: Feedback 003; REC-RM-020, REC-RM-021
+  completed_at: '2026-10-18T16:19:56.784270+00:00'
+  evidence: evidence/qa/secretsauce-mcp/milestone29/acceptance.md
+  notes: One vertical slice; 748 tests across 74 files, build, HTTPS browser, fault/restart/old-reader
+    tests and matching visual checks passed.
   started_at: '2026-10-18T15:58:38.666173+00:00'
+  commit_hash: 6d4b0187451554d96f0c700b3d5eca7389c04e15
 - id: '30'
   title: Manage write-only values through focused dialogs
   file: delivery/milestones/secretsauce-mcp/30-credential-value-dialogs.md
-  status: pending
+  status: in_progress
   dependencies:
   - '27'
   - '29'
   completed_at: null
   evidence: null
   notes: Feedback 003; REC-RM-022
+  started_at: '2026-10-18T16:19:56.784270+00:00'
 - id: '31'
   title: Author policy rules in a clear list and shared dialog
   file: delivery/milestones/secretsauce-mcp/31-policy-rule-dialogs.md
@@ -503,10 +506,10 @@ delivery_goal:
   - '33'
   - '34'
   execution: autonomous
-  current_milestone: '29'
-  governing_plan: delivery/plans/secretsauce-mcp/milestone_29_plan_01.md
+  current_milestone: '30'
+  governing_plan: delivery/plans/secretsauce-mcp/milestone_30_plan_01.md
   blockers: []
-  resume_point: Deliver M29 using its minimal-slice transaction; prior milestones
+  resume_point: Deliver M30 using its minimal-slice transaction; prior milestones
     accepted.
   started_at: '2026-10-18T15:00:58.296201+00:00'
 compiled_from_history:

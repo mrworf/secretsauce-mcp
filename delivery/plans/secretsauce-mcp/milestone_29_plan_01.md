@@ -15,3 +15,5 @@ Focused service/storage/gateway/backup tests during implementation, real HTTPS b
 ## Completion
 
 Slice 01 delivered and verified: 748 tests across 74 files passed (106.96s), build passed, final real HTTPS browser and matching visual evidence passed. Frozen tested inputs matched after validation. See [acceptance](../../../evidence/qa/secretsauce-mcp/milestone29/acceptance.md) and [visual review](../../../evidence/ux-acceptance/secretsauce-mcp/milestone29/visual-review.md). Root records the resulting slice commit SHA in its acceptance closeout.
+
+Accepted commit provenance: `6d4b0187451554d96f0c700b3d5eca7389c04e15`.

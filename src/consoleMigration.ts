@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { LineCounter,parseDocument,stringify } from 'yaml';
 import { z } from 'zod';
 import { rawConfigSchema,validateMigrationGlobals,normalizeManagedService, type ManagedServiceDraft } from './config.js';
@@ -30,15 +31,15 @@ export function importConfiguration(manager:ConsoleServices,session:ConsoleSessi
   validateDraftBounds(content);try{normalizeManagedService(key,content,Object.fromEntries(source.credentials.map(c=>[c.id,'migration-placeholder'])));}catch{throw new ServiceManagementError('gateway.services.field: Invalid destination, credential placement or policy.');}
   drafts.push({id:key,content,missingMappings,missingCredentials});
  }
- const operation=manager.store.commit(actor.id,'configuration.import','configuration',state=>{
+ const mutation=randomUUID();let operation:string;try{operation=manager.store.commit(actor.id,'configuration.import','configuration',state=>{
   const m=state.managed!;m.migrationGlobals={server:config.server,auth:config.auth,tokens:config.tokens,limits:config.limits,logging:config.logging,audit:config.audit};
   m.protection??={applied:bundledProtection()};m.protection.draft={content:catalogs,base:m.revision,generation:(m.protection.draft?.generation??0)+1};delete m.protection.review;
   for(const draft of drafts){let s=Object.hasOwn(m.services,draft.id)?m.services[draft.id]:undefined;if(!s){s={lifecycle:'Draft',values:{},assignments:[]};Object.defineProperty(m.services,draft.id,{value:s,writable:true,enumerable:true,configurable:true});}
    // Imported values may create missing values only. Existing rotations use the explicit immediate credential action.
-   for(const c of config.services[draft.id]!.credentials){const value=values.get(JSON.stringify([draft.id,c.id]));if(value!==undefined&&!Object.hasOwn(s.values,c.id))Object.defineProperty(s.values,c.id,{value:{value,version:1,changed:Date.now()},writable:true,enumerable:true,configurable:true});}
+   for(const c of config.services[draft.id]!.credentials){const value=values.get(JSON.stringify([draft.id,c.id]));if(value!==undefined&&!Object.hasOwn(s.values,c.id))Object.defineProperty(s.values,c.id,{value:{value,version:1,generation:manager.store.state.revision+1,changed:Date.now(),changeAction:'set',actor:actor.id,mutation},writable:true,enumerable:true,configurable:true});}
    s.draft={content:draft.content,base:m.revision,generation:(s.draft?.generation??0)+1,missingMappings:draft.missingMappings,importedIdentities:config.services[draft.id]!.access.users.map((subject,index)=>{const mapping=d.mappings.find(m=>m.subject===subject);return {subject,index,...(mapping?{target:'localId' in mapping?{localId:mapping.localId}:{issuer:mapping.issuer,externalSubject:mapping.externalSubject}}:{})};})};delete s.review;
   }
- });
+ },{mutation});}catch(error){manager.store.uncertainCredentialMutations.add(mutation);throw error;}
  return {operation,status:'drafts imported',services:drafts.map(({id,missingMappings,missingCredentials})=>({id,missingMappingCount:missingMappings.length,missingCredentials})),reserved:'Endpoint, authentication, tokens, operating limits, logging and audit source fields are preserved for their Settings controls; import does not activate them. Clients must reconnect after separately reviewed endpoint or authentication identity changes.',notice:'Managed applied state remains authoritative. Imported paths/environment names are never read; existing credentials/access/lifecycle remain current. Review each draft and shared catalogs separately.'};
 }
 export function exportConfiguration(manager:ConsoleServices,session:ConsoleSession){

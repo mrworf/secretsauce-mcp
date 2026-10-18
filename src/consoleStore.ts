@@ -1,3 +1,4 @@
+import { credentialIdentity, projectCredentialService } from './consoleCredentialState.js';
 import { normalizeNotifications } from './consoleNotifications.js';
 import { closeSync, existsSync, fsyncSync, mkdirSync, openSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -52,7 +53,7 @@ export interface ConsoleState {
     gatewayAuditIdentity?: string;
     operating?: import("./consoleOperations.js").OperatingState;
     retention?: import("./consoleEvidence.js").RetentionState;
-    v: 1 | 2 | 3 | 4;
+    v: 1 | 2 | 3 | 4 | 5;
     id: string;
     revision: number;
     initialized: boolean;
@@ -101,6 +102,7 @@ export function trustedOrigin(value: unknown): string {
 export class ConsoleStore {
     state: ConsoleState;
     storageReliable = true;
+    readonly uncertainCredentialMutations = new Set<string>();
     invalidateUser: (subject: string) => void = () => {};
     externalAudit: AuditSink | undefined;
     readonly journal: ConsoleJournal;
@@ -138,7 +140,7 @@ export class ConsoleStore {
             if (existsSync(join(directory, 'managed')) && !existsSync(this.file))
                 throw new Error('Managed state missing');
             this.state = existsSync(this.file) ? decrypt<ConsoleState>(readFileSync(this.file, 'utf8'), this.key) : { v: 1, id: randomUUID(), revision: 0, initialized: false, origin: '', name: '', users: [], sessions: [], ...(options.config ? { config: options.config } : {}) };
-            if (![1,2,3,4].includes(this.state.v) || !Array.isArray(this.state.users) || !Array.isArray(this.state.sessions))
+            if (![1,2,3,4,5].includes(this.state.v) || !Array.isArray(this.state.users) || !Array.isArray(this.state.sessions))
                 throw new Error('Invalid managed state');
             normalizeNotifications(this.state.notifications);
             if (this.state.config) { if(this.state.managed?.protection)this.state.config.responseProtection=validateProtection(this.state.managed.protection.applied).effective;hydrateManagedConfig(this.state.config);normalizeManagedOAuthPath(this.state.config,this.directory); }
@@ -157,6 +159,26 @@ export class ConsoleStore {
                     if(intent.action!=='identity.account_update'){u.enrolled=false;u.assistedFactorPending=true;u.seed='';u.recoveryHashes=[];u.lastCounter=-1;}
                     else {s.v=Math.max(s.v,3) as ConsoleState['v'];u.accountRevision=(u.accountRevision??0)+1;}
                     s.sessions=s.sessions.filter(v=>v.userId!==u.id);if(s.people)s.people.proofs=s.people.proofs.filter(p=>p.target!==u.id && p.issuer!==u.id);
+                });
+            }
+            const completed=new Set(records.filter(r=>r.phase==='complete').map(r=>r.id));
+            for(const intent of records.filter(r=>r.phase==='start'&&r.action==='credential.mutate'&&!completed.has(r.id))){
+                for(const [id,service] of Object.entries(this.state.managed?.services??{}))for(const [key,value] of Object.entries(service.values)){
+                    if(value.reconciledMutation===intent.id||credentialIdentity(id,key)!==intent.details?.credentialIdentity||(value.generation??0)>(intent.details?.credentialVersion??0))continue;
+                    this.commit('system','credential.uncertain_reconcile',id,state=>{
+                        state.v=Math.max(state.v,5) as ConsoleState['v'];const target=state.managed!.services[id]!;
+                        const old=target.values[key]!,last=old.mutation===intent.details?.mutation?old.previousChange:old;target.values[key]={value:'',missing:true,version:old.version,generation:intent.details!.credentialVersion!,changed:last?.changed??0,...(last?.changeAction?{changeAction:last.changeAction}:{}),...(last?.actor?{actor:last.actor}:{}),...(last?.historical?{historical:true}:{}),reconciledMutation:intent.id};
+                        delete target.review;state.managed!.revision++;projectCredentialService(state,id);
+                    });
+                }
+            }
+            // Supplied import values are new identities only. Preserve their committed value,
+            // but do not describe an unresolved import as a successful credential change.
+            for(const intent of records.filter(r=>r.phase==='start'&&r.action==='configuration.import'&&r.details?.mutation&&!completed.has(r.id))){
+                const affected=Object.values(this.state.managed?.services??{}).some(service=>Object.values(service.values).some(v=>v.mutation===intent.details!.mutation&&v.actor));
+                if(!affected)continue;
+                this.commit('system','credential.uncertain_import_attribution','configuration',state=>{
+                    for(const service of Object.values(state.managed!.services))for(const value of Object.values(service.values))if(value.mutation===intent.details!.mutation){delete value.actor;delete value.changeAction;value.changed=0;}
                 });
             }
             if (!existsSync(this.file)) {
@@ -427,7 +449,7 @@ export function loadManagedConfig(directory: string, keyFile: string): GatewayCo
     if (!existsSync(join(directory, 'managed')))
         throw new Error('Managed marker missing');
     const key=readConsoleKey(keyFile);const state = pendingRecoveryState(directory,key)??decrypt<ConsoleState>(readFileSync(join(directory, 'state.enc'), 'utf8'),key);
-    if (![1,2,3,4].includes(state.v) || !state.config)
+    if (![1,2,3,4,5].includes(state.v) || !state.config)
         throw new Error('Managed configuration missing');
     const config=hydrateManagedConfig(state.config);
     normalizeManagedOAuthPath(config,directory);

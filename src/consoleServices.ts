@@ -1,3 +1,4 @@
+import { projectCredentialService, credentialIdentity } from './consoleCredentialState.js';
 import { captureConfigurationRevision } from './consoleHistory.js';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
@@ -8,7 +9,7 @@ import { ConsoleStore, type ConsoleSession } from './consoleStore.js';
 import type { GatewayConfig, ServiceConfig } from './types.js';
 
 export type ServiceLifecycle = 'Draft' | 'Active' | 'Disabled' | 'Archived';
-export interface ManagedCredential { value: string; version: number; changed: number }
+export interface ManagedCredential { value: string; version: number; changed: number; missing?: true; generation?: number; actor?: string; mutation?: string; historical?: boolean; changeAction?: 'set' | 'replace' | 'clear'; reconciledMutation?: string; previousChange?: { changeAction?: 'set' | 'replace' | 'clear'; actor?: string; changed: number; historical?: boolean } }
 export interface ImportedIdentity { subject: string; index?: number; target?: { localId: string } | { issuer: string; externalSubject: string } }
 export interface ManagedService {
   recoveryReviewRequired?:boolean;
@@ -78,7 +79,7 @@ export class ConsoleServices {
     this.actor(session); const key = this.parse(idSchema, id); const s = own(this.state.services, key);
     if (!s) throw new ServiceManagementError('Service unavailable. Reload Services.');
     return { id: key, revision: this.state.revision, lifecycle: s.lifecycle, applied: s.applied, draft: s.draft,
-      mappingFingerprint: this.fingerprint(key), mappingIssues: this.mappingIssues(key), assignments: s.assignments, credentials: Object.entries(s.values).map(([id, v]) => ({ id, available: true, version: v.version, changed: v.changed })),
+      mappingFingerprint: this.fingerprint(key), mappingIssues: this.mappingIssues(key), assignments: s.assignments, credentials: Object.entries(s.values).map(([id, v]) => ({ id, available: !v.missing && Boolean(v.value), version: v.version, ...this.credentialAttribution(v), confirmation: this.credentialConfirmation(key,id), inUse: this.credentialInUse(s,id), appliedUse: Boolean(s.applied?.credentials?.some(c=>c.id===id)) })),
       exceptions: s.applied ? exceptions(s.applied) : [], activity: this.store.journal.entries().filter(e => e.target === key).map(e => ({ action: e.action, time: e.time, result: e.result, revision: e.revision, details: e.details })) };
   }
   private parse<T>(schema: z.ZodType<T>, value: unknown): T { const p = schema.safeParse(value); if (!p.success) throw new ServiceManagementError('Invalid service input. Check field types and supported settings.'); return p.data; }
@@ -191,27 +192,36 @@ export class ConsoleServices {
     }); } finally { if (own(this.state.services, data.id)?.draft === undefined) { this.invalidate(data.id); this.publish(); } }
     return { operation, status: 'applied', revision: this.state.revision };
   }
+  credentialAttribution(value: ManagedCredential) {
+    const metadata = value.mutation && this.store.uncertainCredentialMutations.has(value.mutation) ? value.previousChange : value;
+    return {changeAction:metadata?.changeAction??null,changed:metadata?.actor?metadata.changed:null,changedBy:metadata?.actor?(metadata.historical?'Historical account '+metadata.actor:this.store.state.users.find(u=>u.id===metadata.actor)?.email??'Former account '+metadata.actor):'Unknown'};
+  }
+  credentialInUse(s: ManagedService, key: string): boolean { return [s.applied,s.draft?.content,s.review?.candidate].some(c=>c?.credentials?.some(v=>v.id===key)); }
+  credentialConfirmation(id: string, key: string): string { return digest(JSON.stringify({id,key,fingerprint:this.fingerprint(id),record:own(own(this.state.services,id)?.values??{},key)?.version,revision:this.store.state.revision})); }
   credential(session: ConsoleSession, input: unknown) {
-    const actor = this.actor(session, true);
-    const data = this.parse(z.object({ id: idSchema, credential: idSchema, action: z.enum(['create', 'replace', 'delete']), value: z.string().min(1).max(16384).optional(), confirmed: z.literal(true) }).strict(), input);
-    const s = own(this.state.services, data.id); if (!s) throw new ServiceManagementError('Service unavailable. Save a draft first.');
-    if (data.action === 'create' && !newIdSchema.safeParse(data.credential).success && ![s.applied, s.draft?.content].some(c => c?.credentials?.some(v => v.id === data.credential))) throw new ServiceManagementError('Invalid new credential identifier.');
-    if (data.action === 'create' ? Boolean(own(s.values, data.credential)) : !own(s.values, data.credential)) throw new ServiceManagementError('Credential availability changed. Reload its current metadata.');
-    if (data.action === 'delete') {
-      if (data.value !== undefined) throw new ServiceManagementError('Delete does not accept a value.');
-      if ([s.applied, s.draft?.content].some(c => c?.credentials?.some(v => v.id === data.credential))) throw new ServiceManagementError('Credential has configuration dependencies. Remove its placement from the draft, review and apply before deleting the value.');
-    } else if (!data.value || data.value.trim() !== data.value || /[\r\n\0]/.test(data.value) || /^(Bearer|Basic)\s/i.test(data.value)) throw new ServiceManagementError('Use a canonical credential value without protocol prefix, surrounding whitespace or control characters.');
-    let operation: string;
-    const base = this.state.revision;
-    try { operation = this.store.commit(actor.id, 'credential.' + data.action, data.id, state => {
-      const m = state.managed!, target = m.services[data.id]!;
-      if (data.action === 'delete') delete target.values[data.credential];
-      else Object.defineProperty(target.values, data.credential, { value: { value: data.value!, version: (own(target.values, data.credential)?.version ?? 0) + 1, changed: Date.now() }, enumerable: true, writable: true, configurable: true });
-      const active = own(state.config!.services, data.id);
-      if (active && data.action !== 'delete') for (const credential of active.credentials) if (credential.id === data.credential) credential.secret = data.value!;
-      m.revision++;
-    }, { credential: sanitizeAuditText(data.credential, data.value ? [data.value] : []), credentialVersion: data.action === 'delete' ? own(s.values, data.credential)!.version : (own(s.values, data.credential)?.version ?? 0) + 1 }); } finally { if (this.state.revision !== base) { this.invalidate(data.id); this.publish(); } }
-    return { operation, status: 'success', revision: this.state.revision };
+    const actor = this.actor(session,true);
+    const data=this.parse(z.object({id:idSchema,credential:idSchema,action:z.enum(['create','replace','delete']),value:z.string().min(1).max(16384).optional(),confirmation:z.string().regex(/^[a-f0-9]{64}$/).optional(),confirmed:z.literal(true)}).strict(),input);
+    const s=own(this.state.services,data.id);if(!s)throw new ServiceManagementError('Service unavailable. Save a draft first.');
+    const previous=own(s.values,data.credential),inUse=this.credentialInUse(s,data.credential);
+    if(previous && !data.confirmation || data.confirmation!==undefined && data.confirmation!==this.credentialConfirmation(data.id,data.credential))throw new ServiceManagementError('Credential changed. Reload its current state and confirm again.');
+    if(data.action==='create' ? Boolean(previous?.value) : !previous)throw new ServiceManagementError('Credential availability changed. Reload its current metadata.');
+    if(data.action==='create'&&!newIdSchema.safeParse(data.credential).success&&!inUse)throw new ServiceManagementError('Invalid new credential identifier.');
+    if(data.action==='delete'){if(data.value!==undefined)throw new ServiceManagementError('Delete does not accept a value.');if(inUse&&!previous?.value)return {status:'already cleared',revision:this.state.revision};}
+    else if(!data.value||data.value.trim()!==data.value||/[\r\n\0]/.test(data.value)||/^(Bearer|Basic)\s/i.test(data.value))throw new ServiceManagementError('Use a canonical credential value without protocol prefix, surrounding whitespace or control characters.');
+    if(this.store.state.v<5)this.store.commit(actor.id,'credential.format_upgrade','instance',state=>{state.v=5;});
+    const changeAction=data.action==='delete'?'clear':previous?.value?'replace':'set';
+    const generation=this.store.state.revision+1,version=(previous?.version??0)+1,mutation=randomUUID(),changed=Date.now();
+    let operation:string;
+    try {operation=this.store.commit(actor.id,'credential.mutate',data.id,state=>{
+      this.actor(session,true);state.v=Math.max(state.v,5) as typeof state.v;
+      const target=state.managed!.services[data.id]!;
+      if(data.action==='delete'&&!inUse)delete target.values[data.credential];
+      else Object.defineProperty(target.values,data.credential,{value:{value:data.action==='delete'?'':data.value!,...(data.action==='delete'?{missing:true}:{}),version,generation,changed,changeAction,actor:actor.id,mutation,...(previous?{previousChange:{changed:previous.changed,...(previous.changeAction?{changeAction:previous.changeAction}:{}),...(previous.actor?{actor:previous.actor}:{}),...(previous.historical?{historical:true}:{})}}:{})},writable:true,enumerable:true,configurable:true});
+      delete target.review;state.managed!.revision++;projectCredentialService(state,data.id);
+    },{credential: sanitizeAuditText(data.credential,data.value?[data.value]:[]),credentialAction:data.action==='delete'?(inUse?'clear':'delete'):previous?.value?'replace':'set',credentialIdentity:credentialIdentity(data.id,data.credential),credentialVersion:generation,mutation});}
+    catch(error){this.store.uncertainCredentialMutations.add(mutation);throw error;}
+    finally {if(this.store.journal.entries().some(r=>r.phase==='start'&&r.details?.mutation===mutation)){if(s.applied?.credentials?.some(c=>c.id===data.credential))this.invalidate(data.id);this.publish();}}
+    return {operation,status:data.action==='delete'?(inUse?'value cleared; key retained':'key deleted'):'success',revision:this.state.revision};
   }
   access(session: ConsoleSession, input: unknown) {
     const actor = this.actor(session, true);
@@ -245,8 +255,10 @@ export class ConsoleServices {
     return { operation, status: 'success', revision: this.state.revision };
   }
   admit(subject: string, id: string): void {
+    if(!this.store.storageReliable||this.store.journal.degraded)throw new Error('Credential state unavailable.');
     if(this.store.mutationsBlocked())throw new Error('Instance recovery maintenance.');
     const service = own(this.state.services, id);
+    if (service?.applied?.credentials?.some(c=>!own(service.values,c.id)?.value))throw new Error('Required credential value missing.');
     if (!service || service.lifecycle !== 'Active' || !service.assignments.includes(subject)) throw new Error('Current service access unavailable.');
     const external = this.store.state.people?.external.find(e=>e.id===subject);if(external&&!external.active)throw new Error('Current identity is not eligible.');
     const local = this.store.state.users.find(u => u.id === subject);

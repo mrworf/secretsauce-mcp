@@ -12,7 +12,7 @@ Administrators are trusted to configure destinations. Exact and pattern response
 
 Use stand-in destinations such as `https://api.example.org`. No service-specific templates are provided.
 
-Credential value create/replace/delete uses an explicit confirmation and changes value availability/version immediately. No value returns in a response; create or rotation advances version/last-change metadata and invalidates affected references. Remove placement from both applied configuration and saved draft before deleting a dependent value. Discarding a draft never undoes a value operation.
+Credential value create/replace/delete uses an explicit confirmation and changes value availability/version immediately. No value returns in a response; create or rotation advances version/last-change metadata and invalidates affected references. Deleting an in-use key clears its value and keeps its configuration references. Remove placement from both applied configuration and saved draft before deleting the key itself. Discarding a draft never undoes a value operation.
 
 Access grants/removals on an existing service act immediately and require explicit eligible enrolled identities for new grants. Existing external subjects remain compatible; they never authorize console management. Disable/archive immediately remove the service from admission and revoke references. Unarchive returns Disabled, and only a fresh configuration/dependency review can enable it. Already-dispatched work may complete; its captured credential response protection survives rotation. Any new placeholders from an old revoked completion remain unregistered and unusable. The existing reference broker and capacity counters survive publication.
 
@@ -31,3 +31,11 @@ Overview groups the configuration currently in use into connections, authenticat
 Configuration opens populated Details, Destinations, Authentication, Access & policy, Secret detection, and Review changes sections. Select one section at a time. Auditor views use the same grouping without mutation actions. Guided and Advanced are two representations of the entire service draft; Advanced retains exact imported fields and patterns. Invalid JSON stays visible for correction and cannot overwrite the guided draft or be saved.
 
 Creation step links can be visited directly. Switching sections retains safe edits without saving or applying. Save draft stores non-secret work for later; Review & apply validates the entire service and requires explicit activation. Incomplete configuration can be saved but cannot activate. Leaving unsaved work offers Stay, Save draft, or Discard; immediate credential operations are not undone by discard.
+
+### Clearing a service credential
+
+Delete explains its outcome before you confirm. If current configuration or a saved draft still uses the key (including Disabled or Archived services), it clears the value and keeps the key and placements. An Active service keeps its status but cannot execute requests needing that missing value. A draft-only missing value does not stop unrelated current requests. Use the explicit value action to supply a replacement; this does not enable a Disabled service or apply a draft. Once no current or saved configuration uses a key, Delete removes it.
+
+The confirmation is tied to the state you inspected. If another administrator changes the value or its references, reload and confirm again. An uncertain result requires inspecting durable state before retry. Clearing is immediate and draft discard cannot undo it. Older backups may retain earlier values; only the existing explicit recovery workflow can restore them.
+
+Authorized viewers see the last successful changer and server time. Legacy attribution is Unknown; removed accounts retain a stable former-account label. Recovered attribution is historical. SMTP credentials retain their separate deletion rules.

@@ -1,0 +1,1292 @@
+schema_version: 1
+feedback_id: PO-FEEDBACK-2026-10-17-001
+product_id: secretsauce-mcp
+source:
+  type: product_owner
+  captured_from: 'prompt: two timestamped service-setup transcripts'
+  references:
+  - workflow/feedback/PO-FEEDBACK-2026-10-11-002/feedback.yaml
+  recordings:
+  - id: 1
+    scope: Service list, overview, configuration, guided editor, destinations, authentication; 00:00:01–00:18:03
+  - id: 2
+    scope: Access and policy, rule management, tester, import blocker, browser navigation; 00:00:01–00:08:42
+  excerpt_convention: Exact excerpts; blank lines separate successive transcript cues. Locators use recording-local
+    times. No audio or runtime inspection performed.
+status: NEEDS_CONFIRMATION
+transaction:
+  parent_commit: 369a379b016664017d2d7c3ccd7c0d92cc4286c3
+  repository_commit: null
+  pre_existing_dirty_paths:
+  - test-results/
+  owned_paths:
+  - workflow/feedback/PO-FEEDBACK-2026-10-17-001
+items:
+- id: PO-FB-042
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: and that worked really well. I'm pretty happy with that.
+  source_locator: Recording 1 00:00:13–00:00:21
+  normalized: YAML import worked well for the Product Owner.
+  scope:
+  - yaml-import
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-043
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: doesn't really indicate that which ones that are working,
+  source_locator: Recording 1 00:00:32–00:01:22
+  normalized: The service list does not clearly communicate which services are active.
+  scope:
+  - service-list
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-044
+  classification: IDEA_OR_QUESTION
+  confirmation: CONFIRMED
+  original: I think the boxes showing the services should probably have a color bar on the, the left that
+    can be red when it's off, yellow when it needs to be configured, like basically there's a draft or
+    something, and green when they're active.
+  source_locator: Recording 1 00:00:38–00:01:22
+  normalized: 'Consider left status bars: red for off, yellow for configuration/draft, green for active.'
+  scope:
+  - service-list
+  tags: []
+  authority:
+    product_intent: exploratory
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-045
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: That also means that you get a conflict because you can have a draft while it's active,
+  source_locator: Recording 1 00:00:38–00:01:22
+  normalized: Service status must accommodate an active service that also has a draft.
+  scope:
+  - service-list
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-046
+  classification: IDEA_OR_QUESTION
+  confirmation: CONFIRMED
+  original: uh, in which case probably needs to show both yellow and green to show that it's both active
+    and has, uh,
+  source_locator: Recording 1 00:01:03–00:01:22
+  normalized: Consider showing both yellow and green for an active service with a draft.
+  scope:
+  - service-list
+  tags: []
+  authority:
+    product_intent: exploratory
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-047
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: Uh, also, I would love to see and like see that you can click anywhere on the bar to open
+    its settings,
+  source_locator: Recording 1 00:01:24–00:01:44
+  normalized: Make the service row clickable to open its settings.
+  scope:
+  - service-list
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-048
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: 'and then on the right, you would have,
+
+
+    uh, like a delete, like an enable, disable, and a delete.'
+  source_locator: Recording 1 00:01:24–00:01:44
+  normalized: Provide enable, disable, and delete actions on the right of each service row.
+  scope:
+  - service-list
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-049
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: 'Uh, delete would prompt the user, "Are you sure?"
+
+
+    Enable and, uh, disable would do similarly.'
+  source_locator: Recording 1 00:01:35–00:01:47
+  normalized: Ask for confirmation for service delete, enable, and disable actions.
+  scope:
+  - service-actions
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-050
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: you get the overview, and it says, "Applied overview. No applied configuration. Incomplete
+    services cannot execute." That's very cryptic.
+  source_locator: Recording 1 00:01:57–00:02:05
+  normalized: The empty applied overview message is cryptic.
+  scope:
+  - service-overview
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-051
+  classification: IDEA_OR_QUESTION
+  confirmation: CONFIRMED
+  original: it's probably to show me the current configuration, so perhaps just simplify it and say that
+    there is no current configuration. It's not running.
+  source_locator: Recording 1 00:02:13–00:02:33
+  normalized: Consider explaining an empty overview as no current configuration and not running.
+  scope:
+  - service-overview
+  tags: []
+  authority:
+    product_intent: exploratory
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-052
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: There's also this bar at the top where it says yellow bar, there's a save draft, apply configuration,
+    it's unchanged. Really not useful
+  source_locator: Recording 1 00:02:13–00:02:41
+  normalized: The top draft/apply/unchanged bar does not communicate useful information to the Product
+    Owner.
+  scope:
+  - service-overview
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-053
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: in my opinion. And then there's a white bar underneath. Don't get that either.
+  source_locator: Recording 1 00:02:34–00:02:41
+  normalized: The white bar below the top bar has no understandable purpose.
+  scope:
+  - service-overview
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-054
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: to understand. It is just one long box that says, "Save draft, name, Portainer, TLS disabled,
+    destination, primary." What does that mean, primary? What are we talking about?
+  source_locator: Recording 1 00:03:02–00:03:23
+  normalized: The long configuration display and labels such as primary are difficult to understand.
+  scope:
+  - configuration-view
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-055
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: 'This needs to be
+
+
+    more human-friendly,
+
+
+    uh, and needs to be broken up in
+
+
+    some kind of structure that is easy to, to see,'
+  source_locator: Recording 1 00:03:25–00:03:37
+  normalized: Organize the configuration view into understandable, distinguishable sections.
+  scope:
+  - configuration-view
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+  clarifies:
+  - PO-FB-016
+- id: PO-FB-056
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: some rules. Again, this is, it just flows into each other, so you don't really see it.
+  source_locator: Recording 1 00:03:57–00:04:21
+  normalized: Rules run together visually instead of appearing as distinct items.
+  scope:
+  - policy-rules
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-057
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: And at this point, it's actually easier for me to read a JSON than it is to read the sup-
+    supposedly human structure.
+  source_locator: Recording 1 00:03:57–00:04:21
+  normalized: The Product Owner finds JSON easier to read than the current human-facing configuration
+    display.
+  scope:
+  - configuration-view
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-058
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: I think we need to iterate a lot more on what is a good UX design for this, because this is
+    an extremely complicated tool, or at least that's the feeling you get.
+  source_locator: Recording 1 00:03:57–00:04:21
+  normalized: Further iterate on service configuration UX to address its perceived complexity.
+  scope:
+  - configuration-view
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-059
+  classification: PREFERENCE
+  confirmation: CONFIRMED
+  original: these fold-out UI elements when you click and it opens up. It just makes the page really long.
+  source_locator: Recording 1 00:04:24–00:04:49
+  normalized: Use fewer fold-out controls that produce long pages, especially for single settings.
+  scope:
+  - progressive-disclosure
+  tags: []
+  authority:
+    product_intent: advisory
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-060
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: We should show last changed by whom, by the way.
+  source_locator: Recording 1 00:05:04–00:05:21
+  normalized: Show who last changed a credential value alongside its change information.
+  scope:
+  - credential-values
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-061
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: And then don't, don't have an input field here.
+  source_locator: Recording 1 00:05:22–00:05:45
+  normalized: Remove the inline credential value input from the configuration display.
+  scope:
+  - credential-values
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-062
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: or in, if there is none, you can have one that's called set value key. But either way, you
+    click a button, then it pops up a dialog where you can input the value, and then you can say save
+    or cancel, um,
+  source_locator: Recording 1 00:05:34–00:05:45
+  normalized: Use Set or Replace value actions that open a credential entry dialog with Save and Cancel.
+  scope:
+  - credential-values
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-063
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: So can I delete it, or can I? I can't, I... It's very unclear what this is actually supposed
+    to do.
+  source_locator: Recording 1 00:05:54–00:06:18
+  normalized: Credential deletion wording does not make clear whether deletion is possible or what it
+    does.
+  scope:
+  - credential-deletion
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-064
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: If I can't delete it because there is dependencies, then don't say something like this.
+  source_locator: Recording 1 00:06:02–00:06:18
+  normalized: When dependencies prevent deletion, clearly say that deletion is blocked.
+  scope:
+  - credential-deletion
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-065
+  classification: IDEA_OR_QUESTION
+  confirmation: NEEDS_CONFIRMATION
+  original: 'discarding a draft never undoes creation, replacement, or deletion. So deleting the value,
+    if it''s still referenced,
+
+
+    then we should probably just wipe out the value instead.'
+  source_locator: Recording 1 00:06:21–00:06:50
+  normalized: Consider clearing a referenced credential value while retaining its key instead of blocking
+    deletion.
+  scope:
+  - credential-deletion
+  tags: []
+  authority:
+    product_intent: unresolved
+  suggestions: []
+  ambiguity:
+  - Confirm whether clearing a referenced value is required behavior or only an option to evaluate.
+- id: PO-FB-066
+  classification: IDEA_OR_QUESTION
+  confirmation: NEEDS_CONFIRMATION
+  original: it should say some- something to the effect that this, uh, this key is in use, so proceeding
+    with the delete will simply wipe out the value, but the key will persist.
+  source_locator: Recording 1 00:06:30–00:06:50
+  normalized: If referenced-value clearing is selected, explain that the key remains and only its value
+    is cleared.
+  scope:
+  - credential-deletion
+  tags: []
+  authority:
+    product_intent: unresolved
+  suggestions: []
+  ambiguity:
+  - Confirm whether clearing a referenced value is required behavior or only an option to evaluate.
+- id: PO-FB-067
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: Only when it's unreferenced can you actually delete it.
+  source_locator: Recording 1 00:06:51–00:06:54
+  normalized: Only allow deletion of the credential key itself when it is unreferenced.
+  scope:
+  - credential-deletion
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-068
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: Explicit assignments control execution separately for end- end- What is Access? I can't do
+    anything here?
+  source_locator: Recording 1 00:07:01–00:07:09
+  normalized: The Access view is unclear and appears to offer no usable action.
+  scope:
+  - service-access
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-069
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: And then we have Activity, and it shows me what, what was done for this service, which is
+    fine.
+  source_locator: Recording 1 00:07:10–00:07:20
+  normalized: The service Activity view is satisfactory.
+  scope:
+  - service-activity
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-070
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: If I hit click Edit Configuration, you go into this wizard-like, which is actually not bad.
+    I kinda like it. I also like that you have Advanced Editor.
+  source_locator: Recording 1 00:07:25–00:07:49
+  normalized: The guided editor and availability of advanced editing are liked.
+  scope:
+  - editor-modes
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-071
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: Uh, you don't have to say same draft. I think that's implied, like if you go Advanced.
+  source_locator: Recording 1 00:07:25–00:07:49
+  normalized: Remove the redundant same draft wording from the Advanced Editor entry.
+  scope:
+  - editor-modes
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-072
+  classification: IDEA_OR_QUESTION
+  confirmation: CONFIRMED
+  original: it would make sense to just have a simple as the tab that's default selected. Oh, and not
+    simple, maybe whatever isn't demeaning, uh, to have, like...
+  source_locator: Recording 1 00:08:01–00:08:40
+  normalized: An initial idea was nested guided/advanced tabs within Details; the speaker subsequently
+    revises the placement because Advanced edits the whole configuration.
+  scope:
+  - editor-modes
+  tags: []
+  authority:
+    product_intent: exploratory
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-073
+  classification: PREFERENCE
+  confirmation: CONFIRMED
+  original: Oh, and not simple, maybe whatever isn't demeaning,
+  source_locator: Recording 1 00:08:01–00:08:40
+  normalized: Avoid demeaning terminology such as simple for the guided editing mode.
+  scope:
+  - product-language
+  tags: []
+  authority:
+    product_intent: advisory
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-074
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: because that's the other thing. You are repeating the menu. I, I can see that Details is selected,
+    but then within the white box, I'm seeing Details as a header.
+  source_locator: Recording 1 00:08:01–00:08:33
+  normalized: Avoid repeating the selected wizard step label as a redundant content heading.
+  scope:
+  - guided-editor
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-075
+  classification: IDEA_OR_QUESTION
+  confirmation: CONFIRMED
+  original: Next to Save Draft, perhaps you could have Advanced Editor, uh, and then that switches over
+    to
+  source_locator: Recording 1 00:09:06–00:09:28
+  normalized: Consider placing the full Advanced Editor switch beside Save Draft in the footer.
+  scope:
+  - editor-modes
+  tags: []
+  authority:
+    product_intent: exploratory
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-076
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: please let me click on the headers.
+  source_locator: Recording 1 00:09:34–00:09:57
+  normalized: Make wizard step headers clickable for navigation between steps.
+  scope:
+  - guided-navigation
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-077
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: Instead, I have to scroll to the bottom and click Back to backtrack through the different
+    tabs,
+  source_locator: Recording 1 00:09:46–00:09:57
+  normalized: Backtracking through the wizard currently requires scrolling to bottom navigation.
+  scope:
+  - guided-navigation
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-078
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: Uh, link to the API documentation for this service. You probably wanna call out that that
+    is, that can be, that an LLM can utilize to understand how to use it.
+  source_locator: Recording 1 00:10:27–00:10:41
+  normalized: Explain that the API documentation link can help an LLM understand how to use the service.
+  scope:
+  - field-help
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-079
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: You probably need to put a little description here explaining what allowed destinations are,
+    because this is a very strange
+  source_locator: Recording 1 00:11:10–00:11:20
+  normalized: Explain what allowed destinations mean.
+  scope:
+  - destinations
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-080
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: then it has to be that. If it's a suffix, you need to explain what host matching is here,
+  source_locator: Recording 1 00:11:45–00:11:55
+  normalized: Explain host matching and its exact, suffix, and regular-expression choices.
+  scope:
+  - destinations
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-081
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: 'I can click Add Another Destination.
+
+
+    That''s correct.'
+  source_locator: Recording 1 00:11:56–00:12:07
+  normalized: Adding another destination behaves as expected.
+  scope:
+  - destinations
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-082
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: I, I would just show verify TLS by default always, and I would make it clear whether that
+    applies to every destination or just...
+  source_locator: Recording 1 00:12:34–00:12:50
+  normalized: Show the TLS verification control without a fold-out and make its scope explicit.
+  scope:
+  - destinations
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-083
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: If it's per destination, it belongs together with per destination.
+  source_locator: Recording 1 00:12:45–00:12:50
+  normalized: If TLS verification is per destination, place it with that destination.
+  scope:
+  - destinations
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-084
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: 'Oh, and you''re hiding, so you have multiple layers of foldable.
+
+
+    That''s terrible. Don''t have multiple.'
+  source_locator: Recording 1 00:12:52–00:13:09
+  normalized: Do not nest multiple fold-out layers in destination settings.
+  scope:
+  - progressive-disclosure
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-085
+  classification: IDEA_OR_QUESTION
+  confirmation: CONFIRMED
+  original: 'You probably need to add a button
+
+
+    next to, like, in the destination one, like, in the destination area, called advanced settings that
+    you can click, and that takes you to the men- to another, uh, page where you can start doing advanced
+    destination matching, allowed schemas, allowed port, host matching, destination identifier.'
+  source_locator: Recording 1 00:13:10–00:13:36
+  normalized: Consider a per-destination Advanced settings action opening a focused page for advanced
+    matching and identifiers.
+  scope:
+  - destinations
+  tags: []
+  authority:
+    product_intent: exploratory
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-086
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: 'If the stable service identifier is something more for the system to be able to relate to
+    things, and me as a user will never actually interact with this piece because I interact with the
+    service name, and likewise under destination, I don''t even
+
+
+    care about primary, secondary, or whatever name I gave it, we should not expose that to the end user.
+    That just adds confusion.'
+  source_locator: Recording 1 00:14:00–00:14:26
+  normalized: Do not expose service and destination identifiers in ordinary user interaction if they are
+    only system references; retain the stated conditional nature of this request.
+  scope:
+  - identifiers
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-087
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: That's why it should just be part of, like, you can switch between guided and advanced.
+  source_locator: Recording 1 00:14:31–00:14:58
+  normalized: Offer a global Guided/Advanced editing mode switch, rather than repeating full-configuration
+    Advanced Editor entries in individual sections.
+  scope:
+  - editor-modes
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+  clarifies:
+  - PO-FB-072
+  - PO-FB-075
+- id: PO-FB-088
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: 'Anyway, so in authentication, uh, downstream authentication. Choose whether the service needs
+    credentials to make request.
+
+
+    Okay, that makes sense.'
+  source_locator: Recording 1 00:14:40–00:15:06
+  normalized: The explanation of whether a downstream service needs credentials is understandable.
+  scope:
+  - authentication
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-089
+  classification: PREFERENCE
+  confirmation: CONFIRMED
+  original: Not keen on placement name, but I don't have a better name.
+  source_locator: Recording 1 00:15:16–00:15:19
+  normalized: Improve the placement name label; no replacement wording has been selected.
+  scope:
+  - authentication
+  tags: []
+  authority:
+    product_intent: advisory
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-090
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: Usage prefix, text placed before the value, such as bearer, followed by a space. This one
+    is very confusing. What does it do?
+  source_locator: Recording 1 00:15:20–00:15:28
+  normalized: The meaning of usage prefix is unclear.
+  scope:
+  - authentication
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-091
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: 'that needs to
+
+
+    be explained a little bit better or
+
+
+    shown.'
+  source_locator: Recording 1 00:15:42–00:15:52
+  normalized: Explain or illustrate how prefix and suffix relate to a credential value.
+  scope:
+  - authentication
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-092
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: Oh, yeah, and again, you, you're doing advanced placement hint, and it's just one single field.
+    Then just show it. It doesn't matter.
+  source_locator: Recording 1 00:16:02–00:16:11
+  normalized: Show the single placement hint field directly instead of hiding it in a fold-out.
+  scope:
+  - authentication
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-093
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: 'And also placement kind, exist, this existing generic hints.
+
+
+    This, as a user, I have no idea.'
+  source_locator: Recording 1 00:16:13–00:16:23
+  normalized: Placement kind and generic hint terminology are not understandable.
+  scope:
+  - authentication
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-094
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: you are not distinguishing between the advanced setting that I'm manipulating and the next
+    step.
+  source_locator: Recording 1 00:16:24–00:16:42
+  normalized: Visual boundaries between advanced placement hints and subsequent controls are unclear.
+  scope:
+  - authentication
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-095
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: Um, enforce gateway owned header. What does that mean?
+  source_locator: Recording 1 00:16:37–00:16:42
+  normalized: The enforce gateway owned header option is unexplained to the Product Owner.
+  scope:
+  - authentication
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-096
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: It says available version one last change. So this is the credential that is being associated.
+  source_locator: Recording 1 00:16:44–00:17:01
+  normalized: The relationship between the displayed credential metadata and the configured credential
+    is not immediately apparent.
+  scope:
+  - credential-values
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-097
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: and it's one of those that actually if I hit continue, that I can do that even though it was
+    marked as required, because this is actually required for it to replace value immediately underneath,
+  source_locator: Recording 1 00:17:18–00:17:29
+  normalized: An inline required credential value field is confusing because Continue works without it
+    and the requirement applies to immediate replacement.
+  scope:
+  - credential-values
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-098
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: 'You should have a button that says set, set credential,
+
+
+    and when you click it, you open up a dialog where you can enter the credential and hit save or cancel.'
+  source_locator: Recording 1 00:17:31–00:17:43
+  normalized: Use the credential entry dialog pattern in the authentication wizard as well.
+  scope:
+  - credential-values
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+  clarifies:
+  - PO-FB-062
+- id: PO-FB-099
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: Oh, and the screen reloaded and I ended up on top.
+  source_locator: Recording 1 00:17:54–00:18:03
+  normalized: Adding another credential jumps the view to the top.
+  scope:
+  - guided-navigation
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-100
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: When I add another credential identity, I expect to actually have the screen scroll to where
+    it was created.
+  source_locator: Recording 1 00:17:54–00:18:03
+  normalized: Scroll to the newly added credential when it is created.
+  scope:
+  - guided-navigation
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-101
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: 'It says explicit service access, and I can click my name.
+
+
+    That doesn''t make sense. What am I doing here?'
+  source_locator: Recording 2 00:00:01–00:00:16
+  normalized: The meaning of selecting a user under explicit service access is unclear.
+  scope:
+  - service-access
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-102
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: 'I think
+
+
+    you need to clarify that. It is much easier to understand, like, default,
+
+
+    default is allow, default is deny.'
+  source_locator: Recording 2 00:00:35–00:00:51
+  normalized: Explain the default policy using clear allow/deny wording.
+  scope:
+  - policy-default
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-103
+  classification: IDEA_OR_QUESTION
+  confirmation: CONFIRMED
+  original: 'because that means that the rules below, if default is allowed, then all the rules below
+    are deny,
+
+
+    right?'
+  source_locator: Recording 2 00:00:53–00:01:04
+  normalized: 'Question: does an allow default mean all individual rules are deny rules? This is an inference
+    to clarify, not a requested restriction on rule effects.'
+  scope:
+  - policy-default
+  tags: []
+  authority:
+    product_intent: exploratory
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-104
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: Methods is comma separated. That should be something I pick from a list. That should not be
+    something I type,
+  source_locator: Recording 2 00:01:11–00:01:30
+  normalized: Select HTTP methods from a list instead of typing comma-separated values.
+  scope:
+  - policy-rules
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-105
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: Is that the reason why it was allowed or the reason it was denied? You need to clarify that.
+  source_locator: Recording 2 00:01:46–00:02:03
+  normalized: Explain what a policy rule reason means.
+  scope:
+  - policy-rules
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-106
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: It's very hard to understand that this is actually a list of rules.
+  source_locator: Recording 2 00:02:16–00:02:23
+  normalized: The existing policy rules are not visually recognizable as a list.
+  scope:
+  - policy-rules
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-107
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: There should just be a button to add a new rule, and then it should list other rules, and
+    for each rule, there should be, like, an edit or delete.
+  source_locator: Recording 2 00:02:33–00:03:02
+  normalized: Show a rule list with an Add rule button and Edit/Delete actions per rule, instead of an
+    always-visible blank add form.
+  scope:
+  - policy-rules
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-108
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: 'You don''t need to continuously repeat yourself with
+
+
+    edit rule, deny identity and access,
+
+
+    remove rule, uh, deny identity and access if it''s a single line
+
+
+    with the, with the rule.'
+  source_locator: Recording 2 00:02:33–00:03:02
+  normalized: Avoid repeating the rule identifier in visible action labels when the row supplies context.
+  scope:
+  - policy-rules
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-109
+  classification: PREFERENCE
+  confirmation: CONFIRMED
+  original: 'I''m torn. I honestly don''t think it makes
+
+
+    a ton of sense having, uh,
+
+
+    the identifier exposed to end user,'
+  source_locator: Recording 2 00:03:07–00:03:31
+  normalized: Prefer not exposing policy rule identifiers in ordinary user interaction; the speaker remains
+    uncertain.
+  scope:
+  - identifiers
+  tags: []
+  authority:
+    product_intent: advisory
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-110
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: if I wanna add, it should open a modal to do so.
+  source_locator: Recording 2 00:03:32–00:03:37
+  normalized: Open a modal to add a policy rule.
+  scope:
+  - policy-rules
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-111
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: 'there''s a shared secret detection settings,
+
+
+    and then when I click that, I get to the main, like, the global settings,'
+  source_locator: Recording 2 00:03:41–00:03:59
+  normalized: The shared secret detection settings link unexpectedly leaves service editing for global
+    settings.
+  scope:
+  - guided-navigation
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-112
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: Why can't I move the first one?
+  source_locator: Recording 2 00:04:24–00:04:44
+  normalized: 'Rule movement controls appear inconsistent: the first rule cannot be moved while subsequent
+    rules offer movement.'
+  scope:
+  - policy-rules
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-113
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: So I like this, but this should probably be a modal,
+  source_locator: Recording 2 00:05:00–00:05:09
+  normalized: The policy tester is liked.
+  scope:
+  - policy-tester
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-114
+  classification: IDEA_OR_QUESTION
+  confirmation: CONFIRMED
+  original: So I like this, but this should probably be a modal,
+  source_locator: Recording 2 00:05:00–00:05:09
+  normalized: Consider presenting the policy tester in a modal.
+  scope:
+  - policy-tester
+  tags: []
+  authority:
+    product_intent: exploratory
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-115
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: 'especially since return to services, this brings me back.
+
+
+    And when I click this, now I''m getting unsaved draft changes.'
+  source_locator: Recording 2 00:05:05–00:05:19
+  normalized: Returning to services from policy testing produces an unexpected unsaved draft warning.
+  scope:
+  - policy-tester
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-116
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: I c- I can't do that, because it says import has unresolved identities. Please supply explicit
+    mappings and import, and import again. That doesn't tell me what to do.
+  source_locator: Recording 2 00:05:27–00:06:03
+  normalized: Unresolved imported identities block review/apply without explaining the required action.
+  scope:
+  - import-recovery
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-117
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: So when I edit a rule, it looks much different than when I add a basic rule.
+  source_locator: Recording 2 00:06:17–00:06:23
+  normalized: Policy rule add and edit forms look substantially different.
+  scope:
+  - policy-rules
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-118
+  classification: PREFERENCE
+  confirmation: CONFIRMED
+  original: 'That''s another reason why not to have
+
+
+    basic r-request rule and then add basic re-press rule, uh, like built in. It would be better to,
+
+
+    to have a button and then open up a window or a modal.'
+  source_locator: Recording 2 00:06:24–00:06:39
+  normalized: Use a consistent focused interaction for adding and editing rules.
+  scope:
+  - policy-rules
+  tags: []
+  authority:
+    product_intent: advisory
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-119
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: why I can't proceed. I have checked my account as the owner.
+  source_locator: Recording 2 00:06:46–00:07:03
+  normalized: Selecting the Product Owner account does not resolve the reported import blocker.
+  scope:
+  - import-recovery
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-120
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: Also, back and forth doesn't work at all reliably. You are not pushing the changes to the
+    browser, so back and forward on the, on the, on the browser doesn't actually work the way one, one
+    would e-expect.
+  source_locator: Recording 2 00:07:07–00:07:26
+  normalized: Browser Back and Forward are unreliable in this workflow; lack of browser history updates
+    is the speaker’s explanation, not a verified root cause.
+  scope:
+  - browser-navigation
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-121
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: 'Which ones?
+
+
+    And I don''t see how I can pick an identity
+
+
+    once I hit edit.'
+  source_locator: Recording 2 00:07:37–00:07:52
+  normalized: The blocker does not identify unresolved identities or reveal a way to map them while editing.
+  scope:
+  - import-recovery
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-122
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: 'So when there are er- uh, uh, issues with a rule
+
+
+    or with a service, you need to say more than just that it''s wrong. You''re not explaining it sufficiently.'
+  source_locator: Recording 2 00:08:07–00:08:37
+  normalized: Explain service and rule errors sufficiently for users to understand the problem and how
+    to proceed, including unresolved imported identities.
+  scope:
+  - validation-errors
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-123
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: or, or, or, you know, look, look into best practices here.
+  source_locator: Recording 1 00:07:50–00:07:56
+  normalized: Research established UX practices when refining service configuration editing.
+  scope:
+  - design-research
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+  clarifies:
+  - PO-FB-040
+- id: PO-FB-124
+  classification: IDEA_OR_QUESTION
+  confirmation: CONFIRMED
+  original: Since that actually edits all of it, I think it would make more sense to have, like, a mode
+    so you could... Like, right now it's guided by default, and then you can switch it to advanced, and
+    then you just get to edit the JSON as it stands.
+  source_locator: Recording 2 00:08:13–00:08:37
+  normalized: The final suggested presentation is Guided by default with a switch to full-configuration
+    JSON editing.
+  scope:
+  - editor-modes
+  tags: []
+  authority:
+    product_intent: exploratory
+  suggestions: []
+  ambiguity: []
+  clarifies:
+  - PO-FB-087
+unresolved:
+- id: PO-UNRESOLVED-004
+  item_ids:
+  - PO-FB-065
+  - PO-FB-066
+  issue: authority
+  question: Should clearing a credential value that is still referenced be required behavior, or an option
+    to evaluate while retaining a clear blocked-delete explanation?
+  options:
+  - id: A
+    meaning: Require clearing the referenced value while keeping the key, with an explanation before proceeding.
+    classification: DIRECTIVE
+  - id: B
+    meaning: Treat referenced-value clearing as an idea; require clear messaging when dependencies block
+      deletion.
+    classification: IDEA_OR_QUESTION
+  blocking_reconciliation: true
+handoff:
+  reconciliation_ready: false
+  next_workflow: null

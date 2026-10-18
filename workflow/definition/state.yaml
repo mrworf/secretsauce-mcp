@@ -4,7 +4,7 @@ status: ready_for_delivery_planning
 scope: Self-hosted single-organization web console initial release
 transaction:
   parent_commit: 57eaebe24fd13a10d2b12f688515b307c47ac8ba
-  repository_commit: null
+  repository_commit: d84ac2265bd6c055a6da5edfe5f3d586137d30e9
   pre_existing_dirty_paths:
   - test-results/
   owned_paths:
@@ -1610,7 +1610,7 @@ last_reconciliation:
   definition_package:
     status: current
     path: workflow/definition/definition-package.yaml
-    revision: sha256:1253b7e3163612c147f922217763ba12e1b3729d3fc56aefaf81019808890589
+    revision: sha256:a8282a031ef8c76e5b80f620e30b26eb202763b5eb65b4a091fd2435ac6e449b
   readiness_basis: REC009 resolved; selective journeys and approved UX5 PASS. Unaffected
     semantic-domain validation preserved with explicit exact current authority basis.
 feedback_source: workflow/feedback/PO-FEEDBACK-2026-10-17-001/feedback.yaml
@@ -1765,8 +1765,8 @@ next_handoff:
   mode: CHANGE_PLAN
   ready: true
   primary_input: workflow/definition/definition-package.yaml
-  definition_package_revision: sha256:1253b7e3163612c147f922217763ba12e1b3729d3fc56aefaf81019808890589
-  repository_commit: null
+  definition_package_revision: sha256:a8282a031ef8c76e5b80f620e30b26eb202763b5eb65b4a091fd2435ac6e449b
+  repository_commit: d84ac2265bd6c055a6da5edfe5f3d586137d30e9
   reconciliation:
     id: REC-RUN-009
     path: workflow/reconciliation/REC-RUN-009/reconciliation-result.yaml

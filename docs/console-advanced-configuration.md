@@ -45,3 +45,9 @@ In **Configuration → Destinations**, enter the servers and base paths that may
 **Verify HTTPS certificates by default** applies to every destination without an override. It checks server identity; disabling verification does not disable HTTPS encryption. Each server shows its effective setting and whether it comes from the service default or a destination override. HTTP is explicitly unencrypted and does not use certificates.
 
 A server’s **Advanced settings** opens only that destination. Connection settings retain schemes, ports, certificate override and the exact destination reference. Host matching retains multiple exact/suffix/regex literals. **Keep destination changes** returns them to the unsaved service draft; **Cancel** discards only this visit’s destination edits. Neither action saves or applies configuration. Use **Save draft**, then explicit **Review & apply** when ready. Invalid fields link to the needed correction. Existing imported `name`/`id` references remain unchanged unless deliberately edited; the MCP service reference is visible and copyable in Details.
+
+### Credential value actions
+
+Authentication keeps placement edits separate from values. Choose **Set value** or **Replace value** beside the key to enter a new write-only value in a dialog. **Save value** takes effect immediately; **Cancel** or Escape discards only the temporary entry. Saving the first value for a new service also saves its configuration as an inactive draft. Continuing through setup never requires a replacement value. Availability, version, last successful actor and time remain beside the key.
+
+If a command result is unknown, check current state before reopening the value dialog. Re-enter and confirm only after reviewing current metadata; closing the dialog is not proof that a value changed. Existing unsaved placement edits remain. Delete confirms whether it clears a referenced value while retaining the key or removes an unreferenced key.

@@ -1,0 +1,14 @@
+{
+  "delivery/milestones/secretsauce-mcp/26-service-lifecycle-rows.md": "5f3dfea789b48b3af7a1eb6c6fae202021007abad4e3213cf114a580aaecdab4",
+  "workflow/delivery-planning/handoff.yaml": "4caf320d2662cec07cfdb2ef865c397a591f456a57695670edf0eea9bea161dd",
+  "product/ux/01-information-architecture.md": "46a44b43f12e8fec32e97abcf659581bc3c2d6b4c57c176038e495277a69c159",
+  "product/ux/02-interaction-patterns.md": "49afe01f26e05cb51e1a0183283ff07f16fdc4cb238cedc1bb85b35e0c6b5539",
+  "workflow/definition/drafts/product-ux/web-console-feedback-003/services-desktop.png": "850d6d4e6dd422cd57a842adbeb0f489d55881d4bec73022e967e874116c8342",
+  "workflow/definition/drafts/product-ux/web-console-feedback-003/services-narrow.png": "31c7d7f7881c4ccbf23956f4329e2010a5e4b2cf75511cad921e800545ec495d",
+  "src/consoleServices.ts": "039df82e3752811addedc7bb572da25dfb445d2bb7e7720c9340633ce2ec78e8",
+  "src/consoleServicePage.ts": "4c2037ccfc012f487e0e37f8923ae1873741940bd68d75439a90e1d5de3c9f57",
+  "src/consolePage.ts": "79c8f9acedb296d863cee8ad07d78cc801419e897e8c836195f6fcaf2562f79b",
+  "src/consolePresentation.ts": "33aa973cc26ffe6d06f73c580fe49923d30e7578f8b5cbbf1c8a1e5574e6a3dd",
+  "scripts/verify-console-lifecycle-browser.mjs": "ef5dfcda4fc0bf1568f768ee196470f591f25555816d6acb3255ce5f2c24f725",
+  "test/console-services.test.ts": "28b2522acfdd211e4b8fa42c18820c9d7e796d43dbd01f509a02522f31b48c8e"
+}

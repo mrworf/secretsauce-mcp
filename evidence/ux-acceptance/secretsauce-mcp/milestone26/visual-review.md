@@ -1,0 +1,9 @@
+# M26 actual browser comparison
+
+Reference: approved UX4 services-desktop.png (1440×1000), services-narrow.png (390×844), source hashes in QA tested-inputs.json. Actual: same filenames in this directory. Compared the actual PNGs directly against both references after the final toolbar correction.
+
+PASS: full-width workspace, 200px desktop navigation, 36px content inset, 29px title, muted subtitle, search/status toolbar, compact white rounded rows, left green/red/amber lifecycle bars, simultaneous separate Active/Draft changes chips, 18px linked service titles, descriptions and person counts, right aligned subordinate Disable/Delete controls. The mapping-blocked draft retains readable chips, disabled Enable and a corrective link in place of inert help. Row widths, columns, padding, density, type hierarchy and colors match the approved service composition. Narrow rows become stacked with usable sibling actions; the title toolbar retains natural-width buttons. No material unapproved drift remains.
+
+Known representation differences: proposal-only banner/footer omitted; established actual application header retains existing account/navigation arrangement instead of prototype shell order; Configuration tools remains reachable below the list to preserve existing functions. These do not alter the approved service task composition and are not new exceptions. No references were modified.
+
+Browser also checks keyboard link traversal, real direct URL, Cancel/Escape focus return, independent action hit targets and retained search. services-text200.png records 320px at 200% text, checking document scroll width, every visible component and text-node ranges. services-value-missing.png demonstrates lifecycle independently of readiness. All states are synthetic; no actual downstream health or external LLM claim.

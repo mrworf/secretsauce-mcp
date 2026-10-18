@@ -51,7 +51,7 @@ export class ConsoleServices {
   }
   fingerprint(id: string): string {
     const s = own(this.state.services, id);
-    return digest(JSON.stringify({ revision: this.state.revision, lifecycle: s?.lifecycle, assignments: s?.assignments,
+    return digest(JSON.stringify({ revision: this.state.revision, lifecycle: s?.lifecycle, draftGeneration: s?.draft?.generation, assignments: s?.assignments,
       values: Object.entries(s?.values ?? {}).map(([key, v]) => [key, v.version]),
       users: this.store.state.users.map(u => ({ id: u.id, role: u.role, active: u.active, enrolled:u.enrolled, authorizationGeneration:u.authorizationGeneration??0 })), external:this.store.state.people?.external.map(e=>({id:e.id,issuer:e.issuer,subject:e.subject,active:e.active,authorizationGeneration:e.authorizationGeneration??0})) }));
   }
@@ -232,8 +232,9 @@ export class ConsoleServices {
   }
   lifecycle(session: ConsoleSession, input: unknown) {
     const actor = this.actor(session, true);
-    const data = this.parse(z.object({ id: idSchema, action: z.enum(['disable', 'archive', 'unarchive']), confirmed: z.literal(true) }).strict(), input);
+    const data = this.parse(z.object({ id: idSchema, action: z.enum(['disable', 'archive', 'unarchive']), fingerprint: z.string().regex(/^[a-f0-9]{64}$/).optional(), confirmed: z.literal(true) }).strict(), input);
     const s = own(this.state.services, data.id); if (!s) throw new ServiceManagementError('Service unavailable. Reload Services.');
+    if (data.fingerprint !== undefined && data.fingerprint !== this.fingerprint(data.id)) throw this.stale(session, data.id);
     if (data.action === 'unarchive' && s.lifecycle !== 'Archived') throw new ServiceManagementError('Only an Archived service can be unarchived.');
     if (data.action === 'disable' && s.lifecycle === 'Archived') throw new ServiceManagementError('Service archived. Unarchive returns it to Disabled.');
     const base = this.state.revision; let operation: string;

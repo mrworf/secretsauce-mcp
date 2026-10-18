@@ -75,3 +75,14 @@ it('lists independent lifecycle, pending changes and readiness without leaking v
  f.store.state.users[0]!.role='Auditor';expect(f.manager.list(f.session).writable).toBe(false);
  f.store.state.users[0]!.role='Member';expect(f.manager.list(f.session).services[0]).toMatchObject({hasDraft:false});expect(f.manager.list(f.session).services[0]).not.toHaveProperty('activationBlocker');s.assignments=[];expect(f.manager.list(f.session).services).toHaveLength(0);
 }finally{f.close();}});
+
+it('binds lifecycle confirmations to current dependencies and retains archive/restore review safeguards',()=>{const f=managedFixture();try{
+ const input={id:'baseline',action:'disable',confirmed:true,fingerprint:f.manager.fingerprint('baseline')};
+ f.manager.save(f.session,{id:'baseline',base:0,generation:0,service:draft()});expect(()=>f.manager.lifecycle(f.session,input)).toThrow('Stale');expect(f.manager.state.services.baseline!.lifecycle).toBe('Active');
+ for(const fingerprint of ['invalid',17,'a'.repeat(65)])expect(()=>f.manager.lifecycle(f.session,{...input,fingerprint})).toThrow('Invalid');
+ for(const role of ['Auditor','Member'] as const){f.store.state.users[0]!.role=role;expect(()=>f.manager.lifecycle(f.session,{...input,fingerprint:undefined})).toThrow('Forbidden');}f.store.state.users[0]!.role='Administrator';
+ f.manager.lifecycle(f.session,{...input,fingerprint:f.manager.fingerprint('baseline')});expect(f.manager.state.services.baseline!.lifecycle).toBe('Disabled');expect(f.cfg.services.baseline).toBeUndefined();
+ f.manager.lifecycle(f.session,{...input,action:'archive',fingerprint:f.manager.fingerprint('baseline')});expect(f.manager.state.services.baseline!.draft).toBeDefined();expect(f.manager.state.services.baseline!.applied).toBeDefined();expect(()=>f.manager.review(f.session,{id:'baseline'})).toThrow('archived');
+ f.manager.lifecycle(f.session,{...input,action:'unarchive',fingerprint:f.manager.fingerprint('baseline')});expect(f.manager.state.services.baseline!.lifecycle).toBe('Disabled');expect(f.cfg.services.baseline).toBeUndefined();expect(()=>f.manager.lifecycle(f.session,{...input,action:'enable'})).toThrow('Invalid');
+ expect(()=>f.manager.review(f.session,{id:'baseline'})).toThrow('Stale');expect(f.store.journal.entries().some(e=>e.action==='service.archive')).toBe(true);
+}finally{f.close();}});

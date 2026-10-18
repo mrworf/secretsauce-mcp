@@ -16,4 +16,7 @@ Disable/archive/restore, cancel/Escape, stale dependencies, malformed fingerprin
 Positive and negative external input tests. Required commands: npx vitest run test/console-services.test.ts test/console-services-http.test.ts --maxWorkers=2. Browser against isolated HTTPS synthetic state. Every described outcome must pass; screenshot acceptance includes layout, density, spacing, typography, controls, color and hierarchy; text enlargement includes document and text ranges.
 
 ## Commit boundary
-One coherent behavior commit with supporting tests/docs and this plan. Status: planned. Commit reference supplied by orchestrator closeout. Full-suite required only at milestone completion.
+One coherent behavior commit with supporting tests/docs and this plan. Status: complete. Commit reference supplied by orchestrator closeout. Full-suite required only at milestone completion.
+
+## Final evidence
+Focused 27 service/API/runtime tests pass; npm run build passes. Final full npm test -- --maxWorkers=2: 730/730 tests, 73 files, 105.77s; pretest build passes. Actual lifecycle browser plus predecessor import-recovery and existing services journey pass. Screenshot comparison and all criteria mapping: evidence/qa/secretsauce-mcp/milestone26/acceptance.md and evidence/ux-acceptance/secretsauce-mcp/milestone26/visual-review.md. No material unapproved drift. Review-only Enable preserves existing explicit save/review semantics; lifecycle optional fingerprint preserves legacy callers while all authorization/current lifecycle checks remain. New UI binds confirmation to fingerprint including draft generation. A direct service link required removing its query on return to list; broader browser-history behavior stays M32. Prior browser selectors were updated to link roles.

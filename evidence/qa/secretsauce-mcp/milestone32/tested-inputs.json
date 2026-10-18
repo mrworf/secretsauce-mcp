@@ -1,0 +1,17 @@
+{
+  "src/consoleServicePage.ts": "151b3ccfadd8be8164b54f3856e82b980522892c086e33af92d62b134af7dd21",
+  "src/consolePresentation.ts": "bc175a53232fa8cb7d7d91e30175de2e642d6b668e0b5e785f310b40ffe6c641",
+  "src/consoleServices.ts": "f63176a5fc6454de9088c41441168a88351fdc7be7815191e616bb8aba0c8ffc",
+  "test/console-services.test.ts": "f6e8f53abc7be078ffa0281afb9559376587696417bdc69850ce1dedc673dc49",
+  "test/console-services-http.test.ts": "231cc21dd908eb3c383a54f5ea860ade596e23edd4662a420431dde88d161898",
+  "scripts/verify-console-service-help-browser.mjs": "e6b487639a154f082dce466687fa362c7e2852550fdfcc81a70d3744a58da77d",
+  "scripts/verify-console-credential-dialogs-browser.mjs": "4dffde4526420d7854512710d2069c1e65ab5b7e7f099b47173cf18598fca703",
+  "scripts/verify-console-policy-dialogs-browser.mjs": "8c80232974ea9ec93d10b382ac3c599a6afedfe3c8e62d20122ecaf70e00a9c2",
+  "package.json": "885ec1afee9dfc4f1d5f8ec2986fdd7e41e4fb3c39ad789c2b6dde4eb58f9a2d",
+  "package-lock.json": "0b96e72aa34aa005030ce4fb83b86a6c584e0dfedb6eff10d33970676da3a9d2",
+  "workflow/definition/drafts/product-ux/web-console-feedback-003/authentication-desktop.png": "2a768226fe2f3a9bc16b1ff1d075205e724e3dba9eaae085e2dccad8790acf6c",
+  "workflow/definition/drafts/product-ux/web-console-feedback-003/authentication-narrow.png": "c5f906859a1bd14e5b04ab57584236ca930d427cd0e123401e262e89ab4daf2c",
+  "workflow/definition/drafts/product-ux/web-console-feedback-003/access.html": "2fca9dfe7d01bff6f9e332d5377e3cd3a263df1a4ce728a2dba40b6355d4caaa",
+  "workflow/definition/drafts/product-ux/web-console-feedback-003/details.html": "96f10bd2dd20bb7289ea8e2354b9d0ac0cd72f772ef1b0e38796a462e970f8f0",
+  "workflow/definition/drafts/product-ux/web-console-feedback-003/policy-desktop.png": "6726143cff615118463c83504d334acb801efc91951dd6be1273d3509291c633"
+}

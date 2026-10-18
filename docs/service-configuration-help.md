@@ -7,3 +7,7 @@ Under Authentication, select where the client should place its credential refere
 Let the gateway control this header is explicit and off by default. A supplied header must contain exactly one valid matching reference or the request is rejected. Extra text or duplicate headers are replaced with the configured template. The enforced reference cannot be used elsewhere. This option does not insert a missing header. Set/Replace/Delete value remains independent of saving a configuration draft.
 
 Default policy applies only if no rule matches. Both Allow and Deny rules are possible with either default. A rule’s explanation describes why that rule allows or denies its matching request.
+
+Access shows current assignments for an existing service. Add eligible identity and Remove access require confirmation and take effect immediately; they do not apply a configuration draft or activate a disabled service. Owner/Administrator roles alone do not grant execution. Auditors can inspect assignments but cannot change them.
+
+For a service that has never been activated, select proposed assignments in Access & policy, then review and apply the configuration. Selecting an identity or correcting an import mapping does not itself grant access. If a confirmation becomes stale, reload assignments and confirm again. If a reply is lost, use Check current assignments before making another change; the console does not automatically repeat the action.

@@ -110,3 +110,14 @@ it('keeps authored rule literals and custom method ordering in drafts and reject
   expect(f.manager.state.services.baseline!.applied!.policy).not.toEqual(service.policy);
  }finally{f.close();}
 });
+
+it('binds confirmed execution access to current dependencies without changing drafts or lifecycle',()=>{const f=managedFixture();try{
+ const id='baseline',user=f.session.userId;const command={id,user,action:'grant',fingerprint:f.manager.fingerprint(id),confirmed:true};
+ for(const patch of [{fingerprint:'invalid'},{confirmed:false},{user:''},{unexpected:true}])expect(()=>f.manager.access(f.session,{...command,...patch})).toThrow('Invalid');
+ f.store.state.users[0]!.authorizationGeneration=(f.store.state.users[0]!.authorizationGeneration??0)+1;expect(()=>f.manager.access(f.session,command)).toThrow('Stale access');expect(f.manager.state.services.baseline!.assignments).toEqual([]);
+ for(const role of ['Auditor','Member'] as const){f.store.state.users[0]!.role=role;expect(()=>f.manager.access(f.session,{...command,fingerprint:f.manager.fingerprint(id)})).toThrow('Forbidden');}
+ f.store.state.users[0]!.role='Administrator';const before=structuredClone(f.manager.state.services.baseline!.draft);f.manager.access(f.session,{...command,fingerprint:f.manager.fingerprint(id)});expect(f.manager.state.services.baseline!.assignments).toEqual([user]);expect(f.cfg.services.baseline!.access.users).toEqual([user]);expect(f.manager.state.services.baseline!.draft).toEqual(before);
+ expect(()=>f.manager.access(f.session,command)).toThrow('Stale');expect(()=>f.manager.access(f.session,{...command,user:'absent',fingerprint:f.manager.fingerprint(id)})).toThrow('eligible');
+ f.manager.access(f.session,{...command,action:'remove',fingerprint:f.manager.fingerprint(id)});expect(f.manager.state.services.baseline!.assignments).toEqual([]);expect(f.cfg.services.baseline!.access.users).toEqual([]);expect(f.manager.state.services.baseline!.lifecycle).toBe('Active');
+ save(f,{...draft(),access:{users:[user]}});expect(f.manager.state.services.new!.assignments).toEqual([]);expect(()=>f.manager.access(f.session,{...command,id:'new',fingerprint:f.manager.fingerprint('new')})).toThrow('reviewed initial');expect(f.cfg.services.new).toBeUndefined();
+}finally{f.close();}});

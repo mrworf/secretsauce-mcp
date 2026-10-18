@@ -225,8 +225,9 @@ export class ConsoleServices {
   }
   access(session: ConsoleSession, input: unknown) {
     const actor = this.actor(session, true);
-    const data = this.parse(z.object({ id: idSchema, user: z.string().min(1).max(254), action: z.enum(['grant', 'remove']), confirmed: z.literal(true) }).strict(), input);
+    const data = this.parse(z.object({ id: idSchema, user: z.string().min(1).max(254), action: z.enum(['grant', 'remove']), fingerprint: z.string().regex(/^[a-f0-9]{64}$/).optional(), confirmed: z.literal(true) }).strict(), input);
     const s = own(this.state.services, data.id); if (!s?.applied) throw new ServiceManagementError('Activate the service with reviewed initial grants first.');
+    if (data.fingerprint !== undefined && data.fingerprint !== this.fingerprint(data.id)) throw new ServiceManagementError('Stale access confirmation. Reload current assignments and confirm again.');
     const user = this.store.state.users.find(u => u.id === data.user);
     if (data.action === 'grant' && (!user?.active || user.enrolled === false || user.role === 'Auditor') && !this.store.state.people?.external.some(e=>e.id===data.user&&e.active) && !(data.user==='bearer-dev'&&this.runtimeConfig.auth.mode==='bearer')) throw new ServiceManagementError('Access target no longer eligible. Select an active enrolled identity.');
     if (data.action === 'grant' ? s.assignments.includes(data.user) : !s.assignments.includes(data.user)) throw new ServiceManagementError('Assignment changed. Reload current access.');

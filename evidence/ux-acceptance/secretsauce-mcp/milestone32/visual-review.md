@@ -6,4 +6,6 @@ Initial visual inspection caught inherited fieldset grid placing the example bes
 
 Actual keyboard checks, 320px document/text ranges and 200% computed text checks passed for authentication/details/policy. No clipping or overflow. Synthetic values and metadata only; screenshot state uses unsaved changes intentionally.
 
-Slice 02 access comparison pending.
+Slice 02: actual access-desktop/access-390 and access-remove-dialog compared with approved access.html. Wide single card, distinct single-row assignments with right-aligned Remove access, local role explanation, matching accent/navigation, backlink and lifecycle chip are retained. The real screen includes accurate MCP/role guidance and immediate-action consequences, adding two short paragraphs rather than a new form or disclosure. Narrow rows stack identity and action without clipping. Add uses explicit selection and named confirmation; Cancel/Escape returns to trigger and focus remains in dialog. 320px and 200% text ranges pass. Details and policy retain their existing approved wide/focused structure; only local help changed. No material unapproved visual deviation remains.
+
+Approved HTML-only access/details were also rendered at1440×1031 to /tmp/m32-approved-access.png and /tmp/m32-approved-details.png, and visually inspected beside actual captures after the full-suite run. The approved proposal banner/footer are historical prototype-only context. Runtime keeps the approved content width/card spacing/type hierarchy with actual permission/help text.

@@ -1,0 +1,576 @@
+{
+  "schema_version": 1,
+  "reconciliation_id": "REC-RUN-009",
+  "product_id": "secretsauce-mcp",
+  "status": "RESOLVED",
+  "transaction": {
+    "parent_commit": "35e6226b5a734b46bbc4b291e93ec103d8eee77c",
+    "repository_commit": null,
+    "pre_existing_dirty_paths": [
+      "test-results/"
+    ]
+  },
+  "source": {
+    "invocation": "product-definition-orchestrator",
+    "originating_stage": "service-review-feedback-adoption",
+    "triggering_findings": [
+      "PO-FB-125",
+      "PO-FB-126",
+      "PO-FB-127",
+      "PO-FB-128",
+      "PO-FB-129",
+      "PO-FB-130",
+      "PO-FB-131",
+      "PO-FB-132",
+      "PO-FB-133",
+      "PO-FB-134",
+      "PO-FB-135",
+      "PO-FB-136",
+      "PO-FB-137"
+    ],
+    "affected_requirements": [
+      "CONFIG-03",
+      "POLICY-04",
+      "UX-02",
+      "UX-04"
+    ],
+    "artifact_revisions": [
+      {
+        "artifact": "workflow/feedback/PO-FEEDBACK-2026-10-18-001/feedback.yaml",
+        "revision": "sha256:790a7d0c0485559591f8d768436b5137474a5df1b5e3b0100c670497fa59a8d7"
+      },
+      {
+        "artifact": "docs/web-console-prd.md",
+        "revision": "sha256:eddf4eabe2589d5ea8d235c267e722cf9b7ba9d5b93db89e3062be210716f9a1"
+      },
+      {
+        "artifact": "product/ux/02-interaction-patterns.md",
+        "revision": "sha256:1ba0ba8765f82c832658848db8b78c8b11002d700f85bf37ec38e2e594c064d0"
+      },
+      {
+        "artifact": "product/architecture/web-console-state-contract.md",
+        "revision": "sha256:c8e22b5013d89090cc451cb2ef0290d7517b05bebae746faa15b65f10fca9848"
+      },
+      {
+        "artifact": "product/security/web-console-security-contract.md",
+        "revision": "sha256:8f66520798094a2638f006c9f3145e263e96008fdf63480fc6b98c2b0ccddc35"
+      }
+    ],
+    "product_owner_feedback": [
+      {
+        "feedback_id": "PO-FEEDBACK-2026-10-18-001",
+        "path": "workflow/feedback/PO-FEEDBACK-2026-10-18-001/feedback.yaml",
+        "schema_version": 1,
+        "status": "CONFIRMED",
+        "transaction": {
+          "parent_commit": "0a61db338023f3e41ef3e2d57f691bb0c0cbd068",
+          "repository_commit": "bf67d59146f7a06dfa6122001859519a78c53a05",
+          "pre_existing_dirty_paths": [
+            "test-results/"
+          ]
+        },
+        "source": {
+          "type": "product_owner",
+          "captured_from": "prompt",
+          "captured_at": "2026-10-18T17:47:51.943122+00:00",
+          "references": []
+        }
+      }
+    ]
+  },
+  "findings": {
+    "resolved": [
+      "REC-035",
+      "REC-036",
+      "REC-037"
+    ],
+    "unresolved": []
+  },
+  "feedback_dispositions": [
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-18-001",
+      "item_id": "PO-FB-125",
+      "classification": "OBSERVATION",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "evidence",
+      "original": "This was a HUGE improvement from last version, the only remaining issue is when I clicked on \"Review & Apply\", I'm one again shown a massive wall of text.",
+      "normalized": "The updated version is a major improvement.",
+      "disposition": "EVIDENCE_CORRELATED",
+      "source_findings": [
+        "REC-035"
+      ],
+      "source_changes": [
+        "REC-CHANGE-035"
+      ],
+      "remediation": [
+        "REC-RM-027"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/02-interaction-patterns.md"
+      ],
+      "rationale": "Traced to the bounded outcome without elevating exploratory mechanism or advisory input. PO-FB-125 preserves the improved baseline; PO-FB-135 is answered by existing TLS inheritance, not a policy change.",
+      "scope": [
+        "service-review-and-apply"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-18-001",
+      "item_id": "PO-FB-126",
+      "classification": "OBSERVATION",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "evidence",
+      "original": "This was a HUGE improvement from last version, the only remaining issue is when I clicked on \"Review & Apply\", I'm one again shown a massive wall of text.",
+      "normalized": "Review & Apply still presents an overwhelming wall of text.",
+      "disposition": "EVIDENCE_CORRELATED",
+      "source_findings": [
+        "REC-035"
+      ],
+      "source_changes": [
+        "REC-CHANGE-035"
+      ],
+      "remediation": [
+        "REC-RM-027"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/02-interaction-patterns.md"
+      ],
+      "rationale": "Traced to the bounded outcome without elevating exploratory mechanism or advisory input. PO-FB-125 preserves the improved baseline; PO-FB-135 is answered by existing TLS inheritance, not a policy change.",
+      "scope": [
+        "service-review-and-apply"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-18-001",
+      "item_id": "PO-FB-127",
+      "classification": "DIRECTIVE",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "authoritative",
+      "original": "I think it would be helpful to show them as two columns, \"Before\" and \"After\" and then group per section, so it's easy to see.",
+      "normalized": "Make the review easy to compare, grouping settings by section.",
+      "disposition": "FULLY_RESOLVED",
+      "source_findings": [
+        "REC-035"
+      ],
+      "source_changes": [
+        "REC-CHANGE-035"
+      ],
+      "remediation": [
+        "REC-RM-027"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/02-interaction-patterns.md"
+      ],
+      "rationale": "Traced to the bounded outcome without elevating exploratory mechanism or advisory input. PO-FB-125 preserves the improved baseline; PO-FB-135 is answered by existing TLS inheritance, not a policy change.",
+      "scope": [
+        "service-review-and-apply"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-18-001",
+      "item_id": "PO-FB-128",
+      "classification": "IDEA_OR_QUESTION",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "exploratory",
+      "original": "I think it would be helpful to show them as two columns, \"Before\" and \"After\" and then group per section, so it's easy to see.",
+      "normalized": "Use Before and After columns for the grouped comparison.",
+      "disposition": "EXPLORATORY_RECORDED",
+      "source_findings": [
+        "REC-035"
+      ],
+      "source_changes": [
+        "REC-CHANGE-035"
+      ],
+      "remediation": [
+        "REC-RM-027"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/02-interaction-patterns.md"
+      ],
+      "rationale": "Traced to the bounded outcome without elevating exploratory mechanism or advisory input. PO-FB-125 preserves the improved baseline; PO-FB-135 is answered by existing TLS inheritance, not a policy change.",
+      "scope": [
+        "service-review-and-apply"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-18-001",
+      "item_id": "PO-FB-129",
+      "classification": "DIRECTIVE",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "authoritative",
+      "original": "Also use Green to indicate addition, red to indicate removal and yellow to indicate changed (if this is feasible).",
+      "normalized": "If feasible, distinguish additions in green, removals in red, and changes in yellow.",
+      "disposition": "FULLY_RESOLVED",
+      "source_findings": [
+        "REC-035"
+      ],
+      "source_changes": [
+        "REC-CHANGE-035"
+      ],
+      "remediation": [
+        "REC-RM-027"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/02-interaction-patterns.md"
+      ],
+      "rationale": "Traced to the bounded outcome without elevating exploratory mechanism or advisory input. PO-FB-125 preserves the improved baseline; PO-FB-135 is answered by existing TLS inheritance, not a policy change.",
+      "scope": [
+        "service-review-and-apply"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-18-001",
+      "item_id": "PO-FB-130",
+      "classification": "DIRECTIVE",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "authoritative",
+      "original": "Having it as a tabbed view where one tab is \"Changes\" and the 2nd tab is \"New settings\" (or similar).",
+      "normalized": "Provide separate tabs for Changes and the complete new settings; the second tab label may be refined.",
+      "disposition": "FULLY_RESOLVED",
+      "source_findings": [
+        "REC-035"
+      ],
+      "source_changes": [
+        "REC-CHANGE-035"
+      ],
+      "remediation": [
+        "REC-RM-027"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/02-interaction-patterns.md"
+      ],
+      "rationale": "Traced to the bounded outcome without elevating exploratory mechanism or advisory input. PO-FB-125 preserves the improved baseline; PO-FB-135 is answered by existing TLS inheritance, not a policy change.",
+      "scope": [
+        "service-review-and-apply"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-18-001",
+      "item_id": "PO-FB-131",
+      "classification": "PREFERENCE",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "advisory",
+      "original": "I like the final box with security exceptions, but I'd inStead show a \"Approve changes\" button that opens a modal which says \"This will apply changes and make this the active configuration\", \"Continue\", \"Cancel\".",
+      "normalized": "Retain the useful security-exception information.",
+      "disposition": "ADVISORY_CONSIDERED",
+      "source_findings": [
+        "REC-036"
+      ],
+      "source_changes": [
+        "REC-CHANGE-036"
+      ],
+      "remediation": [
+        "REC-RM-028"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/02-interaction-patterns.md"
+      ],
+      "rationale": "Traced to the bounded outcome without elevating exploratory mechanism or advisory input. PO-FB-125 preserves the improved baseline; PO-FB-135 is answered by existing TLS inheritance, not a policy change.",
+      "scope": [
+        "service-review-and-apply"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-18-001",
+      "item_id": "PO-FB-132",
+      "classification": "DIRECTIVE",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "authoritative",
+      "original": "I like the final box with security exceptions, but I'd inStead show a \"Approve changes\" button that opens a modal which says \"This will apply changes and make this the active configuration\", \"Continue\", \"Cancel\".",
+      "normalized": "Provide an Approve changes button that opens a confirmation modal explaining that continuing applies the changes as the active configuration, with Continue and Cancel actions.",
+      "disposition": "FULLY_RESOLVED",
+      "source_findings": [
+        "REC-036"
+      ],
+      "source_changes": [
+        "REC-CHANGE-036"
+      ],
+      "remediation": [
+        "REC-RM-028"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/02-interaction-patterns.md"
+      ],
+      "rationale": "Traced to the bounded outcome without elevating exploratory mechanism or advisory input. PO-FB-125 preserves the improved baseline; PO-FB-135 is answered by existing TLS inheritance, not a policy change.",
+      "scope": [
+        "service-review-and-apply"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-18-001",
+      "item_id": "PO-FB-133",
+      "classification": "DIRECTIVE",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "authoritative",
+      "original": "However, if there's security exceptions, then it says \"Before change can be applied, please review and acknowledge the following\" and list the security exceptions and checkboxes, meaning continue only works if all boxes are checked.",
+      "normalized": "When security exceptions exist, the confirmation modal must ask the user to review and acknowledge each listed exception; Continue is enabled only after all checkboxes are checked.",
+      "disposition": "FULLY_RESOLVED",
+      "source_findings": [
+        "REC-036"
+      ],
+      "source_changes": [
+        "REC-CHANGE-036"
+      ],
+      "remediation": [
+        "REC-RM-028"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/02-interaction-patterns.md"
+      ],
+      "rationale": "Traced to the bounded outcome without elevating exploratory mechanism or advisory input. PO-FB-125 preserves the improved baseline; PO-FB-135 is answered by existing TLS inheritance, not a policy change.",
+      "scope": [
+        "service-review-and-apply"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-18-001",
+      "item_id": "PO-FB-134",
+      "classification": "OBSERVATION",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "evidence",
+      "original": "Lastly, in the security exceptions list, you m,ake references saying that \"TLS verification disabled: primary\" which doesn't make sense since a) I believe it's for all endpoints? and b) user has never seen \"primary\", so perhaps show its name instead.",
+      "normalized": "The TLS exception text uses primary, an identifier the user has not encountered and does not understand.",
+      "disposition": "EVIDENCE_CORRELATED",
+      "source_findings": [
+        "REC-037"
+      ],
+      "source_changes": [
+        "REC-CHANGE-037"
+      ],
+      "remediation": [
+        "REC-RM-029"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/02-interaction-patterns.md"
+      ],
+      "rationale": "Traced to the bounded outcome without elevating exploratory mechanism or advisory input. PO-FB-125 preserves the improved baseline; PO-FB-135 is answered by existing TLS inheritance, not a policy change.",
+      "scope": [
+        "service-review-and-apply"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-18-001",
+      "item_id": "PO-FB-135",
+      "classification": "IDEA_OR_QUESTION",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "exploratory",
+      "original": "Lastly, in the security exceptions list, you m,ake references saying that \"TLS verification disabled: primary\" which doesn't make sense since a) I believe it's for all endpoints? and b) user has never seen \"primary\", so perhaps show its name instead.",
+      "normalized": "Clarify whether disabled TLS verification applies to all endpoints.",
+      "disposition": "EXPLORATORY_RECORDED",
+      "source_findings": [
+        "REC-037"
+      ],
+      "source_changes": [
+        "REC-CHANGE-037"
+      ],
+      "remediation": [
+        "REC-RM-029"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/02-interaction-patterns.md"
+      ],
+      "rationale": "Traced to the bounded outcome without elevating exploratory mechanism or advisory input. PO-FB-125 preserves the improved baseline; PO-FB-135 is answered by existing TLS inheritance, not a policy change.",
+      "scope": [
+        "service-review-and-apply"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-18-001",
+      "item_id": "PO-FB-136",
+      "classification": "DIRECTIVE",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "authoritative",
+      "original": "Lastly, in the security exceptions list, you m,ake references saying that \"TLS verification disabled: primary\" which doesn't make sense since a) I believe it's for all endpoints? and b) user has never seen \"primary\", so perhaps show its name instead.",
+      "normalized": "Identify the affected scope of security exceptions in terms the user understands.",
+      "disposition": "FULLY_RESOLVED",
+      "source_findings": [
+        "REC-037"
+      ],
+      "source_changes": [
+        "REC-CHANGE-037"
+      ],
+      "remediation": [
+        "REC-RM-029"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/02-interaction-patterns.md"
+      ],
+      "rationale": "Traced to the bounded outcome without elevating exploratory mechanism or advisory input. PO-FB-125 preserves the improved baseline; PO-FB-135 is answered by existing TLS inheritance, not a policy change.",
+      "scope": [
+        "service-review-and-apply"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    },
+    {
+      "feedback_id": "PO-FEEDBACK-2026-10-18-001",
+      "item_id": "PO-FB-137",
+      "classification": "IDEA_OR_QUESTION",
+      "confirmation": "CONFIRMED",
+      "product_intent_authority": "exploratory",
+      "original": "Lastly, in the security exceptions list, you m,ake references saying that \"TLS verification disabled: primary\" which doesn't make sense since a) I believe it's for all endpoints? and b) user has never seen \"primary\", so perhaps show its name instead.",
+      "normalized": "Use the affected destination name instead of primary in exception descriptions.",
+      "disposition": "EXPLORATORY_RECORDED",
+      "source_findings": [
+        "REC-037"
+      ],
+      "source_changes": [
+        "REC-CHANGE-037"
+      ],
+      "remediation": [
+        "REC-RM-029"
+      ],
+      "decisions_required": [],
+      "affected_artifacts": [
+        "docs/web-console-prd.md",
+        "product/ux/02-interaction-patterns.md"
+      ],
+      "rationale": "Traced to the bounded outcome without elevating exploratory mechanism or advisory input. PO-FB-125 preserves the improved baseline; PO-FB-135 is answered by existing TLS inheritance, not a policy change.",
+      "scope": [
+        "service-review-and-apply"
+      ],
+      "tags": [],
+      "suggestions": [],
+      "ambiguity": []
+    }
+  ],
+  "authoritative_changes": {
+    "changed": true,
+    "entries": [
+      {
+        "change_id": "REC-CHANGE-035",
+        "source_findings": [
+          "REC-035"
+        ],
+        "path": "docs/web-console-prd.md",
+        "requirements": [
+          "CONFIG-03, UX-02/04"
+        ],
+        "status": "APPLIED_AFTER_DECISION"
+      },
+      {
+        "change_id": "REC-CHANGE-036",
+        "source_findings": [
+          "REC-036"
+        ],
+        "path": "product/ux/02-interaction-patterns.md",
+        "requirements": [
+          "CONFIG-03, POLICY-04, STATE-02"
+        ],
+        "status": "APPLIED_AFTER_DECISION"
+      },
+      {
+        "change_id": "REC-CHANGE-037",
+        "source_findings": [
+          "REC-037"
+        ],
+        "path": "product/ux/02-interaction-patterns.md",
+        "requirements": [
+          "POLICY-04, UX-02, UX-IN02/04"
+        ],
+        "status": "NO_SOURCE_MUTATION"
+      }
+    ]
+  },
+  "definition_changed": true,
+  "implementation_required": true,
+  "implementation_ready": true,
+  "decisions_required": [],
+  "change_impact": {
+    "change_id": "REC-IMPACT-009",
+    "source_findings": [
+      "REC-035",
+      "REC-036",
+      "REC-037"
+    ],
+    "changed_artifacts": [
+      "docs/web-console-prd.md",
+      "product/ux/02-interaction-patterns.md"
+    ],
+    "changed_requirements": [
+      "CONFIG-03",
+      "UX-IN02"
+    ],
+    "change_types": [
+      "ux_interaction",
+      "user_behavior",
+      "documentation"
+    ],
+    "affected_domains": {
+      "product": false,
+      "user_journeys": true,
+      "ux": true,
+      "architecture": false,
+      "security": false
+    },
+    "potentially_stale": [
+      "docs/web-console-prd-user-journey-audit.md",
+      "product/ux/manifest.yaml",
+      "product/ux/07-acceptance-checklist.md"
+    ],
+    "revalidation_required": true
+  },
+  "handoff": {
+    "category": "DEFINITION_REVALIDATION",
+    "definition_revalidation_required": true,
+    "delivery_planning_ready": false,
+    "next_workflow": "product-definition-orchestrator"
+  }
+}

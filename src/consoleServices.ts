@@ -9,11 +9,12 @@ import type { GatewayConfig, ServiceConfig } from './types.js';
 
 export type ServiceLifecycle = 'Draft' | 'Active' | 'Disabled' | 'Archived';
 export interface ManagedCredential { value: string; version: number; changed: number }
+export interface ImportedIdentity { subject: string; index?: number; target?: { localId: string } | { issuer: string; externalSubject: string } }
 export interface ManagedService {
   recoveryReviewRequired?:boolean;
   lifecycle: ServiceLifecycle;
   applied?: ManagedServiceDraft;
-  draft?: { content: ManagedServiceDraft; base: number; generation: number; missingMappings?: string[]; settings?: { name: string } };
+  draft?: { content: ManagedServiceDraft; base: number; generation: number; missingMappings?: string[]; importedIdentities?: ImportedIdentity[]; settings?: { name: string } };
   values: Record<string, ManagedCredential>;
   assignments: string[];
   review?: { id: string; actor: string; fingerprint: string; candidate: ManagedServiceDraft; base: number; draftGeneration: number; settings?: { name: string }; exceptions: string[] };
@@ -65,7 +66,7 @@ export class ConsoleServices {
     this.actor(session); const key = this.parse(idSchema, id); const s = own(this.state.services, key);
     if (!s) throw new ServiceManagementError('Service unavailable. Reload Services.');
     return { id: key, revision: this.state.revision, lifecycle: s.lifecycle, applied: s.applied, draft: s.draft,
-      assignments: s.assignments, credentials: Object.entries(s.values).map(([id, v]) => ({ id, available: true, version: v.version, changed: v.changed })),
+      mappingFingerprint: this.fingerprint(key), mappingIssues: this.mappingIssues(key), assignments: s.assignments, credentials: Object.entries(s.values).map(([id, v]) => ({ id, available: true, version: v.version, changed: v.changed })),
       exceptions: s.applied ? exceptions(s.applied) : [], activity: this.store.journal.entries().filter(e => e.target === key).map(e => ({ action: e.action, time: e.time, result: e.result, revision: e.revision, details: e.details })) };
   }
   private parse<T>(schema: z.ZodType<T>, value: unknown): T { const p = schema.safeParse(value); if (!p.success) throw new ServiceManagementError('Invalid service input. Check field types and supported settings.'); return p.data; }
@@ -80,9 +81,53 @@ export class ConsoleServices {
     if (current?.lifecycle === 'Archived') throw new ServiceManagementError('Service archived. Unarchive to Disabled before editing.');
     const operation = this.store.commit(actor.id, 'service.draft_save', data.id, state => {
       const m = state.managed!; let s = own(m.services, data.id); if (!s) { s = { lifecycle: 'Draft', values: {}, assignments: [] }; Object.defineProperty(m.services, data.id, { value: s, enumerable: true, configurable: true, writable: true }); }
-      s.draft = { ...(s.draft?.missingMappings?.length?{missingMappings:s.draft.missingMappings}:{}), content: data.service, base: data.base, generation: data.generation + 1, ...(data.settings ? { settings: data.settings } : {}) }; delete s.review;
+      s.draft = { ...(s.draft?.missingMappings?.length?{missingMappings:s.draft.missingMappings}:{}), ...(s.draft?.importedIdentities?{importedIdentities:s.draft.importedIdentities}:{}), content: data.service, base: data.base, generation: data.generation + 1, ...(data.settings ? { settings: data.settings } : {}) }; delete s.review;
     });
     return { operation, status: 'saved', generation: own(this.state.services, data.id)!.draft!.generation, revision: this.state.revision };
+  }
+  mappingTarget(target: ImportedIdentity['target']): string | undefined {
+    if (!target) return;
+    if ('localId' in target) return this.store.state.users.find(u=>u.id===target.localId && u.active && u.enrolled!==false && u.role!=='Auditor')?.id;
+    return this.store.state.people?.external.find(e=>e.active && e.issuer===target.issuer && e.subject===target.externalSubject)?.id;
+  }
+  mappingIssues(id: string) {
+    const draft=own(this.state.services,id)?.draft;
+    const records=draft?.importedIdentities??(draft?.missingMappings??[]).map(subject=>({subject} as ImportedIdentity));
+    return records.filter(r=>(draft?.missingMappings??[]).includes(r.subject)||!this.mappingTarget(r.target)).map(r=>({
+      subject:r.subject, source:'services['+JSON.stringify(id)+'].access.users'+(r.index===undefined?'':'['+r.index+']'),
+      affectedServices:Object.entries(this.state.services).filter(([,s])=>(s.draft?.importedIdentities??s.draft?.missingMappings?.map(subject=>({subject}))??[]).some(v=>v.subject===r.subject)).map(([key,s])=>({id:key,name:s.draft?.content.name??s.applied?.name??key})),
+    }));
+  }
+  resolveMappings(session: ConsoleSession, input: unknown) {
+    const actor=this.actor(session,true);
+    const importedSubject=z.string().min(1).max(1024);
+    const target=z.union([z.object({localId:importedSubject}).strict(),z.object({issuer:z.string().url().max(2048),externalSubject:importedSubject}).strict()]);
+    const data=this.parse(z.object({id:idSchema,base:z.number().int().nonnegative(),generation:z.number().int().nonnegative(),fingerprint:z.string().length(64),mappings:z.array(z.object({subject:importedSubject,target}).strict()).min(1).max(512)}).strict(),input);
+    const service=own(this.state.services,data.id),draft=service?.draft;
+    if(!draft||service.lifecycle==='Archived')throw new ServiceManagementError('Mapping unavailable. Open a current imported service draft.');
+    if(data.base!==this.state.revision||data.generation!==draft.generation||data.fingerprint!==this.fingerprint(data.id))throw this.stale(session,data.id);
+    const issues=this.mappingIssues(data.id),seen=new Set<string>();
+    for(const m of data.mappings){
+      if(seen.has(m.subject)||!issues.some(i=>i.subject===m.subject))throw new ServiceManagementError('mappings: Choose each listed unresolved subject only once.');
+      seen.add(m.subject);
+      if(!this.mappingTarget(m.target))throw new ServiceManagementError('mappings: Select an enrolled eligible local account or registered exact issuer/subject. Refresh eligible accounts before retrying.');
+    }
+    const operation=this.store.commit(actor.id,'service.import_mapping',data.id,state=>{
+      // Admission and commit are synchronous; still check live identity dependencies at the mutation boundary.
+      this.actor(session,true);
+      if(data.fingerprint!==this.fingerprint(data.id)||data.mappings.some(m=>!this.mappingTarget(m.target)))throw this.stale(session,data.id);
+      const d=state.managed!.services[data.id]!.draft!;
+      d.importedIdentities??=(d.missingMappings??[]).map(subject=>({subject}));
+      for(const m of data.mappings){
+        const records=d.importedIdentities.filter(r=>r.subject===m.subject);
+        const previous=records.flatMap(r=>r.target?['localId' in r.target?r.target.localId:this.store.state.people?.external.find(e=>e.issuer===(r.target as {issuer:string}).issuer&&e.subject===(r.target as {externalSubject:string}).externalSubject)?.id].filter((v):v is string=>Boolean(v)):[]);
+        for(const r of records)r.target=m.target;
+        if(!service.applied&&d.content.access)for(const old of previous)if(!d.importedIdentities.some(r=>this.mappingTarget(r.target)===old))d.content.access.users=d.content.access.users.filter(id=>id!==old);
+        if(!service.applied){d.content.access??={users:[]};const id=this.mappingTarget(m.target)!;if(!d.content.access.users.includes(id))d.content.access.users.push(id);}
+      }
+      d.missingMappings=(d.missingMappings??[]).filter(subject=>!seen.has(subject));d.generation++;d.base=this.state.revision;delete state.managed!.services[data.id]!.review;
+    });
+    return {operation,status:'mapping saved',remaining:this.mappingIssues(data.id).length,generation:this.state.services[data.id]!.draft!.generation,revision:this.state.revision};
   }
   private stale(session: ConsoleSession, id: string): ServiceManagementError {
     return new ServiceManagementError('Stale review or dependencies. Compare current and proposed configuration, reload, save and review again.', own(this.state.services, id) ? this.detail(session, id) : { revision: this.state.revision });
@@ -90,7 +135,7 @@ export class ConsoleServices {
   private candidate(session: ConsoleSession, id: string) {
     const actor = this.actor(session, true); const s = own(this.state.services, id); const draft = s?.draft;
     if (!s || !draft) throw new ServiceManagementError('Save a service draft before review.');
-    if(draft.missingMappings?.length)throw new ServiceManagementError('mappings: Import has unresolved identities. Supply explicit mappings and import again.');
+    if(this.mappingIssues(id).length)throw new ServiceManagementError('mappings: Import has unresolved identities. Open Resolve identity mappings to choose an eligible account for each listed subject.');
     if (s.lifecycle === 'Archived') throw new ServiceManagementError('Service archived. Unarchive to Disabled before review.');
     if (draft.settings && actor.role !== 'Owner') throw new Error('Forbidden.');
     if (draft.base !== this.state.revision) throw this.stale(session, id);

@@ -1,0 +1,51 @@
+{
+  "product_id": "secretsauce-mcp",
+  "milestone": "M25",
+  "result": "PASS",
+  "parent_commit": "549f7d8bdc38dd84f34280895f24091b6fa1dd7e",
+  "commands": [
+    {
+      "command": "npm test -- --maxWorkers=2",
+      "result": "PASS",
+      "files": 73,
+      "tests": 728,
+      "seconds": 105.59,
+      "includes": "npm run build via pretest"
+    },
+    {
+      "command": "npm run build",
+      "result": "PASS"
+    },
+    {
+      "command": "PLAYWRIGHT_BROWSERS_PATH=/tmp/secretsauce-feedback-browsers node scripts/verify-console-import-recovery-browser.mjs",
+      "result": "PASS"
+    },
+    {
+      "command": "git diff --check",
+      "result": "PASS"
+    }
+  ],
+  "sha256": {
+    "src/consoleServices.ts": "16c9a86f4d1bed44205aa3e24f333f4f89a44ffbc999b88a63d0e63f65db7680",
+    "src/consoleMigration.ts": "c1935d36a8df1820682fe75f586de467fa9e92197c0f2f2c9146d592734346bd",
+    "src/consoleHttp.ts": "c1587d3dbbc541e8848644e432edeb62603c2a434713742d035597f9bf882abf",
+    "src/consoleServicePage.ts": "b8a4b725d3893162d7e3849024a47ea220e19dea67e242b26e9b0209fc3e64a1",
+    "src/consolePresentation.ts": "e1c9328d8bac2f0bde54db19cbaaca50132de9785225bf7bb0ecbbfce83f945d",
+    "src/consoleBackupSchema.ts": "c977241bd47b37e8e164e9e1ab417182e83d16bed8e4f82d344f45599b14ac0d",
+    "test/console-migration.test.ts": "bec21c17f3f71a3ef4806ec7dc5fe8fab3bed3495c089f78a59fdc257ef512e2",
+    "test/console-services-http.test.ts": "898f64a66b1184aeb315bb833363270f052b515d1559eda110fb9498750f1ec3",
+    "scripts/verify-console-import-recovery-browser.mjs": "f43708848b3ce4f07a59604b215db9134434e9ee0e9bb11ed5b83645272675f0",
+    "workflow/definition/drafts/product-ux/web-console-feedback-003/import-recovery-desktop.png": "42a1fbfcb127bb431d7feb3c0f84642cbab2a2a2f4c132977af1107026cd8938",
+    "workflow/definition/drafts/product-ux/web-console-feedback-003/import-recovery-narrow.png": "d9843f1637ad38206b7be942f682c4d7393dc1d14d88be4f0db79478b18420ac"
+  },
+  "limitations": [
+    "Synthetic local HTTPS evidence; no external LLM client connection claimed.",
+    "Legacy drafts without retained original indexes show the containing source field.",
+    "No live instance or deployment was changed."
+  ],
+  "reports": [
+    "evidence/qa/secretsauce-mcp/milestone25/acceptance.md",
+    "evidence/ux-acceptance/secretsauce-mcp/milestone25/visual-review.md",
+    "evidence/ux-acceptance/secretsauce-mcp/milestone25/browser-report.json"
+  ]
+}

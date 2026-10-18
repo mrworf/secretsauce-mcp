@@ -1,0 +1,7 @@
+{
+  "result": "PASS",
+  "checks": [
+    "HTTPS multi-service import; two explicit mappings, partial progress, source indexes and affected services; stale registry rejected and refreshed; keyboard-only correction reaches review without activation; unrelated safe edits retained.",
+    "Auditor and Archived read-only recovery views and direct-route refusal; desktop 1440, narrow 390 and 320, 200% text document/component/text-range reflow; no browser runtime errors."
+  ]
+}

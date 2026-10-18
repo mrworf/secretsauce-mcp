@@ -64,3 +64,14 @@ describe('managed service drafts and scoped publication', () => {
 });
 
 it('rejects invalid friendly destination row values atomically while preserving exact ordering',()=>{const f=managedFixture();try{const service=structuredClone(f.manager.state.services.baseline!.applied!);service.destinations![0]!.schemes=['https','http'];service.destinations![0]!.ports=[443,8443];f.manager.save(f.session,{id:'baseline',base:0,generation:0,service});expect(f.manager.state.services.baseline!.draft!.content.destinations![0]!.ports).toEqual([443,8443]);for(const modify of [(s:any)=>s.destinations[0].ports=[0],(s:any)=>s.destinations[0].ports=[65536],(s:any)=>s.destinations[0].schemes=['']]){const bad=structuredClone(service);modify(bad);expect(()=>f.manager.save(f.session,{id:'baseline',base:0,generation:1,service:bad})).toThrow();expect(f.manager.state.services.baseline!.draft!.generation).toBe(1);}const malformed=structuredClone(service);malformed.destinations![0]!.hosts=[{regex:'['}];f.manager.save(f.session,{id:'baseline',base:0,generation:1,service:malformed});expect(()=>f.manager.review(f.session,{id:'baseline'})).toThrow();expect(f.manager.state.revision).toBe(0);}finally{f.close();}});
+
+it('lists independent lifecycle, pending changes and readiness without leaking values or Member drafts',()=>{const f=managedFixture();try{
+ const s=f.manager.state.services.baseline!;s.assignments=[f.session.userId];s.draft={base:0,generation:1,content:{...s.applied!,name:'Proposed name'}};
+ expect(f.manager.list(f.session).services[0]).toMatchObject({lifecycle:'Active',hasDraft:true,readiness:'Configured',activationBlocker:null});
+ s.applied!.no_auth=false;s.applied!.credentials=[{id:'key',usage:{kind:'header',name:'X-Key'}}];s.draft.content=structuredClone(s.applied!);
+ expect(f.manager.list(f.session).services[0]).toMatchObject({lifecycle:'Active',hasDraft:true,readiness:'Value missing',activationBlocker:'Set credential values first'});
+ s.values.key={value:'synthetic-private-value',version:1,changed:Date.now()};expect(JSON.stringify(f.manager.list(f.session))).not.toContain('synthetic-private-value');expect(f.manager.list(f.session).services[0]).toMatchObject({readiness:'Configured',activationBlocker:null});
+ s.draft.missingMappings=['old'];expect(f.manager.list(f.session).services[0]).toMatchObject({activationBlocker:'Resolve identity mapping first'});
+ f.store.state.users[0]!.role='Auditor';expect(f.manager.list(f.session).writable).toBe(false);
+ f.store.state.users[0]!.role='Member';expect(f.manager.list(f.session).services[0]).toMatchObject({hasDraft:false});expect(f.manager.list(f.session).services[0]).not.toHaveProperty('activationBlocker');s.assignments=[];expect(f.manager.list(f.session).services).toHaveLength(0);
+}finally{f.close();}});

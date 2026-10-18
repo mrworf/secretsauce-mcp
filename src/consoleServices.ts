@@ -55,12 +55,24 @@ export class ConsoleServices {
       values: Object.entries(s?.values ?? {}).map(([key, v]) => [key, v.version]),
       users: this.store.state.users.map(u => ({ id: u.id, role: u.role, active: u.active, enrolled:u.enrolled, authorizationGeneration:u.authorizationGeneration??0 })), external:this.store.state.people?.external.map(e=>({id:e.id,issuer:e.issuer,subject:e.subject,active:e.active,authorizationGeneration:e.authorizationGeneration??0})) }));
   }
+  readiness(id: string) {
+    const s = own(this.state.services, id)!;
+    const missing = (c?: ManagedServiceDraft) => (c?.credentials ?? []).some(v => !own(s.values, v.id)?.value);
+    let activationBlocker: string | null = null;
+    const candidate = s.draft?.content ?? s.applied;
+    if (this.mappingIssues(id).length) activationBlocker = 'Resolve identity mapping first';
+    else if (!candidate) activationBlocker = 'Complete configuration first';
+    else if (missing(candidate)) activationBlocker = 'Set credential values first';
+    else try { normalizeManagedService(id, candidate, Object.fromEntries(Object.entries(s.values).map(([key,v]) => [key,v.value]))); }
+    catch { activationBlocker = 'Complete configuration first'; }
+    return { readiness: s.applied && missing(s.applied) ? 'Value missing' : !s.applied ? 'Not configured' : 'Configured', activationBlocker };
+  }
   list(session: ConsoleSession) {
     const user = this.store.authorize(session, 'own');
-    if (user.role === 'Member') return { revision: this.state.revision, writable: false, eligible: [], services: Object.entries(this.state.services).filter(([,s]) => s.lifecycle === 'Active' && s.assignments.includes(user.id)).map(([id,s]) => ({ id, name: s.applied?.name ?? id, description: s.applied?.description ?? '', lifecycle: s.lifecycle, assignmentCount: 1, appliedRevision: this.state.revision, hasDraft: false, exceptions: [] })) };
+    if (user.role === 'Member') return { revision: this.state.revision, writable: false, eligible: [], services: Object.entries(this.state.services).filter(([,s]) => s.lifecycle === 'Active' && s.assignments.includes(user.id)).map(([id,s]) => ({ id, name: s.applied?.name ?? id, description: s.applied?.description ?? '', lifecycle: s.lifecycle, assignmentCount: 1, appliedRevision: this.state.revision, hasDraft: false, readiness: this.readiness(id).readiness, exceptions: [] })) };
     return { revision: this.state.revision, writable: ['Owner', 'Administrator'].includes(user.role) && !session.restricted && !this.store.journal.degraded && !this.store.externalAudit?.degraded,
       eligible: this.store.state.users.filter(u => u.active && u.enrolled !== false && u.role !== 'Auditor').map(u => ({ id: u.id, email: u.email, role: u.role })).concat((this.store.state.people?.external??[]).filter(e=>e.active).map(e=>({id:e.id,email:e.label,role:'External' as typeof user.role,issuer:e.issuer,externalSubject:e.subject}))).concat(this.runtimeConfig.auth.mode==='bearer'?[{id:'bearer-dev',email:'Shared legacy bearer (no console access)',role:'External' as typeof user.role}]:[]),
-      services: Object.entries(this.state.services).map(([id, s]) => ({ id, name: s.applied?.name ?? s.draft?.content.name ?? id, description: s.applied?.description ?? s.draft?.content.description ?? '', assignmentCount: s.assignments.length, lifecycle: s.lifecycle, appliedRevision: this.state.revision, hasDraft: Boolean(s.draft), exceptions: s.applied ? exceptions(s.applied) : [] })) };
+      services: Object.entries(this.state.services).map(([id, s]) => ({ id, name: s.applied?.name ?? s.draft?.content.name ?? id, description: s.applied?.description ?? s.draft?.content.description ?? '', assignmentCount: s.assignments.length, lifecycle: s.lifecycle, appliedRevision: this.state.revision, hasDraft: Boolean(s.draft), ...this.readiness(id), fingerprint: this.fingerprint(id), exceptions: s.applied ? exceptions(s.applied) : [] })) };
   }
   detail(session: ConsoleSession, id: unknown) {
     this.actor(session); const key = this.parse(idSchema, id); const s = own(this.state.services, key);

@@ -1,0 +1,9 @@
+{
+  "result": "PASS",
+  "checks": [
+    "Actual Back/Forward preserves tab, section and safe edits; deep links and refresh restore saved location; dirty Stay and Discard work; malformed section has explicit error.",
+    "Auditor readonly history and Member cannot inspect editor.",
+    "Policy dialog retains selection, canonical denied result/effective protection, no false dirty, invalid path removes stale result, no stacked rule dialog, Escape focus return, unsaved safe work retained; shared Settings names wider scope and guards edits; desktop/narrow/enlarged text pass.",
+    "Custom HTTP methods preserved, malformed method rejected, current allowed decision observed after configuration change, session loss closes tester and clears protected work."
+  ]
+}

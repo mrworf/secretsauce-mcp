@@ -1,0 +1,8 @@
+{
+  "result": "PASS",
+  "checks": [
+    "One joined real browser journey imports YAML, explicitly maps admin, switches full Guided/Advanced, sets write-only value, edits policy dialog, preserves CUSTOM/regex/binary options, saves and reviews/applies, explicitly disables then clears value before encrypted recovery.",
+    "Actual encrypted worker restore followed by fresh Owner enrollment/login; Disabled missing value and source historical account shown; no secret input until Set dialog; keyboard Escape returns focus without mutation; desktop390/320/200% text ranges fit."
+  ],
+  "errors": []
+}

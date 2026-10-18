@@ -1,0 +1,25 @@
+{
+  "result": "PASS",
+  "fullSuite": {
+    "command": "npm test -- --maxWorkers=2",
+    "files": 75,
+    "tests": 757,
+    "durationSeconds": 113.66,
+    "noConcurrentBrowserOrDocker": true
+  },
+  "build": {
+    "command": "npm run build",
+    "result": "PASS"
+  },
+  "browserSuites": 10,
+  "joinedImportToRecovery": true,
+  "docker": {
+    "image": "sha256:89c15ec2d582bd20ce97872bce07b8dfe9f9d8be780e0da0d4737573c1f57fac",
+    "cleanhostGroups": 7,
+    "launcherCases": 9,
+    "actualSigkillBoundaries": 94
+  },
+  "node": "v26.11.1",
+  "externalRealClients": "Existing authorized exception; not exercised",
+  "testedInputs": "tested-inputs.json"
+}

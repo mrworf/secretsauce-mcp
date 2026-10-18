@@ -1,0 +1,47 @@
+{
+  "result": "PASS",
+  "checks": [
+    {
+      "suite": "import-recovery",
+      "result": "PASS"
+    },
+    {
+      "suite": "lifecycle",
+      "result": "PASS"
+    },
+    {
+      "suite": "focused-service",
+      "result": "PASS"
+    },
+    {
+      "suite": "destinations",
+      "result": "PASS"
+    },
+    {
+      "suite": "credential-clear",
+      "result": "PASS"
+    },
+    {
+      "suite": "credential-dialogs",
+      "result": "PASS"
+    },
+    {
+      "suite": "policy-dialogs",
+      "result": "PASS"
+    },
+    {
+      "suite": "service-help",
+      "result": "PASS"
+    },
+    {
+      "suite": "navigation",
+      "result": "PASS"
+    },
+    {
+      "suite": "credential-recovery",
+      "result": "PASS"
+    }
+  ],
+  "scope": "All nine M25\u201333 suites passed against current unchanged UI production inputs; M34 joined import-to-encrypted-recovery browser rerun passed after final restore-generation repair. Exact CUSTOM methods, regex and binary options preserved across the joined chain. Local protocol and Docker checks are separate; no real external client claim.",
+  "affectedRerun": "PLAYWRIGHT_BROWSERS_PATH=/tmp/secretsauce-feedback-browsers CONSOLE_BROWSER_EVIDENCE_DIR=evidence/ux-acceptance/secretsauce-mcp/milestone34/credential-recovery node scripts/verify-console-credential-recovery-browser.mjs"
+}

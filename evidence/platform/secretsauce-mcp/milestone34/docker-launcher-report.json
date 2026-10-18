@@ -1,0 +1,53 @@
+{
+  "result": "PASS",
+  "image": "sha256:89c15ec2d582bd20ce97872bce07b8dfe9f9d8be780e0da0d4737573c1f57fac",
+  "checks": [
+    {
+      "check": "former launcher-thread collision",
+      "result": "PASS",
+      "expected": "Restart by exact ESRCH after bounded owned-child advancement"
+    },
+    {
+      "check": "bounded highest stale PID",
+      "result": "PASS",
+      "expected": "Restart by exact ESRCH after bounded owned-child advancement"
+    },
+    {
+      "check": "invalid digits",
+      "result": "PASS",
+      "expected": "Fail closed; writer metadata remains untouched"
+    },
+    {
+      "check": "out of range",
+      "result": "PASS",
+      "expected": "Fail closed; writer metadata remains untouched"
+    },
+    {
+      "check": "oversize",
+      "result": "PASS",
+      "expected": "Fail closed; writer metadata remains untouched"
+    },
+    {
+      "check": "zero",
+      "result": "PASS",
+      "expected": "Fail closed; writer metadata remains untouched"
+    },
+    {
+      "check": "PID1 live collision",
+      "result": "PASS",
+      "expected": "Fail closed; writer metadata remains untouched"
+    },
+    {
+      "check": "multiline",
+      "result": "PASS",
+      "expected": "Fail closed; writer metadata remains untouched"
+    },
+    {
+      "check": "symlink",
+      "result": "PASS",
+      "expected": "Fail closed; writer metadata remains untouched"
+    }
+  ],
+  "regression": "Previous actual prepare-next-after-rename drill failed because retained app PID16 collided with a new Node launcher thread. Both kernel leases now precede bounded shell PID advancement before Node creates threads; Node revalidates metadata and store retains ESRCH-only stale ownership recovery.",
+  "scope": "Current actual Docker image, isolated network, synthetic mounts; no lease unlink or live process/thread removal"
+}

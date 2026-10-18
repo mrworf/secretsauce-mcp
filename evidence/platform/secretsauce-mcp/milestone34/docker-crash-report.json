@@ -1,0 +1,760 @@
+{
+  "result": "PASS",
+  "image": "sha256:89c15ec2d582bd20ce97872bce07b8dfe9f9d8be780e0da0d4737573c1f57fac",
+  "checks": [
+    {
+      "outcome": "install",
+      "boundary": "prepare-after-directory-sync",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "prepare-prior-before-write",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "prepare-prior-after-file-sync",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "prepare-prior-before-rename",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "prepare-prior-after-rename",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "prepare-prior-after-directory-sync",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "prepare-next-before-write",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "prepare-next-after-file-sync",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "prepare-next-before-rename",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "prepare-next-after-rename",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "prepare-next-after-directory-sync",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "prepare-manifest-before-write",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "prepare-manifest-after-file-sync",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "prepare-manifest-before-rename",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "prepare-manifest-after-rename",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "prepare-manifest-after-directory-sync",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "selected-before-write",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "selected-after-file-sync",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "selected-before-rename",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "selected-after-rename",
+      "occurrence": 1,
+      "selection": "Recovered",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "selected-after-directory-sync",
+      "occurrence": 1,
+      "selection": "Recovered",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "install-before-write",
+      "occurrence": 1,
+      "selection": "Recovered",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "install-before-file-sync",
+      "occurrence": 1,
+      "selection": "Recovered",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "install-after-file-sync",
+      "occurrence": 1,
+      "selection": "Recovered",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "install-before-state-rename",
+      "occurrence": 1,
+      "selection": "Recovered",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "install-after-state-rename",
+      "occurrence": 1,
+      "selection": "Recovered",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "install-after-directory-sync",
+      "occurrence": 1,
+      "selection": "Recovered",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "complete-before-write",
+      "occurrence": 1,
+      "selection": "Recovered",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "complete-after-file-sync",
+      "occurrence": 1,
+      "selection": "Recovered",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "complete-before-rename",
+      "occurrence": 1,
+      "selection": "Recovered",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "complete-after-rename",
+      "occurrence": 1,
+      "selection": "Recovered",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "complete-after-directory-sync",
+      "occurrence": 1,
+      "selection": "Recovered",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "cleanup-before-namespace-rename",
+      "occurrence": 1,
+      "selection": "Recovered",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "cleanup-after-namespace-rename",
+      "occurrence": 1,
+      "selection": "Recovered",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "cleanup-after-namespace-sync",
+      "occurrence": 1,
+      "selection": "Recovered",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "cleanup-before-complete",
+      "occurrence": 1,
+      "selection": "Recovered",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "cleanup-after-complete",
+      "occurrence": 1,
+      "selection": "Recovered",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "cleanup-before-next",
+      "occurrence": 1,
+      "selection": "Recovered",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "cleanup-after-next",
+      "occurrence": 1,
+      "selection": "Recovered",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "cleanup-before-prepared",
+      "occurrence": 1,
+      "selection": "Recovered",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "cleanup-after-prepared",
+      "occurrence": 1,
+      "selection": "Recovered",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "cleanup-before-prior",
+      "occurrence": 1,
+      "selection": "Recovered",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "cleanup-after-prior",
+      "occurrence": 1,
+      "selection": "Recovered",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "cleanup-before-selected",
+      "occurrence": 1,
+      "selection": "Recovered",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "cleanup-after-selected",
+      "occurrence": 1,
+      "selection": "Recovered",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "cleanup-before-directory-remove",
+      "occurrence": 1,
+      "selection": "Recovered",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "install",
+      "boundary": "cleanup-after-directory-sync",
+      "occurrence": 1,
+      "selection": "Recovered",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "prepare-after-directory-sync",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "prepare-prior-before-write",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "prepare-prior-after-file-sync",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "prepare-prior-before-rename",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "prepare-prior-after-rename",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "prepare-prior-after-directory-sync",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "prepare-next-before-write",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "prepare-next-after-file-sync",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "prepare-next-before-rename",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "prepare-next-after-rename",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "prepare-next-after-directory-sync",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "prepare-manifest-before-write",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "prepare-manifest-after-file-sync",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "prepare-manifest-before-rename",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "prepare-manifest-after-rename",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "prepare-manifest-after-directory-sync",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "rollback-before-write",
+      "occurrence": 1,
+      "selection": "Recovered",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "rollback-after-file-sync",
+      "occurrence": 1,
+      "selection": "Recovered",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "rollback-before-rename",
+      "occurrence": 1,
+      "selection": "Recovered",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "rollback-after-rename",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "rollback-after-directory-sync",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "rollback-before-write",
+      "occurrence": 2,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "rollback-before-file-sync",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "rollback-after-file-sync",
+      "occurrence": 2,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "rollback-before-state-rename",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "rollback-after-state-rename",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "rollback-after-directory-sync",
+      "occurrence": 2,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "complete-before-write",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "complete-after-file-sync",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "complete-before-rename",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "complete-after-rename",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "complete-after-directory-sync",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "cleanup-before-namespace-rename",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "cleanup-after-namespace-rename",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "cleanup-after-namespace-sync",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "cleanup-before-complete",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "cleanup-after-complete",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "cleanup-before-next",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "cleanup-after-next",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "cleanup-before-prepared",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "cleanup-after-prepared",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "cleanup-before-prior",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "cleanup-after-prior",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "cleanup-before-rollback",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "cleanup-after-rollback",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "cleanup-before-directory-remove",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    },
+    {
+      "outcome": "rollback",
+      "boundary": "cleanup-after-directory-sync",
+      "occurrence": 1,
+      "selection": "Prior",
+      "auditHealthy": true,
+      "result": "PASS"
+    }
+  ],
+  "scope": "Actual SIGKILL for all authenticated installer/rollback boundary hooks; real startup load and kernel-held app/audit mount leases; coherent prior fresh-login or restricted all-disabled new state; protected synthetic state only",
+  "cleanup": "Owned ephemeral containers auto-removed and temporary mounts deleted"
+}

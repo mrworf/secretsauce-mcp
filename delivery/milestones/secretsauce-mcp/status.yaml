@@ -505,23 +505,26 @@ milestones:
 - id: '38'
   title: See concrete security exceptions before approval
   file: delivery/milestones/secretsauce-mcp/38-visible-review-exceptions.md
-  status: in_progress
+  status: completed
   dependencies:
   - '36'
-  completed_at: null
-  evidence: null
-  notes: REC010 bounded refinement; implementation and acceptance pending.
+  completed_at: '2026-10-19T03:33:42.877084+00:00'
+  evidence: evidence/qa/secretsauce-mcp/milestone38/acceptance.md
+  notes: Accepted concrete exception bullets, unchanged acknowledgment controls, focused/browser
+    visual validation, 772 tests and build PASS.
   started_at: '2026-10-19T03:28:34.234572+00:00'
+  commit_hash: b4038b7ac169b0db1bc0ec0ae2057dc211c0f6a1
 - id: '39'
   title: Navigate guided editing without a redundant detection section
   file: delivery/milestones/secretsauce-mcp/39-focused-guided-service-navigation.md
-  status: pending
+  status: in_progress
   dependencies:
   - '27'
   - '33'
   completed_at: null
   evidence: null
   notes: REC010 bounded refinement; implementation and acceptance pending.
+  started_at: '2026-10-19T03:33:42.877084+00:00'
 - id: '40'
   title: Identify every explicit policy scanning override
   file: delivery/milestones/secretsauce-mcp/40-policy-scanning-override-markers.md
@@ -620,10 +623,10 @@ delivery_goal:
   - '39'
   - '40'
   execution: autonomous
-  current_milestone: '38'
-  governing_plan: delivery/plans/secretsauce-mcp/milestone_38_plan_01.md
+  current_milestone: '39'
+  governing_plan: delivery/plans/secretsauce-mcp/milestone_39_plan_01.md
   blockers: []
-  resume_point: Deliver M38 using its minimal-slice transaction; prior milestones
+  resume_point: Deliver M39 using its minimal-slice transaction; prior milestones
     accepted.
   started_at: '2026-10-19T03:24:08.050362+00:00'
 compiled_from_history:

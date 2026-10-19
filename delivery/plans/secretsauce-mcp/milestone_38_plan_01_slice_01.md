@@ -25,3 +25,5 @@ Implementation and validation complete.
 
 ## Completion evidence
 Focused 7 tests PASS; actual HTTPS browser PASS; final frozen full suite 772/77 PASS in 121.00s and build PASS. Eight source/dependency hashes verified unchanged. Evidence: evidence/qa/secretsauce-mcp/milestone38/acceptance.md, validation.json, tested-inputs.json; evidence/ux-acceptance/secretsauce-mcp/milestone38/visual-review.md and final/. Root independently accepted desktop visual direction. No blocker, no deployment. Exact implementation SHA recorded by parent acceptance.
+
+Parent acceptance: implementation commit `b4038b7ac169b0db1bc0ec0ae2057dc211c0f6a1`; all M38 criteria verified and accepted.

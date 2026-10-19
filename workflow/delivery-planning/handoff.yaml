@@ -23,7 +23,7 @@ source:
     - REC-RM-033
 planning:
   parent_commit: 346ce2feaf2014052ced6eba1c52ce56150aa887
-  repository_commit: null
+  repository_commit: f75b7edd69e6927ac5d94292401dc23c36a45d5a
 milestones:
   manifest: delivery/milestones/secretsauce-mcp/status.yaml
   packet_revision: sha256:ca8203b87749d7daa687ae69cab081b7e7290b782cbfc3bee28f1a9ed7b918a0
@@ -49,16 +49,16 @@ delivery_constraints:
   split_trigger: newly_discovered_independently_verifiable_behavior
   validation: focused_during_iteration_broader_at_required_checkpoint
   contract:
-  - Before production edits persist governing and all slice plans with one observable behavior, exclusions,
-    positive/negative evidence and commit boundary per slice.
-  - Split newly discovered independent behavior into a subsequent slice before absorbing it; keep strictly
-    necessary supporting work with its behavior.
-  - Milestone scope/dependency changes return to planning; preserve completed work and every acceptance
-    requirement.
-  - Use focused iteration checks, broader checks at mandated milestones; repeat passing tests only on
-    relevant changes/failures/unresolved risks or explicit gates.
-  - Demonstrate integrated outcomes at earliest dependency-safe checkpoint; synthetic fixture success
-    does not establish real external interoperability.
+  - Before production edits persist governing and all slice plans with one observable
+    behavior, exclusions, positive/negative evidence and commit boundary per slice.
+  - Split newly discovered independent behavior into a subsequent slice before absorbing
+    it; keep strictly necessary supporting work with its behavior.
+  - Milestone scope/dependency changes return to planning; preserve completed work
+    and every acceptance requirement.
+  - Use focused iteration checks, broader checks at mandated milestones; repeat passing
+    tests only on relevant changes/failures/unresolved risks or explicit gates.
+  - Demonstrate integrated outcomes at earliest dependency-safe checkpoint; synthetic
+    fixture success does not establish real external interoperability.
 visual_acceptance:
   requirements:
   - UX-V05
@@ -69,8 +69,9 @@ visual_acceptance:
   - UX-C62
   - UX-C63
   approved_reference: product/ux/manifest.yaml
-  required: Actual browser screenshots at matching approved states and viewports under UX6/UX-G07 delta
-    precedence; fix material deviations or obtain scoped approval. Functional checks alone insufficient.
+  required: Actual browser screenshots at matching approved states and viewports under
+    UX6/UX-G07 delta precedence; fix material deviations or obtain scoped approval.
+    Functional checks alone insufficient.
 next:
   workflow: implementation
   recommended_skill: milestone-delivery-orchestrator

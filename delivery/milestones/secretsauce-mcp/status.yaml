@@ -517,23 +517,26 @@ milestones:
 - id: '39'
   title: Navigate guided editing without a redundant detection section
   file: delivery/milestones/secretsauce-mcp/39-focused-guided-service-navigation.md
-  status: in_progress
+  status: completed
   dependencies:
   - '27'
   - '33'
-  completed_at: null
-  evidence: null
-  notes: REC010 bounded refinement; implementation and acceptance pending.
+  completed_at: '2026-10-19T03:43:01.456973+00:00'
+  evidence: evidence/qa/secretsauce-mcp/milestone39/acceptance.md
+  notes: Accepted five-section guided navigation, legacy route compatibility, exact
+    scanning preservation; focused16, actual browser visual, full775 and build PASS.
   started_at: '2026-10-19T03:33:42.877084+00:00'
+  commit_hash: 718f4f74ba31c805d820345837b3cdd20f2032c6
 - id: '40'
   title: Identify every explicit policy scanning override
   file: delivery/milestones/secretsauce-mcp/40-policy-scanning-override-markers.md
-  status: pending
+  status: in_progress
   dependencies:
   - '31'
   completed_at: null
   evidence: null
   notes: REC010 bounded refinement; implementation and acceptance pending.
+  started_at: '2026-10-19T03:43:01.456973+00:00'
 delivery_goal:
   product_id: secretsauce-mcp
   status: in_progress
@@ -623,10 +626,10 @@ delivery_goal:
   - '39'
   - '40'
   execution: autonomous
-  current_milestone: '39'
-  governing_plan: delivery/plans/secretsauce-mcp/milestone_39_plan_01.md
+  current_milestone: '40'
+  governing_plan: delivery/plans/secretsauce-mcp/milestone_40_plan_01.md
   blockers: []
-  resume_point: Deliver M39 using its minimal-slice transaction; prior milestones
+  resume_point: Deliver M40 using its minimal-slice transaction; prior milestones
     accepted.
   started_at: '2026-10-19T03:24:08.050362+00:00'
 compiled_from_history:

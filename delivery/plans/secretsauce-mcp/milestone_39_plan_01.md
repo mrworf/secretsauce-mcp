@@ -17,3 +17,5 @@ Focused route compatibility and existing history/editor tests, real disposable H
 
 ## Completion evidence
 Focused 16 tests PASS; actual disposable HTTPS browser PASS; final frozen full suite 775 tests / 78 files PASS (122.39 seconds); build PASS. All 176 tested input hashes verified unchanged. QA: evidence/qa/secretsauce-mcp/milestone39/acceptance.md, validation.json, tested-inputs.json. UX: evidence/ux-acceptance/secretsauce-mcp/milestone39/visual-review.md and final/. Root independently inspected desktop/narrow/text200 composition and scanning dialog. Development harness corrections preserved stale revision/access rejection; no weakened checks or production workaround. No blocker or deployment. Implementation SHA recorded by parent acceptance.
+
+Parent acceptance: implementation commit `718f4f74ba31c805d820345837b3cdd20f2032c6`; all M39 criteria verified and accepted.

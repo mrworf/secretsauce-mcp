@@ -17,3 +17,5 @@ Actual disposable HTTPS browser covers default/order, keyboard, exact proposal d
 
 ## Completion
 All four criteria pass; acceptance.md, validation.json and tested-inputs.json under milestone37 QA map evidence. Actual HTTPS browser PASS; focused8 PASS; final frozen fullsuite772/77 PASS in126.07s and build PASS. All fingerprinted executable inputs unchanged. Root reviewed actual desktop appearance. No blocker or deployment. Exact slice SHA recorded by parent acceptance to avoid self-reference.
+
+Root acceptance: implementation commit `3b2119310bfb6078762be44c3078666a73bc7c15`; all milestone criteria verified.

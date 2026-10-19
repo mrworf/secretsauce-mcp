@@ -15,3 +15,5 @@ Commands: npm test -- --maxWorkers=2 test/console-service-review.test.ts; npm ru
 
 ## Commit boundary
 One reviewable commit with renderer, affected harnesses, plans and evidence after all four milestone criteria pass. Root records exact slice SHA and acceptance, no status edits here. Rollback reverts presentation only. Validation complete: focused8 PASS, actual HTTPS browser PASS, final frozen fullsuite772/77 PASS (126.07s), build PASS. All executable hashes verified unchanged. Concrete criterion map and visual comparison in milestone37 evidence. Slice complete; exact commit recorded by parent acceptance.
+
+Root acceptance: implementation commit `3b2119310bfb6078762be44c3078666a73bc7c15`; all milestone criteria verified.

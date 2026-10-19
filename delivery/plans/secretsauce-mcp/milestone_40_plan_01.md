@@ -21,3 +21,5 @@ Status: complete; slice commit recorded by parent acceptance.
 ## Completed validation
 
 25 focused tests PASS; both actual HTTPS browsers PASS; final frozen full suite 775 tests in 78 files PASS (127.94s), final build PASS. All 230 source/test/harness/lock inputs unchanged against tested-inputs.json. QA: evidence/qa/secretsauce-mcp/milestone40/acceptance.md and validation.json; UX: evidence/ux-acceptance/secretsauce-mcp/milestone40/visual-review.md. Root records exact slice commit in acceptance transaction.
+
+Parent acceptance: implementation commit `678da0aafd6e45959a990cb1e66ac69845671297`; all M40 criteria verified and accepted. Fixed M37–40 delivery goal complete.

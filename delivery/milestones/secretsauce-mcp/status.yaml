@@ -530,16 +530,19 @@ milestones:
 - id: '40'
   title: Identify every explicit policy scanning override
   file: delivery/milestones/secretsauce-mcp/40-policy-scanning-override-markers.md
-  status: in_progress
+  status: completed
   dependencies:
   - '31'
-  completed_at: null
-  evidence: null
-  notes: REC010 bounded refinement; implementation and acceptance pending.
+  completed_at: '2026-10-19T03:49:14.495596+00:00'
+  evidence: evidence/qa/secretsauce-mcp/milestone40/acceptance.md
+  notes: "Accepted neutral presence-based scanning override markers; 25 focused tests,\
+    \ both HTTPS browser flows, visual checks, final775 tests and build PASS. Fixed\
+    \ M37\u201340 goal complete; no deployment."
   started_at: '2026-10-19T03:43:01.456973+00:00'
+  commit_hash: 678da0aafd6e45959a990cb1e66ac69845671297
 delivery_goal:
   product_id: secretsauce-mcp
-  status: in_progress
+  status: completed
   packet: delivery/milestones/secretsauce-mcp/status.yaml
   packet_revision: sha256:ca8203b87749d7daa687ae69cab081b7e7290b782cbfc3bee28f1a9ed7b918a0
   packet_contract_revisions:
@@ -626,12 +629,12 @@ delivery_goal:
   - '39'
   - '40'
   execution: autonomous
-  current_milestone: '40'
+  current_milestone: null
   governing_plan: delivery/plans/secretsauce-mcp/milestone_40_plan_01.md
   blockers: []
-  resume_point: Deliver M40 using its minimal-slice transaction; prior milestones
-    accepted.
+  resume_point: All fixed-scope milestones accepted.
   started_at: '2026-10-19T03:24:08.050362+00:00'
+  completed_at: '2026-10-19T03:49:14.495596+00:00'
 compiled_from_history:
 - product_id: secretsauce-mcp
   input_mode: PRODUCT_BUILD

@@ -44,3 +44,8 @@ Set/Replace, Clear/Delete, rule editing and policy test dialogs have an accessib
 Use semantic tabs with selected state, associated panels and one tab stop. ArrowLeft/Right and Home/End move among the two tabs; preloaded panels may activate with focus. Give each comparison a field/item label and Before/After reading order. Change labels/symbols supplement tint. Preserve exact values at text enlargement and test both document and text-range overflow.
 
 Use a named modal with inert background and trapped focus. Initially focus the heading so consequence and risk text precede the action. Cancel/Escape before submission restores the invoking control and context. Required checkboxes have associated specific risk/scope labels; announce remaining acknowledgments and submission outcomes. Every required acknowledgment must be checked before Continue is enabled. A pending operation cannot be dismissed with wording that implies cancellation or rollback of an admitted request. UX-IN17 governs stale/unknown outcomes.
+
+
+## UX-A09 — Refinement semantics
+
+New settings is the first selected semantic tab on review entry; UX-A08 keyboard behavior remains unchanged. Render actual review exceptions as a semantic list with readable risk/scope text. Reading these bullets does not check any modal acknowledgment. The override badge is visible text associated with its rule, available without hover or color interpretation, and is not an urgent alert merely because an override exists. Removed-section navigation must not strand keyboard focus or discard safe draft input; return to a remaining relevant section under the existing navigation guard.

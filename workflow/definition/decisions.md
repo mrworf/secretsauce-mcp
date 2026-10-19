@@ -1100,3 +1100,35 @@ approval_scope: feedback-004-draft-1 representative service-review layout and di
   direction
 approved_proposal_revisions: *id001
 ```
+
+## Confirmed review and policy refinements (REC010)
+
+```yaml
+id: PO-REFINEMENT-010
+status: accepted
+source_feedback: workflow/feedback/PO-FEEDBACK-2026-10-18-002/feedback.yaml
+source_findings:
+- REC-038
+- REC-039
+- REC-040
+- REC-041
+resolution_category: PRODUCT_DECISION
+resolution_owner: user
+routing_status: resolved
+depends_on: []
+ask_user: false
+resolved_behavior:
+- New settings first/default; Changes remains available.
+- Actual exception bullets visible before approval, replacing rejected generic disclaimer;
+  individual modal acknowledgment retained.
+- Remove standalone guided Secret Detection section; retain policy override controls
+  and global settings.
+- Highlight any explicit rule-specific secret-detection or binary-scanning override.
+- Slider and proposed scale remain exploratory, motivated by free-text usability concern;
+  no new numeric semantics required.
+authoritative_updates:
+- docs/web-console-prd.md
+- product/ux/01-information-architecture.md
+- product/ux/02-interaction-patterns.md
+reconciliation: workflow/reconciliation/REC-RUN-010/reconciliation-result.yaml
+```

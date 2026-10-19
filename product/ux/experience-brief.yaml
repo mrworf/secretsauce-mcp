@@ -2,7 +2,7 @@ status: approved
 product_id: secretsauce-mcp
 sources:
 - path: docs/web-console-prd.md
-  revision: sha256:eddf4eabe2589d5ea8d235c267e722cf9b7ba9d5b93db89e3062be210716f9a1
+  revision: sha256:4359e38faed45eb8f4d3de087bfb51ba7608f9406149fb6311687117dfc1638b
 - path: product/security/web-console-security-contract.md
   revision: sha256:8f66520798094a2638f006c9f3145e263e96008fdf63480fc6b98c2b0ccddc35
 - path: product/architecture/web-console-state-contract.md
@@ -10,7 +10,7 @@ sources:
 - path: workflow/feedback/PO-FEEDBACK-2026-10-11-002/feedback.yaml
   revision: sha256:515a53d2c56f256708cef2fce9add362aa20f2fbcf1f6d34b4ff1a1dfdb9d53b
 - path: workflow/definition/decisions.md
-  revision: sha256:63c476c74fefc60bcd3d925b2c32d6d127804460a4dd9f06d90be053cc4c1711
+  revision: sha256:10b1853239659ff3467ec391fd1a0338cc7003fb828d60375da208240e37b815
 - path: workflow/reconciliation/REC-RUN-005/reconciliation-result.yaml
   revision: sha256:fbcfc50401f03cf2360fe0b6c68aca0c9439a5cdb0becb21d595c0f533f0dfbf
 - path: workflow/feedback/PO-FEEDBACK-2026-10-17-001/feedback.yaml
@@ -23,8 +23,14 @@ sources:
   revision: sha256:abe2992d0c00437f54a8770d353c1da255188d7aeee123046407d4c403d97185
 - path: workflow/definition/drafts/product-ux/web-console-feedback-004/approval.yaml
   revision: sha256:c51e619fb0f0a82ec9c7180f5976626655cacdba5cc76758654824fd780d5fe5
+- path: workflow/feedback/PO-FEEDBACK-2026-10-18-002/feedback.yaml
+  revision: sha256:0fea1b9dccbb13990dbada280d4019c3ae9637a0663bc0c8240770240b28e487
+- path: workflow/reconciliation/REC-RUN-010/reconciliation-result.yaml
+  revision: sha256:59c2d7ba9f4b05500ceed7ae781c243fba0a7e05269dec92826709c4c08d85a3
+- path: docs/web-console-prd-user-journey-audit.md
+  revision: sha256:77d2eb01dfe082853f384f77057884c1ab47dc63d4d003b1aada8f4f549fa7c3
 experience:
-  revision: web-console-ux-5
+  revision: web-console-ux-6
   audience:
     primary:
     - Owners
@@ -58,8 +64,8 @@ experience:
     progressive_disclosure: Preserve all advanced capabilities without putting raw structure in routine paths
     service_configuration: Focused populated sections, clickable creation steps, one global Guided/Advanced mode,
       compact rule list and explicit in-draft import recovery
-    service_review: Changes pairs Before/After; New settings shows complete section cards; Approve changes opens
-      confirmation with every required security acknowledgment
+    service_review: New settings first/default with complete section cards; Changes retains paired Before/After;
+      actual exception bullets precede Approve changes and separate required modal acknowledgments
   responsive_priority: Use columns on wide screens, reflow forms and keep compact account rows linked to complete
     detail on narrow screens
   explicit_po_preferences:
@@ -93,6 +99,14 @@ experience:
   - statement: Approved feedback 004 service comparison composition, narrow paired stacking and confirmation appearance
     decision_refs:
     - UX-DESIGN-005
+  - statement: New settings first/default; actual review exception bullets visible before approval; remove standalone
+      guided Secret detection; highlight every explicit scanning override
+    decision_refs:
+    - PO-REFINEMENT-010
+    - PO-FB-138
+    - PO-FB-140
+    - PO-FB-145
+    - PO-FB-146
   explicit_po_dislikes:
   - statement: Extra viewing/editing steps and inconsistent values/state
     decision_refs:
@@ -113,3 +127,6 @@ experience:
     - UX-DESIGN-003
     - UX-DESIGN-004
     - UX-DESIGN-005
+    - PO-REFINEMENT-010
+    scope: Preserve UX-DESIGN-004/005 approved visual direction; exact confirmed refinements adopted via REC-RUN-010.
+      No new consequential visual choice.

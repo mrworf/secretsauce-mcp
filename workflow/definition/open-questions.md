@@ -1071,3 +1071,7 @@ approval_scope: feedback-004-draft-1 representative service-review layout and di
   direction
 approved_proposal_revisions: *id001
 ```
+
+## REC010 feedback clarification — resolved
+
+PO-UNRESOLVED-001 and PO-UNRESOLVED-002 in PO-FEEDBACK-2026-10-18-002 were resolved by the Product Owner: any scanning override is highlighted; the slider is a suggestion. Decision PO-REFINEMENT-010 records these settled answers. No new product question is opened.

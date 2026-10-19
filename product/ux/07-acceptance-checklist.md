@@ -88,10 +88,23 @@ UX-C43–53 supplement UX-C01–42; they do not mark implementation passed. STAT
 
 | ID | Observable check | Governing UX rules | Product trace |
 | --- | --- | --- | --- |
-| UX-C54 | Changes defaults to section-grouped, aligned Before/After pairs and labeled green/red/amber states; New settings contains the full sanitized proposal. Switching tabs performs no mutation and retains the reviewed target. | UX-IN17, UX-V07 | CONFIG-03, UX-DESIGN-005 |
+| UX-C54 | New settings is first/default and contains the full sanitized proposal; Changes is second with section-grouped, aligned Before/After pairs and labeled green/red/amber states. Switching tabs performs no mutation and retains the reviewed target. | UX-IN17, UX-V07 | CONFIG-03, UX-DESIGN-005 |
 | UX-C55 | Missing baseline, absent/empty/false/zero/null and no-change states remain distinct; supported custom fields, typed values, stable identity and exact array order survive comparison. Removed/added identities are not falsely paired as renamed items. | UX-IN17 | CONFIG-03, BASE-01 |
 | UX-C56 | Approve changes opens Continue/Cancel confirmation; no-exception and multiple-exception paths preserve exact scope. Every existing required acknowledgment remains independently gated; partial checks cannot submit. Cancel/Escape apply nothing; stale dependencies invalidate acknowledgments and unknown completion requires status verification. | UX-IN17, UX-A08 | CONFIG-03, POLICY-04 |
 | UX-C57 | TLS labels distinguish the service default from effective destination overrides, use safe recognizable context and do not imply off for an on override. Distinct required service-default/destination exception identities are retained; no secret-bearing label is displayed. | UX-IN17 | POLICY-04, AUTHZ-04 |
 | UX-C58 | Matching screenshots cover Changes/New settings desktop/narrow and both dialog paths against approved feedback 004. Paired narrow stacking, readable exact literals, text enlargement, keyboard tabs, modal focus and reachable actions preserve all review content. | UX-G06, UX-R07, UX-V07, UX-A08 | UX-02/04, UX-DESIGN-005 |
 
 UX-C54–58 supplement prior checks. They do not certify production implementation or change full Settings review/SMTP semantics.
+
+
+## Confirmed refinement conformance additions
+
+| ID | Observable check | Governing UX rules | Product trace |
+| --- | --- | --- | --- |
+| UX-C59 | New settings is first and selected on review entry; keyboard order matches. Switching to Changes and back is read-only, preserves reviewed scope and safe state, and Cancel returns to the selected tab. | UX-G07, UX-IN17, UX-A08/09 | CONFIG-03, PO-FB-138 |
+| UX-C60 | Zero, one and many actual exceptions appear as readable bullets before Approve changes from either tab, with a neutral none state and no generic disclaimer/count-only replacement. TLS inherited-off, explicit-off, explicit-on and mixed HTTP/HTTPS labels preserve exact safe scope and independent mandatory dialog acknowledgments; no bullet silently acknowledges a risk. | UX-IN17, UX-V08, UX-R08, UX-A09 | CONFIG-03, POLICY-04, PO-FB-140 |
+| UX-C61 | Guided edit/create omit the standalone Secret detection destination; old section entry and Back/Forward reach a remaining relevant section without lost input or false dirty state. Policy scanning controls, shared Settings, complete review and exact saved/imported fields remain available. | UX-G07, UX-IA09/10, UX-IN15, UX-V08 | POLICY-02, PO-FB-145 |
+| UX-C62 | Both explicit override families have a neutral readable rule-row marker, including protection-increasing and explicit default-equivalent binary values. Inherited rules have none. Genuine risk warnings remain separate, with unchanged classification and acknowledgments; existing sizes, custom options, identifiers and rule order survive editing. | UX-IN16, UX-V08, UX-A09 | POLICY-02/04, PO-FB-146 |
+| UX-C63 | Matching-state desktop/narrow and enlarged-text evidence compares against preserved feedback 003/004 appearance with UX-G07's exact delta precedence. Exception lists and rule badges remain readable without hover, clipping, overlap or page overflow; keyboard navigation and modal focus remain intact. | UX-G07, UX-V08, UX-R08, UX-A09 | UX-02/04, PO-REFINEMENT-010 |
+
+These are observable future conformance checks, not executed acceptance. The optional slider and proposed scale are not acceptance requirements; current exact-value and validation obligations remain.

@@ -38,3 +38,8 @@ Feedback 003 extends the approved wide shell: compact full-width service rows, s
 Changes uses aligned Before/After columns at wide widths. At narrow widths stack Before then After within each field/item pair; never collect all Before values separately from all After values. Repeat labels so scope remains clear. New settings uses two columns of named section cards when space permits and one column otherwise. Retain complete values, section headings, review identity, exception summary and action bar; wrap exact unbroken literals without clipping or horizontal page scrolling. Compare 1440px and 390px representative states and enlarged text against approved feedback 004 concepts.
 
 Confirmation fits the viewport with reachable Cancel and Continue. A long list may scroll inside the bounded dialog; every exception remains individually visible/reachable without nested accordions or hidden acknowledgment controls. Narrow layout does not remove supported settings or weaken acknowledgment requirements.
+
+
+## UX-R08 — Refinement reflow
+
+At every width, New settings precedes Changes in reading and focus order. Review exception bullets wrap in the existing full-width exception surface; do not hide, clip or collapse them on narrow screens. The neutral scanning-override badge wraps within its own rule row and remains distinguishable from risk warnings without displacing Edit/Delete. Removing the guided destination preserves direct navigation and safe Back/Forward under UX-IN15. Retain 320 CSS px, 390px and enlarged-text checks for both document and text-range overflow.

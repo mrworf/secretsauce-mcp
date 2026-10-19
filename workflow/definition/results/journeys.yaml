@@ -1,26 +1,31 @@
-stage: journeys
+stage: prd-to-user-journey-audit
 status: PASS
 mode: targeted_revalidation
-generated_at: '2026-10-18T17:53:16+00:00'
+generated_at: '2026-10-19T03:12:23+00:00'
 validated_inputs:
 - path: docs/web-console-prd.md
-  revision: sha256:eddf4eabe2589d5ea8d235c267e722cf9b7ba9d5b93db89e3062be210716f9a1
+  revision: sha256:4359e38faed45eb8f4d3de087bfb51ba7608f9406149fb6311687117dfc1638b
+- path: product/ux/01-information-architecture.md
+  revision: sha256:96c238d8305a5a9a790536792b834a89cd1964a6e0f5e044c9c8a83118f0d1b1
 - path: product/ux/02-interaction-patterns.md
-  revision: sha256:9d945862fc0f60bbee51953abc928d000b65a09c94c3a2b17538f67f829a79c1
+  revision: sha256:86ff134ae868bc265d51b5b2a10731ae30b4993a56b4d7de1a735d98de0a5e30
 - path: product/architecture/web-console-state-contract.md
   revision: sha256:c8e22b5013d89090cc451cb2ef0290d7517b05bebae746faa15b65f10fca9848
 - path: product/security/web-console-security-contract.md
   revision: sha256:8f66520798094a2638f006c9f3145e263e96008fdf63480fc6b98c2b0ccddc35
-- path: workflow/feedback/PO-FEEDBACK-2026-10-18-001/feedback.yaml
-  revision: sha256:790a7d0c0485559591f8d768436b5137474a5df1b5e3b0100c670497fa59a8d7
-- path: workflow/reconciliation/REC-RUN-009/reconciliation-result.yaml
-  revision: sha256:abe2992d0c00437f54a8770d353c1da255188d7aeee123046407d4c403d97185
+- path: workflow/feedback/PO-FEEDBACK-2026-10-18-002/feedback.yaml
+  revision: sha256:0fea1b9dccbb13990dbada280d4019c3ae9637a0663bc0c8240770240b28e487
+- path: workflow/reconciliation/REC-RUN-010/reconciliation-result.yaml
+  revision: sha256:59c2d7ba9f4b05500ceed7ae781c243fba0a7e05269dec92826709c4c08d85a3
+- path: workflow/reconciliation/REC-RUN-010/03-remediation-backlog.md
+  revision: sha256:0447fd917119b396efe80e61611ea00296cafa55ed52734322378b045ddc7057
 artifact_changes:
 - path: docs/web-console-prd-user-journey-audit.md
-  summary: "Preserve all 66 journeys and prior evidence; extend service review paths and three action chains for\
-    \ REC-035\u2013037, confirmation, cancellation, scope and safe recovery."
+  summary: Narrow REC-038–041 journey/action/matrix propagation; preserve all inventories,
+    historical validation and UX5 scope.
 - path: workflow/definition/results/journeys.yaml
-  summary: Bounded PASS against exact REC-RUN-009 authority; runtime remains unverified.
+  summary: Bounded journey PASS with exact authority revisions; no implementation
+    acceptance.
 changed_paths:
 - docs/web-console-prd-user-journey-audit.md
 - workflow/definition/results/journeys.yaml
@@ -28,10 +33,8 @@ findings: []
 questions: []
 affected_requirements:
 - CONFIG-03
+- POLICY-02
 - POLICY-04
-- UX-02
-- UX-04
-- UX-IN02
 affected_artifacts:
 - docs/web-console-prd-user-journey-audit.md
 reconciliation_required: false
@@ -51,19 +54,13 @@ validation:
   coverage_rows: 66
   specification_gaps: 0
   implementation_tests_run: false
-  implementation_evidence: Not verified; definition-only review
-  visual_acceptance: UX-V05/UX-C42 matching-state/viewport implementation/reference comparison required; no runtime
-    acceptance claim.
+  implementation_evidence: Not verified; targeted definition-only review
   target_findings:
-  - REC-035
-  - REC-036
-  - REC-037
-  ux5_equivalence:
-    checked_at: '2026-10-18T21:20:18+00:00'
-    prior_interaction_revision: sha256:1ba0ba8765f82c832658848db8b78c8b11002d700f85bf37ec38e2e594c064d0
-    status: PASS
-    scope: 'UX-IN02/17 approved UX-DESIGN-005 refinement preserves ACT-020/021/123-125: immutable grouped comparison/full
-      proposal, explicit zero/all-exception confirmation, cancellation/focus, stale/unknown/permission controls
-      and effective TLS override scope. Responsive paired columns and exact-value display refine presentation without
-      changing journey transitions. Audit document remains the prior bounded review record.'
-workflow_readiness: "Journey-stage PASS for REC-035\u2013037; Product UX validation and overall handoff remain orchestrator-owned."
+  - REC-038
+  - REC-039
+  - REC-040
+  - REC-041
+  preserved_basis: Prior complete inventory and REC009/UX5 equivalence retained for
+    unaffected scope. No new source-authority changes by this stage.
+workflow_readiness: Journey-stage PASS only; Product UX validation and overall readiness
+  are orchestrator-owned.

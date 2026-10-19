@@ -1,0 +1,19 @@
+# Impact map
+
+| Observation/source | PO feedback item | Finding | Root requirement/rule | Source change | Affected definition domains | Potentially stale artifacts | Remediation | Decision | Trace status |
+|---|---|---|---|---|---|---|---|---|---|
+| Confirmed feedback | PO-FB-138 | REC-038 | CONFIG-03 / UX-IN17 | REC-CHANGE-038 | journeys, UX | docs/web-console-prd-user-journey-audit.md, product/ux/manifest.yaml, product/ux/07-acceptance-checklist.md | REC-RM-030 | None | TRACED |
+| Confirmed feedback | PO-FB-139 | REC-039 | CONFIG-03 / POLICY-04 / UX-IN17 | REC-CHANGE-039 | journeys, UX | docs/web-console-prd-user-journey-audit.md, product/ux/manifest.yaml, product/ux/07-acceptance-checklist.md | REC-RM-031 | None | TRACED |
+| Confirmed feedback | PO-FB-140 | REC-039 | CONFIG-03 / POLICY-04 / UX-IN17 | REC-CHANGE-039 | journeys, UX | docs/web-console-prd-user-journey-audit.md, product/ux/manifest.yaml, product/ux/07-acceptance-checklist.md | REC-RM-031 | None | TRACED |
+| Confirmed feedback | PO-FB-141 | Supplementary evidence | Existing validation / preservation | None | None independently | None | None | None | TRACED |
+| Confirmed feedback | PO-FB-142 | REC-040 | POLICY-02 / UX-IA09 / UX-IA10 | REC-CHANGE-040 | journeys, UX | docs/web-console-prd-user-journey-audit.md, product/ux/manifest.yaml, product/ux/07-acceptance-checklist.md | REC-RM-032 | None | TRACED |
+| Confirmed feedback | PO-FB-143 | REC-040 | POLICY-02 / UX-IA09 / UX-IA10 | REC-CHANGE-040 | journeys, UX | docs/web-console-prd-user-journey-audit.md, product/ux/manifest.yaml, product/ux/07-acceptance-checklist.md | REC-RM-032 | None | TRACED |
+| Confirmed feedback | PO-FB-144 | REC-040 | POLICY-02 / UX-IA09 / UX-IA10 | REC-CHANGE-040 | journeys, UX | docs/web-console-prd-user-journey-audit.md, product/ux/manifest.yaml, product/ux/07-acceptance-checklist.md | REC-RM-032 | None | TRACED |
+| Confirmed feedback | PO-FB-145 | REC-040 | POLICY-02 / UX-IA09 / UX-IA10 | REC-CHANGE-040 | journeys, UX | docs/web-console-prd-user-journey-audit.md, product/ux/manifest.yaml, product/ux/07-acceptance-checklist.md | REC-RM-032 | None | TRACED |
+| Confirmed feedback | PO-FB-146 | REC-041 | POLICY-02 / UX-IN16 | REC-CHANGE-041 | journeys, UX | docs/web-console-prd-user-journey-audit.md, product/ux/manifest.yaml, product/ux/07-acceptance-checklist.md | REC-RM-033 | None | TRACED |
+| Confirmed feedback | PO-FB-147 | Supplementary evidence | Existing validation / preservation | None | None independently | None | None | None | TRACED |
+| Confirmed feedback | PO-FB-148 | Supplementary evidence | Existing validation / preservation | None | None independently | None | None | None | TRACED |
+
+REC-IMPACT-010: product false because exact intent is now locally specified without missing product decisions. user_journeys true because first review view and guided section reachability change. UX true because manifest/acceptance and derived concepts still encode prior ordering/section/summary behavior. Architecture false after checking STATE-01/02/03: same review target, persistence, publication, history and permission transaction. Security false after SECRES-01/POLICY-04 and implementation boundary inspection: moving risk information earlier preserves mandatory checkboxes, exact risk identities, redaction and authorization; marking any override does not relax checks. Removing one navigation section removes no scanner functionality. Optional slider is excluded; no zero/unlimited semantic change is authorized. Approval copy remains accurate and best-effort limitations remain in appropriate existing documentation/help, without forcing the rejected generic footer.
+
+Systemic grouping: REC-038/039 refine review presentation; REC-040/041 refine guided navigation/rule visibility. Separate acceptance outcomes preserve independent testability. No broad architecture/security revalidation is inferred from security-related labels alone.

@@ -4,7 +4,7 @@ status: ready_for_delivery_planning
 scope: Self-hosted single-organization web console initial release
 transaction:
   parent_commit: f498938edf7858a5217f047efba22a727a7303fa
-  repository_commit: null
+  repository_commit: 69611ec52040a3619e0e503b0abdc223e995f4a1
   pre_existing_dirty_paths:
   - test-results/
   owned_paths:
@@ -1622,7 +1622,7 @@ last_reconciliation:
   definition_package:
     status: current
     path: workflow/definition/definition-package.yaml
-    revision: sha256:5ec22326023da977db03b20e86d8f2076772d71ee65e4cec68b9ab268be92100
+    revision: sha256:1b768e553581d190a3a4a7b8f97883ef8ad632d130f71eb6ac96609a9891e3dd
   readiness_basis: REC010 resolved; targeted journeys/UX PASS. Unaffected semantic-domain
     validation preserved against explicit current authority.
 feedback_source: workflow/feedback/PO-FEEDBACK-2026-10-17-001/feedback.yaml
@@ -1798,8 +1798,8 @@ next_handoff:
   mode: CHANGE_PLAN
   ready: true
   primary_input: workflow/definition/definition-package.yaml
-  definition_package_revision: sha256:5ec22326023da977db03b20e86d8f2076772d71ee65e4cec68b9ab268be92100
-  repository_commit: null
+  definition_package_revision: sha256:1b768e553581d190a3a4a7b8f97883ef8ad632d130f71eb6ac96609a9891e3dd
+  repository_commit: 69611ec52040a3619e0e503b0abdc223e995f4a1
   reconciliation:
     id: REC-RUN-010
     path: workflow/reconciliation/REC-RUN-010/reconciliation-result.yaml

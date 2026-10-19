@@ -5,7 +5,7 @@
   "status": "RESOLVED",
   "transaction": {
     "parent_commit": "f498938edf7858a5217f047efba22a727a7303fa",
-    "repository_commit": null,
+    "repository_commit": "c4be1744e182b1ade7772268f3cf1e87dc0f4453",
     "pre_existing_dirty_paths": [
       "workflow/definition/state.yaml",
       "test-results/"

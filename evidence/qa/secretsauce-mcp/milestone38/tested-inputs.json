@@ -1,0 +1,10 @@
+{
+  "src/consoleServiceApproval.ts": "aa2cafd74076db042c1df4867e9d195f0898f525b85b90d1338bf14484f145df",
+  "src/consoleServiceReview.ts": "7e7cf69b7a2d9cd082effde45c3759b51a493dab7eefdbc812f1500ad44b1218",
+  "src/consoleServicePage.ts": "2f69a78e3ede76d5c95726db4a29cf3ebd410948e136f816f023581b86d26dab",
+  "src/consoleServices.ts": "f63176a5fc6454de9088c41441168a88351fdc7be7815191e616bb8aba0c8ffc",
+  "scripts/verify-console-approval-browser.mjs": "f84d8ce86b86fd9497b802b2c8ef6b7a5da26fff1ed9773f0064b9a2bbcae5a4",
+  "test/console-service-approval.test.ts": "59023f23290c031ee0dc72770ad2cd3833405e2be5ab05b239e8190c229760e6",
+  "package.json": "885ec1afee9dfc4f1d5f8ec2986fdd7e41e4fb3c39ad789c2b6dde4eb58f9a2d",
+  "package-lock.json": "0b96e72aa34aa005030ce4fb83b86a6c584e0dfedb6eff10d33970676da3a9d2"
+}

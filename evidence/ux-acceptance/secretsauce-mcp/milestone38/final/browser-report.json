@@ -1,0 +1,14 @@
+{
+  "result": "PASS",
+  "checks": [
+    "Guided saved draft reaches New settings first; all four keyboard navigation keys follow visible tab order; keyboard tabs are read-only and preserve exact bound server review; returning to edit does not dirty.",
+    "Open and partial checks cannot activate; named modal heading focus, Escape/Cancel restore opener and tab without mutations, reopening resets acknowledgments.",
+    "Stale server rejection preserves work and resets checks; pending prevents duplicate submission/cancel; joined edit/save/tabs/approval activates exactly one revision.",
+    "No-exception confirmation and Cancel preserve New settings; lost successful HTTP response requires current durable status read, never resubmits, then shows current configuration.",
+    "Permission loss after review rejects activation without changing the active revision.",
+    "No-baseline additions/no-change full proposal reachable; no browser persistent review state.",
+    "Renderer boundary preserves typed false/zero/null/empty collections/text markers, exact custom own-property names and array order.",
+    "Zero, one and three actual exceptions readable on both tabs before approval; neutral none state; identical safe modal risk meanings with every checkbox initially unchecked.",
+    "Hostile risk descriptions render as inert text; safe server labels exclude URL userinfo/query/fragment."
+  ]
+}

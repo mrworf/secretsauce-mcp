@@ -29,8 +29,9 @@ export function serviceExceptionLabel(risk: string, proposed: any): string {
 export const consoleServiceApprovalScript=String.raw`
 const serviceExceptionLabel=${serviceExceptionLabel.toString()};
 function serviceApprovalFooter(parent,review,editor){
- const summary=el('section');summary.className='approval-summary';summary.append(el('h2','Security exceptions'),el('p',review.exceptions.length?review.exceptions.length+' security exception'+(review.exceptions.length===1?'':'s')+' require your acknowledgment before applying.':'No security exceptions in these changes.'));
- summary.append(el('p','Trusted administrators choose credential destinations. Secret detection is best effort and cannot prevent every downstream reflection or encoding.'));parent.append(summary);
+ const summary=el('section');summary.className='approval-summary';summary.append(el('h2','Security exceptions'));
+ if(review.exceptions.length){const list=el('ul');list.className='approval-exceptions';for(const risk of review.exceptions)list.append(el('li',serviceExceptionLabel(risk,review.proposed)));summary.append(list);}else summary.append(el('p','No security exceptions in these changes.'));
+ parent.append(summary);
  const footer=el('div');footer.className='approval-actions';parent.append(footer);action(footer,'Back to edit',()=>renderEditor(editor.reviewReturnStep??3));action(footer,'Back to Services',()=>leaveEditor(()=>services()));
  const approve=action(footer,'Approve changes',()=>openServiceApproval(review,editor,approve));approve.className='';if(editor.approvalUncertain){approve.disabled=true;serviceApprovalStatusLink(footer,editor);}
 }

@@ -20,8 +20,8 @@ Source: prompt and Product Owner clarification. Status: CONFIRMED.
 
 The binary scan size slider and its proposed scale are exploratory. The reported risk of unsupported free-text values is evidence, not a finding about validation. No unresolved questions remain.
 
-Reconciliation ready: false.
+Reconciliation ready: true.
 
 Authority meanings: confirmed directives establish product intent; preferences are advisory; observations are evidence; ideas/questions are exploratory.
 
-Producer commit and provenance closeout remain before handoff.
+Run product-reconciliation using `workflow/feedback/PO-FEEDBACK-2026-10-18-002/feedback.yaml`.

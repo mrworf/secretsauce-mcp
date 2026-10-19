@@ -6,7 +6,13 @@ source:
   captured_from: prompt
   captured_at: '2026-10-19T01:40:44.399984+00:00'
   references: []
-status: NEEDS_CONFIRMATION
+  clarifications:
+  - captured_from: prompt
+    original: '1. Any override
+
+      2. Suggestion, since the free text field today is a bit risky (users can write
+      things the app doesn''t understand)'
+status: CONFIRMED
 transaction:
   parent_commit: e8705ff2f9737c6741731926ff00f8292c54f8d3
   repository_commit: null
@@ -134,69 +140,50 @@ items:
   ambiguity: []
 - id: PO-FB-146
   classification: DIRECTIVE
-  confirmation: NEEDS_CONFIRMATION
+  confirmation: CONFIRMED
   original: Also, in the policy editor, we'd do good if we highlighted rules that
     deviated from standard.
-  normalized: Highlight policy rules that deviate from standard; the intended meaning
-    of standard needs confirmation.
+  normalized: Highlight policy rules with any rule-specific override of shared/default
+    secret-detection or binary-scanning settings.
   scope:
   - policy-rule-editing
   tags: []
   authority:
-    product_intent: unresolved
+    product_intent: authoritative
   suggestions: []
-  ambiguity:
-  - Standard may mean inherited/shared secret-detection settings or a broader baseline
-    for rules.
+  ambiguity: []
 - id: PO-FB-147
   classification: IDEA_OR_QUESTION
-  confirmation: NEEDS_CONFIRMATION
+  confirmation: CONFIRMED
   original: Also, the "maximum binary scan size" should probably be a slider, ranging
     from 0 (disabled) to 1MB in 10kb increments, one step beyond 1MB should read unlimited.
   normalized: 'Consider a maximum binary scan size slider: 0 means disabled, values
-    extend to 1MB in 10kb increments, and the next step reads unlimited. Confirm whether
-    this mechanism is required or a suggestion.'
+    extend to 1MB in 10kb increments, and the next step reads unlimited. This is a
+    suggestion to evaluate, not a required control or scale.'
   scope:
   - policy-rule-editing
   tags: []
   authority:
-    product_intent: unresolved
+    product_intent: exploratory
   suggestions: []
-  ambiguity:
-  - Should probably may describe a required slider or an exploratory mechanism.
-unresolved:
-- id: PO-UNRESOLVED-001
-  item_ids:
-  - PO-FB-146
-  issue: behavior
-  question: Which deviations should policy-rule highlighting identify?
-  options:
-  - id: A
-    meaning: Any rule-specific secret-detection or binary-scanning override of shared/default
-      protection settings.
-    classification: DIRECTIVE
-  - id: B
-    meaning: Only overrides that reduce protection compared with shared/default settings.
-    classification: DIRECTIVE
-  - id: C
-    meaning: Other rule differences; Product Owner specifies the baseline.
-    classification: DIRECTIVE
-  blocking_reconciliation: true
-- id: PO-UNRESOLVED-002
-  item_ids:
-  - PO-FB-147
-  issue: authority
-  question: Is the specified binary scan size slider required, or a suggestion to
-    evaluate?
-  options:
-  - id: A
-    meaning: Require the slider with the stated disabled, range, increment and unlimited
-      behavior.
-    classification: DIRECTIVE
-  - id: B
-    meaning: Treat the slider and its proposed scale as a suggestion to evaluate.
-    classification: IDEA_OR_QUESTION
-  blocking_reconciliation: true
+  ambiguity: []
+- id: PO-FB-148
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: 2. Suggestion, since the free text field today is a bit risky (users can
+    write things the app doesn't understand)
+  normalized: The Product Owner considers the current free-text binary scan size field
+    risky because users can enter values the application does not understand; this
+    motivates the slider suggestion.
+  scope:
+  - policy-rule-editing
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+  clarifies: PO-FB-147
+unresolved: []
 handoff:
   reconciliation_ready: false
   next_workflow: null

@@ -1,6 +1,6 @@
 # PO-FEEDBACK-2026-10-18-002
 
-Source: prompt. Status: NEEDS_CONFIRMATION.
+Source: prompt and Product Owner clarification. Status: CONFIRMED.
 
 | ID | Class | Confirmation | Meaning |
 |---|---|---|---|
@@ -12,16 +12,16 @@ Source: prompt. Status: NEEDS_CONFIRMATION.
 | PO-FB-143 | OBSERVATION | CONFIRMED | The section suggests exceptions can be configured there but refers the user to policy editing instead. |
 | PO-FB-144 | OBSERVATION | CONFIRMED | The Secret Detection section is not useful as a review because a separate review follows. |
 | PO-FB-145 | DIRECTIVE | CONFIRMED | Remove the Secret Detection section from guided editing. |
-| PO-FB-146 | DIRECTIVE | NEEDS_CONFIRMATION | Highlight policy rules that deviate from standard; the intended meaning of standard needs confirmation. |
-| PO-FB-147 | IDEA_OR_QUESTION | NEEDS_CONFIRMATION | Consider a maximum binary scan size slider: 0 means disabled, values extend to 1MB in 10kb increments, and the next step reads unlimited. Confirm whether this mechanism is required or a suggestion. |
+| PO-FB-146 | DIRECTIVE | CONFIRMED | Highlight policy rules with any rule-specific override of shared/default secret-detection or binary-scanning settings. |
+| PO-FB-147 | IDEA_OR_QUESTION | CONFIRMED | Consider a maximum binary scan size slider: 0 means disabled, values extend to 1MB in 10kb increments, and the next step reads unlimited. This is a suggestion to evaluate, not a required control or scale. |
+| PO-FB-148 | OBSERVATION | CONFIRMED | The Product Owner considers the current free-text binary scan size field risky because users can enter values the application does not understand; this motivates the slider suggestion. |
 
-## Unresolved questions
+## Suggestions and questions
 
-- PO-UNRESOLVED-001: Which deviations should policy-rule highlighting identify?
-- PO-UNRESOLVED-002: Is the specified binary scan size slider required, or a suggestion to evaluate?
+The binary scan size slider and its proposed scale are exploratory. The reported risk of unsupported free-text values is evidence, not a finding about validation. No unresolved questions remain.
 
-The slider mechanism is recorded separately and awaits authority confirmation.
+Reconciliation ready: false.
 
-Reconciliation ready: false. No product, UX, implementation, or milestone artifacts changed.
+Authority meanings: confirmed directives establish product intent; preferences are advisory; observations are evidence; ideas/questions are exploratory.
 
-Authority meanings: confirmed directives establish product intent; preferences are advisory; observations are evidence; ideas/questions are exploratory. Unconfirmed items are unresolved.
+Producer commit and provenance closeout remain before handoff.

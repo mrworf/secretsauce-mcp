@@ -44,24 +44,30 @@ proposed.tls={verify:false};proposed.destinations[0].base_url='https://container
 proposed.policy.rules=[{id:'settings',effect:'deny',priority:1000,methods:['POST','PUT','CUSTOM'],paths:['^/api/settings(?:/.*)?$'],reason:'Protect server settings',binary_response:{scan:false,max_size:'1kb'}}];
 await page.locator('#advanced-json').fill(JSON.stringify(proposed,null,2));await page.getByRole('button',{name:'Return to guided forms',exact:true}).click();
 await page.getByRole('button',{name:'Review & apply',exact:true}).click();
-await expect(page.getByRole('tab',{name:'Changes',exact:true})).toHaveAttribute('aria-selected','true');
-await expect(page.locator('#review-panel-0')).toContainText('Manage containers and view server health');
+await expect(page.getByRole('tab')).toHaveText(['New settings','Changes']);
+await expect(page.getByRole('tab',{name:'New settings',exact:true})).toHaveAttribute('aria-selected','true');
+await expect(page.locator('#review-panel-1')).toContainText('Manage containers and view server health');
 const snapshot=JSON.stringify(store.state.managed);
-await page.getByRole('tab',{name:'Changes',exact:true}).focus();await page.keyboard.press('ArrowRight');
-await expect(page.getByRole('tab',{name:'New settings',exact:true})).toBeFocused();await expect(page.locator('#review-panel-1')).toBeVisible();
-await page.keyboard.press('Home');await expect(page.locator('#review-panel-0')).toBeVisible();
+await page.getByRole('tab',{name:'New settings',exact:true}).focus();await page.keyboard.press('ArrowRight');
+await expect(page.getByRole('tab',{name:'Changes',exact:true})).toBeFocused();await expect(page.locator('#review-panel-1')).toBeVisible();
+await page.keyboard.press('ArrowLeft');await expect(page.getByRole('tab',{name:'New settings',exact:true})).toBeFocused();
+await page.keyboard.press('End');await expect(page.getByRole('tab',{name:'Changes',exact:true})).toBeFocused();
+await page.keyboard.press('Home');await expect(page.getByRole('tab',{name:'New settings',exact:true})).toBeFocused();await expect(page.locator('#review-panel-0')).toBeVisible();
+await page.keyboard.press('End');await expect(page.locator('#review-panel-1')).toBeVisible();
 if(snapshot!==JSON.stringify(store.state.managed))throw Error('Tabs mutated review');
 await shot(page,'changes-desktop');await narrow(page,'changes');await text200(page,'changes');
 await page.getByRole('tab',{name:'New settings',exact:true}).click();
-const rendered=await page.locator('#review-panel-1 code').allTextContents();const expected=[];function leaves(v){if(v===null||typeof v!=='object'){expected.push(typeof v==='string'?JSON.stringify(v):String(v));return;}if(!Object.keys(v).length){expected.push(Array.isArray(v)?'[]':'{}');return;}for(const child of Object.values(v))leaves(child);}leaves(store.state.managed.services.baseline.review.candidate);if(JSON.stringify(rendered.sort())!==JSON.stringify(expected.sort()))throw Error('Complete proposal lost or invented literal values');
-await expect(page.locator('#review-panel-0')).not.toContainText('X-API-Key');
-await expect(page.locator('#review-panel-1')).toContainText('CUSTOM');await expect(page.locator('#review-panel-1')).toContainText('false');await expect(page.locator('#review-panel-1')).toContainText('^/api/settings(?:/.*)?$');
+const rendered=await page.locator('#review-panel-0 code').allTextContents();const expected=[];function leaves(v){if(v===null||typeof v!=='object'){expected.push(typeof v==='string'?JSON.stringify(v):String(v));return;}if(!Object.keys(v).length){expected.push(Array.isArray(v)?'[]':'{}');return;}for(const child of Object.values(v))leaves(child);}leaves(store.state.managed.services.baseline.review.candidate);if(JSON.stringify(rendered.sort())!==JSON.stringify(expected.sort()))throw Error('Complete proposal lost or invented literal values');
+await expect(page.locator('#review-panel-1')).not.toContainText('X-API-Key');
+await expect(page.locator('#review-panel-0')).toContainText('CUSTOM');await expect(page.locator('#review-panel-0')).toContainText('false');await expect(page.locator('#review-panel-0')).toContainText('^/api/settings(?:/.*)?$');
 await shot(page,'new-desktop');await narrow(page,'new');await text200(page,'new');
 if(snapshot!==JSON.stringify(store.state.managed))throw Error('New settings mutated review');
 if((await page.locator('body').innerText()).includes('synthetic-only-sensitive-value'))throw Error('Review exposed credential');
 await page.getByRole('button',{name:'Back to edit',exact:true}).click();await expect(page.locator('#service-edit-state')).not.toContainText('Unsaved');
-checks.push('Guided saved draft reaches Changes; keyboard tabs are read-only and preserve exact bound server review; returning to edit does not dirty.');
+checks.push('Guided saved draft reaches New settings first; all four keyboard navigation keys follow visible tab order; keyboard tabs are read-only and preserve exact bound server review; returning to edit does not dirty.');
 await page.getByRole('button',{name:'Review & apply',exact:true}).click();
+await expect(page.getByRole('tab',{name:'New settings',exact:true})).toHaveAttribute('aria-selected','true');
+await page.getByRole('tab',{name:'Changes',exact:true}).click();
 // Individual modal acknowledgments and immutable cancel/reopen context.
 async function open(){await page.getByRole('button',{name:'Approve changes',exact:true}).click();await expect(page.getByRole('dialog',{name:'Approve changes',exact:true})).toBeVisible();}
 async function checkAll(){for(const n of await page.locator('.service-approval input[type=checkbox]').all())await n.check();}
@@ -85,12 +91,12 @@ await page.goto(origin+'/console?service=baseline&edit=0&mode=guided');await pag
 checks.push('Permission loss after review rejects activation without changing the active revision.');
 // Isolated rendering boundaries do not perform writes or leak secret-bearing storage.
 await page.evaluate(()=>{renderReview({...serviceEditor.detail,review:'synthetic',current:null,proposed:{name:'New service',no_auth:true,destinations:[{id:'primary',base_url:'https://api.example.org'}]},scope:{services:['baseline'],settings:[]},base:0,grants:[],exceptions:[],disruption:''});});
-await expect(page.locator('#review-panel-0')).toContainText('No active configuration yet');
-await page.evaluate(()=>{const data={name:'Same',no_auth:true};renderReview({review:'synthetic',current:data,proposed:data,scope:{services:['baseline'],settings:[]},base:0,grants:[],exceptions:[],disruption:''});});await expect(page.locator('#review-panel-0')).toContainText('No configuration changes');await page.getByRole('tab',{name:'New settings'}).click();await expect(page.locator('#review-panel-1')).toContainText('Same');
+await expect(page.locator('#review-panel-1')).toContainText('No active configuration yet');
+await page.evaluate(()=>{const data={name:'Same',no_auth:true};renderReview({review:'synthetic',current:data,proposed:data,scope:{services:['baseline'],settings:[]},base:0,grants:[],exceptions:[],disruption:''});});await expect(page.locator('#review-panel-1')).toContainText('No configuration changes');await page.getByRole('tab',{name:'New settings'}).click();await expect(page.locator('#review-panel-0')).toContainText('Same');
 if(!await page.evaluate(()=>localStorage.length===0&&sessionStorage.length===0))throw Error('Persistent review storage');
 checks.push('No-baseline additions/no-change full proposal reachable; no browser persistent review state.');
 await page.evaluate(()=>{const proposed=JSON.parse('{"name":"Typed boundary","custom":{"mode":false,"__proto__":0,"constructor":null,"empty":"","array":[],"object":{},"text":"Removed","ordered":["second","first"]}}');renderReview({review:'synthetic',current:{name:'Typed boundary'},proposed,scope:{services:['baseline'],settings:[]},base:0,grants:[],exceptions:[],disruption:''});});
-await page.getByRole('tab',{name:'New settings'}).click();const typed=await page.locator('#review-panel-1').innerText();for(const literal of ['mode','__proto__','constructor','false','0','null','""','[]','{}','"Removed"','"second", "first"'])if(!typed.includes(literal))throw Error('Typed proposal lost literal');
+await page.getByRole('tab',{name:'New settings'}).click();const typed=await page.locator('#review-panel-0').innerText();for(const literal of ['mode','__proto__','constructor','false','0','null','""','[]','{}','"Removed"','"second", "first"'])if(!typed.includes(literal))throw Error('Typed proposal lost literal');
 checks.push('Renderer boundary preserves typed false/zero/null/empty collections/text markers, exact custom own-property names and array order.');
 
 await page.evaluate(()=>{serviceEditor.approvalUncertain=false;renderReview({review:'synthetic',current:null,proposed:{name:'Safe labels',tls:{verify:false},destinations:[{id:'primary',base_url:'https://userinfo:password@api.example.org?token=secret#proof'}],policy:{rules:[{id:'x',reason:'<img src=x onerror=alert(1)>'}]}},scope:{services:['baseline'],settings:[]},base:2,grants:[],exceptions:['TLS verification disabled: primary','Reduced response scanning: x']});});await open();const safe=await page.locator('.service-approval').innerText();for(const forbidden of ['userinfo','password','token=','secret#','proof'])if(safe.includes(forbidden))throw Error('Unsafe exception label');await expect(page.locator('.service-approval img')).toHaveCount(0);await expect(page.locator('.service-approval')).toContainText('<img src=x onerror=alert(1)>');await page.keyboard.press('Escape');checks.push('Hostile risk descriptions render as inert text; safe server labels exclude URL userinfo/query/fragment.');

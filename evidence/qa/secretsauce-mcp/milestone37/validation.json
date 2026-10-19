@@ -1,0 +1,25 @@
+{
+  "result": "PASS",
+  "parent_commit": "f6f0817bcff64d1b8a2ae1d7bb41fd9a62a39a44",
+  "focused": {
+    "tests": 8,
+    "result": "PASS"
+  },
+  "browser": {
+    "result": "PASS",
+    "report": "evidence/ux-acceptance/secretsauce-mcp/milestone37/final/browser-report.json"
+  },
+  "full_suite": {
+    "command": "npm test -- --maxWorkers=2",
+    "tests": 772,
+    "files": 77,
+    "duration_seconds": 126.07,
+    "result": "PASS"
+  },
+  "build": {
+    "command": "npm run build",
+    "result": "PASS"
+  },
+  "frozen_inputs_verified": 176,
+  "concurrent_browser_or_docker": false
+}

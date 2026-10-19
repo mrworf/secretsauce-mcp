@@ -1,3 +1,41 @@
+# Current review and guided-edit refinement packet
+
+**Mode:** CHANGE_PLAN. **Product:** `secretsauce-mcp`. Four bounded outcomes implement REC-RM-030–033; all M10–36 completion history and prior delivery goals remain unchanged. New milestones are pending, not implemented or release-approved.
+
+## Authority and provenance
+
+The [validated package](../../../workflow/definition/definition-package.yaml), producer `69611ec52040a3619e0e503b0abdc223e995f4a1`, and its committed [effective next_handoff](../../../workflow/definition/state.yaml) establish current eligibility. Exact hashes in [status](status.yaml). Committed UX6/journey revalidation satisfies immutable REC010's historical gate; its canonical result is preserved unchanged. Passed definition validation is consumed, not repeated. [Resolved remediation](../../../workflow/reconciliation/REC-RUN-010/03-remediation-backlog.md) creates the four obligations; PRD CONFIG-03/POLICY-02/04 and UX6 govern them. Findings, observations, prior screenshots and suggestion motivation are context only.
+
+## Current milestones and dependencies
+
+| ID | Outcome | Direct providers | Initial status |
+| --- | --- | --- | --- |
+| M37 | [Open review on the complete proposed settings](37-default-proposed-settings-review.md) | M35, M36 | pending |
+| M38 | [See concrete security exceptions before approval](38-visible-review-exceptions.md) | M36 | pending |
+| M39 | [Navigate guided editing without a redundant detection section](39-focused-guided-service-navigation.md) | M27, M33 | pending |
+| M40 | [Identify every explicit policy scanning override](40-policy-scanning-override-markers.md) | M31 | pending |
+
+All direct providers are completed. There are no cross-refinement dependencies: review default, exception visibility, guided destination removal and policy markers can each be accepted and reversed independently. Number order supplies deterministic delivery preference, not fabricated dependency. No M0 or generic foundation is created.
+
+## Granularity assessment
+
+| Milestone | Observable checkpoint | Scope boundary |
+| --- | --- | --- |
+| M37 | Open a saved representative service review, inspect New settings immediately, switch to Changes and back, and cancel approval without losing the selected tab or changing the reviewed proposal. | One read-only entry and tab-selection outcome. Exception visibility is independently useful and stays in M38; no coupling justified by shared review renderer. |
+| M38 | Review a service with multiple actual security exceptions, read every safe scoped bullet before opening approval, then demonstrate that each independent modal acknowledgment is still required. | One risk visibility outcome, including its exact mapping to preserved acknowledgments. Default-tab placement is independently acceptable and not a dependency. |
+| M39 | Create and edit a service through the remaining guided sections, follow an old Secret detection section entry, then navigate Back/Forward with unsaved input preserved and reach policy overrides and shared Settings normally. | One section-removal/navigation outcome includes necessary history and lossless-data compatibility; it does not depend on new rule markers or review presentation. |
+| M40 | View policy rules with inherited, secret-detection, reduced/increased and default-equivalent binary overrides; edit a rule and verify neutral markers track explicit configuration while actual risk warnings remain separate. | One rule scope-identification outcome. Existing rule editing supplies its inputs; removing the unrelated guided destination and review changes can be accepted separately. |
+
+PASS: each outcome is independently acceptable and bounded; no unresolved granularity finding. Necessary view-state/data-preservation and accessibility support stays with its outcome. Shared renderer or test setup is not a reason to merge. No implementation slices are prescribed. M37 provides the earliest integrated checkpoint with a representative saved imported configuration; generated synthetic fixtures preserve exact literals but do not certify real external client connections.
+
+## Validation and exclusions
+
+Each milestone owns focused behavioral tests and actual HTTPS browser/visual acceptance, followed by the required full bounded-worker suite and build at completion. Final delivery validates the joined edit→save→New settings/Changes→exception review→approval→active flow against the complete refinements. Use already-current sufficient evidence for preserved contracts. No concurrent browser/Docker during final suites. UX-G07 gives exact refinement precedence over preserved approved feedback003/004 images; UX-C42/63 require actual screenshot comparison. Slider, new size semantics, global redesign, transport, credentials, recovery, new roles and deployment are excluded. No required item is blocked/deferred/unmapped. Compilation is complete for milestone-readiness; environment readiness remains delegated.
+
+---
+
+## Historical compilation index (status at its compilation date)
+
 # Service review delivery delta — feedback 004
 
 Mode: **CHANGE_PLAN**, product `secretsauce-mcp`. M10–34 are completed and unchanged; M35–36 are pending. [Status](status.yaml) is authoritative for current execution status; tables under historical sections reflect their compilation date.

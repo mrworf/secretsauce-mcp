@@ -1,3 +1,98 @@
+# Readiness report — UX6 refinements
+
+## 1. Overall readiness status
+
+**READY** — M37–40 have verified completed providers and unchanged local validation facilities; parent planning publication must close before implementation handoff.
+
+## 2. Scope and evidence basis
+
+Packet `delivery/milestones/secretsauce-mcp`, active M37–40, stable product `secretsauce-mcp`; explicit dependencies/index establish order. Source transaction `69611ec52040a3619e0e503b0abdc223e995f4a1`; parent start `346ce2feaf2014052ced6eba1c52ce56150aa887`. Inspected complete new contracts, existing prerequisite sections, all31 dependency records, AGENTS, package/lock/CI/Docker setup, documented browser setup, provider acceptance references and current M36 evidence. All17 authority hashes and13 frozen M36 input hashes match. M10–36 contracts/records and completed goal/history match HEAD unchanged. Parent/compiler dirty paths and unrelated `test-results/` are preserved. Observed facts and conceptual simulation are distinguished below.
+
+## 3. Automatically completed prerequisites
+
+PRE-051–054 verified by hashes/history, graph/provider records, runtime versions/dependencies, existing current browser evidence and executable availability. Added documentation only. No installation, product changes, new services, live state action or child commit.
+
+## 4. Confirmation-gated work
+
+None. Existing local-browser authorization is sufficient; no new runtime probe or elevation requested.
+
+## 5. Required user actions
+
+None for this delta. No secrets, accounts, DNS or live deployment needed.
+
+## 6. Missing or unresolved prerequisites
+
+None. PRE-055 feature acceptance belongs to each consuming milestone and is not missing bootstrap.
+
+## 7. Dependency graph
+
+```mermaid
+flowchart LR
+  R[Declared repository/local facilities] -->|PRE-051–053| M37
+  R -->|PRE-051–053| M38
+  R -->|PRE-051–053| M39
+  R -->|PRE-051–053| M40
+  A[Completed M35/M36] -->|PRE-054| M37
+  B[Completed M36] -->|PRE-054| M38
+  C[Completed M27/M33] -->|PRE-054| M39
+  D[Completed M31] -->|PRE-054| M40
+```
+
+PRE-055 is local to each consumer. Full31-record traversal finds no cycle, later provider or missing dependency. No external/unresolved node.
+
+## 8. Proposed milestone order
+
+Declared and proposed M37 → M38 → M39 → M40 unchanged. All new milestones are independent of one another; earlier completed foundations are explicit dependencies. Preserve completed M10–36.
+
+## 9. Milestone 0
+
+Not required. Existing facilities suffice; future feature fixtures remain implementation-owned.
+
+## 10. Per-milestone readiness
+
+- M10–36: accepted provider records and existing contracts/readiness sections unchanged; no reacceptance.
+- M37: PRE-051–054 satisfied by repository and completed M35/M36; PRE-055 delivery-owned; concrete prechecks added; ready.
+- M38: same facilities, completed M36 provider; PRE-055 delivery-owned; concrete prechecks added; ready.
+- M39: same facilities, completed M27/M33 providers; PRE-055 delivery-owned; concrete prechecks added; ready.
+- M40: same facilities, completed M31 provider; PRE-055 delivery-owned; concrete prechecks added; ready.
+
+## 11. Clean-environment simulation
+
+PASS (conceptual). Fresh checkout uses documented Node/npm/OpenSSL, locked dependency install and build; declared Playwright installs matching Chromium into an explicitly writable disposable cache. Synthetic HTTPS fixtures create their own credentials/state and temporary directories; no current user instance or undeclared service/cache is needed. Each new milestone begins with completed foundation outputs already in repository history and owns its feature evidence. Existing current M36 browser/build/full-suite results establish available facilities, not UX6 acceptance. Future actual screenshots must match manifest reference states under UX6 named-delta precedence, including narrow layout, keyboard and200% text-range overflow. No fresh acceptance run, Docker drill or live-client claim was made by readiness.
+
+## 12. Commands run and results
+
+- `git status --short`, `git rev-parse HEAD`: ownership/start recorded.
+- `node --version`, `npm --version`, `openssl version`, `npm ls --depth=0`: PASS Node26.11.1/npm12.2.0/OpenSSL3.6.5, all declared packages including Playwright1.64.0 present.
+- Python YAML/SHA256/ancestry/preservation/graph checks: PASS17 authority hashes,13 frozen M36 inputs, source/reconciliation producer ancestry,31 records and completed history unchanged.
+- `git diff 209e0fdef777ab9b31f1014bc335868ee9cbd44c HEAD -- package.json package-lock.json Dockerfile .github/workflows/ci.yml`: empty; prior setup evidence remains relevant.
+- Declared Playwright `chromium.executablePath()` existence check with `PLAYWRIGHT_BROWSERS_PATH=/tmp/secretsauce-feedback-browsers`: PASS. No launch repeated; actual HTTPS/browser evidence reused from hash-matching M36 final/browser-report.json and prior readiness probe.
+- `git diff --check`: PASS.
+
+## 13. Files changed
+
+- `delivery/milestones/secretsauce-mcp/37-default-proposed-settings-review.md`
+- `delivery/milestones/secretsauce-mcp/38-visible-review-exceptions.md`
+- `delivery/milestones/secretsauce-mcp/39-focused-guided-service-navigation.md`
+- `delivery/milestones/secretsauce-mcp/40-policy-scanning-override-markers.md`
+- `delivery/readiness/secretsauce-mcp/prerequisite-manifest.md`
+- `delivery/readiness/secretsauce-mcp/readiness-report.md`
+- `workflow/delivery-planning/results/readiness.yaml`
+
+Milestone edits add readiness contracts only; reports retain historical content. No scope/dependency/source change.
+
+## 14. Remaining blockers
+
+None. Parent owns final combined planning transaction/provenance; no child commit.
+
+## 15. Exact recommended next step
+
+In `/home/ha/projects/secretsauce`, parent Delivery Planning validates/commits the combined packet and finalizes provenance, then invokes `milestone-delivery-orchestrator` for M37–40 starting M37 under existing user authorization.
+
+## Historical readiness
+
+Unchanged prior report follows for historical provenance only.
+
 # Readiness report — approved service review feedback 004
 
 ## 1. Overall readiness status

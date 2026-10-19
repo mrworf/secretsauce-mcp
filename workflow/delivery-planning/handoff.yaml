@@ -6,35 +6,38 @@ source:
   mode: CHANGE_PLAN
   type: validated-definition-change-handoff
   path: workflow/definition/definition-package.yaml
-  revision: sha256:a8282a031ef8c76e5b80f620e30b26eb202763b5eb65b4a091fd2435ac6e449b
-  repository_commit: d84ac2265bd6c055a6da5edfe5f3d586137d30e9
+  revision: sha256:1b768e553581d190a3a4a7b8f97883ef8ad632d130f71eb6ac96609a9891e3dd
+  repository_commit: 69611ec52040a3619e0e503b0abdc223e995f4a1
   handoff: workflow/definition/state.yaml#next_handoff
   reconciliation:
-    id: REC-RUN-009
-    path: workflow/reconciliation/REC-RUN-009/reconciliation-result.yaml
-    result_revision: sha256:abe2992d0c00437f54a8770d353c1da255188d7aeee123046407d4c403d97185
-    repository_commit: 7399233a321218da5cbef765d4183824b56de966
+    id: REC-RUN-010
+    path: workflow/reconciliation/REC-RUN-010/reconciliation-result.yaml
+    result_revision: sha256:59c2d7ba9f4b05500ceed7ae781c243fba0a7e05269dec92826709c4c08d85a3
+    repository_commit: c4be1744e182b1ade7772268f3cf1e87dc0f4453
     change_ids:
-    - REC-IMPACT-009
+    - REC-IMPACT-010
     remediation_ids:
-    - REC-RM-027
-    - REC-RM-028
-    - REC-RM-029
+    - REC-RM-030
+    - REC-RM-031
+    - REC-RM-032
+    - REC-RM-033
 planning:
-  parent_commit: c83135ab09113dde5ffd39b134a0ef3e9dec5fc4
-  repository_commit: 209e0fdef777ab9b31f1014bc335868ee9cbd44c
+  parent_commit: 346ce2feaf2014052ced6eba1c52ce56150aa887
+  repository_commit: null
 milestones:
   manifest: delivery/milestones/secretsauce-mcp/status.yaml
-  packet_revision: sha256:cb97bdc03c03bd5b0a6974e3ae5d39efa58b6b1f75cda08a7d2826e30b18f4f9
+  packet_revision: sha256:ca8203b87749d7daa687ae69cab081b7e7290b782cbfc3bee28f1a9ed7b918a0
   active_milestones:
-  - '35'
-  - '36'
+  - '37'
+  - '38'
+  - '39'
+  - '40'
 readiness:
   status: READY
   prerequisite_manifest: delivery/readiness/secretsauce-mcp/prerequisite-manifest.md
   result: delivery/readiness/secretsauce-mcp/readiness-report.md
   adapter: workflow/delivery-planning/results/readiness.yaml
-  packet_revision: sha256:cb97bdc03c03bd5b0a6974e3ae5d39efa58b6b1f75cda08a7d2826e30b18f4f9
+  packet_revision: sha256:ca8203b87749d7daa687ae69cab081b7e7290b782cbfc3bee28f1a9ed7b918a0
 m0:
   present: false
   milestone: null
@@ -46,30 +49,30 @@ delivery_constraints:
   split_trigger: newly_discovered_independently_verifiable_behavior
   validation: focused_during_iteration_broader_at_required_checkpoint
   contract:
-  - Before production edits persist governing and all slice plans with one observable
-    behavior, exclusions, positive/negative evidence and commit boundary per slice.
-  - Split newly discovered independent behavior into a subsequent slice before absorbing
-    it; keep strictly necessary supporting work with its behavior.
-  - Milestone scope/dependency changes return to planning; preserve completed work
-    and every acceptance requirement.
-  - Use focused iteration checks, broader checks at mandated milestones; repeat passing
-    tests only on relevant changes/failures/unresolved risks or explicit gates.
-  - Demonstrate integrated outcomes at earliest dependency-safe checkpoint; synthetic
-    fixture success does not establish real external interoperability.
+  - Before production edits persist governing and all slice plans with one observable behavior, exclusions,
+    positive/negative evidence and commit boundary per slice.
+  - Split newly discovered independent behavior into a subsequent slice before absorbing it; keep strictly
+    necessary supporting work with its behavior.
+  - Milestone scope/dependency changes return to planning; preserve completed work and every acceptance
+    requirement.
+  - Use focused iteration checks, broader checks at mandated milestones; repeat passing tests only on
+    relevant changes/failures/unresolved risks or explicit gates.
+  - Demonstrate integrated outcomes at earliest dependency-safe checkpoint; synthetic fixture success
+    does not establish real external interoperability.
 visual_acceptance:
   requirements:
   - UX-V05
   - UX-C42
-  - UX-C54
-  - UX-C55
-  - UX-C56
-  - UX-C57
-  - UX-C58
-  approved_reference: workflow/definition/drafts/product-ux/web-console-feedback-004/index.md
-  required: Actual browser screenshots at matching approved states and viewports;
-    fix material deviations or obtain scoped approval. Functional checks alone insufficient.
+  - UX-C59
+  - UX-C60
+  - UX-C61
+  - UX-C62
+  - UX-C63
+  approved_reference: product/ux/manifest.yaml
+  required: Actual browser screenshots at matching approved states and viewports under UX6/UX-G07 delta
+    precedence; fix material deviations or obtain scoped approval. Functional checks alone insufficient.
 next:
   workflow: implementation
   recommended_skill: milestone-delivery-orchestrator
-  start_milestone: '35'
+  start_milestone: '37'
 implementation_started: false

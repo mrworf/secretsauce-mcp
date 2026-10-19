@@ -1,3 +1,22 @@
+# Current REC010 refinement traceability
+
+Only REC-RM-030–033 create new implementation obligations. Source revisions/producers are pinned in [status](status.yaml). Current UX6 definition handoff satisfies historical REC010 revalidation. Completed M10–36 and prior delivery goals remain preserved.
+
+| Required remediation | Milestone | Governing authority | Evidence provenance |
+| --- | --- | --- | --- |
+| REC-RM-030 | M37 | CONFIG-03, UX-IN17, UX-C59 | REC-038, PO-FB-138 |
+| REC-RM-031 | M38 | CONFIG-03/POLICY-04, UX-IN17, UX-C60 | REC-039, PO-FB-139/140 |
+| REC-RM-032 | M39 | POLICY-02, UX-IA09/10, UX-C61 | REC-040, PO-FB-142–145 |
+| REC-RM-033 | M40 | POLICY-02/04, UX-IN16, UX-C62 | REC-041, PO-FB-146 |
+
+UX-G07, UX-R08/V08/A09, UX-V05/UX-C42 and UX-C63 constrain every user-facing outcome. STATE-01/02/03, SECRES-01 and existing roles/audit/review binding/sanitization/atomic application are preservation constraints on all four; repeated mapping is regression coverage, not duplicate implementation. UX-C54–58 are preserved except exact refinement precedence. Actual screenshot and keyboard/narrow/enlarged-text evidence is required for each affected surface.
+
+Authority classes: required = the four adopted remediations; governing = indexed PRD/UX6 and unchanged security/architecture; context = observations/findings and approved image examples; excluded = PO-FB-147 optional slider, PO-FB-148 motivation as independent defect, broad rebuilds and accepted SEC-DEF-001 limitation as repair work. Positive PO-FB-141 supports preserving existing appearance. No required deferral, blocked or unmapped item exists. Existing real-LLM validation exception stays explicit; all local tests remain required. No source authority changed in compilation.
+
+---
+
+## Historical traceability
+
 # Current feedback 004 traceability
 
 Only adopted REC-RM-027–029 create implementation obligations. Exact source revisions/commits: [status](status.yaml). UX-DESIGN-005 approves UX5; historical prototype pending banners are superseded. Existing M10–34 behavior and history are preservation baseline.

@@ -3,13 +3,11 @@ workflow: delivery-planning
 product_id: secretsauce-mcp
 status: ready
 transaction:
-  parent_commit: c83135ab09113dde5ffd39b134a0ef3e9dec5fc4
-  repository_commit: 209e0fdef777ab9b31f1014bc335868ee9cbd44c
+  parent_commit: 346ce2feaf2014052ced6eba1c52ce56150aa887
+  repository_commit: null
   pre_existing_dirty_paths:
   - test-results/
   owned_paths:
-  - delivery/milestones/secretsauce-mcp/35-grouped-service-review.md
-  - delivery/milestones/secretsauce-mcp/36-service-approval-and-exception-scope.md
   - delivery/milestones/secretsauce-mcp/index.md
   - delivery/milestones/secretsauce-mcp/status.yaml
   - delivery/milestones/secretsauce-mcp/traceability.md
@@ -19,7 +17,50 @@ transaction:
   - workflow/delivery-planning/results/compiler.yaml
   - workflow/delivery-planning/results/readiness.yaml
   - workflow/delivery-planning/state.yaml
+  - delivery/milestones/secretsauce-mcp/37-default-proposed-settings-review.md
+  - delivery/milestones/secretsauce-mcp/38-visible-review-exceptions.md
+  - delivery/milestones/secretsauce-mcp/39-focused-guided-service-navigation.md
+  - delivery/milestones/secretsauce-mcp/40-policy-scanning-override-markers.md
 source:
+  mode: CHANGE_PLAN
+  type: validated-definition-change-handoff
+  path: workflow/definition/definition-package.yaml
+  revision: sha256:1b768e553581d190a3a4a7b8f97883ef8ad632d130f71eb6ac96609a9891e3dd
+  repository_commit: 69611ec52040a3619e0e503b0abdc223e995f4a1
+  handoff: workflow/definition/state.yaml#next_handoff
+  reconciliation:
+    id: REC-RUN-010
+    path: workflow/reconciliation/REC-RUN-010/reconciliation-result.yaml
+    result_revision: sha256:59c2d7ba9f4b05500ceed7ae781c243fba0a7e05269dec92826709c4c08d85a3
+    repository_commit: c4be1744e182b1ade7772268f3cf1e87dc0f4453
+    change_ids:
+    - REC-IMPACT-010
+    remediation_ids:
+    - REC-RM-030
+    - REC-RM-031
+    - REC-RM-032
+    - REC-RM-033
+stages:
+  compilation:
+    status: passed
+    result: workflow/delivery-planning/results/compiler.yaml
+    packet_manifest: delivery/milestones/secretsauce-mcp/status.yaml
+    packet_revision: sha256:4bd2765bc19365cb7911731d53e13e33e6157cf15671c92651e5436ee33a0d8f
+  readiness:
+    status: READY
+    prerequisite_manifest: delivery/readiness/secretsauce-mcp/prerequisite-manifest.md
+    result: delivery/readiness/secretsauce-mcp/readiness-report.md
+    adapter: workflow/delivery-planning/results/readiness.yaml
+    packet_revision: sha256:ca8203b87749d7daa687ae69cab081b7e7290b782cbfc3bee28f1a9ed7b918a0
+blockers: []
+corrections: []
+resume:
+  stage: complete
+handoff:
+  status: ready_for_implementation
+  path: workflow/delivery-planning/handoff.yaml
+  packet_revision: sha256:ca8203b87749d7daa687ae69cab081b7e7290b782cbfc3bee28f1a9ed7b918a0
+previous_source:
   mode: CHANGE_PLAN
   type: validated-definition-change-handoff
   path: workflow/definition/definition-package.yaml
@@ -37,50 +78,3 @@ source:
     - REC-RM-027
     - REC-RM-028
     - REC-RM-029
-stages:
-  compilation:
-    status: passed
-    result: workflow/delivery-planning/results/compiler.yaml
-    packet_manifest: delivery/milestones/secretsauce-mcp/status.yaml
-    packet_revision: sha256:970204424a1096261dede16594b29290a529ef3841c7a115391a3d5e8d221c0a
-  readiness:
-    status: READY
-    prerequisite_manifest: delivery/readiness/secretsauce-mcp/prerequisite-manifest.md
-    result: delivery/readiness/secretsauce-mcp/readiness-report.md
-    adapter: workflow/delivery-planning/results/readiness.yaml
-    packet_revision: sha256:cb97bdc03c03bd5b0a6974e3ae5d39efa58b6b1f75cda08a7d2826e30b18f4f9
-blockers: []
-corrections: []
-resume:
-  stage: complete
-handoff:
-  status: ready_for_implementation
-  path: workflow/delivery-planning/handoff.yaml
-  packet_revision: sha256:cb97bdc03c03bd5b0a6974e3ae5d39efa58b6b1f75cda08a7d2826e30b18f4f9
-previous_source:
-  mode: CHANGE_PLAN
-  type: validated-definition-change-handoff
-  path: workflow/definition/definition-package.yaml
-  revision: sha256:7f417f6965b95f3451144126133831ec1d5c62daee6a148d3606e7552f0b134c
-  repository_commit: d0dffc6ffbc47f114dc232abedf40f50db3e52f3
-  handoff: workflow/definition/state.yaml#next_handoff
-  reconciliation:
-    id: REC-RUN-008
-    path: workflow/reconciliation/REC-RUN-008/reconciliation-result.yaml
-    result_revision: sha256:1018e24f89041935175c94108faa5339c6d09f2c4f9a15c244df5378d4177432
-    repository_commit: 78b333eda885731abf3e9f99c401c64c5f00f148
-    change_ids:
-    - REC-IMPACT-008
-    remediation_ids:
-    - REC-RM-015
-    - REC-RM-016
-    - REC-RM-017
-    - REC-RM-018
-    - REC-RM-019
-    - REC-RM-020
-    - REC-RM-021
-    - REC-RM-022
-    - REC-RM-023
-    - REC-RM-024
-    - REC-RM-025
-    - REC-RM-026

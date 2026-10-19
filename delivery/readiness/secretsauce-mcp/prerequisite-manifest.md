@@ -1,3 +1,34 @@
+# Milestone prerequisite manifest — UX6 refinements
+
+- Packet: `delivery/milestones/secretsauce-mcp/status.yaml`
+- Product ID: `secretsauce-mcp`
+- Audited revision: exact post-readiness hashes in `workflow/delivery-planning/results/readiness.yaml`.
+- Source transaction: `69611ec52040a3619e0e503b0abdc223e995f4a1`.
+- Planning transaction: parent-owned, pending closeout; start `346ce2feaf2014052ced6eba1c52ce56150aa887`.
+- Intended order: M37 → M38 → M39 → M40; all independent of one another, dependent only on completed providers.
+- Order evidence: status dependencies and index; all 31 records traversed.
+- Last audit: 2026-10-18.
+
+| ID | Description | Consumers | Classification | Current status | Proposed provider | Class | Verification | Commands executed | Files changed | Blocking | Evidence |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| PRE-051 | Current committed UX6 authority and planning publication | M37–40 | Already satisfied | 17 authority hashes, source hash and ancestry verified; final planning publication remains parent-owned | Definition producer / parent planning | AUTO | Verify final handoff and hashes before delivery | Python hash/ancestry PASS | None | Before delivery handoff | FACT: definition package and compiler source provenance |
+| PRE-052 | Locked runtime/build dependencies and certificate tooling | M37–40 | Already satisfied | Node26.11.1/npm12.2.0/OpenSSL3.6.5; packages complete; setup unchanged | package.json/lockfile, CI Node22, Dockerfile | AUTO | Documented clean checkout npm ci/build; local npm ls and versions | Versions/npm ls PASS; setup diff empty | None | Before validation | FACT: package manifests; CI; Dockerfile; prior readiness |
+| PRE-053 | Disposable HTTPS, headless screenshot/keyboard and temporary state facilities | M37–40 | Already satisfied | Matching Chromium executable present; unchanged M36 browser source/evidence and prior HTTPS probe remain valid | Declared Playwright and local authorized runner | AUTO | Documented browser install; fixture isolation; hash-verify current browser evidence | Browser executable check PASS; M36 hashes PASS | None | Before browser acceptance | FACT: docs/console-operations.md; M36 validation.json and browser-report.json |
+| PRE-054 | Completed review/approval and focused editor/navigation/rule foundations | M37–40 | Already satisfied | M35/36 for37, M36 for38, M27/33 for39, M31 for40 are completed; contracts and records unchanged | Completed repository milestones | AUTO | Graph and status/evidence inspection | Python31-record graph/preservation PASS | None | Before implementation | FACT: status.yaml; provider acceptance paths |
+| PRE-055 | Feature-specific positive/negative/boundary and visual acceptance | M37–40 | Owned by the consuming milestone | Existing fixture extension points available; new feature evidence pending delivery | Each consuming milestone | AUTO | Focused tests; actual matching-reference screenshots; bounded full suite/build | Not run: implementation-owned acceptance | New milestone readiness sections only | Before acceptance | FACT: each Required Validation; UX6 visual delta precedence |
+
+## Dependency graph and clean setup
+
+Repository facilities PRE-051–053 feed all four consumers. PRE-054 edges: completed M35/M36 → M37; completed M36 → M38; completed M27/M33 → M39; completed M31 → M40. PRE-055 is consuming-milestone work, not a startup dependency. There is no missing, external or unresolved provider and no cycle. Numeric order is one valid deterministic execution order, not evidence of dependency.
+
+Conceptual clean checkout: provision documented Node >=22/npm/OpenSSL, writable temporary storage and authorized loopback; `npm ci`, `npm run build`, then `PLAYWRIGHT_BROWSERS_PATH=/tmp/secretsauce-feedback-browsers npx playwright install chromium`. Cache is disposable, not a required prior output. Downloads need network permission; OS installation on another host is operator-owned. No secret, database, real identity provider or live review instance is needed. M36's current 13 frozen input hashes and successful 772-test/build/browser evidence were checked; setup matches the prior verified readiness transaction. No new browser probe or full suite was needed to establish unchanged facilities. This does not accept the four future features.
+
+Full-suite acceptance runs `npm test -- --maxWorkers=2` alone, with source frozen and no browser/Docker load. No Docker recovery drill is added for presentation-only changes; changing a recovery/transport boundary triggers its existing gates. Real ChatGPT/Codex verification remains NOT RUN under `workflow/delivery/local-validation-authorization.md`; no new waiver or interoperability claim.
+
+## Historical readiness
+
+Unchanged prior manifest follows; PRE-001–050 describe historical packets only.
+
 # Milestone prerequisite manifest — approved feedback 004
 
 - Packet: `delivery/milestones/secretsauce-mcp/status.yaml`

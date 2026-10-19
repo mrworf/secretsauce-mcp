@@ -1,0 +1,32 @@
+{
+  "result": "PASS",
+  "parent_commit": "2066aa60c0a438c325888975627bab1534be9eae",
+  "frozen_input_count": 230,
+  "frozen_inputs_match": true,
+  "focused": {
+    "files": 4,
+    "tests": 25,
+    "result": "PASS"
+  },
+  "browser": {
+    "policy": "PASS",
+    "joined_approval": "PASS",
+    "environment": "disposable HTTPS Chromium"
+  },
+  "full_suite": {
+    "command": "npm test -- --maxWorkers=2",
+    "files": 78,
+    "tests": 775,
+    "duration_seconds": 127.94,
+    "result": "PASS",
+    "concurrent_browser_or_docker": false
+  },
+  "build": {
+    "command": "npm run build",
+    "result": "PASS"
+  },
+  "limitations": [
+    "External real ChatGPT/Codex connectivity remains existing manual exception."
+  ],
+  "deployment": "not requested; unchanged"
+}

@@ -44,6 +44,12 @@ const proposed=JSON.parse(await page.locator('#advanced-json').inputValue());
 proposed.tls={verify:false};proposed.destinations[0].base_url='https://containers.example.org';proposed.destinations[0].hosts=[{exact:'containers.example.org'}];
 proposed.policy.rules=[{id:'settings',effect:'deny',priority:1000,methods:['POST','PUT','CUSTOM'],paths:['^/api/settings(?:/.*)?$'],reason:'Protect server settings',binary_response:{scan:false,max_size:'1kb'}}];
 await page.locator('#advanced-json').fill(JSON.stringify(proposed,null,2));await page.getByRole('button',{name:'Return to guided forms',exact:true}).click();
+await expect(page.locator('.service-sections a')).toHaveCount(5);
+await page.getByRole('link',{name:'Access & policy',exact:true}).click();
+await expect(page.locator('.rule-scanning-override')).toHaveText('Scanning override');
+await page.getByRole('link',{name:'Details',exact:true}).click();
+checks.push('Joined UX6 flow retains five guided sections, imported explicit scanning marker and exact custom rule before New settings review and mandatory approval.');
+
 await page.getByRole('button',{name:'Review & apply',exact:true}).click();
 await expect(page.getByRole('tab')).toHaveText(['New settings','Changes']);
 await expect(page.getByRole('tab',{name:'New settings',exact:true})).toHaveAttribute('aria-selected','true');

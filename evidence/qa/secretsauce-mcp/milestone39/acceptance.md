@@ -1,0 +1,17 @@
+# M39 acceptance evidence
+
+Parent: 22c59f55baab1fa4790ce03c6e65317b73b2ffe9. One coherent slice; root records implementation SHA at acceptance. Source/planning provenance retained from governing plan. Result: PASS. Focused 16 tests, actual HTTPS browser, final frozen full suite (775 tests / 78 files, 122.39 seconds) and build passed.
+
+| Contract criterion | Concrete evidence |
+|---|---|
+| Create/edit omit standalone section; all remaining navigation reachable | Actual HTTPS harness creates through five steps, opens old editable/readonly entries and finds five configuration links. Desktop/narrow/text200 create and policy screenshots. Editor removal retains indices0–4. |
+| Legacy entry/history/dirty guards and late reads | Pure route tests cover every valid editable/readonly index and malformed/boundary strings. Browser Owner and Auditor old routes reach policy; Owner readonly Review5 maps to editable Review4. Back/Forward preserves legacy URL and unsaved description. Existing dirty Stay/Save/Discard, saved reload and Advanced whitespace checks pass. A held prior configuration detail request completes after Back selects legacy policy; the selected view remains. |
+| Scanning/shared defaults/complete review/exact fields | Browser opens normal guarded Settings, then a custom constructor rule with PROPFIND/GET ordered methods, exact regex, secretlint.enabled=false and binary_response scan=true/max_size=12345b. Rule scanning controls remain; Guided/Advanced preserve exact policy; save/review/mandatory acknowledgment/apply stores identical policy. Shared catalog and bounded scanner tests in focused console-advanced suite pass. |
+| Permissions/stale/apply/data integrity | Auditor has no Save; Member cannot inspect editor; session loss clears protected work. Full suite retains service HTTP authorization and stale review regressions. Only client presentation and URL compatibility changed, no backend mutation/security/storage/scanner surfaces. Existing server correctly rejected stale revision and assignment test fixtures during harness development; fixtures were rebased explicitly without relaxing checks. |
+| Visual acceptance | UX report and actual matching desktop/narrow/text200 images; no overflow measured in document or text ranges. Root independently inspected desktop composition. |
+
+Focused command: npx vitest run test/console-service-navigation.test.ts test/console-advanced.test.ts --maxWorkers=2 — 16 tests PASS. Actual browser command: PLAYWRIGHT_BROWSERS_PATH=/tmp/secretsauce-feedback-browsers CONSOLE_BROWSER_EVIDENCE_DIR=evidence/ux-acceptance/secretsauce-mcp/milestone39/final node scripts/verify-console-navigation-browser.mjs — PASS with authorized loopback/Chromium permission. Disposable synthetic HTTPS fixture only; protected live instance unused.
+
+Final full suite and build results are recorded in validation.json. All 176 frozen hashes were verified unchanged after validation. Inputs frozen before the full suite; no concurrent browser or Docker workloads. Harness failures during development were fixture assumptions/selectors, corrected without production changes or weakened assertions. Playwright request call logs are stripped in failure diagnostics.
+
+External qualification boundary: no live ChatGPT/Codex MCP connection performed. Existing explicit external-client qualification limitation retained; no new waiver, data migration, transport/recovery changes or deployment.

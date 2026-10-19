@@ -1,0 +1,11 @@
+# M39 actual-browser visual review
+
+Result: PASS. Actual isolated HTTPS application in headless Chromium; source hashes in ../../../qa/secretsauce-mcp/milestone39/tested-inputs.json. Canonical UX6 manifest/UX-G07, UX-C61/C63 apply. No mockup bytes changed.
+
+Compared final/policy-desktop.png and policy-populated-desktop.png with approved feedback003/policy-desktop.png (1440px), and final/create-desktop.png with approved feedback003/create-desktop.png. Both retain the wide workspace, pale neutral background, warm primary accent, white bordered groups, familiar typography, guided/advanced selector, navigation hierarchy and separated action footer. Differences in synthetic names, empty/populated rules and optional fixture fields are content differences. The intentional UX6 difference is five configuration destinations with no standalone Secret detection entry; existing Review indices remain stable internally. No new visual family or material discrepancy.
+
+Actual final/create-390.png, create-320.png, policy-390.png and policy-320.png preserve readable fields/navigation/actions in the approved stacked narrow composition. final/create-320-text200.png and policy-320-text200.png retain all text/actions with wrapping; document width and individual visible text ranges were measured in the harness, with no overflow. Tester states received the same desktop/narrow/text200 checks. Existing dialog scroll behavior is preserved; final/rule-scanning-desktop.png records the advanced rule editor, whose lower binary controls remain reachable by scrolling.
+
+Keyboard-led login and existing tester Tab/Escape/focus assertions pass. Legacy section routing does not leave an empty destination; form heading focus and existing history focus restoration remain. Dirty Stay/Save/Discard, Back/Forward, safe legacy aliases, complete proposal and normal shared Settings remain accessible. The browser report and harness provide behavioral evidence rather than substituting images for interaction checks.
+
+Root independently inspected the desktop policy composition during delivery and found the five-section sidebar and approved visual family coherent. Local browser evidence does not qualify a real external ChatGPT/Codex connection. No local review-instance deployment performed.

@@ -1,0 +1,29 @@
+{
+  "result": "PASS",
+  "parent": "22c59f55baab1fa4790ce03c6e65317b73b2ffe9",
+  "focused": {
+    "command": "npx vitest run test/console-service-navigation.test.ts test/console-advanced.test.ts --maxWorkers=2",
+    "tests": 16,
+    "result": "PASS"
+  },
+  "browser": {
+    "command": "PLAYWRIGHT_BROWSERS_PATH=/tmp/secretsauce-feedback-browsers CONSOLE_BROWSER_EVIDENCE_DIR=evidence/ux-acceptance/secretsauce-mcp/milestone39/final node scripts/verify-console-navigation-browser.mjs",
+    "result": "PASS",
+    "environment": "Authorized loopback/Chromium permissions; isolated synthetic HTTPS fixture"
+  },
+  "full_suite": {
+    "command": "npm test -- --maxWorkers=2",
+    "files": 78,
+    "tests": 775,
+    "seconds": 122.39,
+    "result": "PASS",
+    "source_frozen": true,
+    "concurrent_browser_or_docker": false
+  },
+  "build": {
+    "command": "npm run build",
+    "result": "PASS"
+  },
+  "tested_input_hashes": "tested-inputs.json",
+  "hashes_verified_after_validation": true
+}

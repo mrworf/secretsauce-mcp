@@ -1,0 +1,65 @@
+name: ARM64 image (after AMD64 release)
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+
+# Only the newest main release needs an ARM64 build. It never blocks the AMD64 image.
+concurrency:
+  group: arm64-image-main
+  cancel-in-progress: true
+
+jobs:
+  arm64-image:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout validated main commit
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Prepare ARM64 tags
+        id: tags
+        env:
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
+          RELEASE_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          owner="${REPOSITORY_OWNER,,}"
+          image="ghcr.io/${owner}/secretsauce-mcp"
+          echo "image=${image}" >> "$GITHUB_OUTPUT"
+          echo "release_sha=${RELEASE_SHA}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and publish ARM64 image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/arm64
+          push: true
+          tags: |
+            ${{ steps.tags.outputs.image }}:arm64
+            ${{ steps.tags.outputs.image }}:sha-${{ steps.tags.outputs.release_sha }}-arm64
+          cache-from: type=gha,scope=app-image-arm64
+          cache-to: type=gha,mode=max,scope=app-image-arm64

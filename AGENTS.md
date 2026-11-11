@@ -15,6 +15,7 @@
 - When changing downstream HTTP transport, verify `tls.verify: false` with an actual self-signed HTTPS test so metadata and socket behavior cannot drift apart.
 - Docker examples should keep opaque gateway tokens ephemeral, but mount stable OAuth signing keys and writable audit storage when restart continuity or audit trails matter.
 - Persist built-in OAuth refresh state as atomic hash-only snapshots; never store raw refresh tokens, and treat the configured state file as single-process writable state.
+- For multi-architecture release images, build native dependencies on native amd64 and arm64 runners and publish a manifest only after both architecture builds pass; QEMU ARM64 `npm ci` can crash or hang.
 - Do not reintroduce `docker/metadata-action` in CI: it unconditionally calls the GitHub repository API, so transient Unicorn HTML responses can fail healthy image builds. Keep Docker tag and label generation local and tested.
 - Sensitive-name JSON handling must use tolerant scanner offsets and source-range replacement; never deserialize and reserialize response or raw request JSON because comments, duplicate keys, malformed separators, and original formatting must survive outside replaced values.
 - Do not rely on Secretlint's `basicauth` rule for `Authorization: Basic ...` values; it detects credential-bearing URLs, so valid HTTP Basic response values require the gateway-owned detector and qualified API auth names require sensitive-name coverage.

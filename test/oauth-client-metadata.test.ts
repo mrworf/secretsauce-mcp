@@ -23,8 +23,11 @@ describe("OAuth client metadata fetching", () => {
   });
 
   it("resolves all addresses, pins a validated address, and verifies JSON metadata", async () => {
-    const request = vi.fn(async (_url: URL, address: MetadataAddress) => {
-      expect(address).toEqual({ address: "93.184.216.34", family: 4 });
+    const request = vi.fn(async (_url: URL, addresses: MetadataAddress[]) => {
+      expect(addresses).toEqual([
+        { address: "93.184.216.34", family: 4 },
+        { address: "2606:4700:4700::1111", family: 6 },
+      ]);
       return response(CLIENT, 200, metadata(CLIENT), { "content-type": "application/oauth-client-id-metadata+json" });
     });
     const fetcher = new OAuthClientMetadataFetcher(4, 2, network(
@@ -46,6 +49,14 @@ describe("OAuth client metadata fetching", () => {
     await expect(mixed.fetch(CLIENT)).resolves.toBeUndefined();
     const literal = new OAuthClientMetadataFetcher(4, 2, network([], request));
     await expect(literal.fetch("https://127.0.0.1/metadata")).resolves.toBeUndefined();
+    expect(request).not.toHaveBeenCalled();
+  });
+
+  it("rejects an excessive DNS answer set before connecting", async () => {
+    const request = vi.fn();
+    const addresses = Array.from({ length: 17 }, () => ({ address: "93.184.216.34", family: 4 as const }));
+    const fetcher = new OAuthClientMetadataFetcher(4, 2, network(addresses, request));
+    await expect(fetcher.fetch(CLIENT)).resolves.toBeUndefined();
     expect(request).not.toHaveBeenCalled();
   });
 

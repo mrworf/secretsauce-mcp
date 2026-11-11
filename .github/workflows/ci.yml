@@ -36,7 +36,15 @@ jobs:
 
   docker-image:
     needs: [quality-gates, docker-browser-e2e]
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 30
     permissions:
       contents: read
@@ -50,13 +58,11 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v4
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
       - name: Run amd64 container smoke
+        if: matrix.arch == 'amd64'
         run: npm run smoke:container
 
       - name: Log in to GitHub Container Registry
@@ -71,19 +77,64 @@ jobs:
         id: meta
         run: node scripts/docker-metadata.mjs
 
-      - name: Build image
+      - name: Build native architecture image
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
-          # PR validation runs natively on x86; QEMU-based ARM64 npm ci can crash and stall.
-          # Keep multi-arch publishing for main until the ARM64 build uses a native runner.
-          platforms: ${{ github.event_name == 'pull_request' && 'linux/amd64' || 'linux/amd64,linux/arm64' }}
+          platforms: linux/${{ matrix.arch }}
           push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-          tags: ${{ steps.meta.outputs.tags }}
+          # Publish temporary architecture-specific tags, then assemble one multi-arch manifest.
+          tags: ghcr.io/mrworf/secretsauce-mcp:build-${{ github.sha }}-${{ matrix.arch }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=app-image
-          cache-to: type=gha,mode=max,scope=app-image
+          cache-from: type=gha,scope=app-image-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=app-image-${{ matrix.arch }}
+
+  docker-manifest:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: docker-image
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker metadata
+        id: meta
+        run: node scripts/docker-metadata.mjs
+
+      - name: Publish multi-architecture manifest
+        env:
+          DOCKER_TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          mapfile -t tags <<< "$DOCKER_TAGS"
+          args=()
+          for tag in "${tags[@]}"; do
+            if [[ -n "$tag" ]]; then args+=(-t "$tag"); fi
+          done
+          test "${#args[@]}" -gt 0
+          docker buildx imagetools create "${args[@]}" \
+            "ghcr.io/mrworf/secretsauce-mcp:build-${GITHUB_SHA}-amd64" \
+            "ghcr.io/mrworf/secretsauce-mcp:build-${GITHUB_SHA}-arm64"
+          docker buildx imagetools inspect "${tags[0]}"
 
   docker-browser-e2e:
     needs: quality-gates

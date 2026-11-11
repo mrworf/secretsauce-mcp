@@ -154,7 +154,7 @@ describe("release container deployment", () => {
     expect(smoke).not.toMatch(/docker\s+run[\s\S]*--user\s+(?:0|root)/);
   });
 
-  it("runs smoke before login and multi-architecture publication", () => {
+  it("runs smoke before independently publishing the AMD64 image", () => {
     const workflow = parse(readFileSync(".github/workflows/ci.yml", "utf8")) as any;
     const steps = workflow.jobs["docker-image"].steps as Array<Record<string, unknown>>;
     const smoke = steps.findIndex((step) => step.run === "npm run smoke:container");
@@ -167,33 +167,46 @@ describe("release container deployment", () => {
     expect(login).toBeLessThan(publish);
   });
 
-  it("builds on native amd64 and arm64 runners before publishing a multi-platform manifest", () => {
+  it("publishes AMD64 after quality gates without waiting for ARM64", () => {
     const workflow = parse(readFileSync(".github/workflows/ci.yml", "utf8")) as any;
     const image = workflow.jobs["docker-image"];
-    expect(image.strategy.matrix.include).toEqual([
-      { arch: "amd64", runner: "ubuntu-24.04" },
-      { arch: "arm64", runner: "ubuntu-24.04-arm" },
-    ]);
-    expect(image["runs-on"]).toBe("${{ matrix.runner }}");
-    expect(image.steps).not.toEqual(expect.arrayContaining([
-      expect.objectContaining({ uses: expect.stringMatching(/^docker\/setup-qemu-action@/) }),
-    ]));
+    expect(image.needs).toEqual(["quality-gates", "docker-browser-e2e"]);
+    expect(image["runs-on"]).toBe("ubuntu-24.04");
+    expect(image).not.toHaveProperty("strategy");
+    expect(workflow.jobs).not.toHaveProperty("docker-manifest");
     const build = image.steps.find((step: any) =>
       typeof step.uses === "string" && step.uses.startsWith("docker/build-push-action@"));
-    expect(build.with.platforms).toBe("linux/${{ matrix.arch }}");
-    expect(build.with.tags).toContain("build-${{ github.sha }}-${{ matrix.arch }}");
-    const publish = workflow.jobs["docker-manifest"];
-    expect(publish.needs).toBe("docker-image");
-    expect(publish.steps).toEqual(expect.arrayContaining([
-      expect.objectContaining({
-        name: "Publish multi-architecture manifest",
-        run: expect.stringContaining("docker buildx imagetools create"),
-      }),
-    ]));
-    const manifest = publish.steps.find((step: any) => step.name === "Publish multi-architecture manifest");
-    expect(manifest.run).toContain("build-${GITHUB_SHA}-amd64");
-    expect(manifest.run).toContain("build-${GITHUB_SHA}-arm64");
-    expect(publish.if).toContain("refs/heads/main");
+    expect(build.with.platforms).toBe("linux/amd64");
+    expect(build.with.tags).toBe("${{ steps.meta.outputs.tags }}");
+    expect(build.with.push).toBe("${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}");
+    expect(image.steps.some((step: any) =>
+      typeof step.uses === "string" && step.uses.startsWith("docker/setup-qemu-action@"))).toBe(false);
+  });
+
+  it("triggers a separate native ARM64 build only after successful main CI", () => {
+    const arm = parse(readFileSync(".github/workflows/arm64-image.yml", "utf8")) as any;
+    expect(arm.on.workflow_run.workflows).toEqual(["CI"]);
+    expect(arm.on.workflow_run.types).toEqual(["completed"]);
+    expect(arm.on.workflow_run.branches).toEqual(["main"]);
+    expect(arm.concurrency["cancel-in-progress"]).toBe(true);
+    const job = arm.jobs["arm64-image"];
+    expect(job.if).toContain("workflow_run.conclusion == 'success'");
+    expect(job.if).toContain("workflow_run.event == 'push'");
+    expect(job.if).toContain("workflow_run.head_branch == 'main'");
+    expect(job.if).toContain("head_repository.full_name == github.repository");
+    expect(job["runs-on"]).toBe("ubuntu-24.04-arm");
+    expect(job["timeout-minutes"]).toBe(20);
+    expect(job.permissions.packages).toBe("write");
+    expect(job.steps[0].with.ref).toBe("${{ github.event.workflow_run.head_sha }}");
+    expect(job.steps[0].with["persist-credentials"]).toBe(false);
+    const build = job.steps.find((step: any) =>
+      typeof step.uses === "string" && step.uses.startsWith("docker/build-push-action@"));
+    expect(build.with.platforms).toBe("linux/arm64");
+    expect(build.with.push).toBe(true);
+    expect(build.with.tags).toContain(":arm64");
+    expect(build.with.tags).toContain(":sha-${{ steps.tags.outputs.release_sha }}-arm64");
+    expect(job.steps.some((step: any) =>
+      typeof step.uses === "string" && step.uses.startsWith("docker/setup-qemu-action@"))).toBe(false);
   });
 
   it("audits production dependencies before build and tests", () => {

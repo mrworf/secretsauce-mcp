@@ -167,6 +167,35 @@ describe("release container deployment", () => {
     expect(login).toBeLessThan(publish);
   });
 
+  it("builds on native amd64 and arm64 runners before publishing a multi-platform manifest", () => {
+    const workflow = parse(readFileSync(".github/workflows/ci.yml", "utf8")) as any;
+    const image = workflow.jobs["docker-image"];
+    expect(image.strategy.matrix.include).toEqual([
+      { arch: "amd64", runner: "ubuntu-24.04" },
+      { arch: "arm64", runner: "ubuntu-24.04-arm" },
+    ]);
+    expect(image["runs-on"]).toBe("${{ matrix.runner }}");
+    expect(image.steps).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ uses: expect.stringMatching(/^docker\/setup-qemu-action@/) }),
+    ]));
+    const build = image.steps.find((step: any) =>
+      typeof step.uses === "string" && step.uses.startsWith("docker/build-push-action@"));
+    expect(build.with.platforms).toBe("linux/${{ matrix.arch }}");
+    expect(build.with.tags).toContain("build-${{ github.sha }}-${{ matrix.arch }}");
+    const publish = workflow.jobs["docker-manifest"];
+    expect(publish.needs).toBe("docker-image");
+    expect(publish.steps).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        name: "Publish multi-architecture manifest",
+        run: expect.stringContaining("docker buildx imagetools create"),
+      }),
+    ]));
+    const manifest = publish.steps.find((step: any) => step.name === "Publish multi-architecture manifest");
+    expect(manifest.run).toContain("build-${GITHUB_SHA}-amd64");
+    expect(manifest.run).toContain("build-${GITHUB_SHA}-arm64");
+    expect(publish.if).toContain("refs/heads/main");
+  });
+
   it("audits production dependencies before build and tests", () => {
     const workflow = parse(readFileSync(".github/workflows/ci.yml", "utf8")) as any;
     const steps = workflow.jobs["quality-gates"].steps as Array<Record<string, unknown>>;

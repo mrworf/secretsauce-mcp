@@ -4,6 +4,7 @@ import { BlockList, isIP, type LookupFunction } from "node:net";
 import { InflightLimiter } from "./inflightLimiter.js";
 
 const MAX_BODY_BYTES = 5 * 1024;
+const MAX_METADATA_ADDRESSES = 16;
 const REQUEST_TIMEOUT_MS = 5000;
 const MAX_CACHE_RECORDS = 1000;
 const MAX_CACHE_TTL_MS = 60 * 60 * 1000;
@@ -34,7 +35,7 @@ export interface MetadataResponse {
 
 export interface OAuthClientMetadataNetwork {
   resolve(hostname: string): Promise<MetadataAddress[]>;
-  request(url: URL, address: MetadataAddress): Promise<MetadataResponse>;
+  request(url: URL, addresses: MetadataAddress[]): Promise<MetadataResponse>;
 }
 
 interface CacheRecord {
@@ -113,10 +114,10 @@ async function fetchPinnedResponse(url: URL, network: OAuthClientMetadataNetwork
   const addresses = literalFamily === 0
     ? await network.resolve(hostname)
     : [{ address: hostname, family: literalFamily as 4 | 6 }];
-  if (addresses.length === 0 || addresses.some((entry) => !isPublicMetadataAddress(entry.address))) {
+  if (addresses.length === 0 || addresses.length > MAX_METADATA_ADDRESSES || addresses.some((entry) => !isPublicMetadataAddress(entry.address))) {
     throw new Error("OAuth client metadata address is not public");
   }
-  return network.request(url, addresses[0] as MetadataAddress);
+  return network.request(url, addresses);
 }
 
 function verifyMetadataResponse(response: MetadataResponse, clientId: string): VerifiedClientMetadata | undefined {
@@ -186,14 +187,21 @@ const productionMetadataNetwork: OAuthClientMetadataNetwork = {
     const results = await dnsLookup(hostname, { all: true, verbatim: true });
     return results.map(({ address, family }) => ({ address, family: family as 4 | 6 }));
   },
-  request(url, address) {
-    return requestPinned(url, address);
+  request(url, addresses) {
+    return requestPinned(url, addresses);
   },
 };
 
-async function requestPinned(url: URL, address: MetadataAddress): Promise<MetadataResponse> {
+async function requestPinned(url: URL, addresses: MetadataAddress[]): Promise<MetadataResponse> {
   return await new Promise((resolve, reject) => {
-    const lookup: LookupFunction = (_hostname, _options, callback) => callback(null, address.address, address.family);
+    // Only supply addresses validated above; never re-resolve during connection.
+    const lookup: LookupFunction = (_hostname, options, callback) => {
+      if (options.all) {
+        callback(null, addresses.map(({ address, family }) => ({ address, family })));
+      } else {
+        callback(null, addresses[0]!.address, addresses[0]!.family);
+      }
+    };
     const request = httpsRequest(url, {
       method: "GET",
       headers: { accept: "application/json" },

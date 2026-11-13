@@ -65,7 +65,12 @@ describe("Docker CI metadata", () => {
     const steps = workflow.jobs["docker-image"].steps as Array<Record<string, unknown>>;
 
     expect(source).not.toContain("docker/metadata-action");
-    expect(source).toContain("docker/setup-qemu-action@v4");
+    expect(source).not.toContain("docker/setup-qemu-action@");
+    const armWorkflow = readFileSync(".github/workflows/arm64-image.yml", "utf8");
+    expect(armWorkflow).not.toContain("docker/setup-qemu-action@");
+    expect(armWorkflow).toContain("docker/setup-buildx-action@v4");
+    expect(armWorkflow).toContain("docker/login-action@v4");
+    expect(armWorkflow).toContain("docker/build-push-action@v6");
     expect(source).toContain("docker/setup-buildx-action@v4");
     expect(source).toContain("docker/login-action@v4");
     expect(source).toContain("docker/build-push-action@v6");

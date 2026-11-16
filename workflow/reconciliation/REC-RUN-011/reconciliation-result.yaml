@@ -1,0 +1,1596 @@
+schema_version: 1
+reconciliation_id: REC-RUN-011
+product_id: secretsauce-mcp
+status: PARTIALLY_RESOLVED
+transaction:
+  parent_commit: e024a6cc4a9728505ebff0d4f645c08d907fe3cb
+  repository_commit: null
+  pre_existing_dirty_paths:
+  - workflow/definition/state.yaml
+  - codex-session-01a122f7-e70f-7440-b1ce-ca88b955e519.md
+  - passwd
+  - test-results/
+  owned_paths:
+  - docs/web-console-prd.md
+  - product/ux/01-information-architecture.md
+  - product/ux/02-interaction-patterns.md
+  - workflow/reconciliation/REC-RUN-011/
+source:
+  invocation: product-definition-orchestrator
+  originating_stage: ux
+  triggering_findings:
+  - UX-VIS-F001
+  - UX-VIS-F002
+  - UX-VIS-F003
+  - UX-VIS-F004
+  affected_requirements:
+  - CONFIG-01
+  - CONFIG-04
+  - MIGRATE-03
+  - UX-02
+  - UX-03
+  - IDENT-04
+  artifact_revisions:
+  - artifact: workflow/feedback/PO-FEEDBACK-2026-10-18-003/feedback.yaml
+    revision: sha256:c49b271e03e59e92d16bf6d508356665694797bb1677edd951bd0724b3b106e8
+  - artifact: evidence/ux-audit/UX-AUDIT-2026-11-16-001/manifest.yaml
+    revision: sha256:dbbd12b947fa9200d151d78fb37608bd325977eb364b8cc5e04af4f6f6787532
+  - artifact: product/architecture/web-console-state-contract.md
+    revision: sha256:c8e22b5013d89090cc451cb2ef0290d7517b05bebae746faa15b65f10fca9848
+  - artifact: product/security/web-console-security-contract.md
+    revision: sha256:8f66520798094a2638f006c9f3145e263e96008fdf63480fc6b98c2b0ccddc35
+  - artifact: workflow/definition/results/feedback7-ux-assessment.md
+    revision: sha256:12a98785b352b4d6aba3eaf7048fde428b738a50f69088955a27eb268d91722e
+    role: Specialist resolution evidence; definition transaction owns source publication,
+      not canonical authority by itself.
+  - artifact: workflow/definition/results/feedback7-ux-resolution.yaml
+    revision: sha256:c56fd8562e448e6783aaf0a0a584931e9f4fce14406eec325a60a3e481c94b7d
+    role: Specialist resolution evidence; definition transaction owns source publication,
+      not canonical authority by itself.
+  product_owner_feedback:
+  - feedback_id: PO-FEEDBACK-2026-10-18-003
+    path: workflow/feedback/PO-FEEDBACK-2026-10-18-003/feedback.yaml
+    schema_version: 1
+    status: CONFIRMED
+findings:
+  resolved:
+  - REC-042
+  - REC-043
+  - REC-044
+  - REC-045
+  - REC-046
+  - REC-047
+  - REC-048
+  - REC-049
+  - REC-051
+  - REC-052
+  - REC-053
+  unresolved:
+  - REC-050
+feedback_dispositions:
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-149
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  product_intent_authority: evidence
+  original: on the services list, it says, "Draft, it needs configuration." Something
+    isn't assigned.
+  normalized: A draft service is shown as needing configuration and with a separate
+    missing-assignment indication.
+  disposition: EVIDENCE_CORRELATED
+  source_findings:
+  - REC-042
+  source_changes:
+  - REC-CHANGE-042
+  remediation:
+  - REC-RM-034
+  decisions_required: []
+  affected_artifacts: &id001
+  - product/ux/01-information-architecture.md
+  rationale: Correlated evidence/advisory direction; no independent mandatory scope
+    inferred.
+  scope:
+  - service-list
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-150
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: at the end of the day, I need to go in, so I think it's enough it says,
+    "Needs configuration."
+  normalized: Keep the service list status concise as Needs configuration; leave specific
+    missing-configuration explanations inside the service.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-042
+  source_changes:
+  - REC-CHANGE-042
+  remediation:
+  - REC-RM-034
+  decisions_required: []
+  affected_artifacts: *id001
+  rationale: Confirmed directive supplies only its exact choice; existing security/lifecycle
+    boundaries are retained.
+  scope:
+  - service-list
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-151
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  product_intent_authority: evidence
+  original: And it says, "Services incomplete or invalid. Check destination, authentication,
+    value, availability, placement, and policy."
+  normalized: Review reports a broad incomplete/invalid message naming many configuration
+    areas.
+  disposition: EVIDENCE_CORRELATED
+  source_findings:
+  - REC-043
+  source_changes: []
+  remediation:
+  - REC-RM-035
+  decisions_required: []
+  affected_artifacts:
+  - src/consoleServices.ts
+  rationale: Correlated evidence/advisory direction; no independent mandatory scope
+    inferred.
+  scope:
+  - service-validation
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-152
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  product_intent_authority: evidence
+  original: Authentication is the one that's wrong.
+  normalized: In the reported example, the missing credential value in Authentication
+    is the actual problem, while other sections appear correct.
+  disposition: EVIDENCE_CORRELATED
+  source_findings:
+  - REC-043
+  source_changes: []
+  remediation:
+  - REC-RM-035
+  decisions_required: []
+  affected_artifacts:
+  - src/consoleServices.ts
+  rationale: Correlated evidence/advisory direction; no independent mandatory scope
+    inferred.
+  scope:
+  - service-validation
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-153
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: You have to be explicit.
+  normalized: Explain the specific configuration problem rather than listing every
+    possible section as potentially wrong.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-044
+  source_changes:
+  - REC-CHANGE-044
+  remediation:
+  - REC-RM-036
+  decisions_required: []
+  affected_artifacts: &id002
+  - docs/web-console-prd.md
+  - product/ux/02-interaction-patterns.md
+  rationale: Confirmed directive supplies only its exact choice; existing security/lifecycle
+    boundaries are retained.
+  scope:
+  - service-validation
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-154
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: authentication should be highlighted with a y- an exclamation mark inside
+    a yellow circle after authentication.
+  normalized: Mark affected configuration section names with a yellow circled exclamation
+    indicator.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-044
+  source_changes:
+  - REC-CHANGE-044
+  remediation:
+  - REC-RM-036
+  decisions_required: []
+  affected_artifacts: *id002
+  rationale: Confirmed directive supplies only its exact choice; existing security/lifecycle
+    boundaries are retained.
+  scope:
+  - service-validation
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-155
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  product_intent_authority: evidence
+  original: It says, "Value missing," but it's gray. Nothing is grabbing my attention
+    that I need to set the value.
+  normalized: The missing credential value status is visually subdued and easy to
+    miss.
+  disposition: EVIDENCE_CORRELATED
+  source_findings:
+  - REC-043
+  source_changes: []
+  remediation:
+  - REC-RM-035
+  decisions_required: []
+  affected_artifacts:
+  - src/consoleServices.ts
+  rationale: Correlated evidence/advisory direction; no independent mandatory scope
+    inferred.
+  scope:
+  - service-credentials
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-156
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: You need to help me find what I need to set. I could miss this.
+  normalized: Make the missing value visibly identifiable in the Authentication section.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-043
+  source_changes: []
+  remediation:
+  - REC-RM-035
+  decisions_required: []
+  affected_artifacts:
+  - src/consoleServices.ts
+  rationale: Confirmed directive supplies only its exact choice; existing security/lifecycle
+    boundaries are retained.
+  scope:
+  - service-credentials
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-157
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: and this applies generally. Like, if there is something in the configuration,
+    you can't just call out all the tabs and hope the user finds it. You need to c-
+    call attention to exactly what's missing.
+  normalized: Apply precise, visible identification of missing or invalid configuration
+    generally rather than giving a generic list of tabs.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-043
+  source_changes: []
+  remediation:
+  - REC-RM-035
+  decisions_required: []
+  affected_artifacts:
+  - src/consoleServices.ts
+  rationale: Confirmed directive supplies only its exact choice; existing security/lifecycle
+    boundaries are retained.
+  scope:
+  - configuration-validation
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-158
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  product_intent_authority: evidence
+  original: All it says is, "Review changes. Review checks the complete service draft,
+    including sections you have not visited. Incomplete drafts can be saved for later
+    but cannot be activated." This is redundant information.
+  normalized: The guided Review changes step provides redundant explanatory text rather
+    than the actual review.
+  disposition: EVIDENCE_CORRELATED
+  source_findings:
+  - REC-045
+  source_changes:
+  - REC-CHANGE-045
+  remediation:
+  - REC-RM-037
+  decisions_required: []
+  affected_artifacts: &id003
+  - docs/web-console-prd.md
+  - product/ux/01-information-architecture.md
+  - product/ux/02-interaction-patterns.md
+  rationale: Correlated evidence/advisory direction; no independent mandatory scope
+    inferred.
+  scope:
+  - guided-service-flow
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-159
+  classification: IDEA_OR_QUESTION
+  confirmation: CONFIRMED
+  product_intent_authority: exploratory
+  original: And then when you do click that one, you instead get to the review changes
+    step, where you can see the new settings, you can click to see the changes, and
+    then you can approve the changes.
+  normalized: Earlier in the walkthrough, consider making the Review changes step
+    the actual review. The later four-section flow is the selected direction.
+  disposition: EXPLORATORY_RECORDED
+  source_findings:
+  - REC-045
+  source_changes:
+  - REC-CHANGE-045
+  remediation:
+  - REC-RM-037
+  decisions_required: []
+  affected_artifacts: *id003
+  rationale: Exploration preserved; the proposed mechanism is not itself required.
+    Later selected four-section directive supersedes this earlier proposal.
+  scope:
+  - guided-service-flow
+  tags: []
+  suggestions: []
+  ambiguity:
+  - Later explicit selection at 00:06:17–00:06:35 supersedes this tentative flow.
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-160
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  product_intent_authority: evidence
+  original: when I do a plain one, it says Continue. And only when I get to Access
+    and Policy does it say Review and Apply.
+  normalized: New-service creation already uses sequential Continue actions followed
+    by Review and Apply, unlike editing imported services.
+  disposition: EVIDENCE_CORRELATED
+  source_findings:
+  - REC-045
+  source_changes:
+  - REC-CHANGE-045
+  remediation:
+  - REC-RM-037
+  decisions_required: []
+  affected_artifacts: *id003
+  rationale: Correlated evidence/advisory direction; no independent mandatory scope
+    inferred.
+  scope:
+  - guided-service-flow
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-161
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  product_intent_authority: evidence
+  original: This is a invalid service input. Yeah, now I get one of those again where
+    it says like, "Hey, you have something wrong, but we won't tell you where."
+  normalized: New-service review also produces a generic invalid-input error without
+    locating the problem.
+  disposition: EVIDENCE_CORRELATED
+  source_findings:
+  - REC-043
+  source_changes: []
+  remediation:
+  - REC-RM-035
+  decisions_required: []
+  affected_artifacts:
+  - src/consoleServices.ts
+  rationale: Correlated evidence/advisory direction; no independent mandatory scope
+    inferred.
+  scope:
+  - service-validation
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-162
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: So I think the edit and the add new need to share a lot of this logic,
+    but I do think step number five, review, should go away, and t- uh, details, destination,
+    authentication should all say continue, and then access and policy should say
+    review and apply.
+  normalized: 'Use a consistent four-section guided flow for new and edited services:
+    Details, Destination and Authentication use Continue; Access and policy uses Review
+    and apply. Remove the separate fifth Review placeholder step while retaining the
+    actual review.'
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-045
+  source_changes:
+  - REC-CHANGE-045
+  remediation:
+  - REC-RM-037
+  decisions_required: []
+  affected_artifacts: *id003
+  rationale: Confirmed directive supplies only its exact choice; existing security/lifecycle
+    boundaries are retained.
+  scope:
+  - guided-service-flow
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-163
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  product_intent_authority: evidence
+  original: I have review draft changes, that goes to configuration. I have continue
+    setup, that goes to configuration. I can click on configuration. This is redundant
+    in so many ways.
+  normalized: Overview has multiple differently named routes to the same configuration
+    editor, including a review action that does not open review.
+  disposition: EVIDENCE_CORRELATED
+  source_findings:
+  - REC-042
+  source_changes:
+  - REC-CHANGE-042
+  remediation:
+  - REC-RM-034
+  decisions_required: []
+  affected_artifacts: *id001
+  rationale: Correlated evidence/advisory direction; no independent mandatory scope
+    inferred.
+  scope:
+  - service-overview
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-164
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: review draft changes should be the same as review and apply, so I go straight
+    to this, if that's possible. If something is missing, obviously, we can't do it.
+  normalized: Make Review draft changes a direct shortcut to the actual review when
+    the draft is ready; missing configuration prevents that shortcut from proceeding.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-042
+  source_changes:
+  - REC-CHANGE-042
+  remediation:
+  - REC-RM-034
+  decisions_required: []
+  affected_artifacts: *id001
+  rationale: Confirmed directive supplies only its exact choice; existing security/lifecycle
+    boundaries are retained.
+  scope:
+  - service-overview
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-165
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  product_intent_authority: evidence
+  original: And it says, "Saved changes are waiting for review." That's not... Well,
+    that's technically true, but it's very different, right? Here are actually things
+    missing.
+  normalized: The overview says changes await review even when configuration is incomplete.
+  disposition: EVIDENCE_CORRELATED
+  source_findings:
+  - REC-042
+  source_changes:
+  - REC-CHANGE-042
+  remediation:
+  - REC-RM-034
+  decisions_required: []
+  affected_artifacts: *id001
+  rationale: Correlated evidence/advisory direction; no independent mandatory scope
+    inferred.
+  scope:
+  - service-overview
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-166
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: So on the overview, it probably should say missing or, you know...
+  normalized: Distinguish missing configuration from a draft ready for review in the
+    overview. Exact wording remains open.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-042
+  source_changes:
+  - REC-CHANGE-042
+  remediation:
+  - REC-RM-034
+  decisions_required: []
+  affected_artifacts: *id001
+  rationale: Confirmed directive supplies only its exact choice; existing security/lifecycle
+    boundaries are retained.
+  scope:
+  - service-overview
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-167
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  product_intent_authority: evidence
+  original: in Unify, you say, "Choose who the imported account refers to." That's
+    great. And then it says, "Saved changes are waiting for review."
+  normalized: The identity-mapping explanation is helpful, but the same overview also
+    implies the draft is ready for review.
+  disposition: EVIDENCE_CORRELATED
+  source_findings:
+  - REC-042
+  source_changes:
+  - REC-CHANGE-042
+  remediation:
+  - REC-RM-034
+  decisions_required: []
+  affected_artifacts: *id001
+  rationale: Correlated evidence/advisory direction; no independent mandatory scope
+    inferred.
+  scope:
+  - service-overview
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-168
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: I don't think the second option here should be available, because we know
+    there are issues with this. But once the issues are resolved, review draft changes
+    should go directly to the review step,
+  normalized: Do not offer the review shortcut as available while known configuration
+    or identity-mapping issues remain; once resolved it should go directly to review.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-042
+  source_changes:
+  - REC-CHANGE-042
+  remediation:
+  - REC-RM-034
+  decisions_required: []
+  affected_artifacts: *id001
+  rationale: Confirmed directive supplies only its exact choice; existing security/lifecycle
+    boundaries are retained.
+  scope:
+  - service-overview
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-169
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: you need to make sure that find a service and status are aligned, uh,
+    uh, vertically.
+  normalized: Align Find a service and Status at the top so differing helper-text
+    lengths do not offset their controls.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-042
+  source_changes:
+  - REC-CHANGE-042
+  remediation:
+  - REC-RM-034
+  decisions_required: []
+  affected_artifacts: *id001
+  rationale: Confirmed directive supplies only its exact choice; existing security/lifecycle
+    boundaries are retained.
+  scope:
+  - service-list
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-170
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: get rid of the message about set credential values first, resolve mapping.
+    I don't think that makes any sense to have that there, because if I click it,
+    I should get that information under overview.
+  normalized: Remove the credential-value and mapping-specific messages from service
+    list rows; present those details in the service overview.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-042
+  source_changes:
+  - REC-CHANGE-042
+  remediation:
+  - REC-RM-034
+  decisions_required: []
+  affected_artifacts: *id001
+  rationale: Confirmed directive supplies only its exact choice; existing security/lifecycle
+    boundaries are retained.
+  scope:
+  - service-list
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-171
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  product_intent_authority: evidence
+  original: This is very, very confusing, the applied configuration history.
+  normalized: Applied configuration history is confusing and its usefulness is unclear
+    to the Product Owner.
+  disposition: EVIDENCE_CORRELATED
+  source_findings:
+  - REC-047
+  source_changes:
+  - REC-CHANGE-047
+  remediation:
+  - REC-RM-039
+  decisions_required: []
+  affected_artifacts: &id005
+  - docs/web-console-prd.md
+  - product/ux/01-information-architecture.md
+  rationale: Correlated evidence/advisory direction; no independent mandatory scope
+    inferred.
+  scope:
+  - configuration-history
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-172
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  product_intent_authority: evidence
+  original: I understand the import gateway. I understand the export.
+  normalized: Import and export are understandable capabilities.
+  disposition: EVIDENCE_CORRELATED
+  source_findings:
+  - REC-046
+  source_changes:
+  - REC-CHANGE-046
+  remediation:
+  - REC-RM-038
+  decisions_required: []
+  affected_artifacts: &id004
+  - docs/web-console-prd.md
+  - product/ux/01-information-architecture.md
+  rationale: Correlated evidence/advisory direction; no independent mandatory scope
+    inferred.
+  scope:
+  - configuration-transfer
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-173
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  product_intent_authority: evidence
+  original: You can't just print something on the screen and hope for the best.
+  normalized: The current sanitized export displays configuration on screen rather
+    than providing the expected downloadable file.
+  disposition: EVIDENCE_CORRELATED
+  source_findings:
+  - REC-046
+  source_changes:
+  - REC-CHANGE-046
+  remediation:
+  - REC-RM-038
+  decisions_required: []
+  affected_artifacts: *id004
+  rationale: Correlated evidence/advisory direction; no independent mandatory scope
+    inferred.
+  scope:
+  - configuration-export
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-174
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: Export sanitized configuration should produce a Yaml file that I can take
+    to another Secret Sauce instance and import.
+  normalized: Export sanitized configuration as a downloadable YAML file that can
+    be imported into another SecretSauce instance.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-046
+  source_changes:
+  - REC-CHANGE-046
+  remediation:
+  - REC-RM-038
+  decisions_required: []
+  affected_artifacts: *id004
+  rationale: Confirmed directive supplies only its exact choice; existing security/lifecycle
+    boundaries are retained.
+  scope:
+  - configuration-export
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-175
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: And for now, I think we can just skip apply configuration history. That,
+    that just doesn't make any sense to me. It's trying to do something. I'm sure
+    at some point I, I gave a reason for why we needed this, but at this point, I
+    don't think it makes any sense.
+  normalized: Hide the applied configuration history/reuse console interface for now;
+    retain the underlying history and revision-reuse capability.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-047
+  source_changes:
+  - REC-CHANGE-047
+  remediation:
+  - REC-RM-039
+  decisions_required: []
+  affected_artifacts: *id005
+  rationale: Confirmed directive supplies only its exact choice; existing security/lifecycle
+    boundaries are retained.
+  scope:
+  - configuration-history
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-176
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  product_intent_authority: evidence
+  original: you have a, like a folded security and operational effect.
+  normalized: Settings review hides Security and operational effect in a disclosure
+    despite its short contents.
+  disposition: EVIDENCE_CORRELATED
+  source_findings:
+  - REC-048
+  source_changes:
+  - REC-CHANGE-048
+  remediation:
+  - REC-RM-040
+  decisions_required: []
+  affected_artifacts: &id006
+  - product/ux/02-interaction-patterns.md
+  rationale: Correlated evidence/advisory direction; no independent mandatory scope
+    inferred.
+  scope:
+  - settings-review
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-177
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: It's two lines of text. Just have it there, visible.
+  normalized: Show Security and operational effect directly in Settings review without
+    requiring expansion.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-048
+  source_changes:
+  - REC-CHANGE-048
+  remediation:
+  - REC-RM-040
+  decisions_required: []
+  affected_artifacts: *id006
+  rationale: Confirmed directive supplies only its exact choice; existing security/lifecycle
+    boundaries are retained.
+  scope:
+  - settings-review
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-178
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  product_intent_authority: evidence
+  original: you're showing identical values, but you're showing it in a way where
+    I can't visually make a comparison anymore, uh, because you're formatting it differently.
+  normalized: Secret-detection rule and timeout values are formatted differently across
+    the Settings comparison, making even identical values difficult to compare.
+  disposition: EVIDENCE_CORRELATED
+  source_findings:
+  - REC-048
+  source_changes:
+  - REC-CHANGE-048
+  remediation:
+  - REC-RM-040
+  decisions_required: []
+  affected_artifacts: *id006
+  rationale: Correlated evidence/advisory direction; no independent mandatory scope
+    inferred.
+  scope:
+  - settings-review
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-179
+  classification: PREFERENCE
+  confirmation: CONFIRMED
+  product_intent_authority: advisory
+  original: That was kind of difficult to see.
+  normalized: Settings comparisons should be easy to compare visually.
+  disposition: ADVISORY_CONSIDERED
+  source_findings:
+  - REC-048
+  source_changes:
+  - REC-CHANGE-048
+  remediation:
+  - REC-RM-040
+  decisions_required: []
+  affected_artifacts: *id006
+  rationale: Correlated evidence/advisory direction; no independent mandatory scope
+    inferred.
+  scope:
+  - settings-review
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-180
+  classification: IDEA_OR_QUESTION
+  confirmation: CONFIRMED
+  product_intent_authority: exploratory
+  original: Why would I edit the required scope? Isn't that something we are required
+    to have?
+  normalized: Explain or evaluate why required MCP scopes are editable and what they
+    mean; no change to scope semantics was selected.
+  disposition: EXPLORATORY_RECORDED
+  source_findings:
+  - REC-049
+  source_changes: []
+  remediation: []
+  decisions_required: []
+  affected_artifacts:
+  - src/consoleSettingsPage.ts
+  rationale: 'Exploration preserved; the proposed mechanism is not itself required. '
+  scope:
+  - mcp-authentication-settings
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-181
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  product_intent_authority: evidence
+  original: Here, you're doing all the folded things again. There's like advanced
+    HTTP and authentication, references and retained state, requests and responses,
+    scanner capacity, advanced regex workers.
+  normalized: Limits settings contain many folded groups and are experienced as messy.
+  disposition: EVIDENCE_CORRELATED
+  source_findings:
+  - REC-050
+  source_changes: []
+  remediation: []
+  decisions_required:
+  - REC-DEC-011
+  affected_artifacts:
+  - product/ux/01-information-architecture.md
+  rationale: Correlated evidence/advisory direction; no independent mandatory scope
+    inferred.
+  scope:
+  - limits-settings
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-182
+  classification: PREFERENCE
+  confirmation: CONFIRMED
+  product_intent_authority: advisory
+  original: You need to take a page from the services work.
+  normalized: Use the improved services configuration organization as direction for
+    Limits settings.
+  disposition: ADVISORY_CONSIDERED
+  source_findings:
+  - REC-050
+  source_changes: []
+  remediation: []
+  decisions_required:
+  - REC-DEC-011
+  affected_artifacts:
+  - product/ux/01-information-architecture.md
+  rationale: Correlated evidence/advisory direction; no independent mandatory scope
+    inferred.
+  scope:
+  - limits-settings
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-183
+  classification: IDEA_OR_QUESTION
+  confirmation: CONFIRMED
+  product_intent_authority: exploratory
+  original: This should probably, probably be sub-tabs, because that's a lot of information.
+  normalized: Consider subtabs to organize Limits settings instead of many expandable
+    groups.
+  disposition: EXPLORATORY_RECORDED
+  source_findings:
+  - REC-050
+  source_changes: []
+  remediation: []
+  decisions_required:
+  - REC-DEC-011
+  affected_artifacts:
+  - product/ux/01-information-architecture.md
+  rationale: 'Exploration preserved; the proposed mechanism is not itself required. '
+  scope:
+  - limits-settings
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-184
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  product_intent_authority: evidence
+  original: why are you having tabs like secret detection, MCP, authentication, limits,
+    email, et cetera, and then on top of the screen, you're also saying secret detection?
+    Seems redundant.
+  normalized: Repeating the selected Settings tab name as a page heading feels redundant.
+  disposition: EVIDENCE_CORRELATED
+  source_findings:
+  - REC-050
+  source_changes:
+  - REC-CHANGE-053
+  remediation:
+  - REC-RM-045
+  decisions_required: []
+  affected_artifacts:
+  - product/ux/02-interaction-patterns.md
+  rationale: Product UX resolves duplicate adjacent headings under existing orientation/accessibility
+    rules; preserve one meaningful page name. No independent navigation choice.
+  scope:
+  - settings-layout
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-185
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  product_intent_authority: evidence
+  original: SMTP login, username, replace password. This is not a good one.
+  normalized: The current SMTP username/password replacement experience is unsatisfactory.
+  disposition: EVIDENCE_CORRELATED
+  source_findings:
+  - REC-051
+  source_changes:
+  - REC-CHANGE-051
+  remediation:
+  - REC-RM-043
+  decisions_required: []
+  affected_artifacts: &id007
+  - product/ux/02-interaction-patterns.md
+  rationale: Correlated evidence/advisory direction; no independent mandatory scope
+    inferred.
+  scope:
+  - smtp-credentials
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-186
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: you're using a single compress or fold, authentication username and password.
+    Just show it the whole time.
+  normalized: Keep the SMTP authentication/credential area visible without a disclosure.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-051
+  source_changes:
+  - REC-CHANGE-051
+  remediation:
+  - REC-RM-043
+  decisions_required: []
+  affected_artifacts: *id007
+  rationale: Confirmed directive supplies only its exact choice; existing security/lifecycle
+    boundaries are retained.
+  scope:
+  - smtp-credentials
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-187
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: showing like current, current credentials, and then show the username,
+    and then you can replace it. That opens up a dialog to ask for username, password.
+    You can pre-fill the username, but the password has to be blank with a save and
+    cancel.
+  normalized: Show current SMTP credential information including the username; Replace
+    opens a dialog with the username prefilled, password blank, and Save/Cancel actions.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-051
+  source_changes:
+  - REC-CHANGE-051
+  remediation:
+  - REC-RM-043
+  decisions_required: []
+  affected_artifacts: *id007
+  rationale: Confirmed directive supplies only its exact choice; existing security/lifecycle
+    boundaries are retained.
+  scope:
+  - smtp-credentials
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-188
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: If there is no credential set, you can have a button that says set credential.
+    And then, of course, you need a button that says clear cred- credential.
+  normalized: Provide Set credential when none is configured and a Clear credential
+    action.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-051
+  source_changes:
+  - REC-CHANGE-051
+  remediation:
+  - REC-RM-043
+  decisions_required: []
+  affected_artifacts: *id007
+  rationale: Confirmed directive supplies only its exact choice; existing security/lifecycle
+    boundaries are retained.
+  scope:
+  - smtp-credentials
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-189
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: Again, look up best practices around this, because this is not a good
+    experience.
+  normalized: Research best practices for the SMTP credential management experience.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-051
+  source_changes:
+  - REC-CHANGE-051
+  remediation:
+  - REC-RM-043
+  decisions_required: []
+  affected_artifacts: *id007
+  rationale: Product UX researched official IBM Carbon, GOV.UK password input and
+    W3C modal-dialog guidance, recorded in 06-specialist-basis.md; timing remains
+    UX-EX03. Research is complete, with no separate implementation requirement beyond
+    credential presentation.
+  scope:
+  - smtp-credentials
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-190
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  product_intent_authority: evidence
+  original: On mail server, it says not configured, but you're showing it green.
+  normalized: Mail-server Not configured status is shown in green.
+  disposition: EVIDENCE_CORRELATED
+  source_findings:
+  - REC-051
+  source_changes:
+  - REC-CHANGE-051
+  remediation:
+  - REC-RM-043
+  decisions_required: []
+  affected_artifacts: *id007
+  rationale: Correlated evidence/advisory direction; no independent mandatory scope
+    inferred.
+  scope:
+  - smtp-status
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-191
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: That should probably be consistent with the rest and showing yellow. To
+    indicate that it's not configured.
+  normalized: Use yellow for the mail server Not configured state, consistent with
+    other incomplete configuration states.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-051
+  source_changes:
+  - REC-CHANGE-051
+  remediation:
+  - REC-RM-043
+  decisions_required: []
+  affected_artifacts: *id007
+  rationale: Confirmed directive supplies only its exact choice; existing security/lifecycle
+    boundaries are retained.
+  scope:
+  - smtp-status
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-192
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  product_intent_authority: evidence
+  original: when I enter 24 and hit save for later, it says, "Check the highlighted
+    settings field."
+  normalized: The daily backup UTC-hour field permits entry of 24 and reports an error
+    only when saving.
+  disposition: EVIDENCE_CORRELATED
+  source_findings:
+  - REC-052
+  source_changes:
+  - REC-CHANGE-052
+  remediation:
+  - REC-RM-044
+  decisions_required: []
+  affected_artifacts: &id008
+  - product/ux/02-interaction-patterns.md
+  rationale: Correlated evidence/advisory direction; no independent mandatory scope
+    inferred.
+  scope:
+  - backup-settings
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-193
+  classification: IDEA_OR_QUESTION
+  confirmation: CONFIRMED
+  product_intent_authority: exploratory
+  original: Probably wanna use a slider or prevent me from entering something wrong.
+  normalized: Consider a slider for the daily backup UTC hour; the selected broader
+    outcome is preventing invalid hour entry, not a required slider mechanism.
+  disposition: EXPLORATORY_RECORDED
+  source_findings:
+  - REC-052
+  source_changes:
+  - REC-CHANGE-052
+  remediation:
+  - REC-RM-044
+  decisions_required: []
+  affected_artifacts: *id008
+  rationale: 'Exploration preserved; the proposed mechanism is not itself required. '
+  scope:
+  - backup-settings
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-194
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: how about you come up with a way where I can't enter the wrong value?
+  normalized: Provide a daily backup UTC-hour control that prevents choosing an invalid
+    hour.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-052
+  source_changes:
+  - REC-CHANGE-052
+  remediation:
+  - REC-RM-044
+  decisions_required: []
+  affected_artifacts: *id008
+  rationale: Confirmed directive supplies only its exact choice; existing security/lifecycle
+    boundaries are retained.
+  scope:
+  - backup-settings
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-195
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: How about the title should be, uh, keep backups for how many days, or
+    something like that, so it's obvious immediately what this is.
+  normalized: Make the backup-retention field label immediately clear that the value
+    is a number of days.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-052
+  source_changes:
+  - REC-CHANGE-052
+  remediation:
+  - REC-RM-044
+  decisions_required: []
+  affected_artifacts: *id008
+  rationale: Confirmed directive supplies only its exact choice; existing security/lifecycle
+    boundaries are retained.
+  scope:
+  - backup-settings
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-196
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: I don't think we need another unfold all health details. Just rearrange
+    it so this is clearly available immediately.
+  normalized: Show health details directly in an organized layout rather than hiding
+    them behind Unfold all health details.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-053
+  source_changes:
+  - REC-CHANGE-053
+  remediation:
+  - REC-RM-045
+  decisions_required: []
+  affected_artifacts: &id009
+  - product/ux/02-interaction-patterns.md
+  rationale: Confirmed directive supplies only its exact choice; existing security/lifecycle
+    boundaries are retained.
+  scope:
+  - health-retention-settings
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-197
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: And also, don't hide audit retention. Make that clearly visible.
+  normalized: Keep audit retention visibly available without a disclosure.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-053
+  source_changes:
+  - REC-CHANGE-053
+  remediation:
+  - REC-RM-045
+  decisions_required: []
+  affected_artifacts: *id009
+  rationale: Confirmed directive supplies only its exact choice; existing security/lifecycle
+    boundaries are retained.
+  scope:
+  - health-retention-settings
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-198
+  classification: PREFERENCE
+  confirmation: CONFIRMED
+  product_intent_authority: advisory
+  original: If you put that underneath the, uh, the diagnostics, that would make much
+    more sense.
+  normalized: Prefer placing audit retention underneath diagnostics.
+  disposition: ADVISORY_CONSIDERED
+  source_findings:
+  - REC-053
+  source_changes:
+  - REC-CHANGE-053
+  remediation:
+  - REC-RM-045
+  decisions_required: []
+  affected_artifacts: *id009
+  rationale: Correlated evidence/advisory direction; no independent mandatory scope
+    inferred.
+  scope:
+  - health-retention-settings
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-199
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  product_intent_authority: evidence
+  original: Oh, I just noticed there's a find the settings. That's pretty neat.
+  normalized: Settings search is useful but was discovered late in the walkthrough.
+  disposition: EVIDENCE_CORRELATED
+  source_findings:
+  - REC-050
+  source_changes: []
+  remediation: []
+  decisions_required:
+  - REC-DEC-012
+  affected_artifacts:
+  - product/ux/01-information-architecture.md
+  rationale: Correlated evidence/advisory direction; no independent mandatory scope
+    inferred.
+  scope:
+  - settings-search
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-200
+  classification: PREFERENCE
+  confirmation: CONFIRMED
+  product_intent_authority: advisory
+  original: Honestly, to find a setting, [sighs] it's pretty neat, but it probably
+    shouldn't be hidden here.
+  normalized: Make Settings search easier to discover rather than placing it at the
+    bottom.
+  disposition: ADVISORY_CONSIDERED
+  source_findings:
+  - REC-050
+  source_changes: []
+  remediation: []
+  decisions_required:
+  - REC-DEC-012
+  affected_artifacts:
+  - product/ux/01-information-architecture.md
+  rationale: Correlated evidence/advisory direction; no independent mandatory scope
+    inferred.
+  scope:
+  - settings-search
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-10-18-003
+  item_id: PO-FB-201
+  classification: IDEA_OR_QUESTION
+  confirmation: CONFIRMED
+  product_intent_authority: exploratory
+  original: Maybe in settings, on the, the tabs on the left, you just need to have
+    a place where there's a button to click to search that opens up a modal where
+    you can type in what you're looking for, and then it gives the links.
+  normalized: Consider a search button near the Settings section navigation that opens
+    a modal with a query field and result links.
+  disposition: EXPLORATORY_RECORDED
+  source_findings:
+  - REC-050
+  source_changes: []
+  remediation: []
+  decisions_required:
+  - REC-DEC-012
+  affected_artifacts:
+  - product/ux/01-information-architecture.md
+  rationale: 'Exploration preserved; the proposed mechanism is not itself required. '
+  scope:
+  - settings-search
+  tags: []
+  suggestions: []
+  ambiguity: []
+authoritative_changes:
+  changed: true
+  entries:
+  - change_id: REC-CHANGE-042
+    source_findings:
+    - REC-042
+    path: product/ux/01-information-architecture.md
+    requirements:
+    - UX-IA02
+    - UX-IA09
+    status: APPLIED_AFTER_DECISION
+  - change_id: REC-CHANGE-044
+    source_findings:
+    - REC-044
+    path: docs/web-console-prd.md
+    requirements:
+    - UX-03
+    status: APPLIED_AFTER_DECISION
+  - change_id: REC-CHANGE-044
+    source_findings:
+    - REC-044
+    path: product/ux/02-interaction-patterns.md
+    requirements:
+    - UX-03
+    status: APPLIED_AFTER_DECISION
+  - change_id: REC-CHANGE-045
+    source_findings:
+    - REC-045
+    path: docs/web-console-prd.md
+    requirements:
+    - CONFIG-01
+    status: APPLIED_AFTER_DECISION
+  - change_id: REC-CHANGE-045
+    source_findings:
+    - REC-045
+    path: product/ux/01-information-architecture.md
+    requirements:
+    - CONFIG-01
+    status: APPLIED_AFTER_DECISION
+  - change_id: REC-CHANGE-045
+    source_findings:
+    - REC-045
+    path: product/ux/02-interaction-patterns.md
+    requirements:
+    - CONFIG-01
+    status: APPLIED_AFTER_DECISION
+  - change_id: REC-CHANGE-046
+    source_findings:
+    - REC-046
+    path: docs/web-console-prd.md
+    requirements:
+    - MIGRATE-03
+    status: APPLIED_AFTER_DECISION
+  - change_id: REC-CHANGE-046
+    source_findings:
+    - REC-046
+    path: product/ux/01-information-architecture.md
+    requirements:
+    - MIGRATE-03
+    status: APPLIED_AFTER_DECISION
+  - change_id: REC-CHANGE-047
+    source_findings:
+    - REC-047
+    path: docs/web-console-prd.md
+    requirements:
+    - CONFIG-04
+    status: APPLIED_AFTER_DECISION
+  - change_id: REC-CHANGE-047
+    source_findings:
+    - REC-047
+    path: product/ux/01-information-architecture.md
+    requirements:
+    - CONFIG-04
+    status: APPLIED_AFTER_DECISION
+  - change_id: REC-CHANGE-048
+    source_findings:
+    - REC-048
+    path: product/ux/02-interaction-patterns.md
+    requirements:
+    - UX-IN02
+    - UX-IN18
+    status: APPLIED_AFTER_DECISION
+  - change_id: REC-CHANGE-051
+    source_findings:
+    - REC-051
+    path: product/ux/02-interaction-patterns.md
+    requirements:
+    - IDENT-04
+    - CONFIG-03
+    status: APPLIED_AFTER_DECISION
+  - change_id: REC-CHANGE-052
+    source_findings:
+    - REC-052
+    path: product/ux/02-interaction-patterns.md
+    requirements:
+    - UX-02
+    - UX-03
+    status: APPLIED_AFTER_DECISION
+  - change_id: REC-CHANGE-053
+    source_findings:
+    - REC-053
+    path: product/ux/02-interaction-patterns.md
+    requirements:
+    - UX-IA06
+    - UX-IN18
+    status: APPLIED_AFTER_DECISION
+definition_changed: true
+implementation_required: true
+implementation_ready: false
+decisions_required:
+- id: REC-DEC-011
+  source_findings:
+  - REC-050
+  product_owner_feedback:
+  - PO-FB-181
+  - PO-FB-182
+  - PO-FB-183
+  domain: ux
+  affected_requirement: UX-02
+  blocking: true
+  question: Approve the proposed Limits category navigation in UX-DESIGN-006?
+  reason: Subtabs were an exploratory suggestion. Product UX made a concrete proposal;
+    new navigation authority awaits approval.
+  options:
+  - id: approve
+    summary: Adopt the five bounded Limits categories shown in the proposal.
+  - id: retain
+    summary: Retain current navigation; do not implement the proposed category redesign.
+- id: REC-DEC-012
+  source_findings:
+  - REC-050
+  product_owner_feedback:
+  - PO-FB-199
+  - PO-FB-200
+  - PO-FB-201
+  domain: ux
+  affected_requirement: UX-02
+  blocking: true
+  question: Approve the proposed Settings search button and modal in UX-DESIGN-006?
+  reason: The search modal was an optional idea; the concrete navigation/interaction
+    proposal requires design approval.
+  options:
+  - id: approve
+    summary: Use a visible search action beside Settings navigation opening the guarded
+      search dialog.
+  - id: retain
+    summary: Retain existing search interaction; do not implement the proposed modal.
+change_impact:
+  change_id: REC-IMPACT-011
+  source_findings:
+  - REC-042
+  - REC-043
+  - REC-044
+  - REC-045
+  - REC-046
+  - REC-047
+  - REC-048
+  - REC-049
+  - REC-050
+  - REC-051
+  - REC-052
+  - REC-053
+  changed_artifacts:
+  - docs/web-console-prd.md
+  - product/ux/01-information-architecture.md
+  - product/ux/02-interaction-patterns.md
+  changed_requirements:
+  - CONFIG-01
+  - CONFIG-04
+  - MIGRATE-03
+  - UX-03
+  - UX-IA02
+  - UX-IA03
+  - UX-IA05
+  - UX-IA09
+  - UX-IN09
+  - UX-IN11
+  - UX-IN13
+  - UX-IN15
+  - UX-IN18
+  change_types:
+  - ux_interaction
+  - user_behavior
+  - documentation
+  affected_domains:
+    product: false
+    user_journeys: true
+    ux: true
+    architecture: false
+    security: false
+  potentially_stale:
+  - docs/web-console-prd-coverage.md
+  - docs/web-console-prd-user-journey-audit.md
+  - product/ux/manifest.yaml
+  - product/ux/07-acceptance-checklist.md
+  revalidation_required: true
+handoff:
+  category: DECISION_RESOLUTION
+  definition_revalidation_required: true
+  delivery_planning_ready: false
+  next_workflow: product-definition-orchestrator

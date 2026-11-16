@@ -4,7 +4,7 @@ status: decision_required
 scope: Self-hosted single-organization web console initial release
 transaction:
   parent_commit: e024a6cc4a9728505ebff0d4f645c08d907fe3cb
-  repository_commit: null
+  repository_commit: c05b1897a2f8b31ddfc432323824e8c302355319
   pre_existing_dirty_paths:
   - codex-session-01a122f7-e70f-7440-b1ce-ca88b955e519.md
   - passwd

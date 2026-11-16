@@ -66,5 +66,5 @@ PO-UNRESOLVED-009 resolved: “1. hide it for now”. Hide the console interface
 
 Confirmed directives establish product intent; preferences are advisory; observations are evidence; ideas/questions are exploratory. Subtabs, a backup-hour slider and a search modal remain suggested mechanisms.
 
-No unresolved questions. Reconciliation ready: false until producer commit/provenance closeout.
+No unresolved questions. Reconciliation ready: true. Run product-reconciliation using workflow/feedback/PO-FEEDBACK-2026-10-18-003/feedback.yaml.
 

@@ -32,8 +32,8 @@ audit:
     network: isolated container loopback; Chromium fixture DNS mapping
     artifact_mount: evidence/ux-audit/UX-AUDIT-2026-11-16-001
     state_reset: Each repository harness creates and removes a unique temporary ConsoleStore
-    seed_fixture: Existing populated-settings/navigation/approval synthetic fixtures; audit-owned
-      focused/remaining extensions of navigation fixture
+    seed_fixture: Existing populated-settings/navigation/approval synthetic fixtures;
+      audit-owned focused/remaining extensions of navigation fixture
     locale: browser default en-US
     timezone: container UTC
     color_scheme: light default
@@ -41,9 +41,9 @@ audit:
     browser_versions:
       chromium: 156.0.8078.4
 transaction:
-  owner: parent
+  owner: standalone
   parent_commit: 6810fe32ab0c461946a78751be82b7c21fedecd7
-  payload_commit: null
+  payload_commit: 8063f5822fff3da5b62ec325c7a55d1daed6e2e1
 coverage:
   total_entries: 19
   captured_entries: 16
@@ -82,8 +82,9 @@ entries:
     interaction: verified
     accessibility: unverified
     reviewed_at: '2026-11-16T19:27:40.701640+00:00'
-    notes: Visual inspected by audit agent (Settings review and Health by parent). Harness checks
-      selected keyboard behavior; full accessibility review remains incomplete.
+    notes: Visual inspected by audit agent (Settings review and Health by parent).
+      Harness checks selected keyboard behavior; full accessibility review remains
+      incomplete.
   status: captured
   path_alignment: documented
   notes: Existing fixture state; screenshots full page.
@@ -117,8 +118,9 @@ entries:
     interaction: verified
     accessibility: unverified
     reviewed_at: '2026-11-16T19:27:40.701640+00:00'
-    notes: Visual inspected by audit agent (Settings review and Health by parent). Harness checks
-      selected keyboard behavior; full accessibility review remains incomplete.
+    notes: Visual inspected by audit agent (Settings review and Health by parent).
+      Harness checks selected keyboard behavior; full accessibility review remains
+      incomplete.
   status: captured
   path_alignment: documented
   notes: Existing fixture state; screenshots full page.
@@ -152,8 +154,9 @@ entries:
     interaction: verified
     accessibility: unverified
     reviewed_at: '2026-11-16T19:27:40.701640+00:00'
-    notes: Visual inspected by audit agent (Settings review and Health by parent). Harness checks
-      selected keyboard behavior; full accessibility review remains incomplete.
+    notes: Visual inspected by audit agent (Settings review and Health by parent).
+      Harness checks selected keyboard behavior; full accessibility review remains
+      incomplete.
   status: captured
   path_alignment: documented
   notes: Existing fixture state; screenshots full page.
@@ -187,8 +190,9 @@ entries:
     interaction: verified
     accessibility: unverified
     reviewed_at: '2026-11-16T19:27:40.701640+00:00'
-    notes: Visual inspected by audit agent (Settings review and Health by parent). Harness checks
-      selected keyboard behavior; full accessibility review remains incomplete.
+    notes: Visual inspected by audit agent (Settings review and Health by parent).
+      Harness checks selected keyboard behavior; full accessibility review remains
+      incomplete.
   status: captured
   path_alignment: documented
   notes: Existing fixture state; screenshots full page.
@@ -222,8 +226,9 @@ entries:
     interaction: verified
     accessibility: unverified
     reviewed_at: '2026-11-16T19:27:40.701640+00:00'
-    notes: Visual inspected by audit agent (Settings review and Health by parent). Harness checks
-      selected keyboard behavior; full accessibility review remains incomplete.
+    notes: Visual inspected by audit agent (Settings review and Health by parent).
+      Harness checks selected keyboard behavior; full accessibility review remains
+      incomplete.
   status: captured
   path_alignment: documented
   notes: Existing fixture state; screenshots full page.
@@ -257,8 +262,9 @@ entries:
     interaction: verified
     accessibility: unverified
     reviewed_at: '2026-11-16T19:27:40.701640+00:00'
-    notes: Visual inspected by audit agent (Settings review and Health by parent). Harness checks
-      selected keyboard behavior; full accessibility review remains incomplete.
+    notes: Visual inspected by audit agent (Settings review and Health by parent).
+      Harness checks selected keyboard behavior; full accessibility review remains
+      incomplete.
   status: captured
   path_alignment: documented
   notes: Existing fixture state; screenshots full page.
@@ -292,8 +298,9 @@ entries:
     interaction: verified
     accessibility: unverified
     reviewed_at: '2026-11-16T19:27:40.701640+00:00'
-    notes: Visual inspected by audit agent (Settings review and Health by parent). Harness checks
-      selected keyboard behavior; full accessibility review remains incomplete.
+    notes: Visual inspected by audit agent (Settings review and Health by parent).
+      Harness checks selected keyboard behavior; full accessibility review remains
+      incomplete.
   status: captured
   path_alignment: documented
   notes: Existing fixture state; screenshots full page.
@@ -327,8 +334,9 @@ entries:
     interaction: verified
     accessibility: unverified
     reviewed_at: '2026-11-16T19:27:40.701640+00:00'
-    notes: Visual inspected by audit agent (Settings review and Health by parent). Harness checks
-      selected keyboard behavior; full accessibility review remains incomplete.
+    notes: Visual inspected by audit agent (Settings review and Health by parent).
+      Harness checks selected keyboard behavior; full accessibility review remains
+      incomplete.
   status: captured
   path_alignment: documented
   notes: Existing fixture state; screenshots full page.
@@ -362,8 +370,9 @@ entries:
     interaction: verified
     accessibility: unverified
     reviewed_at: '2026-11-16T19:27:40.701640+00:00'
-    notes: Visual inspected by audit agent (Settings review and Health by parent). Harness checks
-      selected keyboard behavior; full accessibility review remains incomplete.
+    notes: Visual inspected by audit agent (Settings review and Health by parent).
+      Harness checks selected keyboard behavior; full accessibility review remains
+      incomplete.
   status: captured
   path_alignment: documented
   notes: Existing fixture state; screenshots full page.
@@ -382,8 +391,8 @@ entries:
   state: review blocked
   interaction_state: review blocked
   preconditions: Synthetic enrolled Owner and fixture configuration; no live instance
-  interaction: See supporting-evidence/focused-capture.mjs or remaining-capture.mjs; visible
-    UI actions after synthetic setup
+  interaction: See supporting-evidence/focused-capture.mjs or remaining-capture.mjs;
+    visible UI actions after synthetic setup
   expected_rules:
   - source: product/ux/02-interaction-patterns.md
     section: Shared interaction patterns
@@ -400,13 +409,13 @@ entries:
     interaction: verified
     accessibility: unverified
     reviewed_at: '2026-11-16T19:27:40.701640+00:00'
-    notes: Visually inspected by audit agent. Review-invalid and authentication-missing independently
-      inspected by parent. Interaction capture assertions verify reached state; exhaustive accessibility
-      unverified.
+    notes: Visually inspected by audit agent. Review-invalid and authentication-missing
+      independently inspected by parent. Interaction capture assertions verify reached
+      state; exhaustive accessibility unverified.
   status: captured
   path_alignment: documented
-  notes: Fresh disposable fixture; visually inspected. Owner only. Full-page screenshot; no
-    claim about unexercised role/mode variants.
+  notes: Fresh disposable fixture; visually inspected. Owner only. Full-page screenshot;
+    no claim about unexercised role/mode variants.
 - id: UXVIS-011
   journey_id: Import identity mapping correction
   journey: Import identity mapping correction
@@ -431,8 +440,8 @@ entries:
   supporting_evidence: []
   status: blocked
   path_alignment: documented
-  blocked_reason: Selected existing harness capture set does not provide inspected evidence
-    for this required state. Dedicated audit fixture/traversal remains needed.
+  blocked_reason: Selected existing harness capture set does not provide inspected
+    evidence for this required state. Dedicated audit fixture/traversal remains needed.
   notes: null
 - id: UXVIS-012
   journey_id: Limits settings
@@ -449,8 +458,8 @@ entries:
   state: populated
   interaction_state: populated
   preconditions: Synthetic enrolled Owner and fixture configuration; no live instance
-  interaction: See supporting-evidence/focused-capture.mjs or remaining-capture.mjs; visible
-    UI actions after synthetic setup
+  interaction: See supporting-evidence/focused-capture.mjs or remaining-capture.mjs;
+    visible UI actions after synthetic setup
   expected_rules:
   - source: product/ux/02-interaction-patterns.md
     section: Shared interaction patterns
@@ -467,13 +476,13 @@ entries:
     interaction: verified
     accessibility: unverified
     reviewed_at: '2026-11-16T19:27:40.701640+00:00'
-    notes: Visually inspected by audit agent. Review-invalid and authentication-missing independently
-      inspected by parent. Interaction capture assertions verify reached state; exhaustive accessibility
-      unverified.
+    notes: Visually inspected by audit agent. Review-invalid and authentication-missing
+      independently inspected by parent. Interaction capture assertions verify reached
+      state; exhaustive accessibility unverified.
   status: captured
   path_alignment: documented
-  notes: Fresh disposable fixture; visually inspected. Owner only. Full-page screenshot; no
-    claim about unexercised role/mode variants.
+  notes: Fresh disposable fixture; visually inspected. Owner only. Full-page screenshot;
+    no claim about unexercised role/mode variants.
 - id: UXVIS-013
   journey_id: People and access
   journey: People and access
@@ -489,8 +498,8 @@ entries:
   state: Owner list
   interaction_state: Owner list
   preconditions: Synthetic enrolled Owner and fixture configuration; no live instance
-  interaction: See supporting-evidence/focused-capture.mjs or remaining-capture.mjs; visible
-    UI actions after synthetic setup
+  interaction: See supporting-evidence/focused-capture.mjs or remaining-capture.mjs;
+    visible UI actions after synthetic setup
   expected_rules:
   - source: product/ux/02-interaction-patterns.md
     section: Shared interaction patterns
@@ -507,13 +516,13 @@ entries:
     interaction: verified
     accessibility: unverified
     reviewed_at: '2026-11-16T19:27:40.701640+00:00'
-    notes: Visually inspected by audit agent. Review-invalid and authentication-missing independently
-      inspected by parent. Interaction capture assertions verify reached state; exhaustive accessibility
-      unverified.
+    notes: Visually inspected by audit agent. Review-invalid and authentication-missing
+      independently inspected by parent. Interaction capture assertions verify reached
+      state; exhaustive accessibility unverified.
   status: captured
   path_alignment: documented
-  notes: Fresh disposable fixture; visually inspected. Owner only. Full-page screenshot; no
-    claim about unexercised role/mode variants.
+  notes: Fresh disposable fixture; visually inspected. Owner only. Full-page screenshot;
+    no claim about unexercised role/mode variants.
 - id: UXVIS-014
   journey_id: Activity and audit browsing
   journey: Activity and audit browsing
@@ -529,8 +538,8 @@ entries:
   state: populated
   interaction_state: populated
   preconditions: Synthetic enrolled Owner and fixture configuration; no live instance
-  interaction: See supporting-evidence/focused-capture.mjs or remaining-capture.mjs; visible
-    UI actions after synthetic setup
+  interaction: See supporting-evidence/focused-capture.mjs or remaining-capture.mjs;
+    visible UI actions after synthetic setup
   expected_rules:
   - source: product/ux/02-interaction-patterns.md
     section: Shared interaction patterns
@@ -547,13 +556,13 @@ entries:
     interaction: verified
     accessibility: unverified
     reviewed_at: '2026-11-16T19:27:40.701640+00:00'
-    notes: Visually inspected by audit agent. Review-invalid and authentication-missing independently
-      inspected by parent. Interaction capture assertions verify reached state; exhaustive accessibility
-      unverified.
+    notes: Visually inspected by audit agent. Review-invalid and authentication-missing
+      independently inspected by parent. Interaction capture assertions verify reached
+      state; exhaustive accessibility unverified.
   status: captured
   path_alignment: documented
-  notes: Fresh disposable fixture; visually inspected. Owner only. Full-page screenshot; no
-    claim about unexercised role/mode variants.
+  notes: Fresh disposable fixture; visually inspected. Owner only. Full-page screenshot;
+    no claim about unexercised role/mode variants.
 - id: UXVIS-015
   journey_id: Configuration export and history
   journey: Configuration export and history
@@ -569,8 +578,8 @@ entries:
   state: export result
   interaction_state: export result
   preconditions: Synthetic enrolled Owner and fixture configuration; no live instance
-  interaction: See supporting-evidence/focused-capture.mjs or remaining-capture.mjs; visible
-    UI actions after synthetic setup
+  interaction: See supporting-evidence/focused-capture.mjs or remaining-capture.mjs;
+    visible UI actions after synthetic setup
   expected_rules:
   - source: product/ux/02-interaction-patterns.md
     section: Shared interaction patterns
@@ -587,13 +596,13 @@ entries:
     interaction: verified
     accessibility: unverified
     reviewed_at: '2026-11-16T19:27:40.701640+00:00'
-    notes: Visually inspected by audit agent. Review-invalid and authentication-missing independently
-      inspected by parent. Interaction capture assertions verify reached state; exhaustive accessibility
-      unverified.
+    notes: Visually inspected by audit agent. Review-invalid and authentication-missing
+      independently inspected by parent. Interaction capture assertions verify reached
+      state; exhaustive accessibility unverified.
   status: captured
   path_alignment: documented
-  notes: Fresh disposable fixture; visually inspected. Owner only. Full-page screenshot; no
-    claim about unexercised role/mode variants.
+  notes: Fresh disposable fixture; visually inspected. Owner only. Full-page screenshot;
+    no claim about unexercised role/mode variants.
 - id: UXVIS-016
   journey_id: SMTP not-configured status
   journey: SMTP not-configured status
@@ -618,8 +627,8 @@ entries:
   supporting_evidence: []
   status: blocked
   path_alignment: documented
-  blocked_reason: Selected existing harness capture set does not provide inspected evidence
-    for this required state. Dedicated audit fixture/traversal remains needed.
+  blocked_reason: Selected existing harness capture set does not provide inspected
+    evidence for this required state. Dedicated audit fixture/traversal remains needed.
   notes: null
 - id: UXVIS-017
   journey_id: Cross-browser accessibility
@@ -645,8 +654,8 @@ entries:
   supporting_evidence: []
   status: blocked
   path_alignment: documented
-  blocked_reason: Selected existing harness capture set does not provide inspected evidence
-    for this required state. Dedicated audit fixture/traversal remains needed.
+  blocked_reason: Selected existing harness capture set does not provide inspected
+    evidence for this required state. Dedicated audit fixture/traversal remains needed.
   notes: null
 - id: UXVIS-018
   journey_id: Missing credential correction and section indicators
@@ -663,8 +672,8 @@ entries:
   state: missing value
   interaction_state: missing value
   preconditions: Synthetic enrolled Owner and fixture configuration; no live instance
-  interaction: See supporting-evidence/focused-capture.mjs or remaining-capture.mjs; visible
-    UI actions after synthetic setup
+  interaction: See supporting-evidence/focused-capture.mjs or remaining-capture.mjs;
+    visible UI actions after synthetic setup
   expected_rules:
   - source: product/ux/02-interaction-patterns.md
     section: Shared interaction patterns
@@ -681,13 +690,13 @@ entries:
     interaction: verified
     accessibility: unverified
     reviewed_at: '2026-11-16T19:27:40.701640+00:00'
-    notes: Visually inspected by audit agent. Review-invalid and authentication-missing independently
-      inspected by parent. Interaction capture assertions verify reached state; exhaustive accessibility
-      unverified.
+    notes: Visually inspected by audit agent. Review-invalid and authentication-missing
+      independently inspected by parent. Interaction capture assertions verify reached
+      state; exhaustive accessibility unverified.
   status: captured
   path_alignment: documented
-  notes: Fresh disposable fixture; visually inspected. Owner only. Full-page screenshot; no
-    claim about unexercised role/mode variants.
+  notes: Fresh disposable fixture; visually inspected. Owner only. Full-page screenshot;
+    no claim about unexercised role/mode variants.
 - id: UXVIS-019
   journey_id: MCP authentication
   journey: MCP authentication
@@ -703,8 +712,8 @@ entries:
   state: legacy bearer mode
   interaction_state: legacy bearer mode
   preconditions: Synthetic enrolled Owner and fixture configuration; no live instance
-  interaction: See supporting-evidence/focused-capture.mjs or remaining-capture.mjs; visible
-    UI actions after synthetic setup
+  interaction: See supporting-evidence/focused-capture.mjs or remaining-capture.mjs;
+    visible UI actions after synthetic setup
   expected_rules:
   - source: product/ux/02-interaction-patterns.md
     section: Shared interaction patterns
@@ -721,29 +730,29 @@ entries:
     interaction: verified
     accessibility: unverified
     reviewed_at: '2026-11-16T19:27:40.701640+00:00'
-    notes: Visually inspected by audit agent. Review-invalid and authentication-missing independently
-      inspected by parent. Interaction capture assertions verify reached state; exhaustive accessibility
-      unverified.
+    notes: Visually inspected by audit agent. Review-invalid and authentication-missing
+      independently inspected by parent. Interaction capture assertions verify reached
+      state; exhaustive accessibility unverified.
   status: captured
   path_alignment: documented
-  notes: Fresh disposable fixture; visually inspected. Owner only. Full-page screenshot; no
-    claim about unexercised role/mode variants.
+  notes: Fresh disposable fixture; visually inspected. Owner only. Full-page screenshot;
+    no claim about unexercised role/mode variants.
 findings:
 - id: UX-VIS-F001
   category: CROSS_SURFACE_INCONSISTENCY
-  title: Settings effects and discovery use disclosures while service exceptions are immediately
-    visible
+  title: Settings effects and discovery use disclosures while service exceptions are
+    immediately visible
   materiality: MEDIUM
   evidence_ids:
   - UXVIS-001
   - UXVIS-002
   - UXVIS-004
   - UXVIS-007
-  observed: Settings review folds Security and operational effects. Health folds audit retention
-    and details. Settings search appears below the main content in a disclosure. Service review
-    displays exception bullets openly. UX6 deliberately scopes its new review presentation to
-    services; latest owner feedback requests changes in Settings. This difference requires interpretation,
-    not automatic defect classification.
+  observed: Settings review folds Security and operational effects. Health folds audit
+    retention and details. Settings search appears below the main content in a disclosure.
+    Service review displays exception bullets openly. UX6 deliberately scopes its
+    new review presentation to services; latest owner feedback requests changes in
+    Settings. This difference requires interpretation, not automatic defect classification.
   governing_rules:
   - source: product/ux/02-interaction-patterns.md
     rule: UX-IN01/02
@@ -760,10 +769,10 @@ findings:
   - UXVIS-005
   - UXVIS-006
   - UXVIS-009
-  observed: Create shows five steps including Review; edit sidebar includes Review changes.
-    This matches the retained UX6 design but differs from the latest confirmed four-section
-    owner direction, which has not yet been adopted. The navigation harness verifies safe history
-    and non-secret draft preservation.
+  observed: Create shows five steps including Review; edit sidebar includes Review
+    changes. This matches the retained UX6 design but differs from the latest confirmed
+    four-section owner direction, which has not yet been adopted. The navigation harness
+    verifies safe history and non-secret draft preservation.
   governing_rules:
   - source: product/ux/02-interaction-patterns.md
     rule: UX-IN15
@@ -773,17 +782,19 @@ findings:
   - UXVIS-009
 - id: UX-VIS-F003
   category: INTERACTION_MISMATCH
-  title: Missing credential review failure gives undifferentiated section recovery actions
+  title: Missing credential review failure gives undifferentiated section recovery
+    actions
   materiality: HIGH
   evidence_ids:
   - UXVIS-010
   - UXVIS-018
-  observed: Seeded draft has a named credential without a value. Review displays Service incomplete
-    or invalid followed by four Check section buttons, without identifying the credential or
-    affected section. Authentication shows Value missing near the bottom in a neutral panel;
-    section navigation has no issue cue. This is recovery-direction evidence against UX-IN01/15
-    precise actionable validation obligations. The owner-requested yellow-circle mechanism is
-    separately unadopted; this finding does not establish that particular design as authority.
+  observed: Seeded draft has a named credential without a value. Review displays Service
+    incomplete or invalid followed by four Check section buttons, without identifying
+    the credential or affected section. Authentication shows Value missing near the
+    bottom in a neutral panel; section navigation has no issue cue. This is recovery-direction
+    evidence against UX-IN01/15 precise actionable validation obligations. The owner-requested
+    yellow-circle mechanism is separately unadopted; this finding does not establish
+    that particular design as authority.
   governing_rules:
   - source: product/ux/02-interaction-patterns.md
     rule: UX-IN01/15
@@ -796,11 +807,11 @@ findings:
   materiality: MEDIUM
   evidence_ids:
   - UXVIS-015
-  observed: Clicking Export sanitized configuration renders named YAML text blocks beneath the
-    tools screen. Applied configuration history remains visible in its empty state. Latest confirmed
-    feedback asks for a downloadable importable YAML artifact and temporary hiding of the history
-    interface; those requests remain unadopted. This capture does not test cross-instance import
-    or populated history.
+  observed: Clicking Export sanitized configuration renders named YAML text blocks
+    beneath the tools screen. Applied configuration history remains visible in its
+    empty state. Latest confirmed feedback asks for a downloadable importable YAML
+    artifact and temporary hiding of the history interface; those requests remain
+    unadopted. This capture does not test cross-instance import or populated history.
   governing_rules:
   - source: product/ux/02-interaction-patterns.md
     rule: UX-IN01

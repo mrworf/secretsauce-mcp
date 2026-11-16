@@ -2,7 +2,7 @@
 
 > Source PRD: [web-console-prd.md](web-console-prd.md)
 > Generated: 2026-11-16T20:19:23.149860+00:00
-> Evaluation scope: Bounded definition revalidation of settled REC-RUN-011 corrections; prior unrelated mapping and gateway evidence retained. Proposed Limits/search navigation is excluded pending UX-DESIGN-006. Current implementation is not certified.
+> Evaluation scope: Bounded definition revalidation of settled REC-RUN-011 corrections; prior unrelated mapping and gateway evidence retained. UX-DESIGN-006 now approves the bounded Limits/search navigation refinement. Current implementation is not certified.
 > Normative companions: [security contract](../product/security/web-console-security-contract.md), [state and recovery contract](../product/architecture/web-console-state-contract.md).
 
 This artifact maps the settled single-organization self-hosted product. D-001–D-012 and accepted resolutions RES-PRD-SEC-01/RES-PRD-ARCH-01 govern scope. Existing MCP behavior is the preservation baseline; implementation readiness is assessed separately. Backend cells describe required responsibilities, not invented endpoint paths or wire schemas. Roles with identical permissions for a particular operation share a row; materially different Owner, Member, Auditor, operator, external-client and scheduled-job paths are split.
@@ -227,7 +227,7 @@ History reuse remains retained backend capability with an intentionally hidden c
 
 Settings review preserves full-scope atomic activation and comparable exact values; short operational effects are visible. SMTP dialog Save creates pending changes, while Clear remains immediate and blocked by enabled dependencies. Missing mail setup is yellow with text, not green success. Backup hour offers 00–23 UTC; server-side invalid-input rejection remains necessary. Health details and retention are visible; advanced capability and permissions remain unchanged. These obligations are covered by the existing CONFIG/IDENT/UX/OPS/BACKUP row families rather than inventing new capabilities.
 
-Limits category navigation and search modal are non-authoritative proposals under REC-DEC-011/012. Existing searchable focused Settings remain the baseline until approval; this bounded mapping does not mark those proposals implementation-ready. Audit coverage gaps and REC-RUN-011 runtime findings remain delivery obligations, not a coverage PASS claim about current software.
+Limits category navigation and search modal are approved under UX-DESIGN-006 (REC-DEC-011/012). Five existing Limits groups become selectable categories, with a narrow-screen selector. A persistent Search settings action opens a focused dialog; selection passes the unsaved-change guard and focuses the authorized target. Preserve all fields and exact values, queries typed during loading, read-only visibility, cancel/focus return and direct error links. Navigation never applies changes. Audit coverage gaps and REC-RUN-011 runtime findings remain delivery obligations, not a coverage PASS claim about current software.
 
 ### REC-RUN-011 validated inputs
 
@@ -239,3 +239,7 @@ Limits category navigation and search modal are non-authoritative proposals unde
 | `product/ux/06-feature-exceptions.md` | `sha256:427142201d4c4d0e6fc17c19d957f6f4eb8355c651554f0892aefcc1590468cd` |
 | `workflow/reconciliation/REC-RUN-011/reconciliation-result.yaml` | `sha256:ebf8a0dbc9e4e2284b910d17f02371ef8aec0a37b2fcefb7ca3bf8267a5d4ed8` |
 | `workflow/reconciliation/REC-RUN-011/06-specialist-basis.md` | `sha256:4235ecf36f123878b9929392d95b9c9e16c77eccecbe6c15c3d8a833bd61fdc1` |
+
+### Approved navigation coverage — UX-DESIGN-006
+
+Existing UX-02/OPS-02 row families cover the five Limits categories; UX-02 and UX-04 cover the discoverable search dialog. Owner edits retain existing authority; Administrator/Auditor see only their permitted scopes, and Member gains no Settings access. Search indexes non-secret labels/help/aliases, not credentials or forbidden settings. Positive cases: category selection, deep link/history, query entered during index loading, result selection with field focus. Negative/recovery cases: inaccessible setting, failed/loading/empty index, unsaved Stay/Save/Discard, Cancel/Escape, narrow layout, and no accidental activation. Existing navigation/search harnesses should be extended where needed, not duplicated per category. No new numeric defaults, rounding or limits semantics arise from illustrative concepts.

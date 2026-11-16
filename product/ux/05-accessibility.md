@@ -49,3 +49,9 @@ Use a named modal with inert background and trapped focus. Initially focus the h
 ## UX-A09 — Refinement semantics
 
 New settings is the first selected semantic tab on review entry; UX-A08 keyboard behavior remains unchanged. Render actual review exceptions as a semantic list with readable risk/scope text. Reading these bullets does not check any modal acknowledgment. The override badge is visible text associated with its rule, available without hover or color interpretation, and is not an urgent alert merely because an override exists. Removed-section navigation must not strand keyboard focus or discard safe draft input; return to a remaining relevant section under the existing navigation guard.
+
+## UX-A10 — Precise attention, category navigation and search
+
+Associate field warnings with their local controls and provide a focusable summary linking only actual issues. Circled exclamation markers have accessible Needs attention text; do not rely on yellow or repeatedly announce unchanged validation. A missing credential links to its authorized Set value task. After correction, update status without forcing focus away from the user's work.
+
+Use named navigation/current-location semantics for Limits categories and native labeled selects on narrow layouts. Search uses a named modal with initial query focus, contained keyboard focus and inert background. Escape/Cancel closes before submission and returns focus to its trigger; result selection focuses the destination after any unsaved-work decision. Results have meaningful section/category/field names, loading and errors are announced concisely, and no secret text is announced. Never stack modal tasks. SMTP dialogs share this keyboard/focus model while explicitly describing their different save timing.

@@ -1479,7 +1479,7 @@ Decision provenance: Prior accepted decisions remain authoritative; REC-DEC-008,
 
 ## REC-RUN-011 settled journey revalidation
 
-Scope: settled REC-042–049/051–053 and direct dependent paths. REC-050 Limits/search navigation remains proposed under UX-DESIGN-006, not part of this pass. Stable actor, journey, entry and action IDs are retained; implementation reachability remains unverified.
+Scope: settled REC-042–049/051–053 and direct dependent paths. REC-050 Limits/search navigation was subsequently approved under UX-DESIGN-006; the bounded continuation below completes that path. Stable actor, journey, entry and action IDs are retained; implementation reachability remains unverified.
 
 ### Configuration correction and actual review — J-OWNER-CONFIG / J-ADMIN-CONFIG
 
@@ -1501,7 +1501,7 @@ The SMTP credential summary is directly visible. Set/Replace opens a focused dia
 | ACT-127 | J-OWNER-HISTORY / J-ADMIN-HISTORY export | Download YAML then import elsewhere | Configuration tools export download | Existing sanitized export and explicit import flow | Current scoped configuration access and durable audit | Export read-only; import creates unapplied draft | Resolve credentials/identities, then review; failed download never success | MIGRATE-03; REC-045; implementation unverified |
 | ACT-128 | J-OWNER-SETTINGS credential edit | Set/Replace then Save or Cancel | Focused SMTP dialog | Existing version-bound settings draft save | Owner and audit; normal apply/recent-auth requirements preserved | Save pending, Cancel none; no immediate mail activation | Pending summary, fresh review, error retains safe non-secret context | UX-IN13/UX-EX03; REC-051; implementation unverified |
 
-Validation: these paths map positive completion, missing/invalid inputs, stale authority/dependencies, safe cancellation and read-only roles without asserting runtime success. Audit001's uninspected import mapping/absent SMTP/full accessibility states remain explicit delivery evidence obligations. No new unresolved settled-path specification gap was found. Proposed Limits/search choices remain central decisions, not inferred requirements.
+Validation: these paths map positive completion, missing/invalid inputs, stale authority/dependencies, safe cancellation and read-only roles without asserting runtime success. Audit001's uninspected import mapping/absent SMTP/full accessibility states remain explicit delivery evidence obligations. No new unresolved settled-path specification gap was found. The later approved Limits/search continuation below resolves those central decisions without altering unrelated paths.
 
 Revalidated 2026-11-16T20:20:34.265140+00:00. Exact inputs:
 
@@ -1514,3 +1514,13 @@ Revalidated 2026-11-16T20:20:34.265140+00:00. Exact inputs:
 | `product/ux/06-feature-exceptions.md` | `sha256:427142201d4c4d0e6fc17c19d957f6f4eb8355c651554f0892aefcc1590468cd` |
 | `workflow/reconciliation/REC-RUN-011/reconciliation-result.yaml` | `sha256:ebf8a0dbc9e4e2284b910d17f02371ef8aec0a37b2fcefb7ca3bf8267a5d4ed8` |
 | `workflow/reconciliation/REC-RUN-011/06-specialist-basis.md` | `sha256:4235ecf36f123878b9929392d95b9c9e16c77eccecbe6c15c3d8a833bd61fdc1` |
+
+## Approved Settings navigation continuation — UX-DESIGN-006
+
+User decision: **Agreed, do both**. This targeted addition affects J-OWNER-SETTINGS and the same permitted Administrator/Auditor read or edit paths, EP-12, existing UX-02/OPS-02 capabilities; it creates no Member access or changed setting semantics.
+
+**Limits path:** Enter Settings → Limits → select one of the five existing groups: Requests & responses, References & retained state, HTTP & authentication, Scanner capacity, Regex workers. One category is visible, with the equivalent labeled selector on narrow screens. All supported fields remain reachable, and exact stored values survive movement. Deep links, direct validation links and Back/Forward identify the category. Changing category neither saves nor applies; actual unsaved departure follows the existing guard and preserves work on Stay. Invalid values still have precise field recovery and server validation. Review remains the existing complete Settings review.
+
+**Search path:** A persistent Search settings action opens the focused dialog. Type a query; loading, results, empty and failed index states are distinct. Preserve a query typed while the index loads. Results index only non-secret names/help/technical aliases within current permissions. Select a result → close the search dialog → resolve any existing unsaved-work guard without stacking dialogs → open the relevant section/category and focus its field. Stay retains the original edit; Save or Discard has only its existing explicit scope. Cancel/Escape returns focus to Search settings without mutation. Direct unauthorized targets remain denied, stale visibility never grants permission, and Auditor receives readable values without edit actions.
+
+**Acceptance:** Positive category/result navigation, history/deep links, loading-query retention and destination focus; negative stale/forbidden targets, empty/failed search, unsafe implicit save/apply, hidden error fields and loss of unsaved work. Preserve keyboard focus, accessible dialog naming, narrow selection and non-color active states. Reuse existing navigation/search validation where adequate. Representative approved screenshots define appearance, not implementation conformance. All prior source-only/runtime evidence limits remain.

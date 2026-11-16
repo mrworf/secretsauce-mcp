@@ -1157,13 +1157,13 @@ reconciliation: workflow/reconciliation/REC-RUN-011/reconciliation-result.yaml
 
 ```yaml
 id: REC-DEC-011
-status: pending
+status: accepted
 question_id: UX-DESIGN-006
 resolution_category: PRODUCT_DECISION
 resolution_owner: user
-routing_status: awaiting_answer
+routing_status: resolved
 depends_on: []
-ask_user: true
+ask_user: false
 scope: Limits category navigation
 proposal: workflow/definition/drafts/product-ux/web-console-feedback-007/index.md
 source_findings:
@@ -1183,17 +1183,20 @@ options:
   summary: Adopt the five bounded Limits categories shown in the proposal.
 - id: retain
   summary: Retain current navigation; do not implement the proposed category redesign.
+resolution: Agreed, do both
+approval_scope: Both Limits categories and Settings search dialog in feedback-007-draft-1
+decided_on: '2026-11-16'
 ```
 
 ```yaml
 id: REC-DEC-012
-status: pending
+status: accepted
 question_id: UX-DESIGN-006
 resolution_category: PRODUCT_DECISION
 resolution_owner: user
-routing_status: awaiting_answer
+routing_status: resolved
 depends_on: []
-ask_user: true
+ask_user: false
 scope: Settings search dialog
 proposal: workflow/definition/drafts/product-ux/web-console-feedback-007/index.md
 source_findings:
@@ -1214,4 +1217,7 @@ options:
     search dialog.
 - id: retain
   summary: Retain existing search interaction; do not implement the proposed modal.
+resolution: Agreed, do both
+approval_scope: Both Limits categories and Settings search dialog in feedback-007-draft-1
+decided_on: '2026-11-16'
 ```

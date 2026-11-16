@@ -1,25 +1,30 @@
 stage: generate-prd-coverage-matrix
 status: PASS
 mode: targeted_revalidation
-scope: Only settled REC011 mapping and direct dependent cells; proposed Limits/search
-  excluded. Existing unrelated inventory preserved. Not implementation acceptance.
+scope: Targeted continuation for approved UX-DESIGN-006 navigation; prior settled
+  REC011 mapping and all unrelated inventories preserved. Definition-only, no runtime
+  certification.
 validated_inputs:
 - path: docs/web-console-prd.md
   revision: sha256:046771c8ca506a693e41e6085dbc3d850532a01960421f60d49ab74274fd374b
 - path: product/ux/01-information-architecture.md
-  revision: sha256:6516927a729d0bd3e353470f4df17e7fc218699f512c5f50e3930cb21610163c
+  revision: sha256:ea8c9403ba85d89629c24d53cc6bf4df35bb6a2e9aca27bf0bc9b79c41e21a8c
 - path: product/ux/02-interaction-patterns.md
-  revision: sha256:287094b0d10d8902526ab1e12442b8d874b1ffe8cdea30d47ed95d94f9bee1ec
+  revision: sha256:32f5a1eaae242d7ec9b927b89a43eaff3697074466784ff72398a930501f929d
+- path: product/ux/manifest.yaml
+  revision: sha256:310b3680ef3a4818f0534bd263d5a11b13c3ec3345d9a3576b67d5c140fb1273
 - path: product/ux/06-feature-exceptions.md
   revision: sha256:427142201d4c4d0e6fc17c19d957f6f4eb8355c651554f0892aefcc1590468cd
-- path: workflow/reconciliation/REC-RUN-011/reconciliation-result.yaml
-  revision: sha256:ebf8a0dbc9e4e2284b910d17f02371ef8aec0a37b2fcefb7ca3bf8267a5d4ed8
-- path: workflow/reconciliation/REC-RUN-011/06-specialist-basis.md
-  revision: sha256:4235ecf36f123878b9929392d95b9c9e16c77eccecbe6c15c3d8a833bd61fdc1
+- path: workflow/definition/decisions.md
+  revision: sha256:668197081b367e59ceac5d4a634720ba9369756a958ae4c2ae02696c65c5e3d3
+- path: workflow/reconciliation/REC-RUN-012/reconciliation-result.yaml
+  revision: sha256:abb10f9459d4f783fbda984c2c9bfe1550164f8e649b4ee1b9bb0ddd772a3c74
+- path: workflow/reconciliation/REC-RUN-012/approval-basis.md
+  revision: sha256:6ddd358cbc22576f844da7dbe5f4a2043d819c9becf74d0570422451763f6be6
 artifact_changes:
 - path: docs/web-console-prd-coverage.md
-  summary: Four-section flow, hidden history ingress, exact correction, YAML download
-    and SMTP lifecycle mapping; bounded Settings acceptance notes.
+  summary: Bounded approved Limits categories and search dialog; roles, state guards,
+    failures, recovery and exact-value preservation mapped.
 changed_paths:
 - docs/web-console-prd-coverage.md
 - workflow/definition/results/coverage.yaml

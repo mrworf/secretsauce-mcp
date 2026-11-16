@@ -1105,13 +1105,13 @@ depends_on: []
 source_decisions:
 - REC-DEC-011
 - REC-DEC-012
-status: open
+status: resolved
 stage: ux
 resolution_category: PRODUCT_DECISION
 resolution_owner: user
-routing_status: awaiting_answer
-ask_user: true
-proposal_revisions:
+routing_status: resolved
+ask_user: false
+proposal_revisions: &id001
 - path: workflow/definition/drafts/product-ux/web-console-feedback-007/index.md
   revision: sha256:e89c3ea6d65f27b0bb6a291ee16459e54d44a2bdbdeeca7148a63620d4ac74ba
 - path: workflow/definition/drafts/product-ux/web-console-feedback-007/limits-desktop.png
@@ -1120,4 +1120,8 @@ proposal_revisions:
   revision: sha256:5beb07c4c532dba731c026ac74d65c29e029d6932275027ad33aea776d2333a2
 - path: workflow/definition/drafts/product-ux/web-console-feedback-007/limits-narrow.png
   revision: sha256:a7d68dbaad700524674300aaa2d2d68341e08364c4a159220e79a1be02152c94
+resolution: Agreed, do both
+approval_scope: Both Limits categories and Settings search dialog in feedback-007-draft-1
+decided_on: '2026-11-16'
+approved_proposal_revisions: *id001
 ```

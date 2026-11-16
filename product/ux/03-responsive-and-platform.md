@@ -43,3 +43,9 @@ Confirmation fits the viewport with reachable Cancel and Continue. A long list m
 ## UX-R08 — Refinement reflow
 
 At every width, New settings precedes Changes in reading and focus order. Review exception bullets wrap in the existing full-width exception surface; do not hide, clip or collapse them on narrow screens. The neutral scanning-override badge wraps within its own rule row and remains distinguishable from risk warnings without displacing Edit/Delete. Removing the guided destination preserves direct navigation and safe Back/Forward under UX-IN15. Retain 320 CSS px, 390px and enlarged-text checks for both document and text-range overflow.
+
+## UX-R09 — Settings category and search reflow
+
+At wide widths retain the Settings rail, visible search action and a wrapping row of the five Limits category links above a substantial form canvas. Use related field columns only where readable. On narrow screens keep Search settings directly before the existing labeled Settings section select, and use a second labeled Limit category select within Limits. Do not squeeze either navigation into clipped horizontal tabs or repeat the category title. Search dialog fits the viewport, scrolls when needed and keeps the input, result context and Cancel reachable. Every category/field and permission boundary remains available; no reduced mobile capability.
+
+Compare approved feedback 007 desktop 1440px and narrow 390px states, plus 320 CSS px and enlarged text. Inspect document width and text-range overflow, keyboard focus visibility, wrapped category labels and action groups. New validation markers remain attached to their section names and do not overlap adjacent navigation.

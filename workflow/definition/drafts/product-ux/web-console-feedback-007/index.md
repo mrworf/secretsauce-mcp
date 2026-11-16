@@ -1,6 +1,6 @@
 # Settings navigation proposal — UX-DESIGN-006
 
-Status: **Awaiting Product Owner approval**. Proposal revision `feedback-007-draft-1`. This is a bounded extension of approved UX6, not replacement product authority. Confirmed feedback003 remains independently actionable.
+Status: **Approved by the Product Owner — UX-DESIGN-006, REC-DEC-011/012 (“Agreed, do both”, 2026-11-16)**. Proposal revision `feedback-007-draft-1`. This is a bounded extension of approved UX6, not replacement product authority. Confirmed feedback003 remains independently actionable.
 
 Approve these two navigation refinements?
 
@@ -26,4 +26,4 @@ A category/search transition never silently saves, applies or discards edits. Se
 
 ## Source and approval
 
-Sources: approved `product/ux/manifest.yaml` UX6; PO-FEEDBACK-2026-10-18-003 items182–183/199–201; bounded audit UX-AUDIT-2026-11-16-001. Audit04 is recommendation only. Approval: none yet; stable question UX-DESIGN-006 groups reconciliation choices REC-DEC-011 (Limits) and REC-DEC-012 (search), each independently answerable. The question is orchestrator-owned.
+Sources: approved `product/ux/manifest.yaml` UX6; PO-FEEDBACK-2026-10-18-003 items182–183/199–201; bounded audit UX-AUDIT-2026-11-16-001. Audit04 is recommendation only. Approval: recorded in workflow/definition/decisions.md; stable question UX-DESIGN-006 groups reconciliation choices REC-DEC-011 (Limits) and REC-DEC-012 (search), each independently answerable. The question is orchestrator-owned.

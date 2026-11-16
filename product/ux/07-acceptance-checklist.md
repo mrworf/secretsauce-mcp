@@ -108,3 +108,18 @@ UX-C54–58 supplement prior checks. They do not certify production implementati
 | UX-C63 | Matching-state desktop/narrow and enlarged-text evidence compares against preserved feedback 003/004 appearance with UX-G07's exact delta precedence. Exception lists and rule badges remain readable without hover, clipping, overlap or page overflow; keyboard navigation and modal focus remain intact. | UX-G07, UX-V08, UX-R08, UX-A09 | UX-02/04, PO-REFINEMENT-010 |
 
 These are observable future conformance checks, not executed acceptance. The optional slider and proposed scale are not acceptance requirements; current exact-value and validation obligations remain.
+
+## Feedback 007 consistency conformance
+
+| ID | Observable check | Governing UX rules | Product trace |
+| --- | --- | --- | --- |
+| UX-C64 | List attention is concise, filters align at top, Overview names exact blockers, and only affected sections/fields get visible accessible attention. Missing credentials have a direct correction action; value presence never claims connectivity. | UX-IA02/09, UX-IN15/19, UX-V09, UX-A10 | UX-01/03, PO-FB-150/153/154/156/157/169/170 |
+| UX-C65 | New/imported/existing guided work has four sections, Continue on the first three and Review & apply on the last; no placeholder fifth step. Ready overview shortcut opens actual review, incomplete shortcut cannot proceed; direct navigation/history preserve safe work. | UX-IA02/09, UX-IN19 | CONFIG-03, PO-FB-162/164/166/168 |
+| UX-C66 | Sanitized export downloads import-compatible YAML and applicable optional catalogs with clear import targets; no secret/authority transfer or auto-activation. Console history/reuse entry points are hidden while underlying retained history/reuse remains. | UX-IA03/04, UX-IN19 | CONFIG-04, PO-FB-174/175 |
+| UX-C67 | Settings effects, health and audit retention are directly visible; equal comparison values share formatting/units/order; one meaningful heading remains. Backup hour offers only 00:00–23:00, externally invalid values stay explicit, and retention labels days. | UX-IN18/19, UX-V09 | UX-02/03, PO-FB-177/179/194/195/196/197 |
+| UX-C68 | SMTP summary is visible; Set/Replace opens username-prefilled/password-blank Save/Cancel. Blank Replace retains saved value, Set absent requires value; Save is pending not active, Clear is independently confirmed and dependency-checked. Not configured is yellow with text. | UX-IN09/13/19, UX-EX03, UX-A10 | IDENT-04, PO-FB-186/187/188/191 |
+| UX-C69 | Limits exposes five approved categories with every existing field, units/usage/effects, correct direct-link/history and narrow selector behavior. No category change silently saves/discards; full Settings review stays atomic. | UX-IA11, UX-IN19, UX-R09 | OPS-02, UX-DESIGN-006, REC-DEC-011 |
+| UX-C70 | Search entry is persistent across Settings; focused dialog handles query during loading, empty/error states and permission-scoped links. Selection protects unsaved forms and focuses the target; Cancel restores trigger; no stacked dialogs or secret indexing. | UX-IA11, UX-IN19, UX-A10 | UX-02/04, UX-DESIGN-006, REC-DEC-012 |
+| UX-C71 | Matching-state/viewport screenshots compare feedback 007 navigation/search and preserved prior appearance with UX-G08 precedence. Validate incomplete/ready service, SMTP current/missing/pending/clear-blocked, Settings comparison/health, narrow/zoom and authorized read-only states. | UX-G08, UX-R09, UX-V09, UX-A10 | UX-C42, UX-DESIGN-006 |
+
+These are future observable checks, not executed acceptance. Keep audit coverage gaps explicit. The backup-hour select is a bounded-choice control, not approval for the unrelated binary-scan slider suggestion.

@@ -4,7 +4,7 @@ product_id: secretsauce-mcp
 status: PARTIALLY_RESOLVED
 transaction:
   parent_commit: e024a6cc4a9728505ebff0d4f645c08d907fe3cb
-  repository_commit: null
+  repository_commit: 2cda731ec976d53be6167846544e1bb1d6db141b
   pre_existing_dirty_paths:
   - workflow/definition/state.yaml
   - codex-session-01a122f7-e70f-7440-b1ce-ca88b955e519.md

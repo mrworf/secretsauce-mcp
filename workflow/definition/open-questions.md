@@ -1075,3 +1075,49 @@ approved_proposal_revisions: *id001
 ## REC010 feedback clarification — resolved
 
 PO-UNRESOLVED-001 and PO-UNRESOLVED-002 in PO-FEEDBACK-2026-10-18-002 were resolved by the Product Owner: any scanning override is highlighted; the slider is a suggestion. Decision PO-REFINEMENT-010 records these settled answers. No new product question is opened.
+
+## Feedback003 navigation direction — open
+
+```yaml
+id: UX-DESIGN-006
+kind: UX_DIRECTION_APPROVAL
+blocking: true
+affected_requirement: UX-02
+affected_surfaces:
+- Settings / Limits
+- Settings search
+question: Approve five selectable Limits categories and a persistent Search settings
+  button that opens the search dialog, as shown in the proposal?
+reason: The confirmed feedback suggests these mechanisms but does not select them.
+  They change navigation and disclosure rather than routine control styling.
+recommendation: Adopt both bounded refinements while preserving the existing shell,
+  all supported fields and unsaved-change safeguards.
+options:
+- Approve both
+- Revise Limits navigation
+- Revise search interaction
+proposal_paths:
+- workflow/definition/drafts/product-ux/web-console-feedback-007/index.md
+- workflow/definition/drafts/product-ux/web-console-feedback-007/limits-desktop.png
+- workflow/definition/drafts/product-ux/web-console-feedback-007/search-desktop.png
+- workflow/definition/drafts/product-ux/web-console-feedback-007/limits-narrow.png
+depends_on: []
+source_decisions:
+- REC-DEC-011
+- REC-DEC-012
+status: open
+stage: ux
+resolution_category: PRODUCT_DECISION
+resolution_owner: user
+routing_status: awaiting_answer
+ask_user: true
+proposal_revisions:
+- path: workflow/definition/drafts/product-ux/web-console-feedback-007/index.md
+  revision: sha256:e89c3ea6d65f27b0bb6a291ee16459e54d44a2bdbdeeca7148a63620d4ac74ba
+- path: workflow/definition/drafts/product-ux/web-console-feedback-007/limits-desktop.png
+  revision: sha256:212c7c5c44f0a4c95ab42efec7e48b3dfd1bf6ef1b1d32e76b60c8170d08b63a
+- path: workflow/definition/drafts/product-ux/web-console-feedback-007/search-desktop.png
+  revision: sha256:5beb07c4c532dba731c026ac74d65c29e029d6932275027ad33aea776d2333a2
+- path: workflow/definition/drafts/product-ux/web-console-feedback-007/limits-narrow.png
+  revision: sha256:a7d68dbaad700524674300aaa2d2d68341e08364c4a159220e79a1be02152c94
+```

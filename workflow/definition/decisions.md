@@ -1132,3 +1132,86 @@ authoritative_updates:
 - product/ux/02-interaction-patterns.md
 reconciliation: workflow/reconciliation/REC-RUN-010/reconciliation-result.yaml
 ```
+
+## PO-REFINEMENT-011 — Confirmed configuration consistency feedback
+
+```yaml
+id: PO-REFINEMENT-011
+status: accepted
+source: workflow/feedback/PO-FEEDBACK-2026-10-18-003/feedback.yaml
+source_items: PO-FB-149–201
+resolution_category: PRODUCT_DECISION
+resolution_owner: user
+routing_status: reconciliation_in_progress
+depends_on: []
+ask_user: false
+resolved_behavior:
+- Honor each item's recorded authority; observations and suggested mechanisms are not blanket implementation directives.
+- Apply the final four-section guided flow; earlier transcript proposals are superseded as recorded in the package.
+- Hide the applied configuration history/reuse interface for now; retain history data and underlying revision-reuse capability.
+- Preserve approved service review, write-only secrets, existing permissions and SMTP draft/apply versus immediate deletion timing.
+- Process all 53 items and runtime audit findings through canonical reconciliation; do not infer conformance for uninspected states.
+clarification: 'User answered "1. hide it for now"; PO-FB-175 records the settled UI-only boundary.'
+reconciliation: workflow/reconciliation/REC-RUN-011/reconciliation-result.yaml
+```
+
+```yaml
+id: REC-DEC-011
+status: pending
+question_id: UX-DESIGN-006
+resolution_category: PRODUCT_DECISION
+resolution_owner: user
+routing_status: awaiting_answer
+depends_on: []
+ask_user: true
+scope: Limits category navigation
+proposal: workflow/definition/drafts/product-ux/web-console-feedback-007/index.md
+source_findings:
+- REC-050
+product_owner_feedback:
+- PO-FB-181
+- PO-FB-182
+- PO-FB-183
+domain: ux
+affected_requirement: UX-02
+blocking: true
+question: Approve the proposed Limits category navigation in UX-DESIGN-006?
+reason: Subtabs were an exploratory suggestion. Product UX made a concrete proposal;
+  new navigation authority awaits approval.
+options:
+- id: approve
+  summary: Adopt the five bounded Limits categories shown in the proposal.
+- id: retain
+  summary: Retain current navigation; do not implement the proposed category redesign.
+```
+
+```yaml
+id: REC-DEC-012
+status: pending
+question_id: UX-DESIGN-006
+resolution_category: PRODUCT_DECISION
+resolution_owner: user
+routing_status: awaiting_answer
+depends_on: []
+ask_user: true
+scope: Settings search dialog
+proposal: workflow/definition/drafts/product-ux/web-console-feedback-007/index.md
+source_findings:
+- REC-050
+product_owner_feedback:
+- PO-FB-199
+- PO-FB-200
+- PO-FB-201
+domain: ux
+affected_requirement: UX-02
+blocking: true
+question: Approve the proposed Settings search button and modal in UX-DESIGN-006?
+reason: The search modal was an optional idea; the concrete navigation/interaction
+  proposal requires design approval.
+options:
+- id: approve
+  summary: Use a visible search action beside Settings navigation opening the guarded
+    search dialog.
+- id: retain
+  summary: Retain existing search interaction; do not implement the proposed modal.
+```

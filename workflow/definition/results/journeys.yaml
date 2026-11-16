@@ -1,40 +1,39 @@
 stage: prd-to-user-journey-audit
 status: PASS
 mode: targeted_revalidation
-generated_at: '2026-10-19T03:12:23+00:00'
+scope: Settled REC011 changes only; pending Limits/search proposal excluded. Historical
+  unrelated journeys preserved; runtime reachability remains unverified.
 validated_inputs:
 - path: docs/web-console-prd.md
-  revision: sha256:4359e38faed45eb8f4d3de087bfb51ba7608f9406149fb6311687117dfc1638b
+  revision: sha256:046771c8ca506a693e41e6085dbc3d850532a01960421f60d49ab74274fd374b
+- path: docs/web-console-prd-coverage.md
+  revision: sha256:bc9caab0c0371d91e734a076597880668978f691b732ef6be4f563f62a7be339
 - path: product/ux/01-information-architecture.md
-  revision: sha256:96c238d8305a5a9a790536792b834a89cd1964a6e0f5e044c9c8a83118f0d1b1
+  revision: sha256:6516927a729d0bd3e353470f4df17e7fc218699f512c5f50e3930cb21610163c
 - path: product/ux/02-interaction-patterns.md
-  revision: sha256:86ff134ae868bc265d51b5b2a10731ae30b4993a56b4d7de1a735d98de0a5e30
-- path: product/architecture/web-console-state-contract.md
-  revision: sha256:c8e22b5013d89090cc451cb2ef0290d7517b05bebae746faa15b65f10fca9848
-- path: product/security/web-console-security-contract.md
-  revision: sha256:8f66520798094a2638f006c9f3145e263e96008fdf63480fc6b98c2b0ccddc35
-- path: workflow/feedback/PO-FEEDBACK-2026-10-18-002/feedback.yaml
-  revision: sha256:0fea1b9dccbb13990dbada280d4019c3ae9637a0663bc0c8240770240b28e487
-- path: workflow/reconciliation/REC-RUN-010/reconciliation-result.yaml
-  revision: sha256:59c2d7ba9f4b05500ceed7ae781c243fba0a7e05269dec92826709c4c08d85a3
-- path: workflow/reconciliation/REC-RUN-010/03-remediation-backlog.md
-  revision: sha256:0447fd917119b396efe80e61611ea00296cafa55ed52734322378b045ddc7057
+  revision: sha256:287094b0d10d8902526ab1e12442b8d874b1ffe8cdea30d47ed95d94f9bee1ec
+- path: product/ux/06-feature-exceptions.md
+  revision: sha256:427142201d4c4d0e6fc17c19d957f6f4eb8355c651554f0892aefcc1590468cd
+- path: workflow/reconciliation/REC-RUN-011/reconciliation-result.yaml
+  revision: sha256:ebf8a0dbc9e4e2284b910d17f02371ef8aec0a37b2fcefb7ca3bf8267a5d4ed8
+- path: workflow/reconciliation/REC-RUN-011/06-specialist-basis.md
+  revision: sha256:4235ecf36f123878b9929392d95b9c9e16c77eccecbe6c15c3d8a833bd61fdc1
 artifact_changes:
 - path: docs/web-console-prd-user-journey-audit.md
-  summary: Narrow REC-038–041 journey/action/matrix propagation; preserve all inventories,
-    historical validation and UX5 scope.
-- path: workflow/definition/results/journeys.yaml
-  summary: Bounded journey PASS with exact authority revisions; no implementation
-    acceptance.
+  summary: Four-section correction/review, sanitized download, history hidden ingress,
+    Settings visibility and SMTP dialog lifecycle.
 changed_paths:
 - docs/web-console-prd-user-journey-audit.md
 - workflow/definition/results/journeys.yaml
 findings: []
 questions: []
 affected_requirements:
-- CONFIG-03
-- POLICY-02
-- POLICY-04
+- CONFIG-01
+- CONFIG-04
+- MIGRATE-03
+- UX-03
+- IDENT-04
+- UX-02
 affected_artifacts:
 - docs/web-console-prd-user-journey-audit.md
 reconciliation_required: false
@@ -44,23 +43,3 @@ change_impact:
   ux: false
   architecture: false
   security: false
-validation:
-  actors: 10
-  actor_context_rows: 25
-  capability_families: 79
-  journeys: 66
-  entry_points: 25
-  action_mappings: 125
-  coverage_rows: 66
-  specification_gaps: 0
-  implementation_tests_run: false
-  implementation_evidence: Not verified; targeted definition-only review
-  target_findings:
-  - REC-038
-  - REC-039
-  - REC-040
-  - REC-041
-  preserved_basis: Prior complete inventory and REC009/UX5 equivalence retained for
-    unaffected scope. No new source-authority changes by this stage.
-workflow_readiness: Journey-stage PASS only; Product UX validation and overall readiness
-  are orchestrator-owned.

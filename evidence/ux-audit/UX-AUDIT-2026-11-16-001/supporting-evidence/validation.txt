@@ -1,0 +1,35 @@
+VALID
+{
+  "blocked": 3,
+  "captured": 16,
+  "captured_viewports": {
+    "desktop": 14,
+    "narrow": 2
+  },
+  "entries": 19,
+  "evidence_origin": {
+    "seeded": 16,
+    "unavailable": 3
+  },
+  "findings": 4,
+  "journey_exercise_coverage": {
+    "denominator": 17,
+    "numerator": 14,
+    "percent": 82.4
+  },
+  "journeys": 17,
+  "journeys_exercised": 14,
+  "path_alignment": {
+    "documented": 19
+  },
+  "state_capture_coverage": {
+    "denominator": 19,
+    "numerator": 16,
+    "percent": 84.2
+  },
+  "unreachable": 0,
+  "viewports": {
+    "desktop": 17,
+    "narrow": 2
+  }
+}

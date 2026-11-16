@@ -1,0 +1,811 @@
+schema_version: 2
+contract_revision: '2026-08-18'
+audit:
+  audit_id: UX-AUDIT-2026-11-16-001
+  generated_at: '2026-11-16T19:27:40.701640+00:00'
+  product: secretsauce-mcp
+  build: 6810fe32ab0c461946a78751be82b7c21fedecd7
+  environment: Disposable HTTPS Docker fixtures
+  final_status: INCOMPLETE_COVERAGE
+  canonical_ux_sources:
+  - path: product/ux/manifest.yaml
+    revision: web-console-ux-6
+    authority: approved
+    product_owner_provenance:
+    - UX-DESIGN-005
+    - PO-REFINEMENT-010
+  journey_sources:
+  - docs/web-console-prd-user-journey-audit.md
+  surfaces:
+  - responsive-web
+  harness_revision: 6810fe32ab0c461946a78751be82b7c21fedecd7
+  execution:
+    mode: headless-container
+    command: See supporting-evidence/reproduce.md
+    headless: true
+    playwright_version: 1.64.0
+    browser: chromium
+    browser_version: 156.0.8078.4
+    container_image: mcr.microsoft.com/playwright:v1.64.0-noble
+    container_digest: sha256:06a9939e57531807f8d5fd76ce44b53165ffb7d7501d87ab10e285c20b1e971f
+    base_url: https://console.example.org:<ephemeral-port>
+    network: isolated container loopback; Chromium fixture DNS mapping
+    artifact_mount: evidence/ux-audit/UX-AUDIT-2026-11-16-001
+    state_reset: Each repository harness creates and removes a unique temporary ConsoleStore
+    seed_fixture: Existing populated-settings/navigation/approval synthetic fixtures; audit-owned
+      focused/remaining extensions of navigation fixture
+    locale: browser default en-US
+    timezone: container UTC
+    color_scheme: light default
+    reduced_motion: default; not forced
+    browser_versions:
+      chromium: 156.0.8078.4
+transaction:
+  owner: parent
+  parent_commit: 6810fe32ab0c461946a78751be82b7c21fedecd7
+  payload_commit: null
+coverage:
+  total_entries: 19
+  captured_entries: 16
+  blocked_entries: 3
+  unreachable_entries: 0
+  identified_journeys: 17
+  exercised_journeys: 14
+entries:
+- id: UXVIS-001
+  journey_id: Settings review
+  journey: Settings review
+  role: Owner
+  surface: responsive-web
+  viewport:
+    name: desktop
+    width: 1440
+    height: 1000
+    device_scale_factor: 1
+  route: /console
+  entry_point: Existing named HTTPS fixture harness visible navigation
+  state: review
+  interaction_state: review
+  preconditions: Synthetic enrolled Owner and fixture configuration; no live instance
+  interaction: See named harness and its browser report
+  expected_rules:
+  - source: product/ux/02-interaction-patterns.md
+    section: Shared interaction patterns
+    rule: UX-IN02
+  evidence_origin: seeded
+  navigation_provenance: ui-traversed
+  observed_at: '2026-11-16T19:27:40.701640+00:00'
+  screenshot: screenshots/settings/review-desktop.png
+  supporting_evidence: []
+  inspection:
+    visual: inspected
+    interaction: verified
+    accessibility: unverified
+    reviewed_at: '2026-11-16T19:27:40.701640+00:00'
+    notes: Visual inspected by audit agent (Settings review and Health by parent). Harness checks
+      selected keyboard behavior; full accessibility review remains incomplete.
+  status: captured
+  path_alignment: documented
+  notes: Existing fixture state; screenshots full page.
+- id: UXVIS-002
+  journey_id: Health and retention
+  journey: Health and retention
+  role: Owner
+  surface: responsive-web
+  viewport:
+    name: desktop
+    width: 1440
+    height: 1000
+    device_scale_factor: 1
+  route: /console
+  entry_point: Existing named HTTPS fixture harness visible navigation
+  state: populated
+  interaction_state: populated
+  preconditions: Synthetic enrolled Owner and fixture configuration; no live instance
+  interaction: See named harness and its browser report
+  expected_rules:
+  - source: product/ux/02-interaction-patterns.md
+    section: Shared interaction patterns
+    rule: UX-IN01
+  evidence_origin: seeded
+  navigation_provenance: ui-traversed
+  observed_at: '2026-11-16T19:27:40.701640+00:00'
+  screenshot: screenshots/settings/health-desktop.png
+  supporting_evidence: []
+  inspection:
+    visual: inspected
+    interaction: verified
+    accessibility: unverified
+    reviewed_at: '2026-11-16T19:27:40.701640+00:00'
+    notes: Visual inspected by audit agent (Settings review and Health by parent). Harness checks
+      selected keyboard behavior; full accessibility review remains incomplete.
+  status: captured
+  path_alignment: documented
+  notes: Existing fixture state; screenshots full page.
+- id: UXVIS-003
+  journey_id: Backup settings
+  journey: Backup settings
+  role: Owner
+  surface: responsive-web
+  viewport:
+    name: desktop
+    width: 1440
+    height: 1000
+    device_scale_factor: 1
+  route: /console
+  entry_point: Existing named HTTPS fixture harness visible navigation
+  state: saved draft
+  interaction_state: saved draft
+  preconditions: Synthetic enrolled Owner and fixture configuration; no live instance
+  interaction: See named harness and its browser report
+  expected_rules:
+  - source: product/ux/02-interaction-patterns.md
+    section: Shared interaction patterns
+    rule: UX-IN07
+  evidence_origin: seeded
+  navigation_provenance: ui-traversed
+  observed_at: '2026-11-16T19:27:40.701640+00:00'
+  screenshot: screenshots/settings/backups-desktop.png
+  supporting_evidence: []
+  inspection:
+    visual: inspected
+    interaction: verified
+    accessibility: unverified
+    reviewed_at: '2026-11-16T19:27:40.701640+00:00'
+    notes: Visual inspected by audit agent (Settings review and Health by parent). Harness checks
+      selected keyboard behavior; full accessibility review remains incomplete.
+  status: captured
+  path_alignment: documented
+  notes: Existing fixture state; screenshots full page.
+- id: UXVIS-004
+  journey_id: SMTP credentials
+  journey: SMTP credentials
+  role: Owner
+  surface: responsive-web
+  viewport:
+    name: narrow
+    width: 390
+    height: 1000
+    device_scale_factor: 1
+  route: /console
+  entry_point: Existing named HTTPS fixture harness visible navigation
+  state: populated
+  interaction_state: populated
+  preconditions: Synthetic enrolled Owner and fixture configuration; no live instance
+  interaction: See named harness and its browser report
+  expected_rules:
+  - source: product/ux/02-interaction-patterns.md
+    section: Shared interaction patterns
+    rule: UX-IN09
+  evidence_origin: seeded
+  navigation_provenance: ui-traversed
+  observed_at: '2026-11-16T19:27:40.701640+00:00'
+  screenshot: screenshots/settings/email-narrow.png
+  supporting_evidence: []
+  inspection:
+    visual: inspected
+    interaction: verified
+    accessibility: unverified
+    reviewed_at: '2026-11-16T19:27:40.701640+00:00'
+    notes: Visual inspected by audit agent (Settings review and Health by parent). Harness checks
+      selected keyboard behavior; full accessibility review remains incomplete.
+  status: captured
+  path_alignment: documented
+  notes: Existing fixture state; screenshots full page.
+- id: UXVIS-005
+  journey_id: Create service
+  journey: Create service
+  role: Owner
+  surface: responsive-web
+  viewport:
+    name: desktop
+    width: 1440
+    height: 1031
+    device_scale_factor: 1
+  route: /console
+  entry_point: Existing named HTTPS fixture harness visible navigation
+  state: editing
+  interaction_state: editing
+  preconditions: Synthetic enrolled Owner and fixture configuration; no live instance
+  interaction: See named harness and its browser report
+  expected_rules:
+  - source: product/ux/02-interaction-patterns.md
+    section: Shared interaction patterns
+    rule: UX-IN15
+  evidence_origin: seeded
+  navigation_provenance: ui-traversed
+  observed_at: '2026-11-16T19:27:40.701640+00:00'
+  screenshot: screenshots/navigation/create-desktop.png
+  supporting_evidence: []
+  inspection:
+    visual: inspected
+    interaction: verified
+    accessibility: unverified
+    reviewed_at: '2026-11-16T19:27:40.701640+00:00'
+    notes: Visual inspected by audit agent (Settings review and Health by parent). Harness checks
+      selected keyboard behavior; full accessibility review remains incomplete.
+  status: captured
+  path_alignment: documented
+  notes: Existing fixture state; screenshots full page.
+- id: UXVIS-006
+  journey_id: Edit service
+  journey: Edit service
+  role: Owner
+  surface: responsive-web
+  viewport:
+    name: desktop
+    width: 1440
+    height: 1031
+    device_scale_factor: 1
+  route: /console
+  entry_point: Existing named HTTPS fixture harness visible navigation
+  state: policy-empty
+  interaction_state: policy-empty
+  preconditions: Synthetic enrolled Owner and fixture configuration; no live instance
+  interaction: See named harness and its browser report
+  expected_rules:
+  - source: product/ux/02-interaction-patterns.md
+    section: Shared interaction patterns
+    rule: UX-IN15
+  evidence_origin: seeded
+  navigation_provenance: ui-traversed
+  observed_at: '2026-11-16T19:27:40.701640+00:00'
+  screenshot: screenshots/navigation/policy-desktop.png
+  supporting_evidence: []
+  inspection:
+    visual: inspected
+    interaction: verified
+    accessibility: unverified
+    reviewed_at: '2026-11-16T19:27:40.701640+00:00'
+    notes: Visual inspected by audit agent (Settings review and Health by parent). Harness checks
+      selected keyboard behavior; full accessibility review remains incomplete.
+  status: captured
+  path_alignment: documented
+  notes: Existing fixture state; screenshots full page.
+- id: UXVIS-007
+  journey_id: Service review
+  journey: Service review
+  role: Owner
+  surface: responsive-web
+  viewport:
+    name: desktop
+    width: 1440
+    height: 1000
+    device_scale_factor: 1
+  route: /console
+  entry_point: Existing named HTTPS fixture harness visible navigation
+  state: proposal
+  interaction_state: proposal
+  preconditions: Synthetic enrolled Owner and fixture configuration; no live instance
+  interaction: See named harness and its browser report
+  expected_rules:
+  - source: product/ux/02-interaction-patterns.md
+    section: Shared interaction patterns
+    rule: UX-IN17
+  evidence_origin: seeded
+  navigation_provenance: ui-traversed
+  observed_at: '2026-11-16T19:27:40.701640+00:00'
+  screenshot: screenshots/approval/new-desktop.png
+  supporting_evidence: []
+  inspection:
+    visual: inspected
+    interaction: verified
+    accessibility: unverified
+    reviewed_at: '2026-11-16T19:27:40.701640+00:00'
+    notes: Visual inspected by audit agent (Settings review and Health by parent). Harness checks
+      selected keyboard behavior; full accessibility review remains incomplete.
+  status: captured
+  path_alignment: documented
+  notes: Existing fixture state; screenshots full page.
+- id: UXVIS-008
+  journey_id: Service approval
+  journey: Service approval
+  role: Owner
+  surface: responsive-web
+  viewport:
+    name: desktop
+    width: 1440
+    height: 1000
+    device_scale_factor: 1
+  route: /console
+  entry_point: Existing named HTTPS fixture harness visible navigation
+  state: partial-acknowledgment
+  interaction_state: partial-acknowledgment
+  preconditions: Synthetic enrolled Owner and fixture configuration; no live instance
+  interaction: See named harness and its browser report
+  expected_rules:
+  - source: product/ux/02-interaction-patterns.md
+    section: Shared interaction patterns
+    rule: UX-IN17
+  evidence_origin: seeded
+  navigation_provenance: ui-traversed
+  observed_at: '2026-11-16T19:27:40.701640+00:00'
+  screenshot: screenshots/approval/exception-dialog-desktop.png
+  supporting_evidence: []
+  inspection:
+    visual: inspected
+    interaction: verified
+    accessibility: unverified
+    reviewed_at: '2026-11-16T19:27:40.701640+00:00'
+    notes: Visual inspected by audit agent (Settings review and Health by parent). Harness checks
+      selected keyboard behavior; full accessibility review remains incomplete.
+  status: captured
+  path_alignment: documented
+  notes: Existing fixture state; screenshots full page.
+- id: UXVIS-009
+  journey_id: Create service
+  journey: Create service
+  role: Owner
+  surface: responsive-web
+  viewport:
+    name: narrow
+    width: 320
+    height: 800
+    device_scale_factor: 1
+  route: /console
+  entry_point: Existing named HTTPS fixture harness visible navigation
+  state: editing-text200
+  interaction_state: editing-text200
+  preconditions: Synthetic enrolled Owner and fixture configuration; no live instance
+  interaction: See named harness and its browser report
+  expected_rules:
+  - source: product/ux/02-interaction-patterns.md
+    section: Shared interaction patterns
+    rule: UX-IN15
+  evidence_origin: seeded
+  navigation_provenance: ui-traversed
+  observed_at: '2026-11-16T19:27:40.701640+00:00'
+  screenshot: screenshots/navigation/create-320-text200.png
+  supporting_evidence: []
+  inspection:
+    visual: inspected
+    interaction: verified
+    accessibility: unverified
+    reviewed_at: '2026-11-16T19:27:40.701640+00:00'
+    notes: Visual inspected by audit agent (Settings review and Health by parent). Harness checks
+      selected keyboard behavior; full accessibility review remains incomplete.
+  status: captured
+  path_alignment: documented
+  notes: Existing fixture state; screenshots full page.
+- id: UXVIS-010
+  journey_id: Missing credential correction and section indicators
+  journey: Missing credential correction and section indicators
+  role: Owner
+  surface: responsive-web
+  viewport:
+    name: desktop
+    width: 1440
+    height: 1031
+    device_scale_factor: 1
+  route: /console
+  entry_point: Audit-owned extension of navigation HTTPS fixture
+  state: review blocked
+  interaction_state: review blocked
+  preconditions: Synthetic enrolled Owner and fixture configuration; no live instance
+  interaction: See supporting-evidence/focused-capture.mjs or remaining-capture.mjs; visible
+    UI actions after synthetic setup
+  expected_rules:
+  - source: product/ux/02-interaction-patterns.md
+    section: Shared interaction patterns
+    rule: UX-IN01/15
+  evidence_origin: seeded
+  navigation_provenance: ui-traversed
+  observed_at: '2026-11-16T19:27:40.701640+00:00'
+  screenshot: screenshots/focused/review-invalid.png
+  supporting_evidence:
+  - kind: fixture-script
+    path: supporting-evidence/focused-capture.mjs
+  inspection:
+    visual: inspected
+    interaction: verified
+    accessibility: unverified
+    reviewed_at: '2026-11-16T19:27:40.701640+00:00'
+    notes: Visually inspected by audit agent. Review-invalid and authentication-missing independently
+      inspected by parent. Interaction capture assertions verify reached state; exhaustive accessibility
+      unverified.
+  status: captured
+  path_alignment: documented
+  notes: Fresh disposable fixture; visually inspected. Owner only. Full-page screenshot; no
+    claim about unexercised role/mode variants.
+- id: UXVIS-011
+  journey_id: Import identity mapping correction
+  journey: Import identity mapping correction
+  role: representative permitted roles
+  surface: responsive-web
+  viewport:
+    name: desktop
+    width: 1440
+    height: 1000
+    device_scale_factor: 1
+  route: /console
+  entry_point: To be exercised through UI
+  state: unverified
+  interaction_state: not reached
+  preconditions: Dedicated deterministic state capture required
+  interaction: Not exercised in bounded capture pass
+  expected_rules: []
+  evidence_origin: unavailable
+  navigation_provenance: not-reached
+  observed_at: '2026-11-16T19:27:40.701640+00:00'
+  screenshot: null
+  supporting_evidence: []
+  status: blocked
+  path_alignment: documented
+  blocked_reason: Selected existing harness capture set does not provide inspected evidence
+    for this required state. Dedicated audit fixture/traversal remains needed.
+  notes: null
+- id: UXVIS-012
+  journey_id: Limits settings
+  journey: Limits settings
+  role: Owner
+  surface: responsive-web
+  viewport:
+    name: desktop
+    width: 1440
+    height: 1031
+    device_scale_factor: 1
+  route: /console
+  entry_point: Audit-owned extension of navigation HTTPS fixture
+  state: populated
+  interaction_state: populated
+  preconditions: Synthetic enrolled Owner and fixture configuration; no live instance
+  interaction: See supporting-evidence/focused-capture.mjs or remaining-capture.mjs; visible
+    UI actions after synthetic setup
+  expected_rules:
+  - source: product/ux/02-interaction-patterns.md
+    section: Shared interaction patterns
+    rule: UX-IN01
+  evidence_origin: seeded
+  navigation_provenance: direct-link
+  observed_at: '2026-11-16T19:27:40.701640+00:00'
+  screenshot: screenshots/remaining/limits.png
+  supporting_evidence:
+  - kind: fixture-script
+    path: supporting-evidence/remaining-capture.mjs
+  inspection:
+    visual: inspected
+    interaction: verified
+    accessibility: unverified
+    reviewed_at: '2026-11-16T19:27:40.701640+00:00'
+    notes: Visually inspected by audit agent. Review-invalid and authentication-missing independently
+      inspected by parent. Interaction capture assertions verify reached state; exhaustive accessibility
+      unverified.
+  status: captured
+  path_alignment: documented
+  notes: Fresh disposable fixture; visually inspected. Owner only. Full-page screenshot; no
+    claim about unexercised role/mode variants.
+- id: UXVIS-013
+  journey_id: People and access
+  journey: People and access
+  role: Owner
+  surface: responsive-web
+  viewport:
+    name: desktop
+    width: 1440
+    height: 1031
+    device_scale_factor: 1
+  route: /console
+  entry_point: Audit-owned extension of navigation HTTPS fixture
+  state: Owner list
+  interaction_state: Owner list
+  preconditions: Synthetic enrolled Owner and fixture configuration; no live instance
+  interaction: See supporting-evidence/focused-capture.mjs or remaining-capture.mjs; visible
+    UI actions after synthetic setup
+  expected_rules:
+  - source: product/ux/02-interaction-patterns.md
+    section: Shared interaction patterns
+    rule: UX-IN01
+  evidence_origin: seeded
+  navigation_provenance: direct-link
+  observed_at: '2026-11-16T19:27:40.701640+00:00'
+  screenshot: screenshots/remaining/people.png
+  supporting_evidence:
+  - kind: fixture-script
+    path: supporting-evidence/remaining-capture.mjs
+  inspection:
+    visual: inspected
+    interaction: verified
+    accessibility: unverified
+    reviewed_at: '2026-11-16T19:27:40.701640+00:00'
+    notes: Visually inspected by audit agent. Review-invalid and authentication-missing independently
+      inspected by parent. Interaction capture assertions verify reached state; exhaustive accessibility
+      unverified.
+  status: captured
+  path_alignment: documented
+  notes: Fresh disposable fixture; visually inspected. Owner only. Full-page screenshot; no
+    claim about unexercised role/mode variants.
+- id: UXVIS-014
+  journey_id: Activity and audit browsing
+  journey: Activity and audit browsing
+  role: Owner
+  surface: responsive-web
+  viewport:
+    name: desktop
+    width: 1440
+    height: 1031
+    device_scale_factor: 1
+  route: /console
+  entry_point: Audit-owned extension of navigation HTTPS fixture
+  state: populated
+  interaction_state: populated
+  preconditions: Synthetic enrolled Owner and fixture configuration; no live instance
+  interaction: See supporting-evidence/focused-capture.mjs or remaining-capture.mjs; visible
+    UI actions after synthetic setup
+  expected_rules:
+  - source: product/ux/02-interaction-patterns.md
+    section: Shared interaction patterns
+    rule: UX-IN01
+  evidence_origin: seeded
+  navigation_provenance: ui-traversed
+  observed_at: '2026-11-16T19:27:40.701640+00:00'
+  screenshot: screenshots/remaining/activity.png
+  supporting_evidence:
+  - kind: fixture-script
+    path: supporting-evidence/remaining-capture.mjs
+  inspection:
+    visual: inspected
+    interaction: verified
+    accessibility: unverified
+    reviewed_at: '2026-11-16T19:27:40.701640+00:00'
+    notes: Visually inspected by audit agent. Review-invalid and authentication-missing independently
+      inspected by parent. Interaction capture assertions verify reached state; exhaustive accessibility
+      unverified.
+  status: captured
+  path_alignment: documented
+  notes: Fresh disposable fixture; visually inspected. Owner only. Full-page screenshot; no
+    claim about unexercised role/mode variants.
+- id: UXVIS-015
+  journey_id: Configuration export and history
+  journey: Configuration export and history
+  role: Owner
+  surface: responsive-web
+  viewport:
+    name: desktop
+    width: 1440
+    height: 1031
+    device_scale_factor: 1
+  route: /console
+  entry_point: Audit-owned extension of navigation HTTPS fixture
+  state: export result
+  interaction_state: export result
+  preconditions: Synthetic enrolled Owner and fixture configuration; no live instance
+  interaction: See supporting-evidence/focused-capture.mjs or remaining-capture.mjs; visible
+    UI actions after synthetic setup
+  expected_rules:
+  - source: product/ux/02-interaction-patterns.md
+    section: Shared interaction patterns
+    rule: UX-IN01
+  evidence_origin: seeded
+  navigation_provenance: ui-traversed
+  observed_at: '2026-11-16T19:27:40.701640+00:00'
+  screenshot: screenshots/focused/export-inline.png
+  supporting_evidence:
+  - kind: fixture-script
+    path: supporting-evidence/focused-capture.mjs
+  inspection:
+    visual: inspected
+    interaction: verified
+    accessibility: unverified
+    reviewed_at: '2026-11-16T19:27:40.701640+00:00'
+    notes: Visually inspected by audit agent. Review-invalid and authentication-missing independently
+      inspected by parent. Interaction capture assertions verify reached state; exhaustive accessibility
+      unverified.
+  status: captured
+  path_alignment: documented
+  notes: Fresh disposable fixture; visually inspected. Owner only. Full-page screenshot; no
+    claim about unexercised role/mode variants.
+- id: UXVIS-016
+  journey_id: SMTP not-configured status
+  journey: SMTP not-configured status
+  role: representative permitted roles
+  surface: responsive-web
+  viewport:
+    name: desktop
+    width: 1440
+    height: 1000
+    device_scale_factor: 1
+  route: /console
+  entry_point: To be exercised through UI
+  state: unverified
+  interaction_state: not reached
+  preconditions: Dedicated deterministic state capture required
+  interaction: Not exercised in bounded capture pass
+  expected_rules: []
+  evidence_origin: unavailable
+  navigation_provenance: not-reached
+  observed_at: '2026-11-16T19:27:40.701640+00:00'
+  screenshot: null
+  supporting_evidence: []
+  status: blocked
+  path_alignment: documented
+  blocked_reason: Selected existing harness capture set does not provide inspected evidence
+    for this required state. Dedicated audit fixture/traversal remains needed.
+  notes: null
+- id: UXVIS-017
+  journey_id: Cross-browser accessibility
+  journey: Cross-browser accessibility
+  role: representative permitted roles
+  surface: responsive-web
+  viewport:
+    name: desktop
+    width: 1440
+    height: 1000
+    device_scale_factor: 1
+  route: /console
+  entry_point: To be exercised through UI
+  state: unverified
+  interaction_state: not reached
+  preconditions: Dedicated deterministic state capture required
+  interaction: Not exercised in bounded capture pass
+  expected_rules: []
+  evidence_origin: unavailable
+  navigation_provenance: not-reached
+  observed_at: '2026-11-16T19:27:40.701640+00:00'
+  screenshot: null
+  supporting_evidence: []
+  status: blocked
+  path_alignment: documented
+  blocked_reason: Selected existing harness capture set does not provide inspected evidence
+    for this required state. Dedicated audit fixture/traversal remains needed.
+  notes: null
+- id: UXVIS-018
+  journey_id: Missing credential correction and section indicators
+  journey: Missing credential correction and section indicators
+  role: Owner
+  surface: responsive-web
+  viewport:
+    name: desktop
+    width: 1440
+    height: 1031
+    device_scale_factor: 1
+  route: /console
+  entry_point: Audit-owned extension of navigation HTTPS fixture
+  state: missing value
+  interaction_state: missing value
+  preconditions: Synthetic enrolled Owner and fixture configuration; no live instance
+  interaction: See supporting-evidence/focused-capture.mjs or remaining-capture.mjs; visible
+    UI actions after synthetic setup
+  expected_rules:
+  - source: product/ux/02-interaction-patterns.md
+    section: Shared interaction patterns
+    rule: UX-IN01/15
+  evidence_origin: seeded
+  navigation_provenance: ui-traversed
+  observed_at: '2026-11-16T19:27:40.701640+00:00'
+  screenshot: screenshots/focused/authentication-missing.png
+  supporting_evidence:
+  - kind: fixture-script
+    path: supporting-evidence/focused-capture.mjs
+  inspection:
+    visual: inspected
+    interaction: verified
+    accessibility: unverified
+    reviewed_at: '2026-11-16T19:27:40.701640+00:00'
+    notes: Visually inspected by audit agent. Review-invalid and authentication-missing independently
+      inspected by parent. Interaction capture assertions verify reached state; exhaustive accessibility
+      unverified.
+  status: captured
+  path_alignment: documented
+  notes: Fresh disposable fixture; visually inspected. Owner only. Full-page screenshot; no
+    claim about unexercised role/mode variants.
+- id: UXVIS-019
+  journey_id: MCP authentication
+  journey: MCP authentication
+  role: Owner
+  surface: responsive-web
+  viewport:
+    name: desktop
+    width: 1440
+    height: 1031
+    device_scale_factor: 1
+  route: /console
+  entry_point: Audit-owned extension of navigation HTTPS fixture
+  state: legacy bearer mode
+  interaction_state: legacy bearer mode
+  preconditions: Synthetic enrolled Owner and fixture configuration; no live instance
+  interaction: See supporting-evidence/focused-capture.mjs or remaining-capture.mjs; visible
+    UI actions after synthetic setup
+  expected_rules:
+  - source: product/ux/02-interaction-patterns.md
+    section: Shared interaction patterns
+    rule: UX-IN01
+  evidence_origin: seeded
+  navigation_provenance: direct-link
+  observed_at: '2026-11-16T19:27:40.701640+00:00'
+  screenshot: screenshots/remaining/auth-settings.png
+  supporting_evidence:
+  - kind: fixture-script
+    path: supporting-evidence/remaining-capture.mjs
+  inspection:
+    visual: inspected
+    interaction: verified
+    accessibility: unverified
+    reviewed_at: '2026-11-16T19:27:40.701640+00:00'
+    notes: Visually inspected by audit agent. Review-invalid and authentication-missing independently
+      inspected by parent. Interaction capture assertions verify reached state; exhaustive accessibility
+      unverified.
+  status: captured
+  path_alignment: documented
+  notes: Fresh disposable fixture; visually inspected. Owner only. Full-page screenshot; no
+    claim about unexercised role/mode variants.
+findings:
+- id: UX-VIS-F001
+  category: CROSS_SURFACE_INCONSISTENCY
+  title: Settings effects and discovery use disclosures while service exceptions are immediately
+    visible
+  materiality: MEDIUM
+  evidence_ids:
+  - UXVIS-001
+  - UXVIS-002
+  - UXVIS-004
+  - UXVIS-007
+  observed: Settings review folds Security and operational effects. Health folds audit retention
+    and details. Settings search appears below the main content in a disclosure. Service review
+    displays exception bullets openly. UX6 deliberately scopes its new review presentation to
+    services; latest owner feedback requests changes in Settings. This difference requires interpretation,
+    not automatic defect classification.
+  governing_rules:
+  - source: product/ux/02-interaction-patterns.md
+    rule: UX-IN01/02
+  targeted_revalidation:
+  - UXVIS-001
+  - UXVIS-002
+  - UXVIS-004
+  - UXVIS-007
+- id: UX-VIS-F002
+  category: INTERACTION_MISMATCH
+  title: Guided service navigation retains the fifth Review entry
+  materiality: MEDIUM
+  evidence_ids:
+  - UXVIS-005
+  - UXVIS-006
+  - UXVIS-009
+  observed: Create shows five steps including Review; edit sidebar includes Review changes.
+    This matches the retained UX6 design but differs from the latest confirmed four-section
+    owner direction, which has not yet been adopted. The navigation harness verifies safe history
+    and non-secret draft preservation.
+  governing_rules:
+  - source: product/ux/02-interaction-patterns.md
+    rule: UX-IN15
+  targeted_revalidation:
+  - UXVIS-005
+  - UXVIS-006
+  - UXVIS-009
+- id: UX-VIS-F003
+  category: INTERACTION_MISMATCH
+  title: Missing credential review failure gives undifferentiated section recovery actions
+  materiality: HIGH
+  evidence_ids:
+  - UXVIS-010
+  - UXVIS-018
+  observed: Seeded draft has a named credential without a value. Review displays Service incomplete
+    or invalid followed by four Check section buttons, without identifying the credential or
+    affected section. Authentication shows Value missing near the bottom in a neutral panel;
+    section navigation has no issue cue. This is recovery-direction evidence against UX-IN01/15
+    precise actionable validation obligations. The owner-requested yellow-circle mechanism is
+    separately unadopted; this finding does not establish that particular design as authority.
+  governing_rules:
+  - source: product/ux/02-interaction-patterns.md
+    rule: UX-IN01/15
+  targeted_revalidation:
+  - UXVIS-010
+  - UXVIS-018
+- id: UX-VIS-F004
+  category: INTERACTION_MISMATCH
+  title: Configuration export renders inline text and history remains visible
+  materiality: MEDIUM
+  evidence_ids:
+  - UXVIS-015
+  observed: Clicking Export sanitized configuration renders named YAML text blocks beneath the
+    tools screen. Applied configuration history remains visible in its empty state. Latest confirmed
+    feedback asks for a downloadable importable YAML artifact and temporary hiding of the history
+    interface; those requests remain unadopted. This capture does not test cross-instance import
+    or populated history.
+  governing_rules:
+  - source: product/ux/02-interaction-patterns.md
+    rule: UX-IN01
+  targeted_revalidation:
+  - UXVIS-015
+handoff:
+  workflow: product-reconciliation
+  package_path: evidence/ux-audit/UX-AUDIT-2026-11-16-001

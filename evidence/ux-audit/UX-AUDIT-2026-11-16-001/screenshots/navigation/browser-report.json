@@ -1,0 +1,10 @@
+{
+  "result": "PASS",
+  "checks": [
+    "Legacy edit=5 and section=4 reach policy without false dirty; readonly Review alias maps correctly for Owner; create has five navigable steps and retains unsaved work.",
+    "Actual Back/Forward preserves tab, section and safe edits; deep links and refresh restore saved location; dirty Stay and Discard work; malformed section has explicit error.",
+    "Auditor readonly history and Member cannot inspect editor.",
+    "Legacy history preserves original URL and unsaved work; Settings remains guarded and reachable; policy scanning controls and exact custom fields survive Guided/Advanced/save/review/apply; desktop/narrow/text200 pass.",
+    "Custom HTTP methods preserved, malformed method rejected, current allowed decision observed after configuration change, session loss closes tester and clears protected work."
+  ]
+}

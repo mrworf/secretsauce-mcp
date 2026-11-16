@@ -4,7 +4,7 @@ status: ready_for_delivery_planning
 scope: Self-hosted single-organization web console initial release
 transaction:
   parent_commit: 08f988345860f140b934011ca3c05429dc3a1587
-  repository_commit: null
+  repository_commit: ff213d5a1803b337050149ebffc8ae2debaadee5
   pre_existing_dirty_paths:
   - codex-session-01a122f7-e70f-7440-b1ce-ca88b955e519.md
   - passwd
@@ -658,6 +658,10 @@ last_reconciliation:
   implementation_required: true
   implementation_ready: true
   delivery_planning_ready: true
+  definition_package:
+    status: current
+    path: workflow/definition/definition-package.yaml
+    revision: sha256:5cbab67a72563abc911de8c314ad900dd9da2614118a27fc4e3500d502ac5732
 feedback_source: workflow/feedback/PO-FEEDBACK-2026-10-17-001/feedback.yaml
 reconciliation_history:
 - id: REC-RUN-001
@@ -894,6 +898,8 @@ next_handoff:
   delivery_planning_ready: true
   readiness_basis: REC012 only remaining gate was targeted definition revalidation,
     now complete. No implementation or release acceptance implied.
+  repository_commit: ff213d5a1803b337050149ebffc8ae2debaadee5
+  definition_package_revision: sha256:5cbab67a72563abc911de8c314ad900dd9da2614118a27fc4e3500d502ac5732
 evidence_collection:
   REC-009:
     specialist: feedback2_overlap_evidence

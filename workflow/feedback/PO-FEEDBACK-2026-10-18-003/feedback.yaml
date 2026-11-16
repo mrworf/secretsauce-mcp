@@ -1,0 +1,811 @@
+schema_version: 1
+feedback_id: PO-FEEDBACK-2026-10-18-003
+product_id: secretsauce-mcp
+source:
+  type: product_owner
+  captured_from: pasted transcript in prompt
+  captured_at: '2026-10-19T04:31:36.269262+00:00'
+  references: []
+  notes:
+  - Source locators are transcript timestamps. Exact quoted excerpts preserve source
+    wording; speech fillers outside each material excerpt are omitted.
+  - The later explicit four-section Continue/Review and apply direction resolves the
+    earlier tentative Next/fifth-step proposal.
+  clarifications:
+  - captured_from: prompt
+    original: 1. hide it for now
+    resolves: PO-UNRESOLVED-009
+status: CONFIRMED
+transaction:
+  parent_commit: 6810fe32ab0c461946a78751be82b7c21fedecd7
+  repository_commit: null
+  pre_existing_dirty_paths:
+  - test-results/
+items:
+- id: PO-FB-149
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: on the services list, it says, "Draft, it needs configuration." Something
+    isn't assigned.
+  normalized: A draft service is shown as needing configuration and with a separate
+    missing-assignment indication.
+  scope:
+  - service-list
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:00:11–00:00:21
+- id: PO-FB-150
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: at the end of the day, I need to go in, so I think it's enough it says,
+    "Needs configuration."
+  normalized: Keep the service list status concise as Needs configuration; leave specific
+    missing-configuration explanations inside the service.
+  scope:
+  - service-list
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:00:40–00:00:46
+- id: PO-FB-151
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: And it says, "Services incomplete or invalid. Check destination, authentication,
+    value, availability, placement, and policy."
+  normalized: Review reports a broad incomplete/invalid message naming many configuration
+    areas.
+  scope:
+  - service-validation
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:01:09–00:01:16
+- id: PO-FB-152
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: Authentication is the one that's wrong.
+  normalized: In the reported example, the missing credential value in Authentication
+    is the actual problem, while other sections appear correct.
+  scope:
+  - service-validation
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:02:08–00:02:20
+- id: PO-FB-153
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: You have to be explicit.
+  normalized: Explain the specific configuration problem rather than listing every
+    possible section as potentially wrong.
+  scope:
+  - service-validation
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:02:08–00:02:20
+- id: PO-FB-154
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: authentication should be highlighted with a y- an exclamation mark inside
+    a yellow circle after authentication.
+  normalized: Mark affected configuration section names with a yellow circled exclamation
+    indicator.
+  scope:
+  - service-validation
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:02:50–00:02:58
+- id: PO-FB-155
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: It says, "Value missing," but it's gray. Nothing is grabbing my attention
+    that I need to set the value.
+  normalized: The missing credential value status is visually subdued and easy to
+    miss.
+  scope:
+  - service-credentials
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:03:00–00:03:11
+- id: PO-FB-156
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: You need to help me find what I need to set. I could miss this.
+  normalized: Make the missing value visibly identifiable in the Authentication section.
+  scope:
+  - service-credentials
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:03:00–00:03:17
+- id: PO-FB-157
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: and this applies generally. Like, if there is something in the configuration,
+    you can't just call out all the tabs and hope the user finds it. You need to c-
+    call attention to exactly what's missing.
+  normalized: Apply precise, visible identification of missing or invalid configuration
+    generally rather than giving a generic list of tabs.
+  scope:
+  - configuration-validation
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:03:20–00:03:37
+- id: PO-FB-158
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: All it says is, "Review changes. Review checks the complete service draft,
+    including sections you have not visited. Incomplete drafts can be saved for later
+    but cannot be activated." This is redundant information.
+  normalized: The guided Review changes step provides redundant explanatory text rather
+    than the actual review.
+  scope:
+  - guided-service-flow
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:04:18–00:04:29
+- id: PO-FB-159
+  classification: IDEA_OR_QUESTION
+  confirmation: CONFIRMED
+  original: And then when you do click that one, you instead get to the review changes
+    step, where you can see the new settings, you can click to see the changes, and
+    then you can approve the changes.
+  normalized: Earlier in the walkthrough, consider making the Review changes step
+    the actual review. The later four-section flow is the selected direction.
+  scope:
+  - guided-service-flow
+  tags: []
+  authority:
+    product_intent: exploratory
+  suggestions: []
+  ambiguity:
+  - Later explicit selection at 00:06:17–00:06:35 supersedes this tentative flow.
+  source_locator: 00:05:08–00:05:25
+- id: PO-FB-160
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: when I do a plain one, it says Continue. And only when I get to Access
+    and Policy does it say Review and Apply.
+  normalized: New-service creation already uses sequential Continue actions followed
+    by Review and Apply, unlike editing imported services.
+  scope:
+  - guided-service-flow
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:05:37–00:05:51
+- id: PO-FB-161
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: This is a invalid service input. Yeah, now I get one of those again where
+    it says like, "Hey, you have something wrong, but we won't tell you where."
+  normalized: New-service review also produces a generic invalid-input error without
+    locating the problem.
+  scope:
+  - service-validation
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:06:08–00:06:16
+- id: PO-FB-162
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: So I think the edit and the add new need to share a lot of this logic,
+    but I do think step number five, review, should go away, and t- uh, details, destination,
+    authentication should all say continue, and then access and policy should say
+    review and apply.
+  normalized: 'Use a consistent four-section guided flow for new and edited services:
+    Details, Destination and Authentication use Continue; Access and policy uses Review
+    and apply. Remove the separate fifth Review placeholder step while retaining the
+    actual review.'
+  scope:
+  - guided-service-flow
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:06:17–00:06:35
+- id: PO-FB-163
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: I have review draft changes, that goes to configuration. I have continue
+    setup, that goes to configuration. I can click on configuration. This is redundant
+    in so many ways.
+  normalized: Overview has multiple differently named routes to the same configuration
+    editor, including a review action that does not open review.
+  scope:
+  - service-overview
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:07:20–00:07:36
+- id: PO-FB-164
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: review draft changes should be the same as review and apply, so I go straight
+    to this, if that's possible. If something is missing, obviously, we can't do it.
+  normalized: Make Review draft changes a direct shortcut to the actual review when
+    the draft is ready; missing configuration prevents that shortcut from proceeding.
+  scope:
+  - service-overview
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:07:44–00:07:54
+- id: PO-FB-165
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: And it says, "Saved changes are waiting for review." That's not... Well,
+    that's technically true, but it's very different, right? Here are actually things
+    missing.
+  normalized: The overview says changes await review even when configuration is incomplete.
+  scope:
+  - service-overview
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:08:06–00:08:18
+- id: PO-FB-166
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: So on the overview, it probably should say missing or, you know...
+  normalized: Distinguish missing configuration from a draft ready for review in the
+    overview. Exact wording remains open.
+  scope:
+  - service-overview
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:08:06–00:08:22
+- id: PO-FB-167
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: in Unify, you say, "Choose who the imported account refers to." That's
+    great. And then it says, "Saved changes are waiting for review."
+  normalized: The identity-mapping explanation is helpful, but the same overview also
+    implies the draft is ready for review.
+  scope:
+  - service-overview
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:08:24–00:08:37
+- id: PO-FB-168
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: I don't think the second option here should be available, because we know
+    there are issues with this. But once the issues are resolved, review draft changes
+    should go directly to the review step,
+  normalized: Do not offer the review shortcut as available while known configuration
+    or identity-mapping issues remain; once resolved it should go directly to review.
+  scope:
+  - service-overview
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:08:41–00:08:55
+- id: PO-FB-169
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: you need to make sure that find a service and status are aligned, uh,
+    uh, vertically.
+  normalized: Align Find a service and Status at the top so differing helper-text
+    lengths do not offset their controls.
+  scope:
+  - service-list
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:09:12–00:09:39
+- id: PO-FB-170
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: get rid of the message about set credential values first, resolve mapping.
+    I don't think that makes any sense to have that there, because if I click it,
+    I should get that information under overview.
+  normalized: Remove the credential-value and mapping-specific messages from service
+    list rows; present those details in the service overview.
+  scope:
+  - service-list
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:09:41–00:09:50
+- id: PO-FB-171
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: This is very, very confusing, the applied configuration history.
+  normalized: Applied configuration history is confusing and its usefulness is unclear
+    to the Product Owner.
+  scope:
+  - configuration-history
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:10:41–00:11:09
+- id: PO-FB-172
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: I understand the import gateway. I understand the export.
+  normalized: Import and export are understandable capabilities.
+  scope:
+  - configuration-transfer
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:11:34–00:11:37
+- id: PO-FB-173
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: You can't just print something on the screen and hope for the best.
+  normalized: The current sanitized export displays configuration on screen rather
+    than providing the expected downloadable file.
+  scope:
+  - configuration-export
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:11:46–00:12:04
+- id: PO-FB-174
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: Export sanitized configuration should produce a Yaml file that I can take
+    to another Secret Sauce instance and import.
+  normalized: Export sanitized configuration as a downloadable YAML file that can
+    be imported into another SecretSauce instance.
+  scope:
+  - configuration-export
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:12:05–00:12:15
+- id: PO-FB-175
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: And for now, I think we can just skip apply configuration history. That,
+    that just doesn't make any sense to me. It's trying to do something. I'm sure
+    at some point I, I gave a reason for why we needed this, but at this point, I
+    don't think it makes any sense.
+  normalized: Hide the applied configuration history/reuse console interface for now;
+    retain the underlying history and revision-reuse capability.
+  scope:
+  - configuration-history
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:12:15–00:12:34
+- id: PO-FB-176
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: you have a, like a folded security and operational effect.
+  normalized: Settings review hides Security and operational effect in a disclosure
+    despite its short contents.
+  scope:
+  - settings-review
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:13:26–00:13:46
+- id: PO-FB-177
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: It's two lines of text. Just have it there, visible.
+  normalized: Show Security and operational effect directly in Settings review without
+    requiring expansion.
+  scope:
+  - settings-review
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:13:42–00:13:46
+- id: PO-FB-178
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: you're showing identical values, but you're showing it in a way where
+    I can't visually make a comparison anymore, uh, because you're formatting it differently.
+  normalized: Secret-detection rule and timeout values are formatted differently across
+    the Settings comparison, making even identical values difficult to compare.
+  scope:
+  - settings-review
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:13:59–00:14:15
+- id: PO-FB-179
+  classification: PREFERENCE
+  confirmation: CONFIRMED
+  original: That was kind of difficult to see.
+  normalized: Settings comparisons should be easy to compare visually.
+  scope:
+  - settings-review
+  tags: []
+  authority:
+    product_intent: advisory
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:14:20–00:14:21
+- id: PO-FB-180
+  classification: IDEA_OR_QUESTION
+  confirmation: CONFIRMED
+  original: Why would I edit the required scope? Isn't that something we are required
+    to have?
+  normalized: Explain or evaluate why required MCP scopes are editable and what they
+    mean; no change to scope semantics was selected.
+  scope:
+  - mcp-authentication-settings
+  tags: []
+  authority:
+    product_intent: exploratory
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:15:22–00:15:28
+- id: PO-FB-181
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: Here, you're doing all the folded things again. There's like advanced
+    HTTP and authentication, references and retained state, requests and responses,
+    scanner capacity, advanced regex workers.
+  normalized: Limits settings contain many folded groups and are experienced as messy.
+  scope:
+  - limits-settings
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:15:44–00:15:55
+- id: PO-FB-182
+  classification: PREFERENCE
+  confirmation: CONFIRMED
+  original: You need to take a page from the services work.
+  normalized: Use the improved services configuration organization as direction for
+    Limits settings.
+  scope:
+  - limits-settings
+  tags: []
+  authority:
+    product_intent: advisory
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:15:44–00:15:55
+- id: PO-FB-183
+  classification: IDEA_OR_QUESTION
+  confirmation: CONFIRMED
+  original: This should probably, probably be sub-tabs, because that's a lot of information.
+  normalized: Consider subtabs to organize Limits settings instead of many expandable
+    groups.
+  scope:
+  - limits-settings
+  tags: []
+  authority:
+    product_intent: exploratory
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:15:56–00:16:06
+- id: PO-FB-184
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: why are you having tabs like secret detection, MCP, authentication, limits,
+    email, et cetera, and then on top of the screen, you're also saying secret detection?
+    Seems redundant.
+  normalized: Repeating the selected Settings tab name as a page heading feels redundant.
+  scope:
+  - settings-layout
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:16:31–00:16:44
+- id: PO-FB-185
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: SMTP login, username, replace password. This is not a good one.
+  normalized: The current SMTP username/password replacement experience is unsatisfactory.
+  scope:
+  - smtp-credentials
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:16:57–00:17:03
+- id: PO-FB-186
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: you're using a single compress or fold, authentication username and password.
+    Just show it the whole time.
+  normalized: Keep the SMTP authentication/credential area visible without a disclosure.
+  scope:
+  - smtp-credentials
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:17:15–00:17:28
+- id: PO-FB-187
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: showing like current, current credentials, and then show the username,
+    and then you can replace it. That opens up a dialog to ask for username, password.
+    You can pre-fill the username, but the password has to be blank with a save and
+    cancel.
+  normalized: Show current SMTP credential information including the username; Replace
+    opens a dialog with the username prefilled, password blank, and Save/Cancel actions.
+  scope:
+  - smtp-credentials
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:17:36–00:18:05
+- id: PO-FB-188
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: If there is no credential set, you can have a button that says set credential.
+    And then, of course, you need a button that says clear cred- credential.
+  normalized: Provide Set credential when none is configured and a Clear credential
+    action.
+  scope:
+  - smtp-credentials
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:17:49–00:18:05
+- id: PO-FB-189
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: Again, look up best practices around this, because this is not a good
+    experience.
+  normalized: Research best practices for the SMTP credential management experience.
+  scope:
+  - smtp-credentials
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:18:07–00:18:11
+- id: PO-FB-190
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: On mail server, it says not configured, but you're showing it green.
+  normalized: Mail-server Not configured status is shown in green.
+  scope:
+  - smtp-status
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:18:12–00:18:24
+- id: PO-FB-191
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: That should probably be consistent with the rest and showing yellow. To
+    indicate that it's not configured.
+  normalized: Use yellow for the mail server Not configured state, consistent with
+    other incomplete configuration states.
+  scope:
+  - smtp-status
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:18:12–00:18:26
+- id: PO-FB-192
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: when I enter 24 and hit save for later, it says, "Check the highlighted
+    settings field."
+  normalized: The daily backup UTC-hour field permits entry of 24 and reports an error
+    only when saving.
+  scope:
+  - backup-settings
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:19:17–00:19:21
+- id: PO-FB-193
+  classification: IDEA_OR_QUESTION
+  confirmation: CONFIRMED
+  original: Probably wanna use a slider or prevent me from entering something wrong.
+  normalized: Consider a slider for the daily backup UTC hour; the selected broader
+    outcome is preventing invalid hour entry, not a required slider mechanism.
+  scope:
+  - backup-settings
+  tags: []
+  authority:
+    product_intent: exploratory
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:19:03–00:19:10
+- id: PO-FB-194
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: how about you come up with a way where I can't enter the wrong value?
+  normalized: Provide a daily backup UTC-hour control that prevents choosing an invalid
+    hour.
+  scope:
+  - backup-settings
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:19:35–00:19:38
+- id: PO-FB-195
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: How about the title should be, uh, keep backups for how many days, or
+    something like that, so it's obvious immediately what this is.
+  normalized: Make the backup-retention field label immediately clear that the value
+    is a number of days.
+  scope:
+  - backup-settings
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:19:43–00:19:58
+- id: PO-FB-196
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: I don't think we need another unfold all health details. Just rearrange
+    it so this is clearly available immediately.
+  normalized: Show health details directly in an organized layout rather than hiding
+    them behind Unfold all health details.
+  scope:
+  - health-retention-settings
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:20:41–00:20:53
+- id: PO-FB-197
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: And also, don't hide audit retention. Make that clearly visible.
+  normalized: Keep audit retention visibly available without a disclosure.
+  scope:
+  - health-retention-settings
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:20:55–00:21:00
+- id: PO-FB-198
+  classification: PREFERENCE
+  confirmation: CONFIRMED
+  original: If you put that underneath the, uh, the diagnostics, that would make much
+    more sense.
+  normalized: Prefer placing audit retention underneath diagnostics.
+  scope:
+  - health-retention-settings
+  tags: []
+  authority:
+    product_intent: advisory
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:21:01–00:21:10
+- id: PO-FB-199
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: Oh, I just noticed there's a find the settings. That's pretty neat.
+  normalized: Settings search is useful but was discovered late in the walkthrough.
+  scope:
+  - settings-search
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:21:13–00:21:22
+- id: PO-FB-200
+  classification: PREFERENCE
+  confirmation: CONFIRMED
+  original: Honestly, to find a setting, [sighs] it's pretty neat, but it probably
+    shouldn't be hidden here.
+  normalized: Make Settings search easier to discover rather than placing it at the
+    bottom.
+  scope:
+  - settings-search
+  tags: []
+  authority:
+    product_intent: advisory
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:21:37–00:21:53
+- id: PO-FB-201
+  classification: IDEA_OR_QUESTION
+  confirmation: CONFIRMED
+  original: Maybe in settings, on the, the tabs on the left, you just need to have
+    a place where there's a button to click to search that opens up a modal where
+    you can type in what you're looking for, and then it gives the links.
+  normalized: Consider a search button near the Settings section navigation that opens
+    a modal with a query field and result links.
+  scope:
+  - settings-search
+  tags: []
+  authority:
+    product_intent: exploratory
+  suggestions: []
+  ambiguity: []
+  source_locator: 00:21:57–00:22:16
+unresolved: []
+handoff:
+  reconciliation_ready: false
+  next_workflow: null

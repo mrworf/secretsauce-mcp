@@ -1,0 +1,7 @@
+{
+  "result": "PASS",
+  "checks": [
+    "Actual HTTPS explicit None selection, inline warning, full Settings recent authentication and bound risk acknowledgment; password remains blank",
+    "Reload preserves selected mode; TLS save alone does not activate"
+  ]
+}

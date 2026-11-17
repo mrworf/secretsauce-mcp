@@ -27,8 +27,31 @@ const newIdSchema = z.string().regex(/^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,79}$/);
 const saveSchema = z.object({ id: idSchema, base: z.number().int().nonnegative(), generation: z.number().int().nonnegative(), service: managedDraftSchema, settings: z.object({ name: z.string().trim().min(1).max(100) }).strict().optional() }).strict();
 const reviewSchema = z.object({ id: idSchema }).strict();
 const applySchema = z.object({ id: idSchema, review: z.string().uuid(), acknowledgments: z.array(z.string()).max(200) }).strict();
+export interface ServiceIssue { section: number; path: Array<string | number>; message: string }
+// Only owned schema fields/indices are exposed. Validator text and input values can contain secrets.
+function serviceIssue(raw: PropertyKey[], missingValue = false): ServiceIssue {
+  const fields = new Set(['name','description','api_docs_url','type','destinations','base_url','id','name','schemes','hosts','ports','tls','verify','exact','suffix','regex','credentials','usage','kind','prefix','suffix','enforce','no_auth','access','users','policy','mode','rules','effect','priority','methods','paths','reason','secretlint','binary_response','scan','max_size']);
+  const path = raw.map(v => typeof v === 'number' ? v : fields.has(String(v)) ? String(v) : 'field');
+  const root = path[0], section = root === 'destinations' || root === 'tls' ? 1 : root === 'credentials' || root === 'no_auth' ? 2 : root === 'policy' || root === 'access' ? 3 : 0;
+  const index = typeof path[1] === 'number' ? path[1] + 1 : null;
+  const field = String(path.at(-1) ?? 'configuration').replaceAll('_',' ');
+  const prefix = root === 'destinations' ? 'Server'+(index ? ' '+index : '') : root === 'credentials' ? 'Credential'+(index ? ' '+index : '') : root === 'policy' ? 'Request '+(typeof path[2]==='number'?'rule '+(path[2]+1):'policy') : root === 'access' ? 'Service access' : 'Service';
+  return { section, path, message: missingValue ? prefix+': Set a credential value before review.' : prefix+': Check '+field+' — this setting is missing or invalid.' };
+}
+export function serviceConfigurationIssues(id: string, draft: ManagedServiceDraft | undefined, values: Record<string, ManagedCredential>): ServiceIssue[] {
+  if (!draft) return [{section:0,path:['name'],message:'Add the service configuration before review.'}];
+  const issues: ServiceIssue[] = (draft.credentials ?? []).flatMap((c,i) => !own(values,c.id)?.value ? [serviceIssue(['credentials',i],true)] : []);
+  try { normalizeManagedService(id,draft,Object.fromEntries(Object.entries(values).map(([k,v])=>[k,v.value]))); }
+  catch(error) {
+    const paths = error instanceof z.ZodError ? error.issues.map(i=>i.path) : ((error as {diagnostics?: Array<{configPath?: Array<string|number>}>}).diagnostics??[]).flatMap(d=>d.configPath?[d.configPath.slice(2)]:[]);
+    for(const path of paths.slice(0,50)) if(!(path[0]==='credentials'&&path[2]==='source'&&issues.some(i=>i.path[1]===path[1]))) issues.push(serviceIssue(path));
+    if(!paths.length&&!issues.length) issues.push({section:0,path:[],message:'The service configuration could not be validated. Check the supported configuration fields in Advanced.'});
+  }
+  for(const [index,d] of (draft.destinations??[]).entries()) { try {const u=new URL(d.base_url??'');if(!['http:','https:'].includes(u.protocol)||u.username||u.password||u.search||u.hash||(d.schemes??[]).some(v=>!['http','https'].includes(v)))throw Error();}catch{if(!issues.some(i=>i.path[0]==='destinations'&&i.path[1]===index))issues.push({section:1,path:['destinations',index,'base_url'],message:'Server '+(index+1)+': Use an HTTP or HTTPS URL without credentials, query or fragment.'});} }
+  return issues.slice(0,50);
+}
 export class ServiceManagementError extends Error {
-  constructor(message: string, readonly comparison?: unknown) { super(message); }
+  constructor(message: string, readonly comparison?: unknown, readonly issues?: ServiceIssue[]) { super(message); }
 }
 export class ConsoleServices {
   prepareFault?: () => void;
@@ -59,14 +82,15 @@ export class ConsoleServices {
   readiness(id: string) {
     const s = own(this.state.services, id)!;
     const missing = (c?: ManagedServiceDraft) => (c?.credentials ?? []).some(v => !own(s.values, v.id)?.value);
-    let activationBlocker: string | null = null;
-    const candidate = s.draft?.content ?? s.applied;
-    if (this.mappingIssues(id).length) activationBlocker = 'Resolve identity mapping first';
-    else if (!candidate) activationBlocker = 'Complete configuration first';
-    else if (missing(candidate)) activationBlocker = 'Set credential values first';
-    else try { normalizeManagedService(id, candidate, Object.fromEntries(Object.entries(s.values).map(([key,v]) => [key,v.value]))); }
-    catch { activationBlocker = 'Complete configuration first'; }
+    const issues = this.configurationIssues(id);
+    const activationBlocker = issues[0]?.message ?? null;
     return { readiness: s.applied && missing(s.applied) ? 'Value missing' : !s.applied ? 'Not configured' : 'Configured', activationBlocker };
+  }
+  configurationIssues(id: string): ServiceIssue[] {
+    const s=own(this.state.services,id); if(!s)return [];
+    const issues=serviceConfigurationIssues(id,s.draft?.content??s.applied,s.values);
+    if(this.mappingIssues(id).length)issues.unshift({section:3,path:['access','users'],message:'Choose who the imported accounts refer to in Resolve identity mappings.'});
+    return issues;
   }
   list(session: ConsoleSession) {
     const user = this.store.authorize(session, 'own');
@@ -79,12 +103,14 @@ export class ConsoleServices {
     this.actor(session); const key = this.parse(idSchema, id); const s = own(this.state.services, key);
     if (!s) throw new ServiceManagementError('Service unavailable. Reload Services.');
     return { id: key, revision: this.state.revision, lifecycle: s.lifecycle, applied: s.applied, draft: s.draft,
-      mappingFingerprint: this.fingerprint(key), mappingIssues: this.mappingIssues(key), assignments: s.assignments, credentials: Object.entries(s.values).map(([id, v]) => ({ id, available: !v.missing && Boolean(v.value), version: v.version, ...this.credentialAttribution(v), confirmation: this.credentialConfirmation(key,id), inUse: this.credentialInUse(s,id), appliedUse: Boolean(s.applied?.credentials?.some(c=>c.id===id)) })),
+      configurationIssues: this.configurationIssues(key), ...this.readiness(key), mappingFingerprint: this.fingerprint(key), mappingIssues: this.mappingIssues(key), assignments: s.assignments, credentials: Object.entries(s.values).map(([id, v]) => ({ id, available: !v.missing && Boolean(v.value), version: v.version, ...this.credentialAttribution(v), confirmation: this.credentialConfirmation(key,id), inUse: this.credentialInUse(s,id), appliedUse: Boolean(s.applied?.credentials?.some(c=>c.id===id)) })),
       exceptions: s.applied ? exceptions(s.applied) : [], activity: this.store.journal.entries().filter(e => e.target === key).map(e => ({ action: e.action, time: e.time, result: e.result, revision: e.revision, details: e.details })) };
   }
   private parse<T>(schema: z.ZodType<T>, value: unknown): T { const p = schema.safeParse(value); if (!p.success) throw new ServiceManagementError('Invalid service input. Check field types and supported settings.'); return p.data; }
   save(session: ConsoleSession, input: unknown) {
-    const actor = this.actor(session, true); const data = this.parse(saveSchema, input);
+    const actor = this.actor(session, true); const parsed=saveSchema.safeParse(input);
+    if(!parsed.success){const issues=parsed.error.issues.filter(i=>i.path[0]==='service').slice(0,50).map(i=>serviceIssue(i.path.slice(1)));throw new ServiceManagementError('Invalid service input. '+(issues[0]?.message??'Check the service reference and current draft version.'),undefined,issues);}
+    const data=parsed.data;
     validateDraftBounds(data.service);
     const current = own(this.state.services, data.id);
     if (!current && !newIdSchema.safeParse(data.id).success) throw new ServiceManagementError('Invalid new service identifier. Use 1–80 letters, numbers, dots, underscores or hyphens, starting with a letter or number.');
@@ -148,7 +174,7 @@ export class ConsoleServices {
   private candidate(session: ConsoleSession, id: string) {
     const actor = this.actor(session, true); const s = own(this.state.services, id); const draft = s?.draft;
     if (!s || !draft) throw new ServiceManagementError('Save a service draft before review.');
-    if(this.mappingIssues(id).length)throw new ServiceManagementError('mappings: Import has unresolved identities. Open Resolve identity mappings to choose an eligible account for each listed subject.');
+    if(this.mappingIssues(id).length)throw new ServiceManagementError('mappings: Import has unresolved identities. Open Resolve identity mappings to choose an eligible account for each listed subject.',undefined,this.configurationIssues(id));
     if (s.lifecycle === 'Archived') throw new ServiceManagementError('Service archived. Unarchive to Disabled before review.');
     if (draft.settings && actor.role !== 'Owner') throw new Error('Forbidden.');
     if (draft.base !== this.state.revision) throw this.stale(session, id);
@@ -158,9 +184,11 @@ export class ConsoleServices {
     if (!s.applied||s.recoveryReviewRequired) for (const grant of grants) {
       if (!this.store.state.users.some(u => u.id === grant && u.active && u.enrolled !== false && u.role !== 'Auditor') && !this.store.state.people?.external.some(e=>e.id===grant&&e.active) && !(grant==='bearer-dev'&&this.runtimeConfig.auth.mode==='bearer')) throw new ServiceManagementError('Access target no longer eligible. Select an active enrolled identity and review again.');
     }
+    const issues=this.configurationIssues(id);
+    if(issues.length)throw new ServiceManagementError('Service configuration is incomplete. '+issues.map(i=>i.message).join(' '),undefined,issues);
     let normalized: ServiceConfig;
     try { normalized = normalizeManagedService(id, draft.content, Object.fromEntries(Object.entries(s.values).map(([key, v]) => [key, v.value]))); }
-    catch { throw new ServiceManagementError('Service incomplete or invalid. Check destination, authentication value availability, placement and policy.'); }
+    catch { throw new ServiceManagementError('Service configuration could not be validated. Reload its current settings.'); }
     for (const d of normalized.destinations) {
       const url = new URL(d.baseUrl);
       if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || url.hash || url.search || d.schemes.some(v => !['http', 'https'].includes(v))) throw new ServiceManagementError('Invalid destination. Use HTTP or HTTPS without userinfo, query or fragment.');
@@ -290,8 +318,8 @@ export function bindConsoleServices(store: ConsoleStore, config: GatewayConfig):
 
 export function validateDraftBounds(draft: ManagedServiceDraft): void {
   if (JSON.stringify(draft).length > 262144 || (draft.policy?.rules.length ?? 0)>200) throw new ServiceManagementError('policy: Configuration exceeds bounded size or 200 rules.');
-  for (const r of draft.policy?.rules??[]) for (const field of ['hosts','paths'] as const) {
+  for (const [ruleIndex,r] of (draft.policy?.rules??[]).entries()) for (const field of ['hosts','paths'] as const) {
     if(r[field].length>100) throw new ServiceManagementError('policy.'+field+': At most 100 expressions per rule.');
-    for(const pattern of r[field]) { if(pattern.length>2048) throw new ServiceManagementError('policy.'+field+': Expression exceeds 2048 characters.');try {new RegExp(pattern);}catch {throw new ServiceManagementError('policy.'+field+': Invalid regular expression.');} }
+    for(const [patternIndex,pattern] of r[field].entries()) { if(pattern.length>2048) throw new ServiceManagementError('policy.'+field+': Expression exceeds 2048 characters.');try {new RegExp(pattern);}catch {throw new ServiceManagementError('policy.'+field+': Invalid regular expression.',undefined,[{section:3,path:['policy','rules',ruleIndex,field,patternIndex],message:'Request rule '+(ruleIndex+1)+': Enter a valid '+field+' regular expression.'}]);} }
   }
 }

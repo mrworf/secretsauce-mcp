@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fixture, setup } from './consoleFixtures.js';
 import { totp } from '../src/consoleCrypto.js';
-import { ConsoleServices } from '../src/consoleServices.js';
+import { ConsoleServices, serviceConfigurationIssues } from '../src/consoleServices.js';
 import { validateConfig, serviceDraft, normalizeManagedService } from '../src/config.js';
 import { TokenBroker } from '../src/tokens.js';
 import { AuditSink } from '../src/audit.js';
@@ -69,9 +69,9 @@ it('lists independent lifecycle, pending changes and readiness without leaking v
  const s=f.manager.state.services.baseline!;s.assignments=[f.session.userId];s.draft={base:0,generation:1,content:{...s.applied!,name:'Proposed name'}};
  expect(f.manager.list(f.session).services[0]).toMatchObject({lifecycle:'Active',hasDraft:true,readiness:'Configured',activationBlocker:null});
  s.applied!.no_auth=false;s.applied!.credentials=[{id:'key',usage:{kind:'header',name:'X-Key'}}];s.draft.content=structuredClone(s.applied!);
- expect(f.manager.list(f.session).services[0]).toMatchObject({lifecycle:'Active',hasDraft:true,readiness:'Value missing',activationBlocker:'Set credential values first'});
+ expect(f.manager.list(f.session).services[0]).toMatchObject({lifecycle:'Active',hasDraft:true,readiness:'Value missing',activationBlocker:'Credential 1: Set a credential value before review.'});
  s.values.key={value:'synthetic-private-value',version:1,changed:Date.now()};expect(JSON.stringify(f.manager.list(f.session))).not.toContain('synthetic-private-value');expect(f.manager.list(f.session).services[0]).toMatchObject({readiness:'Configured',activationBlocker:null});
- s.draft.missingMappings=['old'];expect(f.manager.list(f.session).services[0]).toMatchObject({activationBlocker:'Resolve identity mapping first'});
+ s.draft.missingMappings=['old'];expect(f.manager.list(f.session).services[0]).toMatchObject({activationBlocker:'Choose who the imported accounts refer to in Resolve identity mappings.'});
  f.store.state.users[0]!.role='Auditor';expect(f.manager.list(f.session).writable).toBe(false);
  f.store.state.users[0]!.role='Member';expect(f.manager.list(f.session).services[0]).toMatchObject({hasDraft:false});expect(f.manager.list(f.session).services[0]).not.toHaveProperty('activationBlocker');s.assignments=[];expect(f.manager.list(f.session).services).toHaveLength(0);
 }finally{f.close();}});
@@ -121,3 +121,33 @@ it('binds confirmed execution access to current dependencies without changing dr
  f.manager.access(f.session,{...command,action:'remove',fingerprint:f.manager.fingerprint(id)});expect(f.manager.state.services.baseline!.assignments).toEqual([]);expect(f.cfg.services.baseline!.access.users).toEqual([]);expect(f.manager.state.services.baseline!.lifecycle).toBe('Active');
  save(f,{...draft(),access:{users:[user]}});expect(f.manager.state.services.new!.assignments).toEqual([]);expect(()=>f.manager.access(f.session,{...command,id:'new',fingerprint:f.manager.fingerprint('new')})).toThrow('reviewed initial');expect(f.cfg.services.new).toBeUndefined();
 }finally{f.close();}});
+
+describe('specific service readiness diagnostics',()=>{
+ it('retains invalid placement beside a missing value',()=>{const issues=serviceConfigurationIssues('example',{...draft(),no_auth:false,credentials:[{id:'key',usage:{kind:'header',enforce:true}}]},{});expect(issues).toEqual(expect.arrayContaining([expect.objectContaining({path:['credentials',0]}),expect.objectContaining({path:['credentials',0,'usage','enforce']})]));});
+ it('locates missing values without blaming valid destinations and removes the issue when set',()=>{
+  const f=managedFixture();try{
+   save(f,{...draft(),no_auth:false,credentials:[{id:'key',usage:{kind:'header'}}]});
+   const before=f.manager.detail(f.session,'new');expect(before.configurationIssues).toEqual([{section:2,path:['credentials',0],message:'Credential 1: Set a credential value before review.'}]);
+   try{f.manager.review(f.session,{id:'new'});throw Error('Review unexpectedly accepted');}catch(e){expect(e).toMatchObject({issues:before.configurationIssues});}
+   f.manager.credential(f.session,{id:'new',credential:'key',action:'create',value:'synthetic-private-value',confirmed:true});
+   expect(f.manager.detail(f.session,'new').configurationIssues).toEqual([]);
+   expect(JSON.stringify(f.manager.detail(f.session,'new'))).not.toContain('synthetic-private-value');
+  }finally{f.close();}
+ });
+ it('locates semantic destination and policy errors without echoing inputs',()=>{
+  const f=managedFixture();try{
+   save(f,{...draft(),destinations:[{id:'one',base_url:'https://user:synthetic-private@api.example.org'}]});
+   const d=f.manager.detail(f.session,'new');expect(d.configurationIssues).toMatchObject([{section:1,path:['destinations',0,'base_url']}]);expect(JSON.stringify(d.configurationIssues)).not.toContain('synthetic-private');
+   try{save(f,{...draft(),policy:{mode:'deny',rules:[{id:'rule',effect:'deny',priority:1,methods:['GET'],paths:['[']}]}});throw Error('Expected invalid policy');}catch(e){expect(e).toMatchObject({issues:[{section:3,path:['policy','rules',0,'paths',0]}]});}
+   save(f,draft());expect(f.manager.detail(f.session,'new').configurationIssues).toEqual([]);expect(()=>f.manager.review(f.session,{id:'new'})).not.toThrow();
+  }finally{f.close();}
+ });
+ it('reports strict schema paths safely and preserves active configuration under an incomplete draft',()=>{
+  const f=managedFixture();try{
+   save(f);apply(f);const live=f.cfg.services.new;
+   save(f,{name:'Incomplete'});expect(f.manager.detail(f.session,'new').configurationIssues.some(i=>i.section===1)).toBe(true);expect(f.cfg.services.new).toBe(live);expect(f.manager.detail(f.session,'new').lifecycle).toBe('Active');
+   try{save(f,{...draft(),destinations:[{id:'one',base_url:'invalid-synthetic-secret'}]});throw Error('Expected validation');}catch(e){expect(e).toMatchObject({issues:[{section:1,path:['destinations',0,'base_url']}]});expect(String(e)).not.toContain('invalid-synthetic-secret');}
+   f.store.state.users[0]!.role='Member';expect(()=>f.manager.detail(f.session,'new')).toThrow();
+  }finally{f.close();}
+ });
+});

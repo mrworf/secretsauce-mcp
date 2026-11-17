@@ -258,7 +258,7 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
         if (error instanceof SettingsError || error instanceof NotificationError) {reply(400,{message:error.message});return;}
         if (error instanceof PeopleError) { reply(400,{message:error.message});return; }
         if (error instanceof ServiceManagementError) {
-            reply(error.comparison ? 409 : 400, { message: error.message, ...(error.comparison ? { comparison: error.comparison } : {}) }); return;
+            reply(error.comparison ? 409 : 400, { message: error.message, ...(error.comparison ? { comparison: error.comparison } : {}), ...(error.issues ? { issues: error.issues } : {}) }); return;
         }
         if (error instanceof ConsoleOperationError) {
             reply(503, { message: error.message, operation: error.operation, status: 'uncertain' });

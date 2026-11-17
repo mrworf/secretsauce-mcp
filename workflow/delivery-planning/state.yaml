@@ -4,7 +4,7 @@ product_id: secretsauce-mcp
 status: ready
 transaction:
   parent_commit: 6e3d03668eb061a27aca488dfa6eb96b60508a20
-  repository_commit: null
+  repository_commit: f0b0116d0ac0d69c51c7983c62887e2a20ea0af2
   pre_existing_dirty_paths:
   - codex-session-01a122f7-e70f-7440-b1ce-ca88b955e519.md
   - passwd
@@ -89,7 +89,7 @@ transaction_history:
   - delivery/milestones/secretsauce-mcp/39-focused-guided-service-navigation.md
   - delivery/milestones/secretsauce-mcp/40-policy-scanning-override-markers.md
 validation:
-  publication: pending
+  publication: published
   checks: 'PASS: combined source/packet freshness, compiler/readiness gates, 12 remediation/53
     feedback mapping, completed-history preservation, delivery constraints, pending
     regression boundary, provenance and no product-code changes.'

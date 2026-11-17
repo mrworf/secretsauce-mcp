@@ -1,0 +1,9 @@
+{
+  "result": "PASS",
+  "scenario": "ux7",
+  "checks": [
+    "All Limits fields retained across five categories, one visible; saved dirty transition plus Back/Forward and narrow category select.",
+    "Search entered during delayed index load is replayed; result selects category and focuses control; Escape restores focus; Auditor sees readonly fields and no Owner backup search.",
+    "UTC hours00–23, retention unit, visible health/audit/effects, full review Before/After; dirty discard; desktop/narrow/text200 and visible text-range checks."
+  ]
+}

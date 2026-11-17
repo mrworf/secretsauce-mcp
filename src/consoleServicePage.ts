@@ -191,7 +191,7 @@ function advancedEditor(updateLocation=true){const editor=serviceEditor;if(!edit
 window.addEventListener('popstate',async e=>{
  const q=new URLSearchParams(location.search),targetIndex=e.state?.consoleIndex??serviceHistoryIndex,delta=targetIndex-serviceHistoryIndex;
  if(serviceHistoryBounce){e.stopImmediatePropagation();const next=serviceHistoryBounce;serviceHistoryBounce=null;next();return;}
- if(!serviceEditor&&!q.has('service')){serviceHistoryApproved=false;serviceHistoryIndex=targetIndex;return;}
+ if(!serviceEditor&&!q.has('service')&&!q.has('settings')&&!settingsDirty){serviceHistoryApproved=false;serviceHistoryIndex=targetIndex;return;}
  e.stopImmediatePropagation();
  const same=serviceEditor&&q.has('edit')&&(q.get('service')===serviceEditor.id||(serviceEditor.isNew&&q.get('service')==='new'));
  const bounce=next=>{if(delta){serviceHistoryBounce=next;history.go(-delta);}else next();};

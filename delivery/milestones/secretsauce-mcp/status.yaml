@@ -557,7 +557,7 @@ milestones:
 - id: '41'
   title: Complete service setup through precise guidance
   file: delivery/milestones/secretsauce-mcp/41-service-setup-and-readiness.md
-  status: pending
+  status: in_progress
   dependencies:
   - '25'
   - '26'
@@ -567,6 +567,7 @@ milestones:
   completed_at: null
   evidence: null
   notes: null
+  started_at: '2026-11-17T03:21:55.972467+00:00'
 - id: '42'
   title: Transfer configuration with usable YAML downloads
   file: delivery/milestones/secretsauce-mcp/42-configuration-transfer-tools.md
@@ -600,9 +601,9 @@ milestones:
   notes: null
 delivery_goal:
   product_id: secretsauce-mcp
-  status: completed
+  status: in_progress
   packet: delivery/milestones/secretsauce-mcp/status.yaml
-  packet_revision: sha256:ca8203b87749d7daa687ae69cab081b7e7290b782cbfc3bee28f1a9ed7b918a0
+  packet_revision: sha256:ccac4ef4ac561bf9730bdbec8c6c021d6131bd316282e0f1aaab3d8124c02886
   packet_contract_revisions:
   - path: delivery/milestones/secretsauce-mcp/10-secure-audited-setup.md
     revision: sha256:75dfd4caf24033efbc4ab14117b3245bf73439d34ed448c1c75a3700dafaa450
@@ -666,33 +667,43 @@ delivery_goal:
     revision: sha256:fcd477751aea4d1ebc0c0e6f220d190e2e960487e188fae72cb435788acf9d2f
   - path: delivery/milestones/secretsauce-mcp/40-policy-scanning-override-markers.md
     revision: sha256:96dc32cde7772dd345406bff305d62d76cbbcbb38e5ece7699f73fb75653011b
+  - path: delivery/milestones/secretsauce-mcp/41-service-setup-and-readiness.md
+    revision: sha256:02f2c8fb641743e4159a442d85471f8554d41f815b1e1ed243134ac0bcc97813
+  - path: delivery/milestones/secretsauce-mcp/42-configuration-transfer-tools.md
+    revision: sha256:3b294dbb1e86ca7ed4bda571105484010a06370ad5fdb8e2e68fd33faeb2833b
+  - path: delivery/milestones/secretsauce-mcp/43-settings-navigation-and-review.md
+    revision: sha256:82e614747d905ac4963c6e0393cbd61875e3453026463634ed5a493c125f9dd8
+  - path: delivery/milestones/secretsauce-mcp/44-smtp-credential-dialogs.md
+    revision: sha256:e69e8dc0c1a8201da891660489e076c608f6010dc5da73579c3eb8c733f2a32a
   - path: delivery/milestones/secretsauce-mcp/index.md
-    revision: sha256:617ffbb0a36eaa2670f6cc1c823aabf8943497f016fd6fa859939ff5f669c423
+    revision: sha256:c57f16f31bf791b8166276c6aa2122f85f1df4d7e539248e1e25800ff94e875e
   - path: delivery/milestones/secretsauce-mcp/traceability.md
-    revision: sha256:e32ca35b60fa425f329eb87c0fb178bfef84b27dc154d942f48d21a29c6aa54c
-  compiled_from_revision: sha256:b6aaa31cee5931dcc054f8806c12348e542be1116de423971caed0c2ee006884
+    revision: sha256:88dc3028f691e0bd86b197af50564476da7da1dad721b386845cf45a95895672
+  compiled_from_revision: sha256:13bd95baf6961fcb0e6e39c55a1951258c986fa07e7961d076e3a4b3d455a638
   source_path: workflow/definition/definition-package.yaml
-  source_revision: sha256:1b768e553581d190a3a4a7b8f97883ef8ad632d130f71eb6ac96609a9891e3dd
-  source_commit: 69611ec52040a3619e0e503b0abdc223e995f4a1
-  planning_commit: f75b7edd69e6927ac5d94292401dc23c36a45d5a
-  transaction_start_commit: d91fec4c990b365739c4cef9e76e4d810e2f0b48
+  source_revision: sha256:5cbab67a72563abc911de8c314ad900dd9da2614118a27fc4e3500d502ac5732
+  source_commit: ff213d5a1803b337050149ebffc8ae2debaadee5
+  planning_commit: f0b0116d0ac0d69c51c7983c62887e2a20ea0af2
+  transaction_start_commit: 07134e468754315a7acb76642f76b1256a2095b3
   pre_existing_dirty_paths:
+  - codex-session-01a122f7-e70f-7440-b1ce-ca88b955e519.md
+  - passwd
   - test-results/
   scope: remaining
-  start: '37'
+  start: null
   end: null
   milestone_ids:
-  - '37'
-  - '38'
-  - '39'
-  - '40'
+  - '41'
+  - '42'
+  - '43'
+  - '44'
   execution: autonomous
-  current_milestone: null
-  governing_plan: delivery/plans/secretsauce-mcp/milestone_40_plan_01.md
+  current_milestone: '41'
+  governing_plan: delivery/plans/secretsauce-mcp/milestone_41_plan_01.md
   blockers: []
-  resume_point: All fixed-scope milestones accepted.
-  started_at: '2026-10-19T03:24:08.050362+00:00'
-  completed_at: '2026-10-19T03:49:14.495596+00:00'
+  resume_point: M41 governing plan before implementation
+  started_at: '2026-11-17T03:21:55.972439+00:00'
+  completed_at: null
 compiled_from_history:
 - product_id: secretsauce-mcp
   input_mode: PRODUCT_BUILD
@@ -1709,6 +1720,100 @@ delivery_goal_history:
   resume_point: All fixed-scope milestones accepted.
   started_at: '2026-10-18T21:31:08.141046+00:00'
   completed_at: '2026-10-18T22:09:49.538299+00:00'
+- product_id: secretsauce-mcp
+  status: completed
+  packet: delivery/milestones/secretsauce-mcp/status.yaml
+  packet_revision: sha256:ca8203b87749d7daa687ae69cab081b7e7290b782cbfc3bee28f1a9ed7b918a0
+  packet_contract_revisions:
+  - path: delivery/milestones/secretsauce-mcp/10-secure-audited-setup.md
+    revision: sha256:75dfd4caf24033efbc4ab14117b3245bf73439d34ed448c1c75a3700dafaa450
+  - path: delivery/milestones/secretsauce-mcp/11-managed-service-configuration.md
+    revision: sha256:0974e1d0fc81faf4ae5f4377ca7fce379e46ae18b4a414cba5140d1f8f255d46
+  - path: delivery/milestones/secretsauce-mcp/12-people-and-account-recovery.md
+    revision: sha256:57194362bc790482574d6d431b2eeb13a9884b12635bcb601bbe76b8e665e6b6
+  - path: delivery/milestones/secretsauce-mcp/13-advanced-policy-and-migration.md
+    revision: sha256:31df199c8c7e8b0c1841fd46c5db92a1a46e72a7e6ace1eda707db4c710b5576
+  - path: delivery/milestones/secretsauce-mcp/14-mcp-client-access.md
+    revision: sha256:76083d3d4e6aa6ca3c117c4f85ba7058bec36cc1091da5333adee74bc12963fc
+  - path: delivery/milestones/secretsauce-mcp/15-operating-evidence-and-limits.md
+    revision: sha256:e97bae18495226b48f04cc8d22f083fab302077d272a060f18eeaaa63cab4f85
+  - path: delivery/milestones/secretsauce-mcp/16-encrypted-instance-backups.md
+    revision: sha256:e61b86ca883a0f8c00a3747f1a85a8f5bdf5abe60c27c9c4184843ccebeaeacf
+  - path: delivery/milestones/secretsauce-mcp/17-safe-instance-recovery.md
+    revision: sha256:397eefccf9a35158fa20ed5fb9b474c3ceb2760f6127a50f07d7537e99f52b1d
+  - path: delivery/milestones/secretsauce-mcp/18-assisted-identity-resets.md
+    revision: sha256:058282a2f57040e6d907714380c0bd3dc822bac5ae22163bde4f0e50c21869d3
+  - path: delivery/milestones/secretsauce-mcp/19-independent-smtp-deletion.md
+    revision: sha256:75391b813f07ef093ad984bbd128688371098c6213222a83e080e7dc3c254e65
+  - path: delivery/milestones/secretsauce-mcp/20-focused-settings-and-navigation.md
+    revision: sha256:ba3abebf8cc2d5f0ca224aa09528a01eb115b97b259d9f4c85ecffba2d5b51d4
+  - path: delivery/milestones/secretsauce-mcp/21-friendly-configuration-and-import.md
+    revision: sha256:3c798a833efec4ca41eeccad00c59f940bb8489eef91c10b36403a52ce90858c
+  - path: delivery/milestones/secretsauce-mcp/22-readable-forms-and-services.md
+    revision: sha256:7c341cedcd473371608a52ca10df6d2db4a92550606d9085beec700db3f85c92
+  - path: delivery/milestones/secretsauce-mcp/23-people-details-and-account-management.md
+    revision: sha256:e5a464cd4790f190968bfd3f178608047de0bdbd4ec3718bc095d60d3de8e4fa
+  - path: delivery/milestones/secretsauce-mcp/24-populated-settings-and-email-modes.md
+    revision: sha256:ac9202e661897b1a91b7d6c25ec9104bf80f413f9c731a04c1fddfe38591ae0e
+  - path: delivery/milestones/secretsauce-mcp/25-import-identity-recovery.md
+    revision: sha256:acae48dfee0a26b9d27844d2f9de3efa9a396d5e9c23c8ab0688693d7566daeb
+  - path: delivery/milestones/secretsauce-mcp/26-service-lifecycle-rows.md
+    revision: sha256:5f3dfea789b48b3af7a1eb6c6fae202021007abad4e3213cf114a580aaecdab4
+  - path: delivery/milestones/secretsauce-mcp/27-focused-service-editing.md
+    revision: sha256:0d370a4620fe2735c0dadf72ffefd3dac461d8c623fc8a524de66354d7032508
+  - path: delivery/milestones/secretsauce-mcp/28-destination-configuration.md
+    revision: sha256:cde93a45dd1875b91457607e6ca99ba4ed5e1c7c91fa3b6a0f1effb1bc86b58e
+  - path: delivery/milestones/secretsauce-mcp/29-durable-credential-clearing.md
+    revision: sha256:296fa434a3f9c1a56eb91c563a799e17ce2435844e7209febd61d8ab391cd86b
+  - path: delivery/milestones/secretsauce-mcp/30-credential-value-dialogs.md
+    revision: sha256:e286f937e8a65f3a15f9c18f47099429cbf381adec110d82ee44090d238cd0f7
+  - path: delivery/milestones/secretsauce-mcp/31-policy-rule-dialogs.md
+    revision: sha256:091b568d4f2cc62229e64b75ba7fcbdb70d4b5a4d8e79c2fc82cca04b1b8e786
+  - path: delivery/milestones/secretsauce-mcp/32-service-help-and-access.md
+    revision: sha256:4d17d6c5b9edab77e19c53edd65d378e53f4cb6c847251e0abc5189734498037
+  - path: delivery/milestones/secretsauce-mcp/33-service-navigation-and-testing.md
+    revision: sha256:a735038c10018854917eab261496330169c5ab8bb534bc6448518ea63b33b438
+  - path: delivery/milestones/secretsauce-mcp/34-credential-recovery-compatibility.md
+    revision: sha256:856b8ca1292721da166d7f6d4d054b6bca183bdf16b8c327041d0e8c06142f5b
+  - path: delivery/milestones/secretsauce-mcp/35-grouped-service-review.md
+    revision: sha256:a0f1b8b1f274f7136d968fff9cca64fbc4e9528e2c3050492e0315fb27da2bdf
+  - path: delivery/milestones/secretsauce-mcp/36-service-approval-and-exception-scope.md
+    revision: sha256:e520293cd424e876623b0b11de46908f2486403bf3feeea13a8c5767e4c38999
+  - path: delivery/milestones/secretsauce-mcp/37-default-proposed-settings-review.md
+    revision: sha256:dfa1673972d7a9f1a75a4bd9f7739472abd5de9f2fc21a494d609a016d605d27
+  - path: delivery/milestones/secretsauce-mcp/38-visible-review-exceptions.md
+    revision: sha256:a303cfd0545b2f4df896bbdd0f7dde6f585d2d79582d2a571d95de62425b2b47
+  - path: delivery/milestones/secretsauce-mcp/39-focused-guided-service-navigation.md
+    revision: sha256:fcd477751aea4d1ebc0c0e6f220d190e2e960487e188fae72cb435788acf9d2f
+  - path: delivery/milestones/secretsauce-mcp/40-policy-scanning-override-markers.md
+    revision: sha256:96dc32cde7772dd345406bff305d62d76cbbcbb38e5ece7699f73fb75653011b
+  - path: delivery/milestones/secretsauce-mcp/index.md
+    revision: sha256:617ffbb0a36eaa2670f6cc1c823aabf8943497f016fd6fa859939ff5f669c423
+  - path: delivery/milestones/secretsauce-mcp/traceability.md
+    revision: sha256:e32ca35b60fa425f329eb87c0fb178bfef84b27dc154d942f48d21a29c6aa54c
+  compiled_from_revision: sha256:b6aaa31cee5931dcc054f8806c12348e542be1116de423971caed0c2ee006884
+  source_path: workflow/definition/definition-package.yaml
+  source_revision: sha256:1b768e553581d190a3a4a7b8f97883ef8ad632d130f71eb6ac96609a9891e3dd
+  source_commit: 69611ec52040a3619e0e503b0abdc223e995f4a1
+  planning_commit: f75b7edd69e6927ac5d94292401dc23c36a45d5a
+  transaction_start_commit: d91fec4c990b365739c4cef9e76e4d810e2f0b48
+  pre_existing_dirty_paths:
+  - test-results/
+  scope: remaining
+  start: '37'
+  end: null
+  milestone_ids:
+  - '37'
+  - '38'
+  - '39'
+  - '40'
+  execution: autonomous
+  current_milestone: null
+  governing_plan: delivery/plans/secretsauce-mcp/milestone_40_plan_01.md
+  blockers: []
+  resume_point: All fixed-scope milestones accepted.
+  started_at: '2026-10-19T03:24:08.050362+00:00'
+  completed_at: '2026-10-19T03:49:14.495596+00:00'
 regression_checkpoints:
   UX7-INTEGRATED:
     covered_milestones:

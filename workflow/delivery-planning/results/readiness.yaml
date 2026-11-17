@@ -1,21 +1,22 @@
 schema_version: 1
 specialist: milestone-readiness
 product_id: secretsauce-mcp
-input_mode: CHANGE_PLAN
+input_mode: PRODUCT_BUILD
 status: READY
-summary: "M37\u201340 ordered and locally executable; no M0 or blockers. Parent publication required."
+summary: "M41\u201344 ordered and locally executable; all completed providers preserved, no M0 or blockers; parent\
+  \ publication required."
 source:
   path: workflow/definition/definition-package.yaml
-  revision: sha256:1b768e553581d190a3a4a7b8f97883ef8ad632d130f71eb6ac96609a9891e3dd
-  repository_commit: 69611ec52040a3619e0e503b0abdc223e995f4a1
+  revision: sha256:5cbab67a72563abc911de8c314ad900dd9da2614118a27fc4e3500d502ac5732
+  repository_commit: ff213d5a1803b337050149ebffc8ae2debaadee5
 packet:
   path: delivery/milestones/secretsauce-mcp
   manifest: delivery/milestones/secretsauce-mcp/status.yaml
-  manifest_revision: sha256:6c7348024099b511739e48402b64ef0c34625ebf2036d8dc7abf9b7838a2c3de
-  compiler_revision: sha256:4bd2765bc19365cb7911731d53e13e33e6157cf15671c92651e5436ee33a0d8f
-  revision: sha256:ca8203b87749d7daa687ae69cab081b7e7290b782cbfc3bee28f1a9ed7b918a0
-  revision_method: SHA-256 of sorted packet path + NUL + sha256:file-digest lines joined with newline; all packet
-    files included.
+  manifest_revision: sha256:8920075fb948d77c9c6a0169a757fdb3aa18c69a371898c932c39d295544cfec
+  compiler_revision: sha256:3c01f1c74077d40e14f4433ce903d982465b09c669c1cab8169f3e24a3bf747b
+  revision: sha256:ccac4ef4ac561bf9730bdbec8c6c021d6131bd316282e0f1aaab3d8124c02886
+  revision_method: SHA-256 of sorted packet path + NUL + sha256:file-digest lines joined with newline (no trailing
+    newline); all packet files included.
   artifacts:
   - path: delivery/milestones/secretsauce-mcp/10-secure-audited-setup.md
     revision: sha256:75dfd4caf24033efbc4ab14117b3245bf73439d34ed448c1c75a3700dafaa450
@@ -79,120 +80,90 @@ packet:
     revision: sha256:fcd477751aea4d1ebc0c0e6f220d190e2e960487e188fae72cb435788acf9d2f
   - path: delivery/milestones/secretsauce-mcp/40-policy-scanning-override-markers.md
     revision: sha256:96dc32cde7772dd345406bff305d62d76cbbcbb38e5ece7699f73fb75653011b
+  - path: delivery/milestones/secretsauce-mcp/41-service-setup-and-readiness.md
+    revision: sha256:02f2c8fb641743e4159a442d85471f8554d41f815b1e1ed243134ac0bcc97813
+  - path: delivery/milestones/secretsauce-mcp/42-configuration-transfer-tools.md
+    revision: sha256:3b294dbb1e86ca7ed4bda571105484010a06370ad5fdb8e2e68fd33faeb2833b
+  - path: delivery/milestones/secretsauce-mcp/43-settings-navigation-and-review.md
+    revision: sha256:82e614747d905ac4963c6e0393cbd61875e3453026463634ed5a493c125f9dd8
+  - path: delivery/milestones/secretsauce-mcp/44-smtp-credential-dialogs.md
+    revision: sha256:e69e8dc0c1a8201da891660489e076c608f6010dc5da73579c3eb8c733f2a32a
   - path: delivery/milestones/secretsauce-mcp/index.md
-    revision: sha256:617ffbb0a36eaa2670f6cc1c823aabf8943497f016fd6fa859939ff5f669c423
+    revision: sha256:c57f16f31bf791b8166276c6aa2122f85f1df4d7e539248e1e25800ff94e875e
   - path: delivery/milestones/secretsauce-mcp/status.yaml
-    revision: sha256:6c7348024099b511739e48402b64ef0c34625ebf2036d8dc7abf9b7838a2c3de
+    revision: sha256:8920075fb948d77c9c6a0169a757fdb3aa18c69a371898c932c39d295544cfec
   - path: delivery/milestones/secretsauce-mcp/traceability.md
-    revision: sha256:e32ca35b60fa425f329eb87c0fb178bfef84b27dc154d942f48d21a29c6aa54c
-  order:
-  - '37'
-  - '38'
-  - '39'
-  - '40'
-  completed_ids_preserved:
-  - '10'
-  - '11'
-  - '12'
-  - '13'
-  - '14'
-  - '15'
-  - '16'
-  - '17'
-  - '18'
-  - '19'
-  - '20'
-  - '21'
-  - '22'
-  - '23'
-  - '24'
-  - '25'
-  - '26'
-  - '27'
-  - '28'
-  - '29'
-  - '30'
-  - '31'
-  - '32'
-  - '33'
-  - '34'
-  - '35'
-  - '36'
-  dependencies_unchanged: true
-artifacts:
-  prerequisite_manifest:
-    path: delivery/readiness/secretsauce-mcp/prerequisite-manifest.md
-    revision: sha256:ed269dbe86b1aa2b5b1892aaf94a1e1e3525b46eb21ace99efc2e0ad6f7b7c8e
-  readiness_report:
-    path: delivery/readiness/secretsauce-mcp/readiness-report.md
-    revision: sha256:7a4ab610cc8961ffb5471d234b0857990ab956ca51d9a5f1c8625f8e2f9b906f
-active_prerequisite_ids:
-- PRE-051
-- PRE-052
-- PRE-053
-- PRE-054
-- PRE-055
-prerequisite_count: 5
-historical_prerequisites_preserved: "PRE-001\u2013050 original text retained"
-confirmation_requests: []
-user_actions: []
+    revision: sha256:88dc3028f691e0bd86b197af50564476da7da1dad721b386845cf45a95895672
+reports:
+  prerequisite_manifest: delivery/readiness/secretsauce-mcp/prerequisite-manifest.md
+  readiness_report: delivery/readiness/secretsauce-mcp/readiness-report.md
+prerequisite_ids:
+- PRE-056
+- PRE-057
+- PRE-058
+- PRE-059
+- PRE-060
+confirmation_required: []
+user_actions_required: []
 external_dependencies: []
 unresolved_internal_prerequisites: []
 blockers: []
-next_milestone: '37'
+next_milestone: '41'
 affected_milestones:
-- '37'
-- '38'
-- '39'
-- '40'
+- '41'
+- '42'
+- '43'
+- '44'
 m0:
   disposition: Not required
-  reason: Existing shared foundations suffice
+  reason: Existing shared foundations and declared test/browser facilities suffice.
 checks:
-  dependency_order: PASS all31
-  history_preserved: "PASS M10\u201336 and completed goals"
-  authority_hashes: PASS17
-  local_https_browser: Current M36 actual evidence reused;13 frozen input hashes match; matching Chromium exists
-  clean_environment_simulation: PASS conceptual documented install
-  application_acceptance: 'Not run: implementation-owned'
+  dependency_order: PASS all35
+  history_preserved: "PASS completed M10\u201340 records/contracts and delivery goal/history unchanged"
+  authority_hashes: PASS package and current UX artifact/concept references
+  source_coverage: PASS12 remediations/53 feedback dispositions
+  local_https_browser: Pinned existing Playwright1.64 image verified; current audit reproduction reused, all named
+    harnesses exist
+  clean_environment_simulation: PASS conceptual documented install; no hidden generated assets or credentials
+  application_acceptance: 'Not run: consuming milestone responsibility'
   working_tree_diff_check: PASS
+  structural_validation: PASS35 records/contracts after readiness additions
 changed_paths:
-- delivery/milestones/secretsauce-mcp/37-default-proposed-settings-review.md
-- delivery/milestones/secretsauce-mcp/38-visible-review-exceptions.md
-- delivery/milestones/secretsauce-mcp/39-focused-guided-service-navigation.md
-- delivery/milestones/secretsauce-mcp/40-policy-scanning-override-markers.md
+- delivery/milestones/secretsauce-mcp/41-service-setup-and-readiness.md
+- delivery/milestones/secretsauce-mcp/42-configuration-transfer-tools.md
+- delivery/milestones/secretsauce-mcp/43-settings-navigation-and-review.md
+- delivery/milestones/secretsauce-mcp/44-smtp-credential-dialogs.md
 - delivery/readiness/secretsauce-mcp/prerequisite-manifest.md
 - delivery/readiness/secretsauce-mcp/readiness-report.md
 - workflow/delivery-planning/results/readiness.yaml
 execution_facilities:
-  browser_path: /tmp/secretsauce-feedback-browsers
-  browser_setup: PLAYWRIGHT_BROWSERS_PATH=/tmp/secretsauce-feedback-browsers npx playwright install chromium
+  browser_setup: npm ci; npx playwright install chromium under documented writable PLAYWRIGHT_BROWSERS_PATH, or
+    existing pinned Docker route
+  browser_container: mcr.microsoft.com/playwright:v1.64.0-noble
+  browser_image: sha256:06a9939e57531807f8d5fd76ce44b53165ffb7d7501d87ab10e285c20b1e971f
   full_suite: npm test -- --maxWorkers=2
-  constraint: No simultaneous browser/Docker workloads
+  constraint: Full suite runs at UX7-INTEGRATED without concurrent browser/Docker workloads; focused milestone checks
+    preserved.
 historical_external_evidence:
-  real_client_integration_status: deferred_NOT_RUN
-  authorization: workflow/delivery/local-validation-authorization.md
+  real_client_integration_status: Not certified by local readiness; no new external LLM prerequisite for bounded
+    scope
 transaction:
   owner: delivery-planning-orchestrator
-  parent_commit: 346ce2feaf2014052ced6eba1c52ce56150aa887
+  parent_commit: 6e3d03668eb061a27aca488dfa6eb96b60508a20
   repository_commit: null
   child_commit: false
   pre_existing_unrelated_paths:
+  - codex-session-01a122f7-e70f-7440-b1ce-ca88b955e519.md
+  - passwd
   - test-results/
   pre_existing_parent_paths:
-  - delivery/milestones/secretsauce-mcp/37-default-proposed-settings-review.md
-  - delivery/milestones/secretsauce-mcp/38-visible-review-exceptions.md
-  - delivery/milestones/secretsauce-mcp/39-focused-guided-service-navigation.md
-  - delivery/milestones/secretsauce-mcp/40-policy-scanning-override-markers.md
-  - delivery/milestones/secretsauce-mcp/status.yaml
-  - delivery/milestones/secretsauce-mcp/index.md
-  - delivery/milestones/secretsauce-mcp/traceability.md
+  - delivery/milestones/secretsauce-mcp/
   - workflow/delivery-planning/results/compiler.yaml
   - workflow/delivery-planning/state.yaml
 handoff:
   parent_action: Commit combined planning payload and finalize provenance
   next_skill: milestone-delivery-orchestrator
   manifest: delivery/milestones/secretsauce-mcp/status.yaml
-  start_milestone: '37'
+  start_milestone: '41'
   implementation_started: false
   ready_handoff_requires_parent_commit: true

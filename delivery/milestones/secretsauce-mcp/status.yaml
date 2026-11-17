@@ -8,35 +8,42 @@ status_values:
 - blocked
 compiled_from:
   product_id: secretsauce-mcp
-  input_mode: CHANGE_PLAN
+  input_mode: PRODUCT_BUILD
+  mode_reason: "Current validated UX7 definition package is the primary new authority;\
+    \ compile only remaining scope after completed M10\u201340. Historical REC012\
+    \ gate was discharged by committed definition handoff, not edited or consumed\
+    \ as a live unready CHANGE_PLAN."
   definition_package:
     path: workflow/definition/definition-package.yaml
-    revision: sha256:1b768e553581d190a3a4a7b8f97883ef8ad632d130f71eb6ac96609a9891e3dd
-    repository_commit: 69611ec52040a3619e0e503b0abdc223e995f4a1
+    revision: sha256:5cbab67a72563abc911de8c314ad900dd9da2614118a27fc4e3500d502ac5732
+    repository_commit: ff213d5a1803b337050149ebffc8ae2debaadee5
   effective_handoff:
     path: workflow/definition/state.yaml#next_handoff
-    revision: sha256:854a08a1b1161e1575550d562d15a5b82bf20ffc33e68acc2b5ff463936fc98d
-    revalidation_resolution: Committed UX6 and targeted journey revalidation satisfy
-      immutable REC010 historical definition gate. Compile only the current effective
-      definition handoff; preserve canonical reconciliation unchanged.
+    revision: sha256:dad1814d2feb8903344364c56b297922bc80c9e4e3c53507b968d26fb10ce95b
+    revalidation_resolution: Current committed definition handoff is ready; REC012
+      remains immutable historical provenance.
   reconciliation:
-    result: workflow/reconciliation/REC-RUN-010/reconciliation-result.yaml
-    revision: sha256:59c2d7ba9f4b05500ceed7ae781c243fba0a7e05269dec92826709c4c08d85a3
-    repository_commit: c4be1744e182b1ade7772268f3cf1e87dc0f4453
+    result: workflow/reconciliation/REC-RUN-012/reconciliation-result.yaml
+    revision: sha256:abb10f9459d4f783fbda984c2c9bfe1550164f8e649b4ee1b9bb0ddd772a3c74
+    repository_commit: 3661ed1c33bcacc07b6e952d861449685451b2df
     schema_version: 1
-    reconciliation_id: REC-RUN-010
-    change_id: REC-IMPACT-010
+    reconciliation_id: REC-RUN-012
+    change_id: REC-IMPACT-012
+    role: adopted scope trace; not unresolved canonical entry gate
     remediation_ids:
-    - REC-RM-030
-    - REC-RM-031
-    - REC-RM-032
-    - REC-RM-033
-    remediation: workflow/reconciliation/REC-RUN-010/03-remediation-backlog.md
-    remediation_revision: sha256:0447fd917119b396efe80e61611ea00296cafa55ed52734322378b045ddc7057
+    - REC-RM-034
+    - REC-RM-035
+    - REC-RM-036
+    - REC-RM-037
+    - REC-RM-038
+    - REC-RM-039
+    - REC-RM-040
+    - REC-RM-044
+    - REC-RM-045
+    - REC-RM-046
+    - REC-RM-047
+    - REC-RM-043
   authoritative_artifacts:
-    prd:
-      path: docs/web-console-prd.md
-      revision: sha256:4359e38faed45eb8f4d3de087bfb51ba7608f9406149fb6311687117dfc1638b
     security_contract:
       path: product/security/web-console-security-contract.md
       revision: sha256:8f66520798094a2638f006c9f3145e263e96008fdf63480fc6b98c2b0ccddc35
@@ -45,53 +52,56 @@ compiled_from:
       revision: sha256:c8e22b5013d89090cc451cb2ef0290d7517b05bebae746faa15b65f10fca9848
     coverage:
       path: docs/web-console-prd-coverage.md
-      revision: sha256:db1dc7d715ff3704c3d211e4edbcd99aa8ec3f77cce3fdc40bc148aa31237379
+      revision: sha256:bb53ee6f79f7aed57a08b12efb3017fa7c877ec41f03882503616f39046bd35e
     journeys:
       path: docs/web-console-prd-user-journey-audit.md
-      revision: sha256:77d2eb01dfe082853f384f77057884c1ab47dc63d4d003b1aada8f4f549fa7c3
+      revision: sha256:d187fa76ab07f238c508ce4137ea11e461029a97f07c65dabda316cc11634a44
     ux:
       path: product/ux/manifest.yaml
-      revision: sha256:644ce9361f8f39f6d0573ab30e279ab1c9974f2d87ade01e39648c7a9ee4f28a
-      declared_revision: web-console-ux-6
+      revision: sha256:310b3680ef3a4818f0534bd263d5a11b13c3ec3345d9a3576b67d5c140fb1273
+      declared_revision: web-console-ux-7
       manifest: product/ux/manifest.yaml
     ux_experience_brief:
       path: product/ux/experience-brief.yaml
-      revision: sha256:b90dafcca6018a932fccff34adcbc57cb85eb55f80ae05d27328b2d9a57ccabd
+      revision: sha256:5fc881d462926516839c0b7dfb3f95810577e71eb00c5ba7550e1c1fe4390849
     ux_overview:
       path: product/ux/00-overview.md
-      revision: sha256:308329ee038ccb7d81dc8c8b93a7d6690d52984d7e927724aababe593d955527
+      revision: sha256:49219f87045d7df5ddff17596acae3184efb831efa30946bfc6f59d296d3303b
     ux_information_architecture:
       path: product/ux/01-information-architecture.md
-      revision: sha256:96c238d8305a5a9a790536792b834a89cd1964a6e0f5e044c9c8a83118f0d1b1
+      revision: sha256:ea8c9403ba85d89629c24d53cc6bf4df35bb6a2e9aca27bf0bc9b79c41e21a8c
     ux_interaction_patterns:
       path: product/ux/02-interaction-patterns.md
-      revision: sha256:86ff134ae868bc265d51b5b2a10731ae30b4993a56b4d7de1a735d98de0a5e30
+      revision: sha256:32f5a1eaae242d7ec9b927b89a43eaff3697074466784ff72398a930501f929d
     ux_responsive_and_platform:
       path: product/ux/03-responsive-and-platform.md
-      revision: sha256:6ca567e3e1acd12ed50dd1b940a5493faf184002a7c02c6d5eca42e8c27fce42
+      revision: sha256:12d31bd6b2edcae481c81b8e9019c016e6acfdffa2332056d773d2167e085964
     ux_visual_system:
       path: product/ux/04-visual-system.md
-      revision: sha256:5abb1447256f95c7a0f27bb25aabe40cac82ab2a5db2858cff23518be248ba50
+      revision: sha256:b9d5adbf65afac795fa8fb9c8680619ff9f27f5d818ee6815fc1462a772b2abb
     ux_accessibility:
       path: product/ux/05-accessibility.md
-      revision: sha256:068d76d5f92a1f307a243954b8795b4588d9eba13cded4273f6fb4c29c97ee90
+      revision: sha256:a80ea533d94261433e613ac65547d1ce9e7e43921c1e3b05b9378f1a2b84cf43
     ux_feature_exceptions:
       path: product/ux/06-feature-exceptions.md
       revision: sha256:427142201d4c4d0e6fc17c19d957f6f4eb8355c651554f0892aefcc1590468cd
     ux_acceptance_checklist:
       path: product/ux/07-acceptance-checklist.md
-      revision: sha256:cf7193d981117c58f4107cafaee9c9e1b04b44534e9c9da563707c804650b59b
+      revision: sha256:a294f0e71455abffbf030a2caecd9196729abeeb93ad7bca104c6e741aaef7d1
     security:
       path: product/security/web-console-security-review.md
       revision: sha256:f5eee5bf9488489330c2632d7eabbd45c836ae2263ea2de9601ba789f99ede91
     architecture:
       path: product/architecture/web-console-architecture-review.md
       revision: sha256:45fef6181a75575800555c4da62a7c460a24b32f4673d8fe4c20885a63aeb08c
+    prd:
+      path: docs/web-console-prd.md
+      revision: sha256:046771c8ca506a693e41e6085dbc3d850532a01960421f60d49ab74274fd374b
   decisions:
     path: workflow/definition/decisions.md
-    revision: sha256:10b1853239659ff3467ec391fd1a0338cc7003fb828d60375da208240e37b815
+    revision: sha256:668197081b367e59ceac5d4a634720ba9369756a958ae4c2ae02696c65c5e3d3
   preservation_baseline:
-    repository_commit: 346ce2feaf2014052ced6eba1c52ce56150aa887
+    repository_commit: 6810fe32ab0c461946a78751be82b7c21fedecd7
     completed_milestones:
     - '10'
     - '11'
@@ -120,6 +130,10 @@ compiled_from:
     - '34'
     - '35'
     - '36'
+    - '37'
+    - '38'
+    - '39'
+    - '40'
     prior_manifest: docs/milestones/status.yaml
 milestones:
 - id: '10'
@@ -540,6 +554,50 @@ milestones:
     \ M37\u201340 goal complete; no deployment."
   started_at: '2026-10-19T03:43:01.456973+00:00'
   commit_hash: 678da0aafd6e45959a990cb1e66ac69845671297
+- id: '41'
+  title: Complete service setup through precise guidance
+  file: delivery/milestones/secretsauce-mcp/41-service-setup-and-readiness.md
+  status: pending
+  dependencies:
+  - '25'
+  - '26'
+  - '33'
+  - '38'
+  - '39'
+  completed_at: null
+  evidence: null
+  notes: null
+- id: '42'
+  title: Transfer configuration with usable YAML downloads
+  file: delivery/milestones/secretsauce-mcp/42-configuration-transfer-tools.md
+  status: pending
+  dependencies:
+  - '13'
+  - '25'
+  completed_at: null
+  evidence: null
+  notes: null
+- id: '43'
+  title: Find and review operational settings clearly
+  file: delivery/milestones/secretsauce-mcp/43-settings-navigation-and-review.md
+  status: pending
+  dependencies:
+  - '20'
+  - '24'
+  completed_at: null
+  evidence: null
+  notes: null
+- id: '44'
+  title: Manage SMTP credentials through a clear focused task
+  file: delivery/milestones/secretsauce-mcp/44-smtp-credential-dialogs.md
+  status: pending
+  dependencies:
+  - '19'
+  - '24'
+  - '30'
+  completed_at: null
+  evidence: null
+  notes: null
 delivery_goal:
   product_id: secretsauce-mcp
   status: completed
@@ -1147,6 +1205,120 @@ compiled_from_history:
     - '33'
     - '34'
     historical_manifest: docs/milestones/status.yaml
+- product_id: secretsauce-mcp
+  input_mode: CHANGE_PLAN
+  definition_package:
+    path: workflow/definition/definition-package.yaml
+    revision: sha256:1b768e553581d190a3a4a7b8f97883ef8ad632d130f71eb6ac96609a9891e3dd
+    repository_commit: 69611ec52040a3619e0e503b0abdc223e995f4a1
+  effective_handoff:
+    path: workflow/definition/state.yaml#next_handoff
+    revision: sha256:854a08a1b1161e1575550d562d15a5b82bf20ffc33e68acc2b5ff463936fc98d
+    revalidation_resolution: Committed UX6 and targeted journey revalidation satisfy
+      immutable REC010 historical definition gate. Compile only the current effective
+      definition handoff; preserve canonical reconciliation unchanged.
+  reconciliation:
+    result: workflow/reconciliation/REC-RUN-010/reconciliation-result.yaml
+    revision: sha256:59c2d7ba9f4b05500ceed7ae781c243fba0a7e05269dec92826709c4c08d85a3
+    repository_commit: c4be1744e182b1ade7772268f3cf1e87dc0f4453
+    schema_version: 1
+    reconciliation_id: REC-RUN-010
+    change_id: REC-IMPACT-010
+    remediation_ids:
+    - REC-RM-030
+    - REC-RM-031
+    - REC-RM-032
+    - REC-RM-033
+    remediation: workflow/reconciliation/REC-RUN-010/03-remediation-backlog.md
+    remediation_revision: sha256:0447fd917119b396efe80e61611ea00296cafa55ed52734322378b045ddc7057
+  authoritative_artifacts:
+    prd:
+      path: docs/web-console-prd.md
+      revision: sha256:4359e38faed45eb8f4d3de087bfb51ba7608f9406149fb6311687117dfc1638b
+    security_contract:
+      path: product/security/web-console-security-contract.md
+      revision: sha256:8f66520798094a2638f006c9f3145e263e96008fdf63480fc6b98c2b0ccddc35
+    architecture_contract:
+      path: product/architecture/web-console-state-contract.md
+      revision: sha256:c8e22b5013d89090cc451cb2ef0290d7517b05bebae746faa15b65f10fca9848
+    coverage:
+      path: docs/web-console-prd-coverage.md
+      revision: sha256:db1dc7d715ff3704c3d211e4edbcd99aa8ec3f77cce3fdc40bc148aa31237379
+    journeys:
+      path: docs/web-console-prd-user-journey-audit.md
+      revision: sha256:77d2eb01dfe082853f384f77057884c1ab47dc63d4d003b1aada8f4f549fa7c3
+    ux:
+      path: product/ux/manifest.yaml
+      revision: sha256:644ce9361f8f39f6d0573ab30e279ab1c9974f2d87ade01e39648c7a9ee4f28a
+      declared_revision: web-console-ux-6
+      manifest: product/ux/manifest.yaml
+    ux_experience_brief:
+      path: product/ux/experience-brief.yaml
+      revision: sha256:b90dafcca6018a932fccff34adcbc57cb85eb55f80ae05d27328b2d9a57ccabd
+    ux_overview:
+      path: product/ux/00-overview.md
+      revision: sha256:308329ee038ccb7d81dc8c8b93a7d6690d52984d7e927724aababe593d955527
+    ux_information_architecture:
+      path: product/ux/01-information-architecture.md
+      revision: sha256:96c238d8305a5a9a790536792b834a89cd1964a6e0f5e044c9c8a83118f0d1b1
+    ux_interaction_patterns:
+      path: product/ux/02-interaction-patterns.md
+      revision: sha256:86ff134ae868bc265d51b5b2a10731ae30b4993a56b4d7de1a735d98de0a5e30
+    ux_responsive_and_platform:
+      path: product/ux/03-responsive-and-platform.md
+      revision: sha256:6ca567e3e1acd12ed50dd1b940a5493faf184002a7c02c6d5eca42e8c27fce42
+    ux_visual_system:
+      path: product/ux/04-visual-system.md
+      revision: sha256:5abb1447256f95c7a0f27bb25aabe40cac82ab2a5db2858cff23518be248ba50
+    ux_accessibility:
+      path: product/ux/05-accessibility.md
+      revision: sha256:068d76d5f92a1f307a243954b8795b4588d9eba13cded4273f6fb4c29c97ee90
+    ux_feature_exceptions:
+      path: product/ux/06-feature-exceptions.md
+      revision: sha256:427142201d4c4d0e6fc17c19d957f6f4eb8355c651554f0892aefcc1590468cd
+    ux_acceptance_checklist:
+      path: product/ux/07-acceptance-checklist.md
+      revision: sha256:cf7193d981117c58f4107cafaee9c9e1b04b44534e9c9da563707c804650b59b
+    security:
+      path: product/security/web-console-security-review.md
+      revision: sha256:f5eee5bf9488489330c2632d7eabbd45c836ae2263ea2de9601ba789f99ede91
+    architecture:
+      path: product/architecture/web-console-architecture-review.md
+      revision: sha256:45fef6181a75575800555c4da62a7c460a24b32f4673d8fe4c20885a63aeb08c
+  decisions:
+    path: workflow/definition/decisions.md
+    revision: sha256:10b1853239659ff3467ec391fd1a0338cc7003fb828d60375da208240e37b815
+  preservation_baseline:
+    repository_commit: 346ce2feaf2014052ced6eba1c52ce56150aa887
+    completed_milestones:
+    - '10'
+    - '11'
+    - '12'
+    - '13'
+    - '14'
+    - '15'
+    - '16'
+    - '17'
+    - '18'
+    - '19'
+    - '20'
+    - '21'
+    - '22'
+    - '23'
+    - '24'
+    - '25'
+    - '26'
+    - '27'
+    - '28'
+    - '29'
+    - '30'
+    - '31'
+    - '32'
+    - '33'
+    - '34'
+    - '35'
+    - '36'
+    prior_manifest: docs/milestones/status.yaml
 delivery_goal_history:
 - product_id: secretsauce-mcp
   status: completed
@@ -1537,3 +1709,32 @@ delivery_goal_history:
   resume_point: All fixed-scope milestones accepted.
   started_at: '2026-10-18T21:31:08.141046+00:00'
   completed_at: '2026-10-18T22:09:49.538299+00:00'
+regression_checkpoints:
+  UX7-INTEGRATED:
+    covered_milestones:
+    - '41'
+    - '42'
+    - '43'
+    - '44'
+    status: pending
+    due: After all four outcomes and before release/local deployment or final packet
+      acceptance; a bounded stop leaves this obligation pending.
+    categories:
+    - full unit/integration suite
+    - build
+    - joined service import-correct-review and Settings search-edit-review browser
+      journeys
+    - SMTP timing/dependency browser regression
+    - role/error/navigation/accessibility and visual comparison
+    commands:
+    - npm test -- --maxWorkers=2
+    - npm run build
+    execution: Frozen source, no concurrent browser/Docker workloads during full suite.
+      Run browser checks separately with synthetic isolated HTTPS fixtures.
+    evidence: Record exact revision, focused versus broad qualification, commands/results
+      and matching approved/runtime visual comparisons.
+    escalation: First confirmed out-of-area regression expands focused scope; second
+      distinct regression or further spread requires full suite after focused repair.
+    conditional: Transport changes require actual self-signed HTTPS test; recovery/launcher
+      changes require existing Docker restart/recovery gates. No new external LLM
+      dependency for presentation-only scope.

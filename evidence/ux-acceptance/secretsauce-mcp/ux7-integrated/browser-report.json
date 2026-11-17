@@ -1,0 +1,10 @@
+{
+  "result": "PASS",
+  "scenario": "transfer",
+  "checks": [
+    "Actual browser downloaded-YAML import under fresh ID → precise missing credential cue → Set value → New settings review → required exception acknowledgement → active configuration, preserving exact policy literals/options.",
+    "Named gateway and optional catalog downloads via keyboard; transient error/retry and demoted Member rejection; no printed YAML or history UI.",
+    "Actual downloaded bytes reimported in second isolated store preserving identifiers, order, policy literals/options and catalogs; missing credentials required, no activation/live assignments/secrets.",
+    "Desktop,390px,320px and200% text screenshots; document and visible text-range reflow checks."
+  ]
+}

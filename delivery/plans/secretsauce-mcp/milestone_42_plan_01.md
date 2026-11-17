@@ -20,3 +20,7 @@ Slice01 in progress. Commit one complete transfer journey plus evidence. Resolve
 
 ## Completion
 Slice01 complete: build passed; 39 distinct focused provider tests passed; actual transfer browser scenario passed. Evidence: evidence/ux-acceptance/secretsauce-mcp/milestone42/acceptance.md and browser-report.json. Downloaded bytes reimport exactly into second disposable store; history remains backend-only. Visual inspection found and corrected narrow text squeezing through dedicated stacked controls. Remaining failures were fixture/locator issues, not product regressions. No out-of-area escalation. Full integrated regression remains outer-owned. Commit is the publication containing this plan.
+
+## Terminal qualification continuation
+At outer checkpoint ac158cf, extend the existing transfer browser scenario only to complete browser import of downloaded content under a fresh service ID, missing credential correction, actual New settings review and acknowledged activation. Existing exact-byte second-instance provider proof remains. Evidence belongs to evidence/ux-acceptance/secretsauce-mcp/ux7-integrated. No product mutation or new plan; wait for outer full-suite all-clear before Docker execution.
+Joined qualification PASS after explicit full-suite all-clear. Test-only continuation completes browser import/correction/New settings/acknowledged activation with fresh ID and exact policy preserved. Evidence: evidence/ux-acceptance/secretsauce-mcp/ux7-integrated/joined-browser.md and browser-report.json. No product changes or newly discovered defect.

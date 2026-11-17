@@ -584,15 +584,17 @@ milestones:
 - id: '44'
   title: Manage SMTP credentials through a clear focused task
   file: delivery/milestones/secretsauce-mcp/44-smtp-credential-dialogs.md
-  status: in_progress
+  status: completed
   dependencies:
   - '19'
   - '24'
   - '30'
-  completed_at: null
-  evidence: null
-  notes: null
+  completed_at: '2026-11-17T04:04:28.393683+00:00'
+  evidence: evidence/ux-acceptance/secretsauce-mcp/milestone44/acceptance.md
+  notes: Focused acceptance and actual browser visual evidence passed; UX7-INTEGRATED remains due before
+    goal completion.
   started_at: '2026-11-17T03:56:50.538585+00:00'
+  commit_hash: a70c8987647c2a0c631f0ecc2d1576ae8b9b03ac
 delivery_goal:
   product_id: secretsauce-mcp
   status: in_progress
@@ -692,10 +694,10 @@ delivery_goal:
   - '43'
   - '44'
   execution: autonomous
-  current_milestone: '44'
+  current_milestone: null
   governing_plan: delivery/plans/secretsauce-mcp/milestone_44_plan_01.md
   blockers: []
-  resume_point: M44 governing plan before implementation
+  resume_point: UX7-INTEGRATED final qualification due
   started_at: '2026-11-17T03:21:55.972439+00:00'
   completed_at: null
 compiled_from_history:

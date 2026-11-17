@@ -1,0 +1,28 @@
+{
+  "result": "PASS",
+  "source_commit": "ac158cf6df3a22101e75a37b4b001ca8cf481989",
+  "production_commit": "a70c8987647c2a0c631f0ecc2d1576ae8b9b03ac",
+  "source_tree": "6e8bbde22a5ae0e3005bd3d9613454eef2a04b04",
+  "full_suite": {
+    "command": "npm test -- --maxWorkers=2",
+    "environment": "Clean git archive of source_commit, existing locked node_modules, loopback permission, no concurrent Docker/browser workloads",
+    "files_passed": 78,
+    "tests_passed": 780,
+    "tests_failed": 0,
+    "duration_seconds": 111.23
+  },
+  "build": {
+    "command": "npm run build",
+    "result": "PASS"
+  },
+  "initial_workspace_run": {
+    "tests_passed": 779,
+    "tests_failed": 1,
+    "cause": "Documentation branding scanner included pre-existing untracked session Markdown. No product failure; unrelated file preserved and not manually inspected. Unchanged suite rerun in clean committed-source export."
+  },
+  "conditional_boundaries": {
+    "transport_changed": false,
+    "recovery_launcher_changed": false,
+    "deployment_performed": false
+  }
+}

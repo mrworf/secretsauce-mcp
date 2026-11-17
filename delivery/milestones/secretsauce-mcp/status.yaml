@@ -597,7 +597,7 @@ milestones:
   commit_hash: a70c8987647c2a0c631f0ecc2d1576ae8b9b03ac
 delivery_goal:
   product_id: secretsauce-mcp
-  status: in_progress
+  status: completed
   packet: delivery/milestones/secretsauce-mcp/status.yaml
   packet_revision: sha256:ccac4ef4ac561bf9730bdbec8c6c021d6131bd316282e0f1aaab3d8124c02886
   packet_contract_revisions:
@@ -697,9 +697,10 @@ delivery_goal:
   current_milestone: null
   governing_plan: delivery/plans/secretsauce-mcp/milestone_44_plan_01.md
   blockers: []
-  resume_point: UX7-INTEGRATED final qualification due
+  resume_point: "All fixed M41\u201344 outcomes and UX7-INTEGRATED qualification accepted. No deployment."
   started_at: '2026-11-17T03:21:55.972439+00:00'
-  completed_at: null
+  completed_at: '2026-11-17T04:12:08.708278+00:00'
+  evidence: evidence/qa/secretsauce-mcp/ux7-integrated/acceptance.md
 compiled_from_history:
 - product_id: secretsauce-mcp
   input_mode: PRODUCT_BUILD
@@ -1809,7 +1810,7 @@ regression_checkpoints:
     - '42'
     - '43'
     - '44'
-    status: pending
+    status: passed
     due: After all four outcomes and before release/local deployment or final packet acceptance; a bounded
       stop leaves this obligation pending.
     categories:
@@ -1823,9 +1824,13 @@ regression_checkpoints:
     - npm run build
     execution: Frozen source, no concurrent browser/Docker workloads during full suite. Run browser checks
       separately with synthetic isolated HTTPS fixtures.
-    evidence: Record exact revision, focused versus broad qualification, commands/results and matching
-      approved/runtime visual comparisons.
+    evidence: evidence/qa/secretsauce-mcp/ux7-integrated/acceptance.md
     escalation: First confirmed out-of-area regression expands focused scope; second distinct regression
       or further spread requires full suite after focused repair.
     conditional: Transport changes require actual self-signed HTTPS test; recovery/launcher changes require
       existing Docker restart/recovery gates. No new external LLM dependency for presentation-only scope.
+    completed_at: '2026-11-17T04:12:08.708278+00:00'
+    source_commit: ac158cf6df3a22101e75a37b4b001ca8cf481989
+    browser_commit: 5afb7c657d0eea56863782f970fd06c82f845c06
+    result: 780 tests / 78 files and build PASS; joined service browser and current Settings/SMTP qualification
+      PASS; no deployment.

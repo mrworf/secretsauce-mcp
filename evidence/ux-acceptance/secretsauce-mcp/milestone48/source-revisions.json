@@ -1,0 +1,11 @@
+{
+  "src/consoleMigration.ts": "sha256:20a251be7895da418f6526e116648818d6c3cae675a8551909500203db2dee97",
+  "src/consoleImportState.ts": "sha256:3995a91c6f9ecc70c20d269397f35824f0c74ce8993a7aac0b64b02f9626df5c",
+  "src/consoleStore.ts": "sha256:b4d08f11b58728cdbc9b65cd49be88b9c11db04e6ef10ca37c5c1d4263e8cbe9",
+  "src/consoleServices.ts": "sha256:39f2024d73be9a4a757955161e3f6c911f3637526642cb5f381363aa22af3091",
+  "src/consoleRestore.ts": "sha256:aab8fa0a54ad29e916e17dad9e548e8e32694dae7e6fc12da2dfd0be345b586e",
+  "src/consoleRestoreInstall.ts": "sha256:b98771111e0019068303e67e486423da04b2f75220763b803d5eeffbc726508e",
+  "src/consoleBackupSchema.ts": "sha256:b5bca21919edb26a3422cd243f5e82097473464dc77c0b90171e4a55bed35faa",
+  "src/consoleServicePage.ts": "sha256:6d548544ef901f71a5be0aefaf60b7ae523d97c41c40034a4758f55040526341",
+  "scripts/verify-console-advanced-browser.mjs": "sha256:af8a1815ab3b8a67afaa2d3c1b5f0991d1b9bf31a6da0649aa0ceb438d62e746"
+}

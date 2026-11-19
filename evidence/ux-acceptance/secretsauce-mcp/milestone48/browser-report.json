@@ -1,0 +1,12 @@
+{
+  "result": "PASS",
+  "scenario": "transfer",
+  "checks": [
+    "Actual browser collision import creates separate Imported name/ID and no inherited credentials or source grants; incomplete New settings review blocks approval; explicit value correction permits acknowledged activation with zero execution assignments; exact policy literals retained and subsequent draft discard preserves active state/value.",
+    "Legacy pending imported access reset is visible beside ordinary optional access, with no preselected identity or mapping screen.",
+    "Simulated unknown import response disables duplicate resubmission and offers Services inspection; no false no-partial-success claim.",
+    "Named gateway and optional catalog downloads via keyboard; transient error/retry and demoted Member rejection; no printed YAML or history UI.",
+    "Actual downloaded bytes reimported in second isolated store preserving identifiers, order, policy literals/options and catalogs; missing credentials required, no activation/live assignments/secrets.",
+    "Desktop,390px,320px and200% text screenshots; document and visible text-range reflow checks."
+  ]
+}

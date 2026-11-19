@@ -1,0 +1,30 @@
+{
+  "result": "PASS",
+  "source_commit": "70db8b72f9c89267cd572450f09b2ebb6b9ce8e2",
+  "source_tree": "a583d8ef441fe229b2c12cab49c53a196792737b",
+  "full_suite": {
+    "command": "npm test -- --maxWorkers=2",
+    "environment": "Clean tracked git archive; locked existing node_modules; loopback permission; no concurrent browser or Docker workload",
+    "files_passed": 82,
+    "tests_passed": 818,
+    "tests_failed": 0,
+    "duration_seconds": 119.14
+  },
+  "build": {
+    "command": "npm run build (npm test pretest)",
+    "result": "PASS"
+  },
+  "browser_evidence": [
+    "evidence/ux-acceptance/secretsauce-mcp/milestone49/acceptance.md",
+    "evidence/ux-acceptance/secretsauce-mcp/milestone50/acceptance.md",
+    "evidence/ux-acceptance/secretsauce-mcp/milestone51/acceptance.md"
+  ],
+  "conditional_boundaries": {
+    "transport_changed": false,
+    "recovery_changed": true,
+    "launcher_changed": false,
+    "docker_recovery_result": "docker-cleanhost-report.json",
+    "deployment_performed": false
+  },
+  "regression_disposition": "Initial six failures shared deliberate legacy fixture downgrade via normal commit; 70db8b7 constructs encrypted legacy fixture explicitly, preserving every assertion. No production rollback or weakened version fence."
+}

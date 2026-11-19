@@ -646,7 +646,7 @@ milestones:
   commit_hash: d2496150d81a37b9c49b04e2918a0ac803269dfb
 delivery_goal:
   product_id: secretsauce-mcp
-  status: in_progress
+  status: completed
   packet: delivery/milestones/secretsauce-mcp/status.yaml
   packet_revision: sha256:aecb1c78d3ab5b98ed84def92f74c56406a8e27f27b2d7046a0bdc9b9048bcb3
   packet_contract_revisions:
@@ -759,8 +759,10 @@ delivery_goal:
   current_milestone: null
   governing_plan: delivery/plans/secretsauce-mcp/milestone_51_plan_01.md
   blockers: []
-  resume_point: UX10-INTEGRATED final qualification due
+  resume_point: "All fixed M49\u2013M51 outcomes and UX10-INTEGRATED qualification accepted. No deployment."
   started_at: '2026-11-19T17:55:05.817958+00:00'
+  completed_at: '2026-11-19T18:45:45.480265+00:00'
+  evidence: evidence/qa/secretsauce-mcp/ux10-integrated/acceptance.md
 compiled_from_history:
 - product_id: secretsauce-mcp
   input_mode: PRODUCT_BUILD
@@ -2562,7 +2564,7 @@ regression_checkpoints:
     - '49'
     - '50'
     - '51'
-    status: pending
+    status: passed
     due: "After M49\u201351 and before deployment/final acceptance; explicit bounded stops retain this\
       \ obligation."
     categories:
@@ -2580,4 +2582,7 @@ regression_checkpoints:
       regression/spread triggers full suite after focused repairs.
     conditional: Changed transport requires actual self-signed HTTPS; changed recovery/launcher uses mandatory
       existing recovery/Docker gates.
-    evidence: null
+    evidence: evidence/qa/secretsauce-mcp/ux10-integrated/acceptance.md
+    source_commit: 70db8b72f9c89267cd572450f09b2ebb6b9ce8e2
+    completed_at: '2026-11-19T18:45:45.480265+00:00'
+    result: evidence/qa/secretsauce-mcp/ux10-integrated/regression-result.json

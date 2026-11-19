@@ -1,22 +1,20 @@
-# Web console delivery milestones — UX10 remaining delta
+# Web console delivery milestones — UX11 remaining delta
 
-Input mode **PRODUCT_BUILD**. Current validated package `workflow/definition/definition-package.yaml` revision `sha256:6ac2a12358abf60bee58ee1f5377ff7c119e06895d099b255cbac78182599b2c`, published payload `6a03a5523246e8b834aeceb97dc818de32fce461`, governs. All indexed hashes verified; passed definition gates consumed without rerunning them. REC015 is adopted provenance for six remaining remediations, not unresolved producer authority. Completed M10–48 and all prior regression history remain preserved. Accepted SEC-DEF-001 and SMTP exception remain.
+Input mode **PRODUCT_BUILD**. Published ready UX11 package `workflow/definition/definition-package.yaml` at `sha256:7d26ddded7fdb3cad794bee6c9b646d2c19e301ea39d89d7b1e051a6bebc4a50`, payload `681b71870514865f1ed6f89b366aca527d514e16`, closeout f6443a5 governs. Passed definition validations and explicit product/architecture/security preservation bridges consumed, not rerun. Adopted REC016 supplies four resolved outcomes, not a live unrevalidated CHANGE_PLAN gate. Completed M10–51 and prior goals/regression history remain unchanged.
 
-## Current outcomes
+## Current outcome
 
 | Milestone | Outcome | Dependencies | Status |
-|---|---|---|---|
-| [M49](49-clear-shared-console-tasks.md) | Use clear shared sign-in, Settings and service tasks | M43, M45, M48 | pending |
-| [M50](50-reviewed-credential-removal.md) | Remove credential configuration and eligible saved values on Apply | M49, M29, M34, M47 | pending |
-| [M51](51-archived-service-permanent-deletion.md) | Permanently delete an Archived service with retained evidence | M50 | pending |
+| --- | --- | --- | --- |
+| [M52](52-consistent-service-access.md) | Configure service access in one consistent place, with coherent service form/help/confirmation presentation | M47, M48, M49, M51 | pending |
 
-## Granularity and order
+## Granularity and dependency assessment
 
-M49 consolidates four small shared task-shell/presentation remediations; separate milestones for helper copy, warning, sign-in or transient Settings mounting would multiply gates without a substantial new outcome. Its finite demo is sign-in → stable Settings → service advisory/review/fix navigation, not an unbounded Settings redesign. M50 is the complete reviewed credential-removal transaction across UI/proposal/state/runtime/recovery. M51 separately delivers immediate Archived object destruction, a materially different lifecycle and confirmation risk, consuming M50's durable incarnation/dependency fences. No standalone foundation, catchall bucket, per-finding milestone or implementation slices. Earliest integrated demonstration is M49's existing task journey; earliest destructive demonstration is M50's saved-draft-only removal through actual Apply.
+One finite service-workflow outcome consolidates REC-RM-064–067. The substantial change is one Access destination across initial/current state; width/helper/quote are small repairs within the same service shell and review/task family. They introduce no distinct trust or rollout model, so separate milestones would duplicate gates. This is not a general UI cleanup bucket: acceptance enumerates only those four outcomes. No foundation, per-finding milestones, implementation slices or milestone-count target. Dependencies consume existing draft/history, import, compact-form and typed-deletion contracts. Earliest integrated demonstration is new unsaved service → Access → Configuration/Advanced → review/Apply, followed by current Access independent of a draft.
 
-## Validation and boundaries
+## Validation and handoff
 
-Focused affected checks/build and inspected actual visual evidence at each outcome; **UX10-INTEGRATED** separately schedules complete bounded-worker suite/build, joined browser and changed-state recovery qualification before deployment/final acceptance. Preserve mandatory security/external-input/recovery gates; one milestone's targeted PASS does not certify release. First unexpected out-of-area regression widens focused scope; second distinct regression/spread requires full regression after repairs. No tests, bootstrap probes, code or readiness repair run during compilation. No blocked, deferred or unmapped required work. Completed contracts remain historical and unchanged.
+Focused affected tests/build and inspected actual matching browser evidence at M52; separately planned **UX11-INTEGRATED** requires full bounded-worker regression and joined final-source qualification before deployment/final acceptance. Conditional recovery/transport checks apply only if their boundaries change; mandatory project gates remain. First unexpected external regression widens focused scope; second distinct regression/spread triggers full regression after repairs. No tests/code/bootstrap probes/readiness work run in compilation. All8 feedback dispositions and4 remediations mapped; none blocked/deferred/unmapped. Packet complete for milestone-readiness, not yet READY or implemented. Parent owns publication.
 
 ## Completed history
 
@@ -61,3 +59,6 @@ Focused affected checks/build and inspected actual visual evidence at each outco
 | M46 | [Investigate scoped Activity with reusable filters and relevant exports](46-scoped-activity-investigation.md) | completed |
 | M47 | [Edit and discard service proposals through one coherent flow](47-service-edit-review-and-discard.md) | completed |
 | M48 | [Import separate unassigned services and retire legacy mappings safely](48-independent-unassigned-service-import.md) | completed |
+| M49 | [Use clear shared sign-in, Settings and service tasks](49-clear-shared-console-tasks.md) | completed |
+| M50 | [Remove credential configuration and eligible saved values on Apply](50-reviewed-credential-removal.md) | completed |
+| M51 | [Permanently delete an Archived service with retained evidence](51-archived-service-permanent-deletion.md) | completed |

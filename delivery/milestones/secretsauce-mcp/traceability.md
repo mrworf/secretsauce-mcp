@@ -1,3 +1,29 @@
+# UX11 current traceability
+
+Primary ready package governs; REC016 report and canonical dispositions are adopted provenance. Required outcomes map below; observations and preference do not independently create work.
+
+| Remediation | Authoritative outcome | Milestone |
+| --- | --- | --- |
+| REC-RM-064 | CONFIG05; UX-IN25/C93 quoted exact challenge, existing gate preserved | M52 |
+| REC-RM-065 | UX02/CONFIG02; UX-R13/C92 service width with compact identity exception | M52 |
+| REC-RM-066 | CONFIG01/UX03/MIGRATE01/AUTHZ01–02; UX-IN27/C90–91 single Access, unchanged timing | M52 |
+| REC-RM-067 | POLICY01/UX02; UX-IN27/C93 remove redundant helper only | M52 |
+
+| Feedback | Class | Disposition | Milestone |
+| --- | --- | --- | --- |
+| PO-FB-282 | DIRECTIVE | FULLY_RESOLVED through REC-RM-064 | M52 |
+| PO-FB-283 | OBSERVATION | EVIDENCE_CORRELATED through REC-RM-065 | M52 |
+| PO-FB-284 | DIRECTIVE | FULLY_RESOLVED through REC-RM-065 | M52 |
+| PO-FB-285 | OBSERVATION | EVIDENCE_CORRELATED through REC-RM-066 | M52 |
+| PO-FB-286 | DIRECTIVE | FULLY_RESOLVED through REC-RM-066 | M52 |
+| PO-FB-287 | OBSERVATION | EVIDENCE_CORRELATED through REC-RM-066 | M52 |
+| PO-FB-288 | PREFERENCE | ADVISORY_CONSIDERED through REC-RM-066 | M52 |
+| PO-FB-289 | DIRECTIVE | FULLY_RESOLVED through REC-RM-067 | M52 |
+
+Constraints intentionally shared across all outcomes: existing UX11 service family, responsive/accessibility requirements, AUTHZ01/02, STATE01/02/10/11 and SECRES09/10. Prior M49 compact identity forms, M50 cleanup and M51 deletion semantics remain preserved. Existing SMTP exception and SEC-DEF-001 accepted limitation create no new work. Optional/unaccepted scope: none included. Excluded: new authentication/roles/grant timing/state format/refactor/transport/deployment. Deferred required items: none. Blocked: none. Unmapped: none.
+
+## Historical traceability — completed packets
+
 # UX9 traceability
 
 Current validated package governs all mappings; REC014 report is adopted provenance. Existing older traceability is retained below as history, not remaining work.

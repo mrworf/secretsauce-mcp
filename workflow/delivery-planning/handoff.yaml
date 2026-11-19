@@ -6,24 +6,22 @@ source:
   mode: PRODUCT_BUILD
   type: definition-package
   path: workflow/definition/definition-package.yaml
-  revision: sha256:6ac2a12358abf60bee58ee1f5377ff7c119e06895d099b255cbac78182599b2c
-  repository_commit: 6a03a5523246e8b834aeceb97dc818de32fce461
+  revision: sha256:7d26ddded7fdb3cad794bee6c9b646d2c19e301ea39d89d7b1e051a6bebc4a50
+  repository_commit: 681b71870514865f1ed6f89b366aca527d514e16
 planning:
-  parent_commit: e6a27bfa2939994c7de0fe4099f37fe9b43f6cb8
-  repository_commit: 9b8353b4e0615d42ae372abd671d898d533efbd8
+  parent_commit: f6443a54aee249c51f27ed33d16b450531b1d750
+  repository_commit: null
 milestones:
   manifest: delivery/milestones/secretsauce-mcp/status.yaml
-  packet_revision: sha256:aecb1c78d3ab5b98ed84def92f74c56406a8e27f27b2d7046a0bdc9b9048bcb3
+  packet_revision: sha256:1b2a5216cfb6df80d1e432309102fd759447f91545c5b2c46c43753a11085b9d
   active_milestones:
-  - '49'
-  - '50'
-  - '51'
+  - '52'
 readiness:
   status: READY
   prerequisite_manifest: delivery/readiness/secretsauce-mcp/prerequisite-manifest.md
   result: delivery/readiness/secretsauce-mcp/readiness-report.md
   adapter: workflow/delivery-planning/results/readiness.yaml
-  packet_revision: sha256:aecb1c78d3ab5b98ed84def92f74c56406a8e27f27b2d7046a0bdc9b9048bcb3
+  packet_revision: sha256:1b2a5216cfb6df80d1e432309102fd759447f91545c5b2c46c43753a11085b9d
 m0:
   present: false
   milestone: null
@@ -50,38 +48,35 @@ delivery_constraints:
   regression_plan:
     source: delivery/milestones/secretsauce-mcp/status.yaml#regression_checkpoints
     checkpoints:
-      UX10-INTEGRATED:
+      UX11-INTEGRATED:
         covered_milestones:
-        - '49'
-        - '50'
-        - '51'
+        - '52'
         status: pending
-        due: "After M49\u201351 and before deployment/final acceptance; explicit bounded stops retain this obligation."
+        due: After M52 and before deployment/final acceptance; bounded stops retain this obligation.
         categories:
         - full unit/integration suite and build
-        - joined sign-in/Settings/service removal/review/Archived deletion browser journey
-        - role/CSRF/concurrency/unknown/incarnation and current-grant/secret preservation
-        - changed state old-reader/restart/backup/restore compatibility
-        - matching UX10 visuals keyboard narrow/enlarged-text
+        - joined initial/current Access and preserved complete-draft navigation browser qualification
+        - role/CSRF/eligibility/stale/unknown and current-grant preservation
+        - matching UX11 width/dialog/keyboard/narrow/enlarged-text visual comparison
         commands:
         - npm test -- --maxWorkers=2
         - npm run build
-        execution: Clean frozen tracked source; no concurrent browser/Docker during full suite. Synthetic disposable
-          HTTPS qualification separately.
-        escalation: First confirmed unexpected out-of-area regression expands focused scope; second distinct regression/spread
-          triggers full suite after focused repairs.
-        conditional: Changed transport requires actual self-signed HTTPS; changed recovery/launcher uses mandatory
-          existing recovery/Docker gates.
+        execution: Clean frozen tracked source; no concurrent browser/Docker during full suite. Disposable synthetic
+          HTTPS browser separately.
+        conditional: Actual self-signed HTTPS if transport changes; existing old-reader/recovery/backup/restart/Docker
+          gates only if those boundaries change. No state format assumed for UI.
+        escalation: First unexpected out-of-area regression expands focused checks; second distinct regression or
+          spread triggers full regression after repairs.
         evidence: null
 visual_acceptance:
   approved_reference: product/ux/manifest.yaml
-  revision: web-console-ux-10
+  revision: web-console-ux-11
   required: Compare actual browser screenshots at matching states/viewports against approved references and exact
-    UX10 delta; preserve unaffected appearance and behavior. Functional tests alone are insufficient.
+    UX11 delta; preserve unaffected appearance and behavior. Functional tests alone are insufficient.
   requirements:
   - UX-V05
   - UX-C42
-  - "UX-C84\u201389"
+  - "UX-C90\u201393"
 next:
   workflow: implementation
   recommended_skill: milestone-delivery-orchestrator

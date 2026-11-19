@@ -1,51 +1,17 @@
-# UX10 milestone readiness report
+# UX11 milestone readiness
 
-## 1. Overall readiness status
-**READY** — M49 → M50 → M51 has available local foundations and a valid provider order. Publication belongs to the parent planning transaction.
-
-## 2. Scope and evidence basis
-Read the three complete new contracts, compiler/source, status order, existing readiness and relevant setup/harness sources. Compared all39 completed records and contract bytes against planning start `e6a27bf`; unchanged. Prior regression checkpoints preserved. Exact current digests are in the adapter. This is prerequisite readiness, not feature acceptance.
-
-## 3. Automatically completed prerequisites
-Verified PRE-071–073, dependency providers and scheduled qualification; added non-destructive checks to new contracts only. No installation, feature mutation, persistent service or child commit.
-
-## 4. Confirmation-gated work
-None.
-
-## 5. Required user actions
-None for this local scope.
-
-## 6. Missing or unresolved prerequisites
-None. PRE-074 pending earlier providers are ordered; PRE-075 acceptance is deliberately consuming-milestone work.
-
-## 7. Dependency graph
-Repository/source → M49/M50/M51 (PRE-071–073). Completed43/45/48 → M49; completed29/34/47 and M49 → M50; M50 → M51 (PRE-074). All three → UX10-INTEGRATED (PRE-075). Full42-node graph has no missing provider, reverse edge or cycle.
-
-## 8. Proposed milestone order
-Preserve M49 then M50 then M51; no reordering.
-
-## 9. Milestone 0
-Not required. Existing bootstrap and local fixtures suffice.
-
-## 10. Per-milestone readiness
-M49 ready after parent publication/authorization. M50 requires accepted M49 plus existing credential/recovery/proposal foundations. M51 requires accepted M50 fencing. All carry PRE-071–075 checks. Exact cleanup, unknown outcomes, roles, old-reader and changed recovery acceptance remain mandatory, not claimed complete here.
-
-## 11. Clean-environment simulation
-PASS conceptual INFERENCE, not a fresh installation. Clean checkout → Node >=22/OpenSSL → locked `npm ci` → declared Chromium install (writable PLAYWRIGHT_BROWSERS_PATH) or pinned Playwright1.64 Docker image → build → disposable synthetic HTTPS fixtures → M49 focused/visual acceptance → M50 transaction/recovery acceptance → M51 deletion/reuse/recovery acceptance → final frozen-source UX10-INTEGRATED. Ordinary provisioning downloads are declared. Existing image/cache, dist, real credentials and live instance are not required assumptions. Actual changed recovery uses isolated Docker launcher/backup/restore fixtures. Final `npm test -- --maxWorkers=2` and build run without browser/Docker contention; retry listener EPERM with loopback permission, preserving assertions. Conditional transport self-signed HTTPS and launcher gates remain.
-
-## 12. Commands run and results
-- Node v26.12.1; npm12.2.1; OpenSSL3.6.5: PASS.
-- `npm ls --depth=0`: PASS; declared Playwright1.64 and test/build dependencies resolve.
-- Docker image metadata: initial sandbox socket permission denial; same read-only inspection with narrow permission PASS, image sha256:06a9939e57531807f8d5fd76ce44b53165ffb7d7501d87ab10e285c20b1e971f.
-- Python graph/hash/history checks: PASS42 nodes,39 completed records/contracts and prior checkpoints preserved; source matches compiler.
-- `git diff --check`: PASS before handoff.
-- No build, browser/container workload, full suite or feature acceptance run.
-
-## 13. Files changed
-Readiness checks in M49/M50/M51; prerequisite-manifest.md; this report; workflow/delivery-planning/results/readiness.yaml. Other pending files are parent/compiler-owned. Original unrelated paths untouched.
-
-## 14. Remaining blockers
-None; parent transaction publication remains pending.
-
-## 15. Exact recommended next step
-In `/home/ha/projects/secretsauce`, parent Delivery Planning validates and publishes the combined packet, then hands its status.yaml to milestone delivery starting M49 under existing authorization. No deployment or feature completion is implied by READY.
+1. **Overall: READY.** M52 has available, ordered providers and feasible local validation; this is readiness, not behavior acceptance.
+2. **Scope/evidence:** parent-owned planning at f6443a5; ready UX11 package681b718 and preserved42 completed milestones. Status/index declare M52 after completed47/48/49/51. Exact current packet fingerprint is in readiness.yaml. Source files/tool probes are FACT; fresh clean provisioning is a conceptual simulation.
+3. **Automatic work:** no bootstrap remediation. Verified PRE-076–080 and added M52 prerequisite/check references only.
+4. **Confirmation gates:** none. Existing user authorization covers disposable headless HTTPS/Docker and local tests.
+5. **User actions:** none.
+6. **Missing/unresolved prerequisites:** none; new behavior assertions belong to M52, not a setup blocker.
+7. **Graph:** repository/published source → M52 [PRE-076/077/078]; M47/48/49/51 → M52 [PRE-079]; M52 → UX11-INTEGRATED [PRE-080]. No forward edge/cycle or missing provider in all43 records.
+8. **Order:** declared and proposed order match; completed M10–51 then52. No reordering.
+9. **M0:** not required; no missing shared foundation.
+10. **Per-milestone:** completed M10–51 contracts/statuses unchanged. M52 preconditions/checks added and passed by inspection/probes. No acceptance results claimed.
+11. **Clean simulation:** clean checkout supplies lockfile, scripts and prior completed source. Provision declared Node>=22/npm/OpenSSL/Docker, `npm ci`, and declared Playwright1.64 image (or documented browser install); use temporary synthetic fixtures and separate evidence paths. Existing declarations provide all inputs before M52. No external secrets or running deployment needed. Frozen tracked-source full regression avoids unrelated local files and runs maxWorkers2 without concurrent browser workload. Fresh installation/container execution was not run; current installed tools/image were inspected. Conditional self-signed transport and recovery/launcher checks remain required if those boundaries change; no UI state format assumed.
+12. **Commands/results:** node --version=v26.12.1; npm --version=12.2.1; npm ls --depth=0 exit0 with locked declared dependencies; openssl version=3.6.5; Docker image inspection returns sha256:06a9939e57531807f8d5fd76ce44b53165ffb7d7501d87ab10e285c20b1e971f. Structural validator43 records PASS, graph/source/content checks PASS; git diff --check PASS. No tests, build, browser or persistent service started.
+13. **Changed:** M52 Readiness checks; prerequisite-manifest.md; this report; workflow/delivery-planning/results/readiness.yaml. No product changes or child commit.
+14. **Blockers:** none. Broader qualification remains pending at UX11-INTEGRATED, not waived by READY.
+15. **Next:** parent validates/publishes the combined planning transaction, then in `/home/ha/projects/secretsauce` invokes milestone-delivery-orchestrator starting M52 under the existing authorized outcome.

@@ -585,7 +585,7 @@ milestones:
   commit_hash: d14741626ec65233a92933b86735714d74832f78
 delivery_goal:
   product_id: secretsauce-mcp
-  status: in_progress
+  status: completed
   packet: delivery/milestones/secretsauce-mcp/status.yaml
   packet_revision: sha256:89929b6fda3463d07fe9bcbcf9727c99b14b55d4ddcee949fe3b02f532b76d09
   packet_contract_revisions:
@@ -687,8 +687,10 @@ delivery_goal:
   current_milestone: null
   governing_plan: delivery/plans/secretsauce-mcp/milestone_46_plan_01.md
   blockers: []
-  resume_point: UX8-INTEGRATED final qualification due
+  resume_point: "All fixed M45\u201346 outcomes and UX8-INTEGRATED qualification accepted. No deployment."
   started_at: '2026-11-19T03:42:26.490782+00:00'
+  completed_at: '2026-11-19T04:05:46.080881+00:00'
+  evidence: evidence/qa/secretsauce-mcp/ux8-integrated/acceptance.md
 compiled_from_history:
 - product_id: secretsauce-mcp
   input_mode: PRODUCT_BUILD
@@ -2058,7 +2060,7 @@ regression_checkpoints:
     covered_milestones:
     - '45'
     - '46'
-    status: pending
+    status: passed
     due: After both outcomes and before deployment/final packet acceptance; bounded stop leaves broader
       qualification pending.
     categories:
@@ -2071,8 +2073,11 @@ regression_checkpoints:
     - npm run build
     execution: Frozen sources; no concurrent browser/Docker workloads during full suite. Synthetic isolated
       HTTPS browser checks separately.
-    evidence: null
+    evidence: evidence/qa/secretsauce-mcp/ux8-integrated/acceptance.md
     escalation: First confirmed unexpected out-of-area regression expands focused scope; second distinct
       regression or spread requires full regression after focused repairs.
     conditional: Actual self-signed HTTPS if transport changes; existing Docker recovery gates if recovery/launcher
       changes; no new external LLM dependency.
+    source_commit: d14741626ec65233a92933b86735714d74832f78
+    completed_at: '2026-11-19T04:05:46.080881+00:00'
+    result: evidence/qa/secretsauce-mcp/ux8-integrated/regression-result.json

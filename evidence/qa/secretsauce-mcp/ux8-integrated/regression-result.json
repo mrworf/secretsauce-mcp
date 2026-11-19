@@ -1,0 +1,29 @@
+{
+  "result": "PASS",
+  "source_commit": "d14741626ec65233a92933b86735714d74832f78",
+  "source_tree": "8e2c84743e731b0843d8e321bcf532423145670c",
+  "full_suite": {
+    "command": "npm test -- --maxWorkers=2",
+    "environment": "Clean git archive of source_commit; existing locked node_modules; loopback permission; no concurrent browser/Docker workloads",
+    "files_passed": 78,
+    "tests_passed": 785,
+    "tests_failed": 0,
+    "duration_seconds": 114.66
+  },
+  "build": {
+    "command": "npm run build",
+    "environment": "Same clean tracked source export",
+    "result": "PASS"
+  },
+  "browser_evidence": [
+    "evidence/ux-acceptance/secretsauce-mcp/milestone45/acceptance.md",
+    "evidence/ux-acceptance/secretsauce-mcp/milestone46/acceptance.md"
+  ],
+  "visual_review_limits": "Health export action was functionally clicked/downloaded in all authorized role flows; its final viewport image stops before the action, so independent visual comparison does not certify that button placement. Other inspected states passed.",
+  "conditional_boundaries": {
+    "transport_changed": false,
+    "recovery_launcher_changed": false,
+    "deployment_performed": false
+  },
+  "unexpected_out_of_area_regressions": 0
+}

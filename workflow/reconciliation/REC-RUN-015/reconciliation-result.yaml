@@ -1,0 +1,537 @@
+schema_version: 1
+reconciliation_id: REC-RUN-015
+product_id: secretsauce-mcp
+status: RESOLVED
+transaction:
+  parent_commit: d29f412f4587f2338dbc03b99231d179fb5f33cd
+  repository_commit: null
+  owned_paths:
+  - workflow/reconciliation/REC-RUN-015/
+  - docs/web-console-prd.md
+  publication: payload pending; closeout records immutable payload commit
+  pre_existing_dirty_paths:
+  - workflow/definition/state.yaml
+  - workflow/definition/history/web-console-ux-9-completed/
+  - passwd
+  - codex-session-01a122f7-e70f-7440-b1ce-ca88b955e519.md
+  - test-results/
+source:
+  invocation: product-definition-orchestrator
+  originating_stage: product
+  triggering_findings: []
+  affected_requirements: &id002
+  - CONFIG-02
+  - CONFIG-03
+  - CONFIG-05
+  - CONFIG-04
+  - UX-03
+  - CONFIG-01
+  - UX-02
+  - IDENT-02
+  - UX-01
+  artifact_revisions:
+  - artifact: workflow/feedback/PO-FEEDBACK-2026-11-19-001/feedback.yaml
+    revision: sha256:5d66b847807a0c1066773cacd3c80e072ac03cd5d4a5d4665d0600e6b59aec39
+  - artifact: docs/web-console-prd.md
+    revision: sha256:c9c0f4890a94e3a82d6d01fb770fe5f0bde689cd44362af77400c71f003be199
+  - artifact: product/ux/manifest.yaml
+    revision: sha256:e23bf3fef2a825a14573d919007c8cdcf42a717cedff18ec10093b11537d6f1e
+  - artifact: product/ux/02-interaction-patterns.md
+    revision: sha256:5ec48e51de819eb34ca65ca2a9882eecac4131d435e0890d755e10d06e5f9539
+  - artifact: product/ux/03-responsive-and-platform.md
+    revision: sha256:cbdd1fd1012d684a78c060e036ce79c32d06f432b8acb674c914244ecffa3566
+  - artifact: product/architecture/web-console-state-contract.md
+    revision: sha256:3d7ed28c8335a6d142533c253e061e14a30ada5b9e25be341fb1c172d706c955
+  - artifact: product/security/web-console-security-contract.md
+    revision: sha256:b6afd24f5789b0f8738ca952000f8fc3433d82967f2f8bce42df81fbc23c61d5
+  - artifact: workflow/reconciliation/REC-RUN-015/deletion-semantics-basis.md
+    revision: sha256:8b731120243d2c75c7f5af5d6c0a4dfe1e6da7e2a9cba81a8e4d8ce479749995
+  product_owner_feedback:
+  - feedback_id: PO-FEEDBACK-2026-11-19-001
+    path: workflow/feedback/PO-FEEDBACK-2026-11-19-001/feedback.yaml
+    schema_version: 1
+    status: CONFIRMED
+  implementation_revision: d29f412f4587f2338dbc03b99231d179fb5f33cd
+  specialist_resolution: UX10-DELETION-SEMANTICS D10-01–05 and inherited UX-R05/UX-02 pattern interpretation adopted;
+    producer-owned basis; no owner question
+findings:
+  resolved: &id001
+  - REC-064
+  - REC-065
+  - REC-066
+  - REC-067
+  - REC-068
+  - REC-069
+  unresolved: []
+feedback_dispositions:
+- feedback_id: PO-FEEDBACK-2026-11-19-001
+  item_id: PO-FB-265
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: Services > Service > Configuration > Access & Policy should show a warning symbol if no access is assigned,
+    this is different from the exclaimation marks which are missing information.
+  normalized: Show a distinct warning symbol on Access & Policy when nobody has access. Distinguish it from missing-information
+    indicators.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-066
+  source_changes:
+  - REC-CHANGE-066
+  remediation:
+  - REC-RM-060
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Confirmed direction and scoped evidence resolved against current authority; no additional owner choice.
+  scope:
+  - service-access
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-19-001
+  item_id: PO-FB-266
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: the remove credentials configuration link in authentication section should be a button with a modal
+    confirmation.
+  normalized: Provide a button and modal confirmation for removing a credential configuration.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-064
+  source_changes:
+  - REC-CHANGE-064
+  remediation:
+  - REC-RM-058
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Confirmed direction and scoped evidence resolved against current authority; no additional owner choice.
+  scope:
+  - service-credentials
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-19-001
+  item_id: PO-FB-267
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  product_intent_authority: evidence
+  original: The text above it "Removing this configuration removes the proposed placement when you apply changes.
+    It does not clear the stored value." has a couple of issues.
+  normalized: The removal help text is confusing.
+  disposition: EVIDENCE_CORRELATED
+  source_findings:
+  - REC-064
+  source_changes:
+  - REC-CHANGE-064
+  remediation:
+  - REC-RM-058
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Confirmed direction and scoped evidence resolved against current authority; no additional owner choice.
+  scope:
+  - service-credentials
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-19-001
+  item_id: PO-FB-268
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: 1) What is it really saying? Make it simpler.
+  normalized: Explain the consequence of credential removal in plain language.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-064
+  source_changes:
+  - REC-CHANGE-064
+  remediation:
+  - REC-RM-058
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Confirmed direction and scoped evidence resolved against current authority; no additional owner choice.
+  scope:
+  - service-credentials
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-19-001
+  item_id: PO-FB-269
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: 2) This implies that the secret I've entered above will NOT be deleted even if I delete the credential
+    entry.
+  normalized: Delete the saved value on Apply if nothing still uses it. Draft removal alone leaves the secret in
+    place.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-064
+  source_changes:
+  - REC-CHANGE-064
+  remediation:
+  - REC-RM-058
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Confirmed direction and scoped evidence resolved against current authority; no additional owner choice.
+  scope:
+  - service-credentials
+  suggestions: []
+  clarification:
+    question_id: PO-UNRESOLVED-001
+    selected_option: A
+    original: yes to both
+- feedback_id: PO-FEEDBACK-2026-11-19-001
+  item_id: PO-FB-270
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: I also saw you used "Placement" in the helptext under the "Authentication" dropdown above, again, this
+    is a bit odd language.
+  normalized: Replace “Placement” with plain language that explains where the credential is sent.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-064
+  source_changes:
+  - REC-CHANGE-064
+  remediation:
+  - REC-RM-058
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Confirmed direction and scoped evidence resolved against current authority; no additional owner choice.
+  scope:
+  - service-credentials
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-19-001
+  item_id: PO-FB-271
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  product_intent_authority: evidence
+  original: The login screen, I don't like that it uses that much horizontal space, looks odd on a ultrawide.
+  normalized: The sign-in form stretches too wide on an ultrawide display.
+  disposition: EVIDENCE_CORRELATED
+  source_findings:
+  - REC-067
+  source_changes:
+  - REC-CHANGE-067
+  remediation:
+  - REC-RM-061
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Confirmed direction adopted precisely; evidence/advisory inputs retain their original authority. Shared
+    UX-R05 compact-input and UX-02 clear-task patterns settle presentation without adding authentication flows.
+  scope:
+  - sign-in
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-19-001
+  item_id: PO-FB-272
+  classification: PREFERENCE
+  confirmation: CONFIRMED
+  product_intent_authority: advisory
+  original: The login screen, I don't like that it uses that much horizontal space, looks odd on a ultrawide.
+  normalized: Prefer a narrower sign-in layout on wide displays.
+  disposition: ADVISORY_CONSIDERED
+  source_findings:
+  - REC-067
+  source_changes:
+  - REC-CHANGE-067
+  remediation:
+  - REC-RM-061
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Confirmed direction adopted precisely; evidence/advisory inputs retain their original authority. Shared
+    UX-R05 compact-input and UX-02 clear-task patterns settle presentation without adding authentication flows.
+  scope:
+  - sign-in
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-19-001
+  item_id: PO-FB-273
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  product_intent_authority: evidence
+  original: The dropdown lets me pick to use a recovery code. Seems redundant?
+  normalized: The sign-in dropdown already offers a recovery code, so the similarly named secondary action appears
+    redundant.
+  disposition: EVIDENCE_CORRELATED
+  source_findings:
+  - REC-067
+  source_changes:
+  - REC-CHANGE-067
+  remediation:
+  - REC-RM-061
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Confirmed direction adopted precisely; evidence/advisory inputs retain their original authority. Shared
+    UX-R05 compact-input and UX-02 clear-task patterns settle presentation without adding authentication flows.
+  scope:
+  - sign-in
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-19-001
+  item_id: PO-FB-274
+  classification: IDEA_OR_QUESTION
+  confirmation: CONFIRMED
+  product_intent_authority: exploratory
+  original: Also, why "use recovery code or replace authenticator" button?
+  normalized: Clarify how the separate authenticator replacement action differs from using a recovery code to sign
+    in.
+  disposition: EXPLORATORY_RECORDED
+  source_findings:
+  - REC-067
+  source_changes:
+  - REC-CHANGE-067
+  remediation:
+  - REC-RM-061
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Confirmed direction adopted precisely; evidence/advisory inputs retain their original authority. Shared
+    UX-R05 compact-input and UX-02 clear-task patterns settle presentation without adding authentication flows.
+  scope:
+  - sign-in
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-19-001
+  item_id: PO-FB-275
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: The "Your saved value is never shown here" is an odd text to put, remove it.
+  normalized: Remove the quoted helper text.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-067
+  source_changes:
+  - REC-CHANGE-067
+  remediation:
+  - REC-RM-061
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Confirmed direction adopted precisely; evidence/advisory inputs retain their original authority. Shared
+    UX-R05 compact-input and UX-02 clear-task patterns settle presentation without adding authentication flows.
+  scope:
+  - form-copy
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-19-001
+  item_id: PO-FB-276
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  product_intent_authority: evidence
+  original: the contents will temporarily be moved to the bottom of the tab menu and then immediately reflowed to
+    show on the right instead.
+  normalized: Switching Settings subtabs briefly places the content below the menu before reflowing to the right.
+  disposition: EVIDENCE_CORRELATED
+  source_findings:
+  - REC-068
+  source_changes:
+  - REC-CHANGE-068
+  remediation:
+  - REC-RM-062
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Confirmed direction and scoped evidence resolved against current authority; no additional owner choice.
+  scope:
+  - settings-navigation
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-19-001
+  item_id: PO-FB-277
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: This looks very glitchy.
+  normalized: Prevent the transient layout jump when switching Settings subtabs.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-068
+  source_changes:
+  - REC-CHANGE-068
+  remediation:
+  - REC-RM-062
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Confirmed direction and scoped evidence resolved against current authority; no additional owner choice.
+  scope:
+  - settings-navigation
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-19-001
+  item_id: PO-FB-278
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: Oh, and the overview for a service doesn't really need a "Edit configuration" button or a "Continue"
+    button, since all they do is switch tab.
+  normalized: Remove Overview actions whose only effect is to open Configuration.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-069
+  source_changes:
+  - REC-CHANGE-069
+  remediation:
+  - REC-RM-063
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Confirmed direction and scoped evidence resolved against current authority; no additional owner choice.
+  scope:
+  - service-overview
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-19-001
+  item_id: PO-FB-279
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: However, an archived service should also have an option to delete it.
+  normalized: Provide a permanent deletion action for an archived service.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-065
+  source_changes:
+  - REC-CHANGE-065
+  remediation:
+  - REC-RM-059
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Confirmed direction and scoped evidence resolved against current authority; no additional owner choice.
+  scope:
+  - archived-service
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-19-001
+  item_id: PO-FB-280
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: This should result in a modal where to delete it, user has to enter a value shown on screen to continue,
+    to avoid mistakes.
+  normalized: Require typing the displayed confirmation value in a dialog before deleting the archived service.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-065
+  source_changes:
+  - REC-CHANGE-065
+  remediation:
+  - REC-RM-059
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Confirmed direction and scoped evidence resolved against current authority; no additional owner choice.
+  scope:
+  - archived-service
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-19-001
+  item_id: PO-FB-281
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: However, an archived service should also have an option to delete it.
+  normalized: Delete the service and its stored configuration, draft, and secrets from the current instance. Keep
+    retained audit events and existing backups under their regular retention rules.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-065
+  source_changes:
+  - REC-CHANGE-065
+  remediation:
+  - REC-RM-059
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Confirmed direction and scoped evidence resolved against current authority; no additional owner choice.
+  scope:
+  - archived-service
+  suggestions: []
+  clarification:
+    question_id: PO-UNRESOLVED-002
+    selected_option: A
+    original: yes to both
+authoritative_changes:
+  changed: true
+  entries:
+  - change_id: REC-CHANGE-064
+    source_findings:
+    - REC-064
+    path: docs/web-console-prd.md
+    requirements:
+    - CONFIG-02
+    - CONFIG-03
+    status: APPLIED_AFTER_DECISION
+  - change_id: REC-CHANGE-065
+    source_findings:
+    - REC-065
+    path: docs/web-console-prd.md
+    requirements:
+    - CONFIG-05
+    - CONFIG-04
+    status: APPLIED_AFTER_DECISION
+  - change_id: REC-CHANGE-066
+    source_findings:
+    - REC-066
+    path: docs/web-console-prd.md
+    requirements:
+    - UX-03
+    - CONFIG-01
+    status: APPLIED_AFTER_DECISION
+  - change_id: REC-CHANGE-067
+    source_findings:
+    - REC-067
+    path: docs/web-console-prd.md
+    requirements:
+    - UX-02
+    - IDENT-02
+    status: APPLIED_AFTER_DECISION
+  - change_id: REC-CHANGE-068
+    source_findings:
+    - REC-068
+    path: docs/web-console-prd.md
+    requirements:
+    - UX-02
+    status: APPLIED_AUTOMATICALLY
+  - change_id: REC-CHANGE-069
+    source_findings:
+    - REC-069
+    path: docs/web-console-prd.md
+    requirements:
+    - UX-01
+    status: APPLIED_AFTER_DECISION
+definition_changed: true
+implementation_required: true
+implementation_ready: true
+decisions_required: []
+change_impact:
+  change_id: REC-IMPACT-015
+  source_findings: *id001
+  changed_artifacts:
+  - docs/web-console-prd.md
+  changed_requirements: *id002
+  change_types:
+  - user_behavior
+  - ux_interaction
+  - api_contract
+  - data_model
+  affected_domains:
+    product: false
+    user_journeys: true
+    ux: true
+    architecture: true
+    security: true
+  potentially_stale:
+  - docs/web-console-prd-coverage.md
+  - docs/web-console-prd-user-journey-audit.md
+  - product/ux/manifest.yaml
+  - product/ux/01-information-architecture.md
+  - product/ux/02-interaction-patterns.md
+  - product/ux/03-responsive-and-platform.md
+  - product/ux/04-visual-system.md
+  - product/ux/05-accessibility.md
+  - product/ux/07-acceptance-checklist.md
+  - product/architecture/web-console-state-contract.md
+  - product/security/web-console-security-contract.md
+  revalidation_required: true
+handoff:
+  category: DEFINITION_REVALIDATION
+  definition_revalidation_required: true
+  delivery_planning_ready: false
+  next_workflow: product-definition-orchestrator

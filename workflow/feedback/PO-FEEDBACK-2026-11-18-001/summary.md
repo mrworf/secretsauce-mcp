@@ -41,4 +41,6 @@ Source: realtime walkthrough and typed handoff. Status: CONFIRMED.
 | PO-FB-236 | DIRECTIVE | CONFIRMED | Configuration and exceptions in Settings → Configuration tools. |
 | PO-FB-237 | DIRECTIVE | CONFIRMED | Software and job status in Settings → Health & retention. |
 
-Reconciliation ready: false. No debrief questions remain. Confirmed directives establish intent. Preferences guide quality, observations record evidence, and ideas or questions are exploratory. Superseded choices are retained for traceability.
+Reconciliation ready: true. No debrief questions remain. Confirmed directives establish intent. Preferences guide quality, observations record evidence, and ideas or questions are exploratory. Superseded choices are retained for traceability.
+
+Run product-reconciliation using workflow/feedback/PO-FEEDBACK-2026-11-18-001/feedback.yaml.

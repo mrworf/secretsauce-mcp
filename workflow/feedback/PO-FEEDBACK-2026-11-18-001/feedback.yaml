@@ -9,7 +9,7 @@ source:
 status: CONFIRMED
 transaction:
   parent_commit: 4f50365528f380365c0d84aecccc5a4c7dce6263
-  repository_commit: null
+  repository_commit: 1062a57394b34e58decf1d9afa0bdf6c1e01bec4
 items:
 - id: PO-FB-202
   classification: OBSERVATION
@@ -397,5 +397,5 @@ items:
   suggestions: []
 unresolved: []
 handoff:
-  reconciliation_ready: false
-  next_workflow: null
+  reconciliation_ready: true
+  next_workflow: product-reconciliation

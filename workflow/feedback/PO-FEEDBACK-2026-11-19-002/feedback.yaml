@@ -9,7 +9,7 @@ source:
 status: CONFIRMED
 transaction:
   parent_commit: e15c81412d32f6799d79abbcd88c2327cb906cfe
-  repository_commit: null
+  repository_commit: 8f3e205d546b38b4fe109cee4050ccf67ce8c61c
 items:
 - id: PO-FB-282
   classification: DIRECTIVE
@@ -101,5 +101,5 @@ items:
   suggestions: []
 unresolved: []
 handoff:
-  reconciliation_ready: false
-  next_workflow: null
+  reconciliation_ready: true
+  next_workflow: product-reconciliation

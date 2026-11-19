@@ -22,4 +22,6 @@ Source: latest-version review. Status: CONFIRMED.
 | PO-FB-280 | DIRECTIVE | CONFIRMED | Require typing the displayed confirmation value in a dialog before deleting the archived service. |
 | PO-FB-281 | DIRECTIVE | CONFIRMED | Delete the service and its stored configuration, draft, and secrets from the current instance. Keep retained audit events and existing backups under their regular retention rules. |
 
-Both deletion decisions confirmed with “yes to both.” Reconciliation ready: false. Confirmed directives establish product intent. Preferences guide quality. Observations record evidence. Ideas and questions record exploration.
+Both deletion decisions confirmed with “yes to both.” Reconciliation ready: true. Confirmed directives establish product intent. Preferences guide quality. Observations record evidence. Ideas and questions record exploration.
+
+Run product-reconciliation using workflow/feedback/PO-FEEDBACK-2026-11-19-001/feedback.yaml.

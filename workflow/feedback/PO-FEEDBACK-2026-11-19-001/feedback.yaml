@@ -9,7 +9,7 @@ source:
 status: CONFIRMED
 transaction:
   parent_commit: 64903d6831343aa78f91128b7b2e401add4d5362
-  repository_commit: null
+  repository_commit: ed8cf466dbe23e6b787261b56a5d8fe46c51920d
 items:
 - id: PO-FB-265
   classification: DIRECTIVE
@@ -202,5 +202,5 @@ items:
     original: yes to both
 unresolved: []
 handoff:
-  reconciliation_ready: false
-  next_workflow: null
+  reconciliation_ready: true
+  next_workflow: product-reconciliation

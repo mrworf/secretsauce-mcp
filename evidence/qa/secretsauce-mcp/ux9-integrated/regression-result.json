@@ -1,0 +1,29 @@
+{
+  "result": "PASS",
+  "source_commit": "88aaac64e64336f1c274fd1194e8943bb5c41c6b",
+  "source_tree": "3195a8836c2b0497abd5d2b22e047cca42f0ba66",
+  "full_suite": {
+    "command": "npm test -- --maxWorkers=2",
+    "environment": "Clean git archive; locked existing node_modules; loopback permission; no concurrent browser or Docker workload",
+    "files_passed": 80,
+    "tests_passed": 792,
+    "tests_failed": 0,
+    "duration_seconds": 114.55
+  },
+  "build": {
+    "command": "npm run build (npm test pretest)",
+    "result": "PASS"
+  },
+  "browser_evidence": [
+    "evidence/ux-acceptance/secretsauce-mcp/milestone47/acceptance.md",
+    "evidence/ux-acceptance/secretsauce-mcp/milestone48/acceptance.md"
+  ],
+  "conditional_boundaries": {
+    "transport_changed": false,
+    "recovery_changed": true,
+    "launcher_changed": false,
+    "docker_recovery_result": "docker-cleanhost-report.json",
+    "deployment_performed": false
+  },
+  "unexpected_out_of_area_regressions": 0
+}

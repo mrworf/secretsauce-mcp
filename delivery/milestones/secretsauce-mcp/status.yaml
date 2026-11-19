@@ -604,7 +604,7 @@ milestones:
   commit_hash: 88aaac64e64336f1c274fd1194e8943bb5c41c6b
 delivery_goal:
   product_id: secretsauce-mcp
-  status: in_progress
+  status: completed
   packet: delivery/milestones/secretsauce-mcp/status.yaml
   packet_revision: sha256:f116722c929f7b3f68865b07a3d106cf8faf819c8e1b3359530c79592fcebe99
   packet_contract_revisions:
@@ -710,8 +710,10 @@ delivery_goal:
   current_milestone: null
   governing_plan: delivery/plans/secretsauce-mcp/milestone_48_plan_01.md
   blockers: []
-  resume_point: UX9-INTEGRATED final qualification due
+  resume_point: "All fixed M47\u2013M48 outcomes and UX9-INTEGRATED qualification accepted. No deployment."
   started_at: '2026-11-19T06:27:38.646485+00:00'
+  completed_at: '2026-11-19T07:09:42.822203+00:00'
+  evidence: evidence/qa/secretsauce-mcp/ux9-integrated/acceptance.md
 compiled_from_history:
 - product_id: secretsauce-mcp
   input_mode: PRODUCT_BUILD
@@ -2299,7 +2301,7 @@ regression_checkpoints:
     covered_milestones:
     - '47'
     - '48'
-    status: pending
+    status: passed
     due: After both outcomes and before deployment/final acceptance; bounded stop leaves this obligation
       pending.
     categories:
@@ -2316,4 +2318,7 @@ regression_checkpoints:
       requires full suite after repairs.
     conditional: Changed transport requires actual self-signed HTTPS; changed recovery/launcher requires
       existing Docker/recovery gates.
-    evidence: null
+    evidence: evidence/qa/secretsauce-mcp/ux9-integrated/acceptance.md
+    source_commit: 88aaac64e64336f1c274fd1194e8943bb5c41c6b
+    completed_at: '2026-11-19T07:09:42.822203+00:00'
+    result: evidence/qa/secretsauce-mcp/ux9-integrated/regression-result.json

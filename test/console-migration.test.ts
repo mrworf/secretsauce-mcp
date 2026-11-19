@@ -1,3 +1,4 @@
+import {ConsoleStore} from '../src/consoleStore.js';
 import { projectRecoveryState } from '../src/consoleBackupArchive.js';
 import { validateRecoveryDomains } from '../src/consoleBackupSchema.js';
 import { consolePeople } from '../src/consolePeople.js';
@@ -54,3 +55,5 @@ it('retires ambiguous legacy pending access durably without changing current gra
  }finally{reopened.close();}
  }finally{f.close();}});
 it('keeps free maximum-length names exact and rejects impossible collision labels atomically',()=>{const f=managedFixture();try{const raw=parse(data().gateway);raw.services.migrated.name='x'.repeat(200);const input={...data(),gateway:stringify(raw)};expect(importConfiguration(f.manager,f.session,input).services[0]!.name).toBe(raw.services.migrated.name);const before=structuredClone(f.manager.state);expect(()=>importConfiguration(f.manager,f.session,input)).toThrow('Shorten the source name');expect(f.manager.state).toEqual(before);}finally{f.close();}});
+
+it('preserves v8 removal identities through independent import and restart',()=>{const f=managedFixture();try{f.manager.save(f.session,{id:'baseline',base:0,generation:0,service:f.manager.state.services.baseline!.applied});const identity=f.manager.state.services.baseline!.incarnation;const input=data();input.credentials=[{service:'migrated',credential:'key',value:'synthetic-imported-value'}] as never;importConfiguration(f.manager,f.session,input);expect(f.store.state.v).toBe(8);expect(f.manager.state.services.migrated!.incarnation).toBeTypeOf('string');expect(f.manager.state.services.migrated!.values.key!.incarnation).toBeTypeOf('string');expect(f.manager.state.services.baseline!.incarnation).toBe(identity);f.store.close();const store=new ConsoleStore(f.store.directory,f.store.keyFile);try{expect(store.state.v).toBe(8);expect(store.state.managed!.services.baseline!.incarnation).toBe(identity);expect(store.state.managed!.services.migrated!.values.key!.value).toBe('synthetic-imported-value');}finally{store.close();}}finally{f.close();}});

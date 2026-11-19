@@ -1,3 +1,4 @@
+import {upgradeRemovalState,removalIntent,removalEffects} from './consoleRemovalState.js';
 import {hasLegacyImportMappings,retireLegacyImportMappings} from './consoleImportState.js';
 import { projectCredentialService, credentialIdentity } from './consoleCredentialState.js';
 import { captureConfigurationRevision } from './consoleHistory.js';
@@ -10,19 +11,21 @@ import { ConsoleStore, type ConsoleSession } from './consoleStore.js';
 import type { GatewayConfig, ServiceConfig } from './types.js';
 
 export type ServiceLifecycle = 'Draft' | 'Active' | 'Disabled' | 'Archived';
-export interface ManagedCredential { value: string; version: number; changed: number; missing?: true; generation?: number; actor?: string; mutation?: string; historical?: boolean; changeAction?: 'set' | 'replace' | 'clear'; reconciledMutation?: string; previousChange?: { changeAction?: 'set' | 'replace' | 'clear'; actor?: string; changed: number; historical?: boolean } }
+export interface ManagedCredential { incarnation?: string; value: string; version: number; changed: number; missing?: true; generation?: number; actor?: string; mutation?: string; historical?: boolean; changeAction?: 'set' | 'replace' | 'clear'; reconciledMutation?: string; previousChange?: { changeAction?: 'set' | 'replace' | 'clear'; actor?: string; changed: number; historical?: boolean } }
 export interface ImportedIdentity { subject: string; index?: number; target?: { localId: string } | { issuer: string; externalSubject: string } }
 export interface ManagedService {
+  incarnation?: string;
+  lastCleanupMutation?: string;
   recoveryReviewRequired?:boolean;
   displayName?: string;
   importAccessReset?: boolean;
   proposalGeneration?: number;
   lifecycle: ServiceLifecycle;
   applied?: ManagedServiceDraft;
-  draft?: { content: ManagedServiceDraft; base: number; generation: number; missingMappings?: string[]; importedIdentities?: ImportedIdentity[]; settings?: { name: string } };
+  draft?: { removedCredentials?: Array<{id:string;incarnation:string}>; content: ManagedServiceDraft; base: number; generation: number; missingMappings?: string[]; importedIdentities?: ImportedIdentity[]; settings?: { name: string } };
   values: Record<string, ManagedCredential>;
   assignments: string[];
-  review?: { id: string; actor: string; fingerprint: string; candidate: ManagedServiceDraft; base: number; draftGeneration: number; settings?: { name: string }; exceptions: string[] };
+  review?: { session?: string; removedCredentials?: string[]; id: string; actor: string; fingerprint: string; candidate: ManagedServiceDraft; base: number; draftGeneration: number; settings?: { name: string }; exceptions: string[] };
 }
 export interface ManagedConfiguration { history?: import("./consoleHistory.js").ConfigurationRevision[]; migrationGlobals?: Record<string,unknown>; protection?: import("./consoleProtection.js").ProtectionState; revision: number; services: Record<string, ManagedService> }
 function own<T>(values: Record<string, T>, key: string): T | undefined { return Object.hasOwn(values, key) ? values[key] : undefined; }
@@ -79,8 +82,8 @@ export class ConsoleServices {
   }
   fingerprint(id: string): string {
     const s = own(this.state.services, id);
-    return digest(JSON.stringify({ revision: this.state.revision, lifecycle: s?.lifecycle, draftGeneration: s?.draft?.generation, assignments: s?.assignments,
-      values: Object.entries(s?.values ?? {}).map(([key, v]) => [key, v.version]),
+    return digest(JSON.stringify({ revision: this.state.revision, incarnation:s?.incarnation, lifecycle: s?.lifecycle, draftGeneration: s?.draft?.generation, assignments: s?.assignments,
+      values: Object.entries(s?.values ?? {}).map(([key, v]) => [key, v.version, v.generation, v.incarnation, Boolean(v.value)]),
       users: this.store.state.users.map(u => ({ id: u.id, role: u.role, active: u.active, enrolled:u.enrolled, authorizationGeneration:u.authorizationGeneration??0 })), external:this.store.state.people?.external.map(e=>({id:e.id,issuer:e.issuer,subject:e.subject,active:e.active,authorizationGeneration:e.authorizationGeneration??0})) }));
   }
   readiness(id: string) {
@@ -122,13 +125,14 @@ export class ConsoleServices {
     // Field permissions are checked again at review/apply, even in mixed drafts.
     if (data.settings && actor.role !== 'Owner') throw new Error('Forbidden.');
     if (current?.lifecycle === 'Archived') throw new ServiceManagementError('Service archived. Unarchive to Disabled before editing.');
+    if(this.store.state.v<8)this.store.commit(actor.id,'service.removal_format_upgrade','instance',upgradeRemovalState);
     const operation = this.store.commit(actor.id, 'service.draft_save', data.id, state => {
       const legacy=current?.draft&&(current.draft.missingMappings!==undefined||current.draft.importedIdentities!==undefined);
-      if(hasLegacyImportMappings(state.managed)){state.v=7;retireLegacyImportMappings(state.managed!);}
+      if(hasLegacyImportMappings(state.managed)){state.v=Math.max(state.v,7) as typeof state.v;retireLegacyImportMappings(state.managed!);}
       if(legacy)data.service.access={users:current?.applied?[...current.assignments]:[]};
 
       const m = state.managed!; let s = own(m.services, data.id); if (!s) { s = { lifecycle: 'Draft', values: {}, assignments: [] }; Object.defineProperty(m.services, data.id, { value: s, enumerable: true, configurable: true, writable: true }); }
-      s.draft = { content: data.service, base: data.base, generation: data.generation + 1, ...(data.settings ? { settings: data.settings } : {}) }; delete s.review;
+      s.draft = { removedCredentials:removalIntent(s,data.service), content: data.service, base: data.base, generation: data.generation + 1, ...(data.settings ? { settings: data.settings } : {}) }; delete s.review;
     });
     return { operation, status: 'saved', generation: own(this.state.services, data.id)!.draft!.generation, revision: this.state.revision };
   }
@@ -156,7 +160,7 @@ export class ConsoleServices {
     const {id}=this.parse(reviewSchema,input),service=own(this.state.services,id);
     if(!service?.draft)throw new ServiceManagementError('Save a service draft before review.');
     if(service.draft.settings&&this.store.authorize(session,'own').role!=='Owner')throw Error('Forbidden.');
-    return {scope:{services:[id],settings:service.draft.settings?['instance.name']:[]},base:this.state.revision,current:service.applied??null,proposed:service.draft.content,settings:service.draft.settings,grants:service.applied?[]:service.draft.content.access?.users??[],exceptions:exceptions(service.draft.content),issues:this.configurationIssues(id),inspection:true};
+    return {scope:{services:[id],settings:service.draft.settings?['instance.name']:[]},base:this.state.revision,current:service.applied??null,proposed:service.draft.content,settings:service.draft.settings,grants:service.applied?[]:service.draft.content.access?.users??[],exceptions:exceptions(service.draft.content),issues:this.configurationIssues(id),removedCredentials:removalEffects(service),inspection:true};
   }
   private stale(session: ConsoleSession, id: string): ServiceManagementError {
     return new ServiceManagementError('Stale review or dependencies. Compare current and proposed configuration, reload, save and review again.', own(this.state.services, id) ? this.detail(session, id) : { revision: this.state.revision });
@@ -189,25 +193,28 @@ export class ConsoleServices {
   review(session: ConsoleSession, input: unknown) {
     const { id } = this.parse(reviewSchema, input); const c = this.candidate(session, id);
     if(c.s.recoveryReviewRequired&&c.actor.role!=='Owner')throw new ServiceManagementError('Only an Owner may review a recovered service before its first reactivation.');
-    const risks = exceptions(c.draft.content);if(c.s.recoveryReviewRequired)risks.push('Recovered service: reviewed current credentials, policy and access'); const review = { id: randomUUID(), actor: c.actor.id, fingerprint: this.fingerprint(id), candidate: c.draft.content, base: this.state.revision, draftGeneration: c.draft.generation, exceptions: risks, ...(c.draft.settings ? { settings: c.draft.settings } : {}) };
+    const risks = exceptions(c.draft.content);if(c.s.recoveryReviewRequired)risks.push('Recovered service: reviewed current credentials, policy and access'); const review = { session:session.id, removedCredentials:removalEffects(c.s), id: randomUUID(), actor: c.actor.id, fingerprint: this.fingerprint(id), candidate: c.draft.content, base: this.state.revision, draftGeneration: c.draft.generation, exceptions: risks, ...(c.draft.settings ? { settings: c.draft.settings } : {}) };
     const operation = this.store.commit(c.actor.id, 'service.review', id, state => { state.managed!.services[id]!.review = review; });
     return { operation, review: review.id, scope: { services: [id], settings: c.draft.settings ? ['instance.name'] : [] }, base: review.base,
-      current: c.s.applied ?? null, proposed: review.candidate, settings: review.settings, grants: c.s.applied ? [] : c.draft.content.access?.users ?? [], exceptions: risks,
+      removedCredentials:review.removedCredentials, current: c.s.applied ?? null, proposed: review.candidate, settings: review.settings, grants: c.s.applied ? [] : c.draft.content.access?.users ?? [], exceptions: risks,
       disruption: 'Affected service references are invalidated. Already-dispatched work may complete with admitted protection. Trusted administrators control destinations; response scanning is best-effort.' };
   }
   apply(session: ConsoleSession, input: unknown) {
     const data = this.parse(applySchema, input); const c = this.candidate(session, data.id); const review = c.s.review;
-    if (!review || review.id !== data.review || review.actor !== c.actor.id || review.fingerprint !== this.fingerprint(data.id) || review.draftGeneration !== c.draft.generation || review.base !== this.state.revision) throw this.stale(session, data.id);
+    if (!review || review.id !== data.review || review.actor !== c.actor.id || review.session!==session.id || review.fingerprint !== this.fingerprint(data.id) || review.draftGeneration !== c.draft.generation || review.base !== this.state.revision) throw this.stale(session, data.id);
     if (review.exceptions.some(r => !data.acknowledgments.includes(r)) || data.acknowledgments.some(r => !review.exceptions.includes(r))) throw new ServiceManagementError('Acknowledge each listed security exception before apply.');
+    const cleanup=review.removedCredentials??[],mutation=randomUUID();
     let operation: string;
-    try { operation = this.store.commit(c.actor.id, 'service.apply', data.id, state => {
+    try { operation = this.store.commit(c.actor.id, cleanup.length?'service.apply_cleanup':'service.apply', data.id, state => {
       const m = state.managed!, s = m.services[data.id]!;delete s.recoveryReviewRequired;
+      if(cleanup.length)s.lastCleanupMutation=mutation;
       s.applied = structuredClone(review.candidate); s.assignments = [...(c.s.applied ? c.s.assignments : review.candidate.access?.users ?? [])];
       s.applied.access = { users: s.assignments }; s.lifecycle = 'Active'; delete s.draft; delete s.review;
       state.config!.services = { ...state.config!.services, [data.id]: c.service }; m.revision++;
       if (review.settings) state.name = review.settings.name;
       captureConfigurationRevision(state,c.actor.id,'Service configuration applied');
-    }); } finally { if (own(this.state.services, data.id)?.draft === undefined) { this.invalidate(data.id); this.publish(); } }
+      for(const key of cleanup)delete s.values[key];
+    },cleanup.length?{identity:c.s.incarnation!,mutation}:undefined); } finally { if (own(this.state.services, data.id)?.draft === undefined || cleanup.length&&this.store.journal.entries().some(r=>r.phase==='start'&&r.details?.mutation===mutation)) { this.invalidate(data.id); this.publish(); } }
     return { operation, status: 'applied', revision: this.state.revision };
   }
   credentialAttribution(value: ManagedCredential) {
@@ -234,7 +241,7 @@ export class ConsoleServices {
       this.actor(session,true);state.v=Math.max(state.v,5) as typeof state.v;
       const target=state.managed!.services[data.id]!;
       if(data.action==='delete'&&!inUse)delete target.values[data.credential];
-      else Object.defineProperty(target.values,data.credential,{value:{value:data.action==='delete'?'':data.value!,...(data.action==='delete'?{missing:true}:{}),version,generation,changed,changeAction,actor:actor.id,mutation,...(previous?{previousChange:{changed:previous.changed,...(previous.changeAction?{changeAction:previous.changeAction}:{}),...(previous.actor?{actor:previous.actor}:{}),...(previous.historical?{historical:true}:{})}}:{})},writable:true,enumerable:true,configurable:true});
+      else Object.defineProperty(target.values,data.credential,{value:{incarnation:previous?.incarnation??randomUUID(),value:data.action==='delete'?'':data.value!,...(data.action==='delete'?{missing:true}:{}),version,generation,changed,changeAction,actor:actor.id,mutation,...(previous?{previousChange:{changed:previous.changed,...(previous.changeAction?{changeAction:previous.changeAction}:{}),...(previous.actor?{actor:previous.actor}:{}),...(previous.historical?{historical:true}:{})}}:{})},writable:true,enumerable:true,configurable:true});
       delete target.review;state.managed!.revision++;projectCredentialService(state,data.id);
     },{credential: sanitizeAuditText(data.credential,data.value?[data.value]:[]),credentialAction:data.action==='delete'?(inUse?'clear':'delete'):previous?.value?'replace':'set',credentialIdentity:credentialIdentity(data.id,data.credential),credentialVersion:generation,mutation});}
     catch(error){this.store.uncertainCredentialMutations.add(mutation);throw error;}
@@ -253,7 +260,7 @@ export class ConsoleServices {
     try { operation = this.store.commit(actor.id, 'service.access_' + data.action, data.id, state => {
       const m = state.managed!, target = m.services[data.id]!;
       target.assignments = data.action === 'grant' ? [...target.assignments, data.user] : target.assignments.filter(v => v !== data.user);
-      target.applied!.access = { users: target.assignments };if(target.recoveryReviewRequired&&target.draft){target.draft.content.access={users:[...target.assignments]};if(target.draft.missingMappings!==undefined||target.draft.importedIdentities!==undefined)state.v=7;delete target.draft.missingMappings;delete target.draft.importedIdentities;target.draft.base=m.revision+1;target.draft.generation++;delete target.review;}
+      target.applied!.access = { users: target.assignments };if(target.recoveryReviewRequired&&target.draft){target.draft.content.access={users:[...target.assignments]};if(target.draft.missingMappings!==undefined||target.draft.importedIdentities!==undefined)state.v=Math.max(state.v,7) as typeof state.v;delete target.draft.missingMappings;delete target.draft.importedIdentities;target.draft.base=m.revision+1;target.draft.generation++;delete target.review;}
       const active = own(state.config!.services, data.id); if (active) active.access = { users: target.assignments };
       m.revision++;
     }, { identity: data.user }); } finally { if (this.state.revision !== base) { if (data.action === 'remove') this.invalidate(data.id, data.user); this.publish(); } }

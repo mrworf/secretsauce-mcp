@@ -1,0 +1,753 @@
+schema_version: 1
+reconciliation_id: REC-RUN-014
+product_id: secretsauce-mcp
+status: RESOLVED
+transaction:
+  parent_commit: 307202c78bb17663cdfb04331ff8e07f89debe38
+  repository_commit: null
+  owned_paths:
+  - workflow/reconciliation/REC-RUN-014/
+  - docs/web-console-prd.md
+  publication: pending producer payload/closeout
+  pre_existing_dirty_paths:
+  - workflow/definition/definition-package.yaml
+  - workflow/definition/state.yaml
+  - workflow/definition/history/web-console-ux-8-completed/
+  - passwd
+  - codex-session-01a122f7-e70f-7440-b1ce-ca88b955e519.md
+  - test-results/
+source:
+  invocation: product-definition-orchestrator
+  originating_stage: product
+  triggering_findings: []
+  affected_requirements:
+  - CONFIG-01
+  - CONFIG-03
+  - UX-03
+  - CONFIG-05
+  - STATE-01
+  - STATE-09
+  - MIGRATE-01
+  - MIGRATE-03
+  - AUTHZ-02
+  artifact_revisions:
+  - artifact: workflow/feedback/PO-FEEDBACK-2026-11-18-002/feedback.yaml
+    revision: sha256:e83f7407bea5c0317e6dface8ec81617d198ccc5dd93521db70a5178f5007b7f
+  - artifact: docs/web-console-prd.md
+    revision: sha256:dab49dc650ecbc55c3319532ad8ee590767d3938e8772676da9a6ddf047ad32d
+  - artifact: product/ux/manifest.yaml
+    revision: sha256:5f453b1f369134cb22c3da53142a6bacf650700704c50fc8ed76130b1e2480fe
+  - artifact: product/architecture/web-console-state-contract.md
+    revision: sha256:c8e22b5013d89090cc451cb2ef0290d7517b05bebae746faa15b65f10fca9848
+  - artifact: product/security/web-console-security-contract.md
+    revision: sha256:8f66520798094a2638f006c9f3145e263e96008fdf63480fc6b98c2b0ccddc35
+  - artifact: workflow/reconciliation/REC-RUN-014/service-semantics-basis.md
+    revision: sha256:eb6f3e4433b6fecac9e42e9673caeeef196b1164d433a6cb4e3c18f0ce2c5cb9
+  product_owner_feedback:
+  - feedback_id: PO-FEEDBACK-2026-11-18-002
+    path: workflow/feedback/PO-FEEDBACK-2026-11-18-002/feedback.yaml
+    schema_version: 1
+    status: CONFIRMED
+  implementation_revision: 8181af4212c46d2d03fe7414b3c69aa1efd1d30b
+  specialist_resolution: S9-01–05 adopted into PRD; producer-owned basis preserves derivation; no owner decision
+findings:
+  resolved:
+  - REC-059
+  - REC-060
+  - REC-061
+  - REC-062
+  - REC-063
+  unresolved: []
+feedback_dispositions:
+- feedback_id: PO-FEEDBACK-2026-11-18-002
+  item_id: PO-FB-238
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  product_intent_authority: evidence
+  original: When I look at overview, there is a back to services at the bottom.
+  normalized: Back to Services appears inconsistently across service tabs and the editor.
+  disposition: EVIDENCE_CORRELATED
+  source_findings:
+  - REC-059
+  source_changes:
+  - REC-CHANGE-059
+  remediation:
+  - REC-RM-053
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Evidence/advisory/exploration correlated without promoting its authority.
+  scope:
+  - service-navigation
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-002
+  item_id: PO-FB-239
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: I don't think we need to have the back to services link at all on any of these, like neither overview,
+    configuration, access, or activity, because you can just click on services on the left hand side to get there.
+  normalized: Remove Back to Services controls from Overview, Configuration, Access and Activity. Use the main Services
+    navigation.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-059
+  source_changes:
+  - REC-CHANGE-059
+  remediation:
+  - REC-RM-053
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Confirmed direction adopted precisely; implementation and targeted revalidation remain.
+  scope:
+  - service-navigation
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-002
+  item_id: PO-FB-240
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  product_intent_authority: evidence
+  original: When I go to configuration, there's save draft back to services and continue.
+  normalized: Service editing uses scattered actions and has no obvious Discard operation.
+  disposition: EVIDENCE_CORRELATED
+  source_findings:
+  - REC-059
+  source_changes:
+  - REC-CHANGE-059
+  remediation:
+  - REC-RM-053
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Evidence/advisory/exploration correlated without promoting its authority.
+  scope:
+  - service-editor
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-002
+  item_id: PO-FB-241
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: if I'm editing a service, I should have this bar at the bottom where I can uh, just like settings, I
+    can uh, discard, save for later review uh, changes because I think that actually makes sense.
+  normalized: Use a persistent Settings-style action bar in service editing with status, Discard, Save for later
+    and Review changes.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-059
+  source_changes:
+  - REC-CHANGE-059
+  remediation:
+  - REC-RM-053
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Confirmed direction adopted precisely; implementation and targeted revalidation remain.
+  scope:
+  - service-editor
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-002
+  item_id: PO-FB-242
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  product_intent_authority: evidence
+  original: But I feel continue is misleading because all it does is navigate to the next. It doesn't actually take
+    me to what I need to input.
+  normalized: Continue merely advances rather than pointing to what the editor needs to complete.
+  disposition: EVIDENCE_CORRELATED
+  source_findings:
+  - REC-059
+  source_changes:
+  - REC-CHANGE-059
+  remediation:
+  - REC-RM-053
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Evidence/advisory/exploration correlated without promoting its authority.
+  scope:
+  - service-editor
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-002
+  item_id: PO-FB-243
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: I agree. Um, I'm just going through some more.
+  normalized: Accepted design recommendation to remove Continue from service configuration and use direct section
+    navigation with indicators for known blockers.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-059
+  source_changes:
+  - REC-CHANGE-059
+  remediation:
+  - REC-RM-053
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Confirmed direction adopted precisely; implementation and targeted revalidation remain.
+  scope:
+  - service-editor
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-002
+  item_id: PO-FB-244
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: I agree. Um, I'm just going through some more.
+  normalized: Accepted design recommendation to allow Review changes for incomplete setup. Show specific issues
+    and fix links while keeping Apply unavailable until required settings are complete.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-059
+  source_changes:
+  - REC-CHANGE-059
+  remediation:
+  - REC-RM-053
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Confirmed direction adopted precisely; implementation and targeted revalidation remain.
+  scope:
+  - service-editor
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-002
+  item_id: PO-FB-245
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: I agree. Um, I'm just going through some more.
+  normalized: Accepted design recommendation that discarding never-saved setup abandons those edits and returns
+    to Services.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-060
+  source_changes:
+  - REC-CHANGE-060
+  remediation:
+  - REC-RM-054
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Confirmed direction adopted precisely; implementation and targeted revalidation remain.
+  scope:
+  - service-discard
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-002
+  item_id: PO-FB-246
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: I agree. Um, I'm just going through some more.
+  normalized: Accepted design recommendation that unsaved edits can revert to the saved draft and discarding a saved
+    draft requires separate explicit confirmation.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-060
+  source_changes:
+  - REC-CHANGE-060
+  remediation:
+  - REC-RM-054
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Confirmed direction adopted precisely; implementation and targeted revalidation remain.
+  scope:
+  - service-discard
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-002
+  item_id: PO-FB-247
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: I agree. Um, I'm just going through some more.
+  normalized: Accepted design recommendation that an active service keeps running its active configuration when
+    unsaved edits or its saved draft are discarded.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-060
+  source_changes:
+  - REC-CHANGE-060
+  remediation:
+  - REC-RM-054
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Confirmed direction adopted precisely; implementation and targeted revalidation remain.
+  scope:
+  - service-discard
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-002
+  item_id: PO-FB-248
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  product_intent_authority: evidence
+  original: The overview page for services typically have the best uh place to show what you need to do because
+    I noticed that right now if I go to One that's a draft with ness- missing configuration, it actually shows what
+    needs to be configured.
+  normalized: Overview already calls out missing configuration.
+  disposition: EVIDENCE_CORRELATED
+  source_findings:
+  - REC-059
+  source_changes:
+  - REC-CHANGE-059
+  remediation:
+  - REC-RM-053
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Evidence/advisory/exploration correlated without promoting its authority.
+  scope:
+  - service-readiness
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-002
+  item_id: PO-FB-249
+  classification: PREFERENCE
+  confirmation: CONFIRMED
+  product_intent_authority: advisory
+  original: So that actually aligns well with um when we go in to oh, and we already have indicators where we need
+    to fix things. So I think parts of these things are already in place.
+  normalized: Retain useful Overview guidance and build on existing actionable validation indicators.
+  disposition: ADVISORY_CONSIDERED
+  source_findings:
+  - REC-059
+  source_changes:
+  - REC-CHANGE-059
+  remediation:
+  - REC-RM-053
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Evidence/advisory/exploration correlated without promoting its authority.
+  scope:
+  - service-readiness
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-002
+  item_id: PO-FB-250
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  product_intent_authority: evidence
+  original: That keeps showing up absolutely everywhere.
+  normalized: The identity-mapping warning repeats across service screens.
+  disposition: EVIDENCE_CORRELATED
+  source_findings:
+  - REC-063
+  source_changes:
+  - REC-CHANGE-063
+  remediation:
+  - REC-RM-057
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Evidence/advisory/exploration correlated without promoting its authority.
+  scope:
+  - service-import
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-002
+  item_id: PO-FB-251
+  classification: IDEA_OR_QUESTION
+  confirmation: CONFIRMED
+  product_intent_authority: exploratory
+  original: if you import something, you shouldn't really be allowed to start editing or doing anything else until
+    you have resolved the identity mapping because without identity mapping being fixed, nothing else works.
+  normalized: Earlier idea to require identity mapping before editing, superseded by the later direction to drop
+    mapping.
+  disposition: EXPLORATORY_RECORDED
+  source_findings:
+  - REC-063
+  source_changes:
+  - REC-CHANGE-063
+  remediation:
+  - REC-RM-057
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: 'Superseded exploration: PO-FB-253 explicitly removes mapping; no mapping-before-edit gate retained.'
+  scope:
+  - service-import
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-002
+  item_id: PO-FB-252
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  product_intent_authority: evidence
+  original: I can't save the draft. I keep getting told there is a unsaved draft changes. I can stay or I can save
+    the draft or I can discard. Save draft doesn't go anywhere. Stay does the same thing. Discard. It got me back
+    out and now the change I made to access and policy, isn't isn't saved.
+  normalized: Reported that Save draft from the navigation guard did not complete navigation or save the Access
+    & policy selection. Discard left without the selection.
+  disposition: EVIDENCE_CORRELATED
+  source_findings:
+  - REC-061
+  source_changes:
+  - REC-CHANGE-061
+  remediation:
+  - REC-RM-055
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Evidence/advisory/exploration correlated without promoting its authority.
+  scope:
+  - service-save-navigation
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-002
+  item_id: PO-FB-253
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: Yeah, the identity mapping definitely just needs to go away.
+  normalized: Remove the separate identity-mapping flow and repeated mapping warnings for service imports.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-063
+  source_changes:
+  - REC-CHANGE-063
+  remediation:
+  - REC-RM-057
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Confirmed direction adopted precisely; implementation and targeted revalidation remain.
+  supersedes: PO-FB-251
+  scope:
+  - service-import
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-002
+  item_id: PO-FB-254
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: So when you import something, it is it will basically be imported and then we will leave who can use
+    this service completely unchecked, which will force people to have to configure that setting.
+  normalized: Imported drafts start with nobody selected. Use the ordinary Access & policy controls for selecting
+    who can use them.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-063
+  source_changes:
+  - REC-CHANGE-063
+  remediation:
+  - REC-RM-057
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Confirmed direction adopted precisely; implementation and targeted revalidation remain.
+  scope:
+  - service-import
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-002
+  item_id: PO-FB-255
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: I mean, you should you should of course be able to apply. And do all the things, but if you haven't
+    assigned who can use it, it just ends up being that no one can use it
+  normalized: Allow Apply with nobody assigned. Nobody has execution access until explicitly assigned.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-063
+  source_changes:
+  - REC-CHANGE-063
+  remediation:
+  - REC-RM-057
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Confirmed direction adopted precisely; implementation and targeted revalidation remain.
+  scope:
+  - service-access
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-002
+  item_id: PO-FB-256
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  product_intent_authority: evidence
+  original: when I then go in and look, it says draft and draft changes Uh .As uh the the badges for uh in the configuration
+    where the badges are being shown.
+  normalized: Lifecycle and draft badges are confusing when displayed together as Draft and Draft changes.
+  disposition: EVIDENCE_CORRELATED
+  source_findings:
+  - REC-062
+  source_changes:
+  - REC-CHANGE-062
+  remediation:
+  - REC-RM-056
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Evidence/advisory/exploration correlated without promoting its authority.
+  scope:
+  - service-status
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-002
+  item_id: PO-FB-257
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: Something that isn't active should show inactive.
+  normalized: Use Active and Inactive to describe lifecycle independently of saved drafts.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-062
+  source_changes:
+  - REC-CHANGE-062
+  remediation:
+  - REC-RM-056
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Confirmed direction adopted precisely; implementation and targeted revalidation remain.
+  scope:
+  - service-status
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-002
+  item_id: PO-FB-258
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: Correct. And then of course we also have archived as a status. So the three statuses for the lifecycle
+    is uh active, inactive, archived, I believe.
+  normalized: Use Active, Inactive and Archived as lifecycle labels.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-062
+  source_changes:
+  - REC-CHANGE-062
+  remediation:
+  - REC-RM-056
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Confirmed direction adopted precisely; implementation and targeted revalidation remain.
+  clarifies: PO-FB-257
+  scope:
+  - service-status
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-002
+  item_id: PO-FB-259
+  classification: IDEA_OR_QUESTION
+  confirmation: CONFIRMED
+  product_intent_authority: exploratory
+  original: I don't if there is any more states, you're going to have to resolve it when you look at the uh the
+    PRD during the the reconciliation
+  normalized: Reconcile existing service lifecycle states and transitions with the intended presentation.
+  disposition: EXPLORATORY_RECORDED
+  source_findings:
+  - REC-062
+  source_changes:
+  - REC-CHANGE-062
+  remediation:
+  - REC-RM-056
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Lifecycle semantics inspected and resolved by authoritative257/258/260; existing internal states need
+    not be migrated.
+  scope:
+  - service-status
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-002
+  item_id: PO-FB-260
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: Something has a draft configuration [cough] shows draft.
+  normalized: Show Draft as a separate indicator when there is a saved draft.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-062
+  source_changes:
+  - REC-CHANGE-062
+  remediation:
+  - REC-RM-056
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Confirmed direction adopted precisely; implementation and targeted revalidation remain.
+  scope:
+  - service-status
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-002
+  item_id: PO-FB-261
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: When we're in the service and editing it, we don't need to say needs configuration as a badge because
+    obviously we have exclamation marks on all the places where we're missing,
+  normalized: Keep Needs configuration on the Services list and use section indicators instead of a duplicate badge
+    within the service.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-059
+  source_changes:
+  - REC-CHANGE-059
+  remediation:
+  - REC-RM-053
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Confirmed direction adopted precisely; implementation and targeted revalidation remain.
+  scope:
+  - service-readiness
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-002
+  item_id: PO-FB-262
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: if any of the sub tabs have an ex-exclamation mark, I do believe the configuration itself should have
+    an exclamation mark just to make sure that people click there and go there to fix it
+  normalized: Show the issue indicator on the parent Configuration tab when any configuration section needs attention.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-059
+  source_changes:
+  - REC-CHANGE-059
+  remediation:
+  - REC-RM-053
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Confirmed direction adopted precisely; implementation and targeted revalidation remain.
+  scope:
+  - service-readiness
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-002
+  item_id: PO-FB-263
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: I don't want imports overwriting an existing service because it just gets very messy to try and resolve
+    that for the user
+  normalized: Import a separate service instead of overwriting a pre-existing service or its access.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-063
+  source_changes:
+  - REC-CHANGE-063
+  remediation:
+  - REC-RM-057
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Confirmed direction adopted precisely; implementation and targeted revalidation remain.
+  scope:
+  - service-import
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-002
+  item_id: PO-FB-264
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: if I have a service called Uh, Java and I import a service called Java, it should should just be called
+    uh imported Java or something to that effect. And if there's already one called imported Java, we should just
+    call it imported Java Uh .parenthesis two, parenthesis three, so on and so forth.
+  normalized: Resolve name collisions using Imported Java, Imported Java (2), Imported Java (3), and so on.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-063
+  source_changes:
+  - REC-CHANGE-063
+  remediation:
+  - REC-RM-057
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Confirmed direction adopted precisely; implementation and targeted revalidation remain.
+  scope:
+  - service-import
+  suggestions: []
+authoritative_changes:
+  changed: true
+  entries:
+  - change_id: REC-CHANGE-059
+    source_findings:
+    - REC-059
+    path: docs/web-console-prd.md
+    requirements:
+    - CONFIG-01
+    - CONFIG-03
+    - UX-03
+    status: APPLIED_AFTER_DECISION
+  - change_id: REC-CHANGE-060
+    source_findings:
+    - REC-060
+    path: docs/web-console-prd.md
+    requirements:
+    - CONFIG-03
+    - CONFIG-05
+    status: APPLIED_AFTER_DECISION
+  - change_id: REC-CHANGE-061
+    source_findings:
+    - REC-061
+    path: docs/web-console-prd.md
+    requirements:
+    - CONFIG-03
+    - UX-03
+    status: APPLIED_AUTOMATICALLY
+  - change_id: REC-CHANGE-062
+    source_findings:
+    - REC-062
+    path: docs/web-console-prd.md
+    requirements:
+    - CONFIG-05
+    - UX-03
+    status: APPLIED_AFTER_DECISION
+  - change_id: REC-CHANGE-063
+    source_findings:
+    - REC-063
+    path: docs/web-console-prd.md
+    requirements:
+    - MIGRATE-01
+    - MIGRATE-03
+    - CONFIG-03
+    - AUTHZ-02
+    status: APPLIED_AFTER_DECISION
+definition_changed: true
+implementation_required: true
+implementation_ready: true
+decisions_required: []
+change_impact:
+  change_id: REC-IMPACT-014
+  source_findings:
+  - REC-059
+  - REC-060
+  - REC-061
+  - REC-062
+  - REC-063
+  changed_artifacts:
+  - docs/web-console-prd.md
+  changed_requirements:
+  - CONFIG-01
+  - CONFIG-03
+  - CONFIG-05
+  - UX-03
+  - MIGRATE-01
+  - MIGRATE-03
+  change_types:
+  - user_behavior
+  - ux_interaction
+  - migration
+  - api_contract
+  affected_domains:
+    product: false
+    user_journeys: true
+    ux: true
+    architecture: true
+    security: true
+  potentially_stale:
+  - docs/web-console-prd-coverage.md
+  - docs/web-console-prd-user-journey-audit.md
+  - product/ux/manifest.yaml
+  - product/ux/01-information-architecture.md
+  - product/ux/02-interaction-patterns.md
+  - product/architecture/web-console-state-contract.md
+  - product/security/web-console-security-contract.md
+  revalidation_required: true
+handoff:
+  category: DEFINITION_REVALIDATION
+  definition_revalidation_required: true
+  delivery_planning_ready: false
+  next_workflow: product-definition-orchestrator

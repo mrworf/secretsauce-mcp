@@ -32,4 +32,6 @@ Source: realtime service walkthrough and typed handoff. Status: CONFIRMED.
 | PO-FB-263 | DIRECTIVE | CONFIRMED | Import a separate service instead of overwriting a pre-existing service or its access. |
 | PO-FB-264 | DIRECTIVE | CONFIRMED | Resolve name collisions using Imported Java, Imported Java (2), Imported Java (3), and so on. |
 
-Reconciliation ready: false. No unresolved debrief items. Confirmed directives establish product intent. Preferences guide quality, observations record evidence, and ideas or questions record exploration.
+Reconciliation ready: true. No unresolved debrief items. Confirmed directives establish product intent. Preferences guide quality, observations record evidence, and ideas or questions record exploration.
+
+Run product-reconciliation using workflow/feedback/PO-FEEDBACK-2026-11-18-002/feedback.yaml.

@@ -572,15 +572,17 @@ milestones:
 - id: '46'
   title: Investigate scoped Activity with reusable filters and relevant exports
   file: delivery/milestones/secretsauce-mcp/46-scoped-activity-investigation.md
-  status: in_progress
+  status: completed
   dependencies:
   - '15'
   - '42'
   - '43'
-  completed_at: null
-  evidence: null
-  notes: null
+  completed_at: '2026-11-19T04:02:56.514072+00:00'
+  evidence: evidence/ux-acceptance/secretsauce-mcp/milestone46/acceptance.md
+  notes: Focused acceptance and actual browser visual evidence passed; UX8-INTEGRATED remains due before
+    goal completion.
   started_at: '2026-11-19T03:51:15.662130+00:00'
+  commit_hash: d14741626ec65233a92933b86735714d74832f78
 delivery_goal:
   product_id: secretsauce-mcp
   status: in_progress
@@ -682,10 +684,10 @@ delivery_goal:
   - '45'
   - '46'
   execution: autonomous
-  current_milestone: '46'
+  current_milestone: null
   governing_plan: delivery/plans/secretsauce-mcp/milestone_46_plan_01.md
   blockers: []
-  resume_point: M46 governing plan before implementation
+  resume_point: UX8-INTEGRATED final qualification due
   started_at: '2026-11-19T03:42:26.490782+00:00'
 compiled_from_history:
 - product_id: secretsauce-mcp

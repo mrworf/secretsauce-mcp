@@ -652,16 +652,18 @@ milestones:
 - id: '52'
   title: Configure service access in one consistent place
   file: delivery/milestones/secretsauce-mcp/52-consistent-service-access.md
-  status: in_progress
+  status: completed
   dependencies:
   - '47'
   - '48'
   - '49'
   - '51'
-  completed_at: null
-  evidence: null
-  notes: null
+  completed_at: '2026-11-19T20:11:25.216004+00:00'
+  evidence: evidence/ux-acceptance/secretsauce-mcp/milestone52/final/acceptance.md
+  notes: Focused acceptance and actual browser visual evidence passed; UX11-INTEGRATED remains due before
+    goal completion.
   started_at: '2026-11-19T20:02:04.162445+00:00'
+  commit_hash: f4ae3fb780ff1b1676704c40a505066661ef9f39
 delivery_goal:
   product_id: secretsauce-mcp
   status: in_progress
@@ -774,10 +776,10 @@ delivery_goal:
   milestone_ids:
   - '52'
   execution: autonomous
-  current_milestone: '52'
+  current_milestone: null
   governing_plan: delivery/plans/secretsauce-mcp/milestone_52_plan_01.md
   blockers: []
-  resume_point: M52 governing plan before implementation
+  resume_point: UX11-INTEGRATED final qualification due
   started_at: '2026-11-19T20:02:04.162445+00:00'
 compiled_from_history:
 - product_id: secretsauce-mcp

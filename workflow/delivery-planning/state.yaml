@@ -4,7 +4,7 @@ product_id: secretsauce-mcp
 status: ready
 transaction:
   parent_commit: 985b8d082d63ef681abda185b3ed1a7268384b34
-  repository_commit: null
+  repository_commit: efcc8da0ebdaf9bab4e32e8166bdecaa76a7f6dd
   pre_existing_dirty_paths:
   - codex-session-01a122f7-e70f-7440-b1ce-ca88b955e519.md
   - passwd

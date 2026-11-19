@@ -2,25 +2,25 @@ status: approved
 product_id: secretsauce-mcp
 sources:
 - path: docs/web-console-prd.md
-  revision: sha256:c9c0f4890a94e3a82d6d01fb770fe5f0bde689cd44362af77400c71f003be199
+  revision: sha256:7f09e428b920b10daccb98f69c8988cc3e37d7a92483297bc0175a130fc38116
 - path: product/architecture/web-console-state-contract.md
   revision: sha256:1c7642c7b87bba4c7b55c8a5520eac002bd2727d8729f9eb0c51ecec31f3f9c6
 - path: product/security/web-console-security-contract.md
   revision: sha256:f02d7b7bdedb1108c7461f15a0d3cffeab93150ecac34fa0ff9c66b2e24c8268
-- path: workflow/feedback/PO-FEEDBACK-2026-11-19-001/feedback.yaml
-  revision: sha256:5d66b847807a0c1066773cacd3c80e072ac03cd5d4a5d4665d0600e6b59aec39
-- path: workflow/reconciliation/REC-RUN-015/reconciliation-result.yaml
-  revision: sha256:fb2118f64287f6b2791c2ebeadae0974854a6cc68b6dc14bb13d2ca75415eb88
-- path: workflow/reconciliation/REC-RUN-015/deletion-semantics-basis.md
-  revision: sha256:8b731120243d2c75c7f5af5d6c0a4dfe1e6da7e2a9cba81a8e4d8ce479749995
+- path: workflow/feedback/PO-FEEDBACK-2026-11-19-002/feedback.yaml
+  revision: sha256:8219700323e1a8ceb0bfc2246aada8f2e7d46ed23e468a66a026363408b6d733
+- path: workflow/reconciliation/REC-RUN-016/reconciliation-result.yaml
+  revision: sha256:29e16acb1cc7aa1b40d7b15d32125d48acb89a900050a9ed83b027ae9e38e305
 - path: workflow/definition/decisions.md
-  revision: sha256:9dea3ea10de328f6a7fb2e51fc42018c5a0d5747a2ada943eff6d74dbdd32e2a
+  revision: sha256:c855c05692e2dc3a9638f4f6e4c44d54fa112992ef0531fc7168d37ca23ea3ae
 - path: docs/web-console-prd-coverage.md
-  revision: sha256:2832aa3fb941b8397428f5113bd862a25f554a956888d9f7addda6da567b8258
+  revision: sha256:46f141ab512d820f73a6ac78bc068ee7be285e3cc070219f5c20c1924cfdb915
 - path: docs/web-console-prd-user-journey-audit.md
-  revision: sha256:3f593964f65572ff47cd74e058b73f9d07bf3d090fc795d5911dac38d0b5c012
+  revision: sha256:93557c4a8de28e7b11eedd9c0fbf21f0f43e27283d8d4a491c018f914d40c16c
+- path: workflow/reconciliation/REC-RUN-016/design-basis.md
+  revision: sha256:ee4e81f5c8ead4e6444db00f8fec5cbe999ab56b361a2cfab2ea0f37721eab3b
 experience:
-  revision: web-console-ux-10
+  revision: web-console-ux-11
   audience:
     primary:
     - Owners
@@ -35,42 +35,50 @@ experience:
   - Preserve deliberate review and security boundaries
   - Separate service lifecycle, credential readiness and pending configuration
   - Use focused service sections and contextual credential/rule dialogs
-  - Compare service changes by section and keep full proposed settings in a separate tab
+  - Compare service changes by section and keep full proposed settings in a separate
+    tab
   product_character:
     tone: Plain, calm, precise
     density: Moderate density; compact one-row account list
-    complexity_strategy: Focused sections and named advanced controls; no routine JSON
+    complexity_strategy: Focused sections and named advanced controls; no routine
+      JSON
     guidance_level: Short associated help and concrete consequences
   information_priorities:
   - Current versus pending versus unsaved state
   - The next action needed to make changes take effect
   - Role-permitted account details and current health
   interaction_direction:
-    navigation: Preserve four primary areas and six Settings sections; five Limits categories and persistent
-      search dialog under UX-DESIGN-006.
-    routine_actions: Populated forms; Review changes saves pending work then opens complete-scope review; Save
-      for later retains existing persistence-only option
-    consequential_actions: Apply reviewed Settings atomically; confirm immediate account operations separately
-    progressive_disclosure: Preserve all advanced capabilities without putting raw structure in routine paths
-    service_configuration: Four direct sections share Settings-style persistent status/Discard/Save for later/Review
-      changes; actual incomplete review has exact fix links and unavailable approval.
-    service_review: New settings first/default with complete section cards; Changes retains paired Before/After;
-      actual exception bullets precede Approve changes and separate required modal acknowledgments
-    settings_actions: One persistent white bottom bar with status, Discard, Save for later and Review changes;
-      safe multi-form state retained.
-    activity: Shared removable chips with positive alternatives and veto exclusions; fixed contextual scope
-      and last-successful-query export.
-    service_lifecycle: Shared name and Active/Inactive/Archived lifecycle, independent saved Draft and parent/section
-      issue markers; no Back to Services controls.
-    service_import: Create separate initially unassigned drafts with readable collision names; no identity-mapping
-      task; zero assignments valid.
-    credential_removal: Named button/modal stages removal; exact reviewed Apply deletes only intentionally
-      removed unreferenced saved values; independent immediate actions and SMTP exception remain.
-    permanent_deletion: Archived-only typed confirmation removes current service/configuration/secrets; retained
-      audit/backups and explicit restore remain separate.
-    sign_in: Compact task form; ordinary recovery-code sign-in remains distinct from Replace authenticator.
-  responsive_priority: Use columns on wide screens, reflow forms and keep compact account rows linked to complete
-    detail on narrow screens
+    navigation: Preserve four primary areas and six Settings sections; five Limits
+      categories and persistent search dialog under UX-DESIGN-006.
+    routine_actions: Populated forms; Review changes saves pending work then opens
+      complete-scope review; Save for later retains existing persistence-only option
+    consequential_actions: Apply reviewed Settings atomically; confirm immediate account
+      operations separately
+    progressive_disclosure: Preserve all advanced capabilities without putting raw
+      structure in routine paths
+    service_configuration: Four direct sections share Settings-style persistent status/Discard/Save
+      for later/Review changes; actual incomplete review has exact fix links and unavailable
+      approval.
+    service_review: New settings first/default with complete section cards; Changes
+      retains paired Before/After; actual exception bullets precede Approve changes
+      and separate required modal acknowledgments
+    settings_actions: One persistent white bottom bar with status, Discard, Save for
+      later and Review changes; safe multi-form state retained.
+    activity: Shared removable chips with positive alternatives and veto exclusions;
+      fixed contextual scope and last-successful-query export.
+    service_lifecycle: Shared name and Active/Inactive/Archived lifecycle, independent
+      saved Draft and parent/section issue markers; no Back to Services controls.
+    service_import: Create separate initially unassigned drafts with readable collision
+      names; no identity-mapping task; zero assignments valid.
+    credential_removal: Named button/modal stages removal; exact reviewed Apply deletes
+      only intentionally removed unreferenced saved values; independent immediate
+      actions and SMTP exception remain.
+    permanent_deletion: Archived-only typed confirmation removes current service/configuration/secrets;
+      retained audit/backups and explicit restore remain separate.
+    sign_in: Compact task form; ordinary recovery-code sign-in remains distinct from
+      Replace authenticator.
+  responsive_priority: Use columns on wide screens, reflow forms and keep compact
+    account rows linked to complete detail on narrow screens
   explicit_po_preferences:
   - statement: Plain understandable language and useful horizontal space
     decision_refs:
@@ -87,49 +95,58 @@ experience:
     decision_refs:
     - PO-FB-031
     - PO-FB-034
-  - statement: Actual UX must generally match the appearance of approved mockups; meaningful visual drift needs
-      correction or explicit accepted exception
+  - statement: Actual UX must generally match the appearance of approved mockups;
+      meaningful visual drift needs correction or explicit accepted exception
     decision_refs:
     - UX-DESIGN-003
-  - statement: Approved feedback 003 service configuration direction and representative visual appearance
+  - statement: Approved feedback 003 service configuration direction and representative
+      visual appearance
     decision_refs:
     - UX-DESIGN-004
-  - statement: Referenced credential Delete clears its value and retains its key, with the consequence explained
-      before confirmation
+  - statement: Referenced credential Delete clears its value and retains its key,
+      with the consequence explained before confirmation
     decision_refs:
     - PO-FB-065
     - PO-FB-066
-  - statement: Approved feedback 004 service comparison composition, narrow paired stacking and confirmation
-      appearance
+  - statement: Approved feedback 004 service comparison composition, narrow paired
+      stacking and confirmation appearance
     decision_refs:
     - UX-DESIGN-005
-  - statement: New settings first/default; actual review exception bullets visible before approval; remove
-      standalone guided Secret detection; highlight every explicit scanning override
+  - statement: New settings first/default; actual review exception bullets visible
+      before approval; remove standalone guided Secret detection; highlight every
+      explicit scanning override
     decision_refs:
     - PO-REFINEMENT-010
     - PO-FB-138
     - PO-FB-140
     - PO-FB-145
     - PO-FB-146
-  - statement: Approve five Limits categories and a persistent Settings search action/dialog, preserving established
-      style and safeguards.
+  - statement: Approve five Limits categories and a persistent Settings search action/dialog,
+      preserving established style and safeguards.
     decision_refs:
     - UX-DESIGN-006
     - REC-DEC-011
     - REC-DEC-012
-  - statement: One Settings footer, named credential cards/value status, concise policy layout/copy, shared
-      Activity chips and task-specific exports.
+  - statement: One Settings footer, named credential cards/value status, concise policy
+      layout/copy, shared Activity chips and task-specific exports.
     decision_refs:
     - PO-REFINEMENT-013
-  - statement: Reuse Settings action bar for service editing, direct sections, actionable incomplete review,
-      precise discard and separate lifecycle/draft state; independent unassigned imports.
+  - statement: Reuse Settings action bar for service editing, direct sections, actionable
+      incomplete review, precise discard and separate lifecycle/draft state; independent
+      unassigned imports.
     decision_refs:
     - PO-REFINEMENT-014
     - UX9-SERVICE-SEMANTICS
-  - statement: Distinct no-access advisory; named credential removal dialog and Apply cleanup; typed Archived
-      deletion; stable Settings switching; remove duplicate Overview actions and generic saved-value helper.
+  - statement: Distinct no-access advisory; named credential removal dialog and Apply
+      cleanup; typed Archived deletion; stable Settings switching; remove duplicate
+      Overview actions and generic saved-value helper.
     decision_refs:
     - PO-REFINEMENT-015
+  - statement: Use dedicated Access consistently for proposed initial and current
+      assignments; restore service Authentication width; quote typed deletion text;
+      remove redundant default helper.
+    decision_refs:
+    - PO-REFINEMENT-016
   explicit_po_dislikes:
   - statement: Extra viewing/editing steps and inconsistent values/state
     decision_refs:
@@ -140,10 +157,12 @@ experience:
     decision_refs:
     - PO-FB-126
   designer_discretion:
-  - Routine geometry, spacing and typography refinements within the approved general appearance
-  - Minor rendering differences that do not change composition, hierarchy, density or accessibility
-  - "Compact sign-in geometry within short-input pattern and existing recovery task naming, based on PO-FB-271\u2013\
-    274; no new authentication flow."
+  - Routine geometry, spacing and typography refinements within the approved general
+    appearance
+  - Minor rendering differences that do not change composition, hierarchy, density
+    or accessibility
+  - "Compact sign-in geometry within short-input pattern and existing recovery task\
+    \ naming, based on PO-FB-271\u2013274; no new authentication flow."
   approval:
     approved: true
     decision_refs:
@@ -159,8 +178,9 @@ experience:
     - UX9-SERVICE-SEMANTICS
     - PO-REFINEMENT-015
     - UX10-DELETION-SEMANTICS
-    scope: "Preserve UX9 approved appearance and task patterns; adopt confirmed feedback265\u2013281 and D10-01\u2013\
-      05 as the bounded UX10 delta."
+    - PO-REFINEMENT-016
+    scope: REC016 bounded UX11 refinement; preserve prior approved appearance and
+      unaffected behavior.
 historical_source_revisions:
 - path: docs/web-console-prd.md
   revision: sha256:dab49dc650ecbc55c3319532ad8ee590767d3938e8772676da9a6ddf047ad32d

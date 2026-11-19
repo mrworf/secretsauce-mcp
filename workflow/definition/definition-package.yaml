@@ -5,7 +5,7 @@ generated_from_state: workflow/definition/state.yaml
 artifacts:
   prd:
     path: docs/web-console-prd.md
-    revision: sha256:c9c0f4890a94e3a82d6d01fb770fe5f0bde689cd44362af77400c71f003be199
+    revision: sha256:7f09e428b920b10daccb98f69c8988cc3e37d7a92483297bc0175a130fc38116
   security_contract:
     path: product/security/web-console-security-contract.md
     revision: sha256:f02d7b7bdedb1108c7461f15a0d3cffeab93150ecac34fa0ff9c66b2e24c8268
@@ -14,30 +14,30 @@ artifacts:
     revision: sha256:1c7642c7b87bba4c7b55c8a5520eac002bd2727d8729f9eb0c51ecec31f3f9c6
   coverage:
     path: docs/web-console-prd-coverage.md
-    revision: sha256:2832aa3fb941b8397428f5113bd862a25f554a956888d9f7addda6da567b8258
+    revision: sha256:46f141ab512d820f73a6ac78bc068ee7be285e3cc070219f5c20c1924cfdb915
   journeys:
     path: docs/web-console-prd-user-journey-audit.md
-    revision: sha256:3f593964f65572ff47cd74e058b73f9d07bf3d090fc795d5911dac38d0b5c012
+    revision: sha256:93557c4a8de28e7b11eedd9c0fbf21f0f43e27283d8d4a491c018f914d40c16c
   ux:
     path: product/ux/manifest.yaml
-    revision: sha256:2f015fd09c2aec3150010a748a9c85fd78bcd2a9e0d7de93049a89ebda847042
-    declared_revision: web-console-ux-10
+    revision: sha256:10342f67f66523b0688e58ef51a56058e3b7505562ecf5f72776c33f2ab15592
+    declared_revision: web-console-ux-11
     manifest: product/ux/manifest.yaml
   ux_experience_brief:
     path: product/ux/experience-brief.yaml
-    revision: sha256:d4d2e4f5dd95d25d00bea566a55e2e0bffdc6d93bdf941991b72c28120eced73
+    revision: sha256:f2a10490409e699b35769135b190571b3d4fd01f5d5c1a6bf28ad05ea2335fa7
   ux_overview:
     path: product/ux/00-overview.md
-    revision: sha256:78d1005d0ca9f4ac83ef97ed4969695f84d3ee40449b253640021ebd1631edff
+    revision: sha256:ed66982c9c737e03e994f6c06a0095b670cd395319f9a457b837c3e3c181bfa7
   ux_information_architecture:
     path: product/ux/01-information-architecture.md
-    revision: sha256:c455bc6c5810b6db376ea07206e5df4a53615d96483e026a1052591d4ead54e4
+    revision: sha256:7de93261573c014d59b8c2fd66e51627df6a9c1a5c4c7a5d24c995d1cdab9c3c
   ux_interaction_patterns:
     path: product/ux/02-interaction-patterns.md
-    revision: sha256:2198d5ef774cb70017e43843f1d8150a149599fb165732ad3397192dc691b218
+    revision: sha256:158afa3ab5900cf45aca940b670497d52ef14e4b803af98282f2825186cae42b
   ux_responsive_and_platform:
     path: product/ux/03-responsive-and-platform.md
-    revision: sha256:b99829c15fb8780fd5b8f44c2e77a45b7f0c6a936f4902a2aa8bd37789db0e3a
+    revision: sha256:3a8e72500dda4b830115e9b92ad193ceb9272c250c43e7c439b1129d616d04a5
   ux_visual_system:
     path: product/ux/04-visual-system.md
     revision: sha256:8f1e26ebd3d7e6d70314c4959cdfbf51732353135bbadb9a609697a04a58a4f6
@@ -49,7 +49,7 @@ artifacts:
     revision: sha256:90a697a80b380a70d83cbffc7cd1409fe381c2051a877da901c7e4b3c2a30b48
   ux_acceptance_checklist:
     path: product/ux/07-acceptance-checklist.md
-    revision: sha256:ac2ac48df0be3f01a498e6a1d0a85fc2e6a6d8489f463239b10ed79e9a9028e7
+    revision: sha256:98df01c67ed06367217f048a86141a84db4fd007756f03ea164cb1d6cc9eb167
   security:
     path: product/security/web-console-security-review.md
     revision: sha256:b4e024c0c5abed4cd2c3dca53bfe71c109c2a97451403fb90ba3c521f344c8b7
@@ -66,10 +66,73 @@ accepted_risks:
   - D-012
   result: workflow/definition/results/security.yaml
 validation:
-  repository_commit: 6a03a5523246e8b834aeceb97dc818de32fce461
+  repository_commit: null
   prd:
     status: passed
     result: workflow/definition/results/prd.yaml
+    preservation:
+      basis: workflow/reconciliation/REC-RUN-016/reconciliation-result.yaml
+      revision: sha256:29e16acb1cc7aa1b40d7b15d32125d48acb89a900050a9ed83b027ae9e38e305
+      semantic_domain: product
+      affected: false
+      prior_result_revision: sha256:b704080718792e3d98b5935ede9c278c5854e944aaee595c39c0b4d16b2f967c
+      prior_definition_commit: 6a03a5523246e8b834aeceb97dc818de32fce461
+      current_authority_revisions: &id001
+        product:
+          path: docs/web-console-prd.md
+          revision: sha256:7f09e428b920b10daccb98f69c8988cc3e37d7a92483297bc0175a130fc38116
+        security_contract:
+          path: product/security/web-console-security-contract.md
+          revision: sha256:f02d7b7bdedb1108c7461f15a0d3cffeab93150ecac34fa0ff9c66b2e24c8268
+        architecture_contract:
+          path: product/architecture/web-console-state-contract.md
+          revision: sha256:1c7642c7b87bba4c7b55c8a5520eac002bd2727d8729f9eb0c51ecec31f3f9c6
+        coverage:
+          path: docs/web-console-prd-coverage.md
+          revision: sha256:46f141ab512d820f73a6ac78bc068ee7be285e3cc070219f5c20c1924cfdb915
+        journeys:
+          path: docs/web-console-prd-user-journey-audit.md
+          revision: sha256:93557c4a8de28e7b11eedd9c0fbf21f0f43e27283d8d4a491c018f914d40c16c
+        ux:
+          path: product/ux/manifest.yaml
+          revision: sha256:10342f67f66523b0688e58ef51a56058e3b7505562ecf5f72776c33f2ab15592
+          declared_revision: web-console-ux-11
+        ux_experience_brief:
+          path: product/ux/experience-brief.yaml
+          revision: sha256:f2a10490409e699b35769135b190571b3d4fd01f5d5c1a6bf28ad05ea2335fa7
+        ux_overview:
+          path: product/ux/00-overview.md
+          revision: sha256:ed66982c9c737e03e994f6c06a0095b670cd395319f9a457b837c3e3c181bfa7
+        ux_information_architecture:
+          path: product/ux/01-information-architecture.md
+          revision: sha256:7de93261573c014d59b8c2fd66e51627df6a9c1a5c4c7a5d24c995d1cdab9c3c
+        ux_interaction_patterns:
+          path: product/ux/02-interaction-patterns.md
+          revision: sha256:158afa3ab5900cf45aca940b670497d52ef14e4b803af98282f2825186cae42b
+        ux_responsive_and_platform:
+          path: product/ux/03-responsive-and-platform.md
+          revision: sha256:3a8e72500dda4b830115e9b92ad193ceb9272c250c43e7c439b1129d616d04a5
+        ux_visual_system:
+          path: product/ux/04-visual-system.md
+          revision: sha256:8f1e26ebd3d7e6d70314c4959cdfbf51732353135bbadb9a609697a04a58a4f6
+        ux_accessibility:
+          path: product/ux/05-accessibility.md
+          revision: sha256:bd45cbba1e5ad7c8c210ef9c18ee88272f81a00da22dc1ba0db6242f7c9a8db8
+        ux_feature_exceptions:
+          path: product/ux/06-feature-exceptions.md
+          revision: sha256:90a697a80b380a70d83cbffc7cd1409fe381c2051a877da901c7e4b3c2a30b48
+        ux_acceptance_checklist:
+          path: product/ux/07-acceptance-checklist.md
+          revision: sha256:98df01c67ed06367217f048a86141a84db4fd007756f03ea164cb1d6cc9eb167
+        security:
+          path: product/security/web-console-security-review.md
+          revision: sha256:b4e024c0c5abed4cd2c3dca53bfe71c109c2a97451403fb90ba3c521f344c8b7
+        architecture:
+          path: product/architecture/web-console-architecture-review.md
+          revision: sha256:def5cdf63b4074f914365d254752739b1eb24ca1fc0c98acba33fa96b3fae968
+      note: Prior scoped PASS retained, not a new review of changed runtime. REC016 investigated and preserves this
+        semantic domain; current source adoption is bounded to unchanged grant timing/permissions/persistence and
+        presentation. Historical validated_inputs remain historical exact evidence.
   coverage:
     status: passed
     result: workflow/definition/results/coverage.yaml
@@ -82,6 +145,28 @@ validation:
   architecture:
     status: passed
     result: workflow/definition/results/architecture.yaml
+    preservation:
+      basis: workflow/reconciliation/REC-RUN-016/reconciliation-result.yaml
+      revision: sha256:29e16acb1cc7aa1b40d7b15d32125d48acb89a900050a9ed83b027ae9e38e305
+      semantic_domain: architecture
+      affected: false
+      prior_result_revision: sha256:ecf4a0a0b07d60adad18ca702580db95e4eb651713b7c1f43f71c453b4aa878d
+      prior_definition_commit: 6a03a5523246e8b834aeceb97dc818de32fce461
+      current_authority_revisions: *id001
+      note: Prior scoped PASS retained, not a new review of changed runtime. REC016 investigated and preserves this
+        semantic domain; current source adoption is bounded to unchanged grant timing/permissions/persistence and
+        presentation. Historical validated_inputs remain historical exact evidence.
   security:
     status: passed
     result: workflow/definition/results/security.yaml
+    preservation:
+      basis: workflow/reconciliation/REC-RUN-016/reconciliation-result.yaml
+      revision: sha256:29e16acb1cc7aa1b40d7b15d32125d48acb89a900050a9ed83b027ae9e38e305
+      semantic_domain: security
+      affected: false
+      prior_result_revision: sha256:8f2ffcdafc9d785e9cf3504b32cd4abd816a57f7622783484e7062c7bbcd95ce
+      prior_definition_commit: 6a03a5523246e8b834aeceb97dc818de32fce461
+      current_authority_revisions: *id001
+      note: Prior scoped PASS retained, not a new review of changed runtime. REC016 investigated and preserves this
+        semantic domain; current source adoption is bounded to unchanged grant timing/permissions/persistence and
+        presentation. Historical validated_inputs remain historical exact evidence.

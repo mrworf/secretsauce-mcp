@@ -1,51 +1,45 @@
 stage: prd-to-user-journey-audit
 status: PASS
-mode: targeted_revalidation
+scope: Targeted REC016 four outcomes/eight feedback items; preserve prior inventories
+  and unaffected findings
 validated_inputs:
 - path: docs/web-console-prd.md
-  revision: sha256:c9c0f4890a94e3a82d6d01fb770fe5f0bde689cd44362af77400c71f003be199
-- path: workflow/reconciliation/REC-RUN-015/reconciliation-result.yaml
-  revision: sha256:fb2118f64287f6b2791c2ebeadae0974854a6cc68b6dc14bb13d2ca75415eb88
-- path: workflow/reconciliation/REC-RUN-015/deletion-semantics-basis.md
-  revision: sha256:8b731120243d2c75c7f5af5d6c0a4dfe1e6da7e2a9cba81a8e4d8ce479749995
-- path: workflow/feedback/PO-FEEDBACK-2026-11-19-001/feedback.yaml
-  revision: sha256:5d66b847807a0c1066773cacd3c80e072ac03cd5d4a5d4665d0600e6b59aec39
+  revision: sha256:7f09e428b920b10daccb98f69c8988cc3e37d7a92483297bc0175a130fc38116
+- path: workflow/reconciliation/REC-RUN-016/reconciliation-result.yaml
+  revision: sha256:29e16acb1cc7aa1b40d7b15d32125d48acb89a900050a9ed83b027ae9e38e305
+- path: workflow/reconciliation/REC-RUN-016/design-basis.md
+  revision: sha256:ee4e81f5c8ead4e6444db00f8fec5cbe999ab56b361a2cfab2ea0f37721eab3b
+- path: workflow/feedback/PO-FEEDBACK-2026-11-19-002/feedback.yaml
+  revision: sha256:8219700323e1a8ceb0bfc2246aada8f2e7d46ed23e468a66a026363408b6d733
 - path: workflow/definition/decisions.md
-  revision: sha256:9dea3ea10de328f6a7fb2e51fc42018c5a0d5747a2ada943eff6d74dbdd32e2a
-- path: docs/web-console-prd-user-journey-audit.md
-  revision: sha256:3f593964f65572ff47cd74e058b73f9d07bf3d090fc795d5911dac38d0b5c012
+  revision: sha256:c855c05692e2dc3a9638f4f6e4c44d54fa112992ef0531fc7168d37ca23ea3ae
+- path: docs/web-console-prd-coverage.md
+  revision: sha256:46f141ab512d820f73a6ac78bc068ee7be285e3cc070219f5c20c1924cfdb915
+- path: product/ux/manifest.yaml
+  revision: sha256:10342f67f66523b0688e58ef51a56058e3b7505562ecf5f72776c33f2ab15592
 artifact_changes:
 - path: docs/web-console-prd-user-journey-audit.md
-  summary: Targeted UX10 mapping and superseded credential/lifecycle language correction; unrelated inventories
-    retained.
-changed_paths:
+  summary: Bounded UX11 Access location, width and copy refinement
+changed_paths: &id001
 - docs/web-console-prd-user-journey-audit.md
 findings: []
 questions: []
 affected_requirements:
-- CONFIG-02
-- CONFIG-03
+- CONFIG-01
 - CONFIG-05
-- CONFIG-04
-- UX-01
+- AUTHZ-02
+- POLICY-01
 - UX-02
 - UX-03
-- IDENT-02
-- IDENT-05
-- AUTHZ-01
-- AUTHZ-02
-affected_artifacts:
-- docs/web-console-prd-user-journey-audit.md
+- MIGRATE-01
+affected_artifacts: *id001
 reconciliation_required: false
 change_impact:
   product: false
-  user_journeys: false
+  user_journeys: true
   ux: false
   architecture: false
   security: false
-scope_notes:
-- REC015 product domain false; settled direction preserved, adopted exact directives and D10 safeguards checked
-  without new product discovery.
-- Seven supplemental coverage rows and six action mappings preserve affected roles, denial, cancel, stale, unknown
-  and recovery paths.
-- 'Definition mapping only: no runtime conformance or unseen state certification; SMTP timing preserved.'
+validation_boundary: Definition-only; prior implementation evidence remains historical.
+  No new runtime verification, tests, release acceptance, product/architecture/security
+  authority changes or commits.

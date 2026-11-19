@@ -1,0 +1,87 @@
+workflow: product-definition
+product_id: secretsauce-mcp
+status: ready_for_delivery_planning
+generated_from_state: workflow/definition/state.yaml
+artifacts:
+  prd:
+    path: docs/web-console-prd.md
+    revision: sha256:c9c0f4890a94e3a82d6d01fb770fe5f0bde689cd44362af77400c71f003be199
+  security_contract:
+    path: product/security/web-console-security-contract.md
+    revision: sha256:f02d7b7bdedb1108c7461f15a0d3cffeab93150ecac34fa0ff9c66b2e24c8268
+  architecture_contract:
+    path: product/architecture/web-console-state-contract.md
+    revision: sha256:1c7642c7b87bba4c7b55c8a5520eac002bd2727d8729f9eb0c51ecec31f3f9c6
+  coverage:
+    path: docs/web-console-prd-coverage.md
+    revision: sha256:2832aa3fb941b8397428f5113bd862a25f554a956888d9f7addda6da567b8258
+  journeys:
+    path: docs/web-console-prd-user-journey-audit.md
+    revision: sha256:3f593964f65572ff47cd74e058b73f9d07bf3d090fc795d5911dac38d0b5c012
+  ux:
+    path: product/ux/manifest.yaml
+    revision: sha256:2f015fd09c2aec3150010a748a9c85fd78bcd2a9e0d7de93049a89ebda847042
+    declared_revision: web-console-ux-10
+    manifest: product/ux/manifest.yaml
+  ux_experience_brief:
+    path: product/ux/experience-brief.yaml
+    revision: sha256:d4d2e4f5dd95d25d00bea566a55e2e0bffdc6d93bdf941991b72c28120eced73
+  ux_overview:
+    path: product/ux/00-overview.md
+    revision: sha256:78d1005d0ca9f4ac83ef97ed4969695f84d3ee40449b253640021ebd1631edff
+  ux_information_architecture:
+    path: product/ux/01-information-architecture.md
+    revision: sha256:c455bc6c5810b6db376ea07206e5df4a53615d96483e026a1052591d4ead54e4
+  ux_interaction_patterns:
+    path: product/ux/02-interaction-patterns.md
+    revision: sha256:2198d5ef774cb70017e43843f1d8150a149599fb165732ad3397192dc691b218
+  ux_responsive_and_platform:
+    path: product/ux/03-responsive-and-platform.md
+    revision: sha256:b99829c15fb8780fd5b8f44c2e77a45b7f0c6a936f4902a2aa8bd37789db0e3a
+  ux_visual_system:
+    path: product/ux/04-visual-system.md
+    revision: sha256:8f1e26ebd3d7e6d70314c4959cdfbf51732353135bbadb9a609697a04a58a4f6
+  ux_accessibility:
+    path: product/ux/05-accessibility.md
+    revision: sha256:bd45cbba1e5ad7c8c210ef9c18ee88272f81a00da22dc1ba0db6242f7c9a8db8
+  ux_feature_exceptions:
+    path: product/ux/06-feature-exceptions.md
+    revision: sha256:90a697a80b380a70d83cbffc7cd1409fe381c2051a877da901c7e4b3c2a30b48
+  ux_acceptance_checklist:
+    path: product/ux/07-acceptance-checklist.md
+    revision: sha256:ac2ac48df0be3f01a498e6a1d0a85fc2e6a6d8489f463239b10ed79e9a9028e7
+  security:
+    path: product/security/web-console-security-review.md
+    revision: sha256:b4e024c0c5abed4cd2c3dca53bfe71c109c2a97451403fb90ba3c521f344c8b7
+  architecture:
+    path: product/architecture/web-console-architecture-review.md
+    revision: sha256:def5cdf63b4074f914365d254752739b1eb24ca1fc0c98acba33fa96b3fae968
+decisions:
+  path: workflow/definition/decisions.md
+accepted_risks:
+- id: SEC-DEF-001
+  summary: Trusted destination authors and best-effort response scanning are not universal credential non-exfiltration
+    controls.
+  decision_refs:
+  - D-012
+  result: workflow/definition/results/security.yaml
+validation:
+  repository_commit: 6a03a5523246e8b834aeceb97dc818de32fce461
+  prd:
+    status: passed
+    result: workflow/definition/results/prd.yaml
+  coverage:
+    status: passed
+    result: workflow/definition/results/coverage.yaml
+  journeys:
+    status: passed
+    result: workflow/definition/results/journeys.yaml
+  ux:
+    status: passed
+    result: workflow/definition/results/ux.yaml
+  architecture:
+    status: passed
+    result: workflow/definition/results/architecture.yaml
+  security:
+    status: passed
+    result: workflow/definition/results/security.yaml

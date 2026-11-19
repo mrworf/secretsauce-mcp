@@ -156,7 +156,7 @@ Delivery must inspect actual matching desktop/narrow/enlarged-text states agains
 
 | ID | Observable requirement | UX authority | Product source |
 | --- | --- | --- | --- |
-| UX-C84 | Access & policy shows a distinct named nonblocking no-access warning; valid zero-access review/Apply remains available and missing fields keep their separate markers. | UX-IN23, UX-V11, UX-A13 | PO-FB-265, AUTHZ-02 |
+| UX-C84 | The dedicated Access tab shows a distinct named nonblocking no-access warning; valid zero-access review/Apply remains available and missing fields keep their separate markers. | UX-IN23, UX-V11, UX-A13 | PO-FB-265, AUTHZ-02 |
 | UX-C85 | Named credential-removal button opens shared Cancel/confirm modal; review explains actual Apply-bound saved-value deletion, including saved-draft-only removal, while cancel/discard and unrelated orphan values are preserved. Guided/Advanced consequences agree. | UX-IN20/25, UX-EX03 | PO-FB-266–270, D10-01/02 |
 | UX-C86 | Archived permanent deletion has readable target, displayed typed challenge, disabled-until-matching final action and retained audit/backup notice; cancel/stale/unknown outcomes are truthful and non-Archived roles/states cannot bypass the gate. | UX-IN25, UX-R12, UX-A13 | PO-FB-279–281, D10-03–05 |
 | UX-C87 | Wide sign-in remains compact while admin workspace remains wide; Recovery code signs in normally and Replace authenticator explains its distinct existing enrollment/revocation task without losing either flow. | UX-IN26, UX-R12 | PO-FB-271–274, IDENT-02 |
@@ -164,3 +164,12 @@ Delivery must inspect actual matching desktop/narrow/enlarged-text states agains
 | UX-C89 | Overview omits Edit configuration/Continue setup tab duplicates while actual review and precise field-fix links remain; current header/lifecycle/Draft and guarded main navigation stay consistent across four tabs. | UX-IA09, UX-G11 | PO-FB-278, CONFIG-01/05 |
 
 Delivery evidence must compare actual matching wide/narrow populated states, no-access versus missing-field states, both destructive dialogs, compact sign-in/replacement, and delayed/error Settings transitions against the preserved visual references plus UX10 delta. Functional tests or screenshot existence alone do not prove graphical conformance. This checklist is not aggregate release acceptance.
+
+## UX11 bounded conformance
+
+| ID | Observable requirement | UX authority | Product source |
+| --- | --- | --- | --- |
+| UX-C90 | New unsaved, saved and imported services use dedicated Access for proposed assignments in one complete draft; tabs/Advanced/review/history preserve work; first Apply alone grants initial access. Applied Active/Inactive services retain immediate current assignments, independent of drafts. | UX-IN27, UX-EX03 | CONFIG-01, AUTHZ-02, PO-FB-285–288 |
+| UX-C91 | Configuration and read-only grouping use Request rules without an Access card/link/selector. Nonblocking No access assigned marker belongs to Access and never blocks valid zero-access Apply. | UX-IN27, UX-G12 | UX-03, MIGRATE-01 |
+| UX-C92 | Authentication fills its sibling editor column for no-auth/missing-value/multiple-credential states; sign-in/replacement remain compact. Actual matching desktop/narrow/enlarged screenshots and focused controls establish conformance. | UX-R13 | UX-02, PO-FB-283/284 |
+| UX-C93 | Deletion label quotes exact required text and excludes decorative delimiters from input; embedded quotes/long text preserve exact matching. Redundant Default policy helper is absent while meaningful rule evaluation help remains. | UX-IN25/27, UX-R13 | CONFIG-05, POLICY-01, PO-FB-282/289 |

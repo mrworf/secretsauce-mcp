@@ -1254,3 +1254,11 @@ Definition revalidation and delivery qualification remain required. Canonical pr
 - Remaining domain mechanics are specialist-owned under UX10-DELETION-SEMANTICS (D10-01–05), including scoped intent for saved-draft-only removals, exact reviewed dependencies, coherent mutation, incarnation fencing, uncertainty and safe restore compatibility. These safeguards do not reopen the two settled choices.
 - Other confirmed directives preserve current capabilities while clarifying no-access warning, credential actions/copy, Settings layout and redundant Overview navigation. Login width/recovery wording are advisory/evidence interpreted by Product UX under existing patterns.
 - Scope excludes live instance mutation during definition/planning/delivery; parent handles authorized local update after qualification.
+
+## PO-REFINEMENT-016 — Consistent service Access and focused presentation corrections
+
+Status: accepted. Source: confirmed PO-FEEDBACK-2026-11-19-002, PO-FB-282–289. Confirmed directives settle quoted deletion challenge, restored Authentication width, redundant Configuration Access removal and policy-helper cleanup. Product UX interprets the owner's dedicated-Access preference using existing patterns in UX11 U11-01–05, without a new capability or approval gate.
+
+The dedicated Access tab holds the same first-activation proposal as Configuration/Advanced, including unsaved new services; selections remain proposed until reviewed Apply. Applied-service assignments remain current/immediate with existing confirmation and authorization. Empty access stays valid and nonblocking. History, stale-state guards, imported zero-access and existing Advanced exact-edit parity remain. Authentication fills its existing service panel while short sign-in/replacement forms stay compact; challenge quotes delimit rather than alter exact input.
+
+No unresolved owner question. Source-only and historical screenshot findings are not fresh runtime acceptance; delivery must verify actual matching states. Root owns the separately authorized local update after qualification.

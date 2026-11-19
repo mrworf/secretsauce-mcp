@@ -1,6 +1,6 @@
 # SecretSauce web console UX system
 
-**Authority:** Approved UX revision `web-console-ux-10`, preserving the established visual direction and applying confirmed PO-FB-265–281 under PO-REFINEMENT-015 and UX10-DELETION-SEMANTICS. [Manifest](manifest.yaml) routes the exact current sources and [experience brief](experience-brief.yaml); the [decision ledger](../../workflow/definition/decisions.md) records accepted intent. Earlier approved concepts remain appearance references with the explicit delta precedence below; their historical labels and image bytes are unchanged.
+**Authority:** Approved UX revision `web-console-ux-11`, preserving the established visual direction and applying confirmed PO-FB-282–289 under PO-REFINEMENT-016 and REC016. [Manifest](manifest.yaml) routes the exact current sources and [experience brief](experience-brief.yaml); the [decision ledger](../../workflow/definition/decisions.md) records accepted intent. Earlier approved concepts remain appearance references with the explicit delta precedence below; their historical labels and image bytes are unchanged.
 
 ## UX-G01 — Product and audience
 
@@ -96,3 +96,7 @@ Equivalent surfaces assessed: new/imported/existing Guided and Advanced editors;
 Confirmed PO-FEEDBACK-2026-11-19-001 and REC-RUN-015 refine the existing system: a nonblocking no-access advisory; named credential-removal button/dialog and Apply-bound value cleanup; typed Archived permanent deletion; plain shared helper/recovery wording; compact sign-in; stable Settings loading composition; and removal of duplicate Overview-to-Configuration actions. D10-01–05 govern the deletion boundaries. This delta supersedes only the old text-link/removal-retains-value promise, no-permanent-delete statement and named redundant actions. UX-G10 and earlier approved composition, density, color, cards, footer and modal family remain authoritative.
 
 No new visual concept or authentication flow is introduced. Login uses the existing short-input/task-form pattern rather than the broad administration canvas; ordinary recovery-code sign-in remains distinct from replacing an authenticator. Shared credential task consistency covers Guided/Advanced removal, value dialogs, SMTP and equivalent password forms, while UX-EX03 retains their different mutation timing. Delivery must compare actual matching populated, confirmation, loading/error and wide/narrow states; this synthesis is not runtime acceptance.
+
+## UX-G12 — Bounded UX11 refinement precedence
+
+REC016 and U11-01–05 supersede only prior assignment location, service Authentication width, deletion challenge delimiters and redundant Default policy helper. Dedicated Access owns proposed initial assignments and current immediate assignments without changing their timing. Configuration section four is Request rules. Preserve all earlier approved appearance references and unrelated UX10 semantics; historical prototype Access & policy labels are not current navigation authority. Delivery must compare actual affected states; this definition revision is not runtime acceptance.

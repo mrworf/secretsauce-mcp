@@ -4,7 +4,7 @@ status: ready_for_delivery_planning
 scope: 'PO-FEEDBACK-2026-11-19-002: one Access surface, Authentication width and narrow copy corrections'
 transaction:
   parent_commit: 83f1f211195cc81db06edc3a43a4acd0a2e20df2
-  repository_commit: null
+  repository_commit: 681b71870514865f1ed6f89b366aca527d514e16
   pre_existing_dirty_paths:
   - passwd
   - codex-session-01a122f7-e70f-7440-b1ce-ca88b955e519.md
@@ -606,7 +606,7 @@ last_reconciliation:
   definition_package:
     status: current
     path: workflow/definition/definition-package.yaml
-    revision: sha256:06310f01955c00197ae0bdf30957dc3ac97be4d554436209815e0e34ef6cbf90
+    revision: sha256:7d26ddded7fdb3cad794bee6c9b646d2c19e301ea39d89d7b1e051a6bebc4a50
 feedback_source:
   feedback_id: PO-FEEDBACK-2026-11-19-002
   path: workflow/feedback/PO-FEEDBACK-2026-11-19-002/feedback.yaml

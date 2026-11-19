@@ -9,5 +9,5 @@ Move initial proposed assignments to Access with the same full browser/saved dra
 Isolate compact identity-form geometry from service Authentication, remove redundant Default policy helper, quote exact deletion challenge without modifying comparison. Actual width/narrow/enlargement and compact ultrawide login plus typed modal evidence; preserve sibling controls and all mutation timing. Commit with final evidence, exact source hashes and acceptance report. Parent full suite after workloads stop.
 
 ## Progress
-- Slice1: PASS in this checkpoint; access/acceptance.md and exact hashes. Later deletion assertion carried to slice2 explicitly.
-- Slice2: pending.
+- Slice1: PASS commit cbb5adf; access/acceptance.md and exact hashes. Later deletion assertion carried to slice2 explicitly.
+- Slice2: PASS in this checkpoint; final/acceptance.md and exact hashes. Carried deletion failure resolved as synthetic rate-window exhaustion; final joined journey passes. Outer full-suite qualification pending.

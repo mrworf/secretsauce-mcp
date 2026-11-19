@@ -1,0 +1,12 @@
+{
+  "result": "PASS",
+  "checks": [
+    "Compact ultrawide/desktop/narrow sign-in, separate replacement task with blank proofs, ordinary recovery-code login succeeds; generic password helper absent.",
+    "One unsaved proposal across Access/configuration/Advanced and Back/Forward; invalid JSON retained; no creation until save; initial grant only on reviewed Apply; review Back returns Access.",
+    "All four tabs share lifecycle and Draft; direct sections; incomplete actual review and focused credential fix; awaited navigation Save persists and reopening does not loop.",
+    "Unsaved discard preserves saved proposal; named saved discard cancel and success preserve readable Inactive identity and value; fresh setup does not resurrect discarded settings.",
+    "Never-saved abandon creates no record; blank incomplete new service is reviewable; zero-access valid apply succeeds; Active saved-discard preserves current configuration.",
+    "Archived typed deletion at1440/390/320200%; wrong text and Escape safe, stale lifecycle blocks and disables replay, list success removes target, committed lost response remains unknown until current-state lookup; read-only role has no destructive control.",
+    "Archived proposal discard preserves archive without edit controls; guided/advanced footer shown at desktop390/320/200% with text-range reflow."
+  ]
+}

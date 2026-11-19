@@ -1,0 +1,6 @@
+{
+  "src/consoleServicePage.ts": "bba6e72fb58e4e1eb16bc2d84661775b475bbbcc1ca4716db4ba8dbba3338098",
+  "src/consoleServiceApproval.ts": "dc281d9c76fc8828a4840db594bfd94e1c41c28e4e61609a5a59035ed85c1d15",
+  "src/consolePresentation.ts": "42667d8c6a6da00acef44336bc6a03842edb4948ee8d09c34953a9423c38c1ef",
+  "scripts/verify-console-service-editor-browser.mjs": "f61e6a2939954e1c11a3e51be5b6b80a2c8ceb43469cc8d3d322e60c19adb143"
+}

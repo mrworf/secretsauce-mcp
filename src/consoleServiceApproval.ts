@@ -32,7 +32,7 @@ function serviceApprovalFooter(parent,review,editor){
  const summary=el('section');summary.className='approval-summary';summary.append(el('h2','Security exceptions'));
  if(review.exceptions.length){const list=el('ul');list.className='approval-exceptions';for(const risk of review.exceptions)list.append(el('li',serviceExceptionLabel(risk,review.proposed)));summary.append(list);}else summary.append(el('p','No security exceptions in these changes.'));
  parent.append(summary);
- const footer=el('div');footer.className='approval-actions';parent.append(footer);action(footer,'Back to edit',()=>renderEditor(editor.reviewReturnStep??3));
+ const footer=el('div');footer.className='approval-actions';parent.append(footer);action(footer,'Back to edit',()=>editor.reviewReturnTab==='Access'?renderAccessEditor():renderEditor(editor.reviewReturnStep??3));
  const approve=action(footer,'Approve changes',()=>openServiceApproval(review,editor,approve));approve.className='';if(!review.review||review.issues?.length){approve.disabled=true;approve.setAttribute('aria-label','Approve changes unavailable: complete the listed settings');}if(editor.approvalUncertain){approve.disabled=true;serviceApprovalStatusLink(footer,editor);}
 }
 function serviceApprovalStatusLink(parent,editor){action(parent,'Inspect current configuration',async()=>{try{await api('services/'+encodeURIComponent(editor.id));editor.approvalUncertain=false;editorDirty=false;serviceEditor=null;servicesSnapshot=await api('services');await serviceDetail(editor.id,'Configuration');banner.textContent='Current configuration loaded. Review it before preparing any new changes.';}catch(e){showError('Current status could not be verified. '+e.message);}});}

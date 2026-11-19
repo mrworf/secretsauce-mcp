@@ -120,7 +120,8 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
             else consoleRestore(store).admitHostUpload(request.headers['x-console-restore-proof']);
             reply(200,await consoleRestore(store).preview(session,async()=>{const d=JSON.parse((await readBoundedBody(request,MAX_ARCHIVE_BYTES+65536,30000)).toString());if(!store.state.initialized){if(!d||typeof d!=='object'||Array.isArray(d)||Object.hasOwn(d,'proof'))throw new RestoreError('Host proof is supplied only through the protected upload header.');d.proof=request.headers['x-console-restore-proof'];}return d;}));return;
         }
-        const data = JSON.parse((await readBoundedBody(request, 131072, 5000)).toString());
+        if(['/console/api/activity/search','/console/api/activity/detail','/console/api/evidence/export'].includes(path??'')){if(!session){reply(401,{message:'Sign in again.'});return;}if(typeof request.headers['x-console-csrf']!=='string'||!equal(request.headers['x-console-csrf'],session.csrf)){reply(403,{message:'Reload this page before submitting.'});return;}store.authorize(session,'own');}
+        const data = JSON.parse((await readBoundedBody(request, ['/console/api/activity/search','/console/api/activity/detail','/console/api/evidence/export'].includes(path??'')?262144:131072, 5000)).toString());
         if (!data || Array.isArray(data) || typeof data !== 'object')
             throw new Error('Invalid input.');
         if(path==='/console/api/restore/cancel'&&!store.state.initialized){reply(200,consoleRestore(store).cancel(undefined,data));return;}

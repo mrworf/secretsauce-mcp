@@ -18,3 +18,11 @@ All six M46 acceptance rows required; record exact focused results and runtime e
 ## Slice01 result
 
 Complete: strict bounded chips and independent context now apply to query/detail/export; legacy exact filters remain. New authenticated CSRF-protected POST `activity/search` avoids chip-bearing URL transport; existing 131072-byte body cap accommodates32×1024 code units of worst-case3-byte BMP UTF-8, verified by HTTP fixture. No log additions. One deadline includes projection, sorting and predicate scan. Nested chip export metadata is sanitized. Focused evidence/HTTP17tests PASS, build PASS. Existing sanitizer/export500row/single-snapshot and audit/role tests retained; added truth-table, boundaries, Member/context, offset and deadline cases. Slice02 remains pending; no browser/full-product acceptance claimed yet.
+
+## Slice02 support correction
+
+Slice01 published093fa1a. The initial3-byte BMP transport case was not the maximum JSON representation: permitted unpaired surrogate literals serialize as six-byte escapes. Evidence search/detail/export now alone allow262144 bytes, with all32×1024 escaped-value requests tested over HTTP (search/export200, scoped nonmatching detail403 rather than body rejection). Other console routes retain131072 bytes. Current focused evidence/HTTP/Settings30tests PASS; build PASS. This is bounded transport support, not a new literal restriction.
+
+## Slice02 completion
+
+Complete: shared Activity UI and report relocation; actual joined HTTPS scenario passes. Pending Search disables Clear and pagination to avoid dropping an explicit reset. Context summary remains service-scoped and Member own scope explicit; export-only help absent for Member. Settings tools preserve history and guards, without a seventh category. Build PASS, focused30tests and final17evidence/HTTP rerun PASS; added2MiB assertion separately passed. Browser evidence and acceptance mapping: evidence/ux-acceptance/secretsauce-mcp/milestone46/acceptance.md. Independent visual review requested final destination captures; no unresolved design change. No out-of-area product regression. Parent owns remaining full regression; slice commit contains final source/evidence.

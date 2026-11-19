@@ -1,0 +1,13 @@
+{
+  "result": "PASS",
+  "transport": "Actual HTTPS with synthetic example.org certificate/loopback resolver",
+  "checks": [
+    {
+      "check": "Joined Settings footer/service scoped Activity, inclusion/exclusion chips, duplicate modal keyboard return, failed/edited search retains searched export, UTC preset/reversed interval, clear context and page offset"
+    },
+    {
+      "check": "All three evidence roles reach relocated reports without writes; Activity has only filtered export; Member own reads and direct foreign actor rejection"
+    }
+  ],
+  "realLLM": "NOT RUN: authorized local-validation exception"
+}

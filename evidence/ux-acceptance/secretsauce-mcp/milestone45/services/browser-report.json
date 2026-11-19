@@ -1,0 +1,9 @@
+{
+  "result": "PASS",
+  "checks": [
+    "Local LLM help; Header/Query/Body and visible generic placement; exact prefix/suffix preserved through sections; live placeholder-only preview; action-specific enforced-header required cue; accurate ownership and policy fallback help; no inline secret. Desktop/390/320/200% text and keyboard section controls.",
+    "Existing Access: explicit grant; empty selection rejection; named target; Cancel/Escape and bounded focus; generation-stale confirmation rejection; lost admitted removal reply disables retry and requires durable assignment inspection, including failed inspection recovery. Current access is immediate and independent of drafts.",
+    "Auditor current-access summary is read-only; open confirmation after role demotion is rejected server-side.",
+    "Initial proposed selection clearly awaits review/activation; current Access never silently grants, resolves imported mappings or activates a service."
+  ]
+}

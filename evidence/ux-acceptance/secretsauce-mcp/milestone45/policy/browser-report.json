@@ -1,0 +1,11 @@
+{
+  "result": "PASS",
+  "checks": [
+    "Neutral owned-field marker covers secret-only, binary-only, combined, explicit default-equivalent, increasing protection and empty binary object; inherited absent. Cancel preserves, keep adds/removes without autosave, arbitrary 123457b stays exact.",
+    "Effective order is priority descending, deny tie, stable peers; movement only swaps same-priority/effect peers and never renumbers. Shared Edit preserves exact custom method sequence, IDs, patterns and exceptions. Escape/Cancel restore focus with no draft mutation.",
+    "Add shares Edit; generated reference remains editable. Invalid priority, regex/canonical path, duplicate reference, custom method, host regex and scanner/binary options stay local. Common selections and custom REPORT retained.",
+    "Exact/prefix builders escape literals. Global Guided/Advanced roundtrip exact; Delete states draft-only, Cancel preserves, removal does not persist until Save. Owner save succeeds.",
+    "Concurrent save rejected with safe proposed rule retained; admitted lost response reports unknown and durable reopening shows actual draft without claiming closed dialog saved.",
+    "Administrator save succeeds; role demotion blocks mutation server-side; Auditor view read-only and Member authoring/inspection denied."
+  ]
+}

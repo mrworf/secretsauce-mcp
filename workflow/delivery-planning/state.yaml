@@ -4,7 +4,7 @@ product_id: secretsauce-mcp
 status: ready
 transaction:
   parent_commit: e6a27bfa2939994c7de0fe4099f37fe9b43f6cb8
-  repository_commit: null
+  repository_commit: 9b8353b4e0615d42ae372abd671d898d533efbd8
   pre_existing_dirty_paths:
   - passwd
   - codex-session-01a122f7-e70f-7440-b1ce-ca88b955e519.md
@@ -106,4 +106,6 @@ transaction_history:
   - delivery/readiness/secretsauce-mcp/
   - workflow/delivery-planning/
 validation:
-  publication: pending
+  publication: published
+  checks: "PASS: current source and packet, READY, all17 feedback mapped, M49\u201351 pending,39 completed records\
+    \ preserved, UX10 integrated checkpoint owned."

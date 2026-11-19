@@ -18,7 +18,7 @@ describe('saved proposal dependency fencing',()=>{
  m.save(f.session,{id:'first',base,generation,service:{name:'Replacement proposal'}});
  expect(()=>m.discard(f.session,stale)).toThrow('Stale');expect(()=>m.save(f.session,{id:'first',base,generation:1,service})).toThrow('Stale');
  expect(()=>m.save(f.session,{id:'second',base,generation:1,service})).not.toThrow();
- m.lifecycle(f.session,{id:'first',action:'archive',confirmed:true});const archived=m.detail(f.session,'first');expect(()=>m.discard(f.session,{id:'first',base:archived.revision,generation:archived.generation,confirmed:true})).toThrow('archived');expect(m.state.services.first!.draft).toBeDefined();
+ m.lifecycle(f.session,{id:'first',action:'archive',confirmed:true});const archived=m.detail(f.session,'first');const before=structuredClone(m.state.services.first);m.discard(f.session,{id:'first',base:archived.revision,generation:archived.generation,confirmed:true});expect(m.state.services.first!.draft).toBeUndefined();expect(m.state.services.first).toMatchObject({lifecycle:'Archived',values:before!.values,assignments:before!.assignments});
  }finally{f.close();}});
  it('preserves portable identity metadata and rejects invalid retained generations',()=>{const f=managedFixture();try{
  f.manager.save(f.session,{id:'first',base:0,generation:0,service:{name:'Retained label'}});f.manager.discard(f.session,{id:'first',base:0,generation:1,confirmed:true});

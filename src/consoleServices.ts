@@ -38,7 +38,7 @@ function serviceIssue(raw: PropertyKey[], missingValue = false): ServiceIssue {
   const index = typeof path[1] === 'number' ? path[1] + 1 : null;
   const field = String(path.at(-1) ?? 'configuration').replaceAll('_',' ');
   const prefix = root === 'destinations' ? 'Server'+(index ? ' '+index : '') : root === 'credentials' ? 'Credential'+(index ? ' '+index : '') : root === 'policy' ? 'Request '+(typeof path[2]==='number'?'rule '+(path[2]+1):'policy') : root === 'access' ? 'Service access' : 'Service';
-  return { section, path, message: missingValue ? prefix+': Set a credential value before review.' : prefix+': Check '+field+' — this setting is missing or invalid.' };
+  return { section, path, message: missingValue ? prefix+': Set a credential value before applying.' : prefix+': Check '+field+' — this setting is missing or invalid.' };
 }
 export function serviceConfigurationIssues(id: string, draft: ManagedServiceDraft | undefined, values: Record<string, ManagedCredential>): ServiceIssue[] {
   if (!draft) return [{section:0,path:['name'],message:'Add the service configuration before review.'}];
@@ -175,7 +175,6 @@ export class ConsoleServices {
     const data=this.parse(z.object({id:idSchema,base:z.number().int().nonnegative(),generation:z.number().int().nonnegative(),confirmed:z.literal(true)}).strict(),input);
     const current=own(this.state.services,data.id);
     if(!current?.draft)throw new ServiceManagementError('No saved draft to discard. Reload the service.');
-    if(current.lifecycle==='Archived')throw new ServiceManagementError('Service archived. Unarchive before discarding a saved draft.');
     if(data.base!==this.state.revision||data.generation!==current.draft.generation)throw this.stale(session,data.id);
     if(this.store.state.v<6)this.store.commit(actor.id,'service.proposal_format_upgrade','instance',state=>{state.v=6;});
     const operation=this.store.commit(actor.id,'service.draft_discard',data.id,state=>{

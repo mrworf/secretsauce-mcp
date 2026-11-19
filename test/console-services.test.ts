@@ -69,7 +69,7 @@ it('lists independent lifecycle, pending changes and readiness without leaking v
  const s=f.manager.state.services.baseline!;s.assignments=[f.session.userId];s.draft={base:0,generation:1,content:{...s.applied!,name:'Proposed name'}};
  expect(f.manager.list(f.session).services[0]).toMatchObject({lifecycle:'Active',hasDraft:true,readiness:'Configured',activationBlocker:null});
  s.applied!.no_auth=false;s.applied!.credentials=[{id:'key',usage:{kind:'header',name:'X-Key'}}];s.draft.content=structuredClone(s.applied!);
- expect(f.manager.list(f.session).services[0]).toMatchObject({lifecycle:'Active',hasDraft:true,readiness:'Value missing',activationBlocker:'Credential 1: Set a credential value before review.'});
+ expect(f.manager.list(f.session).services[0]).toMatchObject({lifecycle:'Active',hasDraft:true,readiness:'Value missing',activationBlocker:'Credential 1: Set a credential value before applying.'});
  s.values.key={value:'synthetic-private-value',version:1,changed:Date.now()};expect(JSON.stringify(f.manager.list(f.session))).not.toContain('synthetic-private-value');expect(f.manager.list(f.session).services[0]).toMatchObject({readiness:'Configured',activationBlocker:null});
  s.draft.missingMappings=['old'];expect(f.manager.list(f.session).services[0]).toMatchObject({activationBlocker:'Choose who the imported accounts refer to in Resolve identity mappings.'});
  f.store.state.users[0]!.role='Auditor';expect(f.manager.list(f.session).writable).toBe(false);
@@ -127,7 +127,7 @@ describe('specific service readiness diagnostics',()=>{
  it('locates missing values without blaming valid destinations and removes the issue when set',()=>{
   const f=managedFixture();try{
    save(f,{...draft(),no_auth:false,credentials:[{id:'key',usage:{kind:'header'}}]});
-   const before=f.manager.detail(f.session,'new');expect(before.configurationIssues).toEqual([{section:2,path:['credentials',0],message:'Credential 1: Set a credential value before review.'}]);
+   const before=f.manager.detail(f.session,'new');expect(before.configurationIssues).toEqual([{section:2,path:['credentials',0],message:'Credential 1: Set a credential value before applying.'}]);
    try{f.manager.review(f.session,{id:'new'});throw Error('Review unexpectedly accepted');}catch(e){expect(e).toMatchObject({issues:before.configurationIssues});}
    f.manager.credential(f.session,{id:'new',credential:'key',action:'create',value:'synthetic-private-value',confirmed:true});
    expect(f.manager.detail(f.session,'new').configurationIssues).toEqual([]);

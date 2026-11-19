@@ -1,0 +1,9 @@
+{
+  "result": "PASS",
+  "checks": [
+    "All four tabs share lifecycle and Draft; direct sections; incomplete actual review and focused credential fix; awaited navigation Save persists and reopening does not loop.",
+    "Unsaved discard preserves saved proposal; named saved discard cancel and success preserve readable Inactive identity and value; fresh setup does not resurrect discarded settings.",
+    "Never-saved abandon creates no record; blank incomplete new service is reviewable; zero-access valid apply succeeds; Active saved-discard preserves current configuration.",
+    "Archived proposal discard preserves archive without edit controls; guided/advanced footer shown at desktop390/320/200% with text-range reflow."
+  ]
+}

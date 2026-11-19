@@ -1,0 +1,317 @@
+schema_version: 1
+feedback_id: PO-FEEDBACK-2026-11-18-002
+product_id: secretsauce-mcp
+source:
+  type: product_owner
+  captured_from: realtime_service_walkthrough_and_typed_handoff
+  references:
+  - delivery/plans/secretsauce-mcp/independent/shared-service-header.md
+status: CONFIRMED
+transaction:
+  parent_commit: 8181af4212c46d2d03fe7414b3c69aa1efd1d30b
+  repository_commit: null
+items:
+- id: PO-FB-238
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: When I look at overview, there is a back to services at the bottom.
+  normalized: Back to Services appears inconsistently across service tabs and the editor.
+  scope:
+  - service-navigation
+  authority:
+    product_intent: evidence
+  suggestions: []
+- id: PO-FB-239
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: I don't think we need to have the back to services link at all on any of these, like neither overview, configuration,
+    access, or activity, because you can just click on services on the left hand side to get there.
+  normalized: Remove Back to Services controls from Overview, Configuration, Access and Activity. Use the main Services
+    navigation.
+  scope:
+  - service-navigation
+  authority:
+    product_intent: authoritative
+  suggestions: []
+- id: PO-FB-240
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: When I go to configuration, there's save draft back to services and continue.
+  normalized: Service editing uses scattered actions and has no obvious Discard operation.
+  scope:
+  - service-editor
+  authority:
+    product_intent: evidence
+  suggestions: []
+- id: PO-FB-241
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: if I'm editing a service, I should have this bar at the bottom where I can uh, just like settings, I can
+    uh, discard, save for later review uh, changes because I think that actually makes sense.
+  normalized: Use a persistent Settings-style action bar in service editing with status, Discard, Save for later and
+    Review changes.
+  scope:
+  - service-editor
+  authority:
+    product_intent: authoritative
+  suggestions: []
+- id: PO-FB-242
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: But I feel continue is misleading because all it does is navigate to the next. It doesn't actually take
+    me to what I need to input.
+  normalized: Continue merely advances rather than pointing to what the editor needs to complete.
+  scope:
+  - service-editor
+  authority:
+    product_intent: evidence
+  suggestions: []
+- id: PO-FB-243
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: I agree. Um, I'm just going through some more.
+  normalized: Accepted design recommendation to remove Continue from service configuration and use direct section navigation
+    with indicators for known blockers.
+  scope:
+  - service-editor
+  authority:
+    product_intent: authoritative
+  suggestions: []
+- id: PO-FB-244
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: I agree. Um, I'm just going through some more.
+  normalized: Accepted design recommendation to allow Review changes for incomplete setup. Show specific issues and
+    fix links while keeping Apply unavailable until required settings are complete.
+  scope:
+  - service-editor
+  authority:
+    product_intent: authoritative
+  suggestions: []
+- id: PO-FB-245
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: I agree. Um, I'm just going through some more.
+  normalized: Accepted design recommendation that discarding never-saved setup abandons those edits and returns to Services.
+  scope:
+  - service-discard
+  authority:
+    product_intent: authoritative
+  suggestions: []
+- id: PO-FB-246
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: I agree. Um, I'm just going through some more.
+  normalized: Accepted design recommendation that unsaved edits can revert to the saved draft and discarding a saved
+    draft requires separate explicit confirmation.
+  scope:
+  - service-discard
+  authority:
+    product_intent: authoritative
+  suggestions: []
+- id: PO-FB-247
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: I agree. Um, I'm just going through some more.
+  normalized: Accepted design recommendation that an active service keeps running its active configuration when unsaved
+    edits or its saved draft are discarded.
+  scope:
+  - service-discard
+  authority:
+    product_intent: authoritative
+  suggestions: []
+- id: PO-FB-248
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: The overview page for services typically have the best uh place to show what you need to do because I noticed
+    that right now if I go to One that's a draft with ness- missing configuration, it actually shows what needs to be
+    configured.
+  normalized: Overview already calls out missing configuration.
+  scope:
+  - service-readiness
+  authority:
+    product_intent: evidence
+  suggestions: []
+- id: PO-FB-249
+  classification: PREFERENCE
+  confirmation: CONFIRMED
+  original: So that actually aligns well with um when we go in to oh, and we already have indicators where we need to
+    fix things. So I think parts of these things are already in place.
+  normalized: Retain useful Overview guidance and build on existing actionable validation indicators.
+  scope:
+  - service-readiness
+  authority:
+    product_intent: advisory
+  suggestions: []
+- id: PO-FB-250
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: That keeps showing up absolutely everywhere.
+  normalized: The identity-mapping warning repeats across service screens.
+  scope:
+  - service-import
+  authority:
+    product_intent: evidence
+  suggestions: []
+- id: PO-FB-251
+  classification: IDEA_OR_QUESTION
+  confirmation: CONFIRMED
+  original: if you import something, you shouldn't really be allowed to start editing or doing anything else until you
+    have resolved the identity mapping because without identity mapping being fixed, nothing else works.
+  normalized: Earlier idea to require identity mapping before editing, superseded by the later direction to drop mapping.
+  scope:
+  - service-import
+  authority:
+    product_intent: exploratory
+  suggestions: []
+- id: PO-FB-252
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: I can't save the draft. I keep getting told there is a unsaved draft changes. I can stay or I can save the
+    draft or I can discard. Save draft doesn't go anywhere. Stay does the same thing. Discard. It got me back out and
+    now the change I made to access and policy, isn't isn't saved.
+  normalized: Reported that Save draft from the navigation guard did not complete navigation or save the Access & policy
+    selection. Discard left without the selection.
+  scope:
+  - service-save-navigation
+  authority:
+    product_intent: evidence
+  suggestions: []
+- id: PO-FB-253
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: Yeah, the identity mapping definitely just needs to go away.
+  normalized: Remove the separate identity-mapping flow and repeated mapping warnings for service imports.
+  scope:
+  - service-import
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  supersedes: PO-FB-251
+- id: PO-FB-254
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: So when you import something, it is it will basically be imported and then we will leave who can use this
+    service completely unchecked, which will force people to have to configure that setting.
+  normalized: Imported drafts start with nobody selected. Use the ordinary Access & policy controls for selecting who
+    can use them.
+  scope:
+  - service-import
+  authority:
+    product_intent: authoritative
+  suggestions: []
+- id: PO-FB-255
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: I mean, you should you should of course be able to apply. And do all the things, but if you haven't assigned
+    who can use it, it just ends up being that no one can use it
+  normalized: Allow Apply with nobody assigned. Nobody has execution access until explicitly assigned.
+  scope:
+  - service-access
+  authority:
+    product_intent: authoritative
+  suggestions: []
+- id: PO-FB-256
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: when I then go in and look, it says draft and draft changes Uh .As uh the the badges for uh in the configuration
+    where the badges are being shown.
+  normalized: Lifecycle and draft badges are confusing when displayed together as Draft and Draft changes.
+  scope:
+  - service-status
+  authority:
+    product_intent: evidence
+  suggestions: []
+- id: PO-FB-257
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: Something that isn't active should show inactive.
+  normalized: Use Active and Inactive to describe lifecycle independently of saved drafts.
+  scope:
+  - service-status
+  authority:
+    product_intent: authoritative
+  suggestions: []
+- id: PO-FB-258
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: Correct. And then of course we also have archived as a status. So the three statuses for the lifecycle is
+    uh active, inactive, archived, I believe.
+  normalized: Use Active, Inactive and Archived as lifecycle labels.
+  scope:
+  - service-status
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  clarifies: PO-FB-257
+- id: PO-FB-259
+  classification: IDEA_OR_QUESTION
+  confirmation: CONFIRMED
+  original: I don't if there is any more states, you're going to have to resolve it when you look at the uh the PRD
+    during the the reconciliation
+  normalized: Reconcile existing service lifecycle states and transitions with the intended presentation.
+  scope:
+  - service-status
+  authority:
+    product_intent: exploratory
+  suggestions: []
+- id: PO-FB-260
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: Something has a draft configuration [cough] shows draft.
+  normalized: Show Draft as a separate indicator when there is a saved draft.
+  scope:
+  - service-status
+  authority:
+    product_intent: authoritative
+  suggestions: []
+- id: PO-FB-261
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: When we're in the service and editing it, we don't need to say needs configuration as a badge because obviously
+    we have exclamation marks on all the places where we're missing,
+  normalized: Keep Needs configuration on the Services list and use section indicators instead of a duplicate badge
+    within the service.
+  scope:
+  - service-readiness
+  authority:
+    product_intent: authoritative
+  suggestions: []
+- id: PO-FB-262
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: if any of the sub tabs have an ex-exclamation mark, I do believe the configuration itself should have an
+    exclamation mark just to make sure that people click there and go there to fix it
+  normalized: Show the issue indicator on the parent Configuration tab when any configuration section needs attention.
+  scope:
+  - service-readiness
+  authority:
+    product_intent: authoritative
+  suggestions: []
+- id: PO-FB-263
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: I don't want imports overwriting an existing service because it just gets very messy to try and resolve
+    that for the user
+  normalized: Import a separate service instead of overwriting a pre-existing service or its access.
+  scope:
+  - service-import
+  authority:
+    product_intent: authoritative
+  suggestions: []
+- id: PO-FB-264
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: if I have a service called Uh, Java and I import a service called Java, it should should just be called
+    uh imported Java or something to that effect. And if there's already one called imported Java, we should just call
+    it imported Java Uh .parenthesis two, parenthesis three, so on and so forth.
+  normalized: Resolve name collisions using Imported Java, Imported Java (2), Imported Java (3), and so on.
+  scope:
+  - service-import
+  authority:
+    product_intent: authoritative
+  suggestions: []
+unresolved: []
+handoff:
+  reconciliation_ready: false
+  next_workflow: null

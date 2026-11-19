@@ -1,0 +1,30 @@
+{
+  "result": "PASS",
+  "source_commit": "f4ae3fb780ff1b1676704c40a505066661ef9f39",
+  "source_tree": "189c71d294766a9aaebce648893483e5bc7cef09",
+  "full_suite": {
+    "command": "npm test -- --maxWorkers=2",
+    "environment": "Frozen tracked export; locked node_modules; loopback permission; no concurrent browser/Docker workload",
+    "files_passed": 82,
+    "tests_passed": 818,
+    "tests_failed": 0,
+    "duration_seconds": 122.34
+  },
+  "build": {
+    "command": "npm run build (npm test pretest)",
+    "result": "PASS"
+  },
+  "browser_evidence": [
+    "evidence/ux-acceptance/secretsauce-mcp/milestone52/final/acceptance.md"
+  ],
+  "conditional_boundaries": {
+    "transport_changed": false,
+    "recovery_changed": false,
+    "storage_changed": false,
+    "launcher_changed": false,
+    "state_format_changed": false,
+    "deployment_performed": false,
+    "recovery_preservation": "UX10-INTEGRATED exact-source recovery qualification retained; this UI-only delta does not trigger another recovery drill."
+  },
+  "regression_disposition": "Expanded browser fixture reached unchanged mutation rate limit on frozen clock; advancing disposable clock between independent blocks preserved limits and assertions. No accepted product failure or waived gate."
+}

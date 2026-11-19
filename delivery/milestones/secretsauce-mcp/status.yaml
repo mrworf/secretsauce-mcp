@@ -666,7 +666,7 @@ milestones:
   commit_hash: f4ae3fb780ff1b1676704c40a505066661ef9f39
 delivery_goal:
   product_id: secretsauce-mcp
-  status: in_progress
+  status: completed
   packet: delivery/milestones/secretsauce-mcp/status.yaml
   packet_revision: sha256:1b2a5216cfb6df80d1e432309102fd759447f91545c5b2c46c43753a11085b9d
   packet_contract_revisions:
@@ -779,8 +779,10 @@ delivery_goal:
   current_milestone: null
   governing_plan: delivery/plans/secretsauce-mcp/milestone_52_plan_01.md
   blockers: []
-  resume_point: UX11-INTEGRATED final qualification due
+  resume_point: M52 and UX11-INTEGRATED accepted; no deployment.
   started_at: '2026-11-19T20:02:04.162445+00:00'
+  completed_at: '2026-11-19T20:13:57.757218+00:00'
+  evidence: evidence/qa/secretsauce-mcp/ux11-integrated/acceptance.md
 compiled_from_history:
 - product_id: secretsauce-mcp
   input_mode: PRODUCT_BUILD
@@ -2803,7 +2805,7 @@ regression_checkpoints:
   UX11-INTEGRATED:
     covered_milestones:
     - '52'
-    status: pending
+    status: passed
     due: After M52 and before deployment/final acceptance; bounded stops retain this obligation.
     categories:
     - full unit/integration suite and build
@@ -2819,4 +2821,7 @@ regression_checkpoints:
       gates only if those boundaries change. No state format assumed for UI.
     escalation: First unexpected out-of-area regression expands focused checks; second distinct regression
       or spread triggers full regression after repairs.
-    evidence: null
+    evidence: evidence/qa/secretsauce-mcp/ux11-integrated/acceptance.md
+    source_commit: f4ae3fb780ff1b1676704c40a505066661ef9f39
+    result: evidence/qa/secretsauce-mcp/ux11-integrated/regression-result.json
+    completed_at: '2026-11-19T20:13:57.757218+00:00'

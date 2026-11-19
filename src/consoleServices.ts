@@ -27,7 +27,7 @@ export interface ManagedService {
   assignments: string[];
   review?: { session?: string; removedCredentials?: string[]; id: string; actor: string; fingerprint: string; candidate: ManagedServiceDraft; base: number; draftGeneration: number; settings?: { name: string }; exceptions: string[] };
 }
-export interface ManagedConfiguration { history?: import("./consoleHistory.js").ConfigurationRevision[]; migrationGlobals?: Record<string,unknown>; protection?: import("./consoleProtection.js").ProtectionState; revision: number; services: Record<string, ManagedService> }
+export interface ManagedConfiguration { lastServiceDeletion?: {incarnation:string;mutation:string}; history?: import("./consoleHistory.js").ConfigurationRevision[]; migrationGlobals?: Record<string,unknown>; protection?: import("./consoleProtection.js").ProtectionState; revision: number; services: Record<string, ManagedService> }
 function own<T>(values: Record<string, T>, key: string): T | undefined { return Object.hasOwn(values, key) ? values[key] : undefined; }
 const idSchema = z.string().min(1).max(1024).regex(/^[^\u0000-\u001f\u007f]+$/);
 const newIdSchema = z.string().regex(/^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,79}$/);
@@ -110,7 +110,7 @@ export class ConsoleServices {
     this.actor(session); const key = this.parse(idSchema, id); const s = own(this.state.services, key);
     if (!s) throw new ServiceManagementError('Service unavailable. Reload Services.');
     return { id: key, name: s.applied?.name ?? s.draft?.content.name ?? s.displayName ?? key, revision: this.state.revision, generation: s.draft?.generation ?? s.proposalGeneration ?? 0, lifecycle: s.lifecycle, applied: s.applied, draft: s.draft,
-      configurationIssues: this.configurationIssues(key), ...this.readiness(key), mappingFingerprint: this.fingerprint(key), mappingIssues: this.mappingIssues(key), importAccessReset: s.importAccessReset??false, assignments: s.assignments, credentials: Object.entries(s.values).map(([id, v]) => ({ id, available: !v.missing && Boolean(v.value), version: v.version, ...this.credentialAttribution(v), confirmation: this.credentialConfirmation(key,id), inUse: this.credentialInUse(s,id), appliedUse: Boolean(s.applied?.credentials?.some(c=>c.id===id)) })),
+      deletion: s.lifecycle==='Archived'&&['Owner','Administrator'].includes(this.actor(session).role)&&!session.restricted&&!this.store.journal.degraded&&!this.store.externalAudit?.degraded?{label:this.deletionLabel(key),confirmation:this.deletionConfirmation(session,key)}:null, configurationIssues: this.configurationIssues(key), ...this.readiness(key), mappingFingerprint: this.fingerprint(key), mappingIssues: this.mappingIssues(key), importAccessReset: s.importAccessReset??false, assignments: s.assignments, credentials: Object.entries(s.values).map(([id, v]) => ({ id, available: !v.missing && Boolean(v.value), version: v.version, ...this.credentialAttribution(v), confirmation: this.credentialConfirmation(key,id), inUse: this.credentialInUse(s,id), appliedUse: Boolean(s.applied?.credentials?.some(c=>c.id===id)) })),
       exceptions: s.applied ? exceptions(s.applied) : [], activity: this.store.journal.entries().filter(e => e.target === key).map(e => ({ action: e.action, time: e.time, result: e.result, revision: e.revision, details: e.details })) };
   }
   private parse<T>(schema: z.ZodType<T>, value: unknown): T { const p = schema.safeParse(value); if (!p.success) throw new ServiceManagementError('Invalid service input. Check field types and supported settings.'); return p.data; }
@@ -265,6 +265,21 @@ export class ConsoleServices {
       m.revision++;
     }, { identity: data.user }); } finally { if (this.state.revision !== base) { if (data.action === 'remove') this.invalidate(data.id, data.user); this.publish(); } }
     return { operation, status: 'success', revision: this.state.revision };
+  }
+  private deletionLabel(id:string):string {const s=own(this.state.services,id)!;const label=s.applied?.name??s.draft?.content.name??s.displayName;return label?.trim()?label:id;}
+  deletionConfirmation(session:ConsoleSession,id:string):string {return digest(JSON.stringify({session:session.id,actor:session.userId,id,label:this.deletionLabel(id),fingerprint:this.fingerprint(id)}));}
+  permanentDelete(session:ConsoleSession,input:unknown){
+    const actor=this.actor(session,true),data=this.parse(z.object({id:idSchema,confirmation:z.string().regex(/^[a-f0-9]{64}$/),typed:z.string().min(1).max(1024),confirmed:z.literal(true)}).strict(),input);
+    const service=own(this.state.services,data.id);if(!service)throw new ServiceManagementError('Service unavailable. Reload Services.');
+    if(service.lifecycle!=='Archived')throw new ServiceManagementError('Only an Archived service can be permanently deleted.');
+    if(data.typed!==this.deletionLabel(data.id)||data.confirmation!==this.deletionConfirmation(session,data.id))throw new ServiceManagementError('Deletion confirmation changed or does not match. Reload the service and confirm again.');
+    if(this.store.state.v<9)this.store.commit(actor.id,'service.deletion_format_upgrade','instance',state=>{upgradeRemovalState(state);state.v=9;});
+    const incarnation=this.state.services[data.id]!.incarnation!,mutation=randomUUID();let operation:string;
+    try{operation=this.store.commit(actor.id,'service.permanent_delete',data.id,state=>{
+      const managed=state.managed!;delete managed.services[data.id];delete state.config!.services[data.id];managed.revision++;
+      managed.lastServiceDeletion={incarnation,mutation};
+    },{identity:incarnation,mutation});}finally{if(this.store.journal.entries().some(r=>r.phase==='start'&&r.action==='service.permanent_delete'&&r.details?.mutation===mutation)){this.invalidate(data.id);this.publish();}}
+    return {operation,status:'deleted',revision:this.state.revision};
   }
   lifecycle(session: ConsoleSession, input: unknown) {
     const actor = this.actor(session, true);

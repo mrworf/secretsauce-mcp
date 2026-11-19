@@ -34,6 +34,7 @@ export function removalEffects(service:ManagedService):string[]{
 export function validateRemovalIdentities(state:ConsoleState):void {
  if(state.v<8)return;
  const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+ const deleted=state.managed?.lastServiceDeletion;if(deleted&&(state.v<9||!uuid.test(deleted.incarnation)||!uuid.test(deleted.mutation)))throw Error('Invalid service deletion outcome');
  for(const service of Object.values(state.managed?.services??{})){
   if(!uuid.test(service.incarnation??'')||Object.values(service.values).some(v=>!uuid.test(v.incarnation??'')))throw Error('Invalid service dependency identity');
   const intents=service.draft?.removedCredentials??[];

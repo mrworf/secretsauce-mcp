@@ -1,0 +1,13 @@
+{
+  "src/consoleBackupArchive.ts": "40277b7b6a1e9f9afabae67dde2573be9f4786eab3d1a1caef5c50507a19da19",
+  "src/consoleHttp.ts": "e0054d27806546087a2df521e03c847b1bc61b9f86497567f83ff1bbacc29bd0",
+  "src/consoleRemovalState.ts": "9728dce68fb732077945e435a4d42157ca7e22c5b3d7f697d97a072d9341538d",
+  "src/consoleRestore.ts": "b429ec6bb81d30868e2f3d87a88e54c4ae53386400d5a0fb925c6ab7754946d9",
+  "src/consoleRestoreInstall.ts": "b4e2c93ea5be855e4cce7119d12aeebd1b22603b279243373b3aa4d4b00ddcab",
+  "src/consoleServices.ts": "57a0774576d2528f059475a318c44107be47568286c3801cb80adb32987bf15c",
+  "src/consoleStore.ts": "891c1fa7d4c69a560595cd2480d352de9173faa679ff5833ea64c0fd88bc4033",
+  "test/console-credential-recovery.test.ts": "7ae7648c083e95ca2b2cba8bfa5d84d477a404288c1e728604aaa80098da1e93",
+  "test/console-services-http.test.ts": "661a211b3ad97599ce9fa1fea2480baf7c169cb457e4059fb86380459d731e95",
+  "test/console-permanent-deletion.test.ts": "1bf7b3e21f7f55db463d924eae540682f25d66c39bffbf27c2d1ec461a3df543",
+  "test/fixtures/m51/consoleStore-v8.ts.txt": "cdbc608a1b83893cf4342b363f4506fd8c34c8397e71d8f547ba8aaaf95f3bb5"
+}

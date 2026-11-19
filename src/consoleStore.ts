@@ -55,7 +55,7 @@ export interface ConsoleState {
     gatewayAuditIdentity?: string;
     operating?: import("./consoleOperations.js").OperatingState;
     retention?: import("./consoleEvidence.js").RetentionState;
-    v: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+    v: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
     id: string;
     revision: number;
     initialized: boolean;
@@ -142,7 +142,7 @@ export class ConsoleStore {
             if (existsSync(join(directory, 'managed')) && !existsSync(this.file))
                 throw new Error('Managed state missing');
             this.state = existsSync(this.file) ? decrypt<ConsoleState>(readFileSync(this.file, 'utf8'), this.key) : { v: 1, id: randomUUID(), revision: 0, initialized: false, origin: '', name: '', users: [], sessions: [], ...(options.config ? { config: options.config } : {}) };
-            if (![1,2,3,4,5,6,7,8].includes(this.state.v) || !Array.isArray(this.state.users) || !Array.isArray(this.state.sessions))
+            if (![1,2,3,4,5,6,7,8,9].includes(this.state.v) || !Array.isArray(this.state.users) || !Array.isArray(this.state.sessions))
                 throw new Error('Invalid managed state');
             validateRemovalIdentities(this.state);
             normalizeNotifications(this.state.notifications);
@@ -183,6 +183,17 @@ export class ConsoleStore {
                 const applied=entry?.[1].lastCleanupMutation===intent.details?.mutation;
                 if(entry&&!applied)this.commit('system','service.cleanup_review_invalidated',entry[0],state=>{delete state.managed!.services[entry[0]]!.review;state.managed!.revision++;});
                 this.journal.finish(intent.id,'system',intent.action,intent.target,this.state.revision,applied?'success':'failed',intent.details);
+                }catch(error){if(!this.storageReliable)throw error;this.journal.degraded=true;}
+            }
+            // Resolve the admitted whole deletion; never replay it against a reused/restored identity.
+            for(const intent of records.filter(r=>r.phase==='start'&&r.action==='service.permanent_delete'&&!completed.has(r.id))){
+                if(this.journal.degraded)break;
+                try{
+                    const outcome=this.state.managed?.lastServiceDeletion;
+                    const applied=outcome?.incarnation===intent.details?.identity&&outcome?.mutation===intent.details?.mutation;
+                    const entry=Object.entries(this.state.managed?.services??{}).find(([,s])=>s.incarnation===intent.details?.identity);
+                    if(entry&&!applied)this.commit('system','service.deletion_confirmation_invalidated',entry[0],state=>{delete state.managed!.services[entry[0]]!.review;state.managed!.revision++;});
+                    this.journal.finish(intent.id,'system',intent.action,intent.target,this.state.revision,applied?'success':'failed',intent.details);
                 }catch(error){if(!this.storageReliable)throw error;this.journal.degraded=true;}
             }
             // Supplied import values are new identities only. Preserve their committed value,
@@ -469,7 +480,7 @@ export function loadManagedConfig(directory: string, keyFile: string): GatewayCo
     if (!existsSync(join(directory, 'managed')))
         throw new Error('Managed marker missing');
     const key=readConsoleKey(keyFile);const state = pendingRecoveryState(directory,key)??decrypt<ConsoleState>(readFileSync(join(directory, 'state.enc'), 'utf8'),key);
-    if (![1,2,3,4,5,6,7,8].includes(state.v) || !state.config)
+    if (![1,2,3,4,5,6,7,8,9].includes(state.v) || !state.config)
         throw new Error('Managed configuration missing');
     const config=hydrateManagedConfig(state.config);
     normalizeManagedOAuthPath(config,directory);

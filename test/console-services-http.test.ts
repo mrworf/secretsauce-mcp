@@ -52,3 +52,12 @@ it('protects tokenless inspection and confirmed proposal discard with current ro
   const after=await(await fetch(f.base+'/console/api/services/new',{headers:f.headers})).json();expect(after.name).toBe('Unfinished');expect(after.draft).toBeUndefined();
  }finally{await f.close();}
 });
+
+it('protects Archived permanent deletion with typed target confirmation and current HTTP authority',async()=>{const f=await httpFixture();try{
+ f.manager.lifecycle(f.session,{id:'baseline',action:'archive',confirmed:true});const d=f.manager.detail(f.session,'baseline'),data={id:'baseline',typed:d.deletion!.label,confirmation:d.deletion!.confirmation,confirmed:true};
+ expect((await fetch(f.base+'/console/api/service/permanent-delete',{method:'POST',headers:{'content-type':'application/json',origin:'https://console.example.org'},body:JSON.stringify(data)})).status).toBe(401);
+ for(const headers of [{origin:'https://wrong.example.org'},{'x-console-csrf':'wrong'}])expect((await f.post('service/permanent-delete',data,headers)).status).toBe(403);
+ expect((await f.post('service/permanent-delete',{...data,typed:'wrong'})).status).toBe(400);expect((await f.post('service/permanent-delete',{...data,extra:true})).status).toBe(400);
+ f.store.state.users[0]!.role='Auditor';expect((await f.post('service/permanent-delete',data)).status).toBe(403);f.store.state.users[0]!.role='Owner';
+ expect((await f.post('service/permanent-delete',data)).status).toBe(200);expect((await f.post('service/permanent-delete',data)).status).toBe(400);expect(f.manager.state.services.baseline).toBeUndefined();
+}finally{await f.close();}});

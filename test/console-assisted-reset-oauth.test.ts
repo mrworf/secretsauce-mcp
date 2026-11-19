@@ -1,3 +1,4 @@
+import { legacyIdentitySnapshot } from './consoleFixtures.js';
 import { it, expect, vi } from 'vitest';
 import { SignJWT } from 'jose';
 import { ConsolePeople } from '../src/consolePeople.js';
@@ -19,8 +20,8 @@ it('MFA restriction fences refresh suspended in JWT signing',async()=>{const f=a
 it.each([['factor','before-rename'],['factor','after-rename'],['password','before-rename'],['password','after-rename']] as const)('uncertain %s %s write keeps old authority revoked across restart',async (purpose,phase)=>{const f=await setup();let restarted:ConsoleStore|undefined,runtime:GatewayRuntime|undefined,server:ReturnType<typeof createGatewayServer>|undefined;try{
  const issued=await(await f.exchange(await f.code())).json();const grants=new Map(f.runtime.builtinOAuth.state.refreshGrants);const subject=f.session.userId;f.store.state.managed!.services.synthetic!.assignments=[subject];f.config.services.synthetic!.access.users=[subject];const broker=f.runtime.capabilities.tokenBroker,auth={subject,scopes:[],mode:'builtin_oauth' as const},reference=broker.issueTokens(auth,{service:'synthetic',destination:'primary',access_ids:['gateway_access'],reason:'Synthetic uncertain reset'}).tokens[0]!.token;
  // Inject at the real atomic persistence boundary, not a mocked mutation return.
- // Format migration is a prerequisite transaction, before the injected security-transition write.
- f.store.commit('host','test.compatibility','instance',s=>{s.v=2;});
+ // Seed the legacy v2 snapshot explicitly before injecting the security-transition write fault.
+ legacyIdentitySnapshot(f.store,2);
  const proof=purpose==='password'?value(f.issue(purpose).link):undefined;
  (f.store as unknown as {faultState:(p?:string)=>void}).faultState=p=>{if(p===phase)throw Error('synthetic storage loss');};expect(()=>purpose==='factor'?f.issue('factor'):f.p.resetPassword({...proof,password,kind:'recovery',factor:f.enrolled.recoveryCodes[0]})).toThrow(/uncertain/);expect(()=>broker.validateServiceReferenceUse(auth,{service:'synthetic',destination:'primary'},reference)).toThrow();
  await new Promise<void>(r=>f.server.close(()=>r()));await f.runtime.close();f.store.close();restarted=new ConsoleStore(f.directory,f.keyFile);if(purpose==='factor'||phase==='before-rename'){expect(restarted.state.users.find(u=>u.id===subject)!.enrolled).toBe(false);expect(restarted.state.users.find(u=>u.id===subject)!.seed).toBe('');}else expect(restarted.state.users.find(u=>u.id===subject)!.enrolled).not.toBe(false);expect(restarted.state.v).toBe(2);

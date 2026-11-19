@@ -29,3 +29,9 @@ The first enlarged-text measurement preceded responsive observers; two animation
 - Shared button/modal/plain copy/review UX: inspected final screenshots and keyboard/overflow checks; SMTP and independent value controls unchanged.
 
 Known limitations: no external downstream interoperability or deployment qualified here. Final frozen-source full suite/build and joined M49–51 qualification remain required at UX10-INTEGRATED. This report does not waive retained runtime response-scanning limitations, audit retention, or older encrypted backup contents.
+
+## Final-regression fixture correction
+
+The frozen integrated run exposed six assisted-reset failures with one cause: legacy tests attempted to downgrade an existing v3 identity state through ordinary commit. M50's monotonic writer correctly retained v3, so those fixtures never reached their intended v1/v2 migration boundaries. A test-only helper now writes an explicit older encrypted snapshot, removing v3 display metadata and rejecting newer domain formats. Production behavior is unchanged. Exact v2, authority revocation after uncertain writes, preserved MFA on failed first migration, and absence of premature reset intent assertions remain intact.
+
+Focused correction validation: `npx vitest run test/console-assisted-reset-oauth.test.ts test/console-assisted-resets.test.ts test/console-migration.test.ts test/console-import-upgrade.test.ts --maxWorkers=2` PASS (4 files, 44 tests), including newer-format import/restart coverage. `npm run build` PASS. No browser requalification required for fixture-only changes; the outer orchestrator must rerun the frozen full suite against the corrective commit.

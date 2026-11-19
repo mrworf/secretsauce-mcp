@@ -1,0 +1,7 @@
+{
+  "src/consolePage.ts": "b12590b21039457ab739cba340d9ceba4ec1217d01e5efefd249f5ee281bbfe9",
+  "src/consolePeoplePage.ts": "ca68d2baa814f608e961ace1f962c9a15f43cb91757df33b2113654823ae50b6",
+  "src/consolePresentation.ts": "1bbc216a4bbd2f11579f16a3d05e9e6fef212bdf82a53360b72edfa9862762f4",
+  "src/consoleServicePage.ts": "6809c033d586b26c1d5c540d03931de409be1b22a4f5e7b5a83b4de829a6b80b",
+  "scripts/verify-console-service-editor-browser.mjs": "adee3966b51cd2f8029c926694e85652f96db8d262ad798a0a3952b41c48461e"
+}

@@ -592,14 +592,16 @@ milestones:
 - id: '48'
   title: Import separate unassigned services and retire legacy mappings safely
   file: delivery/milestones/secretsauce-mcp/48-independent-unassigned-service-import.md
-  status: in_progress
+  status: completed
   dependencies:
   - '47'
   - '42'
-  completed_at: null
-  evidence: null
-  notes: null
+  completed_at: '2026-11-19T07:02:40.257638+00:00'
+  evidence: evidence/ux-acceptance/secretsauce-mcp/milestone48/acceptance.md
+  notes: Focused acceptance and actual browser visual evidence passed; UX9-INTEGRATED remains due before
+    goal completion.
   started_at: '2026-11-19T06:46:47.416097+00:00'
+  commit_hash: 88aaac64e64336f1c274fd1194e8943bb5c41c6b
 delivery_goal:
   product_id: secretsauce-mcp
   status: in_progress
@@ -705,10 +707,10 @@ delivery_goal:
   - '47'
   - '48'
   execution: autonomous
-  current_milestone: '48'
+  current_milestone: null
   governing_plan: delivery/plans/secretsauce-mcp/milestone_48_plan_01.md
   blockers: []
-  resume_point: M48 governing plan before implementation
+  resume_point: UX9-INTEGRATED final qualification due
   started_at: '2026-11-19T06:27:38.646485+00:00'
 compiled_from_history:
 - product_id: secretsauce-mcp

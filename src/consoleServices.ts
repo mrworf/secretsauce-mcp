@@ -13,6 +13,8 @@ export interface ManagedCredential { value: string; version: number; changed: nu
 export interface ImportedIdentity { subject: string; index?: number; target?: { localId: string } | { issuer: string; externalSubject: string } }
 export interface ManagedService {
   recoveryReviewRequired?:boolean;
+  displayName?: string;
+  proposalGeneration?: number;
   lifecycle: ServiceLifecycle;
   applied?: ManagedServiceDraft;
   draft?: { content: ManagedServiceDraft; base: number; generation: number; missingMappings?: string[]; importedIdentities?: ImportedIdentity[]; settings?: { name: string } };
@@ -97,12 +99,12 @@ export class ConsoleServices {
     if (user.role === 'Member') return { revision: this.state.revision, writable: false, eligible: [], services: Object.entries(this.state.services).filter(([,s]) => s.lifecycle === 'Active' && s.assignments.includes(user.id)).map(([id,s]) => ({ id, name: s.applied?.name ?? id, description: s.applied?.description ?? '', lifecycle: s.lifecycle, assignmentCount: 1, appliedRevision: this.state.revision, hasDraft: false, readiness: this.readiness(id).readiness, exceptions: [] })) };
     return { revision: this.state.revision, writable: ['Owner', 'Administrator'].includes(user.role) && !session.restricted && !this.store.journal.degraded && !this.store.externalAudit?.degraded,
       eligible: this.store.state.users.filter(u => u.active && u.enrolled !== false && u.role !== 'Auditor').map(u => ({ id: u.id, email: u.email, role: u.role })).concat((this.store.state.people?.external??[]).filter(e=>e.active).map(e=>({id:e.id,email:e.label,role:'External' as typeof user.role,issuer:e.issuer,externalSubject:e.subject}))).concat(this.runtimeConfig.auth.mode==='bearer'?[{id:'bearer-dev',email:'Shared legacy bearer (no console access)',role:'External' as typeof user.role}]:[]),
-      services: Object.entries(this.state.services).map(([id, s]) => ({ id, name: s.applied?.name ?? s.draft?.content.name ?? id, description: s.applied?.description ?? s.draft?.content.description ?? '', assignmentCount: s.assignments.length, lifecycle: s.lifecycle, appliedRevision: this.state.revision, hasDraft: Boolean(s.draft), ...this.readiness(id), fingerprint: this.fingerprint(id), exceptions: s.applied ? exceptions(s.applied) : [] })) };
+      services: Object.entries(this.state.services).map(([id, s]) => ({ id, name: s.applied?.name ?? s.draft?.content.name ?? s.displayName ?? id, description: s.applied?.description ?? s.draft?.content.description ?? '', assignmentCount: s.assignments.length, lifecycle: s.lifecycle, appliedRevision: this.state.revision, hasDraft: Boolean(s.draft), ...this.readiness(id), fingerprint: this.fingerprint(id), exceptions: s.applied ? exceptions(s.applied) : [] })) };
   }
   detail(session: ConsoleSession, id: unknown) {
     this.actor(session); const key = this.parse(idSchema, id); const s = own(this.state.services, key);
     if (!s) throw new ServiceManagementError('Service unavailable. Reload Services.');
-    return { id: key, revision: this.state.revision, lifecycle: s.lifecycle, applied: s.applied, draft: s.draft,
+    return { id: key, name: s.applied?.name ?? s.draft?.content.name ?? s.displayName ?? key, revision: this.state.revision, generation: s.draft?.generation ?? s.proposalGeneration ?? 0, lifecycle: s.lifecycle, applied: s.applied, draft: s.draft,
       configurationIssues: this.configurationIssues(key), ...this.readiness(key), mappingFingerprint: this.fingerprint(key), mappingIssues: this.mappingIssues(key), assignments: s.assignments, credentials: Object.entries(s.values).map(([id, v]) => ({ id, available: !v.missing && Boolean(v.value), version: v.version, ...this.credentialAttribution(v), confirmation: this.credentialConfirmation(key,id), inUse: this.credentialInUse(s,id), appliedUse: Boolean(s.applied?.credentials?.some(c=>c.id===id)) })),
       exceptions: s.applied ? exceptions(s.applied) : [], activity: this.store.journal.entries().filter(e => e.target === key).map(e => ({ action: e.action, time: e.time, result: e.result, revision: e.revision, details: e.details })) };
   }
@@ -114,7 +116,7 @@ export class ConsoleServices {
     validateDraftBounds(data.service);
     const current = own(this.state.services, data.id);
     if (!current && !newIdSchema.safeParse(data.id).success) throw new ServiceManagementError('Invalid new service identifier. Use 1–80 letters, numbers, dots, underscores or hyphens, starting with a letter or number.');
-    if (data.base !== this.state.revision || data.generation !== (current?.draft?.generation ?? 0)) throw this.stale(session, data.id);
+    if (data.base !== this.state.revision || data.generation !== (current?.draft?.generation ?? current?.proposalGeneration ?? 0)) throw this.stale(session, data.id);
     // Field permissions are checked again at review/apply, even in mixed drafts.
     if (data.settings && actor.role !== 'Owner') throw new Error('Forbidden.');
     if (current?.lifecycle === 'Archived') throw new ServiceManagementError('Service archived. Unarchive to Disabled before editing.');
@@ -167,6 +169,29 @@ export class ConsoleServices {
       d.missingMappings=(d.missingMappings??[]).filter(subject=>!seen.has(subject));d.generation++;d.base=this.state.revision;delete state.managed!.services[data.id]!.review;
     });
     return {operation,status:'mapping saved',remaining:this.mappingIssues(data.id).length,generation:this.state.services[data.id]!.draft!.generation,revision:this.state.revision};
+  }
+  discard(session: ConsoleSession, input: unknown) {
+    const actor=this.actor(session,true);
+    const data=this.parse(z.object({id:idSchema,base:z.number().int().nonnegative(),generation:z.number().int().nonnegative(),confirmed:z.literal(true)}).strict(),input);
+    const current=own(this.state.services,data.id);
+    if(!current?.draft)throw new ServiceManagementError('No saved draft to discard. Reload the service.');
+    if(current.lifecycle==='Archived')throw new ServiceManagementError('Service archived. Unarchive before discarding a saved draft.');
+    if(data.base!==this.state.revision||data.generation!==current.draft.generation)throw this.stale(session,data.id);
+    if(this.store.state.v<6)this.store.commit(actor.id,'service.proposal_format_upgrade','instance',state=>{state.v=6;});
+    const operation=this.store.commit(actor.id,'service.draft_discard',data.id,state=>{
+      const service=state.managed!.services[data.id]!;
+      service.displayName=service.applied?.name??service.draft?.content.name??service.displayName??data.id;
+      service.proposalGeneration=service.draft!.generation+1;
+      delete service.draft;delete service.review;
+    });
+    return {operation,status:'Saved draft discarded. Current configuration and credential values are unchanged.',revision:this.state.revision};
+  }
+  inspect(session: ConsoleSession,input:unknown) {
+    this.actor(session);
+    const {id}=this.parse(reviewSchema,input),service=own(this.state.services,id);
+    if(!service?.draft)throw new ServiceManagementError('Save a service draft before review.');
+    if(service.draft.settings&&this.store.authorize(session,'own').role!=='Owner')throw Error('Forbidden.');
+    return {scope:{services:[id],settings:service.draft.settings?['instance.name']:[]},base:this.state.revision,current:service.applied??null,proposed:service.draft.content,settings:service.draft.settings,grants:service.applied?[]:service.draft.content.access?.users??[],exceptions:exceptions(service.draft.content),issues:this.configurationIssues(id),inspection:true};
   }
   private stale(session: ConsoleSession, id: string): ServiceManagementError {
     return new ServiceManagementError('Stale review or dependencies. Compare current and proposed configuration, reload, save and review again.', own(this.state.services, id) ? this.detail(session, id) : { revision: this.state.revision });

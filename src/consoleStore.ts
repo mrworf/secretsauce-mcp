@@ -53,7 +53,7 @@ export interface ConsoleState {
     gatewayAuditIdentity?: string;
     operating?: import("./consoleOperations.js").OperatingState;
     retention?: import("./consoleEvidence.js").RetentionState;
-    v: 1 | 2 | 3 | 4 | 5;
+    v: 1 | 2 | 3 | 4 | 5 | 6;
     id: string;
     revision: number;
     initialized: boolean;
@@ -140,7 +140,7 @@ export class ConsoleStore {
             if (existsSync(join(directory, 'managed')) && !existsSync(this.file))
                 throw new Error('Managed state missing');
             this.state = existsSync(this.file) ? decrypt<ConsoleState>(readFileSync(this.file, 'utf8'), this.key) : { v: 1, id: randomUUID(), revision: 0, initialized: false, origin: '', name: '', users: [], sessions: [], ...(options.config ? { config: options.config } : {}) };
-            if (![1,2,3,4,5].includes(this.state.v) || !Array.isArray(this.state.users) || !Array.isArray(this.state.sessions))
+            if (![1,2,3,4,5,6].includes(this.state.v) || !Array.isArray(this.state.users) || !Array.isArray(this.state.sessions))
                 throw new Error('Invalid managed state');
             normalizeNotifications(this.state.notifications);
             if (this.state.config) { if(this.state.managed?.protection)this.state.config.responseProtection=validateProtection(this.state.managed.protection.applied).effective;hydrateManagedConfig(this.state.config);normalizeManagedOAuthPath(this.state.config,this.directory); }
@@ -449,7 +449,7 @@ export function loadManagedConfig(directory: string, keyFile: string): GatewayCo
     if (!existsSync(join(directory, 'managed')))
         throw new Error('Managed marker missing');
     const key=readConsoleKey(keyFile);const state = pendingRecoveryState(directory,key)??decrypt<ConsoleState>(readFileSync(join(directory, 'state.enc'), 'utf8'),key);
-    if (![1,2,3,4,5].includes(state.v) || !state.config)
+    if (![1,2,3,4,5,6].includes(state.v) || !state.config)
         throw new Error('Managed configuration missing');
     const config=hydrateManagedConfig(state.config);
     normalizeManagedOAuthPath(config,directory);

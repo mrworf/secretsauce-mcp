@@ -10,7 +10,7 @@ import { ConsoleStore } from '../src/consoleStore.js';
 const draft = () => ({ name: 'Example service', no_auth: true, destinations: [{ id: 'primary', base_url: 'https://api.example.org', hosts: [{ exact: 'api.example.org' }] }], credentials: [], access: { users: [] }, policy: { mode: 'allow' as const, rules: [] } });
 import { managedFixture } from './consoleManagementFixtures.js';
 
-function save(f: ReturnType<typeof managedFixture>, service: unknown = draft(), settings?: unknown) { return f.manager.save(f.session, { id: 'new', base: f.manager.state.revision, generation: f.manager.state.services.new?.draft?.generation ?? 0, service, ...(settings ? { settings } : {}) }); }
+function save(f: ReturnType<typeof managedFixture>, service: unknown = draft(), settings?: unknown) { return f.manager.save(f.session, { id: 'new', base: f.manager.state.revision, generation: f.manager.state.services.new?.draft?.generation ?? f.manager.state.services.new?.proposalGeneration ?? 0, service, ...(settings ? { settings } : {}) }); }
 function apply(f: ReturnType<typeof managedFixture>) { const r = f.manager.review(f.session, { id: 'new' }); return f.manager.apply(f.session, { id: 'new', review: r.review, acknowledgments: r.exceptions }); }
 describe('managed service drafts and scoped publication', () => {
  it('saves incomplete non-executing work, reviews exact sanitized scope and activates no-auth without restart', () => {
@@ -148,6 +148,29 @@ describe('specific service readiness diagnostics',()=>{
    save(f,{name:'Incomplete'});expect(f.manager.detail(f.session,'new').configurationIssues.some(i=>i.section===1)).toBe(true);expect(f.cfg.services.new).toBe(live);expect(f.manager.detail(f.session,'new').lifecycle).toBe('Active');
    try{save(f,{...draft(),destinations:[{id:'one',base_url:'invalid-synthetic-secret'}]});throw Error('Expected validation');}catch(e){expect(e).toMatchObject({issues:[{section:1,path:['destinations',0,'base_url']}]});expect(String(e)).not.toContain('invalid-synthetic-secret');}
    f.store.state.users[0]!.role='Member';expect(()=>f.manager.detail(f.session,'new')).toThrow();
+  }finally{f.close();}
+ });
+});
+
+describe('proposal inspection and scoped discard',()=>{
+ it('inspects incomplete work without activation authority and discards only a named saved proposal across restart',()=>{
+  const f=managedFixture();try{
+   save(f,{name:'Named unfinished service'});
+   f.manager.credential(f.session,{id:'new',credential:'key',action:'create',value:'synthetic-independent-value',confirmed:true});
+   const inspection=f.manager.inspect(f.session,{id:'new'});expect(inspection.issues.length).toBeGreaterThan(0);expect(inspection).not.toHaveProperty('review');expect(f.manager.state.services.new!.review).toBeUndefined();
+   const values=structuredClone(f.manager.state.services.new!.values);
+   const input={id:'new',base:f.manager.state.revision,generation:f.manager.state.services.new!.draft!.generation,confirmed:true};
+   for(const patch of [{confirmed:false},{base:-1},{generation:99},{extra:true}])expect(()=>f.manager.discard(f.session,{...input,...patch})).toThrow();
+   f.store.state.users[0]!.role='Auditor';expect(f.manager.inspect(f.session,{id:'new'}).inspection).toBe(true);expect(()=>f.manager.discard(f.session,input)).toThrow('Forbidden');f.store.state.users[0]!.role='Owner';
+   const r=f.manager.discard(f.session,input);expect(f.store.journal.status(r.operation)).toBe('success');expect(f.manager.detail(f.session,'new')).toMatchObject({name:'Named unfinished service',lifecycle:'Draft'});expect(f.manager.state.services.new!.draft).toBeUndefined();expect(f.manager.state.services.new!.values).toEqual(values);expect(f.cfg.services.new).toBeUndefined();expect(()=>f.manager.review(f.session,{id:'new'})).toThrow('Save');
+   f.store.close();const restart=new ConsoleStore(f.directory,f.keyFile);expect(restart.state.managed!.services.new).toMatchObject({displayName:'Named unfinished service',values});expect(restart.state.managed!.services.new!.draft).toBeUndefined();restart.close();
+  }finally{f.close();}
+ });
+ it('preserves applied lifecycle assignments and values, denies stale reviews and keeps drafts on failed audit admission',()=>{
+  const f=managedFixture();try{
+   const d=draft();d.access.users.push(f.session.userId as never);save(f,d);apply(f);save(f,{...d,name:'Proposed rename'});const r=f.manager.review(f.session,{id:'new'});const before=structuredClone(f.manager.state.services.new!);const input={id:'new',base:f.manager.state.revision,generation:before.draft!.generation,confirmed:true};
+   const append=vi.spyOn(f.store.journal,'start').mockImplementation(()=>{throw Error('synthetic audit unavailable');});expect(()=>f.manager.discard(f.session,input)).toThrow();append.mockRestore();expect(f.manager.state.services.new!.draft).toEqual(before.draft);
+   f.manager.discard(f.session,input);expect(f.manager.state.services.new).toMatchObject({lifecycle:'Active',applied:before.applied,assignments:before.assignments,values:before.values});expect(()=>f.manager.apply(f.session,{id:'new',review:r.review,acknowledgments:r.exceptions})).toThrow();
   }finally{f.close();}
  });
 });

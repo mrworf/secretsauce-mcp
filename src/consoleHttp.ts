@@ -213,6 +213,8 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
             if (path === '/console/api/service/lifecycle') { reply(200, manager.lifecycle(session, data)); return; }
             if (path === '/console/api/service/mappings') { reply(200, manager.resolveMappings(session, data)); return; }
             if (path === '/console/api/service/save') { reply(200, manager.save(session, data)); return; }
+            if (path === '/console/api/service/discard') { reply(200, manager.discard(session, data)); return; }
+            if (path === '/console/api/service/inspect') { reply(200, manager.inspect(session, data)); return; }
             if (path === '/console/api/service/review') { reply(200, manager.review(session, data)); return; }
             if (path === '/console/api/service/apply') { reply(200, manager.apply(session, data)); return; }
         }

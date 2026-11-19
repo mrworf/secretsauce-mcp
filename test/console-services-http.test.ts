@@ -39,3 +39,16 @@ it('protects confirmed current-access HTTP changes and rejects stale confirmatio
  f.store.state.users[0]!.role='Auditor';expect((await f.post('service/access',command)).status).toBe(403);f.store.state.users[0]!.role='Owner';expect((await f.post('service/access',command)).status).toBe(200);expect((await f.post('service/access',command)).status).toBe(400);expect(f.manager.state.services.baseline!.assignments).toEqual([f.session.userId]);
  expect((await f.post('service/access',{...command,action:'remove',fingerprint:f.manager.fingerprint('baseline')})).status).toBe(200);expect(f.manager.state.services.baseline!.assignments).toEqual([]);
 }finally{await f.close();}});
+it('protects tokenless inspection and confirmed proposal discard with current role and CSRF',async()=>{
+ const f=await httpFixture();try{
+  await f.post('service/save',{id:'new',base:0,generation:0,service:{name:'Unfinished'}});
+  const inspection=await(await f.post('service/inspect',{id:'new'})).json();expect(inspection.issues.length).toBeGreaterThan(0);expect(inspection.review).toBeUndefined();
+  expect((await f.post('service/inspect',{id:'new',extra:true})).status).toBe(400);
+  const d=await(await fetch(f.base+'/console/api/services/new',{headers:f.headers})).json();const input={id:'new',base:d.revision,generation:d.draft.generation,confirmed:true};
+  expect((await f.post('service/discard',input,{'x-console-csrf':'invalid'})).status).toBe(403);
+  expect((await f.post('service/discard',{...input,confirmed:false})).status).toBe(400);
+  f.store.state.users[0]!.role='Auditor';expect((await f.post('service/inspect',{id:'new'})).status).toBe(200);expect((await f.post('service/discard',input)).status).toBe(403);
+  f.store.state.users[0]!.role='Owner';expect((await f.post('service/discard',input)).status).toBe(200);
+  const after=await(await fetch(f.base+'/console/api/services/new',{headers:f.headers})).json();expect(after.name).toBe('Unfinished');expect(after.draft).toBeUndefined();
+ }finally{await f.close();}
+});

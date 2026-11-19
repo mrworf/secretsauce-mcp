@@ -6,7 +6,7 @@ source:
   captured_from: typed_latest_version_review
   references:
   - evidence/qa/secretsauce-mcp/ux9-integrated/acceptance.md
-status: NEEDS_CONFIRMATION
+status: CONFIRMED
 transaction:
   parent_commit: 64903d6831343aa78f91128b7b2e401add4d5362
   repository_commit: null
@@ -55,19 +55,20 @@ items:
     product_intent: authoritative
   suggestions: []
 - id: PO-FB-269
-  classification: IDEA_OR_QUESTION
-  confirmation: NEEDS_CONFIRMATION
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
   original: 2) This implies that the secret I've entered above will NOT be deleted even if I delete the credential
     entry.
-  normalized: Clarify whether applying the removal should also delete the saved value when it is no longer used.
+  normalized: Delete the saved value on Apply if nothing still uses it. Draft removal alone leaves the secret in place.
   scope:
   - service-credentials
   authority:
-    product_intent: unresolved
+    product_intent: authoritative
   suggestions: []
-  ambiguity:
-  - The walkthrough raises the fate of the secret. Deletion on Apply was a recommendation and has not been selected
-    explicitly.
+  clarification:
+    question_id: PO-UNRESOLVED-001
+    selected_option: A
+    original: yes to both
 - id: PO-FB-270
   classification: DIRECTIVE
   confirmation: CONFIRMED
@@ -185,47 +186,21 @@ items:
     product_intent: authoritative
   suggestions: []
 - id: PO-FB-281
-  classification: IDEA_OR_QUESTION
-  confirmation: NEEDS_CONFIRMATION
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
   original: However, an archived service should also have an option to delete it.
-  normalized: Clarify which service data is deleted and how retained history and backups are treated.
+  normalized: Delete the service and its stored configuration, draft, and secrets from the current instance. Keep
+    retained audit events and existing backups under their regular retention rules.
   scope:
   - archived-service
   authority:
-    product_intent: unresolved
+    product_intent: authoritative
   suggestions: []
-  ambiguity:
-  - The local deletion scope and retention treatment were proposed in discussion but not approved.
-unresolved:
-- id: PO-UNRESOLVED-001
-  item_ids:
-  - PO-FB-269
-  issue: behavior
-  question: When an administrator applies removal of a credential, should the saved secret be deleted if nothing still
-    uses it?
-  options:
-  - id: A
-    meaning: Delete the saved value on Apply if nothing still uses it. Draft removal alone leaves the secret in place.
-    classification: DIRECTIVE
-  - id: B
-    meaning: Retain the saved value after Apply. Clearing or deleting it remains a separate action.
-    classification: DIRECTIVE
-  blocking_reconciliation: true
-- id: PO-UNRESOLVED-002
-  item_ids:
-  - PO-FB-281
-  issue: behavior
-  question: Should permanent deletion remove the archived service record, configuration, draft, and saved secrets
-    from the current instance while retaining audit events and existing backups under their retention rules?
-  options:
-  - id: A
-    meaning: Delete the service and its stored configuration, draft, and secrets from the current instance. Keep retained
-      audit events and existing backups under their regular retention rules.
-    classification: DIRECTIVE
-  - id: B
-    meaning: Use another deletion scope specified by the Product Owner.
-    classification: DIRECTIVE
-  blocking_reconciliation: true
+  clarification:
+    question_id: PO-UNRESOLVED-002
+    selected_option: A
+    original: yes to both
+unresolved: []
 handoff:
   reconciliation_ready: false
   next_workflow: null

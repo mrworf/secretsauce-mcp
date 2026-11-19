@@ -1,6 +1,6 @@
 # PO-FEEDBACK-2026-11-19-001
 
-Source: latest-version review. Status: NEEDS_CONFIRMATION.
+Source: latest-version review. Status: CONFIRMED.
 
 | ID | Classification | Confirmation | Meaning |
 |---|---|---|---|
@@ -8,7 +8,7 @@ Source: latest-version review. Status: NEEDS_CONFIRMATION.
 | PO-FB-266 | DIRECTIVE | CONFIRMED | Provide a button and modal confirmation for removing a credential configuration. |
 | PO-FB-267 | OBSERVATION | CONFIRMED | The removal help text is confusing. |
 | PO-FB-268 | DIRECTIVE | CONFIRMED | Explain the consequence of credential removal in plain language. |
-| PO-FB-269 | IDEA_OR_QUESTION | NEEDS_CONFIRMATION | Clarify whether applying the removal should also delete the saved value when it is no longer used. |
+| PO-FB-269 | DIRECTIVE | CONFIRMED | Delete the saved value on Apply if nothing still uses it. Draft removal alone leaves the secret in place. |
 | PO-FB-270 | DIRECTIVE | CONFIRMED | Replace “Placement” with plain language that explains where the credential is sent. |
 | PO-FB-271 | OBSERVATION | CONFIRMED | The sign-in form stretches too wide on an ultrawide display. |
 | PO-FB-272 | PREFERENCE | CONFIRMED | Prefer a narrower sign-in layout on wide displays. |
@@ -20,11 +20,6 @@ Source: latest-version review. Status: NEEDS_CONFIRMATION.
 | PO-FB-278 | DIRECTIVE | CONFIRMED | Remove Overview actions whose only effect is to open Configuration. |
 | PO-FB-279 | DIRECTIVE | CONFIRMED | Provide a permanent deletion action for an archived service. |
 | PO-FB-280 | DIRECTIVE | CONFIRMED | Require typing the displayed confirmation value in a dialog before deleting the archived service. |
-| PO-FB-281 | IDEA_OR_QUESTION | NEEDS_CONFIRMATION | Clarify which service data is deleted and how retained history and backups are treated. |
+| PO-FB-281 | DIRECTIVE | CONFIRMED | Delete the service and its stored configuration, draft, and secrets from the current instance. Keep retained audit events and existing backups under their regular retention rules. |
 
-## Decisions to confirm
-
-- **PO-UNRESOLVED-001** When an administrator applies removal of a credential, should the saved secret be deleted if nothing still uses it? A. Delete the saved value on Apply if nothing still uses it. Draft removal alone leaves the secret in place. B. Retain the saved value after Apply. Clearing or deleting it remains a separate action.
-- **PO-UNRESOLVED-002** Should permanent deletion remove the archived service record, configuration, draft, and saved secrets from the current instance while retaining audit events and existing backups under their retention rules? A. Delete the service and its stored configuration, draft, and secrets from the current instance. Keep retained audit events and existing backups under their regular retention rules. B. Use another deletion scope specified by the Product Owner.
-
-Reconciliation ready: false. Confirmed directives establish product intent. Preferences guide quality. Observations record evidence. Ideas and questions record exploration.
+Both deletion decisions confirmed with “yes to both.” Reconciliation ready: false. Confirmed directives establish product intent. Preferences guide quality. Observations record evidence. Ideas and questions record exploration.

@@ -1,0 +1,979 @@
+schema_version: 1
+reconciliation_id: REC-RUN-013
+product_id: secretsauce-mcp
+status: RESOLVED
+transaction:
+  parent_commit: fc458fe5e202b9d14a1f32a39749540cec3ac928
+  repository_commit: null
+  owned_paths:
+  - workflow/reconciliation/REC-RUN-013/
+  - docs/web-console-prd.md
+  publication: content_revision_payload; resolve producer commit by Git history for this result
+  pre_existing_dirty_paths:
+  - workflow/definition/state.yaml
+  - workflow/definition/decisions.md
+  - workflow/definition/history/
+  - passwd
+  - codex-session-01a122f7-e70f-7440-b1ce-ca88b955e519.md
+  - test-results/
+source:
+  invocation: product-definition-orchestrator
+  originating_stage: product
+  triggering_findings: []
+  affected_requirements:
+  - CONFIG-02
+  - CONFIG-03
+  - POLICY-01
+  - AUTHZ-02
+  - UX-02
+  - AUDIT-02
+  - AUDIT-03
+  - AUDIT-04
+  artifact_revisions:
+  - artifact: workflow/feedback/PO-FEEDBACK-2026-11-18-001/feedback.yaml
+    revision: sha256:f75bf33c095d27ac3983cd9d8af2babf1100aff824f0c77e7447ac2750d49334
+  - artifact: docs/web-console-prd.md
+    revision: sha256:05a8cc6436b4b9d7f71c7b04e06367bc92c80f23a46604a58c5e273c955e1691
+  - artifact: product/ux/manifest.yaml
+    revision: sha256:310b3680ef3a4818f0534bd263d5a11b13c3ec3345d9a3576b67d5c140fb1273
+  - artifact: product/ux/01-information-architecture.md
+    revision: sha256:ea8c9403ba85d89629c24d53cc6bf4df35bb6a2e9aca27bf0bc9b79c41e21a8c
+  - artifact: product/ux/02-interaction-patterns.md
+    revision: sha256:32f5a1eaae242d7ec9b927b89a43eaff3697074466784ff72398a930501f929d
+  - artifact: product/architecture/web-console-state-contract.md
+    revision: sha256:c8e22b5013d89090cc451cb2ef0290d7517b05bebae746faa15b65f10fca9848
+  - artifact: product/security/web-console-security-contract.md
+    revision: sha256:8f66520798094a2638f006c9f3145e263e96008fdf63480fc6b98c2b0ccddc35
+  - artifact: workflow/reconciliation/REC-RUN-013/activity-filter-basis.md
+    revision: sha256:cbcea279757e19900d1a82448694046ec0098ccb2ae9f20f7624b0f5576c0f9f
+  product_owner_feedback:
+  - feedback_id: PO-FEEDBACK-2026-11-18-001
+    path: workflow/feedback/PO-FEEDBACK-2026-11-18-001/feedback.yaml
+    schema_version: 1
+    status: CONFIRMED
+  specialist_resolution: 'UX8-ACTIVITY-SEMANTICS: AF01–06 adopted in AUDIT-02.a/b; producer-owned basis
+    copy'
+findings:
+  resolved:
+  - REC-054
+  - REC-055
+  - REC-056
+  - REC-057
+  - REC-058
+  unresolved: []
+feedback_dispositions:
+- feedback_id: PO-FEEDBACK-2026-11-18-001
+  item_id: PO-FB-202
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  product_intent_authority: evidence
+  original: And I would prefer to have the white one in the buttons available all over because that just
+    makes it consistent.
+  normalized: The walkthrough identified duplicate status bars at the top and bottom of Settings.
+  disposition: EVIDENCE_CORRELATED
+  source_findings:
+  - REC-054
+  source_changes:
+  - REC-CHANGE-054
+  remediation:
+  - REC-RM-048
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Correlated with settled shared outcome; observation/advisory/exploration retained at its
+    original authority. Existing version/attribution and text-button conventions preserved; exact action
+    wording remains within explicit target/timing distinction.
+  scope:
+  - settings
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-001
+  item_id: PO-FB-203
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: And I would prefer to have the white one in the buttons available all over because that just
+    makes it consistent.
+  normalized: Use one persistent white bottom bar for Settings status, Discard, Save for later and Review
+    changes. Remove the duplicate top status bar.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-054
+  source_changes:
+  - REC-CHANGE-054
+  remediation:
+  - REC-RM-048
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Precise confirmed direction adopted in PRD; existing safety/timing/roles preserved and derived
+    artifacts require bounded revalidation.
+  scope:
+  - settings
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-001
+  item_id: PO-FB-204
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  product_intent_authority: evidence
+  original: It is very weird English to say value available.
+  normalized: The status “Value available” is unclear.
+  disposition: EVIDENCE_CORRELATED
+  source_findings:
+  - REC-055
+  source_changes:
+  - REC-CHANGE-055
+  remediation:
+  - REC-RM-049
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Correlated with settled shared outcome; observation/advisory/exploration retained at its
+    original authority. Existing version/attribution and text-button conventions preserved; exact action
+    wording remains within explicit target/timing distinction.
+  scope:
+  - credentials
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-001
+  item_id: PO-FB-205
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: It should it should say something to the effect of credential material set or something to
+    that effect.
+  normalized: Use the confirmed wording “Credential value set” and “Credential value not set.”
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-055
+  source_changes:
+  - REC-CHANGE-055
+  remediation:
+  - REC-RM-049
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Precise confirmed direction adopted in PRD; existing safety/timing/roles preserved and derived
+    artifacts require bounded revalidation.
+  scope:
+  - credentials
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-001
+  item_id: PO-FB-206
+  classification: PREFERENCE
+  confirmation: CONFIRMED
+  product_intent_authority: advisory
+  original: I like the versioning, I like it was changed by who
+  normalized: Retain version, changed-by and timestamp details.
+  disposition: ADVISORY_CONSIDERED
+  source_findings:
+  - REC-055
+  source_changes:
+  - REC-CHANGE-055
+  remediation:
+  - REC-RM-049
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Correlated with settled shared outcome; observation/advisory/exploration retained at its
+    original authority. Existing version/attribution and text-button conventions preserved; exact action
+    wording remains within explicit target/timing distinction.
+  scope:
+  - credentials
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-001
+  item_id: PO-FB-207
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  product_intent_authority: evidence
+  original: right now add credential and remove placement one look like they are part of the same thing
+    and placement one doesn't make any sense to me as a user.
+  normalized: Add and remove appear related, and “Remove placement one” has no clear target.
+  disposition: EVIDENCE_CORRELATED
+  source_findings:
+  - REC-055
+  source_changes:
+  - REC-CHANGE-055
+  remediation:
+  - REC-RM-049
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Correlated with settled shared outcome; observation/advisory/exploration retained at its
+    original authority. Existing version/attribution and text-button conventions preserved; exact action
+    wording remains within explicit target/timing distinction.
+  scope:
+  - credentials
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-001
+  item_id: PO-FB-208
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: But then after that box there is to add credential and if I add another credential, we make
+    another box underneath.
+  normalized: Use a bordered card for each credential with its own removal action. Place Add credential
+    beneath the cards.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-055
+  source_changes:
+  - REC-CHANGE-055
+  remediation:
+  - REC-RM-049
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Precise confirmed direction adopted in PRD; existing safety/timing/roles preserved and derived
+    artifacts require bounded revalidation.
+  scope:
+  - credentials
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-001
+  item_id: PO-FB-209
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: it needs to be clear that remove placement one is removing the API key.
+  normalized: Name and group the removal action so it identifies the credential configuration being removed
+    and is distinct from the stored-secret action.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-055
+  source_changes:
+  - REC-CHANGE-055
+  remediation:
+  - REC-RM-049
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Precise confirmed direction adopted in PRD; existing safety/timing/roles preserved and derived
+    artifacts require bounded revalidation.
+  scope:
+  - credentials
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-001
+  item_id: PO-FB-210
+  classification: IDEA_OR_QUESTION
+  confirmation: CONFIRMED
+  product_intent_authority: exploratory
+  original: then it can just say uh delete credential for example.
+  normalized: Consider “Delete credential” as example wording for the card action.
+  disposition: EXPLORATORY_RECORDED
+  source_findings:
+  - REC-055
+  source_changes:
+  - REC-CHANGE-055
+  remediation:
+  - REC-RM-049
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Correlated with settled shared outcome; observation/advisory/exploration retained at its
+    original authority. Existing version/attribution and text-button conventions preserved; exact action
+    wording remains within explicit target/timing distinction.
+  scope:
+  - credentials
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-001
+  item_id: PO-FB-211
+  classification: PREFERENCE
+  confirmation: CONFIRMED
+  product_intent_authority: advisory
+  original: Oh, maybe not a trash icon because we don't do icons anywhere else. So let's be consistent.
+  normalized: Prefer the existing text-button convention over adding a trash icon.
+  disposition: ADVISORY_CONSIDERED
+  source_findings:
+  - REC-055
+  source_changes:
+  - REC-CHANGE-055
+  remediation:
+  - REC-RM-049
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Correlated with settled shared outcome; observation/advisory/exploration retained at its
+    original authority. Existing version/attribution and text-button conventions preserved; exact action
+    wording remains within explicit target/timing distinction.
+  scope:
+  - credentials
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-001
+  item_id: PO-FB-212
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: You can actually just stick to the first sentence. Move controls change only the order of
+    rules with the same priority and effect.
+  normalized: Keep this one sentence and drop the explanations of disabled directions and automatic priority
+    changes.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-056
+  source_changes:
+  - REC-CHANGE-056
+  remediation:
+  - REC-RM-050
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Precise confirmed direction adopted in PRD; existing safety/timing/roles preserved and derived
+    artifacts require bounded revalidation.
+  scope:
+  - request-rules
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-001
+  item_id: PO-FB-213
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  product_intent_authority: evidence
+  original: I think the way it's being laid out on this screen, uh, is very confusing.
+  normalized: The current layout makes the rule evaluation text difficult to follow.
+  disposition: EVIDENCE_CORRELATED
+  source_findings:
+  - REC-056
+  source_changes:
+  - REC-CHANGE-056
+  remediation:
+  - REC-RM-050
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Correlated with settled shared outcome; observation/advisory/exploration retained at its
+    original authority. Existing version/attribution and text-button conventions preserved; exact action
+    wording remains within explicit target/timing distinction.
+  scope:
+  - request-rules
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-001
+  item_id: PO-FB-214
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: I like it, but I think you should just make it like an info box and you should probably do
+    a bullet list, uh, of the rules of engagement that you're describing
+  normalized: Show Default policy on the left and one explanation box on the right. Cover fallback, mixed
+    Allow and Deny, priority, Deny on ties, and listed order for equal priority and effect. Avoid duplicate
+    explanations.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-056
+  source_changes:
+  - REC-CHANGE-056
+  remediation:
+  - REC-RM-050
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Precise confirmed direction adopted in PRD; existing safety/timing/roles preserved and derived
+    artifacts require bounded revalidation.
+  scope:
+  - request-rules
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-001
+  item_id: PO-FB-215
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: Add eligible identity. I, I just think you could simplify that.
+  normalized: Use the confirmed “Give access” and “Choose a user or client” wording.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-056
+  source_changes:
+  - REC-CHANGE-056
+  remediation:
+  - REC-RM-050
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Precise confirmed direction adopted in PRD; existing safety/timing/roles preserved and derived
+    artifacts require bounded revalidation.
+  scope:
+  - service-access
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-001
+  item_id: PO-FB-216
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  product_intent_authority: evidence
+  original: filter activity is a little bit restrictive.
+  normalized: Activity offers restrictive exact identifier and single-result filters.
+  disposition: EVIDENCE_CORRELATED
+  source_findings:
+  - REC-057
+  source_changes:
+  - REC-CHANGE-057
+  remediation:
+  - REC-RM-051
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Correlated with settled shared outcome; observation/advisory/exploration retained at its
+    original authority. Existing version/attribution and text-button conventions preserved; exact action
+    wording remains within explicit target/timing distinction.
+  scope:
+  - activity
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-001
+  item_id: PO-FB-217
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: it should almost be like you're adding a list of different filters to it.
+  normalized: Allow repeated, individually removable filter chips for service, actor, action, request
+    ID and recorded result.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-057
+  source_changes:
+  - REC-CHANGE-057
+  remediation:
+  - REC-RM-051
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Precise confirmed direction adopted in PRD; existing safety/timing/roles preserved and derived
+    artifacts require bounded revalidation.
+  scope:
+  - activity
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-001
+  item_id: PO-FB-218
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: there should be a dropdown with when you pick like, actor, service, action, request ID, and
+    then, equals, or does not equal, and then the value
+  normalized: Add chips through Field, Comparison, Value and Add. Each chip can be removed individually.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-057
+  source_changes:
+  - REC-CHANGE-057
+  remediation:
+  - REC-RM-051
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Precise confirmed direction adopted in PRD; existing safety/timing/roles preserved and derived
+    artifacts require bounded revalidation.
+  scope:
+  - activity
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-001
+  item_id: PO-FB-219
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: Ideally, I want contains and does not contain.
+  normalized: Include equals, does not equal, contains and does not contain.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-057
+  source_changes:
+  - REC-CHANGE-057
+  remediation:
+  - REC-RM-051
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Precise confirmed direction adopted in PRD; existing safety/timing/roles preserved and derived
+    artifacts require bounded revalidation.
+  scope:
+  - activity
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-001
+  item_id: PO-FB-220
+  classification: IDEA_OR_QUESTION
+  confirmation: CONFIRMED
+  product_intent_authority: exploratory
+  original: But if I add something that's already been added, it will silently not add it.
+  normalized: Consider silently ignoring duplicates.
+  disposition: NO_CHANGE_REQUIRED
+  source_findings:
+  - REC-057
+  source_changes: []
+  remediation: []
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Historical proposal superseded by confirmed 221/222.
+  scope:
+  - activity
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-001
+  item_id: PO-FB-221
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: No, I want the pop up because otherwise people will think it's a bug
+  normalized: Reject duplicate field and value pairs regardless of comparison. Keep the existing chips
+    so the user can remove the old filter first.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-057
+  source_changes:
+  - REC-CHANGE-057
+  remediation:
+  - REC-RM-051
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Precise confirmed direction adopted in PRD; existing safety/timing/roles preserved and derived
+    artifacts require bounded revalidation.
+  scope:
+  - activity
+  suggestions: []
+  supersedes: PO-FB-220
+- feedback_id: PO-FEEDBACK-2026-11-18-001
+  item_id: PO-FB-222
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: And I also think it should be a small modal toasts are too easy to miss
+  normalized: Explain a duplicate in a small modal.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-057
+  source_changes:
+  - REC-CHANGE-057
+  remediation:
+  - REC-RM-051
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Precise confirmed direction adopted in PRD; existing safety/timing/roles preserved and derived
+    artifacts require bounded revalidation.
+  scope:
+  - activity
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-001
+  item_id: PO-FB-223
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: Well, that means they combine as an and.
+  normalized: Combine all filters with AND.
+  disposition: NO_CHANGE_REQUIRED
+  source_findings:
+  - REC-057
+  source_changes: []
+  remediation: []
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Historical directive superseded by confirmed 224; not current all-filter AND authority.
+  scope:
+  - activity
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-001
+  item_id: PO-FB-224
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: So within the same type, it's or. But between types, it's and
+  normalized: Combine alternatives for the same field with OR and different fields with AND.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-057
+  source_changes:
+  - REC-CHANGE-057
+  remediation:
+  - REC-RM-051
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Precise confirmed direction adopted in PRD; existing safety/timing/roles preserved and derived
+    artifacts require bounded revalidation.
+  scope:
+  - activity
+  suggestions: []
+  supersedes: PO-FB-223
+- feedback_id: PO-FEEDBACK-2026-11-18-001
+  item_id: PO-FB-225
+  classification: IDEA_OR_QUESTION
+  confirmation: CONFIRMED
+  product_intent_authority: exploratory
+  original: 'Yes'
+  normalized: Resolve how multiple exclusions and mixed positive and negative comparisons combine during
+    product definition.
+  disposition: EXPLORATORY_RECORDED
+  source_findings:
+  - REC-057
+  source_changes:
+  - REC-CHANGE-057
+  remediation:
+  - REC-RM-051
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Delegated mixed-comparison derivation resolved by UX8-ACTIVITY-SEMANTICS/AF01–06 and adopted
+    in AUDIT-02.a/b; exploratory classification is preserved.
+  scope:
+  - activity
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-001
+  item_id: PO-FB-226
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: you can basically have like a list of options and they will pre-populate the from and to,
+    and then the user can modify that as they see fit.
+  normalized: Time presets populate editable From and To fields.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-057
+  source_changes:
+  - REC-CHANGE-057
+  remediation:
+  - REC-RM-051
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Precise confirmed direction adopted in PRD; existing safety/timing/roles preserved and derived
+    artifacts require bounded revalidation.
+  scope:
+  - activity
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-001
+  item_id: PO-FB-227
+  classification: PREFERENCE
+  confirmation: CONFIRMED
+  product_intent_authority: advisory
+  original: typically you have the last five minutes, last thirty minutes, last hour, last twenty four
+    hours, last uh seven days, last thirty days, uh year to date, so on and so forth.
+  normalized: Use these time presets as examples for the design.
+  disposition: ADVISORY_CONSIDERED
+  source_findings:
+  - REC-057
+  source_changes:
+  - REC-CHANGE-057
+  remediation:
+  - REC-RM-051
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Correlated with settled shared outcome; observation/advisory/exploration retained at its
+    original authority. Existing version/attribution and text-button conventions preserved; exact action
+    wording remains within explicit target/timing distinction.
+  scope:
+  - activity
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-001
+  item_id: PO-FB-228
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: don't call it search activity, just say search.
+  normalized: Label the action Search.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-057
+  source_changes:
+  - REC-CHANGE-057
+  remediation:
+  - REC-RM-051
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Precise confirmed direction adopted in PRD; existing safety/timing/roles preserved and derived
+    artifacts require bounded revalidation.
+  scope:
+  - activity
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-001
+  item_id: PO-FB-229
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: there should be a button called like next to like search, clear filter
+  normalized: Place Clear filters beside Search.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-057
+  source_changes:
+  - REC-CHANGE-057
+  remediation:
+  - REC-RM-051
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Precise confirmed direction adopted in PRD; existing safety/timing/roles preserved and derived
+    artifacts require bounded revalidation.
+  scope:
+  - activity
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-001
+  item_id: PO-FB-230
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: maybe that should be a box that has a an option to export.
+  normalized: Place Export activity by the matching-event count, targeting the searched results.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-057
+  source_changes:
+  - REC-CHANGE-057
+  remediation:
+  - REC-RM-051
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Precise confirmed direction adopted in PRD; existing safety/timing/roles preserved and derived
+    artifacts require bounded revalidation.
+  scope:
+  - activity
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-001
+  item_id: PO-FB-231
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: I think for right now, I would probably leave it like this.
+  normalized: Keep the current results presentation.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-057
+  source_changes:
+  - REC-CHANGE-057
+  remediation:
+  - REC-RM-051
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Precise confirmed direction adopted in PRD; existing safety/timing/roles preserved and derived
+    artifacts require bounded revalidation.
+  scope:
+  - activity
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-001
+  item_id: PO-FB-232
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: the activity browser, the one that's on the main menu, but also per service, uh should obviously
+    use the same mechanism.
+  normalized: Share the filter mechanism between main and per-service Activity.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-057
+  source_changes:
+  - REC-CHANGE-057
+  remediation:
+  - REC-RM-051
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Precise confirmed direction adopted in PRD; existing safety/timing/roles preserved and derived
+    artifacts require bounded revalidation.
+  scope:
+  - activity
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-001
+  item_id: PO-FB-233
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  product_intent_authority: evidence
+  original: This is odd because this seems to me that you're conflating me reviewing the audit log with
+    also being able to export three other things that are unrelated to the activity.
+  normalized: Activity currently mixes log review with broader evidence exports.
+  disposition: EVIDENCE_CORRELATED
+  source_findings:
+  - REC-058
+  source_changes:
+  - REC-CHANGE-058
+  remediation:
+  - REC-RM-052
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Correlated with settled shared outcome; observation/advisory/exploration retained at its
+    original authority. Existing version/attribution and text-button conventions preserved; exact action
+    wording remains within explicit target/timing distinction.
+  scope:
+  - evidence-exports
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-001
+  item_id: PO-FB-234
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: the other export functions you listed, they should probably be somewhere else in the UI because
+    they seem very unrelated to activity.
+  normalized: Leave only filtered-activity export in Activity. Move the three unrelated export actions
+    elsewhere.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-058
+  source_changes:
+  - REC-CHANGE-058
+  remediation:
+  - REC-RM-052
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Precise confirmed direction adopted in PRD; existing safety/timing/roles preserved and derived
+    artifacts require bounded revalidation.
+  scope:
+  - evidence-exports
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-001
+  item_id: PO-FB-235
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: I agree with your proposals, so yeah, let's hand over, let's, let's wrap this up so I can
+    hand it over to design
+  normalized: Access inventory in People & Access.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-058
+  source_changes:
+  - REC-CHANGE-058
+  remediation:
+  - REC-RM-052
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Precise confirmed direction adopted in PRD; existing safety/timing/roles preserved and derived
+    artifacts require bounded revalidation.
+  scope:
+  - evidence-exports
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-001
+  item_id: PO-FB-236
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: I agree with your proposals, so yeah, let's hand over, let's, let's wrap this up so I can
+    hand it over to design
+  normalized: Configuration and exceptions in Settings → Configuration tools.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-058
+  source_changes:
+  - REC-CHANGE-058
+  remediation:
+  - REC-RM-052
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Precise confirmed direction adopted in PRD; existing safety/timing/roles preserved and derived
+    artifacts require bounded revalidation.
+  scope:
+  - evidence-exports
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-18-001
+  item_id: PO-FB-237
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: I agree with your proposals, so yeah, let's hand over, let's, let's wrap this up so I can
+    hand it over to design
+  normalized: Software and job status in Settings → Health & retention.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-058
+  source_changes:
+  - REC-CHANGE-058
+  remediation:
+  - REC-RM-052
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Precise confirmed direction adopted in PRD; existing safety/timing/roles preserved and derived
+    artifacts require bounded revalidation.
+  scope:
+  - evidence-exports
+  suggestions: []
+authoritative_changes:
+  changed: true
+  entries:
+  - change_id: REC-CHANGE-054
+    source_findings:
+    - REC-054
+    path: docs/web-console-prd.md
+    requirements:
+    - UX-02
+    - CONFIG-03
+    status: APPLIED_AFTER_DECISION
+  - change_id: REC-CHANGE-055
+    source_findings:
+    - REC-055
+    path: docs/web-console-prd.md
+    requirements:
+    - CONFIG-02
+    - CONFIG-03
+    status: APPLIED_AFTER_DECISION
+  - change_id: REC-CHANGE-056
+    source_findings:
+    - REC-056
+    path: docs/web-console-prd.md
+    requirements:
+    - POLICY-01
+    - AUTHZ-02
+    status: APPLIED_AFTER_DECISION
+  - change_id: REC-CHANGE-057
+    source_findings:
+    - REC-057
+    path: docs/web-console-prd.md
+    requirements:
+    - AUDIT-02.a
+    - AUDIT-02.b
+    - AUDIT-03
+    - AUDIT-04
+    status: APPLIED_AFTER_DECISION
+  - change_id: REC-CHANGE-058
+    source_findings:
+    - REC-058
+    path: docs/web-console-prd.md
+    requirements:
+    - AUDIT-02.b
+    - AUDIT-03
+    - AUTHZ-02
+    status: APPLIED_AFTER_DECISION
+definition_changed: true
+implementation_required: true
+implementation_ready: true
+decisions_required: []
+change_impact:
+  change_id: REC-IMPACT-013
+  source_findings:
+  - REC-054
+  - REC-055
+  - REC-056
+  - REC-057
+  - REC-058
+  changed_artifacts:
+  - docs/web-console-prd.md
+  changed_requirements:
+  - CONFIG-02
+  - POLICY-01
+  - UX-02
+  - AUDIT-02.a
+  - AUDIT-02.b
+  change_types:
+  - user_behavior
+  - ux_interaction
+  - api_contract
+  - test_expectation
+  affected_domains:
+    product: true
+    user_journeys: true
+    ux: true
+    architecture: true
+    security: true
+  potentially_stale:
+  - docs/web-console-prd-coverage.md
+  - docs/web-console-prd-user-journey-audit.md
+  - product/ux/01-information-architecture.md
+  - product/ux/02-interaction-patterns.md
+  - product/ux/manifest.yaml
+  - product/architecture/web-console-architecture-review.md
+  - product/security/web-console-security-review.md
+  revalidation_required: true
+handoff:
+  category: DEFINITION_REVALIDATION
+  definition_revalidation_required: true
+  delivery_planning_ready: false
+  next_workflow: product-definition-orchestrator

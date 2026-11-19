@@ -4,7 +4,7 @@ status: ready_for_delivery_planning
 scope: Self-hosted single-organization web console initial release
 transaction:
   parent_commit: fc458fe5e202b9d14a1f32a39749540cec3ac928
-  repository_commit: null
+  repository_commit: 80edc3f0b720b3a5bf7b49a8585817a38072ed54
   pre_existing_dirty_paths:
   - codex-session-01a122f7-e70f-7440-b1ce-ca88b955e519.md
   - passwd
@@ -580,7 +580,7 @@ last_reconciliation:
   definition_package:
     status: current
     path: workflow/definition/definition-package.yaml
-    revision: sha256:ae6d685bfd84f3fbdd6feb99e9ea62708793f6c585338022653e62e4b9a59dcb
+    revision: sha256:781ffaf28362e1189a5e7f7353bbf8d9b89f1d4928b98e1f060f7022d3cf9548
 feedback_source: workflow/feedback/PO-FEEDBACK-2026-11-18-001/feedback.yaml
 reconciliation_history:
 - id: REC-RUN-001

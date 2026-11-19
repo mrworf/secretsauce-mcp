@@ -1,0 +1,341 @@
+schema_version: 1
+reconciliation_id: REC-RUN-016
+product_id: secretsauce-mcp
+status: RESOLVED
+transaction:
+  parent_commit: 83f1f211195cc81db06edc3a43a4acd0a2e20df2
+  repository_commit: null
+  owned_paths:
+  - workflow/reconciliation/REC-RUN-016/
+  - docs/web-console-prd.md
+  publication: payload pending; consumer requires exact producer commit; one provenance closeout follows
+  pre_existing_dirty_paths:
+  - workflow/definition/state.yaml
+  - workflow/definition/history/web-console-ux-10-completed/
+  - passwd
+  - codex-session-01a122f7-e70f-7440-b1ce-ca88b955e519.md
+  - test-results/
+source:
+  invocation: product-definition-orchestrator
+  originating_stage: product
+  triggering_findings: []
+  affected_requirements:
+  - CONFIG-05
+  - UX-02
+  - CONFIG-02
+  - CONFIG-01
+  - UX-03
+  - MIGRATE-01
+  - AUTHZ-01
+  - AUTHZ-02
+  - POLICY-01
+  artifact_revisions:
+  - artifact: workflow/feedback/PO-FEEDBACK-2026-11-19-002/feedback.yaml
+    revision: sha256:8219700323e1a8ceb0bfc2246aada8f2e7d46ed23e468a66a026363408b6d733
+  - artifact: docs/web-console-prd.md
+    revision: sha256:7f09e428b920b10daccb98f69c8988cc3e37d7a92483297bc0175a130fc38116
+  - artifact: product/ux/manifest.yaml
+    revision: sha256:2f015fd09c2aec3150010a748a9c85fd78bcd2a9e0d7de93049a89ebda847042
+  - artifact: product/ux/01-information-architecture.md
+    revision: sha256:c455bc6c5810b6db376ea07206e5df4a53615d96483e026a1052591d4ead54e4
+  - artifact: product/ux/02-interaction-patterns.md
+    revision: sha256:2198d5ef774cb70017e43843f1d8150a149599fb165732ad3397192dc691b218
+  - artifact: product/ux/03-responsive-and-platform.md
+    revision: sha256:b99829c15fb8780fd5b8f44c2e77a45b7f0c6a936f4902a2aa8bd37789db0e3a
+  - artifact: product/ux/06-feature-exceptions.md
+    revision: sha256:90a697a80b380a70d83cbffc7cd1409fe381c2051a877da901c7e4b3c2a30b48
+  - artifact: product/architecture/web-console-state-contract.md
+    revision: sha256:1c7642c7b87bba4c7b55c8a5520eac002bd2727d8729f9eb0c51ecec31f3f9c6
+  - artifact: product/security/web-console-security-contract.md
+    revision: sha256:f02d7b7bdedb1108c7461f15a0d3cffeab93150ecac34fa0ff9c66b2e24c8268
+  - artifact: workflow/reconciliation/REC-RUN-016/design-basis.md
+    revision: sha256:ee4e81f5c8ead4e6444db00f8fec5cbe999ab56b361a2cfab2ea0f37721eab3b
+  product_owner_feedback:
+  - feedback_id: PO-FEEDBACK-2026-11-19-002
+    path: workflow/feedback/PO-FEEDBACK-2026-11-19-002/feedback.yaml
+    schema_version: 1
+    status: CONFIRMED
+  implementation_revision: 70db8b7; qualification e15c814; inspected HEAD83f1f2 contains feedback only after qualification
+  specialist_resolution: U11-01–05 adopted via producer-owned design-basis.md; no questions
+findings:
+  resolved:
+  - REC-070
+  - REC-071
+  - REC-072
+  - REC-073
+  unresolved: []
+feedback_dispositions:
+- feedback_id: PO-FEEDBACK-2026-11-19-002
+  item_id: PO-FB-282
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: The delete service is good, but you need to put the text to be typed by the user in quotes, so they
+    know exactly what part to type.
+  normalized: Put quotation marks around the displayed confirmation text to make clear which characters to type.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-070
+  source_changes:
+  - REC-CHANGE-070
+  remediation:
+  - REC-RM-064
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Confirmed scope resolved against existing shared patterns and adopted U11 basis. Advisory placement
+    preference is considered through the explicit redundancy directive and existing dedicated Access pattern, not
+    promoted to independent product authority.
+  scope:
+  - archived-service
+  suggestions: []
+  clarifies: PO-FB-280
+- feedback_id: PO-FEEDBACK-2026-11-19-002
+  item_id: PO-FB-283
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  product_intent_authority: evidence
+  original: Also, for whatever reason, the "Authentication" section of Service configuration is now shrunk widthwise
+    to its smallest possible.
+  normalized: The Authentication panel has collapsed to an unexpectedly narrow width.
+  disposition: EVIDENCE_CORRELATED
+  source_findings:
+  - REC-071
+  source_changes:
+  - REC-CHANGE-071
+  remediation:
+  - REC-RM-065
+  decisions_required: []
+  affected_artifacts:
+  - src/consolePresentation.ts
+  - src/consoleServicePage.ts
+  rationale: Confirmed scope resolved against existing shared patterns and adopted U11 basis. Advisory placement
+    preference is considered through the explicit redundancy directive and existing dedicated Access pattern, not
+    promoted to independent product authority.
+  scope:
+  - service-authentication
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-19-002
+  item_id: PO-FB-284
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: Also, for whatever reason, the "Authentication" section of Service configuration is now shrunk widthwise
+    to its smallest possible.
+  normalized: Restore the Authentication panel to the expected service configuration width.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-071
+  source_changes:
+  - REC-CHANGE-071
+  remediation:
+  - REC-RM-065
+  decisions_required: []
+  affected_artifacts:
+  - src/consolePresentation.ts
+  - src/consoleServicePage.ts
+  rationale: Confirmed scope resolved against existing shared patterns and adopted U11 basis. Advisory placement
+    preference is considered through the explicit redundancy directive and existing dedicated Access pattern, not
+    promoted to independent product authority.
+  scope:
+  - service-authentication
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-19-002
+  item_id: PO-FB-285
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  product_intent_authority: evidence
+  original: I also don't understand the purpose of the "Access" part of section "Accerss & policy", it simply links
+    to the parent tab "Access",
+  normalized: The Access portion of configuration duplicates the dedicated Access tab for active services.
+  disposition: EVIDENCE_CORRELATED
+  source_findings:
+  - REC-072
+  source_changes:
+  - REC-CHANGE-072
+  remediation:
+  - REC-RM-066
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Confirmed scope resolved against existing shared patterns and adopted U11 basis. Advisory placement
+    preference is considered through the explicit redundancy directive and existing dedicated Access pattern, not
+    promoted to independent product authority.
+  scope:
+  - service-access
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-19-002
+  item_id: PO-FB-286
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: so why even have the "Access" portion in configuration?
+  normalized: Remove the redundant Access portion from service configuration.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-072
+  source_changes:
+  - REC-CHANGE-072
+  remediation:
+  - REC-RM-066
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Confirmed scope resolved against existing shared patterns and adopted U11 basis. Advisory placement
+    preference is considered through the explicit redundancy directive and existing dedicated Access pattern, not
+    promoted to independent product authority.
+  scope:
+  - service-access
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-19-002
+  item_id: PO-FB-287
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  product_intent_authority: evidence
+  original: In an active service, all is managed from "Access" with the "Access & Policy" linking to it. In draft,
+    it's the opposite.
+  normalized: Access controls appear in different locations for active and draft services.
+  disposition: EVIDENCE_CORRELATED
+  source_findings:
+  - REC-072
+  source_changes:
+  - REC-CHANGE-072
+  remediation:
+  - REC-RM-066
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Confirmed scope resolved against existing shared patterns and adopted U11 basis. Advisory placement
+    preference is considered through the explicit redundancy directive and existing dedicated Access pattern, not
+    promoted to independent product authority.
+  scope:
+  - service-access
+  suggestions: []
+- feedback_id: PO-FEEDBACK-2026-11-19-002
+  item_id: PO-FB-288
+  classification: PREFERENCE
+  confirmation: CONFIRMED
+  product_intent_authority: advisory
+  original: I prefer the approach of Active vs what I see in Draft services. It just gets confusing and inconsistent.
+  normalized: Use the dedicated Access tab pattern from active services as the consistent direction for draft services
+    as well.
+  disposition: ADVISORY_CONSIDERED
+  source_findings:
+  - REC-072
+  source_changes:
+  - REC-CHANGE-072
+  remediation:
+  - REC-RM-066
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Confirmed scope resolved against existing shared patterns and adopted U11 basis. Advisory placement
+    preference is considered through the explicit redundancy directive and existing dedicated Access pattern, not
+    promoted to independent product authority.
+  scope:
+  - service-access
+  suggestions: []
+  clarifies: PO-FB-254
+- feedback_id: PO-FEEDBACK-2026-11-19-002
+  item_id: PO-FB-289
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: For Request rules, the text under the allow/deny dropdown is unnecessary (Choose Allow of Deny.).
+  normalized: Remove the redundant helper text beneath the Allow/Deny dropdown.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-073
+  source_changes:
+  - REC-CHANGE-073
+  remediation:
+  - REC-RM-067
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Confirmed scope resolved against existing shared patterns and adopted U11 basis. Advisory placement
+    preference is considered through the explicit redundancy directive and existing dedicated Access pattern, not
+    promoted to independent product authority.
+  scope:
+  - request-rules
+  suggestions: []
+authoritative_changes:
+  changed: true
+  entries:
+  - change_id: REC-CHANGE-070
+    source_findings:
+    - REC-070
+    path: docs/web-console-prd.md
+    requirements:
+    - CONFIG-05
+    status: APPLIED_AFTER_DECISION
+  - change_id: REC-CHANGE-071
+    source_findings:
+    - REC-071
+    path: product/ux/03-responsive-and-platform.md
+    requirements:
+    - UX-02
+    - CONFIG-02
+    status: NO_SOURCE_MUTATION
+  - change_id: REC-CHANGE-072
+    source_findings:
+    - REC-072
+    path: docs/web-console-prd.md
+    requirements:
+    - CONFIG-01
+    - UX-03
+    - MIGRATE-01
+    - AUTHZ-01
+    - AUTHZ-02
+    status: APPLIED_AFTER_DECISION
+  - change_id: REC-CHANGE-073
+    source_findings:
+    - REC-073
+    path: docs/web-console-prd.md
+    requirements:
+    - POLICY-01
+    - UX-02
+    status: APPLIED_AFTER_DECISION
+definition_changed: true
+implementation_required: true
+implementation_ready: true
+decisions_required: []
+change_impact:
+  change_id: REC-IMPACT-016
+  source_findings:
+  - REC-070
+  - REC-071
+  - REC-072
+  - REC-073
+  changed_artifacts:
+  - docs/web-console-prd.md
+  changed_requirements:
+  - CONFIG-01
+  - CONFIG-05
+  - POLICY-01
+  - UX-03
+  - MIGRATE-01
+  change_types:
+  - ux_interaction
+  - user_behavior
+  affected_domains:
+    product: false
+    user_journeys: true
+    ux: true
+    architecture: false
+    security: false
+  potentially_stale:
+  - docs/web-console-prd-coverage.md
+  - docs/web-console-prd-user-journey-audit.md
+  - product/ux/manifest.yaml
+  - product/ux/01-information-architecture.md
+  - product/ux/02-interaction-patterns.md
+  - product/ux/03-responsive-and-platform.md
+  - product/ux/05-accessibility.md
+  - product/ux/07-acceptance-checklist.md
+  revalidation_required: true
+handoff:
+  category: DEFINITION_REVALIDATION
+  definition_revalidation_required: true
+  delivery_planning_ready: false
+  next_workflow: product-definition-orchestrator

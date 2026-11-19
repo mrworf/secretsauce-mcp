@@ -12,5 +12,5 @@ Expose distinct Permanently delete for writable Archived targets in list and det
 All new external inputs have positive/negative tests. No real instances/credentials, deployment or broad suite. Parent runs final clean frozen-source suite/build and changed actual recovery Docker gate on exact candidate; report that obligation pending until parent completion. First unrelated regression expands focused checks; second distinct regression triggers full profile after repairs. Per-slice exact tested hashes/evidence and commit references recorded below.
 
 ## Progress
-- Slice1: PASS; checkpoint containing this update. Evidence: evidence/ux-acceptance/secretsauce-mcp/milestone51/core-acceptance.md and exact hashes.
-- Slice2: planned.
+- Slice1: PASS; commit `a457bca`. Evidence: evidence/ux-acceptance/secretsauce-mcp/milestone51/core-acceptance.md and exact hashes.
+- Slice2: PASS; this checkpoint contains typed deletion UI, current-source browser evidence and acceptance.md. Parent-owned terminal qualification remains pending.

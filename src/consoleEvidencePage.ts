@@ -2,9 +2,9 @@ export const consoleEvidenceScript = String.raw`
 let activityFilters={};
 const activityFields=[['service','Service'],['actor','Actor'],['action','Action'],['requestId','Request ID'],['result','Recorded result']],activityComparisons=[['equals','equals'],['notEquals','does not equal'],['contains','contains'],['notContains','does not contain']];
 async function activity(service){
- const context=typeof service==='string'?service:undefined;currentNav(context?'services-nav':'activity-nav');form(workspaceState.user.role==='Member'?'My activity':context?'Activity for '+context:'Activity').remove();
+ const context=typeof service==='string'?service:undefined;if(!context){currentNav('activity-nav');form(workspaceState.user.role==='Member'?'My activity':'Activity').remove();}
  let chips=[],searched=null,response=null,offset=0,loading=false;
- if(context){content.append(el('p','Activity for '+context+' · This service scope remains when filters are cleared.'));action(content,'View instance Activity',()=>activity());}
+ if(context){content.append(el('p','This service scope remains when filters are cleared.'));action(content,'View instance Activity',()=>activity());}
  const info=el('div'),f=el('form');f.className='activity-filter-card card';const times=el('div');times.className='activity-time-controls';
  const presetBox=el('div'),fromBox=el('div'),toBox=el('div');times.append(presetBox,fromBox,toBox);
  const from=field(fromBox,'From (UTC)','activity-from','datetime-local'),to=field(toBox,'To (UTC)','activity-to','datetime-local');from.required=to.required=false;from.step=to.step='0.001';

@@ -1,0 +1,58 @@
+stage: prd-development-partner
+status: PASS
+mode: targeted_resolution
+validated_inputs:
+- path: workflow/feedback/PO-FEEDBACK-2026-11-18-001/feedback.yaml
+  revision: sha256:f75bf33c095d27ac3983cd9d8af2babf1100aff824f0c77e7447ac2750d49334
+- path: docs/web-console-prd.md
+  revision: sha256:046771c8ca506a693e41e6085dbc3d850532a01960421f60d49ab74274fd374b
+- path: product/security/web-console-security-contract.md
+  revision: sha256:8f66520798094a2638f006c9f3145e263e96008fdf63480fc6b98c2b0ccddc35
+- path: product/architecture/web-console-state-contract.md
+  revision: sha256:c8e22b5013d89090cc451cb2ef0290d7517b05bebae746faa15b65f10fca9848
+- path: product/ux/01-information-architecture.md
+  revision: sha256:ea8c9403ba85d89629c24d53cc6bf4df35bb6a2e9aca27bf0bc9b79c41e21a8c
+- path: src/consoleEvidence.ts
+  revision: sha256:538a862ee690ffc71026d3b43036a746bf0ef58780185784c318593fdc540223
+- path: src/consoleEvidencePage.ts
+  revision: sha256:8965083dce7423af259c6c08431c9b68c5f8cd83a69707d13a05f6e007d8c810
+- path: src/consoleHttp.ts
+  revision: sha256:e6ba4abe56329cc93a8b4edd614b89b0550cb5cef5cddc5480ba900166610127
+- path: test/console-evidence.test.ts
+  revision: sha256:5da331ae1d70045234f393dac98919a2fbd266c5c6c37a70151f7b4222efedbb
+- path: workflow/definition/decisions.md
+  revision: sha256:015e3f900495ee56269250de0dd177ebc9225f0d98194495240db48168d29917
+artifact_changes:
+- path: workflow/definition/results/activity-filter-contract.md
+  change: Derived precise bounded Activity matching/search/export contract from delegated established intent; proposal
+    for reconciliation adoption only.
+changed_paths:
+- workflow/definition/results/activity-filter-contract.md
+- workflow/definition/results/activity-filter-resolution.yaml
+findings: []
+questions: []
+affected_requirements:
+- AUDIT-02
+- AUDIT-04
+- UX-02
+- UX-03
+- UX-04
+affected_artifacts:
+- docs/web-console-prd.md
+- product/ux/01-information-architecture.md
+- product/ux/02-interaction-patterns.md
+reconciliation_required: false
+change_impact:
+  product: true
+  user_journeys: true
+  ux: true
+  architecture: true
+  security: true
+resolution:
+  contract: workflow/definition/results/activity-filter-contract.md
+  canonical_authority_changed: false
+  approval_basis: PO-FB-224/225 and orchestrator-recorded delegation; negatives exclude specified values.
+  semantics: OR positive alternatives within field; AND all exclusions; AND fields/time/hard authorized scope.
+  remaining_product_questions: []
+  implementation_ready: Scoped semantics resolved; reconciliation adoption and applicable domain validation still
+    required.

@@ -1,0 +1,215 @@
+stage: prd-development-partner
+status: DECISION_REQUIRED
+validated_inputs:
+- path: docs/web-console-prd.md
+  revision: sha256:86d7ffa3c05907d559b942373b9d6828a3c07ee4d0833f9a7ada1fada7441e27
+- path: workflow/definition/decisions.md
+  revision: sha256:aedc5de3516bc26382b091a6cc3a0ecdcf66ee16d5af81f0699866b71a6e33eb
+- path: src/types.ts
+  revision: sha256:c8dd07c69fbdb42c69b8e5d8556a73706cd2563e93bd9eca9742cf1795760fe4
+- path: src/policy.ts
+  revision: sha256:a337be610ca1bc0ee090b963c0f94e2f00aca1fbb93b0b9c5f024a54def21608
+- path: src/auth.ts
+  revision: sha256:ccbaf36b7c2a58297ff18eda1f06533f5dccbddb892a2fbdc5eae7d47c25d8fb
+- path: docs/config-reference.md
+  revision: sha256:8fc78c4876cd61d1cfa0315cf53e6a46c98432f8e7bd2b30d2565f5024bb9850
+artifact_changes:
+- path: workflow/definition/results/prd-review.md
+  summary: Recorded full PRD refinement review, four specialist-owned gaps, readiness
+    and bounded revalidation scope.
+- path: workflow/definition/results/prd.yaml
+  summary: Recorded orchestration result and resolution questions.
+changed_paths:
+- workflow/definition/results/prd-review.md
+- workflow/definition/results/prd.yaml
+findings:
+- id: F-PRD-001
+  significance: MATERIAL
+  summary: Secret-in-URL prohibition conflicts with required capability links and
+    preserved query credential placement.
+  affected_requirement: SEC-01
+  affected_requirements: &id001
+  - SEC-01
+  - IDENT-03
+  - IDENT-05
+  - BASE-01
+  affected_artifact: docs/web-console-prd.md
+  evidence: SEC-01; IDENT-03/05; BASE-01; docs/config-reference.md credential usage.enforce
+    description
+  why_it_matters: Distinct implementations could prohibit required links or remove
+    existing downstream placement, or leak management secrets.
+  local_correction_possible: false
+  reconciliation_required: false
+- id: F-PRD-002
+  significance: MATERIAL
+  summary: Clean-host restore does not define how a recovery Owner authenticates without
+    restored MFA or live sessions.
+  affected_requirement: BACKUP-03
+  affected_requirements: &id002
+  - BACKUP-03
+  - BACKUP-04
+  - BACKUP-05
+  - AUTHZ-03
+  - IDENT-01
+  - IDENT-05
+  affected_artifact: docs/web-console-prd.md
+  evidence: BACKUP-01 excluded data; BACKUP-05 authenticated recovery Owner and fresh
+    enrollment
+  why_it_matters: Recovery may deadlock or allow unauthenticated takeover; final Owner
+    and service resumption cannot be tested.
+  local_correction_possible: false
+  reconciliation_required: false
+- id: F-PRD-003
+  significance: MATERIAL
+  summary: Audit failure repair-access exception lacks a bounded authentication and
+    mutation contract.
+  affected_requirement: AUDIT-01
+  affected_requirements: &id003
+  - AUDIT-01
+  - AUDIT-04
+  - IDENT-02
+  - IDENT-05
+  - SEC-03
+  affected_artifact: docs/web-console-prd.md
+  evidence: AUDIT-04 preserves access needed to repair storage; AUDIT-01 requires
+    security-event recording
+  why_it_matters: Implementers could enable unaudited privileged mutation or eliminate
+    the promised recovery access.
+  local_correction_possible: false
+  reconciliation_required: false
+- id: F-PRD-004
+  significance: MATERIAL
+  summary: Draft/apply scope and rollback permissions do not distinguish immediate
+    authorization/lifecycle operations from configuration edits.
+  affected_requirement: CONFIG-02
+  affected_requirements: &id004
+  - CONFIG-02
+  - CONFIG-03
+  - CONFIG-04
+  - CONFIG-05
+  - AUTHZ-02
+  - AUTHZ-03
+  - SEC-03
+  - OPS-02
+  affected_artifact: docs/web-console-prd.md
+  evidence: CONFIG-03 all changes drafted; AUTHZ-02/SEC-03 next-request revocation;
+    role matrix Owner-only settings
+  why_it_matters: Revocation could wait for apply, or an Administrator could apply/rollback
+    Owner-only settings through a mixed draft.
+  local_correction_possible: false
+  reconciliation_required: false
+questions:
+- id: Q-PRD-001
+  source_finding_ids:
+  - F-PRD-001
+  blocking: true
+  affected_requirement: SEC-01
+  affected_requirements: *id001
+  affected_artifact: docs/web-console-prd.md
+  question: Derive the narrow URL/token exposure contract preserving enrollment/recovery
+    links, OAuth flows, and supported gateway query placement.
+  reason: Distinct implementations could prohibit required links or remove existing
+    downstream placement, or leak management secrets.
+  options:
+  - Define purpose-bound short-lived capability exceptions with leakage controls while
+    prohibiting ordinary credential exposure
+  - Return a precise remaining product choice only if the established requirements
+    cannot coexist
+  resolution_category: SPECIALIST_RESOLUTION
+  resolution_owner:
+  - security
+  depends_on: []
+  ask_user: false
+- id: Q-PRD-002
+  source_finding_ids:
+  - F-PRD-002
+  blocking: true
+  affected_requirement: BACKUP-03
+  affected_requirements: *id002
+  affected_artifact: docs/web-console-prd.md
+  question: Derive recovery proof, restricted Owner enrollment, and activation transitions
+    for clean-host and in-place restore.
+  reason: Recovery may deadlock or allow unauthenticated takeover; final Owner and
+    service resumption cannot be tested.
+  options:
+  - Use established host/bootstrap and backup recovery authority in a restricted restore
+    ceremony
+  - Identify only any residual consequential product tradeoff that cannot be derived
+  resolution_category: SPECIALIST_RESOLUTION
+  resolution_owner:
+  - security
+  - architecture
+  depends_on: []
+  ask_user: false
+- id: Q-PRD-003
+  source_finding_ids:
+  - F-PRD-003
+  blocking: true
+  affected_requirement: AUDIT-01
+  affected_requirements: *id003
+  affected_artifact: docs/web-console-prd.md
+  question: Specify allowed read-only/recovery access and prohibited changes while
+    durable audit is unavailable, plus verified resumption.
+  reason: Implementers could enable unaudited privileged mutation or eliminate the
+    promised recovery access.
+  options:
+  - Restrict outage access to diagnosis and operator repair with durable recording
+    before sensitive work resumes
+  - Identify only any residual safety-versus-availability product choice
+  resolution_category: SPECIALIST_RESOLUTION
+  resolution_owner:
+  - security
+  - architecture
+  depends_on: []
+  ask_user: false
+- id: Q-PRD-004
+  source_finding_ids:
+  - F-PRD-004
+  blocking: true
+  affected_requirement: CONFIG-02
+  affected_requirements: *id004
+  affected_artifact: docs/web-console-prd.md
+  question: Derive draft transaction and immediate-operation boundaries, apply-time
+    actor checks, scoped rollback and related lifecycle invalidation.
+  reason: Revocation could wait for apply, or an Administrator could apply/rollback
+    Owner-only settings through a mixed draft.
+  options:
+  - Preserve immediate security actions and restrict draft/apply/rollback to the acting
+    role permitted configuration
+  - Surface a remaining product choice only if simpler safe semantics cannot satisfy
+    the existing matrix
+  resolution_category: SPECIALIST_RESOLUTION
+  resolution_owner:
+  - architecture
+  - security
+  depends_on: []
+  ask_user: false
+affected_requirements:
+- AUDIT-01
+- AUDIT-04
+- AUTHZ-02
+- AUTHZ-03
+- BACKUP-03
+- BACKUP-04
+- BACKUP-05
+- BASE-01
+- CONFIG-02
+- CONFIG-03
+- CONFIG-04
+- CONFIG-05
+- IDENT-01
+- IDENT-02
+- IDENT-03
+- IDENT-05
+- OPS-02
+- SEC-01
+- SEC-03
+affected_artifacts:
+- docs/web-console-prd.md
+reconciliation_required: false
+change_impact:
+  product: true
+  user_journeys: true
+  ux: true
+  architecture: true
+  security: true

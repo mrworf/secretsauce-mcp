@@ -1,0 +1,123 @@
+stage: security-code-reviewer
+status: PASS
+mode: targeted_revalidation
+validated_inputs:
+- path: docs/web-console-prd.md
+  revision: sha256:dab49dc650ecbc55c3319532ad8ee590767d3938e8772676da9a6ddf047ad32d
+- path: workflow/reconciliation/REC-RUN-014/reconciliation-result.yaml
+  revision: sha256:a6bc873cdfd7c32298a68205659f359f48af480a26b53926624741ace7346e03
+- path: workflow/reconciliation/REC-RUN-014/service-semantics-basis.md
+  revision: sha256:eb6f3e4433b6fecac9e42e9673caeeef196b1164d433a6cb4e3c18f0ce2c5cb9
+- path: product/architecture/web-console-state-contract.md
+  revision: sha256:3d7ed28c8335a6d142533c253e061e14a30ada5b9e25be341fb1c172d706c955
+- path: product/security/web-console-security-contract.md
+  revision: sha256:b6afd24f5789b0f8738ca952000f8fc3433d82967f2f8bce42df81fbc23c61d5
+- path: src/consoleServices.ts
+  revision: sha256:bdd63483827f4fa62e55bc3362837953f1964c7635d1ad8ed0df306d58bd9905
+- path: src/consoleMigration.ts
+  revision: sha256:905f74a27fb72f69e8fc9997252a78c0177d6a8cbcb5989f04730aa56c9e3b77
+- path: test/console-services.test.ts
+  revision: sha256:8358ab9e8e3212abf7ca9cf28bbbe66aba544ebab4a8fd7f9d2626db0c01bb66
+- path: test/console-migration.test.ts
+  revision: sha256:c56418e5d7c0f1b88ec7b22bcbab75491cc7b873d2954f555f840af835f9b212
+- path: product/ux/manifest.yaml
+  revision: sha256:e23bf3fef2a825a14573d919007c8cdcf42a717cedff18ec10093b11537d6f1e
+- path: product/ux/01-information-architecture.md
+  revision: sha256:2e091bfd97582805d4e8dd8367bddf2a4a40f1e0352e6494a73107a9f3575060
+- path: product/ux/02-interaction-patterns.md
+  revision: sha256:5ec48e51de819eb34ca65ca2a9882eecac4131d435e0890d755e10d06e5f9539
+- path: docs/web-console-prd-coverage.md
+  revision: sha256:819366039171c186656ea2efaa569d0b8b23ef5b1004118ed91a6cd0cd4e09fb
+- path: docs/web-console-prd-user-journey-audit.md
+  revision: sha256:30f765a025f65df67a5139e02933f3843943ec85ccd0de48c2c2e46a564c0a77
+artifact_changes:
+- path: product/security/web-console-security-contract.md
+  summary: REC014 bounded adopted service-state/import derivation; prior conclusions preserved.
+  revision: sha256:b6afd24f5789b0f8738ca952000f8fc3433d82967f2f8bce42df81fbc23c61d5
+- path: product/security/web-console-security-review.md
+  summary: REC014 bounded adopted service-state/import derivation; prior conclusions preserved.
+  revision: sha256:d0784d2d656c7774c73348fd78df3be7e8e8572d6d487936f8b6511144752040
+changed_paths:
+- product/security/web-console-security-contract.md
+- product/security/web-console-security-review.md
+- workflow/definition/results/security.yaml
+findings:
+- id: SEC-DEF-001
+  significance: ACCEPTED_RISK
+  summary: Trusted destination authors and best-effort response scanning are not universal credential non-exfiltration
+    controls.
+  affected_requirement: AUTHZ-04
+  affected_artifact: docs/web-console-prd.md
+  evidence: D-012; AUTHZ-04, BASE-01, SEC-02; product/ux/04-visual-system.md UX-V02; security review SEC-DEF-001.
+  why_it_matters: The write-only console must not misrepresent protection against a malicious trusted administrator
+    or approved endpoint.
+  local_correction_possible: false
+  reconciliation_required: false
+  status: accepted_existing_product_boundary
+  decision_refs:
+  - D-012
+- id: SEC-DEF-002
+  significance: OBSERVATION
+  summary: Host integrity and independent off-host archive/evidence copies remain operator responsibilities.
+  affected_requirement: OPS-06
+  affected_artifact: docs/web-console-prd.md
+  evidence: D-001/D-005; AUDIT-03, BACKUP-02, OPS-05/06; security review SEC-DEF-002.
+  why_it_matters: Product append-only evidence and local backups do not defeat a hostile or lost host.
+  local_correction_possible: false
+  reconciliation_required: false
+- id: SEC-DEF-003
+  significance: OBSERVATION
+  summary: Audit fail-closed availability cost and restricted diagnostic-login exception are explicit settled behavior.
+  affected_requirement: AUDIT-04
+  affected_artifact: product/security/web-console-security-contract.md
+  evidence: D-004; SECRES-04; product/ux/06-feature-exceptions.md UX-EX01; security review SEC-DEF-003.
+  why_it_matters: Repair and restore must not become unaudited privilege bypasses.
+  local_correction_possible: false
+  reconciliation_required: false
+- id: SEC-DEF-004
+  significance: OBSERVATION
+  summary: Definition PASS is not implementation or SOC 2 acceptance.
+  affected_requirement: BASE-01
+  affected_artifact: docs/web-console-prd-coverage.md
+  evidence: Current PRD acceptance table; current coverage unverified console backend/test cells; UX manifest implementation
+    status; security review SEC-DEF-004.
+  why_it_matters: Future tests must verify each new input and preserved gateway boundary.
+  local_correction_possible: false
+  reconciliation_required: false
+questions: []
+affected_requirements:
+- CONFIG-01
+- CONFIG-03
+- CONFIG-05
+- MIGRATE-01
+- MIGRATE-03
+- AUTHZ-02
+- STATE-10
+- SECRES-09
+affected_artifacts:
+- product/security/web-console-security-contract.md
+- product/security/web-console-security-review.md
+reconciliation_required: false
+change_impact:
+  product: false
+  user_journeys: false
+  ux: false
+  architecture: false
+  security: false
+validation:
+  scope: 'REC014 only: proposal discard, incomplete inspection, independent import allocation, legacy mapping retirement;
+    no broad audit'
+  checks:
+  - Proposal removal preserves identity/display label, applied state, live assignments and independent values.
+  - Incomplete inspection has no usable approval authority; empty grants do not permit execution.
+  - Names/IDs allocate independently and atomically; direct/legacy mapping cannot grant.
+  - Legacy proposed reset is visible, live grants preserved, reviews invalidated; old-reader/restore boundaries
+    retained.
+  - Final UX9 IN23/24 and current coverage/journey service supplements align with STATE-10/SECRES-09; exact source
+    hashes refreshed without redesign.
+  application_tests: 'Not run: documentation-only definition review. Code/tests inspected; delivery validation required.'
+  upstream_authority_changes: false
+  commit_owner: product-definition-orchestrator
+preservation_basis:
+  baseline: workflow/definition/history/web-console-ux-8-completed/results/security.yaml
+  scope: Historical findings and SEC-DEF-001 preserved; no runtime requalification.

@@ -1,0 +1,195 @@
+stage: product-ux
+status: DECISION_REQUIRED
+mode: targeted_revalidation
+scope: Bounded SPECIALIST_RESOLUTION REC-DEC-002; proposal complete, not final full UX validation.
+validated_inputs:
+- path: docs/web-console-prd.md
+  revision: sha256:cb8d09474431d3bdd082466beac07163051bd2cb00639433f8a87bf85b46c3d8
+- path: docs/web-console-prd-coverage.md
+  revision: sha256:1cb9db8350470b5ddca5bc63e3005fb13df4900535b93db6541dc1f636b3598c
+- path: docs/web-console-prd-user-journey-audit.md
+  revision: sha256:168c61f3b4e2223c14a1e706f36e6762dc2da23bf06a4f0b48cc0fffbb966987
+- path: docs/config-reference.md
+  revision: sha256:8fc78c4876cd61d1cfa0315cf53e6a46c98432f8e7bd2b30d2565f5024bb9850
+- path: product/ux/manifest.yaml
+  revision: sha256:891610e063e21e46ed0f7400cd182a0efe901af4731b2b8a5ad0d59e2d07dbb5
+- path: product/ux/experience-brief.yaml
+  revision: sha256:a47b0fdbd6ea02993a0bcc349b581620e0e4affd21f5ceab63f5d6f39a016ef7
+- path: product/ux/01-information-architecture.md
+  revision: sha256:a9efc597a9218098cb904728e7e6584ab8b2ac36253f52cbd4f436f321789046
+- path: product/ux/02-interaction-patterns.md
+  revision: sha256:64385ad9998533bb63f6430aea5ed73176f2a2afb46684ac26caa571a240d56f
+- path: product/ux/03-responsive-and-platform.md
+  revision: sha256:cd027549dbb9d62f4467c8988102599d20e5b1b1019776b51cac8216535d66dd
+- path: product/ux/04-visual-system.md
+  revision: sha256:2345fc823bb63e0bafb418643a85b8bde8e757931d7e2c17de36f1297257afd9
+- path: product/ux/05-accessibility.md
+  revision: sha256:7fdc573a9cfae385c31077bafdc46b302e30e3a8669aafda760f9bf3094e3642
+- path: product/ux/07-acceptance-checklist.md
+  revision: sha256:66b802e9327253abd5de128566f95025225c11adc4482d77fdcf9fd6a5cafb27
+- path: workflow/feedback/PO-FEEDBACK-2026-10-11-001/feedback.yaml
+  revision: sha256:2a66ade78b37b971d5cf0f62ff5042564089d4482ed46bb3cce68c68299ae6d9
+- path: workflow/reconciliation/REC-RUN-001/reconciliation-result.yaml
+  revision: sha256:0fe9e8f2f2b8679b63f17e4466c43a2ecfcf7fc01d5f028262d9581bd109f579
+artifact_changes:
+- path: workflow/definition/drafts/product-ux/web-console-feedback-001/design-contract.md
+  summary: Non-authoritative Settings proposal, capability map, representative visual evidence or layout checks
+- path: workflow/definition/drafts/product-ux/web-console-feedback-001/email-desktop.png
+  summary: Non-authoritative Settings proposal, capability map, representative visual evidence or layout checks
+- path: workflow/definition/drafts/product-ux/web-console-feedback-001/experience-brief.yaml
+  summary: Non-authoritative Settings proposal, capability map, representative visual evidence or layout checks
+- path: workflow/definition/drafts/product-ux/web-console-feedback-001/index.md
+  summary: Non-authoritative Settings proposal, capability map, representative visual evidence or layout checks
+- path: workflow/definition/drafts/product-ux/web-console-feedback-001/render-checks.json
+  summary: Non-authoritative Settings proposal, capability map, representative visual evidence or layout checks
+- path: workflow/definition/drafts/product-ux/web-console-feedback-001/settings-desktop.png
+  summary: Non-authoritative Settings proposal, capability map, representative visual evidence or layout checks
+- path: workflow/definition/drafts/product-ux/web-console-feedback-001/settings-narrow.png
+  summary: Non-authoritative Settings proposal, capability map, representative visual evidence or layout checks
+- path: workflow/definition/drafts/product-ux/web-console-feedback-001/settings-review.png
+  summary: Non-authoritative Settings proposal, capability map, representative visual evidence or layout checks
+- path: workflow/definition/drafts/product-ux/web-console-feedback-001/settings.html
+  summary: Non-authoritative Settings proposal, capability map, representative visual evidence or layout checks
+changed_paths:
+- workflow/definition/drafts/product-ux/web-console-feedback-001/design-contract.md
+- workflow/definition/drafts/product-ux/web-console-feedback-001/email-desktop.png
+- workflow/definition/drafts/product-ux/web-console-feedback-001/experience-brief.yaml
+- workflow/definition/drafts/product-ux/web-console-feedback-001/index.md
+- workflow/definition/drafts/product-ux/web-console-feedback-001/render-checks.json
+- workflow/definition/drafts/product-ux/web-console-feedback-001/settings-desktop.png
+- workflow/definition/drafts/product-ux/web-console-feedback-001/settings-narrow.png
+- workflow/definition/drafts/product-ux/web-console-feedback-001/settings-review.png
+- workflow/definition/drafts/product-ux/web-console-feedback-001/settings.html
+- workflow/definition/results/feedback-ux-resolution.yaml
+findings: []
+questions:
+- id: UX-DESIGN-002
+  kind: UX_DIRECTION_APPROVAL
+  blocking: true
+  origin_stage: product-ux
+  resolution_category: PRODUCT_DECISION
+  resolution_owner: user
+  depends_on: []
+  affected_requirement: UX-02
+  affected_requirements:
+  - UX-02
+  - UX-03
+  - UX-04
+  - CONFIG-03
+  affected_surfaces:
+  - settings-sections
+  - settings-search
+  - settings-draft-review
+  - configuration-forms
+  question: 'Approve the focused Settings direction shown in the concepts: six named sections, one visible at a
+    time, readable summaries and friendly forms, with all draft changes shown together before applying?'
+  reason: Existing feedback establishes focused sections and friendly controls; the proposed secondary navigation,
+    responsive selection and cross-section review composition are consequential experience choices not explicitly
+    covered by UX-DESIGN-001.
+  recommendation: Approve this bounded direction; retain the existing calm visual language and all advanced capabilities.
+  options:
+  - Approve this direction
+  - Refine this direction
+  alternatives:
+  - option: Refine this direction
+    tradeoff: Identify a material concern with section navigation, disclosure or review; revise only this bounded
+      proposal.
+  proposal_paths:
+  - workflow/definition/drafts/product-ux/web-console-feedback-001/index.md
+  - workflow/definition/drafts/product-ux/web-console-feedback-001/experience-brief.yaml
+  - workflow/definition/drafts/product-ux/web-console-feedback-001/settings-desktop.png
+  - workflow/definition/drafts/product-ux/web-console-feedback-001/email-desktop.png
+  - workflow/definition/drafts/product-ux/web-console-feedback-001/settings-narrow.png
+  - workflow/definition/drafts/product-ux/web-console-feedback-001/settings-review.png
+  - workflow/definition/drafts/product-ux/web-console-feedback-001/design-contract.md
+  approval_consequence: Allows synthesis of this Settings direction into canonical UX after current product reconciliation
+    is adopted; does not approve new roles, reset semantics or deletion mechanisms beyond their authoritative contracts.
+affected_requirements:
+- UX-02
+- UX-03
+- UX-04
+- UX-IA03
+- UX-IN01
+- CONFIG-01
+- CONFIG-03
+- POLICY-02
+- MIGRATE-01
+affected_artifacts:
+- product/ux/manifest.yaml
+- product/ux/experience-brief.yaml
+- product/ux/01-information-architecture.md
+- product/ux/02-interaction-patterns.md
+- product/ux/03-responsive-and-platform.md
+- product/ux/07-acceptance-checklist.md
+reconciliation_required: false
+change_impact:
+  product: false
+  user_journeys: false
+  ux: false
+  architecture: false
+  security: false
+decision_resolution:
+  id: REC-DEC-002
+  specialist_design_complete: true
+  remaining_product_choices:
+  - UX-DESIGN-002
+  canonical_synthesis_pending: true
+  settled_feedback:
+  - PO-FB-008
+  - PO-FB-011
+  exploratory_mechanism: PO-FB-009 remains unselected; secondary section rail is the recommended proposal.
+  no_user_domain_design_required: true
+ux_handoff:
+  manifest:
+    path: product/ux/manifest.yaml
+    revision: web-console-ux-1
+  experience_brief:
+    path: workflow/definition/drafts/product-ux/web-console-feedback-001/experience-brief.yaml
+    revision: feedback-draft-1
+  approval:
+    status: pending
+    decision_refs:
+    - UX-DESIGN-001
+    pending_question: UX-DESIGN-002
+    existing_approval_scope: Visual character retained; this new consequential section-navigation and review composition
+      awaits explicit review.
+  authoritative_artifacts_changed: []
+  proposal_paths:
+  - workflow/definition/drafts/product-ux/web-console-feedback-001/design-contract.md
+  - workflow/definition/drafts/product-ux/web-console-feedback-001/email-desktop.png
+  - workflow/definition/drafts/product-ux/web-console-feedback-001/experience-brief.yaml
+  - workflow/definition/drafts/product-ux/web-console-feedback-001/index.md
+  - workflow/definition/drafts/product-ux/web-console-feedback-001/render-checks.json
+  - workflow/definition/drafts/product-ux/web-console-feedback-001/settings-desktop.png
+  - workflow/definition/drafts/product-ux/web-console-feedback-001/settings-narrow.png
+  - workflow/definition/drafts/product-ux/web-console-feedback-001/settings-review.png
+  - workflow/definition/drafts/product-ux/web-console-feedback-001/settings.html
+  downstream_freshness:
+    affected_domains: []
+    potentially_stale_artifacts: []
+  consumer: product-definition-orchestrator
+  approval_requirement:
+    skill: /home/ha/.codex/skills/product-ux/SKILL.md
+    quote: Seek Product Owner direction when a choice materially affects comprehension, task structure, navigation,
+      information priority, risk perception, workflow friction, disclosure, actor expectations, responsive capability,
+      accessibility behavior, consequential interaction, or overall product character.
+    application: This is a newly selected Settings section-navigation and disclosure composition. Existing UX-DESIGN-001
+      visual approval does not explicitly cover it. All concrete proposal work is complete before asking.
+validation:
+  method: Rendered local-only prototype with installed Chromium; direct visual inspection of desktop response-protection,
+    desktop email and narrow concepts; 320 CSS px document/text-range checks at normal and explicit 200 percent
+    text.
+  checks_path: workflow/definition/drafts/product-ux/web-console-feedback-001/render-checks.json
+  canonical_ux_changed: false
+  production_tests_run: false
+  limitations: Concept controls are partly demonstrative; no implementation correctness, release, screen-reader
+    or WCAG certification. Final reset/deletion UX integration follows current authoritative reconciliation.
+git_ownership:
+  parent_commit: f799dc5675aff16975653d76f8fdf61e0efe7dc7
+  commit_owner: product-definition-orchestrator
+  child_commit: false
+  pre_existing_dirty_paths:
+  - workflow/definition/decisions.md
+  - workflow/definition/open-questions.md
+  - workflow/definition/state.yaml
+  - test-results/

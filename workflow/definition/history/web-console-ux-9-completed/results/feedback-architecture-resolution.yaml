@@ -1,0 +1,128 @@
+stage: software-architect-review
+status: RECONCILIATION_REQUIRED
+resolution_id: REC-DEC-003
+scope: Bounded SPECIALIST_RESOLUTION of SMTP credential deletion; not final architecture review.
+validated_inputs:
+- path: docs/web-console-prd.md
+  revision: sha256:cb8d09474431d3bdd082466beac07163051bd2cb00639433f8a87bf85b46c3d8
+- path: workflow/feedback/PO-FEEDBACK-2026-10-11-001/feedback.yaml
+  revision: sha256:2a66ade78b37b971d5cf0f62ff5042564089d4482ed46bb3cce68c68299ae6d9
+- path: workflow/reconciliation/REC-RUN-001/reconciliation-result.yaml
+  revision: sha256:0fe9e8f2f2b8679b63f17e4466c43a2ecfcf7fc01d5f028262d9581bd109f579
+- path: workflow/definition/decisions.md
+  revision: sha256:efa40bbc12b138a479ea1cea1c063f10c53e1dc575298a5eedb4ed6781d55ac4
+- path: workflow/definition/open-questions.md
+  revision: sha256:638d9287436a4427723527f0252c05cf9f5e6a8638a23dd9bada3ee57d95cbfd
+- path: product/architecture/web-console-state-contract.md
+  revision: sha256:54956edc26dbcebcb48ecca0697a4695012d61488fa2297e56b6c04c9cbaa858
+- path: product/security/web-console-security-contract.md
+  revision: sha256:95e342c77316f1697540fa8da29c6dd6333d6b6d3356b326c4dde921bca4540d
+- path: src/consoleNotifications.ts
+  revision: sha256:ece5af811941e16fbaf4114776a34ad8517fcbf9ee7e2604359f775e06827b51
+artifact_changes:
+- path: product/architecture/web-console-state-contract.md
+  change: Added bounded STATE-01/02/03 SMTP deletion amendment and positive/negative acceptance scenarios; creation/replacement
+    retain existing draft/review/apply with current credential-version fencing.
+  revision: sha256:c685c7fc9539f878986ccd906878808395fb13ae8ae2261fad9fd667107cbc80
+changed_paths:
+- product/architecture/web-console-state-contract.md
+- workflow/definition/results/feedback-architecture-resolution.yaml
+findings:
+- id: REC-006
+  significance: MATERIAL
+  summary: SMTP deletion semantics are resolved in the architecture-owned contract; PRD and UX must adopt the independent
+    deletion/dependency boundary through reconciliation.
+  affected_requirement: CONFIG-03
+  affected_artifact: docs/web-console-prd.md
+  evidence: product/architecture/web-console-state-contract.md#state-010203-amendment--independent-smtp-credential-deletion
+  why_it_matters: Current save/apply bundles secret copying and deletion; adoption must prevent a separately deleted
+    value from being resurrected by a draft or silently removed by disabling SMTP.
+  local_correction_possible: false
+  reconciliation_required: true
+questions: []
+affected_requirements:
+- IDENT-04
+- CONFIG-02
+- CONFIG-03
+- CONFIG-04
+- AUTHZ-02
+- STATE-01
+- STATE-02
+- STATE-03
+affected_artifacts:
+- docs/web-console-prd.md
+- product/architecture/web-console-state-contract.md
+- product/ux/02-interaction-patterns.md
+- product/security/web-console-security-contract.md
+- docs/web-console-prd-coverage.md
+- docs/web-console-prd-user-journey-audit.md
+reconciliation_required: true
+change_impact:
+  product: true
+  user_journeys: true
+  ux: true
+  architecture: true
+  security: true
+decision_resolution:
+  id: REC-DEC-003
+  semantics_resolved: true
+  remaining_product_choices: []
+  adoption_required: true
+  settled_feedback: PO-FB-013
+  authority_preserved:
+  - D-001
+  - D-002
+  - D-003
+  - D-004
+  - D-006
+  - D-009
+  - D-010
+  rationale: Reuses existing referenced-credential dependency restriction, Owner-only SMTP permissions and coherent
+    revision checks. Only deletion becomes independent Apply under PO-FB-013; SMTP creation/replacement retain their
+    existing workflow. No new approval or messaging capability.
+proposed_prd_clarifications:
+- requirement: IDENT-04
+  text: 'SMTP credential deletion is an explicit write-only action independent of configuration Apply. SMTP credential
+    creation and replacement retain their existing draft/review/apply workflow, bound to the current configuration
+    revision and credential version. Only a recently authenticated Owner can confirm deletion of the current credential
+    version. Enabled SMTP that depends on the value blocks deletion: disable SMTP through its settings review/apply
+    first, then use Delete SMTP credential. Disabling SMTP retains its saved settings and encrypted credential;
+    deletion preserves non-secret settings and never silently enables anonymous delivery. Manual link delivery remains
+    available under the authorized recovery/invitation flow.'
+- requirement: CONFIG-03
+  text: The STATE-01/02/03 SMTP amendment applies to SMTP credentials as well as service values. Deletion rechecks
+    current authorization, recent authentication, audit readiness, configuration revision, credential version and
+    dependencies. Success removes live and pending copies of the value, advances revisions and invalidates reviews;
+    preserved non-secret drafts require fresh review. Stale confirmations, drafts, browser submissions and history
+    cannot resurrect deleted values. Delivery queued before a change must recheck current admission; already-dispatched
+    mail may finish under its admitted revision without rewriting credentials. Audit failure blocks mutation; uncertain
+    persistence never reports success or permits new use of an unresolved credential. A later creation/replacement
+    requires fresh value entry into a current draft and ordinary review/apply; reloading an old draft cannot silently
+    rebase its pending secret across deletion or replacement.
+- requirement: CONFIG-04
+  text: SMTP credential values are excluded from configuration history, and rollback cannot restore a deleted SMTP
+    value. This does not promise retroactive removal from encrypted backup archives; explicit whole-instance restore
+    retains its existing restricted review and reactivation requirements.
+cross_specialist_coordination:
+  security: Security specialist confirmed no conflict with SMTP deletion boundary. Its REC-DEC-001 reset contract
+    owns target/issuer generation and factor requirements; SMTP management remains Owner-only.
+  reset_persistence_note: Existing STATE-01/02/03 ordering and non-resurrection apply to reset-induced eligibility/revocation;
+    no duplicate reset contract is introduced here.
+validation:
+  method: Reviewed bounded semantics against confirmed feedback, existing dependency/revision/audit requirements
+    and src/consoleNotifications.ts; validated YAML required keys, exact recorded input hashes at capture, output
+    hash and scoped diff.
+  tests_run: []
+  reason: Definition-only changes; no executable code changed.
+  scope_correction: Generic STATE-01 wording does not explicitly settle the SMTP-specific create/replace timing
+    against existing IDENT-04/current implementation; this amendment narrowly specifies deletion and preserves that
+    unrelated workflow.
+git_ownership:
+  parent_commit: f799dc5675aff16975653d76f8fdf61e0efe7dc7
+  commit_owner: product-definition-orchestrator
+  child_commit: false
+  pre_existing_dirty_paths:
+  - workflow/definition/decisions.md
+  - workflow/definition/open-questions.md
+  - workflow/definition/state.yaml
+  - test-results/

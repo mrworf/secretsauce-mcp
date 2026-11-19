@@ -1,0 +1,50 @@
+stage: prd-development-partner
+status: PASS
+mode: bounded_specialist_resolution
+validated_inputs:
+- path: workflow/feedback/PO-FEEDBACK-2026-11-18-002/feedback.yaml
+  revision: sha256:e83f7407bea5c0317e6dface8ec81617d198ccc5dd93521db70a5178f5007b7f
+- path: docs/web-console-prd.md
+  revision: sha256:05a8cc6436b4b9d7f71c7b04e06367bc92c80f23a46604a58c5e273c955e1691
+- path: product/architecture/web-console-state-contract.md
+  revision: sha256:c8e22b5013d89090cc451cb2ef0290d7517b05bebae746faa15b65f10fca9848
+- path: src/consoleServices.ts
+  revision: sha256:bdd63483827f4fa62e55bc3362837953f1964c7635d1ad8ed0df306d58bd9905
+- path: src/consoleMigration.ts
+  revision: sha256:905f74a27fb72f69e8fc9997252a78c0177d6a8cbcb5989f04730aa56c9e3b77
+- path: delivery/plans/secretsauce-mcp/independent/shared-service-header.md
+  revision: sha256:92c126c3fd3a7adb96ee0bacec6871b65c5c76eee0303ff4a42abda2ab185f25
+artifact_changes:
+- path: workflow/definition/results/ux9-service-semantics.md
+  revision: sha256:eb6f3e4433b6fecac9e42e9673caeeef196b1164d433a6cb4e3c18f0ce2c5cb9
+  summary: S9-01–05 explicit discard, presentation, separate import and legacy access retirement semantics for producer
+    adoption.
+findings: []
+questions: []
+affected_requirements:
+- CONFIG-01
+- CONFIG-03
+- CONFIG-05
+- MIGRATE-01
+- MIGRATE-03
+- AUTHZ-02
+- UX-02
+affected_artifacts:
+- docs/web-console-prd.md
+- product/ux/
+- product/architecture/web-console-state-contract.md
+reconciliation_required: false
+change_impact:
+  product: true
+  user_journeys: true
+  ux: true
+  architecture: true
+  security: true
+scope:
+  feedback_items: PO-FB-238–264 (27)
+  canonical_adoption_owner: product-reconciliation
+  limits: Semantic resolution only; no canonical PRD edits, implementation or full-domain pass
+  decision_ref: UX9-SERVICE-SEMANTICS
+changed_paths:
+- workflow/definition/results/ux9-service-semantics.md
+- workflow/definition/results/ux9-service-semantics.yaml

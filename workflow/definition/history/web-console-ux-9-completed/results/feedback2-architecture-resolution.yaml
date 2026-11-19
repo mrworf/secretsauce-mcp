@@ -1,0 +1,116 @@
+stage: architecture
+status: RECONCILIATION_REQUIRED
+scope: Bounded REC-DEC-007 metadata and architecture portion of REC-DEC-005 SMTP mode; not a final architecture-stage
+  pass.
+validated_inputs:
+- path: docs/web-console-prd.md
+  revision: sha256:bc908afcb8c40184dfcccdf296672bc559f5499236ed37f351a82f34ad0e9843
+- path: workflow/feedback/PO-FEEDBACK-2026-10-11-002/feedback.yaml
+  revision: sha256:515a53d2c56f256708cef2fce9add362aa20f2fbcf1f6d34b4ff1a1dfdb9d53b
+- path: workflow/definition/definition-package.yaml
+  revision: sha256:f60ab3efcfca9d95991c023058ee81e61838121275ec482b549fed55a87618f9
+- path: product/architecture/web-console-state-contract.md
+  revision: sha256:c685c7fc9539f878986ccd906878808395fb13ae8ae2261fad9fd667107cbc80
+- path: src/consoleStore.ts
+  revision: sha256:a76e4b92b006a3f43d9bb7c9f9dbe348686ea4313b4fa9c9afa5518b76621fb6
+- path: src/consolePeople.ts
+  revision: sha256:7953d198977bfd3d13ba86eb136590de7ce5b1e31d6900a2a3d014313473cf42
+- path: src/consoleNotifications.ts
+  revision: sha256:96eaeb17766b222d034648bf8b4fa7c6379e1e4b193a01f1c98e95012eef59cc
+- path: src/consoleBackups.ts
+  revision: sha256:f6fc54600800467c887ee2883845d209fda67944279637bce6155159f3c13f23
+artifact_changes:
+- path: product/architecture/web-console-state-contract.md
+  change: Added STATE-07 account metadata semantics and STATE-08 explicit SMTP transport mode with migration, persistence,
+    restore and acceptance requirements.
+  revision: sha256:80835e44cdd550f10638bb757f183868804f9678cac4626a7ac84abb27ff0d32
+findings:
+- id: F-ARCH-FB2-001
+  significance: MATERIAL
+  summary: Account metadata events and truthful missing/history states are resolved in architecture; PRD and UX
+    adoption remains required.
+  affected_requirement: IDENT-02
+  affected_artifact: docs/web-console-prd.md
+  evidence: product/architecture/web-console-state-contract.md#state-07--account-creation-and-last-sign-in-metadata
+  why_it_matters: Creation, enrollment and successful login are different events; absent legacy or restored data
+    cannot be represented as fresh activity.
+  local_correction_possible: false
+  reconciliation_required: true
+- id: F-ARCH-FB2-002
+  significance: MATERIAL
+  summary: Explicit SMTP None is resolved with secure migration/defaults and no silent downgrade; PRD/UX/security
+    adoption remains required.
+  affected_requirement: IDENT-04
+  affected_artifact: docs/web-console-prd.md
+  evidence: product/architecture/web-console-state-contract.md#state-08--explicit-smtp-connection-encryption
+  why_it_matters: New mode must survive configuration/recovery without converting old TLS configurations or authorizing
+    unreviewed cleartext delivery.
+  local_correction_possible: false
+  reconciliation_required: true
+questions: []
+affected_requirements:
+- IDENT-01
+- IDENT-02
+- IDENT-03
+- IDENT-04
+- CONFIG-03
+- CONFIG-04
+- BACKUP-01
+- BACKUP-04
+- BACKUP-05
+- STATE-07
+- STATE-08
+affected_artifacts:
+- docs/web-console-prd.md
+- product/architecture/web-console-state-contract.md
+- product/security/web-console-security-contract.md
+- product/ux/01-information-architecture.md
+- product/ux/02-interaction-patterns.md
+- docs/web-console-prd-coverage.md
+- docs/web-console-prd-user-journey-audit.md
+reconciliation_required: true
+change_impact:
+  product: true
+  user_journeys: true
+  ux: true
+  architecture: true
+  security: true
+decision_resolution:
+- id: REC-DEC-007
+  semantics_resolved: true
+  remaining_product_choices: []
+  adoption_required: true
+- id: REC-DEC-005
+  semantics_resolved: true
+  scope: Architecture mode/default/migration/persistence; security owns acknowledgment and authority.
+  remaining_product_choices: []
+  adoption_required: true
+proposed_prd_clarifications:
+- requirement: IDENT-02 / People & Access
+  text: Show account creation at durable identity creation and Last console sign-in at successful full console password-and-factor
+    session admission. Preserve dates across reissue, recovery and edits. Never denotes a newly tracked account
+    with no successful event; missing legacy data is Unknown; external mappings have no local sign-in (Not applicable).
+    Metadata is read-only and does not prove authority. STATE-07 defines excluded events and durable recovery semantics.
+- requirement: IDENT-04
+  text: Owners choose TLS (encrypted, existing implicit TLS and default) or explicit None (unencrypted). Legacy
+    missing modes mean TLS; unknown values fail. Ports do not infer mode. Review and delivery preserve exact selection;
+    no automatic downgrade. None requires security-defined recent authentication and explicit risk acknowledgment,
+    including after restore before new cleartext dispatch. Authentication is independent and password values stay
+    write-only. No STARTTLS is required.
+- requirement: BACKUP-01 / BACKUP-05
+  text: Preserve account metadata as historical snapshot information and SMTP encryption mode. Restore does not
+    invent login events, recover missing dates or grant current access from timestamps. Mark restored last-sign-in
+    history until a new local qualifying sign-in; old archives with missing dates remain Unknown and missing SMTP
+    mode means TLS. Explicit None requires fresh current-Owner review before delivery.
+validation:
+  method: Inspected current store login, invitation, SMTP settings/transport and backup capture boundaries; parsed
+    result YAML and verified exact input/output hashes.
+  tests_run: []
+  reason: Definition-only contract resolution; no executable code or live instance changes.
+git_ownership:
+  parent_commit: 532b2dd8c4631dccd9463194d3daa36d12722732
+  commit_owner: product-definition-orchestrator
+  child_commit: false
+changed_paths:
+- product/architecture/web-console-state-contract.md
+- workflow/definition/results/feedback2-architecture-resolution.yaml

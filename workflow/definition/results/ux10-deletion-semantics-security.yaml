@@ -1,0 +1,66 @@
+stage: security-code-reviewer
+status: PASS
+scope: UX10-DELETION-SEMANTICS; proposed bounded resolution only, canonical adoption
+  is reconciliation-owned
+validated_inputs:
+- path: workflow/feedback/PO-FEEDBACK-2026-11-19-001/feedback.yaml
+  revision: sha256:5d66b847807a0c1066773cacd3c80e072ac03cd5d4a5d4665d0600e6b59aec39
+- path: product/architecture/web-console-state-contract.md
+  revision: sha256:3d7ed28c8335a6d142533c253e061e14a30ada5b9e25be341fb1c172d706c955
+- path: product/security/web-console-security-contract.md
+  revision: sha256:b6afd24f5789b0f8738ca952000f8fc3433d82967f2f8bce42df81fbc23c61d5
+- path: docs/web-console-prd.md
+  revision: sha256:dab49dc650ecbc55c3319532ad8ee590767d3938e8772676da9a6ddf047ad32d
+- path: src/consoleServices.ts
+  revision: sha256:39f2024d73be9a4a757955161e3f6c911f3637526642cb5f381363aa22af3091
+- path: src/consoleStore.ts
+  revision: sha256:b4d08f11b58728cdbc9b65cd49be88b9c11db04e6ef10ca37c5c1d4263e8cbe9
+- path: src/consoleHistory.ts
+  revision: sha256:cf6865592bb51fd3b7d348a82d4856b1bcc6530489c0797a5b3b05d8d07e9315
+- path: src/consoleRestore.ts
+  revision: sha256:aab8fa0a54ad29e916e17dad9e548e8e32694dae7e6fc12da2dfd0be345b586e
+artifact_changes:
+- path: workflow/definition/results/ux10-deletion-semantics.md
+  summary: "D10-01\u201305: Apply-bound intentional credential cleanup and Archived\
+    \ permanent deletion, including dependency/incarnation/uncertainty/recovery constraints."
+findings: []
+questions: []
+affected_requirements:
+- CONFIG-02
+- CONFIG-03
+- CONFIG-05
+- AUTHZ-02
+- AUDIT-01
+- BACKUP-01
+- BACKUP-05
+- STATE-09
+- STATE-10
+- SECRES-08
+- SECRES-09
+- PO-FB-266
+- PO-FB-268
+- PO-FB-269
+- PO-FB-279
+- PO-FB-280
+- PO-FB-281
+affected_artifacts:
+- docs/web-console-prd.md
+- product/architecture/web-console-state-contract.md
+- product/security/web-console-security-contract.md
+- product/ux/02-interaction-patterns.md
+reconciliation_required: false
+change_impact:
+  product: true
+  user_journeys: true
+  ux: true
+  architecture: true
+  security: true
+proposed_clause_ids:
+- D10-01
+- D10-02
+- D10-03
+- D10-04
+- D10-05
+validation_boundary: Source/contract definition derivation; no code or authoritative
+  contract changes, tests, runtime acceptance, commits or new product decisions. Canonical
+  adoption remains required in the already-active reconciliation.

@@ -201,3 +201,33 @@ Do not add distributed transactions, an import identity registry, global storage
 ### Overall opinion and validation
 
 Definition architecture PASS after the bounded owned amendment. Downstream delivery must validate positive/negative input, current permissions, stale/concurrent/restart cases and actual UX; this assessment does not claim those changes are implemented. No application tests/build were run for this documentation-only review. YAML/path/hash/diff checks validate these artifacts; no exploit development or broad re-audit.
+
+## REC015 targeted amendment — 2026-11-19
+
+### Scope
+
+Adopted CONFIG-02/03/05 and producer D10-01–05 only, inspected at producer closeout 19174d5. Source boundaries: `ConsoleServices` candidate/review/apply/credential/lifecycle, `ConsoleStore.commit`, recovery projections and STATE-09/10. No runtime tests or broad re-audit.
+
+### Executive Summary
+
+STATE-11 resolves the two deletion transactions within the existing state owner; no product choice or architecture blocker remains.
+
+### What Is Good
+
+Existing revision-bound review, encrypted commit and independent immediate credential operations provide appropriate boundaries. Preserve them and live runtime ownership rather than introducing a second secret store.
+
+### What Is Bad Or Risky
+
+An applied-only diff misses saved-draft-only removal; a registry sweep destroys unrelated orphan values. ID reuse and stale audit intent replay can affect the wrong incarnation unless fences outlive deletion. These are implementation obligations for new behavior, not claims that a shipped deletion feature is vulnerable.
+
+### What Should Change
+
+Carry intentional removal scope, review exact resulting effects and commit cleanup with configuration publication. Add distinct Archived deletion with current confirmation and incarnation fences, bounded compatibility/recovery and explicit uncertain outcomes under STATE-11. Validate D10-05/STATE-11 acceptance in delivery.
+
+### What I Would Not Change Yet
+
+Do not add distributed transactions, an external vault, purge jobs, backup destruction or new roles. Preserve unchanged prior conclusions and closed findings.
+
+### Overall Opinion
+
+The scoped architecture definition is consistent with the adopted PRD. This is definition readiness only; implementation and visual acceptance remain outstanding.

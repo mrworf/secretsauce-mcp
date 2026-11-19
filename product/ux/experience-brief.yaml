@@ -2,21 +2,25 @@ status: approved
 product_id: secretsauce-mcp
 sources:
 - path: docs/web-console-prd.md
-  revision: sha256:dab49dc650ecbc55c3319532ad8ee590767d3938e8772676da9a6ddf047ad32d
+  revision: sha256:c9c0f4890a94e3a82d6d01fb770fe5f0bde689cd44362af77400c71f003be199
 - path: product/architecture/web-console-state-contract.md
-  revision: sha256:3d7ed28c8335a6d142533c253e061e14a30ada5b9e25be341fb1c172d706c955
+  revision: sha256:1c7642c7b87bba4c7b55c8a5520eac002bd2727d8729f9eb0c51ecec31f3f9c6
 - path: product/security/web-console-security-contract.md
-  revision: sha256:b6afd24f5789b0f8738ca952000f8fc3433d82967f2f8bce42df81fbc23c61d5
-- path: workflow/feedback/PO-FEEDBACK-2026-11-18-002/feedback.yaml
-  revision: sha256:e83f7407bea5c0317e6dface8ec81617d198ccc5dd93521db70a5178f5007b7f
-- path: workflow/reconciliation/REC-RUN-014/reconciliation-result.yaml
-  revision: sha256:a6bc873cdfd7c32298a68205659f359f48af480a26b53926624741ace7346e03
-- path: workflow/reconciliation/REC-RUN-014/service-semantics-basis.md
-  revision: sha256:eb6f3e4433b6fecac9e42e9673caeeef196b1164d433a6cb4e3c18f0ce2c5cb9
+  revision: sha256:f02d7b7bdedb1108c7461f15a0d3cffeab93150ecac34fa0ff9c66b2e24c8268
+- path: workflow/feedback/PO-FEEDBACK-2026-11-19-001/feedback.yaml
+  revision: sha256:5d66b847807a0c1066773cacd3c80e072ac03cd5d4a5d4665d0600e6b59aec39
+- path: workflow/reconciliation/REC-RUN-015/reconciliation-result.yaml
+  revision: sha256:fb2118f64287f6b2791c2ebeadae0974854a6cc68b6dc14bb13d2ca75415eb88
+- path: workflow/reconciliation/REC-RUN-015/deletion-semantics-basis.md
+  revision: sha256:8b731120243d2c75c7f5af5d6c0a4dfe1e6da7e2a9cba81a8e4d8ce479749995
 - path: workflow/definition/decisions.md
-  revision: sha256:a70e4ec8f97e4fd9cce2a9eab49a3706adc48ad05fbb4a5a6d1edeec6506c7b4
+  revision: sha256:9dea3ea10de328f6a7fb2e51fc42018c5a0d5747a2ada943eff6d74dbdd32e2a
+- path: docs/web-console-prd-coverage.md
+  revision: sha256:2832aa3fb941b8397428f5113bd862a25f554a956888d9f7addda6da567b8258
+- path: docs/web-console-prd-user-journey-audit.md
+  revision: sha256:3f593964f65572ff47cd74e058b73f9d07bf3d090fc795d5911dac38d0b5c012
 experience:
-  revision: web-console-ux-9
+  revision: web-console-ux-10
   audience:
     primary:
     - Owners
@@ -42,24 +46,29 @@ experience:
   - The next action needed to make changes take effect
   - Role-permitted account details and current health
   interaction_direction:
-    navigation: Preserve four primary areas and six Settings sections; five Limits categories and persistent search
-      dialog under UX-DESIGN-006.
-    routine_actions: Populated forms; Review changes saves pending work then opens complete-scope review; Save for
-      later retains existing persistence-only option
+    navigation: Preserve four primary areas and six Settings sections; five Limits categories and persistent
+      search dialog under UX-DESIGN-006.
+    routine_actions: Populated forms; Review changes saves pending work then opens complete-scope review; Save
+      for later retains existing persistence-only option
     consequential_actions: Apply reviewed Settings atomically; confirm immediate account operations separately
     progressive_disclosure: Preserve all advanced capabilities without putting raw structure in routine paths
     service_configuration: Four direct sections share Settings-style persistent status/Discard/Save for later/Review
       changes; actual incomplete review has exact fix links and unavailable approval.
     service_review: New settings first/default with complete section cards; Changes retains paired Before/After;
       actual exception bullets precede Approve changes and separate required modal acknowledgments
-    settings_actions: One persistent white bottom bar with status, Discard, Save for later and Review changes; safe
-      multi-form state retained.
-    activity: Shared removable chips with positive alternatives and veto exclusions; fixed contextual scope and
-      last-successful-query export.
+    settings_actions: One persistent white bottom bar with status, Discard, Save for later and Review changes;
+      safe multi-form state retained.
+    activity: Shared removable chips with positive alternatives and veto exclusions; fixed contextual scope
+      and last-successful-query export.
     service_lifecycle: Shared name and Active/Inactive/Archived lifecycle, independent saved Draft and parent/section
       issue markers; no Back to Services controls.
     service_import: Create separate initially unassigned drafts with readable collision names; no identity-mapping
       task; zero assignments valid.
+    credential_removal: Named button/modal stages removal; exact reviewed Apply deletes only intentionally
+      removed unreferenced saved values; independent immediate actions and SMTP exception remain.
+    permanent_deletion: Archived-only typed confirmation removes current service/configuration/secrets; retained
+      audit/backups and explicit restore remain separate.
+    sign_in: Compact task form; ordinary recovery-code sign-in remains distinct from Replace authenticator.
   responsive_priority: Use columns on wide screens, reflow forms and keep compact account rows linked to complete
     detail on narrow screens
   explicit_po_preferences:
@@ -90,11 +99,12 @@ experience:
     decision_refs:
     - PO-FB-065
     - PO-FB-066
-  - statement: Approved feedback 004 service comparison composition, narrow paired stacking and confirmation appearance
+  - statement: Approved feedback 004 service comparison composition, narrow paired stacking and confirmation
+      appearance
     decision_refs:
     - UX-DESIGN-005
-  - statement: New settings first/default; actual review exception bullets visible before approval; remove standalone
-      guided Secret detection; highlight every explicit scanning override
+  - statement: New settings first/default; actual review exception bullets visible before approval; remove
+      standalone guided Secret detection; highlight every explicit scanning override
     decision_refs:
     - PO-REFINEMENT-010
     - PO-FB-138
@@ -107,15 +117,19 @@ experience:
     - UX-DESIGN-006
     - REC-DEC-011
     - REC-DEC-012
-  - statement: One Settings footer, named credential cards/value status, concise policy layout/copy, shared Activity
-      chips and task-specific exports.
+  - statement: One Settings footer, named credential cards/value status, concise policy layout/copy, shared
+      Activity chips and task-specific exports.
     decision_refs:
     - PO-REFINEMENT-013
-  - statement: Reuse Settings action bar for service editing, direct sections, actionable incomplete review, precise
-      discard and separate lifecycle/draft state; independent unassigned imports.
+  - statement: Reuse Settings action bar for service editing, direct sections, actionable incomplete review,
+      precise discard and separate lifecycle/draft state; independent unassigned imports.
     decision_refs:
     - PO-REFINEMENT-014
     - UX9-SERVICE-SEMANTICS
+  - statement: Distinct no-access advisory; named credential removal dialog and Apply cleanup; typed Archived
+      deletion; stable Settings switching; remove duplicate Overview actions and generic saved-value helper.
+    decision_refs:
+    - PO-REFINEMENT-015
   explicit_po_dislikes:
   - statement: Extra viewing/editing steps and inconsistent values/state
     decision_refs:
@@ -128,6 +142,8 @@ experience:
   designer_discretion:
   - Routine geometry, spacing and typography refinements within the approved general appearance
   - Minor rendering differences that do not change composition, hierarchy, density or accessibility
+  - "Compact sign-in geometry within short-input pattern and existing recovery task naming, based on PO-FB-271\u2013\
+    274; no new authentication flow."
   approval:
     approved: true
     decision_refs:
@@ -141,5 +157,22 @@ experience:
     - PO-REFINEMENT-013
     - PO-REFINEMENT-014
     - UX9-SERVICE-SEMANTICS
-    scope: Preserve UX8 appearance and exceptions; apply confirmed feedback238–264 and adopted S9 service semantics
-      as exact UX9 delta.
+    - PO-REFINEMENT-015
+    - UX10-DELETION-SEMANTICS
+    scope: "Preserve UX9 approved appearance and task patterns; adopt confirmed feedback265\u2013281 and D10-01\u2013\
+      05 as the bounded UX10 delta."
+historical_source_revisions:
+- path: docs/web-console-prd.md
+  revision: sha256:dab49dc650ecbc55c3319532ad8ee590767d3938e8772676da9a6ddf047ad32d
+- path: product/architecture/web-console-state-contract.md
+  revision: sha256:3d7ed28c8335a6d142533c253e061e14a30ada5b9e25be341fb1c172d706c955
+- path: product/security/web-console-security-contract.md
+  revision: sha256:b6afd24f5789b0f8738ca952000f8fc3433d82967f2f8bce42df81fbc23c61d5
+- path: workflow/feedback/PO-FEEDBACK-2026-11-18-002/feedback.yaml
+  revision: sha256:e83f7407bea5c0317e6dface8ec81617d198ccc5dd93521db70a5178f5007b7f
+- path: workflow/reconciliation/REC-RUN-014/reconciliation-result.yaml
+  revision: sha256:a6bc873cdfd7c32298a68205659f359f48af480a26b53926624741ace7346e03
+- path: workflow/reconciliation/REC-RUN-014/service-semantics-basis.md
+  revision: sha256:eb6f3e4433b6fecac9e42e9673caeeef196b1164d433a6cb4e3c18f0ce2c5cb9
+- path: workflow/definition/decisions.md
+  revision: sha256:a70e4ec8f97e4fd9cce2a9eab49a3706adc48ad05fbb4a5a6d1edeec6506c7b4

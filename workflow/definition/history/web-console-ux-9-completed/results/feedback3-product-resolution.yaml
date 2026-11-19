@@ -1,0 +1,93 @@
+stage: prd-development-partner
+status: RECONCILIATION_REQUIRED
+scope: Bounded REC-DEC-010 resolution and REC-DEC-008 product adoption proposals; no full PRD readiness declaration.
+validated_inputs:
+- path: docs/web-console-prd.md
+  revision: sha256:00e6e2a9ec4661695f6aa4f01f86e8963739579bd147c7d73fa67870dda41e4b
+- path: workflow/feedback/PO-FEEDBACK-2026-10-17-001/feedback.yaml
+  revision: sha256:9b50a7d3dc87a3f2d45832b0deee4402b6e84b65092680a57f5bfbf8c7fbe0bf
+- path: workflow/definition/decisions.md
+  revision: sha256:2a676e65f8714321fa772463059eb4bdf949d83df310ae47056c964bccbfeae7
+- path: product/ux/02-interaction-patterns.md
+  revision: sha256:7e9090b32ffeab812989a467e9aa7f1d574928b66f61056fd2a4a724a0885928
+- path: product/architecture/web-console-state-contract.md
+  revision: sha256:c8e22b5013d89090cc451cb2ef0290d7517b05bebae746faa15b65f10fca9848
+- path: product/security/web-console-security-contract.md
+  revision: sha256:8f66520798094a2638f006c9f3145e263e96008fdf63480fc6b98c2b0ccddc35
+- path: workflow/definition/results/feedback3-architecture-resolution.yaml
+  revision: sha256:9f01f7a8c0f75fb2a1eaa3cb53dc29532159c5eb93a467353bec6618dbbc4598
+- path: workflow/definition/results/feedback3-security-resolution.yaml
+  revision: sha256:05afeb1703f8996dadc6e890a721e89fe2b5839ee86ec5a6737d56c302533988
+artifact_changes:
+- path: workflow/definition/results/feedback3-product-resolution.md
+  revision: sha256:24a1d134c8445c542a052fd1db76e792dd5ee03c5442b3e34d7dc3930f62a869
+  change: Recorded minimum retained-history service Delete contract and exact credential adoption proposals; no
+    canonical source changes.
+findings:
+- id: F-PRD-FB3-001
+  significance: MATERIAL
+  summary: Existing service archive lifecycle satisfies requested Delete when the retained and restorable outcome
+    is explicit; source clarification requires reconciliation adoption.
+  affected_requirement: CONFIG-05
+  affected_artifact: docs/web-console-prd.md
+  evidence: PO-FB-048/049 require action and confirmation, not purge; CONFIG-05 explicitly retains history and restore-to-Disabled.
+  why_it_matters: Silent permanent deletion or misleading irreversible wording would exceed authority; retaining
+    hidden safety semantics without telling the user is also insufficient.
+  local_correction_possible: false
+  reconciliation_required: true
+- id: F-PRD-FB3-002
+  significance: MATERIAL
+  summary: STATE-09 and SECRES-08 product semantics need adoption into currently contradictory credential requirements.
+  affected_requirement: CONFIG-02 / CONFIG-03 / AUDIT-01 / BACKUP-01 / BACKUP-05
+  affected_artifact: docs/web-console-prd.md
+  evidence: CONFIG-02 blocks all referenced deletion; CONFIG-03 conflates immediate service value actions with SMTP
+    draft replacement.
+  why_it_matters: Implementation cannot satisfy confirmed clear-only behavior against stale product authority.
+  local_correction_possible: false
+  reconciliation_required: true
+questions: []
+affected_requirements:
+- CONFIG-02
+- CONFIG-03
+- CONFIG-04
+- CONFIG-05
+- AUTHZ-02
+- AUDIT-01
+- BACKUP-01
+- BACKUP-05
+affected_artifacts:
+- docs/web-console-prd.md
+- product/ux/02-interaction-patterns.md
+- docs/web-console-prd-coverage.md
+- docs/web-console-prd-user-journey-audit.md
+reconciliation_required: true
+change_impact:
+  product: true
+  user_journeys: true
+  ux: true
+  architecture: false
+  security: false
+decision_resolution:
+- id: REC-DEC-010
+  semantics_resolved: true
+  remaining_product_choices: []
+  adoption_required: true
+  resolution: Delete uses existing Archived lifecycle with explicit retained-history/restore-to-Disabled consequence;
+    no permanent purge inferred.
+- id: REC-DEC-008
+  semantics_resolved: true
+  remaining_product_choices: []
+  adoption_required: true
+  resolution: Adopt STATE-09 and SECRES-08 under the precise requirement proposals in the companion report; SMTP
+    remains separate.
+validation:
+  method: Bounded authority consistency review; YAML parsing and exact content hashes.
+  tests_run: []
+  reason: Definition-only proposals, no executable changes.
+git_ownership:
+  parent_commit: 4deffb4276b956f9f32c34ef7dc43418b4d0ff83
+  commit_owner: product-definition-orchestrator
+  child_commit: false
+changed_paths:
+- workflow/definition/results/feedback3-product-resolution.md
+- workflow/definition/results/feedback3-product-resolution.yaml

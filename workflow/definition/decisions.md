@@ -1244,3 +1244,13 @@ Status: accepted. Source: confirmed PO-FEEDBACK-2026-11-18-002, PO-FB-238–264,
 UX9-SERVICE-SEMANTICS is an accepted delegated PRD resolution (S9-01–05), adopted by REC-RUN-014: saved-new discard retains named Inactive identity and independent values/audit; fresh setup does not restore discarded content. Empty assignments are valid but confer no execution. Legacy import retirement clears import-derived/ambiguous pending grants with notice and preserves proved later explicit selections and current live grants. Archive is a separate mutation, not implied by Discard. No owner question remains; no new permission or automatic grant is inferred.
 
 Definition revalidation and delivery qualification remain required. Canonical producer: workflow/reconciliation/REC-RUN-014/reconciliation-result.yaml.
+
+## PO-REFINEMENT-015 — Credential cleanup and archived-service deletion
+
+- Status: accepted; resolution category PRODUCT_DECISION; owner Product Owner.
+- Source: PO-FEEDBACK-2026-11-19-001, PO-FB-265–281; confirmation **“yes to both”** for PO-UNRESOLVED-001/002.
+- Remove credential configuration is proposed until Apply. On Apply delete its saved value only if no resulting live reference uses it. Cancel/discard does not delete independent values.
+- Permanent deletion is available for Archived services with typed confirmation. Remove current service/configuration/draft/secrets; retained audit and existing backups follow their ordinary retention rules.
+- Remaining domain mechanics are specialist-owned under UX10-DELETION-SEMANTICS (D10-01–05), including scoped intent for saved-draft-only removals, exact reviewed dependencies, coherent mutation, incarnation fencing, uncertainty and safe restore compatibility. These safeguards do not reopen the two settled choices.
+- Other confirmed directives preserve current capabilities while clarifying no-access warning, credential actions/copy, Settings layout and redundant Overview navigation. Login width/recovery wording are advisory/evidence interpreted by Product UX under existing patterns.
+- Scope excludes live instance mutation during definition/planning/delivery; parent handles authorized local update after qualification.

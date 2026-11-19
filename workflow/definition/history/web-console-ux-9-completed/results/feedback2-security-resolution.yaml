@@ -1,0 +1,98 @@
+stage: security
+status: RECONCILIATION_REQUIRED
+scope: bounded_specialist_resolution
+resolution_ids:
+- REC-DEC-004
+- REC-DEC-005
+decision_provenance:
+- PO-FB-025
+- PO-FB-031
+- PO-FB-034
+validated_inputs:
+- path: docs/web-console-prd.md
+  revision: sha256:bc908afcb8c40184dfcccdf296672bc559f5499236ed37f351a82f34ad0e9843
+- path: workflow/feedback/PO-FEEDBACK-2026-10-11-002/feedback.yaml
+  revision: sha256:515a53d2c56f256708cef2fce9add362aa20f2fbcf1f6d34b4ff1a1dfdb9d53b
+- path: product/architecture/web-console-state-contract.md
+  revision: sha256:80835e44cdd550f10638bb757f183868804f9678cac4626a7ac84abb27ff0d32
+- path: product/ux/manifest.yaml
+  revision: sha256:8c2881d271b7ca836fbf9ca28e2687e2c049004fdca9093b7f9f3f6c80f43132
+- path: workflow/definition/decisions.md
+  revision: sha256:3ef4b85d01db4d71c05f7e0258c788ba67a0042274705c0bc23411635aa0d6e1
+- path: workflow/definition/open-questions.md
+  revision: sha256:a839c02e8e6912d114f36e7c7c805c4ed0ac21c37ed3e1f3050b600d611c81b6
+- path: src/consolePeople.ts
+  revision: sha256:7953d198977bfd3d13ba86eb136590de7ce5b1e31d6900a2a3d014313473cf42
+- path: AGENTS.md
+  revision: sha256:fe74c192b9fe3b1a816925c56874106b74dc50e7ef93be2fb554201a5f16647e
+artifact_changes:
+- path: product/security/web-console-security-contract.md
+  summary: Added SECRES-06 account editing hierarchy/contact revocation and SECRES-07
+    explicit unencrypted SMTP controls, with acceptance cases and precise PRD adoption
+    requirements.
+- path: workflow/definition/results/feedback2-security-resolution.yaml
+  summary: Bounded delegated resolution; cross-authority adoption remains, not full
+    security-stage validation.
+changed_paths:
+- product/security/web-console-security-contract.md
+- workflow/definition/results/feedback2-security-resolution.yaml
+findings:
+- id: SECRES-F06
+  significance: MATERIAL
+  summary: Administrator account editing contract requires PRD and UX adoption.
+  affected_requirement: AUTHZ-02
+  affected_artifact: docs/web-console-prd.md
+  evidence: product/security/web-console-security-contract.md#secres-06; confirmed
+    feedback PO-FB-025/031 and current Owner-only or unspecified PRD wording.
+  why_it_matters: Implementation needs consistent role/contact or transport authority
+    across product, UX and state contracts.
+  local_correction_possible: false
+  reconciliation_required: true
+- id: SECRES-F07
+  significance: MATERIAL
+  summary: Explicit unencrypted SMTP contract requires PRD and UX adoption.
+  affected_requirement: IDENT-04
+  affected_artifact: docs/web-console-prd.md
+  evidence: product/security/web-console-security-contract.md#secres-07; confirmed
+    feedback PO-FB-025/031 and current Owner-only or unspecified PRD wording.
+  why_it_matters: Implementation needs consistent role/contact or transport authority
+    across product, UX and state contracts.
+  local_correction_possible: false
+  reconciliation_required: true
+questions: []
+affected_requirements:
+- AUTHZ-02
+- AUTHZ-03
+- IDENT-04
+- IDENT-05
+- IDENT-06
+- CONFIG-03
+- SEC-01
+- AUDIT-01
+- AUDIT-04
+affected_artifacts:
+- docs/web-console-prd.md
+- product/security/web-console-security-contract.md
+- product/architecture/web-console-state-contract.md
+- product/ux/02-interaction-patterns.md
+- docs/web-console-prd-coverage.md
+- docs/web-console-prd-user-journey-audit.md
+reconciliation_required: true
+change_impact:
+  product: true
+  user_journeys: true
+  ux: true
+  architecture: true
+  security: true
+adoption:
+  prd_owner_action: Adopt SECRES-06/07 precise PRD adoption text and normative contracts;
+    delegate UI expression to Product UX. No additional product choice remains.
+  does_not_complete_full_security_stage: true
+  unresolved_product_choices: []
+validation:
+  method: Confirmed owner intent, current authority and bounded consolePeople implementation
+    inspection, primary-source research, architecture transport coordination and positive/negative
+    acceptance review.
+  implementation_tests_run: false
+  rationale: Definition-only change; no product code, live state, or runtime vulnerability
+    validation.

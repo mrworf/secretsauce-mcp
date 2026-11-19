@@ -1,6 +1,6 @@
 product_id: secretsauce-mcp
 ux:
-  revision: web-console-ux-9
+  revision: web-console-ux-10
   authority:
     status: approved
     decision_refs:
@@ -14,32 +14,38 @@ ux:
     - PO-REFINEMENT-013
     - PO-REFINEMENT-014
     - UX9-SERVICE-SEMANTICS
+    - PO-REFINEMENT-015
+    - UX10-DELETION-SEMANTICS
     decision_ledger: workflow/definition/decisions.md
     approved_proposal_revision: feedback-007-draft-1
-    approval_scope: Preserve UX8 appearance and exceptions; apply confirmed feedback238–264 and adopted S9 service
-      semantics as exact UX9 delta.
+    approval_scope: "Preserve UX9 approved appearance and task patterns; adopt confirmed feedback265\u2013\
+      281 and D10-01\u201305 as the bounded UX10 delta."
     preserved_proposal_revision: draft-1
-    refinement_precedence: UX-G10 supersedes only service footer/direct navigation, incomplete review/discard, lifecycle/Draft/readiness
-      and import mapping/collision behavior. UX-G09 and prior approved immutable references remain for unaffected
-      appearance.
+    refinement_precedence: UX-G11 supersedes only the scoped credential-removal/deletion, advisory, sign-in/helper,
+      Settings-transition and Overview actions in prior text/concepts; UX-G10 and earlier approved appearance
+      remain for unaffected work.
   source_revisions:
   - path: docs/web-console-prd.md
-    revision: sha256:dab49dc650ecbc55c3319532ad8ee590767d3938e8772676da9a6ddf047ad32d
+    revision: sha256:c9c0f4890a94e3a82d6d01fb770fe5f0bde689cd44362af77400c71f003be199
   - path: product/architecture/web-console-state-contract.md
-    revision: sha256:3d7ed28c8335a6d142533c253e061e14a30ada5b9e25be341fb1c172d706c955
+    revision: sha256:1c7642c7b87bba4c7b55c8a5520eac002bd2727d8729f9eb0c51ecec31f3f9c6
   - path: product/security/web-console-security-contract.md
-    revision: sha256:b6afd24f5789b0f8738ca952000f8fc3433d82967f2f8bce42df81fbc23c61d5
-  - path: workflow/feedback/PO-FEEDBACK-2026-11-18-002/feedback.yaml
-    revision: sha256:e83f7407bea5c0317e6dface8ec81617d198ccc5dd93521db70a5178f5007b7f
-  - path: workflow/reconciliation/REC-RUN-014/reconciliation-result.yaml
-    revision: sha256:a6bc873cdfd7c32298a68205659f359f48af480a26b53926624741ace7346e03
-  - path: workflow/reconciliation/REC-RUN-014/service-semantics-basis.md
-    revision: sha256:eb6f3e4433b6fecac9e42e9673caeeef196b1164d433a6cb4e3c18f0ce2c5cb9
+    revision: sha256:f02d7b7bdedb1108c7461f15a0d3cffeab93150ecac34fa0ff9c66b2e24c8268
+  - path: workflow/feedback/PO-FEEDBACK-2026-11-19-001/feedback.yaml
+    revision: sha256:5d66b847807a0c1066773cacd3c80e072ac03cd5d4a5d4665d0600e6b59aec39
+  - path: workflow/reconciliation/REC-RUN-015/reconciliation-result.yaml
+    revision: sha256:fb2118f64287f6b2791c2ebeadae0974854a6cc68b6dc14bb13d2ca75415eb88
+  - path: workflow/reconciliation/REC-RUN-015/deletion-semantics-basis.md
+    revision: sha256:8b731120243d2c75c7f5af5d6c0a4dfe1e6da7e2a9cba81a8e4d8ce479749995
   - path: workflow/definition/decisions.md
-    revision: sha256:a70e4ec8f97e4fd9cce2a9eab49a3706adc48ad05fbb4a5a6d1edeec6506c7b4
+    revision: sha256:9dea3ea10de328f6a7fb2e51fc42018c5a0d5747a2ada943eff6d74dbdd32e2a
+  - path: docs/web-console-prd-coverage.md
+    revision: sha256:2832aa3fb941b8397428f5113bd862a25f554a956888d9f7addda6da567b8258
+  - path: docs/web-console-prd-user-journey-audit.md
+    revision: sha256:3f593964f65572ff47cd74e058b73f9d07bf3d090fc795d5911dac38d0b5c012
   experience_brief:
     path: product/ux/experience-brief.yaml
-    revision: web-console-ux-9
+    revision: web-console-ux-10
   supported_surfaces:
   - desktop-web-console
   - narrow-web-monitoring-and-recovery
@@ -58,23 +64,23 @@ ux:
     acceptance_checklist: product/ux/07-acceptance-checklist.md
   artifact_revisions:
   - path: product/ux/experience-brief.yaml
-    revision: sha256:1360d5f4976f21adeacb02d311e3076cafa04b069e29fc4abbef169ce0583601
+    revision: sha256:d4d2e4f5dd95d25d00bea566a55e2e0bffdc6d93bdf941991b72c28120eced73
   - path: product/ux/00-overview.md
-    revision: sha256:23f3eac7f496580c8bdde20d175c7bf3f362ae5852eea4fda67d1fa33b5abdd4
+    revision: sha256:78d1005d0ca9f4ac83ef97ed4969695f84d3ee40449b253640021ebd1631edff
   - path: product/ux/01-information-architecture.md
-    revision: sha256:2e091bfd97582805d4e8dd8367bddf2a4a40f1e0352e6494a73107a9f3575060
+    revision: sha256:c455bc6c5810b6db376ea07206e5df4a53615d96483e026a1052591d4ead54e4
   - path: product/ux/02-interaction-patterns.md
-    revision: sha256:5ec48e51de819eb34ca65ca2a9882eecac4131d435e0890d755e10d06e5f9539
+    revision: sha256:2198d5ef774cb70017e43843f1d8150a149599fb165732ad3397192dc691b218
   - path: product/ux/03-responsive-and-platform.md
-    revision: sha256:cbdd1fd1012d684a78c060e036ce79c32d06f432b8acb674c914244ecffa3566
+    revision: sha256:b99829c15fb8780fd5b8f44c2e77a45b7f0c6a936f4902a2aa8bd37789db0e3a
   - path: product/ux/04-visual-system.md
-    revision: sha256:dfa3d9525b3b35d1e2e7d8731ab6ca2fcb4d1df2783567cf8d8d36efd548e463
+    revision: sha256:8f1e26ebd3d7e6d70314c4959cdfbf51732353135bbadb9a609697a04a58a4f6
   - path: product/ux/05-accessibility.md
-    revision: sha256:cc93165d518497dc80ba145546ba182f53b7145ab2179d35cc3f9aa28a9de3b9
+    revision: sha256:bd45cbba1e5ad7c8c210ef9c18ee88272f81a00da22dc1ba0db6242f7c9a8db8
   - path: product/ux/06-feature-exceptions.md
-    revision: sha256:427142201d4c4d0e6fc17c19d957f6f4eb8355c651554f0892aefcc1590468cd
+    revision: sha256:90a697a80b380a70d83cbffc7cd1409fe381c2051a877da901c7e4b3c2a30b48
   - path: product/ux/07-acceptance-checklist.md
-    revision: sha256:a7f25c6f6d217dcfe1cfce38ea8c503c74b7fecb9684884f67851b24931d4e6e
+    revision: sha256:ac2ac48df0be3f01a498e6a1d0a85fc2e6a6d8489f463239b10ed79e9a9028e7
   approved_concept_evidence:
   - path: workflow/definition/drafts/product-ux/web-console-initial/experience-brief.yaml
     revision: sha256:1f06ace4bfa0d7a64f15cf32adbe80ada89ebae427a73e3c3e9e860ad4ef5e6e
@@ -278,5 +284,20 @@ ux:
     revision: sha256:ea601aef177d7644e5a3eab2a02e477b055d73700ed94d3e94b1ac249676fe93
   implementation_status: not_validated_by_this_definition_revision
   scope_boundary: UX authority only; Product Definition controls cross-domain freshness and downstream handoff
-  validation_boundary: UX9 bounded confirmed-direction synthesis only; Product Definition controls cross-domain
+  validation_boundary: UX10 bounded confirmed-direction synthesis only; Product Definition owns cross-domain
     freshness and delivery verifies runtime conformance.
+  historical_source_revisions:
+  - path: docs/web-console-prd.md
+    revision: sha256:dab49dc650ecbc55c3319532ad8ee590767d3938e8772676da9a6ddf047ad32d
+  - path: product/architecture/web-console-state-contract.md
+    revision: sha256:3d7ed28c8335a6d142533c253e061e14a30ada5b9e25be341fb1c172d706c955
+  - path: product/security/web-console-security-contract.md
+    revision: sha256:b6afd24f5789b0f8738ca952000f8fc3433d82967f2f8bce42df81fbc23c61d5
+  - path: workflow/feedback/PO-FEEDBACK-2026-11-18-002/feedback.yaml
+    revision: sha256:e83f7407bea5c0317e6dface8ec81617d198ccc5dd93521db70a5178f5007b7f
+  - path: workflow/reconciliation/REC-RUN-014/reconciliation-result.yaml
+    revision: sha256:a6bc873cdfd7c32298a68205659f359f48af480a26b53926624741ace7346e03
+  - path: workflow/reconciliation/REC-RUN-014/service-semantics-basis.md
+    revision: sha256:eb6f3e4433b6fecac9e42e9673caeeef196b1164d433a6cb4e3c18f0ce2c5cb9
+  - path: workflow/definition/decisions.md
+    revision: sha256:a70e4ec8f97e4fd9cce2a9eab49a3706adc48ad05fbb4a5a6d1edeec6506c7b4

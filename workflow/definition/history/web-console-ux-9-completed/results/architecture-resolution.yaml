@@ -1,0 +1,99 @@
+stage: software-architect-review
+status: PASS
+resolution_id: RES-PRD-ARCH-01
+scope: Bounded state-contract resolution; not the full architecture stage
+validated_inputs:
+  - path: docs/web-console-prd.md
+    revision: sha256:86d7ffa3c05907d559b942373b9d6828a3c07ee4d0833f9a7ada1fada7441e27
+  - path: src/runtime.ts
+    revision: sha256:07afca2d7f6ab0d0a5173853eb459303704948930785bc0a29bf2a3aaf79beca
+  - path: src/gateway.ts
+    revision: sha256:4d09fe4214d403086de03d7374feeef169b8c38d2e6eaf33c31212d27bf5c590
+  - path: src/tokens.ts
+    revision: sha256:2d17fade5721930642a17329c7894e503da3f497100ee91f70e68dd3b41c3adb
+decision_provenance:
+  - D-001
+  - D-002
+  - D-003
+  - D-004
+  - D-005
+  - D-007
+  - D-009
+  - D-010
+  - RES-PRD-ARCH-01
+artifact_changes:
+  - path: product/architecture/web-console-state-contract.md
+    change: Created minimal observable draft, immediate action, admission, backup, restore, and audit-continuity contracts preserving accepted product intent.
+changed_paths:
+  - product/architecture/web-console-state-contract.md
+  - workflow/definition/results/architecture-resolution.yaml
+findings:
+  - id: F-PRD-004
+    significance: OBSERVATION
+    summary: Delegated semantics resolved by STATE-01 through STATE-03; PRD owner must adopt the bounded clarification before PRD revalidation.
+    affected_requirement: CONFIG-03
+    affected_artifact: docs/web-console-prd.md
+    evidence: product/architecture/web-console-state-contract.md#state-01--configuration-versus-immediate-actions
+    why_it_matters: Prevents stale drafts or history from bypassing current authorization or reviving revoked access.
+    local_correction_possible: true
+    reconciliation_required: false
+  - id: F-PRD-002
+    significance: OBSERVATION
+    summary: Architecture portion resolved by STATE-04 through STATE-06; security owns proof and enrollment authority.
+    affected_requirement: BACKUP-04
+    affected_artifact: docs/web-console-prd.md
+    evidence: product/architecture/web-console-state-contract.md#state-05--restore-installation-and-rollback
+    why_it_matters: Makes failure rollback possible despite export backups excluding MFA and preserves recovery and evidence boundaries.
+    local_correction_possible: true
+    reconciliation_required: false
+  - id: F-PRD-003
+    significance: OBSERVATION
+    summary: Architecture portions preserve uncertain in-flight outcomes and prohibit recovery activation until audit readiness; security owns repair-access exceptions.
+    affected_requirement: AUDIT-04
+    affected_artifact: docs/web-console-prd.md
+    evidence: product/architecture/web-console-state-contract.md#state-06--recovery-activation-and-audit-continuity
+    why_it_matters: Recovery and install rollback cannot erase local audit evidence or create a bypass of fail-closed operation.
+    local_correction_possible: true
+    reconciliation_required: false
+questions: []
+affected_requirements:
+  - AUTHZ-02
+  - CONFIG-02
+  - CONFIG-03
+  - CONFIG-04
+  - CONFIG-05
+  - AUDIT-04
+  - SEC-03
+  - BACKUP-02
+  - BACKUP-04
+  - BACKUP-05
+  - BACKUP-06
+affected_artifacts:
+  - docs/web-console-prd.md
+  - product/architecture/web-console-state-contract.md
+reconciliation_required: false
+change_impact:
+  product: true
+  user_journeys: true
+  ux: true
+  architecture: true
+  security: true
+proposed_prd_clarifications:
+  - requirement: CONFIG-03
+    clarification: Draft/apply covers configuration; immediate authorized identity, grant, credential-value, disable, and revocation actions do not wait for apply. Apply rechecks current actor rights and relevant dependencies, rejects stale work, and cannot mix configuration revisions at request admission.
+  - requirement: CONFIG-04
+    clarification: History excludes live access/lifecycle state and secret values; rollback cannot revive revoked access or enable services and is limited to current actor authority.
+  - requirement: AUTHZ-02
+    clarification: Current authorization is checked at dispatch admission; already-dispatched work may complete under its original revision and response protection, without reviving invalidated references.
+  - requirement: BACKUP-02
+    clarification: Completed backups identify one consistent recoverable state and audit boundary; partial output cannot be successful.
+  - requirement: BACKUP-04
+    clarification: Freeze admission and quiesce within existing deadlines; preserve a protected local installation rollback source distinct from export backups, validate installation atomically, and remain recoverable through interruption.
+  - requirement: BACKUP-05
+    clarification: Separate restricted restore continuation from normal login; fresh recovery Owner enrollment and audit readiness enable management, with other users and services requiring explicit review/reactivation.
+  - requirement: BACKUP-06
+    clarification: Preserve local audit events independently of snapshot replacement; label imported evidence and explicitly identify clean-host gaps.
+validation:
+  method: Reviewed contract against source PRD, accepted central decisions, current runtime ordering, and security specialist's recovery-proof boundary; checked YAML shape, source hashes, relative link, and whitespace.
+  tests_run: []
+  reason: Definition-only artifact; no executable code or implementation behavior changed.

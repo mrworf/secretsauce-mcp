@@ -1,0 +1,56 @@
+stage: security-code-reviewer
+status: PASS
+scope: bounded_specialist_resolution
+resolution_id: RES-PRD-SEC-01
+source_finding_ids: [F-PRD-001, F-PRD-002, F-PRD-003]
+source_question_ids: [Q-PRD-001, Q-PRD-002, Q-PRD-003]
+decision_provenance: [D-004, D-006, D-007, D-009, D-010, D-012]
+validated_inputs:
+  - path: docs/web-console-prd.md
+    revision: sha256:86d7ffa3c05907d559b942373b9d6828a3c07ee4d0833f9a7ada1fada7441e27
+  - path: docs/config-reference.md
+    revision: sha256:8fc78c4876cd61d1cfa0315cf53e6a46c98432f8e7bd2b30d2565f5024bb9850
+artifact_changes:
+  - path: product/security/web-console-security-contract.md
+    summary: Created bounded security authority for URL/proof exceptions, bootstrap and restore recovery, account verification and fail-closed audit diagnosis; precise PRD adoption text and acceptance cases included.
+  - path: workflow/definition/results/security-resolution.yaml
+    summary: Recorded bounded resolution result; this does not pass the downstream full security stage or the PRD stage.
+changed_paths:
+  - product/security/web-console-security-contract.md
+  - workflow/definition/results/security-resolution.yaml
+findings: []
+questions: []
+affected_requirements:
+  - BASE-01
+  - IDENT-01
+  - IDENT-02
+  - IDENT-03
+  - IDENT-05
+  - IDENT-06
+  - AUTHZ-03
+  - SEC-01
+  - SEC-03
+  - AUDIT-01
+  - AUDIT-04
+  - BACKUP-03
+  - BACKUP-04
+  - BACKUP-05
+  - CONFIG-03
+affected_artifacts:
+  - docs/web-console-prd.md
+  - product/security/web-console-security-contract.md
+  - product/architecture/web-console-state-contract.md
+reconciliation_required: false
+change_impact:
+  product: true
+  user_journeys: true
+  ux: true
+  architecture: true
+  security: true
+adoption:
+  prd_owner_action: Incorporate the precise PRD clarifications section and revalidate F-PRD-001 through F-PRD-003; coordinate shared restore/outage boundaries with architecture.
+  does_not_complete_full_security_stage: true
+validation:
+  method: Requirements trace, verified preservation evidence, primary-source guidance and positive/negative acceptance contract review.
+  implementation_tests_run: false
+  rationale: Definition-only artifact; no application implementation changed.

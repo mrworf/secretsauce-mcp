@@ -1125,3 +1125,7 @@ approval_scope: Both Limits categories and Settings search dialog in feedback-00
 decided_on: '2026-11-16'
 approved_proposal_revisions: *id001
 ```
+
+## PO-UNRESOLVED-001/002 — Resolved in feedback001
+
+Status: resolved. The Product Owner answered **“yes to both”**: unreferenced saved values are deleted on Apply only; archived permanent deletion removes current service data/secrets while historical audit/backups retain ordinary policy. Recorded in PO-REFINEMENT-015. No repeated approval requested. Domain safeguards are delegated under UX10-DELETION-SEMANTICS, not questions for the owner.

@@ -1,45 +1,45 @@
 stage: prd-development-partner
 status: PASS
-mode: targeted_revalidation
+mode: preserved_product_domain_with_adoption_check
 validated_inputs:
 - path: docs/web-console-prd.md
-  revision: sha256:dab49dc650ecbc55c3319532ad8ee590767d3938e8772676da9a6ddf047ad32d
-- path: workflow/reconciliation/REC-RUN-014/reconciliation-result.yaml
-  revision: sha256:a6bc873cdfd7c32298a68205659f359f48af480a26b53926624741ace7346e03
-- path: workflow/reconciliation/REC-RUN-014/service-semantics-basis.md
-  revision: sha256:eb6f3e4433b6fecac9e42e9673caeeef196b1164d433a6cb4e3c18f0ce2c5cb9
-- path: workflow/feedback/PO-FEEDBACK-2026-11-18-002/feedback.yaml
-  revision: sha256:e83f7407bea5c0317e6dface8ec81617d198ccc5dd93521db70a5178f5007b7f
+  revision: sha256:c9c0f4890a94e3a82d6d01fb770fe5f0bde689cd44362af77400c71f003be199
+- path: workflow/reconciliation/REC-RUN-015/reconciliation-result.yaml
+  revision: sha256:fb2118f64287f6b2791c2ebeadae0974854a6cc68b6dc14bb13d2ca75415eb88
+- path: workflow/reconciliation/REC-RUN-015/deletion-semantics-basis.md
+  revision: sha256:8b731120243d2c75c7f5af5d6c0a4dfe1e6da7e2a9cba81a8e4d8ce479749995
+- path: workflow/feedback/PO-FEEDBACK-2026-11-19-001/feedback.yaml
+  revision: sha256:5d66b847807a0c1066773cacd3c80e072ac03cd5d4a5d4665d0600e6b59aec39
 - path: workflow/definition/decisions.md
-  revision: sha256:a70e4ec8f97e4fd9cce2a9eab49a3706adc48ad05fbb4a5a6d1edeec6506c7b4
+  revision: sha256:9dea3ea10de328f6a7fb2e51fc42018c5a0d5747a2ada943eff6d74dbdd32e2a
 artifact_changes: []
-changed_paths:
-- workflow/definition/results/prd.yaml
+changed_paths: []
 findings: []
 questions: []
 affected_requirements:
-- CONFIG-01
+- CONFIG-02
 - CONFIG-03
 - CONFIG-05
-- MIGRATE-01
-- MIGRATE-03
-- AUTHZ-02
+- CONFIG-04
+- UX-01
 - UX-02
+- UX-03
+- IDENT-02
+- IDENT-05
+- AUTHZ-01
+- AUTHZ-02
 affected_artifacts:
 - docs/web-console-prd.md
 reconciliation_required: false
 change_impact:
   product: false
-  user_journeys: true
-  ux: true
-  architecture: true
-  security: true
-review_scope:
-  feedback_items: PO-FB-238–264 (27)
-  contract: S9-01–05 in published REC014 service-semantics-basis.md
-  outcome: Canonical adopted PRD matches resolved scoped discard, named Inactive identity retention, independent
-    saved Draft, incomplete review, empty access, separate imports and safe legacy mapping retirement. Accepted
-    direct navigation/footer/no redundant Back preserved. All unrelated accepted baseline requirements remain.
-  limits: Bounded adoption validation only; no full product rewrite or runtime acceptance.
-preservation_basis: Previous accepted PRD baseline plus exact confirmed feedback and resolved S9 semantics; no additional
-  product change by revalidation.
+  user_journeys: false
+  ux: false
+  architecture: false
+  security: false
+scope_notes:
+- REC015 product domain false; settled direction preserved, adopted exact directives and D10 safeguards checked
+  without new product discovery.
+- Seven supplemental coverage rows and six action mappings preserve affected roles, denial, cancel, stale, unknown
+  and recovery paths.
+- 'Definition mapping only: no runtime conformance or unseen state certification; SMTP timing preserved.'

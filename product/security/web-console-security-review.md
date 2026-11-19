@@ -183,3 +183,11 @@ SECRES-09 requires authorized proposal-only discard, no secret cleanup side effe
 ### Findings, risk and validation
 
 No new confirmed/likely vulnerability is asserted from this definition delta; CVSS is not applicable. SEC-DEF-001 accepted trusted-author/scanning boundary and prior observations/closed findings remain unchanged. No exploit chain, PoC or live request was developed. Required future positive/negative fixtures cover role/target/generation, collisions, no-grant activation, incomplete preview, old mapping/review, audit failure and durable uncertainty, using synthetic local data. Source inspection and documentation/YAML/hash checks support this review only; runtime acceptance, penetration testing and SOC2 certification are not claimed.
+
+## REC015 targeted security amendment — 2026-11-19
+
+Scope: adopted CONFIG-02/03/05, D10-01–05 and STATE-11 at producer closeout 19174d5. Threat boundaries are authenticated caller versus management authority, stale proposal/intent versus current incarnation, runtime admission versus publication, and retained backup evidence versus current authority. Source inspection is bounded to existing service mutation/commit/recovery contracts; no destructive PoC, runtime acceptance or external vulnerability claim.
+
+Positive controls: current role/CSRF, generation-bound reviews, durable audit admission and write-only values remain appropriate. SECRES-10 requires deliberate scoped cleanup, exact reviewed effects and typed target-bound Archived deletion, with coherent state publication and durable reuse/replay fences. Uncertainty cannot become silent success or permission to retry against a new target. Retained backup secrets and explicit restore are disclosed honestly; no retroactive erasure or universal non-exfiltration promise is introduced.
+
+No new confirmed or likely vulnerability is asserted in this definition review, so no CVSS or exploit PoC is assigned. The risks describe safety requirements for requested new behavior. Required positive/negative implementation validation is specified in SECRES-10 and D10-05. Preserve SEC-DEF-001 accepted trust/scanning risk and all unrelated closed findings. No additional owner decision, authentication ceremony, approval chain or platform redesign is required. Definition readiness does not establish implementation or SOC 2 acceptance.

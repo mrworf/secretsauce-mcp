@@ -1,0 +1,75 @@
+stage: security-code-reviewer
+status: RECONCILIATION_REQUIRED
+scope: Bounded REC-DEC-008 security resolution, not final security-stage review
+validated_inputs:
+- path: docs/web-console-prd.md
+  revision: sha256:00e6e2a9ec4661695f6aa4f01f86e8963739579bd147c7d73fa67870dda41e4b
+- path: workflow/feedback/PO-FEEDBACK-2026-10-17-001/feedback.yaml
+  revision: sha256:9b50a7d3dc87a3f2d45832b0deee4402b6e84b65092680a57f5bfbf8c7fbe0bf
+- path: product/architecture/web-console-state-contract.md
+  revision: sha256:c8e22b5013d89090cc451cb2ef0290d7517b05bebae746faa15b65f10fca9848
+- path: src/consoleServices.ts
+  revision: sha256:3c0615322209993d8d7c4e8e9209154499611da397e7c11bbfddf07f196ebdfc
+- path: src/consoleStore.ts
+  revision: sha256:6242451630eac02488cdabddd2f95098817f8116593b3f01d44eed1b91a6a1d3
+- path: src/consoleBackupSchema.ts
+  revision: sha256:018ce5ad1b2df029c5c28fa0f6cdce64647190cf482e013f7f7c88fad6639e40
+- path: product/security/web-console-security-contract.md
+  revision: sha256:2f46343c6d3206b48c46212de6ba84a308b7f2a921cfba7525d2b212f3e4f5bc
+artifact_changes:
+- path: product/security/web-console-security-contract.md
+  revision: sha256:8f66520798094a2638f006c9f3145e263e96008fdf63480fc6b98c2b0ccddc35
+  change: "Added SECRES-08 and T17\u2013T21 for referenced value clearing, durable revocation, metadata\
+    \ and recovery."
+findings:
+- id: F-SEC-FB3-001
+  significance: MATERIAL
+  summary: Resolved SECRES-08 security semantics require PRD/UX adoption.
+  affected_requirement: CONFIG-02 / CONFIG-03 / AUTHZ-02 / AUDIT-01 / BACKUP-01 / BACKUP-05
+  affected_artifact: docs/web-console-prd.md
+  evidence: Confirmed PO-FB-065/066/067 require clearing while current CONFIG-02 blocks referenced deletion;
+    SECRES-08 supplies security constraints consistent with STATE-09.
+  why_it_matters: Value clearing must revoke runtime authority and durable copies without exposing or
+    resurrecting secrets.
+  local_correction_possible: false
+  reconciliation_required: true
+questions: []
+affected_requirements:
+- CONFIG-02
+- CONFIG-03
+- AUTHZ-02
+- AUDIT-01
+- BACKUP-01
+- BACKUP-05
+- SEC-01
+- SECRES-08
+affected_artifacts:
+- product/security/web-console-security-contract.md
+- product/architecture/web-console-state-contract.md
+- docs/web-console-prd.md
+- product/ux/02-interaction-patterns.md
+reconciliation_required: true
+change_impact:
+  product: true
+  user_journeys: true
+  ux: true
+  architecture: false
+  security: true
+decision_resolution:
+- id: REC-DEC-008
+  semantics_resolved: true
+  scope: Security constraints for service credential clearing and last successful actor
+  remaining_product_choices: []
+  adoption_required: true
+validation:
+  method: Bounded source and architecture/security contract inspection; YAML parse and output hash checks
+  tests_run: []
+  reason: Definition-only resolution with no executable changes
+git_ownership:
+  parent_commit: 4703c56c17020bc04f8a58c90c1ae0f23ca3886e
+  commit_owner: product-definition-orchestrator
+  child_commit: false
+changed_paths:
+- product/security/web-console-security-contract.md
+- workflow/definition/results/feedback3-security-resolution.md
+- workflow/definition/results/feedback3-security-resolution.yaml

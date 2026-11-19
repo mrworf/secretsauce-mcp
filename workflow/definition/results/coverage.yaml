@@ -3,37 +3,37 @@ status: PASS
 mode: targeted_revalidation
 validated_inputs:
 - path: docs/web-console-prd.md
-  revision: sha256:dab49dc650ecbc55c3319532ad8ee590767d3938e8772676da9a6ddf047ad32d
-- path: workflow/reconciliation/REC-RUN-014/reconciliation-result.yaml
-  revision: sha256:a6bc873cdfd7c32298a68205659f359f48af480a26b53926624741ace7346e03
-- path: workflow/reconciliation/REC-RUN-014/service-semantics-basis.md
-  revision: sha256:eb6f3e4433b6fecac9e42e9673caeeef196b1164d433a6cb4e3c18f0ce2c5cb9
+  revision: sha256:c9c0f4890a94e3a82d6d01fb770fe5f0bde689cd44362af77400c71f003be199
+- path: workflow/reconciliation/REC-RUN-015/reconciliation-result.yaml
+  revision: sha256:fb2118f64287f6b2791c2ebeadae0974854a6cc68b6dc14bb13d2ca75415eb88
+- path: workflow/reconciliation/REC-RUN-015/deletion-semantics-basis.md
+  revision: sha256:8b731120243d2c75c7f5af5d6c0a4dfe1e6da7e2a9cba81a8e4d8ce479749995
+- path: workflow/feedback/PO-FEEDBACK-2026-11-19-001/feedback.yaml
+  revision: sha256:5d66b847807a0c1066773cacd3c80e072ac03cd5d4a5d4665d0600e6b59aec39
 - path: workflow/definition/decisions.md
-  revision: sha256:a70e4ec8f97e4fd9cce2a9eab49a3706adc48ad05fbb4a5a6d1edeec6506c7b4
-- path: product/ux/manifest.yaml
-  revision: sha256:e23bf3fef2a825a14573d919007c8cdcf42a717cedff18ec10093b11537d6f1e
-- path: product/ux/02-interaction-patterns.md
-  revision: sha256:5ec48e51de819eb34ca65ca2a9882eecac4131d435e0890d755e10d06e5f9539
+  revision: sha256:9dea3ea10de328f6a7fb2e51fc42018c5a0d5747a2ada943eff6d74dbdd32e2a
 - path: docs/web-console-prd-coverage.md
-  revision: sha256:819366039171c186656ea2efaa569d0b8b23ef5b1004118ed91a6cd0cd4e09fb
+  revision: sha256:2832aa3fb941b8397428f5113bd862a25f554a956888d9f7addda6da567b8258
 artifact_changes:
 - path: docs/web-console-prd-coverage.md
-  summary: Replaced superseded Continue and mapping paths; added bounded UX9 correction/discard/import lifecycle
-    traces and positive/negative delivery obligations.
+  summary: Targeted UX10 mapping and superseded credential/lifecycle language correction; unrelated inventories
+    retained.
 changed_paths:
 - docs/web-console-prd-coverage.md
 findings: []
 questions: []
 affected_requirements:
-- CONFIG-01
+- CONFIG-02
 - CONFIG-03
 - CONFIG-05
+- CONFIG-04
+- UX-01
+- UX-02
 - UX-03
-- MIGRATE-01
-- MIGRATE-03
+- IDENT-02
+- IDENT-05
+- AUTHZ-01
 - AUTHZ-02
-- STATE-01
-- STATE-09
 affected_artifacts:
 - docs/web-console-prd-coverage.md
 reconciliation_required: false
@@ -44,8 +44,8 @@ change_impact:
   architecture: false
   security: false
 scope_notes:
-- Prior unrelated capability/actor/journey inventories and accepted risks retained.
-- Current specification complete; new implementation reachability not certified.
-- Four UX9 coverage row families / four action mappings plus existing actors and retained ACT-119 cover27feedback
-  items.
-- No runtime tests performed; implementation validation belongs to delivery.
+- REC015 product domain false; settled direction preserved, adopted exact directives and D10 safeguards checked
+  without new product discovery.
+- Seven supplemental coverage rows and six action mappings preserve affected roles, denial, cancel, stale, unknown
+  and recovery paths.
+- 'Definition mapping only: no runtime conformance or unseen state certification; SMTP timing preserved.'

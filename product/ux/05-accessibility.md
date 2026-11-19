@@ -66,3 +66,8 @@ Associate Field/Comparison/Value labels/help/errors locally. Duplicate modal use
 ## UX-A12 — Service corrections and discard focus
 
 Parent Configuration and section issue markers have meaningful accessible labels and text alternatives, not color alone; announce changing blockers concisely. Direct sections retain current-location semantics. Incomplete review fix links focus the actual field/action. Scoped discard uses the shared named modal, contained focus, Escape/Cancel and return-focus behavior; after abandoning creation, focus Services heading. Saved never-active discard announces retained Inactive identity without claiming deletion. Do not announce hidden values or legacy subject details unnecessarily. Shared footer focus never obscures input/errors at enlarged text.
+
+
+## UX-A13 — Advisory, deletion and recovery clarity
+
+No-access symbols have **No access assigned** text alternatives and are distinguishable from blocking validation independently of color. Do not announce valid zero-access state as invalid or disable activation. Named credential-removal and permanent-delete dialogs use contained keyboard focus, an explicit labeled confirmation input where required, accessible disabled-state explanation, Cancel/Escape and predictable return focus. Completion announces removal without exposing values; after permanent deletion focus the Services heading. Loading status is announced politely in the stable Settings panel without moving keyboard focus. Recovery-code sign-in and Replace authenticator have distinct accessible names and purposes. Apply text-range and focus-clearance checks at 320px/200%, not merely screenshot or component-width checks.

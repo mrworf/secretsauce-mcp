@@ -1,0 +1,153 @@
+stage: prd-development-partner
+status: FIX_LOCAL
+mode: correction
+validated_inputs:
+- path: docs/web-console-prd.md
+  revision: sha256:cb8d09474431d3bdd082466beac07163051bd2cb00639433f8a87bf85b46c3d8
+- path: product/security/web-console-security-contract.md
+  revision: sha256:95e342c77316f1697540fa8da29c6dd6333d6b6d3356b326c4dde921bca4540d
+- path: product/architecture/web-console-state-contract.md
+  revision: sha256:54956edc26dbcebcb48ecca0697a4695012d61488fa2297e56b6c04c9cbaa858
+decision_provenance:
+- D-001
+- D-002
+- D-003
+- D-004
+- D-005
+- D-006
+- D-007
+- D-008
+- D-009
+- D-010
+- D-011
+- D-012
+- RES-PRD-SEC-01
+- RES-PRD-ARCH-01
+artifact_changes:
+- path: docs/web-console-prd.md
+  summary: Adopted normative Security and Architecture companion contracts and bounded
+    product-level clarifications for F-PRD-001 through F-PRD-004; existing requirement
+    IDs and product intent preserved.
+- path: workflow/definition/results/prd-review.md
+  summary: Recorded adoption trace and targeted revalidation scope.
+- path: workflow/definition/results/prd.yaml
+  summary: Recorded FIX_LOCAL correction result; pass awaits targeted validation.
+changed_paths:
+- docs/web-console-prd.md
+- workflow/definition/results/prd-review.md
+- workflow/definition/results/prd.yaml
+findings:
+- id: F-PRD-001
+  significance: OBSERVATION
+  status: corrected_pending_revalidation
+  summary: Bounded delegated contract adopted; targeted validation required.
+  affected_requirement: SEC-01
+  affected_artifact: docs/web-console-prd.md
+  evidence: SECRES-01 adopted under SEC-01 and IDENT-03
+  why_it_matters: Requires independent targeted validation before declaring the refinement
+    passed.
+  local_correction_possible: true
+  reconciliation_required: false
+- id: F-PRD-002
+  significance: OBSERVATION
+  status: corrected_pending_revalidation
+  summary: Bounded delegated contract adopted; targeted validation required.
+  affected_requirement: BACKUP-05
+  affected_artifact: docs/web-console-prd.md
+  evidence: SECRES-02 and STATE-05/06 adopted under BACKUP-03/04/05
+  why_it_matters: Requires independent targeted validation before declaring the refinement
+    passed.
+  local_correction_possible: true
+  reconciliation_required: false
+- id: F-PRD-003
+  significance: OBSERVATION
+  status: corrected_pending_revalidation
+  summary: Bounded delegated contract adopted; targeted validation required.
+  affected_requirement: AUDIT-04
+  affected_artifact: docs/web-console-prd.md
+  evidence: SECRES-04 adopted under AUDIT-04
+  why_it_matters: Requires independent targeted validation before declaring the refinement
+    passed.
+  local_correction_possible: true
+  reconciliation_required: false
+- id: F-PRD-004
+  significance: OBSERVATION
+  status: corrected_pending_revalidation
+  summary: Bounded delegated contract adopted; targeted validation required.
+  affected_requirement: CONFIG-03
+  affected_artifact: docs/web-console-prd.md
+  evidence: STATE-01/02/03 adopted under AUTHZ-02 and CONFIG-02/03/04/05
+  why_it_matters: Requires independent targeted validation before declaring the refinement
+    passed.
+  local_correction_possible: true
+  reconciliation_required: false
+questions: []
+resolved_question_ids:
+- Q-PRD-001
+- Q-PRD-002
+- Q-PRD-003
+- Q-PRD-004
+affected_requirements:
+- AUDIT-01
+- AUDIT-04
+- AUTHZ-02
+- AUTHZ-03
+- BACKUP-03
+- BACKUP-04
+- BACKUP-05
+- BASE-01
+- CONFIG-02
+- CONFIG-03
+- CONFIG-04
+- CONFIG-05
+- IDENT-01
+- IDENT-02
+- IDENT-03
+- IDENT-05
+- OPS-02
+- SEC-01
+- SEC-03
+- IDENT-06
+affected_artifacts: &id001
+- docs/web-console-prd.md
+- product/security/web-console-security-contract.md
+- product/architecture/web-console-state-contract.md
+reconciliation_required: false
+change_impact:
+  product: true
+  user_journeys: true
+  ux: true
+  architecture: true
+  security: true
+validation:
+  requirement_ids_preserved: 53
+  local_links: pass
+  implementation_tests_run: false
+  reason: Definition-only correction; no product code changed.
+targeted_revalidation:
+  finding_ids:
+  - F-PRD-001
+  - F-PRD-002
+  - F-PRD-003
+  - F-PRD-004
+  requirement_ids:
+  - AUDIT-01
+  - AUDIT-04
+  - AUTHZ-02
+  - AUTHZ-03
+  - BACKUP-03
+  - BACKUP-04
+  - BACKUP-05
+  - BASE-01
+  - CONFIG-02
+  - CONFIG-03
+  - CONFIG-04
+  - CONFIG-05
+  - IDENT-01
+  - IDENT-02
+  - IDENT-03
+  - IDENT-05
+  - OPS-02
+  - SEC-01
+  - SEC-03
+  artifact_paths: *id001

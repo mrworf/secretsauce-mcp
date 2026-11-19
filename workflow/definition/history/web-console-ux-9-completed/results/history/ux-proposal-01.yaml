@@ -1,0 +1,158 @@
+stage: product-ux
+status: DECISION_REQUIRED
+mode: full
+validated_inputs:
+  - path: docs/web-console-prd.md
+    revision: sha256:cb8d09474431d3bdd082466beac07163051bd2cb00639433f8a87bf85b46c3d8
+  - path: product/security/web-console-security-contract.md
+    revision: sha256:95e342c77316f1697540fa8da29c6dd6333d6b6d3356b326c4dde921bca4540d
+  - path: product/architecture/web-console-state-contract.md
+    revision: sha256:54956edc26dbcebcb48ecca0697a4695012d61488fa2297e56b6c04c9cbaa858
+  - path: docs/web-console-prd-coverage.md
+    revision: sha256:1cb9db8350470b5ddca5bc63e3005fb13df4900535b93db6541dc1f636b3598c
+  - path: docs/web-console-prd-user-journey-audit.md
+    revision: sha256:168c61f3b4e2223c14a1e706f36e6762dc2da23bf06a4f0b48cc0fffbb966987
+artifact_changes:
+  - path: workflow/definition/drafts/product-ux/web-console-initial/edit-desktop.png
+    summary: Initial unapproved UX direction proposal and representative visual evidence
+  - path: workflow/definition/drafts/product-ux/web-console-initial/edit.html
+    summary: Initial unapproved UX direction proposal and representative visual evidence
+  - path: workflow/definition/drafts/product-ux/web-console-initial/experience-brief.yaml
+    summary: Initial unapproved UX direction proposal and representative visual evidence
+  - path: workflow/definition/drafts/product-ux/web-console-initial/index.md
+    summary: Initial unapproved UX direction proposal and representative visual evidence
+  - path: workflow/definition/drafts/product-ux/web-console-initial/recovery-desktop.png
+    summary: Initial unapproved UX direction proposal and representative visual evidence
+  - path: workflow/definition/drafts/product-ux/web-console-initial/recovery-narrow.png
+    summary: Initial unapproved UX direction proposal and representative visual evidence
+  - path: workflow/definition/drafts/product-ux/web-console-initial/recovery.html
+    summary: Initial unapproved UX direction proposal and representative visual evidence
+  - path: workflow/definition/drafts/product-ux/web-console-initial/review-desktop.png
+    summary: Initial unapproved UX direction proposal and representative visual evidence
+  - path: workflow/definition/drafts/product-ux/web-console-initial/review.html
+    summary: Initial unapproved UX direction proposal and representative visual evidence
+  - path: workflow/definition/drafts/product-ux/web-console-initial/services-desktop.png
+    summary: Initial unapproved UX direction proposal and representative visual evidence
+  - path: workflow/definition/drafts/product-ux/web-console-initial/services.html
+    summary: Initial unapproved UX direction proposal and representative visual evidence
+  - path: workflow/definition/drafts/product-ux/web-console-initial/styles.css
+    summary: Initial unapproved UX direction proposal and representative visual evidence
+  - path: workflow/definition/results/ux.yaml
+    summary: UX proposal and explicit direction approval request; no canonical
+      authority published
+changed_paths:
+  - workflow/definition/drafts/product-ux/web-console-initial/edit-desktop.png
+  - workflow/definition/drafts/product-ux/web-console-initial/edit.html
+  - workflow/definition/drafts/product-ux/web-console-initial/experience-brief.yaml
+  - workflow/definition/drafts/product-ux/web-console-initial/index.md
+  - workflow/definition/drafts/product-ux/web-console-initial/recovery-desktop.png
+  - workflow/definition/drafts/product-ux/web-console-initial/recovery-narrow.png
+  - workflow/definition/drafts/product-ux/web-console-initial/recovery.html
+  - workflow/definition/drafts/product-ux/web-console-initial/review-desktop.png
+  - workflow/definition/drafts/product-ux/web-console-initial/review.html
+  - workflow/definition/drafts/product-ux/web-console-initial/services-desktop.png
+  - workflow/definition/drafts/product-ux/web-console-initial/services.html
+  - workflow/definition/drafts/product-ux/web-console-initial/styles.css
+  - workflow/definition/results/ux.yaml
+findings: []
+questions:
+  - id: UX-DESIGN-001
+    kind: UX_DIRECTION_APPROVAL
+    blocking: true
+    stage: ux
+    resolution_category: PRODUCT_DECISION
+    resolution_owner: product_owner
+    depends_on: []
+    affected_requirement: UX-02
+    affected_requirements:
+      - UX-01
+      - UX-02
+      - UX-03
+      - UX-04
+      - CONFIG-03
+      - BACKUP-05
+    affected_surfaces:
+      - service-list
+      - service-edit
+      - apply-review
+      - recovery-review
+      - narrow-recovery
+    question: Approve the proposed calm, moderately dense visual and interaction
+      direction shown in the service, edit, review and recovery concepts?
+    reason: The PRD settles navigation and behavior; explicit Owner approval of
+      consequential composition, disclosure, risk prominence and visual
+      character is required before canonical UX synthesis.
+    recommendation: "Approve this direction: aligned service lists, grouped forms
+      with advanced disclosure, explicit impact review, and calm guided recovery
+      that reflows to one column."
+    alternatives:
+      - option: Refine the proposal
+        tradeoff: Name a consequential concern in hierarchy, density, disclosure or
+          character; revise these draft concepts before synthesis.
+    options:
+      - Approve this direction
+      - Refine the proposal
+    proposal_paths:
+      - workflow/definition/drafts/product-ux/web-console-initial/experience-brief.yaml
+      - workflow/definition/drafts/product-ux/web-console-initial/index.md
+      - workflow/definition/drafts/product-ux/web-console-initial/edit-desktop.png
+      - workflow/definition/drafts/product-ux/web-console-initial/recovery-desktop.png
+      - workflow/definition/drafts/product-ux/web-console-initial/recovery-narrow.png
+      - workflow/definition/drafts/product-ux/web-console-initial/review-desktop.png
+      - workflow/definition/drafts/product-ux/web-console-initial/services-desktop.png
+    approval_consequence: Publish canonical UX system and observable conformance
+      criteria; enables downstream architecture/security review without
+      authorizing implementation.
+affected_requirements:
+  - UX-01
+  - UX-02
+  - UX-03
+  - UX-04
+  - CONFIG-01
+  - CONFIG-02
+  - CONFIG-03
+  - POLICY-02
+  - POLICY-04
+  - BACKUP-05
+affected_artifacts:
+  - workflow/definition/drafts/product-ux/web-console-initial/experience-brief.yaml
+  - workflow/definition/drafts/product-ux/web-console-initial/index.md
+reconciliation_required: false
+change_impact:
+  product: false
+  user_journeys: false
+  ux: false
+  architecture: false
+  security: false
+ux_handoff:
+  manifest: null
+  experience_brief:
+    path: workflow/definition/drafts/product-ux/web-console-initial/experience-brief.yaml
+    revision: draft-1
+  approval:
+    status: pending
+    decision_refs: []
+    question_id: UX-DESIGN-001
+  authoritative_artifacts_changed: []
+  downstream_freshness:
+    affected_domains: []
+    potentially_stale_artifacts: []
+  approval_gate:
+    skill_path: /home/ha/.codex/skills/product-ux/SKILL.md
+    quote: Only after approval, synthesize or revise the canonical UX system, its
+      manifest, the approved experience brief, and observable UX conformance
+      checklist.
+  inspection:
+    method: Local isolated headless Chromium rendering and direct view_image inspection
+    images_inspected:
+      - workflow/definition/drafts/product-ux/web-console-initial/edit-desktop.png
+      - workflow/definition/drafts/product-ux/web-console-initial/recovery-desktop.png
+      - workflow/definition/drafts/product-ux/web-console-initial/recovery-narrow.png
+      - workflow/definition/drafts/product-ux/web-console-initial/review-desktop.png
+      - workflow/definition/drafts/product-ux/web-console-initial/services-desktop.png
+    limitations: No production runtime, exhaustive interaction, screen-reader or
+      accessibility conformance validation; in-app Browser unavailable.
+transaction:
+  parent_commit: 9c4fcb28144efa0f39de91ff20660fbae4cd8de1
+  child_commit: false
+  owner: product-definition-orchestrator

@@ -1,0 +1,207 @@
+stage: ux
+status: DECISION_REQUIRED
+validated_inputs:
+- path: workflow/feedback/PO-FEEDBACK-2026-10-11-002/feedback.yaml
+  revision: sha256:515a53d2c56f256708cef2fce9add362aa20f2fbcf1f6d34b4ff1a1dfdb9d53b
+- path: workflow/feedback/PO-FEEDBACK-2026-10-11-002/research.md
+  revision: sha256:728ba278ea6d1fb47223e441b54c791de54e3539473916c43033b07bf3bfb277
+- path: docs/web-console-prd.md
+  revision: sha256:bc908afcb8c40184dfcccdf296672bc559f5499236ed37f351a82f34ad0e9843
+- path: docs/web-console-prd-coverage.md
+  revision: sha256:ee1f5e26989ba653c007b67ef5b36d3d06922cc24db49b3c2eb8b4959620bb7e
+- path: docs/web-console-prd-user-journey-audit.md
+  revision: sha256:22f0693cdda9a055ed8013a4a23ccf8710918a89a3417e6a0d902df4a7bef9a2
+- path: product/ux/manifest.yaml
+  revision: sha256:8c2881d271b7ca836fbf9ca28e2687e2c049004fdca9093b7f9f3f6c80f43132
+- path: product/ux/experience-brief.yaml
+  revision: sha256:b8371e8d77f398cd44c205320b7d73f860b0e48c152d0ad2425b5bdc9902121f
+- path: product/ux/01-information-architecture.md
+  revision: sha256:2f7bc646c1f518e424378a4b47df945d5b7eb8c72f1c2aef7f07879929a40ddf
+- path: product/ux/02-interaction-patterns.md
+  revision: sha256:0346e83574043bcac2927c197c5639624d6d405961e9226e4a5f15b02908f331
+- path: product/architecture/web-console-state-contract.md
+  revision: sha256:80835e44cdd550f10638bb757f183868804f9678cac4626a7ac84abb27ff0d32
+- path: product/security/web-console-security-contract.md
+  revision: sha256:2f46343c6d3206b48c46212de6ba84a308b7f2a921cfba7525d2b212f3e4f5bc
+artifact_changes:
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/applied-desktop.png
+  change: Created unapproved bounded UX proposal; not canonical authority
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/applied.html
+  change: Created unapproved bounded UX proposal; not canonical authority
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/backups-desktop.png
+  change: Created unapproved bounded UX proposal; not canonical authority
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/backups.html
+  change: Created unapproved bounded UX proposal; not canonical authority
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/design-contract.md
+  change: Created unapproved bounded UX proposal; not canonical authority
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/email-desktop.png
+  change: Created unapproved bounded UX proposal; not canonical authority
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/email-narrow.png
+  change: Created unapproved bounded UX proposal; not canonical authority
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/email-unencrypted-desktop.png
+  change: Created unapproved bounded UX proposal; not canonical authority
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/email-unencrypted.html
+  change: Created unapproved bounded UX proposal; not canonical authority
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/email.html
+  change: Created unapproved bounded UX proposal; not canonical authority
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/experience-brief.yaml
+  change: Created unapproved bounded UX proposal; not canonical authority
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/health-desktop.png
+  change: Created unapproved bounded UX proposal; not canonical authority
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/health.html
+  change: Created unapproved bounded UX proposal; not canonical authority
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/index.md
+  change: Created unapproved bounded UX proposal; not canonical authority
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/people-desktop.png
+  change: Created unapproved bounded UX proposal; not canonical authority
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/people-narrow.png
+  change: Created unapproved bounded UX proposal; not canonical authority
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/people.html
+  change: Created unapproved bounded UX proposal; not canonical authority
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/person-desktop.png
+  change: Created unapproved bounded UX proposal; not canonical authority
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/person.html
+  change: Created unapproved bounded UX proposal; not canonical authority
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/render-checks.json
+  change: Created unapproved bounded UX proposal; not canonical authority
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/research.md
+  change: Created unapproved bounded UX proposal; not canonical authority
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/review-desktop.png
+  change: Created unapproved bounded UX proposal; not canonical authority
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/review.html
+  change: Created unapproved bounded UX proposal; not canonical authority
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/service-desktop.png
+  change: Created unapproved bounded UX proposal; not canonical authority
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/service.html
+  change: Created unapproved bounded UX proposal; not canonical authority
+- path: workflow/definition/drafts/product-ux/web-console-feedback-002/styles.css
+  change: Created unapproved bounded UX proposal; not canonical authority
+changed_paths:
+- workflow/definition/drafts/product-ux/web-console-feedback-002/applied-desktop.png
+- workflow/definition/drafts/product-ux/web-console-feedback-002/applied.html
+- workflow/definition/drafts/product-ux/web-console-feedback-002/backups-desktop.png
+- workflow/definition/drafts/product-ux/web-console-feedback-002/backups.html
+- workflow/definition/drafts/product-ux/web-console-feedback-002/design-contract.md
+- workflow/definition/drafts/product-ux/web-console-feedback-002/email-desktop.png
+- workflow/definition/drafts/product-ux/web-console-feedback-002/email-narrow.png
+- workflow/definition/drafts/product-ux/web-console-feedback-002/email-unencrypted-desktop.png
+- workflow/definition/drafts/product-ux/web-console-feedback-002/email-unencrypted.html
+- workflow/definition/drafts/product-ux/web-console-feedback-002/email.html
+- workflow/definition/drafts/product-ux/web-console-feedback-002/experience-brief.yaml
+- workflow/definition/drafts/product-ux/web-console-feedback-002/health-desktop.png
+- workflow/definition/drafts/product-ux/web-console-feedback-002/health.html
+- workflow/definition/drafts/product-ux/web-console-feedback-002/index.md
+- workflow/definition/drafts/product-ux/web-console-feedback-002/people-desktop.png
+- workflow/definition/drafts/product-ux/web-console-feedback-002/people-narrow.png
+- workflow/definition/drafts/product-ux/web-console-feedback-002/people.html
+- workflow/definition/drafts/product-ux/web-console-feedback-002/person-desktop.png
+- workflow/definition/drafts/product-ux/web-console-feedback-002/person.html
+- workflow/definition/drafts/product-ux/web-console-feedback-002/render-checks.json
+- workflow/definition/drafts/product-ux/web-console-feedback-002/research.md
+- workflow/definition/drafts/product-ux/web-console-feedback-002/review-desktop.png
+- workflow/definition/drafts/product-ux/web-console-feedback-002/review.html
+- workflow/definition/drafts/product-ux/web-console-feedback-002/service-desktop.png
+- workflow/definition/drafts/product-ux/web-console-feedback-002/service.html
+- workflow/definition/drafts/product-ux/web-console-feedback-002/styles.css
+- workflow/definition/results/feedback2-ux-resolution.yaml
+findings: []
+questions:
+- id: UX-DESIGN-003
+  kind: UX_DIRECTION_APPROVAL
+  blocking: true
+  affected_requirement: UX-02/03/04; IDENT-05; BACKUP-02
+  affected_surfaces:
+  - Settings
+  - People & Access
+  - service creation
+  question: Approve the proposed populated-form Settings and account list/detail direction shown
+    in feedback-002-draft-1?
+  reason: Changes editing structure, save-state presentation, terminology and account information
+    hierarchy beyond previously approved UX2.
+  recommendation: Populated current-value forms; Review changes then Apply, with existing save-only
+    capability labeled Save for later; useful wider layouts; compact account list and full detail.
+  alternatives:
+  - option: retain summary-first editing
+    tradeoff: Preserves read-first scanning but keeps a separate Edit step and duplicate value presentation.
+  options:
+  - approve recommended direction
+  - request adjustments
+  proposal_paths:
+  - workflow/definition/drafts/product-ux/web-console-feedback-002/index.md
+  - workflow/definition/drafts/product-ux/web-console-feedback-002/experience-brief.yaml
+  - workflow/definition/drafts/product-ux/web-console-feedback-002/design-contract.md
+affected_requirements:
+- UX-01
+- UX-02
+- UX-03
+- UX-04
+- IDENT-04
+- IDENT-05
+- IDENT-06
+- CONFIG-03
+- BACKUP-02
+- SECRES-06
+- SECRES-07
+- STATE-07
+- STATE-08
+affected_artifacts:
+- product/ux/manifest.yaml
+- product/ux/experience-brief.yaml
+- product/ux/03-responsive-and-platform.md
+- product/ux/06-feature-exceptions.md
+- product/ux/02-interaction-patterns.md
+- product/ux/04-visual-system.md
+- product/ux/07-acceptance-checklist.md
+- product/ux/05-accessibility.md
+- product/ux/00-overview.md
+- product/ux/01-information-architecture.md
+reconciliation_required: false
+change_impact:
+  product: false
+  user_journeys: false
+  ux: false
+  architecture: false
+  security: false
+ux_handoff:
+  manifest:
+    path: product/ux/manifest.yaml
+    revision: web-console-ux-2
+  experience_brief:
+    path: workflow/definition/drafts/product-ux/web-console-feedback-002/experience-brief.yaml
+    revision: feedback-002-draft-1
+    status: proposed
+  approval:
+    status: pending
+    decision_refs: []
+    pending_decision: UX-DESIGN-003
+  authoritative_artifacts_changed: []
+  downstream_freshness:
+    affected_domains: []
+    potentially_stale_artifacts: []
+  consumer: product-definition-orchestrator
+  approval_requirement:
+    skill: /home/ha/.codex/skills/product-ux/SKILL.md
+    quote: Obtain explicit approval of the experience direction.
+    application: This proposal changes Settings editing/task progression and People hierarchy. Existing
+      UX2 approval does not cover these new concepts.
+validation:
+  method: Local Chromium rendering and direct concept visual inspection; narrow document and text-range
+    checks
+  checks_path: workflow/definition/drafts/product-ux/web-console-feedback-002/render-checks.json
+  canonical_ux_changed: false
+  production_tests_run: false
+  limitations: Static design concepts; no live state, implementation correctness or complete accessibility
+    certification.
+git_ownership:
+  parent_commit: 532b2dd8c4631dccd9463194d3daa36d12722732
+  commit_owner: product-definition-orchestrator
+  child_commit: false
+  pre_existing_dirty_paths:
+  - product/architecture/web-console-state-contract.md
+  - product/security/web-console-security-contract.md
+  - workflow/definition/decisions.md
+  - workflow/definition/open-questions.md
+  - workflow/definition/state.yaml
+  - workflow/definition/results/feedback2-architecture-resolution.yaml
+  - workflow/definition/results/feedback2-security-resolution.yaml
+  - test-results/

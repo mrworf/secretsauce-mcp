@@ -69,7 +69,7 @@ UX-C42 requires visual implementation evidence, not new release or platform cert
 
 | ID | Observable check | Governing UX rules | Product trace |
 | --- | --- | --- | --- |
-| UX-C43 | Service rows expose real links and independent action targets, Active/Inactive/Archived plus saved Draft/list readiness, explicit unavailable activation and confirmed Delete with retained archive/history and restore-as-Inactive consequence. | UX-IA09, UX-A07, UX-V06 | CONFIG-05, UX-01/03, REC-DEC-010 |
+| UX-C43 | Service rows expose real links and independent action targets, Active/Inactive/Archived plus saved Draft/list readiness, explicit unavailable activation and confirmed archive Delete with retained history/restore-as-Inactive consequence, plus a distinct typed permanent Delete for Archived services under UX-IN25. | UX-IA09, UX-A07, UX-V06 | CONFIG-05, UX-01/03, REC-DEC-010 |
 | UX-C44 | Overview shows grouped actual current values; Configuration shows one populated section with a single full-service Guided/Advanced switch; all exact literals/custom options and imported references survive representation changes. | UX-IA09, UX-IN15 | CONFIG-01/03, BASE-01, POLICY-02 |
 | UX-C45 | Creation steps and browser Back/Forward restore safe input/location; adding repeated items focuses the new item; unchanged navigation/testing produces no false dirty warning. | UX-IN15, UX-A07 | CONFIG-01/03, UX-03/04 |
 | UX-C46 | Destinations explain matching and visibly scope certificate defaults/overrides; focused advanced settings retain all options without nested fold-outs; API-doc and placement help explains its purpose with secret-free examples. | UX-IN15, UX-IA09 | BASE-01, CONFIG-01, AUTHZ-04 |
@@ -129,7 +129,7 @@ These are future observable checks, not executed acceptance. Keep audit coverage
 | ID | Observable check | Governing UX rules | Product trace |
 | --- | --- | --- | --- |
 | UX-C72 | Every editable Settings section has one white persistent status/Discard/Save for later/Review footer, no duplicate top bar, correct disabled/no-op and read-only states, and safe multi-form/loss scope. Footer never obscures keyboard focus or content. | UX-IN20, UX-R10, UX-A11 | UX-02, PO-FB-203 |
-| UX-C73 | Credential summary/editor/value tasks use exact set/not-set labels and preserve metadata/attention; each bordered card has named configuration removal distinct from immediate value Clear/Delete, with Add beneath cards. | UX-IN20, UX-V10, UX-EX03 | CONFIG-02, PO-FB-205/208/209 |
+| UX-C73 | Credential summary/editor/value tasks use exact set/not-set labels and preserve metadata/attention; each bordered card has named configuration-removal button/modal distinct from immediate value Clear/Delete, exact Apply-bound deletion consequence, with Add beneath cards. | UX-IN20, UX-V10, UX-EX03 | CONFIG-02, PO-FB-205/208/209 |
 | UX-C74 | Policy default and one explanation box contain all five required semantics, with only the exact short reorder help. Give access and Choose a user or client preserve eligibility, confirmations and execution boundaries. | UX-IN21, UX-R10 | POLICY-01, PO-FB-212/214/215 |
 | UX-C75 | Main/per-service Activity share four-comparator removable chips, literal matching, positive OR/exclusion veto/field AND, bounds and duplicate modal without lost input. Time presets fill editable fixed UTC bounds; Search/Clear preserve hard context. | UX-IA12, UX-IN22, UX-A11 | AUDIT-02.a, PO-FB-217–229/232 |
 | UX-C76 | Displayed count/results/export retain last-successful criteria despite edits/failure, searched offset and current snapshot/cap/truncation are explicit; list/detail/export agree without unauthorized records or secret-bearing metadata. Existing event cards remain. | UX-IA12, UX-IN22 | AUDIT-02.b, PO-FB-230/231 |
@@ -150,3 +150,17 @@ These checks are future conformance requirements, not executed runtime acceptanc
 | UX-C83 | Colliding imports visibly create separate names/identities and empty access; no mapping flow; old imported drafts recover without live access change or lost unrelated work, and pending resets are explained. | UX-IN24 | PO-FB-253–255/263–264, S9-03/04 |
 
 Delivery must inspect actual matching desktop/narrow/enlarged-text states against unchanged approved appearance plus UX-G10 delta. These are requirements, not completed browser evidence.
+
+
+## UX10 bounded refinement checks
+
+| ID | Observable requirement | UX authority | Product source |
+| --- | --- | --- | --- |
+| UX-C84 | Access & policy shows a distinct named nonblocking no-access warning; valid zero-access review/Apply remains available and missing fields keep their separate markers. | UX-IN23, UX-V11, UX-A13 | PO-FB-265, AUTHZ-02 |
+| UX-C85 | Named credential-removal button opens shared Cancel/confirm modal; review explains actual Apply-bound saved-value deletion, including saved-draft-only removal, while cancel/discard and unrelated orphan values are preserved. Guided/Advanced consequences agree. | UX-IN20/25, UX-EX03 | PO-FB-266–270, D10-01/02 |
+| UX-C86 | Archived permanent deletion has readable target, displayed typed challenge, disabled-until-matching final action and retained audit/backup notice; cancel/stale/unknown outcomes are truthful and non-Archived roles/states cannot bypass the gate. | UX-IN25, UX-R12, UX-A13 | PO-FB-279–281, D10-03–05 |
+| UX-C87 | Wide sign-in remains compact while admin workspace remains wide; Recovery code signs in normally and Replace authenticator explains its distinct existing enrollment/revocation task without losing either flow. | UX-IN26, UX-R12 | PO-FB-271–274, IDENT-02 |
+| UX-C88 | Quoted generic saved-value helper is absent across equivalent password forms; task-specific requirements and blank/write-only value behavior remain. Settings loading/loaded/error content stays in its designated region throughout switching. | UX-IN26, UX-R12, UX-A13 | PO-FB-275–277, UX-02/03 |
+| UX-C89 | Overview omits Edit configuration/Continue setup tab duplicates while actual review and precise field-fix links remain; current header/lifecycle/Draft and guarded main navigation stay consistent across four tabs. | UX-IA09, UX-G11 | PO-FB-278, CONFIG-01/05 |
+
+Delivery evidence must compare actual matching wide/narrow populated states, no-access versus missing-field states, both destructive dialogs, compact sign-in/replacement, and delayed/error Settings transitions against the preserved visual references plus UX10 delta. Functional tests or screenshot existence alone do not prove graphical conformance. This checklist is not aggregate release acceptance.

@@ -3,40 +3,44 @@ status: PASS
 mode: targeted_revalidation
 validated_inputs:
 - path: docs/web-console-prd.md
-  revision: sha256:dab49dc650ecbc55c3319532ad8ee590767d3938e8772676da9a6ddf047ad32d
-- path: workflow/reconciliation/REC-RUN-014/reconciliation-result.yaml
-  revision: sha256:a6bc873cdfd7c32298a68205659f359f48af480a26b53926624741ace7346e03
-- path: workflow/reconciliation/REC-RUN-014/service-semantics-basis.md
-  revision: sha256:eb6f3e4433b6fecac9e42e9673caeeef196b1164d433a6cb4e3c18f0ce2c5cb9
+  revision: sha256:c9c0f4890a94e3a82d6d01fb770fe5f0bde689cd44362af77400c71f003be199
+- path: workflow/reconciliation/REC-RUN-015/reconciliation-result.yaml
+  revision: sha256:fb2118f64287f6b2791c2ebeadae0974854a6cc68b6dc14bb13d2ca75415eb88
+- path: workflow/reconciliation/REC-RUN-015/deletion-semantics-basis.md
+  revision: sha256:8b731120243d2c75c7f5af5d6c0a4dfe1e6da7e2a9cba81a8e4d8ce479749995
 - path: product/architecture/web-console-state-contract.md
-  revision: sha256:3d7ed28c8335a6d142533c253e061e14a30ada5b9e25be341fb1c172d706c955
+  revision: sha256:1c7642c7b87bba4c7b55c8a5520eac002bd2727d8729f9eb0c51ecec31f3f9c6
 - path: product/security/web-console-security-contract.md
-  revision: sha256:b6afd24f5789b0f8738ca952000f8fc3433d82967f2f8bce42df81fbc23c61d5
-- path: src/consoleServices.ts
-  revision: sha256:bdd63483827f4fa62e55bc3362837953f1964c7635d1ad8ed0df306d58bd9905
-- path: src/consoleMigration.ts
-  revision: sha256:905f74a27fb72f69e8fc9997252a78c0177d6a8cbcb5989f04730aa56c9e3b77
-- path: test/console-services.test.ts
-  revision: sha256:8358ab9e8e3212abf7ca9cf28bbbe66aba544ebab4a8fd7f9d2626db0c01bb66
-- path: test/console-migration.test.ts
-  revision: sha256:c56418e5d7c0f1b88ec7b22bcbab75491cc7b873d2954f555f840af835f9b212
+  revision: sha256:f02d7b7bdedb1108c7461f15a0d3cffeab93150ecac34fa0ff9c66b2e24c8268
 - path: product/ux/manifest.yaml
-  revision: sha256:e23bf3fef2a825a14573d919007c8cdcf42a717cedff18ec10093b11537d6f1e
+  revision: sha256:2f015fd09c2aec3150010a748a9c85fd78bcd2a9e0d7de93049a89ebda847042
 - path: product/ux/01-information-architecture.md
-  revision: sha256:2e091bfd97582805d4e8dd8367bddf2a4a40f1e0352e6494a73107a9f3575060
+  revision: sha256:c455bc6c5810b6db376ea07206e5df4a53615d96483e026a1052591d4ead54e4
 - path: product/ux/02-interaction-patterns.md
-  revision: sha256:5ec48e51de819eb34ca65ca2a9882eecac4131d435e0890d755e10d06e5f9539
+  revision: sha256:2198d5ef774cb70017e43843f1d8150a149599fb165732ad3397192dc691b218
 - path: docs/web-console-prd-coverage.md
-  revision: sha256:819366039171c186656ea2efaa569d0b8b23ef5b1004118ed91a6cd0cd4e09fb
+  revision: sha256:2832aa3fb941b8397428f5113bd862a25f554a956888d9f7addda6da567b8258
 - path: docs/web-console-prd-user-journey-audit.md
-  revision: sha256:30f765a025f65df67a5139e02933f3843943ec85ccd0de48c2c2e46a564c0a77
+  revision: sha256:3f593964f65572ff47cd74e058b73f9d07bf3d090fc795d5911dac38d0b5c012
+- path: workflow/definition/decisions.md
+  revision: sha256:9dea3ea10de328f6a7fb2e51fc42018c5a0d5747a2ada943eff6d74dbdd32e2a
+- path: src/consoleServices.ts
+  revision: sha256:39f2024d73be9a4a757955161e3f6c911f3637526642cb5f381363aa22af3091
+- path: src/consoleStore.ts
+  revision: sha256:b4d08f11b58728cdbc9b65cd49be88b9c11db04e6ef10ca37c5c1d4263e8cbe9
+- path: src/consoleHistory.ts
+  revision: sha256:cf6865592bb51fd3b7d348a82d4856b1bcc6530489c0797a5b3b05d8d07e9315
+- path: src/consoleRestore.ts
+  revision: sha256:aab8fa0a54ad29e916e17dad9e548e8e32694dae7e6fc12da2dfd0be345b586e
+- path: test/console-services.test.ts
+  revision: sha256:a407678f21ea1e9a2aa949a7ceb39911be65bf95d86af79eceb955b38db439cf
 artifact_changes:
 - path: product/security/web-console-security-contract.md
-  summary: REC014 bounded adopted service-state/import derivation; prior conclusions preserved.
-  revision: sha256:b6afd24f5789b0f8738ca952000f8fc3433d82967f2f8bce42df81fbc23c61d5
+  summary: REC015 adopted scoped Apply cleanup and Archived deletion; prior conclusions preserved.
+  revision: sha256:f02d7b7bdedb1108c7461f15a0d3cffeab93150ecac34fa0ff9c66b2e24c8268
 - path: product/security/web-console-security-review.md
-  summary: REC014 bounded adopted service-state/import derivation; prior conclusions preserved.
-  revision: sha256:d0784d2d656c7774c73348fd78df3be7e8e8572d6d487936f8b6511144752040
+  summary: REC015 adopted scoped Apply cleanup and Archived deletion; prior conclusions preserved.
+  revision: sha256:b4e024c0c5abed4cd2c3dca53bfe71c109c2a97451403fb90ba3c521f344c8b7
 changed_paths:
 - product/security/web-console-security-contract.md
 - product/security/web-console-security-review.md
@@ -86,14 +90,15 @@ findings:
   reconciliation_required: false
 questions: []
 affected_requirements:
-- CONFIG-01
+- CONFIG-02
 - CONFIG-03
 - CONFIG-05
-- MIGRATE-01
-- MIGRATE-03
 - AUTHZ-02
-- STATE-10
-- SECRES-09
+- AUDIT-01
+- BACKUP-01
+- BACKUP-05
+- STATE-11
+- SECRES-10
 affected_artifacts:
 - product/security/web-console-security-contract.md
 - product/security/web-console-security-review.md
@@ -105,19 +110,19 @@ change_impact:
   architecture: false
   security: false
 validation:
-  scope: 'REC014 only: proposal discard, incomplete inspection, independent import allocation, legacy mapping retirement;
-    no broad audit'
+  scope: 'REC015 only: explicit removal intent, atomic Apply cleanup, typed Archived deletion, incarnation/unknown/recovery/old-reader
+    boundaries'
   checks:
-  - Proposal removal preserves identity/display label, applied state, live assignments and independent values.
-  - Incomplete inspection has no usable approval authority; empty grants do not permit execution.
-  - Names/IDs allocate independently and atomically; direct/legacy mapping cannot grant.
-  - Legacy proposed reset is visible, live grants preserved, reviews invalidated; old-reader/restore boundaries
-    retained.
-  - Final UX9 IN23/24 and current coverage/journey service supplements align with STATE-10/SECRES-09; exact source
-    hashes refreshed without redesign.
-  application_tests: 'Not run: documentation-only definition review. Code/tests inspected; delivery validation required.'
+  - D10-01–05 adopted consistently into STATE-11/SECRES-10; no new role or architecture choice.
+  - Saved-draft-only removal is covered; unrelated orphans and remaining references preserved.
+  - Review exact effects bind current values/incarnations; cleanup commits with configuration.
+  - Typed Archived deletion retains historical evidence/backups and rejects stale/reused targets.
+  - Current UX-IN25/26, coverage UX10-C01–07 and journey ACT140–145 align; no runtime certification.
+  - Preserve SMTP exception, zero-access authorization and historical accepted risks.
+  application_tests: 'Not run: documentation-only definition review; future delivery acceptance remains required.'
   upstream_authority_changes: false
   commit_owner: product-definition-orchestrator
 preservation_basis:
-  baseline: workflow/definition/history/web-console-ux-8-completed/results/security.yaml
-  scope: Historical findings and SEC-DEF-001 preserved; no runtime requalification.
+  baseline: workflow/definition/history/web-console-ux-9-completed/results/security.yaml
+  scope: Prior findings and accepted risks preserved; no new exploit, broad audit or runtime requalification. All
+    impact false after scoped cross-domain alignment; no remaining stale dependent domain from these clarifications.

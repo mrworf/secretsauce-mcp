@@ -1,0 +1,98 @@
+stage: product-ux
+status: DECISION_REQUIRED
+validated_inputs:
+- path: workflow/feedback/PO-FEEDBACK-2026-10-18-003/feedback.yaml
+  revision: sha256:c49b271e03e59e92d16bf6d508356665694797bb1677edd951bd0724b3b106e8
+- path: product/ux/manifest.yaml
+  revision: sha256:644ce9361f8f39f6d0573ab30e279ab1c9974f2d87ade01e39648c7a9ee4f28a
+- path: product/ux/01-information-architecture.md
+  revision: sha256:6516927a729d0bd3e353470f4df17e7fc218699f512c5f50e3930cb21610163c
+- path: product/ux/02-interaction-patterns.md
+  revision: sha256:287094b0d10d8902526ab1e12442b8d874b1ffe8cdea30d47ed95d94f9bee1ec
+- path: product/ux/06-feature-exceptions.md
+  revision: sha256:427142201d4c4d0e6fc17c19d957f6f4eb8355c651554f0892aefcc1590468cd
+- path: docs/web-console-prd.md
+  revision: sha256:046771c8ca506a693e41e6085dbc3d850532a01960421f60d49ab74274fd374b
+- path: evidence/ux-audit/UX-AUDIT-2026-11-16-001/manifest.yaml
+  revision: sha256:dbbd12b947fa9200d151d78fb37608bd325977eb364b8cc5e04af4f6f6787532
+- path: src/consoleOperations.ts
+  revision: sha256:cf1939d27bfc77198165b674ef740811657940cfb83778032ed1ea97492f4d26
+artifact_changes: []
+changed_paths:
+- workflow/definition/drafts/product-ux/web-console-feedback-007/index.md
+- workflow/definition/drafts/product-ux/web-console-feedback-007/search-desktop.png
+- workflow/definition/drafts/product-ux/web-console-feedback-007/limits-narrow.png
+- workflow/definition/drafts/product-ux/web-console-feedback-007/styles.css
+- workflow/definition/drafts/product-ux/web-console-feedback-007/settings.html
+- workflow/definition/drafts/product-ux/web-console-feedback-007/limits-desktop.png
+- workflow/definition/results/feedback7-ux-assessment.md
+- workflow/definition/results/feedback7-ux-resolution.yaml
+findings:
+- id: UX-F7-001
+  significance: MATERIAL
+  summary: Limits/search consequential navigation proposal requires selection; settled
+    shared-pattern corrections remain independently resolved.
+  affected_requirement: UX-02
+  affected_artifact: product/ux/01-information-architecture.md
+  evidence: workflow/definition/drafts/product-ux/web-console-feedback-007/index.md
+  why_it_matters: Suggestions must not silently become active UX authority.
+  local_correction_possible: false
+  reconciliation_required: true
+questions:
+- id: UX-DESIGN-006
+  kind: UX_DIRECTION_APPROVAL
+  blocking: true
+  affected_requirement: UX-02
+  affected_surfaces:
+  - Settings / Limits
+  - Settings search
+  question: Approve five selectable Limits categories and a persistent Search settings
+    button that opens the search dialog, as shown in the proposal?
+  reason: The confirmed feedback suggests these mechanisms but does not select them.
+    They change navigation and disclosure rather than routine control styling.
+  recommendation: Adopt both bounded refinements while preserving the existing shell,
+    all supported fields and unsaved-change safeguards.
+  options:
+  - Approve both
+  - Revise Limits navigation
+  - Revise search interaction
+  proposal_paths:
+  - workflow/definition/drafts/product-ux/web-console-feedback-007/index.md
+  - workflow/definition/drafts/product-ux/web-console-feedback-007/limits-desktop.png
+  - workflow/definition/drafts/product-ux/web-console-feedback-007/search-desktop.png
+  - workflow/definition/drafts/product-ux/web-console-feedback-007/limits-narrow.png
+  depends_on: []
+  source_decisions:
+  - REC-DEC-011
+  - REC-DEC-012
+affected_requirements:
+- UX-01
+- UX-02
+- UX-03
+- CONFIG-03
+- CONFIG-04
+- IDENT-04
+- OPS-02
+affected_artifacts:
+- product/ux/01-information-architecture.md
+- product/ux/02-interaction-patterns.md
+- product/ux/07-acceptance-checklist.md
+reconciliation_required: true
+change_impact:
+  product: false
+  user_journeys: true
+  ux: true
+  architecture: false
+  security: false
+ux_handoff:
+  manifest:
+    path: product/ux/manifest.yaml
+    revision: web-console-ux-6
+  approval:
+    status: proposal_pending
+    decision_refs:
+    - UX-DESIGN-006
+  authoritative_artifacts_changed: []
+  settled_resolution: workflow/definition/results/feedback7-ux-assessment.md
+  boundary: Output-only design resolution; canonical synthesis/revalidation remains
+    pending reconciliation. Not implementation or release acceptance.

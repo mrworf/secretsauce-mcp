@@ -1,0 +1,96 @@
+stage: software-architect-review
+status: RECONCILIATION_REQUIRED
+scope: Bounded REC-DEC-008 architecture resolution; not final architecture-stage review.
+validated_inputs:
+- path: docs/web-console-prd.md
+  revision: sha256:00e6e2a9ec4661695f6aa4f01f86e8963739579bd147c7d73fa67870dda41e4b
+- path: workflow/feedback/PO-FEEDBACK-2026-10-17-001/feedback.yaml
+  revision: sha256:9b50a7d3dc87a3f2d45832b0deee4402b6e84b65092680a57f5bfbf8c7fbe0bf
+- path: product/architecture/web-console-state-contract.md
+  revision: sha256:80835e44cdd550f10638bb757f183868804f9678cac4626a7ac84abb27ff0d32
+- path: product/security/web-console-security-contract.md
+  revision: sha256:2f46343c6d3206b48c46212de6ba84a308b7f2a921cfba7525d2b212f3e4f5bc
+- path: src/consoleServices.ts
+  revision: sha256:3c0615322209993d8d7c4e8e9209154499611da397e7c11bbfddf07f196ebdfc
+- path: src/consoleStore.ts
+  revision: sha256:6242451630eac02488cdabddd2f95098817f8116593b3f01d44eed1b91a6a1d3
+- path: src/consoleBackupSchema.ts
+  revision: sha256:018ce5ad1b2df029c5c28fa0f6cdce64647190cf482e013f7f7c88fad6639e40
+artifact_changes:
+- path: product/architecture/web-console-state-contract.md
+  change: Added STATE-09 service credential clear/delete dependencies, execution gating, durable generations, actor
+    provenance and recovery acceptance.
+  revision: sha256:c8e22b5013d89090cc451cb2ef0290d7517b05bebae746faa15b65f10fca9848
+findings:
+- id: F-ARCH-FB3-001
+  significance: MATERIAL
+  summary: Confirmed referenced-key clear behavior and change-actor semantics are resolved in STATE-09; PRD and
+    UX adoption is required.
+  affected_requirement: CONFIG-02 / CONFIG-03 / BACKUP-01
+  affected_artifact: docs/web-console-prd.md
+  evidence: CONFIG-02 currently blocks referenced deletion; CONFIG-03 conflates SMTP replacement workflow with immediate
+    service operations. STATE-09 supplies bounded replacement contract.
+  why_it_matters: Without cross-artifact adoption, implementation could either retain the forbidden block or clear
+    a value while normalized runtime/backup copies still permit use.
+  local_correction_possible: false
+  reconciliation_required: true
+questions: []
+affected_requirements:
+- CONFIG-02
+- CONFIG-03
+- CONFIG-04
+- AUTHZ-02
+- AUDIT-01
+- BACKUP-01
+- BACKUP-02
+- BACKUP-04
+- BACKUP-05
+- STATE-09
+affected_artifacts:
+- docs/web-console-prd.md
+- product/architecture/web-console-state-contract.md
+- product/security/web-console-security-contract.md
+- product/ux/02-interaction-patterns.md
+- docs/web-console-prd-coverage.md
+- docs/web-console-prd-user-journey-audit.md
+reconciliation_required: true
+change_impact:
+  product: true
+  user_journeys: true
+  ux: true
+  architecture: true
+  security: true
+decision_resolution:
+- id: REC-DEC-008
+  semantics_resolved: true
+  scope: 'Architecture: referenced service key clearing and last successful actor; security owns its independent
+    review.'
+  remaining_product_choices: []
+  adoption_required: true
+proposed_prd_clarifications:
+- requirement: CONFIG-02 / CONFIG-03
+  text: Referenced service credential Delete clears only its value and retains its exact key; count applied and
+    saved proposed dependencies, state the outcome before confirmation, and reject changed dependency/version confirmations.
+    Only unreferenced keys can be removed. Missing applied values block execution without silently changing lifecycle
+    or authentication; immediate Set restores only otherwise eligible execution. SMTP remains unchanged. STATE-09
+    defines atomicity, stale references and restart fencing.
+- requirement: CONFIG-02 / AUDIT-01
+  text: Show last successful Set/Replace/Clear actor and time without values; preserve stable attribution across
+    actor changes, Unknown for legacy missing data, and historical source distinction after restore.
+- requirement: BACKUP-01 / BACKUP-05
+  text: Preserve missing-value/generation state consistently without stale normalized secret copies; archived older
+    values remain recoverable only through existing explicit whole-instance restore with disabled services and review.
+    Restore does not fabricate new mutation attribution.
+validation:
+  method: Read current service mutations, durable commit and archive schema; parsed YAML and verified architecture
+    output hash.
+  tests_run: []
+  reason: Definition-only semantic resolution; no executable changes.
+git_ownership:
+  parent_commit: 4703c56c17020bc04f8a58c90c1ae0f23ca3886e
+  commit_owner: product-definition-orchestrator
+  child_commit: false
+changed_paths:
+- product/architecture/web-console-state-contract.md
+- workflow/definition/results/feedback3-architecture-resolution.md
+- workflow/definition/results/feedback3-architecture-resolution.yaml

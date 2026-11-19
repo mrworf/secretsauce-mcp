@@ -60,3 +60,10 @@ Credential cards stack vertically with their own removal/value controls; Add fol
 ## UX-R11 — Service footer and shared header
 
 Apply UX-R10 footer clearance to service editing at desktop, 390px and 320CSSpx/200% text: every focused field, error and final action can scroll above persistent controls. Stack actions with readable whole-word labels rather than squeezing them; retain all three actions. Shared name/lifecycle/Draft and parent/section issue indicators wrap without clipping on every service tab. No duplicate footer/top actions or service-specific navigation workaround.
+
+
+## UX-R12 — Compact authentication and stable task geometry
+
+Sign-in and the related short factor-recovery task use a compact readable form width on desktop/ultrawide screens; short inputs do not stretch across the administration canvas. Preserve the established typography, warm accent, control sizes and branding. This task-specific constraint does not narrow Settings or service editors, which retain useful wide working space under UX-R05. Exact maximum width/alignment is ordinary designer discretion; compare actual wide and 390/320 CSS px states with readable labels and no clipped actions.
+
+Settings keeps the same rail/content geometry during loading, loaded and failed states; narrow layout keeps its established selector/content order without a desktop-style transient jump. Credential-removal and typed permanent-delete dialogs reflow/scroll within the existing bounded modal pattern; at 200% text the target, retention consequence, confirmation input and Cancel/destructive actions remain reachable and focus-visible. No-access advisory symbols and text wrap with their section labels without becoming blocking error badges.

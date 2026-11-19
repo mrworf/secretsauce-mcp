@@ -10,7 +10,7 @@ source:
   repository_commit: 80edc3f0b720b3a5bf7b49a8585817a38072ed54
 planning:
   parent_commit: 5a95a349a326af07a32869e10d69c22fae299fcf
-  repository_commit: null
+  repository_commit: 62343ccec607617b832c1ec6538e96acd400cb21
 milestones:
   manifest: delivery/milestones/secretsauce-mcp/status.yaml
   packet_revision: sha256:89929b6fda3463d07fe9bcbcf9727c99b14b55d4ddcee949fe3b02f532b76d09

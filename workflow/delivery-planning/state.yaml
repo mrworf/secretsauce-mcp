@@ -4,7 +4,7 @@ product_id: secretsauce-mcp
 status: ready
 transaction:
   parent_commit: 5a95a349a326af07a32869e10d69c22fae299fcf
-  repository_commit: null
+  repository_commit: 62343ccec607617b832c1ec6538e96acd400cb21
   pre_existing_dirty_paths:
   - codex-session-01a122f7-e70f-7440-b1ce-ca88b955e519.md
   - passwd
@@ -86,6 +86,6 @@ transaction_history:
   - workflow/delivery-planning/results/readiness.yaml
   - workflow/delivery-planning/state.yaml
 validation:
-  publication: pending
+  publication: published
   checks: "PASS: source/packet freshness, compiler/readiness gates, five remediation/36 feedback mapping,\
     \ completed M10\u201344 preservation, execution constraints and pending UX8 qualification. No implementation."

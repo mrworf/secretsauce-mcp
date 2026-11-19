@@ -1,0 +1,134 @@
+stage: product-ux
+status: PASS
+mode: targeted_revalidation
+validated_inputs:
+- path: docs/web-console-prd.md
+  revision: sha256:046771c8ca506a693e41e6085dbc3d850532a01960421f60d49ab74274fd374b
+- path: docs/web-console-prd-coverage.md
+  revision: sha256:bb53ee6f79f7aed57a08b12efb3017fa7c877ec41f03882503616f39046bd35e
+- path: docs/web-console-prd-user-journey-audit.md
+  revision: sha256:d187fa76ab07f238c508ce4137ea11e461029a97f07c65dabda316cc11634a44
+- path: product/architecture/web-console-state-contract.md
+  revision: sha256:c8e22b5013d89090cc451cb2ef0290d7517b05bebae746faa15b65f10fca9848
+- path: product/security/web-console-security-contract.md
+  revision: sha256:8f66520798094a2638f006c9f3145e263e96008fdf63480fc6b98c2b0ccddc35
+- path: workflow/definition/decisions.md
+  revision: sha256:668197081b367e59ceac5d4a634720ba9369756a958ae4c2ae02696c65c5e3d3
+- path: workflow/feedback/PO-FEEDBACK-2026-10-18-003/feedback.yaml
+  revision: sha256:c49b271e03e59e92d16bf6d508356665694797bb1677edd951bd0724b3b106e8
+- path: workflow/reconciliation/REC-RUN-011/reconciliation-result.yaml
+  revision: sha256:ebf8a0dbc9e4e2284b910d17f02371ef8aec0a37b2fcefb7ca3bf8267a5d4ed8
+- path: workflow/definition/results/feedback7-ux-assessment.md
+  revision: sha256:12a98785b352b4d6aba3eaf7048fde428b738a50f69088955a27eb268d91722e
+- path: workflow/definition/drafts/product-ux/web-console-feedback-007/index.md
+  revision: sha256:74360601417bac9fe552a8e166a8a6d9fa045100af5439286c43ad3e708045ec
+- path: product/ux/manifest.yaml
+  revision: sha256:310b3680ef3a4818f0534bd263d5a11b13c3ec3345d9a3576b67d5c140fb1273
+- path: product/ux/experience-brief.yaml
+  revision: sha256:5fc881d462926516839c0b7dfb3f95810577e71eb00c5ba7550e1c1fe4390849
+artifact_changes:
+- path: product/ux/00-overview.md
+  revision: sha256:49219f87045d7df5ddff17596acae3184efb831efa30946bfc6f59d296d3303b
+  change: Bounded UX7 synthesis of settled consistency direction and approved Limits/search navigation.
+- path: product/ux/01-information-architecture.md
+  revision: sha256:ea8c9403ba85d89629c24d53cc6bf4df35bb6a2e9aca27bf0bc9b79c41e21a8c
+  change: Bounded UX7 synthesis of settled consistency direction and approved Limits/search navigation.
+- path: product/ux/02-interaction-patterns.md
+  revision: sha256:32f5a1eaae242d7ec9b927b89a43eaff3697074466784ff72398a930501f929d
+  change: Bounded UX7 synthesis of settled consistency direction and approved Limits/search navigation.
+- path: product/ux/03-responsive-and-platform.md
+  revision: sha256:12d31bd6b2edcae481c81b8e9019c016e6acfdffa2332056d773d2167e085964
+  change: Bounded UX7 synthesis of settled consistency direction and approved Limits/search navigation.
+- path: product/ux/04-visual-system.md
+  revision: sha256:b9d5adbf65afac795fa8fb9c8680619ff9f27f5d818ee6815fc1462a772b2abb
+  change: Bounded UX7 synthesis of settled consistency direction and approved Limits/search navigation.
+- path: product/ux/05-accessibility.md
+  revision: sha256:a80ea533d94261433e613ac65547d1ce9e7e43921c1e3b05b9378f1a2b84cf43
+  change: Bounded UX7 synthesis of settled consistency direction and approved Limits/search navigation.
+- path: product/ux/07-acceptance-checklist.md
+  revision: sha256:a294f0e71455abffbf030a2caecd9196729abeeb93ad7bca104c6e741aaef7d1
+  change: Bounded UX7 synthesis of settled consistency direction and approved Limits/search navigation.
+- path: product/ux/experience-brief.yaml
+  revision: sha256:5fc881d462926516839c0b7dfb3f95810577e71eb00c5ba7550e1c1fe4390849
+  change: Bounded UX7 synthesis of settled consistency direction and approved Limits/search navigation.
+- path: product/ux/manifest.yaml
+  revision: sha256:310b3680ef3a4818f0534bd263d5a11b13c3ec3345d9a3576b67d5c140fb1273
+  change: Bounded UX7 synthesis of settled consistency direction and approved Limits/search navigation.
+- path: workflow/definition/drafts/product-ux/web-console-feedback-007/index.md
+  revision: sha256:74360601417bac9fe552a8e166a8a6d9fa045100af5439286c43ad3e708045ec
+  change: Bounded UX7 synthesis of settled consistency direction and approved Limits/search navigation.
+changed_paths:
+- product/ux/00-overview.md
+- product/ux/01-information-architecture.md
+- product/ux/02-interaction-patterns.md
+- product/ux/03-responsive-and-platform.md
+- product/ux/04-visual-system.md
+- product/ux/05-accessibility.md
+- product/ux/07-acceptance-checklist.md
+- product/ux/experience-brief.yaml
+- product/ux/manifest.yaml
+- workflow/definition/drafts/product-ux/web-console-feedback-007/index.md
+- workflow/definition/results/ux.yaml
+findings: []
+questions: []
+affected_requirements:
+- UX-01
+- UX-02
+- UX-03
+- UX-04
+- CONFIG-03
+- CONFIG-04
+- IDENT-04
+- OPS-02
+affected_artifacts:
+- product/ux/00-overview.md
+- product/ux/01-information-architecture.md
+- product/ux/02-interaction-patterns.md
+- product/ux/03-responsive-and-platform.md
+- product/ux/04-visual-system.md
+- product/ux/05-accessibility.md
+- product/ux/07-acceptance-checklist.md
+- product/ux/experience-brief.yaml
+- product/ux/manifest.yaml
+reconciliation_required: false
+change_impact:
+  product: false
+  user_journeys: true
+  ux: true
+  architecture: false
+  security: false
+ux_handoff:
+  manifest:
+    path: product/ux/manifest.yaml
+    revision: web-console-ux-7
+  experience_brief:
+    path: product/ux/experience-brief.yaml
+    revision: web-console-ux-7
+  approval:
+    status: approved
+    decision_refs:
+    - UX-DESIGN-006
+    - REC-DEC-011
+    - REC-DEC-012
+    decision_ledger: workflow/definition/decisions.md
+  authoritative_artifacts_changed:
+  - product/ux/00-overview.md
+  - product/ux/01-information-architecture.md
+  - product/ux/02-interaction-patterns.md
+  - product/ux/03-responsive-and-platform.md
+  - product/ux/04-visual-system.md
+  - product/ux/05-accessibility.md
+  - product/ux/07-acceptance-checklist.md
+  - product/ux/experience-brief.yaml
+  - product/ux/manifest.yaml
+  preserved_exceptions:
+  - UX-EX01
+  - UX-EX02
+  - UX-EX03
+  - UX-EX04
+  - UX-EX05
+  assessment: workflow/definition/results/feedback7-ux-assessment.md
+  implementation_status: Not certified by definition; prior audit coverage limitations retained
+  impact_hints:
+    architecture: No permission, state or activation boundary changed
+    security: SMTP blank-retain and independent guarded Clear preserved

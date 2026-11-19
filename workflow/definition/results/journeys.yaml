@@ -1,44 +1,40 @@
 stage: prd-to-user-journey-audit
 status: PASS
 mode: targeted_revalidation
-scope: Targeted continuation for approved UX-DESIGN-006 navigation; prior settled
-  REC011 mapping and all unrelated inventories preserved. Definition-only, no runtime
-  certification.
+scope: Five REC013 outcomes applied to existing actor journeys; no runtime certification.66journeys,10actors,25contexts,zero
+  specification gaps.
 validated_inputs:
 - path: docs/web-console-prd.md
-  revision: sha256:046771c8ca506a693e41e6085dbc3d850532a01960421f60d49ab74274fd374b
-- path: product/ux/01-information-architecture.md
-  revision: sha256:ea8c9403ba85d89629c24d53cc6bf4df35bb6a2e9aca27bf0bc9b79c41e21a8c
-- path: product/ux/02-interaction-patterns.md
-  revision: sha256:32f5a1eaae242d7ec9b927b89a43eaff3697074466784ff72398a930501f929d
-- path: product/ux/manifest.yaml
-  revision: sha256:310b3680ef3a4818f0534bd263d5a11b13c3ec3345d9a3576b67d5c140fb1273
-- path: product/ux/06-feature-exceptions.md
-  revision: sha256:427142201d4c4d0e6fc17c19d957f6f4eb8355c651554f0892aefcc1590468cd
-- path: workflow/definition/decisions.md
-  revision: sha256:668197081b367e59ceac5d4a634720ba9369756a958ae4c2ae02696c65c5e3d3
-- path: workflow/reconciliation/REC-RUN-012/reconciliation-result.yaml
-  revision: sha256:abb10f9459d4f783fbda984c2c9bfe1550164f8e649b4ee1b9bb0ddd772a3c74
-- path: workflow/reconciliation/REC-RUN-012/approval-basis.md
-  revision: sha256:6ddd358cbc22576f844da7dbe5f4a2043d819c9becf74d0570422451763f6be6
+  revision: sha256:05a8cc6436b4b9d7f71c7b04e06367bc92c80f23a46604a58c5e273c955e1691
 - path: docs/web-console-prd-coverage.md
-  revision: sha256:bb53ee6f79f7aed57a08b12efb3017fa7c877ec41f03882503616f39046bd35e
+  revision: sha256:b7c6b4109af2c71b91305de84c2467886d4e4197cbbefc4250e9172c46232e96
+- path: workflow/reconciliation/REC-RUN-013/reconciliation-result.yaml
+  revision: sha256:91571dfad36655a45a4149b0d8518429f9ece3e2c4903178a6caf6864302aa43
+- path: product/architecture/web-console-state-contract.md
+  revision: sha256:c8e22b5013d89090cc451cb2ef0290d7517b05bebae746faa15b65f10fca9848
+- path: product/security/web-console-security-contract.md
+  revision: sha256:8f66520798094a2638f006c9f3145e263e96008fdf63480fc6b98c2b0ccddc35
+- path: product/ux/manifest.yaml
+  revision: sha256:5f453b1f369134cb22c3da53142a6bacf650700704c50fc8ed76130b1e2480fe
+- path: product/ux/01-information-architecture.md
+  revision: sha256:a1729436988ed6de93fc66baf6c6e24d6b60577e8041620cb3f0d3583a2a0bd1
+- path: product/ux/02-interaction-patterns.md
+  revision: sha256:1d5b184e282ca1972996095acccc8d6b2e267053c8782cfbbfd3e6f5d7332331
 artifact_changes:
 - path: docs/web-console-prd-user-journey-audit.md
-  summary: Bounded approved Limits categories and search dialog; roles, state guards,
-    failures, recovery and exact-value preservation mapped.
-changed_paths:
-- docs/web-console-prd-user-journey-audit.md
-- workflow/definition/results/journeys.yaml
+  summary: "Updated Activity export placement/Member denial and added shared state,\
+    \ scope, recovery and action maps129\u2013135; existing66journeys preserved."
 findings: []
 questions: []
 affected_requirements:
-- CONFIG-01
-- CONFIG-04
-- MIGRATE-03
-- UX-03
-- IDENT-04
 - UX-02
+- CONFIG-02
+- CONFIG-03
+- POLICY-01
+- AUTHZ-02
+- AUDIT-02.a
+- AUDIT-02.b
+- OPS-06
 affected_artifacts:
 - docs/web-console-prd-user-journey-audit.md
 reconciliation_required: false
@@ -48,3 +44,10 @@ change_impact:
   ux: false
   architecture: false
   security: false
+ux8_alignment: "PASS: UX-IA12/UX-IN20\u201322 align with existing REC013 mappings:\
+  \ contextual service/Member scope, successful-search criteria, exact mixed exclusions,\
+  \ guarded navigation, named task-specific exports and credential configuration removal\
+  \ distinct from value. Configuration tools is a task within existing Settings shell,\
+  \ no seventh primary section; no new journey or role. Canonical wording and focus/visual\
+  \ mechanics refine mapped outcomes without semantic gap. Docs unchanged to avoid\
+  \ source-hash cycle; runtime remains unverified."

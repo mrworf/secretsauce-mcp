@@ -123,3 +123,17 @@ These are observable future conformance checks, not executed acceptance. The opt
 | UX-C71 | Matching-state/viewport screenshots compare feedback 007 navigation/search and preserved prior appearance with UX-G08 precedence. Validate incomplete/ready service, SMTP current/missing/pending/clear-blocked, Settings comparison/health, narrow/zoom and authorized read-only states. | UX-G08, UX-R09, UX-V09, UX-A10 | UX-C42, UX-DESIGN-006 |
 
 These are future observable checks, not executed acceptance. Keep audit coverage gaps explicit. The backup-hour select is a bounded-choice control, not approval for the unrelated binary-scan slider suggestion.
+
+## Confirmed UX8 conformance additions
+
+| ID | Observable check | Governing UX rules | Product trace |
+| --- | --- | --- | --- |
+| UX-C72 | Every editable Settings section has one white persistent status/Discard/Save for later/Review footer, no duplicate top bar, correct disabled/no-op and read-only states, and safe multi-form/loss scope. Footer never obscures keyboard focus or content. | UX-IN20, UX-R10, UX-A11 | UX-02, PO-FB-203 |
+| UX-C73 | Credential summary/editor/value tasks use exact set/not-set labels and preserve metadata/attention; each bordered card has named configuration removal distinct from immediate value Clear/Delete, with Add beneath cards. | UX-IN20, UX-V10, UX-EX03 | CONFIG-02, PO-FB-205/208/209 |
+| UX-C74 | Policy default and one explanation box contain all five required semantics, with only the exact short reorder help. Give access and Choose a user or client preserve eligibility, confirmations and execution boundaries. | UX-IN21, UX-R10 | POLICY-01, PO-FB-212/214/215 |
+| UX-C75 | Main/per-service Activity share four-comparator removable chips, literal matching, positive OR/exclusion veto/field AND, bounds and duplicate modal without lost input. Time presets fill editable fixed UTC bounds; Search/Clear preserve hard context. | UX-IA12, UX-IN22, UX-A11 | AUDIT-02.a, PO-FB-217–229/232 |
+| UX-C76 | Displayed count/results/export retain last-successful criteria despite edits/failure, searched offset and current snapshot/cap/truncation are explicit; list/detail/export agree without unauthorized records or secret-bearing metadata. Existing event cards remain. | UX-IA12, UX-IN22 | AUDIT-02.b, PO-FB-230/231 |
+| UX-C77 | Only filtered export remains in Activity; existing access/configuration/version reports are reachable at all three specified destinations by current authorized roles, without extra mutation rights or confusion with transferable YAML. | UX-IA12 | AUDIT-02.b, PO-FB-234–237 |
+| UX-C78 | Matching desktop/narrow/enlarged-text screenshots preserve prior approved style plus UX-G09 delta; footer, multiple credentials, policy panel, chips/duplicate dialog and export destinations have no overlap/hidden actions and keyboard/focus checks pass. | UX-G09, UX-R10, UX-V10, UX-A11 | UX-C42, UX-04 |
+
+These checks are future conformance requirements, not executed runtime acceptance. Preserve all prior security, draft/immediate timing and incomplete audit-coverage obligations.

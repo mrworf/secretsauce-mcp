@@ -1221,3 +1221,18 @@ resolution: Agreed, do both
 approval_scope: Both Limits categories and Settings search dialog in feedback-007-draft-1
 decided_on: '2026-11-16'
 ```
+
+
+## UX8-ACTIVITY-SEMANTICS — delegated contract derivation
+
+Status: accepted delegated resolution. Category: SPECIALIST_RESOLUTION; owner: PRD specialist; ask_user: false. Source: PO-FB-224/225 in confirmed PO-FEEDBACK-2026-11-18-001. Established intent: positive alternatives within a field are OR, fields combine AND, negative comparisons exclude specified values; owner explicitly delegated mixed/exclusion details to definition. Derive bounded literal matching/exclusion and search/export parity under existing authorization, without expanding access or silently changing current compatibility. Result: workflow/definition/results/activity-filter-resolution.yaml.
+
+Accepted contract: workflow/definition/results/activity-filter-contract.md (AF-01–06). Positive alternatives OR per field, every exclusion vetoes, fields/time/hard scope AND; case-sensitive literal values, 32-chip bound, retained limits and last-successful-search/current-snapshot export parity. Canonical adoption by REC-RUN-013; no owner decision remains.
+
+## PO-REFINEMENT-013 — Confirmed walkthrough refinements
+
+Status: accepted. Authority: confirmed PO-FEEDBACK-2026-11-18-001, published feedback payload 1062a57394b34e58decf1d9afa0bdf6c1e01bec4. Canonical adoption: REC-RUN-013 (payload 23fd721583f435ff9ee4a87cc93f94fe849a449c), REC-CHANGE-054–058 and REC-RM-048–052. All 36 original item dispositions remain in that producer result, including superseded and advisory wording.
+
+The owner-approved scope is the single white persistent Settings footer; credential availability wording and separate bordered credential cards with named configuration removal; concise policy explanations and plain access actions; shared Activity comparison chips, time presets, Search/Clear, count-adjacent filtered export; and the three agreed evidence-export destinations. UX8-ACTIVITY-SEMANTICS supplies the expressly delegated predicate details, now adopted in AUDIT-02.a/b. Product UX may compose these settled changes using the approved UX7 visual family without reopening them as a new design choice. Prior approved concepts remain the appearance baseline except these explicit deltas. No implementation or deployment is authorized by this definition decision; the current workflow continues into separately authorized delivery planning only.
+
+No outstanding owner question. Existing roles, write-only values, SMTP staged Set/Replace and independent dependency-blocked Clear, service value immediate actions, atomic Settings activation, and policy evaluation semantics remain unchanged.

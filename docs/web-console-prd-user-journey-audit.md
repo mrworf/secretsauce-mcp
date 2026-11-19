@@ -1,9 +1,9 @@
 # PRD User Journey Audit: SecretSauce Web Console
 
 > Source PRD: [web-console-prd.md](web-console-prd.md)<br>
-> Generated: 2026-10-19T03:12:23+00:00 (UTC)<br>
-> Review mode: Remediation re-audit — targeted review and guided-edit refinements REC-RUN-010<br>
-> Compared against: this artifact generated 2026-10-18T17:53:16+00:00 (UTC), with its recorded UX5 equivalence pass<br>
+> Generated: 2026-11-18T19:15:34.849021-08:00 (America/Los_Angeles)<br>
+> Review mode: Remediation re-audit — targeted REC-RUN-013 consistency and Activity filters<br>
+> Compared against: prior artifact 2026-10-19T03:12:23+00:00 and preserved UX7 continuation revalidated 2026-11-16T20:20:34.265140+00:00<br>
 > Evaluation scope: PRD and normative companions only; definition-only revalidation; existing implementation was not re-audited. Passed [coverage](web-console-prd-coverage.md) is an input, not implementation proof.
 
 ## Executive verdict
@@ -438,7 +438,7 @@ Each step below has an ACT mapping. Common role journeys reference the correspon
 - **Promise/evidence:** AUDIT-01, AUDIT-02, AUDIT-03, OPS-06, UX-01, UX-03, UX-04.
 - **Begins / entry:** Authenticated Owner; recorded events or denial identifier; EP-11.
 - **Permissions / preconditions:** Current evidence-read/export role; never raw secrets; export requires durable audit.
-- **Happy path:** 1. Filter and inspect activity (Event detail and attributable revision; empty-state feedback) → 2. Investigate denial or uncertain request (Safe next step and provenance) → 3. Export selected evidence/report (Download with access/config/exception/version/backup evidence).
+- **Happy path:** 1. Filter and inspect activity (Event detail and attributable revision; empty-state feedback) → 2. Investigate denial or uncertain request (Safe next step and provenance) → 3. Export activity beside the count using successful searched criteria. Other evidence exports remain reachable in their subject areas under AUDIT-02.b, not Activity.
 - **Alternate paths:** Event filters may yield no matches; own client denial lookup also uses explain_denial; existing scoped viewing survives audit outage.
 - **Failure paths:** Unauthorized target/event, expired denial or missing record yields bounded feedback; forged labels/paths cannot inject sensitive data; Member cannot export instance evidence.
 - **State transitions:** Filter → scoped list → detail → return; export creates artifact without editing events; audit outage → view-only.
@@ -473,9 +473,9 @@ Each step below has an ACT mapping. Common role journeys reference the correspon
 - **Happy path:** 1. Filter and inspect activity (Event detail and attributable revision; empty-state feedback) → 2. Investigate denial or uncertain request (Safe next step and provenance) → 3. Return to activity (Own scoped results).
 - **Alternate paths:** Event filters may yield no matches; own client denial lookup also uses explain_denial; existing scoped viewing survives audit outage.
 - **Failure paths:** Unauthorized target/event, expired denial or missing record yields bounded feedback; forged labels/paths cannot inject sensitive data; Member cannot export instance evidence.
-- **State transitions:** Filter → scoped list → detail → return; export creates artifact without editing events; audit outage → view-only.
+- **State transitions:** Filter → scoped list → detail → return; export attempt is denied without an artifact; audit outage → view-only.
 - **Recovery:** Adjust filter/request ID, check retention and permissions; uncertain remote effect requires investigation, not automatic retry.
-- **Exit / reversal:** Clear filters or leave detail; exports do not delete records; retention is separate Owner setting.
+- **Exit / reversal:** Clear filters or leave detail; no Member export is available; retention is separate Owner setting.
 
 **Assessment:** Complete specification; implementation Not verified in this review; reachability Indeterminate; no gap.
 
@@ -1423,7 +1423,7 @@ An account security surface is a necessary entry for the PRD’s own-password/MF
 - Unique requirement/capability families: 79 (55 PRD IDs, seventeen normative companion IDs, seven derived unnumbered families).
 - Actor-specific journeys: 66; Complete: 66; Partial/Missing/Contradictory: 0.
 - Reachability: 66 Indeterminate; no Reachable claim. Implementation assessment: 66 Not verified; prior evidence was not refreshed.
-- Entry points: 25; action mappings: 125; coverage rows: 66, exactly eight populated columns each.
+- Entry points: 25 (EP-11 now names relocated report ingresses); action mappings: 135; coverage rows: 66, exactly eight populated columns each.
 - Unique gaps: 0 Blocker, 0 Major, 0 Minor; implementation gaps asserted: 0; unmapped requirements: 0.
 - No implementation tests run. No product authority or code changed.
 
@@ -1524,3 +1524,47 @@ User decision: **Agreed, do both**. This targeted addition affects J-OWNER-SETTI
 **Search path:** A persistent Search settings action opens the focused dialog. Type a query; loading, results, empty and failed index states are distinct. Preserve a query typed while the index loads. Results index only non-secret names/help/technical aliases within current permissions. Select a result → close the search dialog → resolve any existing unsaved-work guard without stacking dialogs → open the relevant section/category and focus its field. Stay retains the original edit; Save or Discard has only its existing explicit scope. Cancel/Escape returns focus to Search settings without mutation. Direct unauthorized targets remain denied, stale visibility never grants permission, and Auditor receives readable values without edit actions.
 
 **Acceptance:** Positive category/result navigation, history/deep links, loading-query retention and destination focus; negative stale/forbidden targets, empty/failed search, unsafe implicit save/apply, hidden error fields and loss of unsaved work. Preserve keyboard focus, accessible dialog naming, narrow selection and non-color active states. Reuse existing navigation/search validation where adequate. Representative approved screenshots define appearance, not implementation conformance. All prior source-only/runtime evidence limits remain.
+
+## REC-RUN-013 targeted journey continuation
+
+This section supersedes earlier generic Activity filter/export placement descriptions only. Canonical requirements are CONFIG-02/03, POLICY-01, UX-02 and AUDIT-02.a/b; REC-054–058 resolve all36feedback items. Existing66actor-specific journeys and25entry IDs persist; no new actor, persisted search, policy evaluator or credential lifecycle is introduced. Prior zero-gap disposition remains. Source-only implementation inspection locates current Settings/service/evidence responsibilities (src/consoleSettingsPage.ts:21, src/consoleServicePage.ts:44/148, src/consoleEvidencePage.ts:3/6, src/consoleEvidence.ts:39–68); existing exact-only filters and per-service prefill do not prove the new journeys work. Specification Complete; implementation Not verified; reachability Indeterminate.
+
+### Shared editing journeys — J-OWNER-SETTINGS and permitted Administrator/Auditor configuration variants
+
+Begins: enrolled actor opens permitted populated Settings through EP-12. Owner edits existing instance sections; Administrator edits scanning only; Auditor sees the same safe grouping without mutation. One persistent white bottom bar supplies status, Discard, Save for later and Review changes, without duplicate top draft banner. Edit one or multiple forms → Unsaved changes → save permitted changes → Saved for later, not in use → review all affected changes → current authorization/dependency/audit validation → atomic activation. Alternate: keep editing or discard explicitly named unsaved/pending scope; neither restores an independently cleared credential. Cancel leaves work intact. Failed validation focuses the actual field; partial draft-save failures preserve unsaved forms and do not imply partial activation. Stale/unknown outcomes use comparison/current-state lookup before retry. Navigation retains existing Stay/Save/Discard guards. Read-only views never expose mutation. Persistent controls must not obscure keyboard focus, errors or narrow/enlarged-text content. SMTP Set/Replace remains staged and Clear remains independent/immediate with enabled-dependency blocking (UX-EX03).
+
+### Service configuration, credential, policy and access journeys
+
+J-OWNER-CONFIG/J-ADMIN-CONFIG and CREDENTIAL begin from EP-06/07 with an editable service draft and current metadata. Each credential has a bordered card, exact named configuration-removal control, value set/not set metadata, attribution/version and separate immediate value action; Add credential follows the cards and focuses the new one. Remove configuration → draft reference removed → save/review/apply, while stored secret remains unchanged. Cancel/discard the draft can abandon that configuration edit; it cannot undo a separately completed Set/Replace/Clear. Missing values retain attention cues and block only their actual dependent scope. Existing no-auth/imported/exact-ID behavior survives. Auditor's J-AUDITOR-CONFIG retains safe readable metadata, no mutation or value reveal. Concurrent/forbidden/unknown value outcomes use existing recheck/reconciliation paths, never blind replay.
+
+J-OWNER-POLICY/J-ADMIN-POLICY and ACCESS use Default policy left with one explanation box right (stacked when narrow); its bullets preserve fallback, mixed effects, priority, deny ties and listed equal-effect ties. Reorder help has the selected single sentence, while unavailable moves remain unavailable. Give access → Choose a user or client → current eligibility → explicit confirmation → immediate assignment, or the existing initial-activation reviewed grant path. Cancel does not grant; expired role/stale identity rejects without rewriting policy. Auditor observes policy without controls. No wording implies administrative role alone authorizes execution.
+
+### J-OWNER-ACTIVITY / J-ADMIN-ACTIVITY / J-AUDITOR-ACTIVITY
+
+Begins: current enrolled evidence reader at EP-11, global Activity or explicit service context, with current retained records (possibly none). Field/Comparison/Value/Add creates individually removable chips. A duplicate field+literal value regardless of comparison opens a small modal; dismiss returns to unchanged chips and attempted input. Valid 32-or-fewer chips, supported literal values and optional UTC dates → Search → authorized evaluated snapshot, count and unchanged result cards. Positive alternatives OR within a field; every negative excludes; all groups/time/hard context AND. No positives means exclusions alone narrow the scope. Missing fields fail positives/pass negatives. Contradictory valid criteria produce an honest empty result. Case/space/metacharacters remain literal; no wildcard or regex.
+
+Alternate: a preset fills fixed editable From/To once; open ends remain valid. Editing/removing chips marks criteria unsearched without relabeling prior results/export. Search starts at first page; pagination retains successful criteria. Clear filters removes only user chips/time and immediately refreshes from the beginning, retaining per-service hard context. To broaden intentionally, navigate to global Activity. Detail lookup uses the same authorized criteria/context. Failed search preserves or clearly separates prior results; correct actual malformed/unsupported/duplicate/oversize/reversed input and retry. Bounded-work failure is not empty results. Cancel duplicate/modal or leave Activity changes no configuration and stores no secret input in persistent browser state.
+
+Export activity beside the count uses last successful Search criteria/context and searched offset, not current unsent edits; reauthorization/audit admission then evaluates one current retained snapshot up to500rows/2MiB. The file can differ after new events/retention; label offset/cap/truncation and current-snapshot meaning. Download completion is distinct from failed export; sanitized rows and nested criteria never leak raw secret-like input. Export does not delete events or create a retained immutable search snapshot. Role loss, restricted session or audit outage prevents sensitive export; permitted reads remain scoped. Administrator/Auditor can reach all three relocated reports without Owner mutation authority.
+
+### J-MEMBER-ACTIVITY
+
+Begins: enrolled Member at own Activity or assigned-service Activity. Reuse the same controls, validation, empty/failed search, fixed presets, duplicate modal and safe exit above, but apply immutable own-actor authorization before user predicates. Direct exact foreign-actor or unassigned-service selections remain denied. Substrings/exclusions can only narrow owned authorized records; no autocomplete enumerates foreign identities. Clear cannot remove actor or contextual service scope, and conflicting service chips yield no matches. Detail rechecks scope. No export control or successful direct export exists; a denied attempt creates no artifact. Session expiry requires login; unauthorized/unknown records yield bounded error with safe return to own scope. State is local edited criteria → successful scoped query → detail/return; no authority mutation.
+
+### Relocated evidence paths for existing evidence roles
+
+The existing EP-11 report outcome now has explicit ingresses: People & Access → Access inventory; Settings → Configuration tools → Configuration and exceptions; Settings → Health & retention → Software and job status. Owner, Administrator and Auditor follow identical read/export paths while retaining their different edit permissions. Enter destination → current authorized evidence export → sanitized existing-format download and audited outcome; unchanged role/audit/size checks may reject with retry only after repair/reauthentication. Settings navigation observes unsaved-work guards. Cancel/navigation does not export or mutate configuration. Configuration evidence is labeled distinctly from transferable gateway YAML. Member and restricted sessions gain no export ingress or direct capability. Exit leaves records and settings unchanged.
+
+### Action and lifecycle mapping
+
+| Action ID | Journey / Path / Step | Actor Action | UI or Entry Point | Backend/API | Permission Check | State Change | Feedback / Next State | Evidence / Gap |
+|---|---|---|---|---|---|---|---|---|
+| ACT-129 | Settings editor / save and discard | Use single bottom bar | EP-12 persistent actions | Existing multi-form draft/review/discard | Current section role, audit, dependency | Unsaved → saved pending → reviewed active; scoped discard only | Exact status; errors focus field; unknown lookup | UX-02, CONFIG-03; implementation unverified |
+| ACT-130 | Service credentials / configuration removal | Remove named card configuration | EP-07 card; Add below | Existing draft placement save/apply | Owner/Administrator current service edit | Draft reference removed; stored value unchanged | Pending review; cancel/discard restores only draft | CONFIG-02; unverified |
+| ACT-131 | Policy/access / explain and grant | Read rules; Give access | EP-08/09 | Existing evaluation and assignment commands | Current eligible identity and role | Same policy; confirmed grant immediate or initial reviewed grant | Safe confirmed outcome; cancellation unchanged | POLICY-01, AUTHZ-02; unverified |
+| ACT-132 | All Activity / construct query | Add/remove chips, presets, Search | EP-11 shared editor and duplicate modal | Bounded predicate parser/query | Actor/context authorization outside predicates | Edited criteria → successful searched snapshot/count | Invalid/duplicate/over32 retained for correction; empty distinct | AUDIT-02.a; unverified |
+| ACT-133 | All Activity / clear, page, detail | Clear or inspect | EP-11 controls/cards | Same scoped evaluator/detail | Own-actor/service hard context retained | Successful criteria/page changes; no grants | Empty/current results; denied ID safe return | AUDIT-02.a; unverified |
+| ACT-134 | Evidence roles / Activity export | Export matching activity | Beside successful count | Current bounded snapshot, searched criteria/offset | Current export role/session/audit | Audited file; no retention hold | Offset/cap/truncation; no false frozen-results promise | AUDIT-02.b; unverified |
+| ACT-135 | Evidence roles / other reports | Export by subject | People; Configuration tools; Health | Existing three report kinds | Existing role; no new settings rights | Audited file, no configuration mutation | Safe download/error; guarded navigation | AUDIT-02.b, OPS-06; unverified |
+
+Verification covers successful, alternative, invalid/forbidden/stale/unknown and safe-exit paths for each amended family; existing unrelated journeys and all previous gaps (none) remain unchanged. No unresolved definition dead end, backend-only human promise or unsupported normative interface remains. Current implementation must still be qualified against these new paths and approved UX. Required tests reuse existing service/Settings/evidence suites and focused browsers, including exclusion truth tables,32/33chips, literal/missing/duplicate input, UTC boundaries, scope/detail/export parity, nested sanitization and role/audit negatives. No test was run here.

@@ -1,0 +1,120 @@
+workflow: product-definition
+product_id: secretsauce-mcp
+status: ready_for_delivery_planning
+generated_from_state: workflow/definition/state.yaml
+artifacts:
+  security_contract:
+    path: product/security/web-console-security-contract.md
+    revision: sha256:8f66520798094a2638f006c9f3145e263e96008fdf63480fc6b98c2b0ccddc35
+  architecture_contract:
+    path: product/architecture/web-console-state-contract.md
+    revision: sha256:c8e22b5013d89090cc451cb2ef0290d7517b05bebae746faa15b65f10fca9848
+  coverage:
+    path: docs/web-console-prd-coverage.md
+    revision: sha256:bb53ee6f79f7aed57a08b12efb3017fa7c877ec41f03882503616f39046bd35e
+  journeys:
+    path: docs/web-console-prd-user-journey-audit.md
+    revision: sha256:d187fa76ab07f238c508ce4137ea11e461029a97f07c65dabda316cc11634a44
+  ux:
+    path: product/ux/manifest.yaml
+    revision: sha256:310b3680ef3a4818f0534bd263d5a11b13c3ec3345d9a3576b67d5c140fb1273
+    declared_revision: web-console-ux-7
+    manifest: product/ux/manifest.yaml
+  ux_experience_brief:
+    path: product/ux/experience-brief.yaml
+    revision: sha256:5fc881d462926516839c0b7dfb3f95810577e71eb00c5ba7550e1c1fe4390849
+  ux_overview:
+    path: product/ux/00-overview.md
+    revision: sha256:49219f87045d7df5ddff17596acae3184efb831efa30946bfc6f59d296d3303b
+  ux_information_architecture:
+    path: product/ux/01-information-architecture.md
+    revision: sha256:ea8c9403ba85d89629c24d53cc6bf4df35bb6a2e9aca27bf0bc9b79c41e21a8c
+  ux_interaction_patterns:
+    path: product/ux/02-interaction-patterns.md
+    revision: sha256:32f5a1eaae242d7ec9b927b89a43eaff3697074466784ff72398a930501f929d
+  ux_responsive_and_platform:
+    path: product/ux/03-responsive-and-platform.md
+    revision: sha256:12d31bd6b2edcae481c81b8e9019c016e6acfdffa2332056d773d2167e085964
+  ux_visual_system:
+    path: product/ux/04-visual-system.md
+    revision: sha256:b9d5adbf65afac795fa8fb9c8680619ff9f27f5d818ee6815fc1462a772b2abb
+  ux_accessibility:
+    path: product/ux/05-accessibility.md
+    revision: sha256:a80ea533d94261433e613ac65547d1ce9e7e43921c1e3b05b9378f1a2b84cf43
+  ux_feature_exceptions:
+    path: product/ux/06-feature-exceptions.md
+    revision: sha256:427142201d4c4d0e6fc17c19d957f6f4eb8355c651554f0892aefcc1590468cd
+  ux_acceptance_checklist:
+    path: product/ux/07-acceptance-checklist.md
+    revision: sha256:a294f0e71455abffbf030a2caecd9196729abeeb93ad7bca104c6e741aaef7d1
+  security:
+    path: product/security/web-console-security-review.md
+    revision: sha256:f5eee5bf9488489330c2632d7eabbd45c836ae2263ea2de9601ba789f99ede91
+  architecture:
+    path: product/architecture/web-console-architecture-review.md
+    revision: sha256:45fef6181a75575800555c4da62a7c460a24b32f4673d8fe4c20885a63aeb08c
+  prd:
+    path: docs/web-console-prd.md
+    revision: sha256:046771c8ca506a693e41e6085dbc3d850532a01960421f60d49ab74274fd374b
+decisions:
+  path: workflow/definition/decisions.md
+accepted_risks:
+- id: SEC-DEF-001
+  summary: Trusted destination authors and best-effort response scanning are not universal
+    credential non-exfiltration controls.
+  decision_refs:
+  - D-012
+  result: workflow/definition/results/security.yaml
+validation:
+  repository_commit: ff213d5a1803b337050149ebffc8ae2debaadee5
+  prd:
+    status: passed
+    result: workflow/definition/results/prd.yaml
+    preservation_basis:
+      scope: Inspected unchanged semantic domain under REC-IMPACT-011/012; original
+        validated_inputs are historical, not a new whole-artifact pass.
+      reconciliation:
+        path: workflow/reconciliation/REC-RUN-012/reconciliation-result.yaml
+        revision: sha256:abb10f9459d4f783fbda984c2c9bfe1550164f8e649b4ee1b9bb0ddd772a3c74
+      current_authority:
+        prd: sha256:046771c8ca506a693e41e6085dbc3d850532a01960421f60d49ab74274fd374b
+        ux: sha256:310b3680ef3a4818f0534bd263d5a11b13c3ec3345d9a3576b67d5c140fb1273
+        architecture: sha256:c8e22b5013d89090cc451cb2ef0290d7517b05bebae746faa15b65f10fca9848
+        security: sha256:8f66520798094a2638f006c9f3145e263e96008fdf63480fc6b98c2b0ccddc35
+  coverage:
+    status: passed
+    result: workflow/definition/results/coverage.yaml
+  journeys:
+    status: passed
+    result: workflow/definition/results/journeys.yaml
+  ux:
+    status: passed
+    result: workflow/definition/results/ux.yaml
+  architecture:
+    status: passed
+    result: workflow/definition/results/architecture.yaml
+    preservation_basis:
+      scope: Inspected unchanged semantic domain under REC-IMPACT-011/012; original
+        validated_inputs are historical, not a new whole-artifact pass.
+      reconciliation:
+        path: workflow/reconciliation/REC-RUN-012/reconciliation-result.yaml
+        revision: sha256:abb10f9459d4f783fbda984c2c9bfe1550164f8e649b4ee1b9bb0ddd772a3c74
+      current_authority:
+        prd: sha256:046771c8ca506a693e41e6085dbc3d850532a01960421f60d49ab74274fd374b
+        ux: sha256:310b3680ef3a4818f0534bd263d5a11b13c3ec3345d9a3576b67d5c140fb1273
+        architecture: sha256:c8e22b5013d89090cc451cb2ef0290d7517b05bebae746faa15b65f10fca9848
+        security: sha256:8f66520798094a2638f006c9f3145e263e96008fdf63480fc6b98c2b0ccddc35
+  security:
+    status: passed
+    result: workflow/definition/results/security.yaml
+    preservation_basis:
+      scope: Inspected unchanged semantic domain under REC-IMPACT-011/012; original
+        validated_inputs are historical, not a new whole-artifact pass.
+      reconciliation:
+        path: workflow/reconciliation/REC-RUN-012/reconciliation-result.yaml
+        revision: sha256:abb10f9459d4f783fbda984c2c9bfe1550164f8e649b4ee1b9bb0ddd772a3c74
+      current_authority:
+        prd: sha256:046771c8ca506a693e41e6085dbc3d850532a01960421f60d49ab74274fd374b
+        ux: sha256:310b3680ef3a4818f0534bd263d5a11b13c3ec3345d9a3576b67d5c140fb1273
+        architecture: sha256:c8e22b5013d89090cc451cb2ef0290d7517b05bebae746faa15b65f10fca9848
+        security: sha256:8f66520798094a2638f006c9f3145e263e96008fdf63480fc6b98c2b0ccddc35

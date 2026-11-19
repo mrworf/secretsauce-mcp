@@ -147,3 +147,31 @@ This table consolidates already-required evidence; it is not a new milestone pac
 The combined definition, including approved UX-DESIGN-004 and adopted third-feedback semantics, has adequate behavioral precision and a credible simple implementation shape. Architecture passes with no blocking questions, reconciliation requirement, or change to upstream authority. The remaining risks are implementation obligations already identified by the PRD and contracts; they must be proven through delivery, not silently treated as completed by this review.
 
 Validation for this documentation-only stage checks exact input hashes, result structure, report links, and whitespace/diff integrity. No application code or executable configuration changed, and no application test/build was run. Existing test references are inspected evidence only. The parent orchestrator owns the coherent definition commit and downstream handoff.
+
+## Targeted revalidation — REC013 walkthrough refinements (2026-11-18)
+
+### Scope and executive summary
+
+This incremental definition review covers REC-054–058, CONFIG-02, POLICY-01, UX-02 and AUDIT-02.a/b. Historical conclusions above remain unchanged. The exact final inputs are fingerprinted in the stage adapter; source inspection of `src/consoleEvidence.ts` (`filters`, `select`, `query`, `detail`, `export`) and `src/consoleEvidencePage.ts` establishes the current extension points, not acceptance of the unimplemented behavior.
+
+### What is good
+
+The existing evidence selector is shared by query, detail and export, with bounded retained rows, page size and export size. Extending that boundary with a finite validated comparison structure is a proportionate change. The adopted positive-OR/exclusion-AND contract makes contradictions deterministic, keeps literal matching free of regular-expression execution and avoids introducing a query language or search backend. Current-snapshot export preserves the operating model without a retained search-result store.
+
+The footer, credential cards and policy/access copy preserve existing mutation boundaries. In particular, a Settings footer can coordinate every authorized unsaved form without changing atomic activation; a credential card can distinguish draft configuration removal from immediate secret mutation. SMTP remains the explicit staged Set/Replace exception.
+
+### What is risky and what should change
+
+The new service context must be a separate immutable restriction on the shared selector, not another removable chip. The current Activity page merely prepopulates a filter and Clear returns to global activity; this is a known implementation delta. Apply the same context on list, detail, paging and export, including empty chip lists and exclusions. Represent edited filters separately from the last successful searched criteria so a failed search cannot retarget existing rows or export.
+
+Use one finite predicate contract across all entry points and preserve legacy exact-filter compatibility. Validate the 32-chip, 1024-code-unit, control-character, time, pagination and aggregate work bounds before matching. Keep export metadata sanitization aware of the owned nested chip structure. Do not let adding comparisons multiply retained scans or introduce unbounded autocomplete.
+
+Relocated exports must remain reachable by currently authorized read-only roles even when their destination page contains Owner-only editors. Reuse evidence commands and their current authorization rather than adopting the destination page's mutation permission. Existing output formats, audit admission and truncation disclosure remain unchanged.
+
+### What I would not change yet
+
+No new persistence format, database index, saved search service, frozen result snapshot, role model, gateway transport, scanner algorithm or credential lifecycle is required. Keep completed UX7 outcomes and unrelated runtime modules intact. Mechanism and module selection remain implementation decisions within the adopted contract.
+
+### Overall opinion and validation
+
+The bounded architecture contract is coherent and implementable with existing boundaries. Delivery must prove positive/negative predicate truth tables, hard-scope and last-successful-search behavior, export parity, role reachability, and shared footer/card states. This report does not certify runtime behavior or repeat prior milestone acceptance. No application tests or build are required for this documentation-only review; exact-source/result checks and whitespace validation support publication. Final UX alignment and result disposition are recorded in the adapter.

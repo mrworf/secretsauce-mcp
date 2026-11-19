@@ -1,0 +1,181 @@
+stage: security-code-reviewer
+status: PASS
+validated_inputs:
+- path: docs/web-console-prd.md
+  revision: sha256:48194cfbc4e55756649820a411aa0675c2a6be87c577bdd920b0aaf06e21b617
+- path: product/security/web-console-security-contract.md
+  revision: sha256:8f66520798094a2638f006c9f3145e263e96008fdf63480fc6b98c2b0ccddc35
+- path: product/architecture/web-console-state-contract.md
+  revision: sha256:c8e22b5013d89090cc451cb2ef0290d7517b05bebae746faa15b65f10fca9848
+- path: product/ux/manifest.yaml
+  revision: sha256:4c5851fd985e7fa83f5d902eaf0100f983cb5e3da240c28d7b4a789b80d0f8b2
+  declared_revision: web-console-ux-4
+- path: product/ux/experience-brief.yaml
+  revision: sha256:859e7e6cd056f37a9682df291f0daa6d292d361b5a711fbbb824be2f1806c4e6
+- path: product/ux/00-overview.md
+  revision: sha256:7cb20e4112c013d3188b307f4f91205e2edea977dc5f08d7231ae58bcfb8f51c
+- path: product/ux/01-information-architecture.md
+  revision: sha256:46a44b43f12e8fec32e97abcf659581bc3c2d6b4c57c176038e495277a69c159
+- path: product/ux/02-interaction-patterns.md
+  revision: sha256:49afe01f26e05cb51e1a0183283ff07f16fdc4cb238cedc1bb85b35e0c6b5539
+- path: product/ux/03-responsive-and-platform.md
+  revision: sha256:ee4e4b2edecb8f56677145f3ea90c482334527c7e4d6356bf64220b7d3149b8f
+- path: product/ux/04-visual-system.md
+  revision: sha256:9c30c4e67669f43a14234727d7bebf3e5a309f6915333aaf5c3827e79ce0590a
+- path: product/ux/05-accessibility.md
+  revision: sha256:82b0463ee026354d14e01d925e5c734317774cac88396c103748f2d907e54dd1
+- path: product/ux/06-feature-exceptions.md
+  revision: sha256:427142201d4c4d0e6fc17c19d957f6f4eb8355c651554f0892aefcc1590468cd
+- path: product/ux/07-acceptance-checklist.md
+  revision: sha256:7852a01661c26abc1868250219f85410857b0ce216b3c50cb71a5b79ec4162f5
+- path: workflow/feedback/PO-FEEDBACK-2026-10-17-001/feedback.yaml
+  revision: sha256:9b50a7d3dc87a3f2d45832b0deee4402b6e84b65092680a57f5bfbf8c7fbe0bf
+- path: workflow/reconciliation/REC-RUN-008/reconciliation-result.yaml
+  revision: sha256:1018e24f89041935175c94108faa5339c6d09f2c4f9a15c244df5378d4177432
+artifact_changes:
+- path: product/security/web-console-security-review.md
+  summary: Added final targeted feedback003/UX4 review resolving F-SEC-FB3-001 adoption; preserved historical
+    dispositions.
+- path: workflow/definition/results/security.yaml
+  summary: Recorded bounded security PASS against exact current authority inputs; excluded concurrently
+    updated coverage/journey traces.
+changed_paths:
+- product/security/web-console-security-review.md
+- workflow/definition/results/security.yaml
+findings:
+- id: SEC-DEF-001
+  significance: ACCEPTED_RISK
+  summary: Trusted destination authors and best-effort response scanning are not universal credential
+    non-exfiltration controls.
+  affected_requirement: AUTHZ-04
+  affected_artifact: docs/web-console-prd.md
+  evidence: D-012; AUTHZ-04, BASE-01, SEC-02; product/ux/04-visual-system.md UX-V02; security review SEC-DEF-001.
+  why_it_matters: The write-only console must not misrepresent protection against a malicious trusted
+    administrator or approved endpoint.
+  local_correction_possible: false
+  reconciliation_required: false
+  status: accepted_existing_product_boundary
+  decision_refs:
+  - D-012
+- id: SEC-DEF-002
+  significance: OBSERVATION
+  summary: Host integrity and independent off-host archive/evidence copies remain operator responsibilities.
+  affected_requirement: OPS-06
+  affected_artifact: docs/web-console-prd.md
+  evidence: D-001/D-005; AUDIT-03, BACKUP-02, OPS-05/06; security review SEC-DEF-002.
+  why_it_matters: Product append-only evidence and local backups do not defeat a hostile or lost host.
+  local_correction_possible: false
+  reconciliation_required: false
+- id: SEC-DEF-003
+  significance: OBSERVATION
+  summary: Audit fail-closed availability cost and restricted diagnostic-login exception are explicit
+    settled behavior.
+  affected_requirement: AUDIT-04
+  affected_artifact: product/security/web-console-security-contract.md
+  evidence: D-004; SECRES-04; product/ux/06-feature-exceptions.md UX-EX01; security review SEC-DEF-003.
+  why_it_matters: Repair and restore must not become unaudited privilege bypasses.
+  local_correction_possible: false
+  reconciliation_required: false
+- id: SEC-DEF-004
+  significance: OBSERVATION
+  summary: Definition PASS is not implementation or SOC 2 acceptance.
+  affected_requirement: BASE-01
+  affected_artifact: docs/web-console-prd-coverage.md
+  evidence: Current PRD acceptance table; current coverage unverified console backend/test cells; UX manifest
+    implementation status; security review SEC-DEF-004.
+  why_it_matters: Future tests must verify each new input and preserved gateway boundary.
+  local_correction_possible: false
+  reconciliation_required: false
+questions: []
+affected_requirements:
+- CONFIG-02
+- CONFIG-03
+- CONFIG-04
+- CONFIG-05
+- AUTHZ-01
+- AUTHZ-02
+- AUDIT-01
+- BACKUP-01
+- BACKUP-05
+- MIGRATE-01
+- MIGRATE-02
+- SEC-01
+- SEC-03
+- STATE-09
+- SECRES-08
+- UX-03
+affected_artifacts:
+- docs/web-console-prd.md
+- product/security/web-console-security-contract.md
+- product/architecture/web-console-state-contract.md
+- product/ux/manifest.yaml
+- product/ux/experience-brief.yaml
+- product/ux/00-overview.md
+- product/ux/01-information-architecture.md
+- product/ux/02-interaction-patterns.md
+- product/ux/03-responsive-and-platform.md
+- product/ux/04-visual-system.md
+- product/ux/05-accessibility.md
+- product/ux/06-feature-exceptions.md
+- product/ux/07-acceptance-checklist.md
+- workflow/feedback/PO-FEEDBACK-2026-10-17-001/feedback.yaml
+- workflow/reconciliation/REC-RUN-008/reconciliation-result.yaml
+- product/security/web-console-security-review.md
+reconciliation_required: false
+change_impact:
+  product: false
+  user_journeys: false
+  ux: false
+  architecture: false
+  security: false
+native_report: product/security/web-console-security-review.md
+validation:
+  kind: product_definition_security_review
+  mode: targeted_revalidation
+  inputs_verified: 15
+  unresolved_material_findings: 0
+  source_evidence: Adopted PRD/STATE09/SECRES08 and approved UX4 bounded security trace, confirmed feedback003,
+    resolved REC-RUN-008. Current application implementation not audited in this final pass.
+  tests_run: []
+  limitations:
+  - Coverage/journey trace updates are independently owned and not validated in this pass.
+  - No implementation, runtime, visual, dependency or SOC 2 acceptance; specified positive/negative failure/restart
+    evidence remains mandatory delivery work.
+  provenance_refresh: Verified only accepted-decision-ledger hash and dependent brief hash changed in
+    UX manifest/brief by reversing those substitutions and matching prior validated SHA-256; PASS retained
+    without semantic re-review.
+mode: targeted_revalidation
+decision_provenance:
+- D-001
+- D-002
+- D-003
+- D-004
+- D-005
+- D-006
+- D-007
+- D-008
+- D-009
+- D-010
+- D-011
+- D-012
+- UX-DESIGN-001
+- RES-PRD-SEC-01
+- RES-PRD-ARCH-01
+- UX-DESIGN-002
+- REC-DEC-001
+- REC-DEC-003
+- PO-FEEDBACK-2026-10-11-001
+- UX-DESIGN-003
+- REC-DEC-004
+- REC-DEC-005
+- REC-DEC-007
+- PO-FEEDBACK-2026-10-11-002
+- UX-DESIGN-004
+- REC-DEC-008
+- REC-DEC-009
+- REC-DEC-010
+- PO-FEEDBACK-2026-10-17-001
+resolved_findings:
+- SECRES-F06
+- SECRES-F07
+- F-SEC-FB3-001

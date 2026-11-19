@@ -2,27 +2,25 @@ status: approved
 product_id: secretsauce-mcp
 sources:
 - path: docs/web-console-prd.md
-  revision: sha256:046771c8ca506a693e41e6085dbc3d850532a01960421f60d49ab74274fd374b
+  revision: sha256:05a8cc6436b4b9d7f71c7b04e06367bc92c80f23a46604a58c5e273c955e1691
 - path: docs/web-console-prd-coverage.md
-  revision: sha256:bb53ee6f79f7aed57a08b12efb3017fa7c877ec41f03882503616f39046bd35e
+  revision: sha256:b7c6b4109af2c71b91305de84c2467886d4e4197cbbefc4250e9172c46232e96
 - path: docs/web-console-prd-user-journey-audit.md
-  revision: sha256:d187fa76ab07f238c508ce4137ea11e461029a97f07c65dabda316cc11634a44
+  revision: sha256:8d466d968faebe2d9f245b5bf72d1210438b25bd02c0f0159a8c606b6dd7d40a
 - path: product/architecture/web-console-state-contract.md
   revision: sha256:c8e22b5013d89090cc451cb2ef0290d7517b05bebae746faa15b65f10fca9848
 - path: product/security/web-console-security-contract.md
   revision: sha256:8f66520798094a2638f006c9f3145e263e96008fdf63480fc6b98c2b0ccddc35
 - path: workflow/definition/decisions.md
-  revision: sha256:668197081b367e59ceac5d4a634720ba9369756a958ae4c2ae02696c65c5e3d3
-- path: workflow/feedback/PO-FEEDBACK-2026-10-18-003/feedback.yaml
-  revision: sha256:c49b271e03e59e92d16bf6d508356665694797bb1677edd951bd0724b3b106e8
-- path: workflow/reconciliation/REC-RUN-011/reconciliation-result.yaml
-  revision: sha256:ebf8a0dbc9e4e2284b910d17f02371ef8aec0a37b2fcefb7ca3bf8267a5d4ed8
-- path: workflow/definition/results/feedback7-ux-assessment.md
-  revision: sha256:12a98785b352b4d6aba3eaf7048fde428b738a50f69088955a27eb268d91722e
-- path: workflow/definition/drafts/product-ux/web-console-feedback-007/index.md
-  revision: sha256:74360601417bac9fe552a8e166a8a6d9fa045100af5439286c43ad3e708045ec
+  revision: sha256:1dbd51a9efdbfa39aa5cb6b1aaca734096866e56bfb41ddf810dfbf7774068fa
+- path: workflow/feedback/PO-FEEDBACK-2026-11-18-001/feedback.yaml
+  revision: sha256:f75bf33c095d27ac3983cd9d8af2babf1100aff824f0c77e7447ac2750d49334
+- path: workflow/reconciliation/REC-RUN-013/reconciliation-result.yaml
+  revision: sha256:91571dfad36655a45a4149b0d8518429f9ece3e2c4903178a6caf6864302aa43
+- path: workflow/reconciliation/REC-RUN-013/activity-filter-basis.md
+  revision: sha256:cbcea279757e19900d1a82448694046ec0098ccb2ae9f20f7624b0f5576c0f9f
 experience:
-  revision: web-console-ux-7
+  revision: web-console-ux-8
   audience:
     primary:
     - Owners
@@ -58,6 +56,10 @@ experience:
       links; actual review remains separate.
     service_review: New settings first/default with complete section cards; Changes retains paired Before/After;
       actual exception bullets precede Approve changes and separate required modal acknowledgments
+    settings_actions: One persistent white bottom bar with status, Discard, Save for later and Review changes; safe
+      multi-form state retained.
+    activity: Shared removable chips with positive alternatives and veto exclusions; fixed contextual scope and
+      last-successful-query export.
   responsive_priority: Use columns on wide screens, reflow forms and keep compact account rows linked to complete
     detail on narrow screens
   explicit_po_preferences:
@@ -105,6 +107,10 @@ experience:
     - UX-DESIGN-006
     - REC-DEC-011
     - REC-DEC-012
+  - statement: One Settings footer, named credential cards/value status, concise policy layout/copy, shared Activity
+      chips and task-specific exports.
+    decision_refs:
+    - PO-REFINEMENT-013
   explicit_po_dislikes:
   - statement: Extra viewing/editing steps and inconsistent values/state
     decision_refs:
@@ -127,5 +133,6 @@ experience:
     - UX-DESIGN-005
     - PO-REFINEMENT-010
     - UX-DESIGN-006
-    scope: Preserve approved UX4/5/6 appearance; adopt confirmed feedback003 consistency corrections and approved
-      feedback007 Limits/search direction.
+    - PO-REFINEMENT-013
+    scope: "Preserve approved UX7 appearance and concepts; adopt exact confirmed feedback202\u2013237 direction\
+      \ and delegated AUDIT02 semantics through REC013."

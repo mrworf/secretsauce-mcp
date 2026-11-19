@@ -60,11 +60,19 @@ export class ConsoleEvidence {
   return {user,f,matches,verified:rows.verified};
  }
  private sanitize(entries:EvidenceEntry[],safe:(value:string)=>string){return entries.map(e=>({...e,actor:safe(e.actor),service:safe(e.service),action:safe(e.action),reason:safe(e.reason),...(e.requestId?{requestId:safe(e.requestId)}:{})}));}
+ private present(entries:EvidenceEntry[],safe:(value:string)=>string){
+  const emails=new Map(this.store.state.users.map(user=>[user.id,user.email]));
+  return this.sanitize(entries,safe).map((entry,index)=>{
+   const source=entries[index]!;
+   const email=source.provenance==='local'?emails.get(source.actor):undefined;
+   return email?{...entry,actorEmail:safe(email)}:entry;
+  });
+ }
  query(session:ConsoleSession,input:unknown={}){
   const {user,f,matches,verified}=this.select(session,input),safe=evidenceSanitizer(this.store);
-  return {scope:user.role==='Member'?'Own activity':'Instance activity',verified,entries:this.sanitize(matches.slice(f.offset,f.offset+f.limit),safe),total:matches.length,next:f.offset+f.limit<matches.length?f.offset+f.limit:null,retentionDays:this.retention.days,recovery:this.store.state.recovery?{phase:this.store.state.recovery.phase,recoveryPoint:this.store.state.recovery.recoveryPoint,installedAt:this.store.state.recovery.installedAt??null,notice:this.store.state.recovery.notice,unknownInterval:this.store.state.recovery.unknownInterval}:undefined,exportable:user.role!=='Member'&&!session.restricted&&!this.store.journal.degraded&&!this.store.externalAudit?.degraded};
+  return {scope:user.role==='Member'?'Own activity':'Instance activity',verified,entries:this.present(matches.slice(f.offset,f.offset+f.limit),safe),total:matches.length,next:f.offset+f.limit<matches.length?f.offset+f.limit:null,retentionDays:this.retention.days,recovery:this.store.state.recovery?{phase:this.store.state.recovery.phase,recoveryPoint:this.store.state.recovery.recoveryPoint,installedAt:this.store.state.recovery.installedAt??null,notice:this.store.state.recovery.notice,unknownInterval:this.store.state.recovery.unknownInterval}:undefined,exportable:user.role!=='Member'&&!session.restricted&&!this.store.journal.degraded&&!this.store.externalAudit?.degraded};
  }
- detail(session:ConsoleSession,input:unknown){const d=parse(z.object({id:label,filters:filters.default({offset:0,limit:50})}).strict(),input);const q=this.select(session,d.filters),item=q.matches.find(e=>e.id===d.id);if(!item)throw new Error('Forbidden.');return {scope:q.user.role==='Member'?'Own activity':'Instance activity',entry:this.sanitize([item],evidenceSanitizer(this.store))[0],verified:q.verified};}
+ detail(session:ConsoleSession,input:unknown){const d=parse(z.object({id:label,filters:filters.default({offset:0,limit:50})}).strict(),input);const q=this.select(session,d.filters),item=q.matches.find(e=>e.id===d.id);if(!item)throw new Error('Forbidden.');return {scope:q.user.role==='Member'?'Own activity':'Instance activity',entry:this.present([item],evidenceSanitizer(this.store))[0],verified:q.verified};}
  export(session:ConsoleSession,input:unknown){
   const actor=this.store.requireSensitive(session);if(actor.role==='Member')throw new Error('Forbidden.');
   const data=parse(z.object({kind:z.enum(['activity','access','configuration','version']),filters:filters.default({offset:0,limit:50})}).strict(),input);

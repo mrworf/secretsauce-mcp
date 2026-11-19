@@ -17,6 +17,21 @@ describe('scoped operating evidence',()=>{
    for(const bad of [{from:2,to:1},{limit:101},{actor:'bad\nlabel'},{offset:-1},{unknown:true},{result:'invented'}])expect(()=>consoleEvidence(f.store).query(f.session,bad)).toThrow();
   }finally{sink.close();}
  });
+ it('adds the current email to authorized local Activity rows without relabeling imported actors or exports',()=>{
+  const f=fixture(),e=consoleEvidence(f.store),actor=f.store.state.users[0]!;
+  const id=f.store.journal.start(actor.id,'synthetic.actor','baseline');
+  const unknown=f.store.journal.start('external-actor','synthetic.actor','baseline');
+  const local=e.query(f.session,{action:'synthetic.actor'}).entries.find(row=>row.operation===id)!;
+  expect(local).toMatchObject({actor:actor.id,actorEmail:actor.email});
+  expect(e.detail(f.session,{id:local.id}).entry).toMatchObject({actor:actor.id,actorEmail:actor.email});
+  expect(e.query(f.session,{action:'synthetic.actor'}).entries.find(row=>row.operation===unknown)).not.toHaveProperty('actorEmail');
+  const report=e.export(f.session,{kind:'activity',filters:{action:'synthetic.actor'}});
+  expect(JSON.stringify(report)).not.toContain(actor.email);
+  const row={...local,id:'imported-actor',provenance:'imported' as const};
+  delete (row as {actorEmail?:string}).actorEmail;
+  vi.spyOn(e as unknown as {rows():unknown},'rows').mockReturnValue({verified:true,entries:[row]});
+  expect(e.query(f.session).entries[0]).not.toHaveProperty('actorEmail');
+ });
  it('Members read only own acting identity and cannot use target matching or foreign direct filters/details/exports',()=>{
   const f=fixture(),other=f.store.journal.start('foreign','identity.change',f.session.userId);
   f.store.state.users[0]!.role='Member';

@@ -1,0 +1,105 @@
+schema_version: 1
+feedback_id: PO-FEEDBACK-2026-11-19-002
+product_id: secretsauce-mcp
+source:
+  type: product_owner
+  captured_from: typed_M51_review
+  references:
+  - evidence/qa/secretsauce-mcp/ux10-integrated/acceptance.md
+status: CONFIRMED
+transaction:
+  parent_commit: e15c81412d32f6799d79abbcd88c2327cb906cfe
+  repository_commit: null
+items:
+- id: PO-FB-282
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: The delete service is good, but you need to put the text to be typed by the user in quotes, so they know
+    exactly what part to type.
+  normalized: Put quotation marks around the displayed confirmation text to make clear which characters to type.
+  scope:
+  - archived-service
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  clarifies: PO-FB-280
+- id: PO-FB-283
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: Also, for whatever reason, the "Authentication" section of Service configuration is now shrunk widthwise
+    to its smallest possible.
+  normalized: The Authentication panel has collapsed to an unexpectedly narrow width.
+  scope:
+  - service-authentication
+  authority:
+    product_intent: evidence
+  suggestions: []
+- id: PO-FB-284
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: Also, for whatever reason, the "Authentication" section of Service configuration is now shrunk widthwise
+    to its smallest possible.
+  normalized: Restore the Authentication panel to the expected service configuration width.
+  scope:
+  - service-authentication
+  authority:
+    product_intent: authoritative
+  suggestions: []
+- id: PO-FB-285
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: I also don't understand the purpose of the "Access" part of section "Accerss & policy", it simply links
+    to the parent tab "Access",
+  normalized: The Access portion of configuration duplicates the dedicated Access tab for active services.
+  scope:
+  - service-access
+  authority:
+    product_intent: evidence
+  suggestions: []
+- id: PO-FB-286
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: so why even have the "Access" portion in configuration?
+  normalized: Remove the redundant Access portion from service configuration.
+  scope:
+  - service-access
+  authority:
+    product_intent: authoritative
+  suggestions: []
+- id: PO-FB-287
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: In an active service, all is managed from "Access" with the "Access & Policy" linking to it. In draft,
+    it's the opposite.
+  normalized: Access controls appear in different locations for active and draft services.
+  scope:
+  - service-access
+  authority:
+    product_intent: evidence
+  suggestions: []
+- id: PO-FB-288
+  classification: PREFERENCE
+  confirmation: CONFIRMED
+  original: I prefer the approach of Active vs what I see in Draft services. It just gets confusing and inconsistent.
+  normalized: Use the dedicated Access tab pattern from active services as the consistent direction for draft services
+    as well.
+  scope:
+  - service-access
+  authority:
+    product_intent: advisory
+  suggestions: []
+  clarifies: PO-FB-254
+- id: PO-FB-289
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: For Request rules, the text under the allow/deny dropdown is unnecessary (Choose Allow of Deny.).
+  normalized: Remove the redundant helper text beneath the Allow/Deny dropdown.
+  scope:
+  - request-rules
+  authority:
+    product_intent: authoritative
+  suggestions: []
+unresolved: []
+handoff:
+  reconciliation_ready: false
+  next_workflow: null

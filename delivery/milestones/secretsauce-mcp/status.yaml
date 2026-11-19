@@ -620,25 +620,28 @@ milestones:
 - id: '50'
   title: Remove credential configuration and eligible saved values on Apply
   file: delivery/milestones/secretsauce-mcp/50-reviewed-credential-removal.md
-  status: in_progress
+  status: completed
   dependencies:
   - '49'
   - '29'
   - '34'
   - '47'
-  completed_at: null
-  evidence: null
-  notes: Focused outcome acceptance required; UX10-INTEGRATED due before final qualification.
+  completed_at: '2026-11-19T18:18:05.627292+00:00'
+  evidence: evidence/ux-acceptance/secretsauce-mcp/milestone50/acceptance.md
+  notes: Focused acceptance and actual browser visual evidence passed; UX10-INTEGRATED remains due before
+    goal completion.
   started_at: '2026-11-19T18:06:13.702845+00:00'
+  commit_hash: d782860c41c4b49fbcae27f9600951ccc9ee3c28
 - id: '51'
   title: Permanently delete an Archived service with retained evidence
   file: delivery/milestones/secretsauce-mcp/51-archived-service-permanent-deletion.md
-  status: pending
+  status: in_progress
   dependencies:
   - '50'
   completed_at: null
   evidence: null
   notes: Focused outcome acceptance required; UX10-INTEGRATED due before final qualification.
+  started_at: '2026-11-19T18:18:05.627292+00:00'
 delivery_goal:
   product_id: secretsauce-mcp
   status: in_progress
@@ -751,10 +754,10 @@ delivery_goal:
   - '50'
   - '51'
   execution: autonomous
-  current_milestone: '50'
-  governing_plan: delivery/plans/secretsauce-mcp/milestone_50_plan_01.md
+  current_milestone: '51'
+  governing_plan: delivery/plans/secretsauce-mcp/milestone_51_plan_01.md
   blockers: []
-  resume_point: M50 governing plan before implementation
+  resume_point: M51 governing plan before implementation
   started_at: '2026-11-19T17:55:05.817958+00:00'
 compiled_from_history:
 - product_id: secretsauce-mcp

@@ -1,0 +1,231 @@
+schema_version: 1
+feedback_id: PO-FEEDBACK-2026-11-19-001
+product_id: secretsauce-mcp
+source:
+  type: product_owner
+  captured_from: typed_latest_version_review
+  references:
+  - evidence/qa/secretsauce-mcp/ux9-integrated/acceptance.md
+status: NEEDS_CONFIRMATION
+transaction:
+  parent_commit: 64903d6831343aa78f91128b7b2e401add4d5362
+  repository_commit: null
+items:
+- id: PO-FB-265
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: Services > Service > Configuration > Access & Policy should show a warning symbol if no access is assigned,
+    this is different from the exclaimation marks which are missing information.
+  normalized: Show a distinct warning symbol on Access & Policy when nobody has access. Distinguish it from missing-information
+    indicators.
+  scope:
+  - service-access
+  authority:
+    product_intent: authoritative
+  suggestions: []
+- id: PO-FB-266
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: the remove credentials configuration link in authentication section should be a button with a modal confirmation.
+  normalized: Provide a button and modal confirmation for removing a credential configuration.
+  scope:
+  - service-credentials
+  authority:
+    product_intent: authoritative
+  suggestions: []
+- id: PO-FB-267
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: The text above it "Removing this configuration removes the proposed placement when you apply changes.
+    It does not clear the stored value." has a couple of issues.
+  normalized: The removal help text is confusing.
+  scope:
+  - service-credentials
+  authority:
+    product_intent: evidence
+  suggestions: []
+- id: PO-FB-268
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: 1) What is it really saying? Make it simpler.
+  normalized: Explain the consequence of credential removal in plain language.
+  scope:
+  - service-credentials
+  authority:
+    product_intent: authoritative
+  suggestions: []
+- id: PO-FB-269
+  classification: IDEA_OR_QUESTION
+  confirmation: NEEDS_CONFIRMATION
+  original: 2) This implies that the secret I've entered above will NOT be deleted even if I delete the credential
+    entry.
+  normalized: Clarify whether applying the removal should also delete the saved value when it is no longer used.
+  scope:
+  - service-credentials
+  authority:
+    product_intent: unresolved
+  suggestions: []
+  ambiguity:
+  - The walkthrough raises the fate of the secret. Deletion on Apply was a recommendation and has not been selected
+    explicitly.
+- id: PO-FB-270
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: I also saw you used "Placement" in the helptext under the "Authentication" dropdown above, again, this
+    is a bit odd language.
+  normalized: Replace “Placement” with plain language that explains where the credential is sent.
+  scope:
+  - service-credentials
+  authority:
+    product_intent: authoritative
+  suggestions: []
+- id: PO-FB-271
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: The login screen, I don't like that it uses that much horizontal space, looks odd on a ultrawide.
+  normalized: The sign-in form stretches too wide on an ultrawide display.
+  scope:
+  - sign-in
+  authority:
+    product_intent: evidence
+  suggestions: []
+- id: PO-FB-272
+  classification: PREFERENCE
+  confirmation: CONFIRMED
+  original: The login screen, I don't like that it uses that much horizontal space, looks odd on a ultrawide.
+  normalized: Prefer a narrower sign-in layout on wide displays.
+  scope:
+  - sign-in
+  authority:
+    product_intent: advisory
+  suggestions: []
+- id: PO-FB-273
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: The dropdown lets me pick to use a recovery code. Seems redundant?
+  normalized: The sign-in dropdown already offers a recovery code, so the similarly named secondary action appears
+    redundant.
+  scope:
+  - sign-in
+  authority:
+    product_intent: evidence
+  suggestions: []
+- id: PO-FB-274
+  classification: IDEA_OR_QUESTION
+  confirmation: CONFIRMED
+  original: Also, why "use recovery code or replace authenticator" button?
+  normalized: Clarify how the separate authenticator replacement action differs from using a recovery code to sign
+    in.
+  scope:
+  - sign-in
+  authority:
+    product_intent: exploratory
+  suggestions: []
+- id: PO-FB-275
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: The "Your saved value is never shown here" is an odd text to put, remove it.
+  normalized: Remove the quoted helper text.
+  scope:
+  - form-copy
+  authority:
+    product_intent: authoritative
+  suggestions: []
+- id: PO-FB-276
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: the contents will temporarily be moved to the bottom of the tab menu and then immediately reflowed to
+    show on the right instead.
+  normalized: Switching Settings subtabs briefly places the content below the menu before reflowing to the right.
+  scope:
+  - settings-navigation
+  authority:
+    product_intent: evidence
+  suggestions: []
+- id: PO-FB-277
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: This looks very glitchy.
+  normalized: Prevent the transient layout jump when switching Settings subtabs.
+  scope:
+  - settings-navigation
+  authority:
+    product_intent: authoritative
+  suggestions: []
+- id: PO-FB-278
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: Oh, and the overview for a service doesn't really need a "Edit configuration" button or a "Continue" button,
+    since all they do is switch tab.
+  normalized: Remove Overview actions whose only effect is to open Configuration.
+  scope:
+  - service-overview
+  authority:
+    product_intent: authoritative
+  suggestions: []
+- id: PO-FB-279
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: However, an archived service should also have an option to delete it.
+  normalized: Provide a permanent deletion action for an archived service.
+  scope:
+  - archived-service
+  authority:
+    product_intent: authoritative
+  suggestions: []
+- id: PO-FB-280
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: This should result in a modal where to delete it, user has to enter a value shown on screen to continue,
+    to avoid mistakes.
+  normalized: Require typing the displayed confirmation value in a dialog before deleting the archived service.
+  scope:
+  - archived-service
+  authority:
+    product_intent: authoritative
+  suggestions: []
+- id: PO-FB-281
+  classification: IDEA_OR_QUESTION
+  confirmation: NEEDS_CONFIRMATION
+  original: However, an archived service should also have an option to delete it.
+  normalized: Clarify which service data is deleted and how retained history and backups are treated.
+  scope:
+  - archived-service
+  authority:
+    product_intent: unresolved
+  suggestions: []
+  ambiguity:
+  - The local deletion scope and retention treatment were proposed in discussion but not approved.
+unresolved:
+- id: PO-UNRESOLVED-001
+  item_ids:
+  - PO-FB-269
+  issue: behavior
+  question: When an administrator applies removal of a credential, should the saved secret be deleted if nothing still
+    uses it?
+  options:
+  - id: A
+    meaning: Delete the saved value on Apply if nothing still uses it. Draft removal alone leaves the secret in place.
+    classification: DIRECTIVE
+  - id: B
+    meaning: Retain the saved value after Apply. Clearing or deleting it remains a separate action.
+    classification: DIRECTIVE
+  blocking_reconciliation: true
+- id: PO-UNRESOLVED-002
+  item_ids:
+  - PO-FB-281
+  issue: behavior
+  question: Should permanent deletion remove the archived service record, configuration, draft, and saved secrets
+    from the current instance while retaining audit events and existing backups under their retention rules?
+  options:
+  - id: A
+    meaning: Delete the service and its stored configuration, draft, and secrets from the current instance. Keep retained
+      audit events and existing backups under their regular retention rules.
+    classification: DIRECTIVE
+  - id: B
+    meaning: Use another deletion scope specified by the Product Owner.
+    classification: DIRECTIVE
+  blocking_reconciliation: true
+handoff:
+  reconciliation_ready: false
+  next_workflow: null

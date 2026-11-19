@@ -1,3 +1,49 @@
+# UX9 traceability
+
+Current validated package governs all mappings; REC014 report is adopted provenance. Existing older traceability is retained below as history, not remaining work.
+
+| Remediation | Current authoritative outcome | Milestone |
+| --- | --- | --- |
+| REC-RM-053 | CONFIG01/UX02 direct navigation, footer and incomplete review; UX-IN23/C79–81 | M47 |
+| REC-RM-054 | CONFIG03/STATE10/SECRES09 exact scoped discard; S9-01, UX-C82 | M47 |
+| REC-RM-055 | CONFIG03 guard-save navigation and failure preservation | M47 |
+| REC-RM-056 | CONFIG05 lifecycle orthogonal to Draft, S9-02 | M47 |
+| REC-RM-057 | MIGRATE01/03 separate empty-access imports and retirement, S9-03/04, UX-IN24/C83 | M48 |
+
+| Feedback | Classification | Disposition / consumer |
+| --- | --- | --- |
+| PO-FB-238 | OBSERVATION | Context only; corresponding confirmed outcome; M47 |
+| PO-FB-239 | DIRECTIVE | Required confirmed outcome; M47 |
+| PO-FB-240 | OBSERVATION | Context only; corresponding confirmed outcome; M47 |
+| PO-FB-241 | DIRECTIVE | Required confirmed outcome; M47 |
+| PO-FB-242 | OBSERVATION | Context only; corresponding confirmed outcome; M47 |
+| PO-FB-243 | DIRECTIVE | Required confirmed outcome; M47 |
+| PO-FB-244 | DIRECTIVE | Required confirmed outcome; M47 |
+| PO-FB-245 | DIRECTIVE | Required confirmed outcome; M47 |
+| PO-FB-246 | DIRECTIVE | Required confirmed outcome; M47 |
+| PO-FB-247 | DIRECTIVE | Required confirmed outcome; M47 |
+| PO-FB-248 | OBSERVATION | Context only; corresponding confirmed outcome; M47 |
+| PO-FB-249 | PREFERENCE | Context only; corresponding confirmed outcome; M47 |
+| PO-FB-250 | OBSERVATION | Context only; corresponding confirmed outcome; M48 |
+| PO-FB-251 | IDEA_OR_QUESTION | Superseded exploratory mapping gate; excluded; M48 |
+| PO-FB-252 | OBSERVATION | Context only; corresponding confirmed outcome; M47 |
+| PO-FB-253 | DIRECTIVE | Required confirmed outcome; M48 |
+| PO-FB-254 | DIRECTIVE | Required confirmed outcome; M48 |
+| PO-FB-255 | DIRECTIVE | Required confirmed outcome; M48 |
+| PO-FB-256 | OBSERVATION | Context only; corresponding confirmed outcome; M47 |
+| PO-FB-257 | DIRECTIVE | Required confirmed outcome; M47 |
+| PO-FB-258 | DIRECTIVE | Required confirmed outcome; M47 |
+| PO-FB-259 | IDEA_OR_QUESTION | Context only; corresponding confirmed outcome; M47 |
+| PO-FB-260 | DIRECTIVE | Required confirmed outcome; M47 |
+| PO-FB-261 | DIRECTIVE | Required confirmed outcome; M47 |
+| PO-FB-262 | DIRECTIVE | Required confirmed outcome; M47 |
+| PO-FB-263 | DIRECTIVE | Required confirmed outcome; M48 |
+| PO-FB-264 | DIRECTIVE | Required confirmed outcome; M48 |
+
+Shared STATE10/SECRES09, S9-05, UX-G10/R11/A12 and exact appearance/focus constraints intentionally map to both. Permission/current grants, value timing, audit uncertainty and compatibility remain governing constraints, not separate milestones. Existing Settings/SMTP/Activity behavior and all completed work are preservation scope. No automatic credential cleanup, permanent service deletion, mapping wizard, overwritten imports, blanket storage redesign or new roles. Blocked: none. Required deferred: none. Unmapped: none.
+
+## Historical traceability (prior packets)
+
 # UX8 implementation traceability
 
 Current validated package is implementation authority; REC013 is adopted provenance. Completed UX7 mapping is retained below as historical scope.

@@ -5,74 +5,72 @@ source_eligibility:
   status: PASS
   primary_input:
     path: workflow/definition/definition-package.yaml
-    revision: sha256:781ffaf28362e1189a5e7f7353bbf8d9b89f1d4928b98e1f060f7022d3cf9548
-    repository_commit: 80edc3f0b720b3a5bf7b49a8585817a38072ed54
-  reason: Current published UX8 definition package is primary authority; compile only remaining REC013 delta
-    after completed M10–44. Historical REC013 pending revalidation flags were discharged by six current definition
-    passes; no unready standalone CHANGE_PLAN is consumed.
-  reconciliation_role: Adopted trace after current six-stage validation; historical producer gate unchanged
+    revision: sha256:d253b2e79042338dc726d74066f69105acf6e742d4759ab73e366b29afc4c72c
+    repository_commit: 8c307a8e745c6b739abc241be30a63c14f850449
+  reason: Published validated UX9 PRODUCT_BUILD package is primary; compile only remaining REC014 delta. Historical
+    producer revalidation flags are discharged by current package passes, not consumed as a fresh standalone CHANGE_PLAN.
 packet:
   path: delivery/milestones/secretsauce-mcp
   manifest: delivery/milestones/secretsauce-mcp/status.yaml
   new_milestones:
-  - '45'
-  - '46'
-  existing_completed_count: 35
+  - '47'
+  - '48'
+  existing_completed_count: 37
 granularity_assessment:
   outcomes: 2
-  rationale: Small shared editing refinements consolidated; substantially different Activity predicate/export
-    trust boundary separate; all five remediation outcomes included.
-  unresolved_findings: []
+  rationale: One coherent service edit/discard flow; separate substantive import authority/migration outcome consuming
+    it.
 validated_inputs:
 - path: workflow/definition/definition-package.yaml
-  revision: sha256:781ffaf28362e1189a5e7f7353bbf8d9b89f1d4928b98e1f060f7022d3cf9548
+  revision: sha256:d253b2e79042338dc726d74066f69105acf6e742d4759ab73e366b29afc4c72c
 artifact_changes:
 - path: delivery/milestones/secretsauce-mcp/index.md
-  summary: Bounded UX8 milestone compilation or provenance/trace
+  summary: UX9 bounded compilation and source trace
 - path: delivery/milestones/secretsauce-mcp/traceability.md
-  summary: Bounded UX8 milestone compilation or provenance/trace
+  summary: UX9 bounded compilation and source trace
 - path: delivery/milestones/secretsauce-mcp/status.yaml
-  summary: Bounded UX8 milestone compilation or provenance/trace
-- path: delivery/milestones/secretsauce-mcp/45-consistent-editing-actions.md
-  summary: Bounded UX8 milestone compilation or provenance/trace
-- path: delivery/milestones/secretsauce-mcp/46-scoped-activity-investigation.md
-  summary: Bounded UX8 milestone compilation or provenance/trace
+  summary: UX9 bounded compilation and source trace
+- path: delivery/milestones/secretsauce-mcp/47-service-edit-review-and-discard.md
+  summary: UX9 bounded compilation and source trace
+- path: delivery/milestones/secretsauce-mcp/48-independent-unassigned-service-import.md
+  summary: UX9 bounded compilation and source trace
 - path: workflow/delivery-planning/results/compiler.yaml
-  summary: Bounded UX8 milestone compilation or provenance/trace
+  summary: UX9 bounded compilation and source trace
 changed_paths:
 - delivery/milestones/secretsauce-mcp/index.md
 - delivery/milestones/secretsauce-mcp/traceability.md
 - delivery/milestones/secretsauce-mcp/status.yaml
-- delivery/milestones/secretsauce-mcp/45-consistent-editing-actions.md
-- delivery/milestones/secretsauce-mcp/46-scoped-activity-investigation.md
+- delivery/milestones/secretsauce-mcp/47-service-edit-review-and-discard.md
+- delivery/milestones/secretsauce-mcp/48-independent-unassigned-service-import.md
 - workflow/delivery-planning/results/compiler.yaml
 findings: []
+unresolved_findings: []
 questions: []
 blocked: []
 unmapped: []
+coverage:
+  remediation_ids:
+  - REC-RM-053
+  - REC-RM-054
+  - REC-RM-055
+  - REC-RM-056
+  - REC-RM-057
+  feedback_dispositions: 27
+  unmapped: []
 validation:
   source_revisions: PASS
-  definition_gate: Consumed current published package, not rerun
-  completed_history: 35 milestone records preserved exactly
-  structural_validator: 'PASS: validated37 milestone records and document contracts'
-  whitespace: 'PASS: git diff --check'
+  definition_gate: Consumed current published package
+  completed_history: 37 completed records/contracts preserved
+  structural_validator: PASS39 milestone records/contracts
+  whitespace: PASS
 ready_for_milestone_readiness: true
 implementation_started: false
 commit_ownership: parent planning transaction
-transaction_start_commit: 5a95a349a326af07a32869e10d69c22fae299fcf
+transaction_start_commit: 985b8d082d63ef681abda185b3ed1a7268384b34
 pre_existing_dirty_paths:
 - workflow/delivery-planning/state.yaml
-- workflow/delivery-planning/history/
+- workflow/delivery-planning/handoff.yaml
+- workflow/delivery-planning/history/ux8/
 - passwd
 - codex-session-01a122f7-e70f-7440-b1ce-ca88b955e519.md
 - test-results/
-coverage:
-  required_remediation_count: 5
-  mapped_remediation_ids:
-  - REC-RM-048
-  - REC-RM-049
-  - REC-RM-050
-  - REC-RM-051
-  - REC-RM-052
-  feedback_disposition_count: 36
-  unmapped: []

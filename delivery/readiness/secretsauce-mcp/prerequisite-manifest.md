@@ -1,17 +1,16 @@
-# Milestone Prerequisite Manifest — UX8
+# Milestone prerequisite manifest — UX9
 
-- Packet: `delivery/milestones/secretsauce-mcp/status.yaml`; product `secretsauce-mcp`.
-- Audited revision: all-file fingerprint and exact digests in `workflow/delivery-planning/results/readiness.yaml`.
-- Source transaction: `80edc3f0b720b3a5bf7b49a8585817a38072ed54`; planning transaction parent-owned pending publication, start `5a95a349a326af07a32869e10d69c22fae299fcf`.
-- Intended order: completed M10–44, then M45, M46. Both pending outcomes independently consume completed providers; explicit status dependencies govern.
-- Audit: 2026-11-18. Previous prerequisite versions remain in Git.
+- Packet/product: `delivery/milestones/secretsauce-mcp/status.yaml`, `secretsauce-mcp`.
+- Source transaction: `8c307a8`; planning start `985b8d0`; parent-owned planning publication pending.
+- Audited revisions: exact packet/source digests in `workflow/delivery-planning/results/readiness.yaml`.
+- Intended order: completed M10–46, then M47 → M48, per status dependencies/index. Audit: 2026-11-18.
 
 | ID | Description | Consumers | Classification | Current status | Proposed provider | Class | Verification | Commands executed | Files changed | Blocking | Evidence |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| PRE-061 | Settled UX8 authority and appearance | M45/46 | Already satisfied | Verified | Published definition | AUTO | Source/compiler hashes and current approved UX | Python hashes/path checks | Readiness docs | Yes | FACT: definition-package.yaml, compiler.yaml, UX manifest |
-| PRE-062 | Node >=22, npm packages and OpenSSL | M45/46 | Already satisfied | Verified versions/dependencies | package/lock and documented npm ci | AUTO | Runtime and dependency probes | node --version; npm --version; openssl version; npm ls --depth=0 | None | Yes | FACT: package.json, lockfile, console-operations setup |
-| PRE-063 | Synthetic HTTPS browser facilities | M45/46 | Already satisfied | Pinned Playwright1.64 image verified; default host Chromium absent, supported Docker route available | Existing harnesses and image; documented Chromium installation for fresh hosts | AUTO | Image inspect and retained passing harness evidence | docker image inspect; executable-path existence probe | None | Yes at browser qualification | FACT: existing scripts, UX7 integrated acceptance and reproduction |
-| PRE-064 | Completed editing/evidence/navigation foundations | M45:31/32/41/43/44; M46:15/42/43 | Provided by an earlier milestone | Verified completed and unchanged | Repository completed milestones | AUTO | Exact status/contract comparison and graph | Python dependency/preservation check | None | Yes | FACT: status.yaml and contracts |
-| PRE-065 | New assertions, screenshots and integrated qualification | M45/46; UX8-INTEGRATED | Owned by the consuming milestone | Scheduled, not run | Milestone acceptance and integrated checkpoint | AUTO | Named tests/harnesses and commands exist | Path inspection | M45/46 readiness sections | Yes at acceptance | FACT: Required Validation, status regression checkpoint |
+| PRE-066 | Settled UX9 authority and appearance | M47/48 | Already satisfied | Verified | Published definition | AUTO | Current source/compiler hashes | Python hash/path checks | Readiness docs | Yes | FACT: current definition-package, compiler and UX manifest |
+| PRE-067 | Node >=22, OpenSSL, locked dependencies | M47/48 | Already satisfied | Verified | package/lock; documented npm ci | AUTO | Runtime/dependency probes | node --version; npm --version; openssl version; npm ls --depth=0 | None | Yes | FACT: package.json, package-lock.json, docs/console-operations.md |
+| PRE-068 | Disposable synthetic HTTPS browser facility | M47/48 | Already satisfied | Existing supported route verified from source and retained qualification | Declared Playwright/Chromium or pinned Docker image | AUTO | Existing harness and prior acceptance inspection | Source/path inspection; no container execution | None | Yes at visual qualification | FACT: scripts/verify-console-advanced-browser.mjs, verify-console-service-help-browser.mjs and evidence/qa/secretsauce-mcp/ux8-integrated/acceptance.md |
+| PRE-069 | Earlier coherent state/review foundations | M47:35/41/45/46; M48:47/42 | Provided by an earlier milestone | Existing providers complete; M47 intentionally pending before M48 | Declared milestone dependency | AUTO | Full graph/order and history comparison | Python comparison with 985b8d0 | None | Yes at consuming milestone start | FACT: 39-node graph, 37 completed records/contracts preserved |
+| PRE-070 | Focused and integrated qualification | M47/48; UX9-INTEGRATED | Owned by the consuming milestone | Scheduled, not executed | Implementation acceptance | AUTO | Named tests/harnesses exist; checkpoint explicit | Path inspection | M47/48 readiness checks | Yes at acceptance | FACT: Required Validation and UX9-INTEGRATED |
 
-No external LLM integration change, real SMTP account, live secrets or persistent service is needed. Fresh setup requires declared package/browser downloads; this is documented provisioning, not an undeclared cache assumption. Retained browser evidence establishes facility availability, not current feature acceptance. Conditional transport/recovery gates remain unchanged.
+No external service account, real credential, live deployment or LLM connection is required. Fresh environment provisioning requires package/browser downloads as declared setup, not an assumed cache. Existing acceptance proves the facility, not these future features. Conditional transport/recovery gates remain.

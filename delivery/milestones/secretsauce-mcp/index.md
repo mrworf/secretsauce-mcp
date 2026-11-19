@@ -1,36 +1,27 @@
-# Web console delivery milestones — current UX8 delta
+# Web console delivery milestones — UX9 remaining delta
 
-Input mode **PRODUCT_BUILD**. Current published UX8 definition package is primary authority; compile only remaining REC013 delta after completed M10–44. Historical REC013 pending revalidation flags were discharged by six current definition passes; no unready standalone CHANGE_PLAN is consumed.
+Input mode **PRODUCT_BUILD**. Published validated UX9 PRODUCT_BUILD package is primary; compile only remaining REC014 delta. Historical producer revalidation flags are discharged by current package passes, not consumed as a fresh standalone CHANGE_PLAN.
 
-## Authority and eligibility
+## Authority
+Package `workflow/definition/definition-package.yaml` revision `sha256:d253b2e79042338dc726d74066f69105acf6e742d4759ab73e366b29afc4c72c`, published payload `8c307a8e745c6b739abc241be30a63c14f850449`. Indexed exact hashes verified; passed definition gates consumed without re-running them. REC014 five remediations are adopted provenance and feedback dispositions, not independent new authority. SEC-DEF-001 and UX-EX03 remain preserved. Existing completed M10–46, prior integrated checkpoints, and tested originating-screen export confirmation, current email beside Activity actor ID, and shared service header fixes remain baseline.
 
-Package `workflow/definition/definition-package.yaml` at `sha256:781ffaf28362e1189a5e7f7353bbf8d9b89f1d4928b98e1f060f7022d3cf9548`, payload `80edc3f0b720b3a5bf7b49a8585817a38072ed54`; exact indexed revisions verified, passed definition validations consumed without repeating them. Current PRD/UX8 and targeted architecture/security reviews create/constrain work; REC013/feedback preserve trace, not fresh scope. Preserve completed M10–44 and passed UX7-INTEGRATED. Accepted SEC-DEF-001 and SMTP UX-EX03 remain unchanged.
+## Current outcomes
 
-## Current outcome graph
+| Milestone | Outcome | Dependencies | Status |
+| --- | --- | --- | --- |
+| [M47](47-service-edit-review-and-discard.md) | Coherent service editing, incomplete review and scoped discard | M35/41/45/46 completed | pending |
+| [M48](48-independent-unassigned-service-import.md) | Separate unassigned imports and safe legacy retirement | M47 and completed M42 | pending |
 
-| Milestone | Outcome | Completed providers | Status |
-|---|---|---|---|
-| [M45](45-consistent-editing-actions.md) | Consistent Settings/service editing actions and explanations | M31,M32,M41,M43,M44 | pending |
-| [M46](46-scoped-activity-investigation.md) | Bounded scoped Activity investigation and relevant evidence exports | M15,M42,M43 | pending |
+## Granularity and order
+Four shared editing/status/discard remediations combine into M47: splitting footer/badges/guard/state would fragment one usable edit/exit journey. M48 is a substantial independently demonstrable import/migration authority boundary, consuming M47's retained Inactive identity, incomplete review and ordinary empty-access handling. M47 excludes allocation/legacy mapping retirement; M48 does not duplicate its footer work. No foundation/M0, per-finding milestones or prescribed implementation slices.
 
-No dependency between new outcomes: both consume completed contracts. Earliest integrated demonstration is M45: edit populated Settings through one bar; configure a named service credential/policy/access and review without changing value timing. M46 independently demonstrates query→detail→searched export plus report destinations. Shared files require coordination, not false dependency edges.
-
-## Granularity assessment
-
-Five remediation outcomes consolidate into two bounded user tasks. M45 combines small presentation corrections sharing the editing/state/action hierarchy and existing form guards; a separate footer, wording or card milestone would add gates without independent substantial capability. It excludes Activity, new predicates and persistence changes. M46 joins chips, hard scope, pagination/detail/export parity and report placement because shipping half would leave investigation/export inconsistent. Its richer user input and confidentiality/authorization risk justify separation from M45. No foundation, catch-all subsystem rewrite, per-finding milestone or prescribed slice count.
-
-## Validation boundary
-
-Focused build/tests/browser and actual approved-state visual comparison belong to each milestone. `status.yaml#regression_checkpoints.UX8-INTEGRATED` separately requires one full bounded-worker suite/build plus joined role/edit/investigation qualification before deployment/final acceptance. Preserve AGENTS mandatory gates and first/second unexpected-regression escalation. No tests, readiness bootstrap or acceptance executed in compilation. Local synthetic evidence cannot certify external LLM connectivity.
-
-## Exclusions and blockers
-
-No blocked or unmapped required work. Superseded220/223 do not create work; suggestions/preferences remain advisory. Existing result cards, SMTP timing, history UI hiding, transfer YAML, all completed runtime and recovery behavior remain intact. No new roles, query language, saved searches, extra Settings primary section or immutable search persistence.
+## Regression and boundaries
+Focused checks and actual matching visual comparison belong to each outcome. UX9-INTEGRATED retains full bounded-worker suite/build and joined browser/security-state qualification before deployment/final acceptance. No full suite, bootstrap probes, implementation or readiness work runs in compilation. Required positive/negative external-input coverage, audit uncertainty, conditional compatibility/recovery gates and escalation remain. No blockers, required deferrals or unmapped items.
 
 ## Completed history
 
-| Milestone | Title | State |
-|---|---|---|
+| Milestone | Contract | Status |
+| --- | --- | --- |
 | M10 | [Establish secure audited console access](10-secure-audited-setup.md) | completed |
 | M11 | [Configure and activate services safely](11-managed-service-configuration.md) | completed |
 | M12 | [Manage people and recover accounts](12-people-and-account-recovery.md) | completed |
@@ -62,14 +53,9 @@ No blocked or unmapped required work. Superseded220/223 do not create work; sugg
 | M38 | [See concrete security exceptions before approval](38-visible-review-exceptions.md) | completed |
 | M39 | [Navigate guided editing without a redundant detection section](39-focused-guided-service-navigation.md) | completed |
 | M40 | [Identify every explicit policy scanning override](40-policy-scanning-override-markers.md) | completed |
-
 | M41 | [Complete service setup through precise guidance](41-service-setup-and-readiness.md) | completed |
 | M42 | [Transfer configuration with usable YAML downloads](42-configuration-transfer-tools.md) | completed |
 | M43 | [Find and review operational settings clearly](43-settings-navigation-and-review.md) | completed |
 | M44 | [Manage SMTP credentials through a clear focused task](44-smtp-credential-dialogs.md) | completed |
-
-Completed contracts, records, evidence and delivery-goal history are unchanged. Current status manifest is authoritative; earlier indexes are available in Git history. No new delivery goal is started by compilation.
-
-## Handoff
-
-[Traceability](traceability.md) maps every required delta and every feedback item. Known semantic blockers/unmapped requirements: none. Packet is complete for milestone-readiness, not yet an environment-readiness or release claim. Parent delivery-planning-orchestrator owns commit/publication.
+| M45 | [Configure services and Settings with clear consistent actions](45-consistent-editing-actions.md) | completed |
+| M46 | [Investigate scoped Activity with reusable filters and relevant exports](46-scoped-activity-investigation.md) | completed |

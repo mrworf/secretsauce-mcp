@@ -3,17 +3,18 @@ specialist: milestone-readiness
 product_id: secretsauce-mcp
 input_mode: PRODUCT_BUILD
 status: READY
-summary: M45/46 are ordered and locally executable; completed providers preserved; no M0 or blockers.
+summary: M47 then M48 are locally executable in declared order; all 37 completed providers preserved; no M0 or external
+  blocker.
 source:
   path: workflow/definition/definition-package.yaml
-  revision: sha256:781ffaf28362e1189a5e7f7353bbf8d9b89f1d4928b98e1f060f7022d3cf9548
-  repository_commit: 80edc3f0b720b3a5bf7b49a8585817a38072ed54
+  revision: sha256:d253b2e79042338dc726d74066f69105acf6e742d4759ab73e366b29afc4c72c
+  repository_commit: 8c307a8e745c6b739abc241be30a63c14f850449
 packet:
   path: delivery/milestones/secretsauce-mcp
   manifest: delivery/milestones/secretsauce-mcp/status.yaml
-  manifest_revision: sha256:458ca79cd350d443e5e12167adb17df8fe76019f956d6d8ab43b9a424585f38a
-  compiler_revision: sha256:9bbf51459a1d5b6665d07ea95540225501e38a6cdce4cf7a9111184f9c3a08b7
-  revision: sha256:89929b6fda3463d07fe9bcbcf9727c99b14b55d4ddcee949fe3b02f532b76d09
+  manifest_revision: sha256:1f23d37203ecb647f08025fc9aa12ecfe3d27153b0c7fe5ca3948bac06e86e37
+  compiler_revision: sha256:610c5703ceabba959e773b66aac2f1feef9772217881b1400dde278c3b3aac51
+  revision: sha256:f116722c929f7b3f68865b07a3d106cf8faf819c8e1b3359530c79592fcebe99
   revision_method: SHA-256 of sorted packet path + NUL + sha256:file-digest lines joined with newline (no trailing
     newline); all packet files included.
   artifacts:
@@ -91,49 +92,53 @@ packet:
     revision: sha256:9e547c7f2649263ef6ca3dc59fa0536f2a50fc35cbf5b9dd88e32365a9875a19
   - path: delivery/milestones/secretsauce-mcp/46-scoped-activity-investigation.md
     revision: sha256:75f891f3d91483890cf36c0f40138e17d8a640f8ed7fde11a978de09ce51b871
+  - path: delivery/milestones/secretsauce-mcp/47-service-edit-review-and-discard.md
+    revision: sha256:4f01d2053264f4f8d3309e1c6996d01233529908852aadb76c71e8fc1e535ffa
+  - path: delivery/milestones/secretsauce-mcp/48-independent-unassigned-service-import.md
+    revision: sha256:afa70b9dfdb3a35e179a3f71eee57b3aee35ac10dc30e123e2b9768c93c81c95
   - path: delivery/milestones/secretsauce-mcp/index.md
-    revision: sha256:7369bea0ea7675e552dd4382d5bd50969718242d233f166249618356eef39358
+    revision: sha256:da148eb1fe5644cd9e9f9ea90e641e9f201f2850e7dc0e580a7993f72e3e06ab
   - path: delivery/milestones/secretsauce-mcp/status.yaml
-    revision: sha256:458ca79cd350d443e5e12167adb17df8fe76019f956d6d8ab43b9a424585f38a
+    revision: sha256:1f23d37203ecb647f08025fc9aa12ecfe3d27153b0c7fe5ca3948bac06e86e37
   - path: delivery/milestones/secretsauce-mcp/traceability.md
-    revision: sha256:4fff8778f2df6134717ead7ef29260f901abd959b613cfcfd671fe24f9228bdc
+    revision: sha256:b3a2d2aab6eab03d4842775148e20514799e34b2a412d2efacc8c6d31d439a23
 reports:
   prerequisite_manifest: delivery/readiness/secretsauce-mcp/prerequisite-manifest.md
   readiness_report: delivery/readiness/secretsauce-mcp/readiness-report.md
 prerequisite_ids:
-- PRE-061
-- PRE-062
-- PRE-063
-- PRE-064
-- PRE-065
+- PRE-066
+- PRE-067
+- PRE-068
+- PRE-069
+- PRE-070
 confirmation_required: []
 user_actions_required: []
 external_dependencies: []
 unresolved_internal_prerequisites: []
 blockers: []
-next_milestone: '45'
+next_milestone: '47'
 affected_milestones:
-- '45'
-- '46'
+- '47'
+- '48'
 m0:
   disposition: Not required
-  reason: Existing foundations and synthetic validation facilities suffice.
+  reason: Existing foundations and synthetic local facilities suffice.
 checks:
-  dependency_order: PASS37
-  history_preserved: PASS35 completed records/contracts and goal/history
+  dependency_order: PASS39
+  history_preserved: PASS37 completed records/contracts and previous goal/checkpoints
   source_hash: PASS
-  clean_environment_simulation: PASS conceptual
-  application_acceptance: Not run; milestone-owned
+  clean_environment_simulation: PASS conceptual; fresh provisioning not executed
+  application_acceptance: Not run; consuming milestone-owned
   working_tree_diff_check: PASS
 changed_paths:
-- delivery/milestones/secretsauce-mcp/45-consistent-editing-actions.md
-- delivery/milestones/secretsauce-mcp/46-scoped-activity-investigation.md
+- delivery/milestones/secretsauce-mcp/47-service-edit-review-and-discard.md
+- delivery/milestones/secretsauce-mcp/48-independent-unassigned-service-import.md
 - delivery/readiness/secretsauce-mcp/prerequisite-manifest.md
 - delivery/readiness/secretsauce-mcp/readiness-report.md
 - workflow/delivery-planning/results/readiness.yaml
 transaction:
   owner: delivery-planning-orchestrator
-  parent_commit: 5a95a349a326af07a32869e10d69c22fae299fcf
+  parent_commit: 985b8d082d63ef681abda185b3ed1a7268384b34
   repository_commit: null
   child_commit: false
   pre_existing_unrelated_paths:
@@ -147,6 +152,6 @@ handoff:
   parent_action: Validate and publish combined planning transaction
   next_skill: milestone-delivery-orchestrator
   manifest: delivery/milestones/secretsauce-mcp/status.yaml
-  start_milestone: '45'
+  start_milestone: '47'
   implementation_started: false
   ready_handoff_requires_parent_commit: true

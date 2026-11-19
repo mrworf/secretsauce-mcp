@@ -6,27 +6,27 @@ source:
   mode: PRODUCT_BUILD
   type: definition-package
   path: workflow/definition/definition-package.yaml
-  revision: sha256:781ffaf28362e1189a5e7f7353bbf8d9b89f1d4928b98e1f060f7022d3cf9548
-  repository_commit: 80edc3f0b720b3a5bf7b49a8585817a38072ed54
+  revision: sha256:d253b2e79042338dc726d74066f69105acf6e742d4759ab73e366b29afc4c72c
+  repository_commit: 8c307a8e745c6b739abc241be30a63c14f850449
 planning:
-  parent_commit: 5a95a349a326af07a32869e10d69c22fae299fcf
-  repository_commit: 62343ccec607617b832c1ec6538e96acd400cb21
+  parent_commit: 985b8d082d63ef681abda185b3ed1a7268384b34
+  repository_commit: null
 milestones:
   manifest: delivery/milestones/secretsauce-mcp/status.yaml
-  packet_revision: sha256:89929b6fda3463d07fe9bcbcf9727c99b14b55d4ddcee949fe3b02f532b76d09
+  packet_revision: sha256:f116722c929f7b3f68865b07a3d106cf8faf819c8e1b3359530c79592fcebe99
   active_milestones:
-  - '45'
-  - '46'
+  - '47'
+  - '48'
 readiness:
   status: READY
   prerequisite_manifest: delivery/readiness/secretsauce-mcp/prerequisite-manifest.md
   result: delivery/readiness/secretsauce-mcp/readiness-report.md
   adapter: workflow/delivery-planning/results/readiness.yaml
-  packet_revision: sha256:89929b6fda3463d07fe9bcbcf9727c99b14b55d4ddcee949fe3b02f532b76d09
+  packet_revision: sha256:f116722c929f7b3f68865b07a3d106cf8faf819c8e1b3359530c79592fcebe99
 m0:
   present: false
   milestone: null
-  rationale: Existing foundations and synthetic validation facilities suffice.
+  rationale: Current repository and synthetic harness prerequisites suffice.
 external_dependencies: []
 delivery_constraints:
   granularity: coherent_integrated_outcomes
@@ -34,54 +34,51 @@ delivery_constraints:
   split_trigger: distinct_substantial_outcome_or_material_risk_boundary
   validation: focused_during_iteration_broader_at_required_checkpoint
   contract:
-  - Before production edits, minimal-slice-delivery records each observable behavior, exclusions, focused
-    positive/negative evidence and commit boundary; keep necessary layers and related same-pattern support
-    together.
-  - Revise remaining slice plans before absorbing another behavior; tests and fixes proving the same behavior
-    remain together. Complete and commit verified outcomes without relabeling remaining acceptance.
-  - Slice refinements stay within milestone authority; scope/dependency changes return to planning and
-    preserve completed history.
-  - Run focused checks during iteration and broader regression at its planned stable boundary; repeat
-    passing checks only for relevant changes, failures, unresolved risks or required gates.
-  - Demonstrate integrated behavior at the earliest dependency-safe checkpoint. Synthetic fixtures do
-    not prove real external interoperability.
-  - First confirmed out-of-area regression expands focused scope; second distinct regression or further
-    spread requires full regression after focused repair.
+  - Before production edits, minimal-slice-delivery records each observable behavior, exclusions, focused positive/negative
+    evidence and commit boundary; keep necessary layers and related same-pattern support together.
+  - Revise remaining slice plans before absorbing another behavior; tests and fixes proving the same behavior remain
+    together. Complete and commit verified outcomes without relabeling remaining acceptance.
+  - Slice refinements stay within milestone authority; scope/dependency changes return to planning and preserve
+    completed history.
+  - Run focused checks during iteration and broader regression at its planned stable boundary; repeat passing checks
+    only for relevant changes, failures, unresolved risks or required gates.
+  - Demonstrate integrated behavior at the earliest dependency-safe checkpoint. Synthetic fixtures do not prove
+    real external interoperability.
+  - First confirmed out-of-area regression expands focused scope; second distinct regression or further spread requires
+    full regression after focused repair.
   regression_plan:
     source: delivery/milestones/secretsauce-mcp/status.yaml#regression_checkpoints
     checkpoints:
-      UX8-INTEGRATED:
+      UX9-INTEGRATED:
         covered_milestones:
-        - '45'
-        - '46'
+        - '47'
+        - '48'
         status: pending
-        due: After both outcomes and before deployment/final packet acceptance; bounded stop leaves broader
-          qualification pending.
+        due: After both outcomes and before deployment/final acceptance; bounded stop leaves this obligation pending.
         categories:
         - full unit/integration suite and build
-        - joined service/Settings edit-state and Activity search-detail-export browser qualification
-        - Member and evidence-role scope, audit denials and SMTP timing regression
-        - matching-state UX8 visual/keyboard/narrow/enlarged-text comparison
+        - joined service edit/discard/import/review browser journey
+        - current authority/credential preservation and legacy retirement negatives
+        - matching UX9 visual keyboard narrow/enlarged-text qualification
         commands:
         - npm test -- --maxWorkers=2
         - npm run build
-        execution: Frozen sources; no concurrent browser/Docker workloads during full suite. Synthetic
-          isolated HTTPS browser checks separately.
+        execution: Frozen source, no concurrent browser/Docker workload during full suite; isolated synthetic HTTPS
+          browser checks separately.
+        escalation: First confirmed out-of-area regression expands focused checks; second distinct regression/spread
+          requires full suite after repairs.
+        conditional: Changed transport requires actual self-signed HTTPS; changed recovery/launcher requires existing
+          Docker/recovery gates.
         evidence: null
-        escalation: First confirmed unexpected out-of-area regression expands focused scope; second distinct
-          regression or spread requires full regression after focused repairs.
-        conditional: Actual self-signed HTTPS if transport changes; existing Docker recovery gates if
-          recovery/launcher changes; no new external LLM dependency.
 visual_acceptance:
   approved_reference: product/ux/manifest.yaml
-  revision: web-console-ux-8
+  revision: web-console-ux-9
+  required: Compare actual browser screenshots at matching states/viewports against approved references and exact
+    UX9 delta; preserve unaffected appearance and behavior. Functional tests alone are insufficient.
   requirements:
   - UX-V05
   - UX-C42
-  - "UX-C72\u201378"
-  required: Compare actual browser screenshots at matching states/viewports against approved references
-    and UX8 exact delta precedence; preserve appearance, density, hierarchy and all unaffected UX7 behavior.
-    Functional tests alone are insufficient.
+  - "UX-C79\u201383"
 next:
   workflow: implementation
   recommended_skill: milestone-delivery-orchestrator

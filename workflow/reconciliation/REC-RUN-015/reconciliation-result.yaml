@@ -4,11 +4,11 @@ product_id: secretsauce-mcp
 status: RESOLVED
 transaction:
   parent_commit: d29f412f4587f2338dbc03b99231d179fb5f33cd
-  repository_commit: null
+  repository_commit: 9065c4557118f98ffc68377f5d032405a8278c61
   owned_paths:
   - workflow/reconciliation/REC-RUN-015/
   - docs/web-console-prd.md
-  publication: payload pending; closeout records immutable payload commit
+  publication: published; repository_commit identifies immutable payload; closeout changes provenance only
   pre_existing_dirty_paths:
   - workflow/definition/state.yaml
   - workflow/definition/history/web-console-ux-9-completed/

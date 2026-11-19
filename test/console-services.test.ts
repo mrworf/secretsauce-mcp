@@ -71,7 +71,7 @@ it('lists independent lifecycle, pending changes and readiness without leaking v
  s.applied!.no_auth=false;s.applied!.credentials=[{id:'key',usage:{kind:'header',name:'X-Key'}}];s.draft.content=structuredClone(s.applied!);
  expect(f.manager.list(f.session).services[0]).toMatchObject({lifecycle:'Active',hasDraft:true,readiness:'Value missing',activationBlocker:'Credential 1: Set a credential value before applying.'});
  s.values.key={value:'synthetic-private-value',version:1,changed:Date.now()};expect(JSON.stringify(f.manager.list(f.session))).not.toContain('synthetic-private-value');expect(f.manager.list(f.session).services[0]).toMatchObject({readiness:'Configured',activationBlocker:null});
- s.draft.missingMappings=['old'];expect(f.manager.list(f.session).services[0]).toMatchObject({activationBlocker:'Choose who the imported accounts refer to in Resolve identity mappings.'});
+ s.draft.missingMappings=['old'];expect(f.manager.list(f.session).services[0]).toMatchObject({activationBlocker:null});
  f.store.state.users[0]!.role='Auditor';expect(f.manager.list(f.session).writable).toBe(false);
  f.store.state.users[0]!.role='Member';expect(f.manager.list(f.session).services[0]).toMatchObject({hasDraft:false});expect(f.manager.list(f.session).services[0]).not.toHaveProperty('activationBlocker');s.assignments=[];expect(f.manager.list(f.session).services).toHaveLength(0);
 }finally{f.close();}});

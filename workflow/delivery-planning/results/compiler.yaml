@@ -5,182 +5,74 @@ source_eligibility:
   status: PASS
   primary_input:
     path: workflow/definition/definition-package.yaml
-    revision: sha256:5cbab67a72563abc911de8c314ad900dd9da2614118a27fc4e3500d502ac5732
-    repository_commit: ff213d5a1803b337050149ebffc8ae2debaadee5
-  reason: "Current validated UX7 definition package is the primary new authority;\
-    \ compile only remaining scope after completed M10\u201340. Historical REC012\
-    \ gate was discharged by committed definition handoff, not edited or consumed\
-    \ as a live unready CHANGE_PLAN."
-  current_effective_handoff:
-    path: workflow/definition/state.yaml#next_handoff
-    revision: sha256:dad1814d2feb8903344364c56b297922bc80c9e4e3c53507b968d26fb10ce95b
-    revalidation_resolution: Current committed definition handoff is ready; REC012
-      remains immutable historical provenance.
-  reconciliation_role: Historical adopted provenance; current package is post-revalidation
-    authority. No canonical result rewritten.
+    revision: sha256:781ffaf28362e1189a5e7f7353bbf8d9b89f1d4928b98e1f060f7022d3cf9548
+    repository_commit: 80edc3f0b720b3a5bf7b49a8585817a38072ed54
+  reason: Current published UX8 definition package is primary authority; compile only remaining REC013 delta
+    after completed M10–44. Historical REC013 pending revalidation flags were discharged by six current definition
+    passes; no unready standalone CHANGE_PLAN is consumed.
+  reconciliation_role: Adopted trace after current six-stage validation; historical producer gate unchanged
 packet:
   path: delivery/milestones/secretsauce-mcp
   manifest: delivery/milestones/secretsauce-mcp/status.yaml
   new_milestones:
-  - '41'
-  - '42'
-  - '43'
-  - '44'
-  existing_completed_count: 31
+  - '45'
+  - '46'
+  existing_completed_count: 35
 granularity_assessment:
-  status: PASS
-  milestones:
-  - milestone: '41'
-    observable_checkpoint: Import or create a service, see exactly what is missing,
-      correct it, and reach the actual review through one consistent four-section
-      flow.
-    scope_boundary: Readiness explanation, corrections and progression are inseparable
-      parts of reaching a valid review; splitting produces inconsistent error paths.
-    granularity_findings: []
-  - milestone: '42'
-    observable_checkpoint: Download sanitized configuration, import it into an isolated
-      second instance, and finish setup without exposing live authority; history/reuse
-      UI stays hidden while its capability persists.
-    scope_boundary: Portable transfer plus simpler configuration-tools entry is independently
-      valuable; file fidelity/authority sanitization is a separate integration risk
-      from editor routing.
-    granularity_findings: []
-  - milestone: '43'
-    observable_checkpoint: An administrator finds a setting, edits a focused populated
-      group, corrects an error and reviews the exact full change set without losing
-      work or hiding decision information.
-    scope_boundary: One find-edit-correct-review Settings journey unifies navigation,
-      search, local bounded controls and readable effects; these share unsaved-form
-      and full-scope review state. No scheduler/runtime/recovery redesign.
-    granularity_findings: []
-  - milestone: '44'
-    observable_checkpoint: An Owner sees current SMTP credential status and stages
-      Set/Replace in a focused dialog, while independent Clear preserves its existing
-      immediate dependency-checked contract.
-    scope_boundary: Credential entry and Clear presentation share focused task UX
-      but have security-sensitive distinct timing/dependency semantics, independently
-      testable from general Settings navigation.
-    granularity_findings: []
+  outcomes: 2
+  rationale: Small shared editing refinements consolidated; substantially different Activity predicate/export
+    trust boundary separate; all five remediation outcomes included.
   unresolved_findings: []
-  earliest_integrated_checkpoint: Import or create a service, see exactly what is
-    missing, correct it, and reach the actual review through one consistent four-section
-    flow.
-  validation_distribution: Focused affected tests/browser/build per outcome, separate
-    UX7-INTEGRATED full regression and joined acceptance checkpoint before deployment/final
-    acceptance.
-preservation:
-  completed_contracts_and_records_unchanged:
-  - '10'
-  - '11'
-  - '12'
-  - '13'
-  - '14'
-  - '15'
-  - '16'
-  - '17'
-  - '18'
-  - '19'
-  - '20'
-  - '21'
-  - '22'
-  - '23'
-  - '24'
-  - '25'
-  - '26'
-  - '27'
-  - '28'
-  - '29'
-  - '30'
-  - '31'
-  - '32'
-  - '33'
-  - '34'
-  - '35'
-  - '36'
-  - '37'
-  - '38'
-  - '39'
-  - '40'
-  delivery_goal_preserved_unchanged: true
-  historical_manifest_unchanged: docs/milestones/status.yaml
-  legacy_selector_unchanged: true
-  prior_compiled_from_preserved: delivery/milestones/secretsauce-mcp/status.yaml#compiled_from_history
-coverage:
-  required_remediation_ids:
-  - REC-RM-034
-  - REC-RM-035
-  - REC-RM-036
-  - REC-RM-037
-  - REC-RM-038
-  - REC-RM-039
-  - REC-RM-040
-  - REC-RM-044
-  - REC-RM-045
-  - REC-RM-046
-  - REC-RM-047
-  - REC-RM-043
-  mapping:
-    REC-RM-034:
-    - '41'
-    REC-RM-035:
-    - '41'
-    REC-RM-036:
-    - '41'
-    REC-RM-037:
-    - '41'
-    REC-RM-038:
-    - '42'
-    REC-RM-039:
-    - '42'
-    REC-RM-040:
-    - '43'
-    REC-RM-044:
-    - '43'
-    REC-RM-045:
-    - '43'
-    REC-RM-046:
-    - '43'
-    REC-RM-047:
-    - '43'
-    REC-RM-043:
-    - '44'
-  feedback_item_count: 53
-  unmapped: []
-  blocked: []
-  deferred_required_work: []
-validation:
-  source_revision_and_commit_checks: PASS
-  granularity: PASS
-  structural_validator: 'PASS: 35 milestone records and Markdown contracts'
-  completed_contract_record_and_goal_preservation: "PASS: exact completed M10\u2013\
-    40 contracts/records, goal and goal history unchanged"
-  git_diff_check: PASS
-  application_tests: 'Not run: documentation-only compilation.'
-  packet_readiness_checklist: PASS for compilation only; environment readiness delegated
-  source_coverage: 'PASS: all12 required remediations and53 feedback dispositions
-    mapped; no blocked/unmapped required work'
-blockers: []
-next_workflow:
-  skill: milestone-readiness
-  packet: delivery/milestones/secretsauce-mcp
-  manifest: delivery/milestones/secretsauce-mcp/status.yaml
-  owner: delivery-planning-orchestrator
-  implementation_authorized_by_this_result: false
+validated_inputs:
+- path: workflow/definition/definition-package.yaml
+  revision: sha256:781ffaf28362e1189a5e7f7353bbf8d9b89f1d4928b98e1f060f7022d3cf9548
+artifact_changes:
+- path: delivery/milestones/secretsauce-mcp/index.md
+  summary: Bounded UX8 milestone compilation or provenance/trace
+- path: delivery/milestones/secretsauce-mcp/traceability.md
+  summary: Bounded UX8 milestone compilation or provenance/trace
+- path: delivery/milestones/secretsauce-mcp/status.yaml
+  summary: Bounded UX8 milestone compilation or provenance/trace
+- path: delivery/milestones/secretsauce-mcp/45-consistent-editing-actions.md
+  summary: Bounded UX8 milestone compilation or provenance/trace
+- path: delivery/milestones/secretsauce-mcp/46-scoped-activity-investigation.md
+  summary: Bounded UX8 milestone compilation or provenance/trace
+- path: workflow/delivery-planning/results/compiler.yaml
+  summary: Bounded UX8 milestone compilation or provenance/trace
 changed_paths:
-- delivery/milestones/secretsauce-mcp/41-service-setup-and-readiness.md
-- delivery/milestones/secretsauce-mcp/42-configuration-transfer-tools.md
-- delivery/milestones/secretsauce-mcp/43-settings-navigation-and-review.md
-- delivery/milestones/secretsauce-mcp/44-smtp-credential-dialogs.md
-- delivery/milestones/secretsauce-mcp/status.yaml
 - delivery/milestones/secretsauce-mcp/index.md
 - delivery/milestones/secretsauce-mcp/traceability.md
+- delivery/milestones/secretsauce-mcp/status.yaml
+- delivery/milestones/secretsauce-mcp/45-consistent-editing-actions.md
+- delivery/milestones/secretsauce-mcp/46-scoped-activity-investigation.md
 - workflow/delivery-planning/results/compiler.yaml
-transaction:
-  ownership: parent_delivery_planning
-  parent_commit: 6e3d03668eb061a27aca488dfa6eb96b60508a20
-  pre_existing_dirty_paths:
-  - workflow/delivery-planning/state.yaml
-  - codex-session-01a122f7-e70f-7440-b1ce-ca88b955e519.md
-  - passwd
-  - test-results/
-  child_commits_created: false
+findings: []
+questions: []
+blocked: []
+unmapped: []
+validation:
+  source_revisions: PASS
+  definition_gate: Consumed current published package, not rerun
+  completed_history: 35 milestone records preserved exactly
+  structural_validator: 'PASS: validated37 milestone records and document contracts'
+  whitespace: 'PASS: git diff --check'
+ready_for_milestone_readiness: true
+implementation_started: false
+commit_ownership: parent planning transaction
+transaction_start_commit: 5a95a349a326af07a32869e10d69c22fae299fcf
+pre_existing_dirty_paths:
+- workflow/delivery-planning/state.yaml
+- workflow/delivery-planning/history/
+- passwd
+- codex-session-01a122f7-e70f-7440-b1ce-ca88b955e519.md
+- test-results/
+coverage:
+  required_remediation_count: 5
+  mapped_remediation_ids:
+  - REC-RM-048
+  - REC-RM-049
+  - REC-RM-050
+  - REC-RM-051
+  - REC-RM-052
+  feedback_disposition_count: 36
+  unmapped: []

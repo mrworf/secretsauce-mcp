@@ -1,0 +1,100 @@
+schema_version: 1
+workflow: delivery-planning
+product_id: secretsauce-mcp
+status: ready_for_implementation
+source:
+  mode: PRODUCT_BUILD
+  type: definition-package
+  path: workflow/definition/definition-package.yaml
+  revision: sha256:5cbab67a72563abc911de8c314ad900dd9da2614118a27fc4e3500d502ac5732
+  repository_commit: ff213d5a1803b337050149ebffc8ae2debaadee5
+planning:
+  parent_commit: 6e3d03668eb061a27aca488dfa6eb96b60508a20
+  repository_commit: f0b0116d0ac0d69c51c7983c62887e2a20ea0af2
+milestones:
+  manifest: delivery/milestones/secretsauce-mcp/status.yaml
+  packet_revision: sha256:ccac4ef4ac561bf9730bdbec8c6c021d6131bd316282e0f1aaab3d8124c02886
+  active_milestones:
+  - '41'
+  - '42'
+  - '43'
+  - '44'
+readiness:
+  status: READY
+  prerequisite_manifest: delivery/readiness/secretsauce-mcp/prerequisite-manifest.md
+  result: delivery/readiness/secretsauce-mcp/readiness-report.md
+  adapter: workflow/delivery-planning/results/readiness.yaml
+  packet_revision: sha256:ccac4ef4ac561bf9730bdbec8c6c021d6131bd316282e0f1aaab3d8124c02886
+m0:
+  present: false
+  milestone: null
+  rationale: Existing shared foundations and declared test/browser facilities suffice.
+external_dependencies: []
+delivery_constraints:
+  granularity: coherent_integrated_outcomes
+  slice_boundary: one_independently_verifiable_behavior
+  split_trigger: distinct_substantial_outcome_or_material_risk_boundary
+  validation: focused_during_iteration_broader_at_required_checkpoint
+  contract:
+  - Before production edits, minimal-slice-delivery records each observable behavior,
+    exclusions, focused positive/negative evidence and commit boundary; keep necessary
+    layers and related same-pattern support together.
+  - Revise remaining slice plans before absorbing another behavior; tests and fixes
+    proving the same behavior remain together. Complete and commit verified outcomes
+    without relabeling remaining acceptance.
+  - Slice refinements stay within milestone authority; scope/dependency changes return
+    to planning and preserve completed history.
+  - Run focused checks during iteration and broader regression at its planned stable
+    boundary; repeat passing checks only for relevant changes, failures, unresolved
+    risks or required gates.
+  - Demonstrate integrated behavior at the earliest dependency-safe checkpoint. Synthetic
+    fixtures do not prove real external interoperability.
+  - First confirmed out-of-area regression expands focused scope; second distinct
+    regression or further spread requires full regression after focused repair.
+  regression_plan:
+    source: delivery/milestones/secretsauce-mcp/status.yaml#regression_checkpoints
+    checkpoints:
+      UX7-INTEGRATED:
+        covered_milestones:
+        - '41'
+        - '42'
+        - '43'
+        - '44'
+        status: pending
+        due: After all four outcomes and before release/local deployment or final
+          packet acceptance; a bounded stop leaves this obligation pending.
+        categories:
+        - full unit/integration suite
+        - build
+        - joined service import-correct-review and Settings search-edit-review browser
+          journeys
+        - SMTP timing/dependency browser regression
+        - role/error/navigation/accessibility and visual comparison
+        commands:
+        - npm test -- --maxWorkers=2
+        - npm run build
+        execution: Frozen source, no concurrent browser/Docker workloads during full
+          suite. Run browser checks separately with synthetic isolated HTTPS fixtures.
+        evidence: Record exact revision, focused versus broad qualification, commands/results
+          and matching approved/runtime visual comparisons.
+        escalation: First confirmed out-of-area regression expands focused scope;
+          second distinct regression or further spread requires full suite after focused
+          repair.
+        conditional: Transport changes require actual self-signed HTTPS test; recovery/launcher
+          changes require existing Docker restart/recovery gates. No new external
+          LLM dependency for presentation-only scope.
+visual_acceptance:
+  approved_reference: product/ux/manifest.yaml
+  revision: web-console-ux-7
+  requirements:
+  - UX-V05
+  - UX-C42
+  - "UX-C64\u201371"
+  required: Compare actual browser screenshots at matching approved states/viewports
+    with UX7 bounded delta precedence; preserve layout, density and hierarchy. Functional
+    checks alone are insufficient. Audit uninspected states remain validation obligations.
+next:
+  workflow: implementation
+  recommended_skill: milestone-delivery-orchestrator
+  start_milestone: '41'
+implementation_started: false

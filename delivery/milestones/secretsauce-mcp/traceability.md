@@ -1,3 +1,64 @@
+# UX8 implementation traceability
+
+Current validated package is implementation authority; REC013 is adopted provenance. Completed UX7 mapping is retained below as historical scope.
+
+## Current required outcomes
+
+| Remediation | Current requirements | Milestone |
+|---|---|---|
+| REC-RM-048 | UX-02,CONFIG-03,UX-IN20 | M45 |
+| REC-RM-049 | CONFIG-02,UX-IN20,UX-EX03 | M45 |
+| REC-RM-050 | POLICY-01,AUTHZ-02,UX-IN21 | M45 |
+| REC-RM-051 | AUDIT-02.a/b,UX-IA12/IN22 | M46 |
+| REC-RM-052 | AUDIT-02.b,OPS-06,UX-IA12 | M46 |
+
+Shared constraints UX-R10/V10/A11/C72–78, STATE and security contracts apply wherever touched; no duplicated implementation obligation.
+
+## Current feedback dispositions
+
+| Item | Class | Disposition | Mapping |
+|---|---|---|---|
+| PO-FB-202 | OBSERVATION | EVIDENCE_CORRELATED | M45 — context/advisory only; not independent requirement |
+| PO-FB-203 | DIRECTIVE | FULLY_RESOLVED | M45 |
+| PO-FB-204 | OBSERVATION | EVIDENCE_CORRELATED | M45 — context/advisory only; not independent requirement |
+| PO-FB-205 | DIRECTIVE | FULLY_RESOLVED | M45 |
+| PO-FB-206 | PREFERENCE | ADVISORY_CONSIDERED | M45 — context/advisory only; not independent requirement |
+| PO-FB-207 | OBSERVATION | EVIDENCE_CORRELATED | M45 — context/advisory only; not independent requirement |
+| PO-FB-208 | DIRECTIVE | FULLY_RESOLVED | M45 |
+| PO-FB-209 | DIRECTIVE | FULLY_RESOLVED | M45 |
+| PO-FB-210 | IDEA_OR_QUESTION | EXPLORATORY_RECORDED | M45 — context/advisory only; not independent requirement |
+| PO-FB-211 | PREFERENCE | ADVISORY_CONSIDERED | M45 — context/advisory only; not independent requirement |
+| PO-FB-212 | DIRECTIVE | FULLY_RESOLVED | M45 |
+| PO-FB-213 | OBSERVATION | EVIDENCE_CORRELATED | M45 — context/advisory only; not independent requirement |
+| PO-FB-214 | DIRECTIVE | FULLY_RESOLVED | M45 |
+| PO-FB-215 | DIRECTIVE | FULLY_RESOLVED | M45 |
+| PO-FB-216 | OBSERVATION | EVIDENCE_CORRELATED | M46 — context/advisory only; not independent requirement |
+| PO-FB-217 | DIRECTIVE | FULLY_RESOLVED | M46 |
+| PO-FB-218 | DIRECTIVE | FULLY_RESOLVED | M46 |
+| PO-FB-219 | DIRECTIVE | FULLY_RESOLVED | M46 |
+| PO-FB-220 | IDEA_OR_QUESTION | NO_CHANGE_REQUIRED | Excluded superseded intent; successor221/222 or224 governs |
+| PO-FB-221 | DIRECTIVE | FULLY_RESOLVED | M46 |
+| PO-FB-222 | DIRECTIVE | FULLY_RESOLVED | M46 |
+| PO-FB-223 | DIRECTIVE | NO_CHANGE_REQUIRED | Excluded superseded intent; successor221/222 or224 governs |
+| PO-FB-224 | DIRECTIVE | FULLY_RESOLVED | M46 |
+| PO-FB-225 | IDEA_OR_QUESTION | EXPLORATORY_RECORDED | M46 — context/advisory only; not independent requirement |
+| PO-FB-226 | DIRECTIVE | FULLY_RESOLVED | M46 |
+| PO-FB-227 | PREFERENCE | ADVISORY_CONSIDERED | M46 — context/advisory only; not independent requirement |
+| PO-FB-228 | DIRECTIVE | FULLY_RESOLVED | M46 |
+| PO-FB-229 | DIRECTIVE | FULLY_RESOLVED | M46 |
+| PO-FB-230 | DIRECTIVE | FULLY_RESOLVED | M46 |
+| PO-FB-231 | DIRECTIVE | FULLY_RESOLVED | M46 |
+| PO-FB-232 | DIRECTIVE | FULLY_RESOLVED | M46 |
+| PO-FB-233 | OBSERVATION | EVIDENCE_CORRELATED | M46 — context/advisory only; not independent requirement |
+| PO-FB-234 | DIRECTIVE | FULLY_RESOLVED | M46 |
+| PO-FB-235 | DIRECTIVE | FULLY_RESOLVED | M46 |
+| PO-FB-236 | DIRECTIVE | FULLY_RESOLVED | M46 |
+| PO-FB-237 | DIRECTIVE | FULLY_RESOLVED | M46 |
+
+No unresolved decision, deferred required work or unmapped requirement. Exact original wording and relationships remain canonical in REC013. Accepted risk SEC-DEF-001 and SMTP exception are constraints, not backlog.
+
+## Historical completed UX7 trace
+
 # UX7 implementation traceability
 
 Authority: current validated definition-package and indexed PRD/UX7; input mode PRODUCT_BUILD. REC011/012 are adopted change trace; findings, observations and audit screenshots alone create no obligation. Completed M10–40 provide the unaffected product baseline.

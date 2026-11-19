@@ -60,7 +60,7 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
         if(request.method==='GET'&&path==='/console/api/authentication'){if(!session){reply(401,{message:'Sign in again.'});return;}reply(200,consoleAuthentication(store).read(session));return;}
         if(request.method==='GET'&&path==='/console/api/clients'){if(!session){reply(401,{message:'Sign in again.'});return;}reply(200,connectedClients(store,session));return;}
         if(request.method==='GET'&&path==='/console/api/notifications'){if(!session){reply(401,{message:'Sign in again.'});return;}reply(200,consoleNotifications(store).read(session));return;}
-        if(request.method==='GET'&&path==='/console/api/activity'){if(!session){reply(401,{message:'Sign in again.'});return;}const values:Record<string,unknown>=Object.create(null);const query=new URL(request.url!,'https://console.example.org').searchParams;for(const [key,value] of query){if(Object.hasOwn(values,key))throw new EvidenceError('Duplicate activity filter.');values[key]=['from','to','offset','limit'].includes(key)?Number(value):value;}reply(200,consoleEvidence(store).query(session,values));return;}
+        if(request.method==='GET'&&path==='/console/api/activity'){if(!session){reply(401,{message:'Sign in again.'});return;}const values:Record<string,unknown>=Object.create(null);const query=new URL(request.url!,'https://console.example.org').searchParams;for(const [key,value] of query){if(Object.hasOwn(values,key))throw new EvidenceError('Duplicate activity filter.');if(key==='chips'){try{values[key]=JSON.parse(value);}catch{throw new EvidenceError('Invalid activity filters.');}}else values[key]=['from','to','offset','limit'].includes(key)&&value.trim()!==''?Number(value):value;}reply(200,consoleEvidence(store).query(session,values));return;}
         if(request.method==='GET'&&path==='/console/api/retention'){if(!session){reply(401,{message:'Sign in again.'});return;}reply(200,consoleEvidence(store).readRetention(session));return;}
         if (request.method === 'GET' && path === '/console/api/people') { if(!session){reply(401,{message:'Sign in again.'});return;} reply(200,consolePeople(store).list(session));return; }
         if (request.method === 'GET' && path === '/console/api/instance') {
@@ -174,6 +174,7 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
         if(path==='/console/api/limits/save'){reply(200,consoleOperations(store).save(session,data));return;}
         if(path==='/console/api/limits/review'){reply(200,consoleOperations(store).review(session,data));return;}
         if(path==='/console/api/limits/apply'){reply(200,consoleOperations(store).apply(session,data));return;}
+        if(path==='/console/api/activity/search'){reply(200,consoleEvidence(store).query(session,data));return;}
         if(path==='/console/api/activity/detail'){reply(200,consoleEvidence(store).detail(session,data));return;}
         if(path==='/console/api/evidence/export'){reply(200,consoleEvidence(store).export(session,data));return;}
         if(path==='/console/api/retention/save'){reply(200,consoleEvidence(store).saveRetention(session,data));return;}

@@ -8,7 +8,10 @@ import { consoleServices } from './consoleServices.js';
 import { PACKAGE_VERSION } from './version.js';
 export class EvidenceError extends Error {}
 const label=z.string().min(1).max(1024).refine(v=>!/[\u0000-\u001f\u007f]/.test(v));
-const filters=z.object({from:z.number().int().nonnegative().optional(),to:z.number().int().nonnegative().optional(),actor:label.optional(),service:label.optional(),action:label.optional(),result:z.enum(['success','failed','uncertain','allow','deny','error']).optional(),requestId:label.optional(),offset:z.number().int().min(0).max(100000).default(0),limit:z.number().int().min(1).max(100).default(50)}).strict().refine(v=>v.from===undefined||v.to===undefined||v.from<=v.to);
+const filterFields=['actor','service','action','result','requestId'] as const;
+const results=['success','failed','uncertain','allow','deny','error'] as const;
+const chip=z.object({field:z.enum(filterFields),comparison:z.enum(['equals','notEquals','contains','notContains']),value:label}).strict().refine(v=>v.field!=='result'||!['equals','notEquals'].includes(v.comparison)||results.includes(v.value as typeof results[number]));
+const filters=z.object({from:z.number().int().nonnegative().optional(),to:z.number().int().nonnegative().optional(),contextService:label.optional(),chips:z.array(chip).max(32).optional(),actor:label.optional(),service:label.optional(),action:label.optional(),result:z.enum(results).optional(),requestId:label.optional(),offset:z.number().int().min(0).max(100000).default(0),limit:z.number().int().min(1).max(100).default(50)}).strict().refine(v=>v.from===undefined||v.to===undefined||v.from<=v.to).refine(v=>{const seen=new Set<string>();return (v.chips??[]).every(c=>{const key=JSON.stringify([c.field,c.value]);if(seen.has(key)||v[c.field]!==undefined)return false;seen.add(key);return true;});});
 export type EvidenceFilter=z.input<typeof filters>;
 export interface EvidenceEntry {id:string;operation?:string;time:number;actor:string;service:string;action:string;result:string;requestId?:string;revision:number;reason:string;provenance:'local'|'imported';sourceInstance?:string;sourceArchive?:string;recoveryPoint?:number;}
 export interface RetentionState {days:number;draft?:{days:number;base:number;generation:number;baseDays?:number};review?:{id:string;actor:string;base:number;generation:number;cutoff:number;impact:number;};}
@@ -23,8 +26,7 @@ export class ConsoleEvidence {
  get retention():RetentionState{return this.store.state.retention??{days:365};}
  private expiredImported(cutoff:number){return (this.store.state.importedAudit??[]).filter(d=>d.lastEvidenceTime<cutoff&&d.entries.every(e=>e.time<cutoff&&e.result!=='uncertain'));}
  private importedImpact(cutoff:number){return this.expiredImported(cutoff).reduce((n,d)=>n+d.entries.length,0);}
- private rows():{entries:EvidenceEntry[];verified:boolean}{
-  const deadline=performance.now()+2000;
+ private rows(deadline:number):{entries:EvidenceEntry[];verified:boolean}{
   const gateway=this.store.externalAudit?.evidence(),verified=this.store.journal.verify()&&(gateway?.verified??true);
   const journalEntries=this.store.journal.entries();
   const operations=[...journalEntries,...(gateway?.operations??[])];
@@ -44,9 +46,17 @@ export class ConsoleEvidence {
  }
  private select(session:ConsoleSession,input:unknown){
   const user=this.store.authorize(session,'own'),f=parse(filters,input);
-  if(user.role==='Member'&&f.actor&&f.actor!==user.id)throw new Error('Forbidden.');
-  if(user.role==='Member'&&f.service){const service=Object.hasOwn(this.store.state.managed?.services??{},f.service)?this.store.state.managed!.services[f.service]:undefined;if(!service?.assignments.includes(user.id))throw new Error('Forbidden.');}
-  const rows=this.rows(),matches=rows.entries.filter(e=>(user.role!=='Member'||e.actor===user.id)&&(f.from===undefined||e.time>=f.from)&&(f.to===undefined||e.time<=f.to)&&(!f.actor||e.actor===f.actor)&&(!f.service||e.service===f.service)&&(!f.action||e.action===f.action)&&(!f.result||e.result===f.result)&&(!f.requestId||e.requestId===f.requestId));
+  const predicates=[...(f.chips??[]),...filterFields.flatMap(field=>f[field]===undefined?[]:[{field,comparison:'equals' as const,value:f[field]!}])];
+  if(user.role==='Member'){
+   for(const c of predicates)if(c.comparison==='equals'&&c.field==='actor'&&c.value!==user.id)throw new Error('Forbidden.');
+   for(const id of [f.contextService,...predicates.filter(c=>c.field==='service'&&c.comparison==='equals').map(c=>c.value)].filter((v):v is string=>v!==undefined)){const service=Object.hasOwn(this.store.state.managed?.services??{},id)?this.store.state.managed!.services[id]:undefined;if(!service?.assignments.includes(user.id))throw new Error('Forbidden.');}
+  }
+  const groups=filterFields.map(field=>({field,positive:predicates.filter(c=>c.field===field&&['equals','contains'].includes(c.comparison)),negative:predicates.filter(c=>c.field===field&&['notEquals','notContains'].includes(c.comparison))}));
+  const deadline=performance.now()+2000,rows=this.rows(deadline),matches:EvidenceEntry[]=[];
+  const check=()=>{if(performance.now()>deadline)throw new EvidenceError('Evidence scan reached its bounded work limit. Narrow retained storage with reviewed retention.');};
+  for(const e of rows.entries){check();if(user.role==='Member'&&e.actor!==user.id||f.contextService!==undefined&&e.service!==f.contextService||f.from!==undefined&&e.time<f.from||f.to!==undefined&&e.time>f.to)continue;
+   if(groups.every(g=>{const value=e[g.field],present=typeof value==='string'&&value.length>0;return (!g.positive.length||g.positive.some(c=>present&&(c.comparison==='equals'?value===c.value:value.includes(c.value))))&&g.negative.every(c=>!present||(c.comparison==='notEquals'?value!==c.value:!value.includes(c.value)));}))matches.push(e);
+  }check();
   return {user,f,matches,verified:rows.verified};
  }
  private sanitize(entries:EvidenceEntry[],safe:(value:string)=>string){return entries.map(e=>({...e,actor:safe(e.actor),service:safe(e.service),action:safe(e.action),reason:safe(e.reason),...(e.requestId?{requestId:safe(e.requestId)}:{})}));}
@@ -62,7 +72,7 @@ export class ConsoleEvidence {
   this.store.requireSensitive(session);this.store.authorize(session,'instance');
   const safe=evidenceSanitizer(this.store);
   let report:unknown;
-  if(data.kind==='activity'){const q=this.select(session,data.filters);report={entries:this.sanitize(q.matches.slice(data.filters.offset,data.filters.offset+500),safe),bounded:true,maximumRows:500,truncated:q.matches.length>data.filters.offset+500,filters:Object.fromEntries(Object.entries(data.filters).map(([key,value])=>[key,typeof value==='string'?safe(value):value]))};}
+  if(data.kind==='activity'){const q=this.select(session,data.filters);report={entries:this.sanitize(q.matches.slice(data.filters.offset,data.filters.offset+500),safe),bounded:true,maximumRows:500,truncated:q.matches.length>data.filters.offset+500,total:q.matches.length,startOffset:data.filters.offset,snapshot:'Current retained matching events',filters:Object.fromEntries(Object.entries(data.filters).map(([key,value])=>[key,key==='chips'?(value as z.infer<typeof chip>[]).map(c=>({...c,value:safe(c.value)})):typeof value==='string'?safe(value):value]))};}
   else if(data.kind==='access'){report={users:this.store.state.users.map(u=>({id:safe(u.id),contact:safe(u.email),role:u.role,active:u.active,enrolled:u.enrolled!==false})),external:(this.store.state.people?.external??[]).map(e=>({id:safe(e.id),label:safe(e.label),active:e.active})),services:Object.entries(this.store.state.managed?.services??{}).map(([id,s])=>({id:safe(id),lifecycle:s.lifecycle,assignments:s.assignments.map(safe)}))};}
   else if(data.kind==='configuration'){const manager=consoleServices(this.store);report={revision:manager.state.revision,services:manager.list(session).services.map(s=>({id:safe(s.id),name:safe(s.name),lifecycle:s.lifecycle,exceptions:s.exceptions.map(e=>safe(e))})),limits:this.store.state.config?.limits,retentionDays:this.retention.days,authenticationMode:this.store.state.config?.auth.mode,responseProtectionSource:'Settings',backup:consoleBackups(this.store).health(),restore:{phase:this.store.state.recovery?.phase??'not restored',recoveryPoint:this.store.state.recovery?.recoveryPoint??null,importedDomains:this.store.state.importedAudit?.length??0,notice:this.store.state.recovery?.notice??'Whole-instance recovery requires independent material and current Owner or protected host authority.'}};}
   else report={version:PACKAGE_VERSION,instance:this.store.state.id,backup:consoleBackups(this.store).health(),restore:{phase:this.store.state.recovery?.phase??'not restored',recoveryPoint:this.store.state.recovery?.recoveryPoint??null}};

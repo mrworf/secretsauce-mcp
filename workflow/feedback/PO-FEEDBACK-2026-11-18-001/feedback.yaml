@@ -1,0 +1,401 @@
+schema_version: 1
+feedback_id: PO-FEEDBACK-2026-11-18-001
+product_id: secretsauce-mcp
+source:
+  type: product_owner
+  captured_from: realtime_walkthrough_and_typed_handoff
+  references:
+  - evidence/qa/secretsauce-mcp/ux7-integrated/acceptance.md
+status: CONFIRMED
+transaction:
+  parent_commit: 4f50365528f380365c0d84aecccc5a4c7dce6263
+  repository_commit: null
+items:
+- id: PO-FB-202
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: And I would prefer to have the white one in the buttons available all over because that just makes it
+    consistent.
+  normalized: The walkthrough identified duplicate status bars at the top and bottom of Settings.
+  scope:
+  - settings
+  authority:
+    product_intent: evidence
+  suggestions: []
+- id: PO-FB-203
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: And I would prefer to have the white one in the buttons available all over because that just makes it
+    consistent.
+  normalized: Use one persistent white bottom bar for Settings status, Discard, Save for later and Review changes.
+    Remove the duplicate top status bar.
+  scope:
+  - settings
+  authority:
+    product_intent: authoritative
+  suggestions: []
+- id: PO-FB-204
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: It is very weird English to say value available.
+  normalized: The status “Value available” is unclear.
+  scope:
+  - credentials
+  authority:
+    product_intent: evidence
+  suggestions: []
+- id: PO-FB-205
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: It should it should say something to the effect of credential material set or something to that effect.
+  normalized: Use the confirmed wording “Credential value set” and “Credential value not set.”
+  scope:
+  - credentials
+  authority:
+    product_intent: authoritative
+  suggestions: []
+- id: PO-FB-206
+  classification: PREFERENCE
+  confirmation: CONFIRMED
+  original: I like the versioning, I like it was changed by who
+  normalized: Retain version, changed-by and timestamp details.
+  scope:
+  - credentials
+  authority:
+    product_intent: advisory
+  suggestions: []
+- id: PO-FB-207
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: right now add credential and remove placement one look like they are part of the same thing and placement
+    one doesn't make any sense to me as a user.
+  normalized: Add and remove appear related, and “Remove placement one” has no clear target.
+  scope:
+  - credentials
+  authority:
+    product_intent: evidence
+  suggestions: []
+- id: PO-FB-208
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: But then after that box there is to add credential and if I add another credential, we make another
+    box underneath.
+  normalized: Use a bordered card for each credential with its own removal action. Place Add credential beneath
+    the cards.
+  scope:
+  - credentials
+  authority:
+    product_intent: authoritative
+  suggestions: []
+- id: PO-FB-209
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: it needs to be clear that remove placement one is removing the API key.
+  normalized: Name and group the removal action so it identifies the credential configuration being removed and
+    is distinct from the stored-secret action.
+  scope:
+  - credentials
+  authority:
+    product_intent: authoritative
+  suggestions: []
+- id: PO-FB-210
+  classification: IDEA_OR_QUESTION
+  confirmation: CONFIRMED
+  original: then it can just say uh delete credential for example.
+  normalized: Consider “Delete credential” as example wording for the card action.
+  scope:
+  - credentials
+  authority:
+    product_intent: exploratory
+  suggestions: []
+- id: PO-FB-211
+  classification: PREFERENCE
+  confirmation: CONFIRMED
+  original: Oh, maybe not a trash icon because we don't do icons anywhere else. So let's be consistent.
+  normalized: Prefer the existing text-button convention over adding a trash icon.
+  scope:
+  - credentials
+  authority:
+    product_intent: advisory
+  suggestions: []
+- id: PO-FB-212
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: You can actually just stick to the first sentence. Move controls change only the order of rules with
+    the same priority and effect.
+  normalized: Keep this one sentence and drop the explanations of disabled directions and automatic priority changes.
+  scope:
+  - request-rules
+  authority:
+    product_intent: authoritative
+  suggestions: []
+- id: PO-FB-213
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: I think the way it's being laid out on this screen, uh, is very confusing.
+  normalized: The current layout makes the rule evaluation text difficult to follow.
+  scope:
+  - request-rules
+  authority:
+    product_intent: evidence
+  suggestions: []
+- id: PO-FB-214
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: I like it, but I think you should just make it like an info box and you should probably do a bullet
+    list, uh, of the rules of engagement that you're describing
+  normalized: Show Default policy on the left and one explanation box on the right. Cover fallback, mixed Allow
+    and Deny, priority, Deny on ties, and listed order for equal priority and effect. Avoid duplicate explanations.
+  scope:
+  - request-rules
+  authority:
+    product_intent: authoritative
+  suggestions: []
+- id: PO-FB-215
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: Add eligible identity. I, I just think you could simplify that.
+  normalized: Use the confirmed “Give access” and “Choose a user or client” wording.
+  scope:
+  - service-access
+  authority:
+    product_intent: authoritative
+  suggestions: []
+- id: PO-FB-216
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: filter activity is a little bit restrictive.
+  normalized: Activity offers restrictive exact identifier and single-result filters.
+  scope:
+  - activity
+  authority:
+    product_intent: evidence
+  suggestions: []
+- id: PO-FB-217
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: it should almost be like you're adding a list of different filters to it.
+  normalized: Allow repeated, individually removable filter chips for service, actor, action, request ID and recorded
+    result.
+  scope:
+  - activity
+  authority:
+    product_intent: authoritative
+  suggestions: []
+- id: PO-FB-218
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: there should be a dropdown with when you pick like, actor, service, action, request ID, and then, equals,
+    or does not equal, and then the value
+  normalized: Add chips through Field, Comparison, Value and Add. Each chip can be removed individually.
+  scope:
+  - activity
+  authority:
+    product_intent: authoritative
+  suggestions: []
+- id: PO-FB-219
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: Ideally, I want contains and does not contain.
+  normalized: Include equals, does not equal, contains and does not contain.
+  scope:
+  - activity
+  authority:
+    product_intent: authoritative
+  suggestions: []
+- id: PO-FB-220
+  classification: IDEA_OR_QUESTION
+  confirmation: CONFIRMED
+  original: But if I add something that's already been added, it will silently not add it.
+  normalized: Consider silently ignoring duplicates.
+  scope:
+  - activity
+  authority:
+    product_intent: exploratory
+  suggestions: []
+- id: PO-FB-221
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: No, I want the pop up because otherwise people will think it's a bug
+  normalized: Reject duplicate field and value pairs regardless of comparison. Keep the existing chips so the user
+    can remove the old filter first.
+  scope:
+  - activity
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  supersedes: PO-FB-220
+- id: PO-FB-222
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: And I also think it should be a small modal toasts are too easy to miss
+  normalized: Explain a duplicate in a small modal.
+  scope:
+  - activity
+  authority:
+    product_intent: authoritative
+  suggestions: []
+- id: PO-FB-223
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: Well, that means they combine as an and.
+  normalized: Combine all filters with AND.
+  scope:
+  - activity
+  authority:
+    product_intent: authoritative
+  suggestions: []
+- id: PO-FB-224
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: So within the same type, it's or. But between types, it's and
+  normalized: Combine alternatives for the same field with OR and different fields with AND.
+  scope:
+  - activity
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  supersedes: PO-FB-223
+- id: PO-FB-225
+  classification: IDEA_OR_QUESTION
+  confirmation: CONFIRMED
+  original: 'Yes'
+  normalized: Resolve how multiple exclusions and mixed positive and negative comparisons combine during product
+    definition.
+  scope:
+  - activity
+  authority:
+    product_intent: exploratory
+  suggestions: []
+- id: PO-FB-226
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: you can basically have like a list of options and they will pre-populate the from and to, and then the
+    user can modify that as they see fit.
+  normalized: Time presets populate editable From and To fields.
+  scope:
+  - activity
+  authority:
+    product_intent: authoritative
+  suggestions: []
+- id: PO-FB-227
+  classification: PREFERENCE
+  confirmation: CONFIRMED
+  original: typically you have the last five minutes, last thirty minutes, last hour, last twenty four hours, last
+    uh seven days, last thirty days, uh year to date, so on and so forth.
+  normalized: Use these time presets as examples for the design.
+  scope:
+  - activity
+  authority:
+    product_intent: advisory
+  suggestions: []
+- id: PO-FB-228
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: don't call it search activity, just say search.
+  normalized: Label the action Search.
+  scope:
+  - activity
+  authority:
+    product_intent: authoritative
+  suggestions: []
+- id: PO-FB-229
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: there should be a button called like next to like search, clear filter
+  normalized: Place Clear filters beside Search.
+  scope:
+  - activity
+  authority:
+    product_intent: authoritative
+  suggestions: []
+- id: PO-FB-230
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: maybe that should be a box that has a an option to export.
+  normalized: Place Export activity by the matching-event count, targeting the searched results.
+  scope:
+  - activity
+  authority:
+    product_intent: authoritative
+  suggestions: []
+- id: PO-FB-231
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: I think for right now, I would probably leave it like this.
+  normalized: Keep the current results presentation.
+  scope:
+  - activity
+  authority:
+    product_intent: authoritative
+  suggestions: []
+- id: PO-FB-232
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: the activity browser, the one that's on the main menu, but also per service, uh should obviously use
+    the same mechanism.
+  normalized: Share the filter mechanism between main and per-service Activity.
+  scope:
+  - activity
+  authority:
+    product_intent: authoritative
+  suggestions: []
+- id: PO-FB-233
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: This is odd because this seems to me that you're conflating me reviewing the audit log with also being
+    able to export three other things that are unrelated to the activity.
+  normalized: Activity currently mixes log review with broader evidence exports.
+  scope:
+  - evidence-exports
+  authority:
+    product_intent: evidence
+  suggestions: []
+- id: PO-FB-234
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: the other export functions you listed, they should probably be somewhere else in the UI because they
+    seem very unrelated to activity.
+  normalized: Leave only filtered-activity export in Activity. Move the three unrelated export actions elsewhere.
+  scope:
+  - evidence-exports
+  authority:
+    product_intent: authoritative
+  suggestions: []
+- id: PO-FB-235
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: I agree with your proposals, so yeah, let's hand over, let's, let's wrap this up so I can hand it over
+    to design
+  normalized: Access inventory in People & Access.
+  scope:
+  - evidence-exports
+  authority:
+    product_intent: authoritative
+  suggestions: []
+- id: PO-FB-236
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: I agree with your proposals, so yeah, let's hand over, let's, let's wrap this up so I can hand it over
+    to design
+  normalized: Configuration and exceptions in Settings → Configuration tools.
+  scope:
+  - evidence-exports
+  authority:
+    product_intent: authoritative
+  suggestions: []
+- id: PO-FB-237
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: I agree with your proposals, so yeah, let's hand over, let's, let's wrap this up so I can hand it over
+    to design
+  normalized: Software and job status in Settings → Health & retention.
+  scope:
+  - evidence-exports
+  authority:
+    product_intent: authoritative
+  suggestions: []
+unresolved: []
+handoff:
+  reconciliation_ready: false
+  next_workflow: null

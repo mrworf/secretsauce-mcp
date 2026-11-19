@@ -4,7 +4,7 @@ status: ready_for_delivery_planning
 scope: Self-hosted single-organization web console initial release
 transaction:
   parent_commit: d29f412f4587f2338dbc03b99231d179fb5f33cd
-  repository_commit: null
+  repository_commit: 6a03a5523246e8b834aeceb97dc818de32fce461
   pre_existing_dirty_paths:
   - passwd
   - codex-session-01a122f7-e70f-7440-b1ce-ca88b955e519.md
@@ -575,7 +575,7 @@ last_reconciliation:
   definition_package:
     status: current
     path: workflow/definition/definition-package.yaml
-    revision: sha256:35d2b8ba20149a4ae50201d5805ede0a0aad86e60d3851d0a2ce0b46c683de53
+    revision: sha256:6ac2a12358abf60bee58ee1f5377ff7c119e06895d099b255cbac78182599b2c
 feedback_source:
   feedback_id: PO-FEEDBACK-2026-11-19-001
   path: workflow/feedback/PO-FEEDBACK-2026-11-19-001/feedback.yaml

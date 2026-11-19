@@ -14,5 +14,6 @@ Observable: loading, success and failure remain inside the selected Settings pan
 No new external input or security policy intended; reuse existing positive/negative auth, permissions and values coverage. First out-of-area regression expands focused checks; second distinct regression triggers full profile after repairs. Full frozen-source bounded-worker suite/build plus joined browser/recovery remains parent-owned UX10-INTEGRATED after M51. Do not run it per slice. No raw credentials, cookies or request call logs. Final report distinguishes focused M49 acceptance from later integration obligation.
 
 ## Progress
-- Slice1: PASS; commit is the checkpoint containing this update. Evidence: evidence/ux-acceptance/secretsauce-mcp/milestone49/slice1-acceptance.md; exact tested source revisions adjacent.
-- Slice2: planned; commit/evidence pending.
+- Slice1: PASS; commit `96119cc`. Evidence: evidence/ux-acceptance/secretsauce-mcp/milestone49/slice1-acceptance.md; exact tested source revisions adjacent.
+- Slice2: PASS; commit is the checkpoint containing this update. Evidence: evidence/ux-acceptance/secretsauce-mcp/milestone49/acceptance.md and slice2-source-revisions.json.
+- M49 focused acceptance complete; later UX10-INTEGRATED remains pending under parent goal.

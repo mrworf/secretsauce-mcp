@@ -1,0 +1,10 @@
+{
+  "src/consoleAuthenticationPage.ts": "b6f970ea2f0335fcb4d472873d59ae10378991ee319d20941da00e29aafbca64",
+  "src/consoleBackupsPage.ts": "692543fb6dfae033db72c588aae526c705444556c377a9f512c5f92afaa27026",
+  "src/consoleEvidencePage.ts": "076d5fbeb937257ae6b85ec299192341cb0d84438598134bff74434e4fcd8e6a",
+  "src/consoleOperationsPage.ts": "81c9760512da45d35039196cea7b68ea2ae38a14a119b7a1e48342dc617984c6",
+  "src/consolePeoplePage.ts": "a8919d8b204c8a504c135a6577c859d643a71f3cf40c7b29f7aca7c71be9597c",
+  "src/consoleServicePage.ts": "04b8791f380f58172364bf0bbcb493cc753b536e4f9e0d10e7d4a3c6d04184e5",
+  "src/consoleSettingsPage.ts": "c4598a0a2a69155a3a4b94a506febd6686ca7ce7011711bbae793b0227ca2f30",
+  "scripts/verify-console-populated-settings-browser.mjs": "01b26f0d7a7dbec85f64bf66eba4ed4a995e83c6766a8d26fb9e48282dfa5bdd"
+}

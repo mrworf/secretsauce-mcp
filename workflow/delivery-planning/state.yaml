@@ -3,11 +3,11 @@ workflow: delivery-planning
 product_id: secretsauce-mcp
 status: ready
 transaction:
-  parent_commit: 985b8d082d63ef681abda185b3ed1a7268384b34
-  repository_commit: efcc8da0ebdaf9bab4e32e8166bdecaa76a7f6dd
+  parent_commit: e6a27bfa2939994c7de0fe4099f37fe9b43f6cb8
+  repository_commit: null
   pre_existing_dirty_paths:
-  - codex-session-01a122f7-e70f-7440-b1ce-ca88b955e519.md
   - passwd
+  - codex-session-01a122f7-e70f-7440-b1ce-ca88b955e519.md
   - test-results/
   owned_paths:
   - delivery/milestones/secretsauce-mcp/
@@ -17,21 +17,21 @@ source:
   mode: PRODUCT_BUILD
   type: definition-package
   path: workflow/definition/definition-package.yaml
-  revision: sha256:d253b2e79042338dc726d74066f69105acf6e742d4759ab73e366b29afc4c72c
-  repository_commit: 8c307a8e745c6b739abc241be30a63c14f850449
+  revision: sha256:6ac2a12358abf60bee58ee1f5377ff7c119e06895d099b255cbac78182599b2c
+  repository_commit: 6a03a5523246e8b834aeceb97dc818de32fce461
 stages:
   compilation:
     status: passed
     result: workflow/delivery-planning/results/compiler.yaml
     normalized_outcome: COMPILED
     packet_manifest: delivery/milestones/secretsauce-mcp/status.yaml
-    packet_revision: sha256:f116722c929f7b3f68865b07a3d106cf8faf819c8e1b3359530c79592fcebe99
+    packet_revision: sha256:aecb1c78d3ab5b98ed84def92f74c56406a8e27f27b2d7046a0bdc9b9048bcb3
   readiness:
     status: READY
     prerequisite_manifest: delivery/readiness/secretsauce-mcp/prerequisite-manifest.md
     result: delivery/readiness/secretsauce-mcp/readiness-report.md
     adapter: workflow/delivery-planning/results/readiness.yaml
-    packet_revision: sha256:f116722c929f7b3f68865b07a3d106cf8faf819c8e1b3359530c79592fcebe99
+    packet_revision: sha256:aecb1c78d3ab5b98ed84def92f74c56406a8e27f27b2d7046a0bdc9b9048bcb3
 blockers: []
 corrections: []
 resume:
@@ -39,13 +39,13 @@ resume:
 handoff:
   status: ready_for_implementation
   path: workflow/delivery-planning/handoff.yaml
-  packet_revision: sha256:f116722c929f7b3f68865b07a3d106cf8faf819c8e1b3359530c79592fcebe99
+  packet_revision: sha256:aecb1c78d3ab5b98ed84def92f74c56406a8e27f27b2d7046a0bdc9b9048bcb3
 previous_source:
   mode: PRODUCT_BUILD
   type: definition-package
   path: workflow/definition/definition-package.yaml
-  revision: sha256:781ffaf28362e1189a5e7f7353bbf8d9b89f1d4928b98e1f060f7022d3cf9548
-  repository_commit: 80edc3f0b720b3a5bf7b49a8585817a38072ed54
+  revision: sha256:d253b2e79042338dc726d74066f69105acf6e742d4759ab73e366b29afc4c72c
+  repository_commit: 8c307a8e745c6b739abc241be30a63c14f850449
 transaction_history:
 - parent_commit: 346ce2feaf2014052ced6eba1c52ce56150aa887
   repository_commit: f75b7edd69e6927ac5d94292401dc23c36a45d5a
@@ -95,7 +95,15 @@ transaction_history:
   - delivery/milestones/secretsauce-mcp/
   - delivery/readiness/secretsauce-mcp/
   - workflow/delivery-planning/
+- parent_commit: 985b8d082d63ef681abda185b3ed1a7268384b34
+  repository_commit: efcc8da0ebdaf9bab4e32e8166bdecaa76a7f6dd
+  pre_existing_dirty_paths:
+  - codex-session-01a122f7-e70f-7440-b1ce-ca88b955e519.md
+  - passwd
+  - test-results/
+  owned_paths:
+  - delivery/milestones/secretsauce-mcp/
+  - delivery/readiness/secretsauce-mcp/
+  - workflow/delivery-planning/
 validation:
-  publication: published
-  checks: "PASS: source/packet freshness, compiler/readiness gates, five remediation/36 feedback mapping, completed\
-    \ M10\u201344 preservation, execution constraints and pending UX8 qualification. No implementation."
+  publication: pending

@@ -1,0 +1,86 @@
+schema_version: 1
+workflow: delivery-planning
+product_id: secretsauce-mcp
+status: ready_for_implementation
+source:
+  mode: PRODUCT_BUILD
+  type: definition-package
+  path: workflow/definition/definition-package.yaml
+  revision: sha256:d253b2e79042338dc726d74066f69105acf6e742d4759ab73e366b29afc4c72c
+  repository_commit: 8c307a8e745c6b739abc241be30a63c14f850449
+planning:
+  parent_commit: 985b8d082d63ef681abda185b3ed1a7268384b34
+  repository_commit: efcc8da0ebdaf9bab4e32e8166bdecaa76a7f6dd
+milestones:
+  manifest: delivery/milestones/secretsauce-mcp/status.yaml
+  packet_revision: sha256:f116722c929f7b3f68865b07a3d106cf8faf819c8e1b3359530c79592fcebe99
+  active_milestones:
+  - '47'
+  - '48'
+readiness:
+  status: READY
+  prerequisite_manifest: delivery/readiness/secretsauce-mcp/prerequisite-manifest.md
+  result: delivery/readiness/secretsauce-mcp/readiness-report.md
+  adapter: workflow/delivery-planning/results/readiness.yaml
+  packet_revision: sha256:f116722c929f7b3f68865b07a3d106cf8faf819c8e1b3359530c79592fcebe99
+m0:
+  present: false
+  milestone: null
+  rationale: Current repository and synthetic harness prerequisites suffice.
+external_dependencies: []
+delivery_constraints:
+  granularity: coherent_integrated_outcomes
+  slice_boundary: one_independently_verifiable_behavior
+  split_trigger: distinct_substantial_outcome_or_material_risk_boundary
+  validation: focused_during_iteration_broader_at_required_checkpoint
+  contract:
+  - Before production edits, minimal-slice-delivery records each observable behavior, exclusions, focused positive/negative
+    evidence and commit boundary; keep necessary layers and related same-pattern support together.
+  - Revise remaining slice plans before absorbing another behavior; tests and fixes proving the same behavior remain
+    together. Complete and commit verified outcomes without relabeling remaining acceptance.
+  - Slice refinements stay within milestone authority; scope/dependency changes return to planning and preserve
+    completed history.
+  - Run focused checks during iteration and broader regression at its planned stable boundary; repeat passing checks
+    only for relevant changes, failures, unresolved risks or required gates.
+  - Demonstrate integrated behavior at the earliest dependency-safe checkpoint. Synthetic fixtures do not prove
+    real external interoperability.
+  - First confirmed out-of-area regression expands focused scope; second distinct regression or further spread requires
+    full regression after focused repair.
+  regression_plan:
+    source: delivery/milestones/secretsauce-mcp/status.yaml#regression_checkpoints
+    checkpoints:
+      UX9-INTEGRATED:
+        covered_milestones:
+        - '47'
+        - '48'
+        status: pending
+        due: After both outcomes and before deployment/final acceptance; bounded stop leaves this obligation pending.
+        categories:
+        - full unit/integration suite and build
+        - joined service edit/discard/import/review browser journey
+        - current authority/credential preservation and legacy retirement negatives
+        - matching UX9 visual keyboard narrow/enlarged-text qualification
+        commands:
+        - npm test -- --maxWorkers=2
+        - npm run build
+        execution: Frozen source, no concurrent browser/Docker workload during full suite; isolated synthetic HTTPS
+          browser checks separately.
+        escalation: First confirmed out-of-area regression expands focused checks; second distinct regression/spread
+          requires full suite after repairs.
+        conditional: Changed transport requires actual self-signed HTTPS; changed recovery/launcher requires existing
+          Docker/recovery gates.
+        evidence: null
+visual_acceptance:
+  approved_reference: product/ux/manifest.yaml
+  revision: web-console-ux-9
+  required: Compare actual browser screenshots at matching states/viewports against approved references and exact
+    UX9 delta; preserve unaffected appearance and behavior. Functional tests alone are insufficient.
+  requirements:
+  - UX-V05
+  - UX-C42
+  - "UX-C79\u201383"
+next:
+  workflow: implementation
+  recommended_skill: milestone-delivery-orchestrator
+  start_milestone: '45'
+implementation_started: false

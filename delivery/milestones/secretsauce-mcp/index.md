@@ -1,22 +1,22 @@
-# Web console delivery milestones — UX9 remaining delta
+# Web console delivery milestones — UX10 remaining delta
 
-Input mode **PRODUCT_BUILD**. Published validated UX9 PRODUCT_BUILD package is primary; compile only remaining REC014 delta. Historical producer revalidation flags are discharged by current package passes, not consumed as a fresh standalone CHANGE_PLAN.
-
-## Authority
-Package `workflow/definition/definition-package.yaml` revision `sha256:d253b2e79042338dc726d74066f69105acf6e742d4759ab73e366b29afc4c72c`, published payload `8c307a8e745c6b739abc241be30a63c14f850449`. Indexed exact hashes verified; passed definition gates consumed without re-running them. REC014 five remediations are adopted provenance and feedback dispositions, not independent new authority. SEC-DEF-001 and UX-EX03 remain preserved. Existing completed M10–46, prior integrated checkpoints, and tested originating-screen export confirmation, current email beside Activity actor ID, and shared service header fixes remain baseline.
+Input mode **PRODUCT_BUILD**. Current validated package `workflow/definition/definition-package.yaml` revision `sha256:6ac2a12358abf60bee58ee1f5377ff7c119e06895d099b255cbac78182599b2c`, published payload `6a03a5523246e8b834aeceb97dc818de32fce461`, governs. All indexed hashes verified; passed definition gates consumed without rerunning them. REC015 is adopted provenance for six remaining remediations, not unresolved producer authority. Completed M10–48 and all prior regression history remain preserved. Accepted SEC-DEF-001 and SMTP exception remain.
 
 ## Current outcomes
 
 | Milestone | Outcome | Dependencies | Status |
-| --- | --- | --- | --- |
-| [M47](47-service-edit-review-and-discard.md) | Coherent service editing, incomplete review and scoped discard | M35/41/45/46 completed | pending |
-| [M48](48-independent-unassigned-service-import.md) | Separate unassigned imports and safe legacy retirement | M47 and completed M42 | pending |
+|---|---|---|---|
+| [M49](49-clear-shared-console-tasks.md) | Use clear shared sign-in, Settings and service tasks | M43, M45, M48 | pending |
+| [M50](50-reviewed-credential-removal.md) | Remove credential configuration and eligible saved values on Apply | M49, M29, M34, M47 | pending |
+| [M51](51-archived-service-permanent-deletion.md) | Permanently delete an Archived service with retained evidence | M50 | pending |
 
 ## Granularity and order
-Four shared editing/status/discard remediations combine into M47: splitting footer/badges/guard/state would fragment one usable edit/exit journey. M48 is a substantial independently demonstrable import/migration authority boundary, consuming M47's retained Inactive identity, incomplete review and ordinary empty-access handling. M47 excludes allocation/legacy mapping retirement; M48 does not duplicate its footer work. No foundation/M0, per-finding milestones or prescribed implementation slices.
 
-## Regression and boundaries
-Focused checks and actual matching visual comparison belong to each outcome. UX9-INTEGRATED retains full bounded-worker suite/build and joined browser/security-state qualification before deployment/final acceptance. No full suite, bootstrap probes, implementation or readiness work runs in compilation. Required positive/negative external-input coverage, audit uncertainty, conditional compatibility/recovery gates and escalation remain. No blockers, required deferrals or unmapped items.
+M49 consolidates four small shared task-shell/presentation remediations; separate milestones for helper copy, warning, sign-in or transient Settings mounting would multiply gates without a substantial new outcome. Its finite demo is sign-in → stable Settings → service advisory/review/fix navigation, not an unbounded Settings redesign. M50 is the complete reviewed credential-removal transaction across UI/proposal/state/runtime/recovery. M51 separately delivers immediate Archived object destruction, a materially different lifecycle and confirmation risk, consuming M50's durable incarnation/dependency fences. No standalone foundation, catchall bucket, per-finding milestone or implementation slices. Earliest integrated demonstration is M49's existing task journey; earliest destructive demonstration is M50's saved-draft-only removal through actual Apply.
+
+## Validation and boundaries
+
+Focused affected checks/build and inspected actual visual evidence at each outcome; **UX10-INTEGRATED** separately schedules complete bounded-worker suite/build, joined browser and changed-state recovery qualification before deployment/final acceptance. Preserve mandatory security/external-input/recovery gates; one milestone's targeted PASS does not certify release. First unexpected out-of-area regression widens focused scope; second distinct regression/spread requires full regression after repairs. No tests, bootstrap probes, code or readiness repair run during compilation. No blocked, deferred or unmapped required work. Completed contracts remain historical and unchanged.
 
 ## Completed history
 
@@ -59,3 +59,5 @@ Focused checks and actual matching visual comparison belong to each outcome. UX9
 | M44 | [Manage SMTP credentials through a clear focused task](44-smtp-credential-dialogs.md) | completed |
 | M45 | [Configure services and Settings with clear consistent actions](45-consistent-editing-actions.md) | completed |
 | M46 | [Investigate scoped Activity with reusable filters and relevant exports](46-scoped-activity-investigation.md) | completed |
+| M47 | [Edit and discard service proposals through one coherent flow](47-service-edit-review-and-discard.md) | completed |
+| M48 | [Import separate unassigned services and retire legacy mappings safely](48-independent-unassigned-service-import.md) | completed |

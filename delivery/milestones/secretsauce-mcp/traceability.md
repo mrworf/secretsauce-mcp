@@ -208,3 +208,38 @@ Each original class and disposition stays intact. A mapping means inclusion in t
 - Accepted best-effort scanning limits and existing external-LLM qualification limits remain; no new waiver.
 
 Blocked: none. Deferred required work: none. Unmapped required items: none. Every original feedback item has a disposition; all12 remaining remediation outcomes map once.
+
+## REC015 / UX10 bounded delta
+
+Primary authority: published ready UX10 definition package; PRD/UX/STATE-11/SECRES-10 create and constrain obligations. Resolved REC015 remediations trace adopted requirements; original observations and preference/exploration remain evidence, not independent mandates. Historical REC015 revalidation flags are discharged by the current validated package. Prior trace/history unchanged.
+
+| Remediation | Adopted authority | Milestone | Outcome |
+|---|---|---|---|
+| REC-RM-058 | CONFIG-02/03; STATE-11; SECRES-10; UX-IN25 | M50 | Reviewed intentional credential cleanup |
+| REC-RM-059 | CONFIG-05; STATE-11; SECRES-10; UX-IN25 | M51 | Typed Archived permanent deletion |
+| REC-RM-060 | UX-03; AUTHZ-01/02; UX-IN23 | M49 | Distinct valid no-access advisory |
+| REC-RM-061 | UX-02; IDENT-02/05; UX-IN26/R12 | M49 | Compact distinct authentication tasks and shared help |
+| REC-RM-062 | UX-02; UX-IN26 | M49 | Stable Settings transitions |
+| REC-RM-063 | UX-01 | M49 | Nonredundant Overview actions |
+
+| Feedback item | Original class / disposition | Milestone | Adopted remediation |
+|---|---|---|---|
+| PO-FB-265 | DIRECTIVE / FULLY_RESOLVED | M49 | REC-RM-060 |
+| PO-FB-266 | DIRECTIVE / FULLY_RESOLVED | M50 | REC-RM-058 |
+| PO-FB-267 | OBSERVATION / EVIDENCE_CORRELATED | M50 | REC-RM-058 |
+| PO-FB-268 | DIRECTIVE / FULLY_RESOLVED | M50 | REC-RM-058 |
+| PO-FB-269 | DIRECTIVE / FULLY_RESOLVED | M50 | REC-RM-058 |
+| PO-FB-270 | DIRECTIVE / FULLY_RESOLVED | M50 | REC-RM-058 |
+| PO-FB-271 | OBSERVATION / EVIDENCE_CORRELATED | M49 | REC-RM-061 |
+| PO-FB-272 | PREFERENCE / ADVISORY_CONSIDERED | M49 | REC-RM-061 |
+| PO-FB-273 | OBSERVATION / EVIDENCE_CORRELATED | M49 | REC-RM-061 |
+| PO-FB-274 | IDEA_OR_QUESTION / EXPLORATORY_RECORDED | M49 | REC-RM-061 |
+| PO-FB-275 | DIRECTIVE / FULLY_RESOLVED | M49 | REC-RM-061 |
+| PO-FB-276 | OBSERVATION / EVIDENCE_CORRELATED | M49 | REC-RM-062 |
+| PO-FB-277 | DIRECTIVE / FULLY_RESOLVED | M49 | REC-RM-062 |
+| PO-FB-278 | DIRECTIVE / FULLY_RESOLVED | M49 | REC-RM-063 |
+| PO-FB-279 | DIRECTIVE / FULLY_RESOLVED | M51 | REC-RM-059 |
+| PO-FB-280 | DIRECTIVE / FULLY_RESOLVED | M51 | REC-RM-059 |
+| PO-FB-281 | DIRECTIVE / FULLY_RESOLVED | M51 | REC-RM-059 |
+
+Shared constraints intentionally map repeatedly: current authorization/audit/write-only values and scoped UX in all three; STATE-11/SECRES-10 incarnation/uncertainty/recovery across M50/51. Excluded: new authentication flows/roles/vault, unrelated orphan sweep, bulk purge, backup destruction, and reimplementation of completed behavior. Advisory compact login is included only as adopted UX-R05/R12 interpretation; no independent optional idea promoted. Deferred required work: none. Blocked: none. Unmapped: none. All17items and six remediations covered. Implementation qualification remains pending, not established by planning.

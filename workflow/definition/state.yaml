@@ -4,7 +4,7 @@ status: ready_for_delivery_planning
 scope: Self-hosted single-organization web console initial release
 transaction:
   parent_commit: 307202c78bb17663cdfb04331ff8e07f89debe38
-  repository_commit: null
+  repository_commit: 8c307a8e745c6b739abc241be30a63c14f850449
   pre_existing_dirty_paths:
   - codex-session-01a122f7-e70f-7440-b1ce-ca88b955e519.md
   - passwd
@@ -564,7 +564,7 @@ last_reconciliation:
   definition_package:
     status: current
     path: workflow/definition/definition-package.yaml
-    revision: sha256:42f58203e3aa1c697ddc2dfeed7360e9124ef838058387786e817b3c8c048f33
+    revision: sha256:d253b2e79042338dc726d74066f69105acf6e742d4759ab73e366b29afc4c72c
 feedback_source:
   feedback_id: PO-FEEDBACK-2026-11-18-002
   path: workflow/feedback/PO-FEEDBACK-2026-11-18-002/feedback.yaml
@@ -822,11 +822,11 @@ next_handoff:
   change_ids:
   - REC-IMPACT-014
   remediation_ids:
-  - REC-RM-53
-  - REC-RM-54
-  - REC-RM-55
-  - REC-RM-56
-  - REC-RM-57
+  - REC-RM-053
+  - REC-RM-054
+  - REC-RM-055
+  - REC-RM-056
+  - REC-RM-057
   definition_action: TARGETED_REVALIDATION
   implementation_ready: true
   delivery_planning_ready: true

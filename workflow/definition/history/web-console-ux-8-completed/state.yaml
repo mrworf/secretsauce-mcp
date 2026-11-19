@@ -1,0 +1,864 @@
+workflow: product-definition
+product_id: secretsauce-mcp
+status: ready_for_delivery_planning
+scope: Self-hosted single-organization web console initial release
+transaction:
+  parent_commit: fc458fe5e202b9d14a1f32a39749540cec3ac928
+  repository_commit: 80edc3f0b720b3a5bf7b49a8585817a38072ed54
+  pre_existing_dirty_paths:
+  - codex-session-01a122f7-e70f-7440-b1ce-ca88b955e519.md
+  - passwd
+  - test-results/
+  owned_paths:
+  - workflow/definition/
+  - product/
+  - docs/web-console-prd.md
+  - docs/web-console-prd-coverage.md
+  - docs/web-console-prd-user-journey-audit.md
+authoritative_artifacts:
+  product:
+    path: docs/web-console-prd.md
+    revision: sha256:05a8cc6436b4b9d7f71c7b04e06367bc92c80f23a46604a58c5e273c955e1691
+  security_contract:
+    path: product/security/web-console-security-contract.md
+    revision: sha256:8f66520798094a2638f006c9f3145e263e96008fdf63480fc6b98c2b0ccddc35
+  architecture_contract:
+    path: product/architecture/web-console-state-contract.md
+    revision: sha256:c8e22b5013d89090cc451cb2ef0290d7517b05bebae746faa15b65f10fca9848
+  coverage:
+    path: docs/web-console-prd-coverage.md
+    revision: sha256:b7c6b4109af2c71b91305de84c2467886d4e4197cbbefc4250e9172c46232e96
+  journeys:
+    path: docs/web-console-prd-user-journey-audit.md
+    revision: sha256:8d466d968faebe2d9f245b5bf72d1210438b25bd02c0f0159a8c606b6dd7d40a
+  ux:
+    path: product/ux/manifest.yaml
+    revision: sha256:5f453b1f369134cb22c3da53142a6bacf650700704c50fc8ed76130b1e2480fe
+    declared_revision: web-console-ux-8
+  ux_experience_brief:
+    path: product/ux/experience-brief.yaml
+    revision: sha256:216fcf96b37e6554ee25e3f624d890a5a9fe2a1c308b0ad5c9b4cc0c40f6e51e
+  ux_overview:
+    path: product/ux/00-overview.md
+    revision: sha256:5614ac2253fe17c2b821b36eb207258cdd4a1e5480f9dba39d8cbdda0b5bb3a5
+  ux_information_architecture:
+    path: product/ux/01-information-architecture.md
+    revision: sha256:a1729436988ed6de93fc66baf6c6e24d6b60577e8041620cb3f0d3583a2a0bd1
+  ux_interaction_patterns:
+    path: product/ux/02-interaction-patterns.md
+    revision: sha256:1d5b184e282ca1972996095acccc8d6b2e267053c8782cfbbfd3e6f5d7332331
+  ux_responsive_and_platform:
+    path: product/ux/03-responsive-and-platform.md
+    revision: sha256:75d7b83b7b34d3be6507faa2f869a65f136fab6936a1ba4b390cd67004a057f3
+  ux_visual_system:
+    path: product/ux/04-visual-system.md
+    revision: sha256:dfa3d9525b3b35d1e2e7d8731ab6ca2fcb4d1df2783567cf8d8d36efd548e463
+  ux_accessibility:
+    path: product/ux/05-accessibility.md
+    revision: sha256:6e75d741491d2f25f2642cf8acdb170c3b2eec458412318e8a25415d19fb658f
+  ux_feature_exceptions:
+    path: product/ux/06-feature-exceptions.md
+    revision: sha256:427142201d4c4d0e6fc17c19d957f6f4eb8355c651554f0892aefcc1590468cd
+  ux_acceptance_checklist:
+    path: product/ux/07-acceptance-checklist.md
+    revision: sha256:530ac61db856b1403d3cebd8be31c73c9528481bf5f1124f424e4dc08bd6c3b0
+  security:
+    path: product/security/web-console-security-review.md
+    revision: sha256:62cad1a25d864c09abef739db6edeed7df0bf38e42253f9fca8a908ec65f085e
+  architecture:
+    path: product/architecture/web-console-architecture-review.md
+    revision: sha256:74763e93b4b64477c6e43b37aeb1ecb0334e21b605041be25d3a4f07184f73f3
+specialists:
+  prd: /home/ha/.codex/skills/prd-development-partner/SKILL.md
+  coverage: /home/ha/.codex/skills/generate-prd-coverage-matrix/SKILL.md
+  journeys: /home/ha/.codex/skills/prd-to-user-journey-audit/SKILL.md
+  ux: /home/ha/.codex/skills/product-ux/SKILL.md
+  architecture: /home/ha/.codex/skills/software-architect-review/SKILL.md
+  security: /home/ha/.codex/skills/security-code-reviewer/SKILL.md
+stages:
+  prd:
+    status: passed
+    validated_inputs:
+    - path: docs/web-console-prd.md
+      revision: sha256:05a8cc6436b4b9d7f71c7b04e06367bc92c80f23a46604a58c5e273c955e1691
+    - path: workflow/feedback/PO-FEEDBACK-2026-11-18-001/feedback.yaml
+      revision: sha256:f75bf33c095d27ac3983cd9d8af2babf1100aff824f0c77e7447ac2750d49334
+    - path: workflow/definition/results/activity-filter-contract.md
+      revision: sha256:cbcea279757e19900d1a82448694046ec0098ccb2ae9f20f7624b0f5576c0f9f
+    - path: workflow/definition/results/activity-filter-resolution.yaml
+      revision: sha256:63c42a45e9f9ca5d13335298b6ab52ef8efcbf11933c2e470d9517aa59584953
+    - path: product/security/web-console-security-contract.md
+      revision: sha256:8f66520798094a2638f006c9f3145e263e96008fdf63480fc6b98c2b0ccddc35
+    - path: product/architecture/web-console-state-contract.md
+      revision: sha256:c8e22b5013d89090cc451cb2ef0290d7517b05bebae746faa15b65f10fca9848
+    - path: src/consoleEvidence.ts
+      revision: sha256:538a862ee690ffc71026d3b43036a746bf0ef58780185784c318593fdc540223
+    - path: src/consoleEvidencePage.ts
+      revision: sha256:8965083dce7423af259c6c08431c9b68c5f8cd83a69707d13a05f6e007d8c810
+    - path: test/console-evidence.test.ts
+      revision: sha256:5da331ae1d70045234f393dac98919a2fbd266c5c6c37a70151f7b4222efedbb
+    - path: workflow/definition/decisions.md
+      revision: sha256:1dbd51a9efdbfa39aa5cb6b1aaca734096866e56bfb41ddf810dfbf7774068fa
+    result: workflow/definition/results/prd.yaml
+    mode: targeted_revalidation
+    target_scope:
+      finding_ids: &id001
+      - REC-054
+      - REC-055
+      - REC-056
+      - REC-057
+      - REC-058
+      requirement_ids: &id002
+      - CONFIG-02
+      - POLICY-01
+      - UX-02
+      - AUDIT-02.a
+      - AUDIT-02.b
+  coverage:
+    status: passed
+    validated_inputs:
+    - path: docs/web-console-prd.md
+      revision: sha256:05a8cc6436b4b9d7f71c7b04e06367bc92c80f23a46604a58c5e273c955e1691
+    - path: workflow/reconciliation/REC-RUN-013/reconciliation-result.yaml
+      revision: sha256:91571dfad36655a45a4149b0d8518429f9ece3e2c4903178a6caf6864302aa43
+    - path: product/architecture/web-console-state-contract.md
+      revision: sha256:c8e22b5013d89090cc451cb2ef0290d7517b05bebae746faa15b65f10fca9848
+    - path: product/security/web-console-security-contract.md
+      revision: sha256:8f66520798094a2638f006c9f3145e263e96008fdf63480fc6b98c2b0ccddc35
+    - path: product/ux/manifest.yaml
+      revision: sha256:5f453b1f369134cb22c3da53142a6bacf650700704c50fc8ed76130b1e2480fe
+    - path: product/ux/01-information-architecture.md
+      revision: sha256:a1729436988ed6de93fc66baf6c6e24d6b60577e8041620cb3f0d3583a2a0bd1
+    - path: product/ux/02-interaction-patterns.md
+      revision: sha256:1d5b184e282ca1972996095acccc8d6b2e267053c8782cfbbfd3e6f5d7332331
+    result: workflow/definition/results/coverage.yaml
+    mode: targeted_revalidation
+    target_scope:
+      finding_ids: *id001
+      requirement_ids: *id002
+  journeys:
+    status: passed
+    validated_inputs:
+    - path: docs/web-console-prd.md
+      revision: sha256:05a8cc6436b4b9d7f71c7b04e06367bc92c80f23a46604a58c5e273c955e1691
+    - path: docs/web-console-prd-coverage.md
+      revision: sha256:b7c6b4109af2c71b91305de84c2467886d4e4197cbbefc4250e9172c46232e96
+    - path: workflow/reconciliation/REC-RUN-013/reconciliation-result.yaml
+      revision: sha256:91571dfad36655a45a4149b0d8518429f9ece3e2c4903178a6caf6864302aa43
+    - path: product/architecture/web-console-state-contract.md
+      revision: sha256:c8e22b5013d89090cc451cb2ef0290d7517b05bebae746faa15b65f10fca9848
+    - path: product/security/web-console-security-contract.md
+      revision: sha256:8f66520798094a2638f006c9f3145e263e96008fdf63480fc6b98c2b0ccddc35
+    - path: product/ux/manifest.yaml
+      revision: sha256:5f453b1f369134cb22c3da53142a6bacf650700704c50fc8ed76130b1e2480fe
+    - path: product/ux/01-information-architecture.md
+      revision: sha256:a1729436988ed6de93fc66baf6c6e24d6b60577e8041620cb3f0d3583a2a0bd1
+    - path: product/ux/02-interaction-patterns.md
+      revision: sha256:1d5b184e282ca1972996095acccc8d6b2e267053c8782cfbbfd3e6f5d7332331
+    result: workflow/definition/results/journeys.yaml
+    mode: targeted_revalidation
+    target_scope:
+      finding_ids: *id001
+      requirement_ids: *id002
+  ux:
+    status: passed
+    mode: targeted_revalidation
+    validated_inputs:
+    - path: docs/web-console-prd.md
+      revision: sha256:05a8cc6436b4b9d7f71c7b04e06367bc92c80f23a46604a58c5e273c955e1691
+    - path: docs/web-console-prd-coverage.md
+      revision: sha256:b7c6b4109af2c71b91305de84c2467886d4e4197cbbefc4250e9172c46232e96
+    - path: docs/web-console-prd-user-journey-audit.md
+      revision: sha256:8d466d968faebe2d9f245b5bf72d1210438b25bd02c0f0159a8c606b6dd7d40a
+    - path: product/architecture/web-console-state-contract.md
+      revision: sha256:c8e22b5013d89090cc451cb2ef0290d7517b05bebae746faa15b65f10fca9848
+    - path: product/security/web-console-security-contract.md
+      revision: sha256:8f66520798094a2638f006c9f3145e263e96008fdf63480fc6b98c2b0ccddc35
+    - path: workflow/definition/decisions.md
+      revision: sha256:1dbd51a9efdbfa39aa5cb6b1aaca734096866e56bfb41ddf810dfbf7774068fa
+    - path: workflow/feedback/PO-FEEDBACK-2026-11-18-001/feedback.yaml
+      revision: sha256:f75bf33c095d27ac3983cd9d8af2babf1100aff824f0c77e7447ac2750d49334
+    - path: workflow/reconciliation/REC-RUN-013/reconciliation-result.yaml
+      revision: sha256:91571dfad36655a45a4149b0d8518429f9ece3e2c4903178a6caf6864302aa43
+    - path: workflow/reconciliation/REC-RUN-013/activity-filter-basis.md
+      revision: sha256:cbcea279757e19900d1a82448694046ec0098ccb2ae9f20f7624b0f5576c0f9f
+    - path: product/ux/manifest.yaml
+      revision: sha256:5f453b1f369134cb22c3da53142a6bacf650700704c50fc8ed76130b1e2480fe
+    - path: product/ux/experience-brief.yaml
+      revision: sha256:216fcf96b37e6554ee25e3f624d890a5a9fe2a1c308b0ad5c9b4cc0c40f6e51e
+    result: workflow/definition/results/ux.yaml
+    target_scope:
+      finding_ids: *id001
+      requirement_ids: *id002
+  architecture:
+    status: passed
+    mode: targeted_revalidation
+    validated_inputs:
+    - path: docs/web-console-prd.md
+      revision: sha256:05a8cc6436b4b9d7f71c7b04e06367bc92c80f23a46604a58c5e273c955e1691
+    - path: product/architecture/web-console-state-contract.md
+      revision: sha256:c8e22b5013d89090cc451cb2ef0290d7517b05bebae746faa15b65f10fca9848
+    - path: product/security/web-console-security-contract.md
+      revision: sha256:8f66520798094a2638f006c9f3145e263e96008fdf63480fc6b98c2b0ccddc35
+    - path: workflow/reconciliation/REC-RUN-013/reconciliation-result.yaml
+      revision: sha256:91571dfad36655a45a4149b0d8518429f9ece3e2c4903178a6caf6864302aa43
+    - path: workflow/definition/decisions.md
+      revision: sha256:1dbd51a9efdbfa39aa5cb6b1aaca734096866e56bfb41ddf810dfbf7774068fa
+    - path: product/ux/manifest.yaml
+      revision: sha256:5f453b1f369134cb22c3da53142a6bacf650700704c50fc8ed76130b1e2480fe
+    - path: product/ux/01-information-architecture.md
+      revision: sha256:a1729436988ed6de93fc66baf6c6e24d6b60577e8041620cb3f0d3583a2a0bd1
+    - path: product/ux/02-interaction-patterns.md
+      revision: sha256:1d5b184e282ca1972996095acccc8d6b2e267053c8782cfbbfd3e6f5d7332331
+    - path: product/ux/05-accessibility.md
+      revision: sha256:6e75d741491d2f25f2642cf8acdb170c3b2eec458412318e8a25415d19fb658f
+    - path: product/ux/06-feature-exceptions.md
+      revision: sha256:427142201d4c4d0e6fc17c19d957f6f4eb8355c651554f0892aefcc1590468cd
+    - path: product/ux/07-acceptance-checklist.md
+      revision: sha256:530ac61db856b1403d3cebd8be31c73c9528481bf5f1124f424e4dc08bd6c3b0
+    - path: src/consoleEvidence.ts
+      revision: sha256:538a862ee690ffc71026d3b43036a746bf0ef58780185784c318593fdc540223
+    - path: src/consoleEvidencePage.ts
+      revision: sha256:8965083dce7423af259c6c08431c9b68c5f8cd83a69707d13a05f6e007d8c810
+    - path: test/console-evidence.test.ts
+      revision: sha256:5da331ae1d70045234f393dac98919a2fbd266c5c6c37a70151f7b4222efedbb
+    result: workflow/definition/results/architecture.yaml
+    target_scope:
+      finding_ids: *id001
+      requirement_ids: *id002
+  security:
+    status: passed
+    mode: targeted_revalidation
+    validated_inputs:
+    - path: docs/web-console-prd.md
+      revision: sha256:05a8cc6436b4b9d7f71c7b04e06367bc92c80f23a46604a58c5e273c955e1691
+    - path: product/architecture/web-console-state-contract.md
+      revision: sha256:c8e22b5013d89090cc451cb2ef0290d7517b05bebae746faa15b65f10fca9848
+    - path: product/security/web-console-security-contract.md
+      revision: sha256:8f66520798094a2638f006c9f3145e263e96008fdf63480fc6b98c2b0ccddc35
+    - path: workflow/reconciliation/REC-RUN-013/reconciliation-result.yaml
+      revision: sha256:91571dfad36655a45a4149b0d8518429f9ece3e2c4903178a6caf6864302aa43
+    - path: workflow/definition/decisions.md
+      revision: sha256:1dbd51a9efdbfa39aa5cb6b1aaca734096866e56bfb41ddf810dfbf7774068fa
+    - path: product/ux/manifest.yaml
+      revision: sha256:5f453b1f369134cb22c3da53142a6bacf650700704c50fc8ed76130b1e2480fe
+    - path: product/ux/01-information-architecture.md
+      revision: sha256:a1729436988ed6de93fc66baf6c6e24d6b60577e8041620cb3f0d3583a2a0bd1
+    - path: product/ux/02-interaction-patterns.md
+      revision: sha256:1d5b184e282ca1972996095acccc8d6b2e267053c8782cfbbfd3e6f5d7332331
+    - path: product/ux/05-accessibility.md
+      revision: sha256:6e75d741491d2f25f2642cf8acdb170c3b2eec458412318e8a25415d19fb658f
+    - path: product/ux/06-feature-exceptions.md
+      revision: sha256:427142201d4c4d0e6fc17c19d957f6f4eb8355c651554f0892aefcc1590468cd
+    - path: product/ux/07-acceptance-checklist.md
+      revision: sha256:530ac61db856b1403d3cebd8be31c73c9528481bf5f1124f424e4dc08bd6c3b0
+    - path: src/consoleEvidence.ts
+      revision: sha256:538a862ee690ffc71026d3b43036a746bf0ef58780185784c318593fdc540223
+    - path: src/consoleEvidencePage.ts
+      revision: sha256:8965083dce7423af259c6c08431c9b68c5f8cd83a69707d13a05f6e007d8c810
+    - path: test/console-evidence.test.ts
+      revision: sha256:5da331ae1d70045234f393dac98919a2fbd266c5c6c37a70151f7b4222efedbb
+    result: workflow/definition/results/security.yaml
+    target_scope:
+      finding_ids: *id001
+      requirement_ids: *id002
+reconciliation_cycles:
+  F-PRD-001:
+    attempts: 1
+    status: resolved
+    progress:
+    - Delegated security/architecture resolution adopted into PRD
+  F-PRD-002:
+    attempts: 1
+    status: resolved
+    progress:
+    - Delegated security/architecture resolution adopted into PRD
+  F-PRD-003:
+    attempts: 1
+    status: resolved
+    progress:
+    - Delegated security/architecture resolution adopted into PRD
+  F-PRD-004:
+    attempts: 1
+    status: resolved
+    progress:
+    - Delegated security/architecture resolution adopted into PRD
+  F-PRD-005:
+    attempts: 1
+    status: resolved
+    progress:
+    - UX-02 explicitly preserves PO-FB-008 and PO-FB-011 without selecting a layout mechanism
+  F-COV-FEEDBACK-001:
+    attempts: 1
+    status: resolved
+    progress:
+    - Derived coverage now includes feedback-authorized reset roles, separate SMTP deletion, and focused
+      Settings requirements
+  F-JOURNEY-FEEDBACK-001:
+    attempts: 1
+    status: resolved
+    progress:
+    - Derived journeys updated for confirmed feedback and adopted domain contracts
+  REC-001:
+    attempts: 1
+    status: resolved
+    last_result_revision: sha256:2f24571fcc26f6819689dc241fc4214a2979569e1d06a1ca9d72201659f001e2
+    progress:
+    - Delegated contract accepted in REC-RUN-002; PRD, coverage, and journeys revalidated; final UX/domain
+      validation awaits UX-DESIGN-002.
+    - REC-RUN-003 resolves finding and remediation; approved UX and compatible coverage/journeys current.
+      Architecture/security final review in progress.
+  REC-002:
+    attempts: 1
+    status: resolved
+    last_result_revision: sha256:2f24571fcc26f6819689dc241fc4214a2979569e1d06a1ca9d72201659f001e2
+    progress:
+    - Delegated contract accepted in REC-RUN-002; PRD, coverage, and journeys revalidated; final UX/domain
+      validation awaits UX-DESIGN-002.
+    - REC-RUN-003 resolves finding and remediation; approved UX and compatible coverage/journeys current.
+      Architecture/security final review in progress.
+  REC-006:
+    attempts: 1
+    status: resolved
+    last_result_revision: sha256:2f24571fcc26f6819689dc241fc4214a2979569e1d06a1ca9d72201659f001e2
+    progress:
+    - Delegated contract accepted in REC-RUN-002; PRD, coverage, and journeys revalidated; final UX/domain
+      validation awaits UX-DESIGN-002.
+    - REC-RUN-003 resolves finding and remediation; approved UX and compatible coverage/journeys current.
+      Architecture/security final review in progress.
+  REC-003:
+    attempts: 1
+    progress:
+    - REC-RUN-003 resolves finding and remediation; approved UX and compatible coverage/journeys current.
+      Architecture/security final review in progress.
+    status: resolved
+    last_result_revision: sha256:2f24571fcc26f6819689dc241fc4214a2979569e1d06a1ca9d72201659f001e2
+  REC-004:
+    attempts: 1
+    progress:
+    - REC-RUN-003 resolves finding and remediation; approved UX and compatible coverage/journeys current.
+      Architecture/security final review in progress.
+    status: resolved
+    last_result_revision: sha256:2f24571fcc26f6819689dc241fc4214a2979569e1d06a1ca9d72201659f001e2
+  REC-005:
+    attempts: 1
+    progress:
+    - REC-RUN-003 resolves finding and remediation; approved UX and compatible coverage/journeys current.
+      Architecture/security final review in progress.
+    status: resolved
+    last_result_revision: sha256:2f24571fcc26f6819689dc241fc4214a2979569e1d06a1ca9d72201659f001e2
+  REC-007:
+    attempts: 1
+    progress:
+    - REC-RUN-003 resolves finding and remediation; approved UX and compatible coverage/journeys current.
+      Architecture/security final review in progress.
+    status: resolved
+    last_result_revision: sha256:2f24571fcc26f6819689dc241fc4214a2979569e1d06a1ca9d72201659f001e2
+blocking_questions: []
+unresolved_decisions: []
+decision_graph:
+  nodes:
+    UX8-ACTIVITY-SEMANTICS:
+      status: resolved
+      resolution_category: SPECIALIST_RESOLUTION
+      resolution_owner:
+      - prd
+      routing_status: adopted_in_REC013
+      depends_on: []
+      source_feedback:
+      - PO-FB-224
+      - PO-FB-225
+      result_path: workflow/definition/results/activity-filter-resolution.yaml
+  ready: []
+accepted_risks:
+- id: SEC-DEF-001
+  summary: Trusted destination authors and best-effort response scanning are not universal credential
+    non-exfiltration controls.
+  decision_refs:
+  - D-012
+  result: workflow/definition/results/security.yaml
+blockers: []
+transaction_history:
+- parent_commit: 9c4fcb28144efa0f39de91ff20660fbae4cd8de1
+  repository_commit: 5128ac3b4cdf1a1a9f5af1d6f6d96d1dea0885f2
+  pre_existing_dirty_paths: &id003
+  - test-results/
+  owned_paths:
+  - docs/web-console-prd.md
+  - workflow/definition/
+  - product/security/web-console-security-contract.md
+  - product/architecture/web-console-state-contract.md
+  - docs/web-console-prd-coverage.md
+  - docs/web-console-prd-user-journey-audit.md
+  - workflow/definition/drafts/product-ux/web-console-initial/
+  - product/ux/
+  - product/architecture/web-console-architecture-review.md
+  - product/security/web-console-security-review.md
+  - product/architecture/web-console-architecture-review.md
+  - product/security/web-console-security-review.md
+- parent_commit: 9889bfe1d17a5c326046421e40367077c4e45bf3
+  repository_commit: 06dd0ee59defd1a75db121f1d8133c7100238b80
+  pre_existing_dirty_paths: *id003
+  owned_paths:
+  - docs/web-console-prd.md
+  - workflow/definition/
+  - product/security/web-console-security-contract.md
+  - product/architecture/web-console-state-contract.md
+  - docs/web-console-prd-coverage.md
+  - docs/web-console-prd-user-journey-audit.md
+  - workflow/definition/drafts/product-ux/web-console-initial/
+  - product/ux/
+  - product/architecture/web-console-architecture-review.md
+  - product/security/web-console-security-review.md
+- parent_commit: f799dc5675aff16975653d76f8fdf61e0efe7dc7
+  repository_commit: 59e8b562e6fafb13bfd37a4e744ba19a06fab3d0
+  pre_existing_dirty_paths:
+  - test-results/
+  owned_paths:
+  - docs/web-console-prd.md
+  - docs/web-console-prd-coverage.md
+  - docs/web-console-prd-user-journey-audit.md
+  - product/architecture/web-console-state-contract.md
+  - product/security/web-console-security-contract.md
+  - workflow/definition/decisions.md
+  - workflow/definition/open-questions.md
+  - workflow/definition/state.yaml
+  - workflow/definition/results/prd.yaml
+  - workflow/definition/results/prd-review.md
+  - workflow/definition/results/coverage.yaml
+  - workflow/definition/results/journeys.yaml
+  - workflow/definition/results/ux.yaml
+  - workflow/definition/results/feedback-security-resolution.yaml
+  - workflow/definition/results/feedback-architecture-resolution.yaml
+  - workflow/definition/results/feedback-ux-resolution.yaml
+  - workflow/definition/drafts/product-ux/web-console-feedback-001/design-contract.md
+  - workflow/definition/drafts/product-ux/web-console-feedback-001/email-desktop.png
+  - workflow/definition/drafts/product-ux/web-console-feedback-001/experience-brief.yaml
+  - workflow/definition/drafts/product-ux/web-console-feedback-001/index.md
+  - workflow/definition/drafts/product-ux/web-console-feedback-001/render-checks.json
+  - workflow/definition/drafts/product-ux/web-console-feedback-001/settings-desktop.png
+  - workflow/definition/drafts/product-ux/web-console-feedback-001/settings-narrow.png
+  - workflow/definition/drafts/product-ux/web-console-feedback-001/settings-review.png
+  - workflow/definition/drafts/product-ux/web-console-feedback-001/settings.html
+- parent_commit: 1cbc57766e76b4cd4de8f35e9a7dc39b7b1214e3
+  repository_commit: 4d46db3fa08a25df52b8d7b0aa2357cf8446b2fd
+  pre_existing_dirty_paths:
+  - test-results/
+  owned_paths:
+  - product/architecture/web-console-architecture-review.md
+  - product/security/web-console-security-review.md
+  - product/ux/00-overview.md
+  - product/ux/01-information-architecture.md
+  - product/ux/02-interaction-patterns.md
+  - product/ux/03-responsive-and-platform.md
+  - product/ux/04-visual-system.md
+  - product/ux/05-accessibility.md
+  - product/ux/06-feature-exceptions.md
+  - product/ux/07-acceptance-checklist.md
+  - product/ux/experience-brief.yaml
+  - product/ux/manifest.yaml
+  - workflow/definition/decisions.md
+  - workflow/definition/definition-package.yaml
+  - workflow/definition/open-questions.md
+  - workflow/definition/results/architecture.yaml
+  - workflow/definition/results/coverage.yaml
+  - workflow/definition/results/journeys.yaml
+  - workflow/definition/results/security.yaml
+  - workflow/definition/results/ux.yaml
+  - workflow/definition/state.yaml
+- parent_commit: 532b2dd8c4631dccd9463194d3daa36d12722732
+  repository_commit: 87352e822ce27866ae353c64e5323fc7a6770281
+  pre_existing_dirty_paths:
+  - test-results/
+  owned_paths:
+  - product/architecture/web-console-state-contract.md
+  - product/security/web-console-security-contract.md
+  - workflow/definition/decisions.md
+  - workflow/definition/open-questions.md
+  - workflow/definition/state.yaml
+  - workflow/definition/results/feedback2-architecture-resolution.yaml
+  - workflow/definition/results/feedback2-security-resolution.yaml
+  - workflow/definition/results/feedback2-ux-resolution.yaml
+  - workflow/definition/drafts/product-ux/web-console-feedback-002/
+  - evidence/ux-acceptance/secretsauce-mcp/feedback-002-service-overlap/
+- parent_commit: 65c1d45ba19f8dbcfca161bddf8c415f04c40d26
+  repository_commit: 653ac14f771dc1da7d1d650c577ff439e9b99bce
+  pre_existing_dirty_paths:
+  - test-results/
+  owned_paths:
+  - AGENTS.md
+  - docs/web-console-prd-coverage.md
+  - docs/web-console-prd-user-journey-audit.md
+  - docs/web-console-prd.md
+  - product/architecture/web-console-architecture-review.md
+  - product/security/web-console-security-review.md
+  - product/ux/00-overview.md
+  - product/ux/01-information-architecture.md
+  - product/ux/02-interaction-patterns.md
+  - product/ux/03-responsive-and-platform.md
+  - product/ux/04-visual-system.md
+  - product/ux/05-accessibility.md
+  - product/ux/06-feature-exceptions.md
+  - product/ux/07-acceptance-checklist.md
+  - product/ux/experience-brief.yaml
+  - product/ux/manifest.yaml
+  - workflow/definition/decisions.md
+  - workflow/definition/definition-package.yaml
+  - workflow/definition/open-questions.md
+  - workflow/definition/results/architecture.yaml
+  - workflow/definition/results/coverage.yaml
+  - workflow/definition/results/journeys.yaml
+  - workflow/definition/results/prd-review.md
+  - workflow/definition/results/prd.yaml
+  - workflow/definition/results/security.yaml
+  - workflow/definition/results/ux.yaml
+  - workflow/definition/state.yaml
+- parent_commit: 4703c56c17020bc04f8a58c90c1ae0f23ca3886e
+  repository_commit: 729f9df7dea970e76b509ae36fa9c09852daf54e
+  pre_existing_dirty_paths:
+  - test-results/
+  owned_paths:
+  - workflow/definition/state.yaml
+  - workflow/definition/decisions.md
+  - workflow/definition/open-questions.md
+  - workflow/definition/results/feedback3-*
+  - workflow/definition/drafts/product-ux/web-console-feedback-003/
+  - product/architecture/web-console-state-contract.md
+  - product/security/web-console-security-contract.md
+- parent_commit: f498938edf7858a5217f047efba22a727a7303fa
+  repository_commit: 69611ec52040a3619e0e503b0abdc223e995f4a1
+  pre_existing_dirty_paths:
+  - test-results/
+  owned_paths:
+  - docs/web-console-prd-user-journey-audit.md
+  - product/ux/00-overview.md
+  - product/ux/03-responsive-and-platform.md
+  - product/ux/04-visual-system.md
+  - product/ux/05-accessibility.md
+  - product/ux/07-acceptance-checklist.md
+  - product/ux/experience-brief.yaml
+  - product/ux/manifest.yaml
+  - workflow/definition/decisions.md
+  - workflow/definition/definition-package.yaml
+  - workflow/definition/open-questions.md
+  - workflow/definition/results/journeys.yaml
+  - workflow/definition/results/ux.yaml
+  - workflow/definition/state.yaml
+- parent_commit: e024a6cc4a9728505ebff0d4f645c08d907fe3cb
+  repository_commit: c05b1897a2f8b31ddfc432323824e8c302355319
+  pre_existing_dirty_paths:
+  - codex-session-01a122f7-e70f-7440-b1ce-ca88b955e519.md
+  - passwd
+  - test-results/
+  owned_paths:
+  - docs/web-console-prd-coverage.md
+  - docs/web-console-prd-user-journey-audit.md
+  - workflow/definition/state.yaml
+  - workflow/definition/decisions.md
+  - workflow/definition/open-questions.md
+  - workflow/definition/results/coverage.yaml
+  - workflow/definition/results/journeys.yaml
+  - workflow/definition/results/feedback7-ux-assessment.md
+  - workflow/definition/results/feedback7-ux-resolution.yaml
+  - workflow/definition/drafts/product-ux/web-console-feedback-007/
+last_reconciliation:
+  id: REC-RUN-013
+  path: workflow/reconciliation/REC-RUN-013/reconciliation-result.yaml
+  schema_version: 1
+  result_revision: sha256:91571dfad36655a45a4149b0d8518429f9ece3e2c4903178a6caf6864302aa43
+  repository_commit: 23fd721583f435ff9ee4a87cc93f94fe849a449c
+  status: RESOLVED
+  adoption_status: complete
+  definition_action: TARGETED_REVALIDATION
+  change_ids:
+  - REC-IMPACT-013
+  implementation_required: true
+  implementation_ready: true
+  delivery_planning_ready: true
+  readiness_basis: REC013 resolved and implementation-ready; its sole remaining definition-revalidation
+    gate passed across six bounded stages. Canonical producer result preserved.
+  definition_package:
+    status: current
+    path: workflow/definition/definition-package.yaml
+    revision: sha256:781ffaf28362e1189a5e7f7353bbf8d9b89f1d4928b98e1f060f7022d3cf9548
+feedback_source: workflow/feedback/PO-FEEDBACK-2026-11-18-001/feedback.yaml
+reconciliation_history:
+- id: REC-RUN-001
+  path: workflow/reconciliation/REC-RUN-001/reconciliation-result.yaml
+  schema_version: 1
+  result_revision: sha256:0fe9e8f2f2b8679b63f17e4466c43a2ecfcf7fc01d5f028262d9581bd109f579
+  repository_commit: 030983d559bb2d6228272b7dbb07c818da6f5e81
+  status: PARTIALLY_RESOLVED
+  adoption_status: in_progress
+  definition_action: RESOLUTION_REQUIRED
+  change_ids:
+  - REC-IMPACT-001
+  remediation_ids:
+  - REC-RM-001
+  - REC-RM-002
+  implementation_required: true
+  implementation_ready: false
+  delivery_planning_ready: false
+- id: REC-RUN-002
+  path: workflow/reconciliation/REC-RUN-002/reconciliation-result.yaml
+  schema_version: 1
+  result_revision: sha256:c6b695bd86f0ebcf526f188b7faf4bfac183761b0b2fd79631b0e121adb96e1e
+  repository_commit: 095bbcd927dfe8160b1c91aed147bd6357bec7b2
+  status: PARTIALLY_RESOLVED
+  adoption_status: in_progress
+  definition_action: RESOLUTION_REQUIRED
+  change_ids:
+  - REC-IMPACT-002
+  remediation_ids:
+  - REC-RM-001
+  - REC-RM-002
+  - REC-RM-003
+  - REC-RM-004
+  implementation_required: true
+  implementation_ready: false
+  delivery_planning_ready: false
+  definition_package:
+    status: historical_pending_revalidation
+    path: workflow/definition/definition-package.yaml
+    revision: sha256:44c2c2338ed74a26867fdd374988bb73c4bd6ed1179e99a7a329b26acf59f6e1
+- id: REC-RUN-003
+  path: workflow/reconciliation/REC-RUN-003/reconciliation-result.yaml
+  schema_version: 1
+  result_revision: sha256:2f24571fcc26f6819689dc241fc4214a2979569e1d06a1ca9d72201659f001e2
+  repository_commit: fb901edc2d5d226a9685c16ecbc5bbb5e85dfb97
+  status: RESOLVED
+  adoption_status: complete
+  definition_action: TARGETED_REVALIDATION
+  change_ids:
+  - REC-IMPACT-003
+  remediation_ids:
+  - REC-RM-001
+  - REC-RM-002
+  - REC-RM-003
+  - REC-RM-004
+  - REC-RM-005
+  - REC-RM-006
+  implementation_required: true
+  implementation_ready: true
+  delivery_planning_ready: true
+  definition_package:
+    status: current
+    path: workflow/definition/definition-package.yaml
+    revision: sha256:f60ab3efcfca9d95991c023058ee81e61838121275ec482b549fed55a87618f9
+  readiness_basis: REC-RUN-003 is resolved and implementation-ready; its sole remaining gate, targeted
+    architecture/security definition revalidation, passed. Earlier REC-RUN-001/002 authority changes and
+    approved UX-2 now have a current complete package.
+- id: REC-RUN-004
+  path: workflow/reconciliation/REC-RUN-004/reconciliation-result.yaml
+  schema_version: 1
+  result_revision: sha256:ecaf289db5f2684b1195aa9b68a6b6957dc3074b98d61b2ef8882ffb27ebedde
+  repository_commit: 4d29294606cf2021b6fc27dc982da4a2dab1ca26
+  status: PARTIALLY_RESOLVED
+  adoption_status: in_progress
+  definition_action: RESOLUTION_REQUIRED
+  change_ids:
+  - REC-IMPACT-004
+  implementation_required: true
+  implementation_ready: false
+  delivery_planning_ready: false
+- id: REC-RUN-005
+  path: workflow/reconciliation/REC-RUN-005/reconciliation-result.yaml
+  schema_version: 1
+  result_revision: sha256:fbcfc50401f03cf2360fe0b6c68aca0c9439a5cdb0becb21d595c0f533f0dfbf
+  repository_commit: 37ea0ef7b1b55632cb3e721d1807c1a04b380a82
+  status: PARTIALLY_RESOLVED
+  adoption_status: in_progress
+  definition_action: RESOLUTION_REQUIRED
+  change_ids:
+  - REC-IMPACT-005
+  implementation_required: true
+  implementation_ready: false
+  delivery_planning_ready: false
+- id: REC-RUN-006
+  path: workflow/reconciliation/REC-RUN-006/reconciliation-result.yaml
+  schema_version: 1
+  result_revision: sha256:66907c2a791c0c794e600f3b3b1dd1d9167ebe7ea804fe24d759f0d309edeb93
+  repository_commit: a57c1ca28615a36770cc1446c4cb71fe21ae5f48
+  status: RESOLVED
+  adoption_status: complete
+  definition_action: TARGETED_REVALIDATION
+  change_ids:
+  - REC-IMPACT-006
+  remediation_ids:
+  - REC-RM-007
+  - REC-RM-008
+  - REC-RM-009
+  - REC-RM-010
+  - REC-RM-011
+  - REC-RM-012
+  - REC-RM-013
+  - REC-RM-014
+  implementation_required: true
+  implementation_ready: true
+  delivery_planning_ready: true
+  readiness_basis: REC006 resolved remediation; all six definition stages validate current authoritative
+    revisions. Root-owned sources committed in this transaction.
+  definition_package:
+    status: current
+    path: workflow/definition/definition-package.yaml
+    revision: sha256:82014f66c15c3e7246144c9b44b95c70c7a22aba863d1e8bbd6887ca6afed506
+- id: REC-RUN-007
+  path: workflow/reconciliation/REC-RUN-007/reconciliation-result.yaml
+  schema_version: 1
+  result_revision: sha256:2ff9aa27c26362e5b9de490ef201279bbf341e22f3162ddd86ec04f885b02ea3
+  repository_commit: abfa50b2cfdc4ad9762274df860353a6a40a66a5
+  status: PARTIALLY_RESOLVED
+  adoption_status: in_progress
+  definition_action: RESOLUTION_REQUIRED
+  change_ids:
+  - REC-IMPACT-007
+  implementation_required: true
+  implementation_ready: false
+  delivery_planning_ready: false
+  definition_package:
+    status: historical_pending_revalidation
+    path: workflow/definition/definition-package.yaml
+    revision: sha256:82014f66c15c3e7246144c9b44b95c70c7a22aba863d1e8bbd6887ca6afed506
+- id: REC-RUN-009
+  path: workflow/reconciliation/REC-RUN-009/reconciliation-result.yaml
+  schema_version: 1
+  result_revision: sha256:abe2992d0c00437f54a8770d353c1da255188d7aeee123046407d4c403d97185
+  repository_commit: 7399233a321218da5cbef765d4183824b56de966
+  status: RESOLVED
+  adoption_status: complete
+  definition_action: TARGETED_REVALIDATION
+  change_ids:
+  - REC-IMPACT-009
+  remediation_ids:
+  - REC-RM-027
+  - REC-RM-028
+  - REC-RM-029
+  implementation_required: true
+  implementation_ready: true
+  delivery_planning_ready: true
+  definition_package:
+    status: current
+    path: workflow/definition/definition-package.yaml
+    revision: sha256:a8282a031ef8c76e5b80f620e30b26eb202763b5eb65b4a091fd2435ac6e449b
+  readiness_basis: REC009 resolved; selective journeys and approved UX5 PASS. Unaffected semantic-domain
+    validation preserved with explicit exact current authority basis.
+- id: REC-RUN-010
+  path: workflow/reconciliation/REC-RUN-010/reconciliation-result.yaml
+  schema_version: 1
+  result_revision: sha256:59c2d7ba9f4b05500ceed7ae781c243fba0a7e05269dec92826709c4c08d85a3
+  repository_commit: c4be1744e182b1ade7772268f3cf1e87dc0f4453
+  status: RESOLVED
+  adoption_status: complete
+  definition_action: TARGETED_REVALIDATION
+  change_ids:
+  - REC-IMPACT-010
+  remediation_ids:
+  - REC-RM-030
+  - REC-RM-031
+  - REC-RM-032
+  - REC-RM-033
+  implementation_required: true
+  implementation_ready: true
+  delivery_planning_ready: true
+  definition_package:
+    status: current
+    path: workflow/definition/definition-package.yaml
+    revision: sha256:1b768e553581d190a3a4a7b8f97883ef8ad632d130f71eb6ac96609a9891e3dd
+  readiness_basis: REC010 resolved; targeted journeys/UX PASS. Unaffected semantic-domain validation preserved
+    against explicit current authority.
+- id: REC-RUN-011
+  path: workflow/reconciliation/REC-RUN-011/reconciliation-result.yaml
+  schema_version: 1
+  result_revision: sha256:ebf8a0dbc9e4e2284b910d17f02371ef8aec0a37b2fcefb7ca3bf8267a5d4ed8
+  repository_commit: 2cda731ec976d53be6167846544e1bb1d6db141b
+  status: PARTIALLY_RESOLVED
+  adoption_status: in_progress
+  definition_action: RESOLUTION_REQUIRED
+  change_ids:
+  - REC-IMPACT-011
+  implementation_required: true
+  implementation_ready: false
+  delivery_planning_ready: false
+- id: REC-RUN-012
+  path: workflow/reconciliation/REC-RUN-012/reconciliation-result.yaml
+  schema_version: 1
+  result_revision: sha256:abb10f9459d4f783fbda984c2c9bfe1550164f8e649b4ee1b9bb0ddd772a3c74
+  repository_commit: 3661ed1c33bcacc07b6e952d861449685451b2df
+  status: RESOLVED
+  adoption_status: complete
+  definition_action: TARGETED_REVALIDATION
+  change_ids:
+  - REC-IMPACT-012
+  implementation_required: true
+  implementation_ready: true
+  delivery_planning_ready: true
+  definition_package:
+    status: current
+    path: workflow/definition/definition-package.yaml
+    revision: sha256:5cbab67a72563abc911de8c314ad900dd9da2614118a27fc4e3500d502ac5732
+checkpoint:
+  reason: All six bounded definition stages passed; no questions; UX8 confirmed refinements adopted.
+  product_code_changed: false
+  delivery_planning_ready: true
+  validation:
+  - Six current stage adapters and exact authority hashes
+  - 36 feedback dispositions and five resolved outcomes retained
+  - Approved visual references unchanged except explicit UX8 delta precedence
+  - Producer ancestry and no product-code edits
+next_actions:
+- Proceed into separately authorized delivery-planning transaction; no implementation or deployment.
+next_handoff:
+  next: delivery-planning-orchestrator
+  status: ready
+  mode: PRODUCT_BUILD
+  primary_input: workflow/definition/definition-package.yaml
+  reconciliation: workflow/reconciliation/REC-RUN-013/reconciliation-result.yaml
+  change_ids:
+  - REC-IMPACT-013
+  remediation_ids:
+  - REC-RM-48
+  - REC-RM-49
+  - REC-RM-50
+  - REC-RM-51
+  - REC-RM-52
+  definition_action: TARGETED_REVALIDATION
+  implementation_ready: true
+  delivery_planning_ready: true
+evidence_collection:
+  REC-009:
+    specialist: feedback2_overlap_evidence
+    status: complete
+    path: evidence/ux-acceptance/secretsauce-mcp/feedback-002-service-overlap/
+    result: evidence/ux-acceptance/secretsauce-mcp/feedback-002-service-overlap/manifest.yaml
+active_feedback:
+  path: workflow/feedback/PO-FEEDBACK-2026-11-18-001/feedback.yaml
+  status: complete
+  preservation_baseline: workflow/definition/history/web-console-ux-7-completed/definition-package.yaml
+  scope: Confirmed walkthrough refinements and shared Activity filter semantics; no implementation/planning
+    in this transaction
+prior_feedback_adoption:
+  feedback_id: PO-FEEDBACK-2026-10-18-003
+  status: complete
+  feedback_revision: sha256:c49b271e03e59e92d16bf6d508356665694797bb1677edd951bd0724b3b106e8
+  audit: evidence/ux-audit/UX-AUDIT-2026-11-16-001/manifest.yaml
+  audit_revision: sha256:dbbd12b947fa9200d151d78fb37608bd325977eb364b8cc5e04af4f6f6787532
+  scope: Definition-only; existing validation preserved until canonical reconciliation impact routing.
+  specialist_resolution:
+    id: UX-RESOLUTION-007
+    owner: product-ux
+    status: decision_required
+    result: workflow/definition/results/feedback7-ux-resolution.yaml
+    scope: Bounded shared-pattern interpretation, confirmed feedback003 and audit001; SMTP timing exception
+      preserved.
+    ask_user: false
+  reconciliation: REC-RUN-012
+  approval:
+    question: UX-DESIGN-006
+    response: Agreed, do both
+    scope: Both feedback-007-draft-1 navigation refinements
+active_feedback_adoption:
+  feedback_id: PO-FEEDBACK-2026-11-18-001
+  status: complete
+  reconciliation: REC-RUN-013
+  decision: PO-REFINEMENT-013
+  specialist_resolution: UX8-ACTIVITY-SEMANTICS

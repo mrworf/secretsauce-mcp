@@ -1,0 +1,123 @@
+stage: security-code-reviewer
+status: PASS
+mode: targeted_revalidation
+validated_inputs:
+- path: docs/web-console-prd.md
+  revision: sha256:05a8cc6436b4b9d7f71c7b04e06367bc92c80f23a46604a58c5e273c955e1691
+- path: product/architecture/web-console-state-contract.md
+  revision: sha256:c8e22b5013d89090cc451cb2ef0290d7517b05bebae746faa15b65f10fca9848
+- path: product/security/web-console-security-contract.md
+  revision: sha256:8f66520798094a2638f006c9f3145e263e96008fdf63480fc6b98c2b0ccddc35
+- path: workflow/reconciliation/REC-RUN-013/reconciliation-result.yaml
+  revision: sha256:91571dfad36655a45a4149b0d8518429f9ece3e2c4903178a6caf6864302aa43
+- path: workflow/definition/decisions.md
+  revision: sha256:1dbd51a9efdbfa39aa5cb6b1aaca734096866e56bfb41ddf810dfbf7774068fa
+- path: product/ux/manifest.yaml
+  revision: sha256:5f453b1f369134cb22c3da53142a6bacf650700704c50fc8ed76130b1e2480fe
+- path: product/ux/01-information-architecture.md
+  revision: sha256:a1729436988ed6de93fc66baf6c6e24d6b60577e8041620cb3f0d3583a2a0bd1
+- path: product/ux/02-interaction-patterns.md
+  revision: sha256:1d5b184e282ca1972996095acccc8d6b2e267053c8782cfbbfd3e6f5d7332331
+- path: product/ux/05-accessibility.md
+  revision: sha256:6e75d741491d2f25f2642cf8acdb170c3b2eec458412318e8a25415d19fb658f
+- path: product/ux/06-feature-exceptions.md
+  revision: sha256:427142201d4c4d0e6fc17c19d957f6f4eb8355c651554f0892aefcc1590468cd
+- path: product/ux/07-acceptance-checklist.md
+  revision: sha256:530ac61db856b1403d3cebd8be31c73c9528481bf5f1124f424e4dc08bd6c3b0
+- path: src/consoleEvidence.ts
+  revision: sha256:538a862ee690ffc71026d3b43036a746bf0ef58780185784c318593fdc540223
+- path: src/consoleEvidencePage.ts
+  revision: sha256:8965083dce7423af259c6c08431c9b68c5f8cd83a69707d13a05f6e007d8c810
+- path: test/console-evidence.test.ts
+  revision: sha256:5da331ae1d70045234f393dac98919a2fbd266c5c6c37a70151f7b4222efedbb
+artifact_changes:
+- path: product/security/web-console-security-review.md
+  summary: REC013 bounded definition revalidation; prior conclusions preserved, no new authority or runtime
+    claim.
+  revision: sha256:62cad1a25d864c09abef739db6edeed7df0bf38e42253f9fca8a908ec65f085e
+changed_paths:
+- product/security/web-console-security-review.md
+- workflow/definition/results/security.yaml
+findings:
+- id: SEC-DEF-001
+  significance: ACCEPTED_RISK
+  summary: Trusted destination authors and best-effort response scanning are not universal credential
+    non-exfiltration controls.
+  affected_requirement: AUTHZ-04
+  affected_artifact: docs/web-console-prd.md
+  evidence: D-012; AUTHZ-04, BASE-01, SEC-02; product/ux/04-visual-system.md UX-V02; security review SEC-DEF-001.
+  why_it_matters: The write-only console must not misrepresent protection against a malicious trusted
+    administrator or approved endpoint.
+  local_correction_possible: false
+  reconciliation_required: false
+  status: accepted_existing_product_boundary
+  decision_refs:
+  - D-012
+- id: SEC-DEF-002
+  significance: OBSERVATION
+  summary: Host integrity and independent off-host archive/evidence copies remain operator responsibilities.
+  affected_requirement: OPS-06
+  affected_artifact: docs/web-console-prd.md
+  evidence: D-001/D-005; AUDIT-03, BACKUP-02, OPS-05/06; security review SEC-DEF-002.
+  why_it_matters: Product append-only evidence and local backups do not defeat a hostile or lost host.
+  local_correction_possible: false
+  reconciliation_required: false
+- id: SEC-DEF-003
+  significance: OBSERVATION
+  summary: Audit fail-closed availability cost and restricted diagnostic-login exception are explicit
+    settled behavior.
+  affected_requirement: AUDIT-04
+  affected_artifact: product/security/web-console-security-contract.md
+  evidence: D-004; SECRES-04; product/ux/06-feature-exceptions.md UX-EX01; security review SEC-DEF-003.
+  why_it_matters: Repair and restore must not become unaudited privilege bypasses.
+  local_correction_possible: false
+  reconciliation_required: false
+- id: SEC-DEF-004
+  significance: OBSERVATION
+  summary: Definition PASS is not implementation or SOC 2 acceptance.
+  affected_requirement: BASE-01
+  affected_artifact: docs/web-console-prd-coverage.md
+  evidence: Current PRD acceptance table; current coverage unverified console backend/test cells; UX manifest
+    implementation status; security review SEC-DEF-004.
+  why_it_matters: Future tests must verify each new input and preserved gateway boundary.
+  local_correction_possible: false
+  reconciliation_required: false
+questions: []
+affected_requirements:
+- CONFIG-02
+- CONFIG-03
+- POLICY-01
+- UX-02
+- AUTHZ-02
+- AUDIT-02.a
+- AUDIT-02.b
+- AUDIT-03
+- AUDIT-04
+affected_artifacts:
+- product/security/web-console-security-review.md
+reconciliation_required: false
+change_impact:
+  product: false
+  user_journeys: false
+  ux: false
+  architecture: false
+  security: false
+validation:
+  scope: REC013 five adopted outcomes and direct Activity input/scope/export boundaries; UX8 alignment
+    checked. Unchanged prior domains preserved; no broad review.
+  checks:
+  - Finite literal predicates and exclusion algebra with bounded external inputs and legacy compatibility.
+  - Current authorization and immutable context shared by search/detail/paging/export, including Member
+    denial and Clear.
+  - Last successful searched criteria separate from edited/failed filters; current-snapshot bounded export
+    disclosed.
+  - Nested metadata sanitization, audited exports, unchanged role reachability and no new storage.
+  - Shared footer/card/policy patterns preserve atomic activation, immediate service values and staged
+    SMTP exception.
+  application_tests: 'Not run: documentation-only definition review; source tests inspected, future implementation
+    evidence required.'
+  upstream_authority_changes: false
+  commit_owner: product-definition-orchestrator
+preservation_basis:
+  baseline: workflow/definition/history/web-console-ux-7-completed/results/security.yaml
+  scope: Unchanged historical conclusions; no runtime requalification.

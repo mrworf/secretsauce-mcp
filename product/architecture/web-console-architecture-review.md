@@ -175,3 +175,29 @@ No new persistence format, database index, saved search service, frozen result s
 ### Overall opinion and validation
 
 The bounded architecture contract is coherent and implementable with existing boundaries. Delivery must prove positive/negative predicate truth tables, hard-scope and last-successful-search behavior, export parity, role reachability, and shared footer/card states. This report does not certify runtime behavior or repeat prior milestone acceptance. No application tests or build are required for this documentation-only review; exact-source/result checks and whitespace validation support publication. Final UX alignment and result disposition are recorded in the adapter.
+
+## Targeted revalidation — REC014 service editing and imports (2026-11-19 UTC)
+
+### Scope and executive summary
+
+Reviewed published REC0141b7c051/5838ff5, CONFIG-01/03/05, UX-03, MIGRATE-01/03 and S9-01–05 against `consoleServices` save/candidate/review/apply, `consoleMigration.importConfiguration`, guard-save navigation and current service/migration tests. Implementation baseline8181af4; source inspection only. STATE-10 is the bounded owned derivation. No unresolved architecture decision remains; prior conclusions and historical findings stay preserved.
+
+### What is good
+
+The existing service object separates applied state, proposal, values and assignments, and apply already rechecks a dependency fingerprint. This permits proposal-only discard and empty-grant activation without inventing a second transaction system. Current import uses one managed commit, so collision-safe allocation can preserve atomicity in the existing state owner. Existing lifecycle storage need not change for three presentation labels.
+
+### What is bad or risky
+
+Current import reuses same-ID services and records mapping targets; simply hiding that UI would retain stale grant authority and overwrite risk. Current review rejects incomplete candidates before producing a view; bypassing that check would accidentally turn inspection into approval. A saved never-active service currently stores its display name in proposed content, so discard must preserve display identity independently without retaining the discarded executable proposal. These are scoped implementation obligations, not evidence of a new deployment architecture conflict.
+
+### What should change
+
+Follow STATE-10's coherent discard/review/import boundaries. Keep current assignments outside legacy-proposal migration, bind changes to current generation, reject retired mapping grant commands and invalidate old reviews. Select storage compatibility based on the actual changed representation, preserving newer formats and old-reader fail-closed behavior. No read should silently reset access. Safe-save guard failure must preserve input and distinguish rejected/unknown persistence rather than repeatedly invoking navigation.
+
+### What I would not change yet
+
+Do not add distributed transactions, an import identity registry, global storage rewrite, new approval roles, automatic value cleanup or retrospective cloning. Internal Draft/Disabled enums can remain. Preserve independent secret operations, Settings SMTP exception, Activity predicates and existing restore ownership.
+
+### Overall opinion and validation
+
+Definition architecture PASS after the bounded owned amendment. Downstream delivery must validate positive/negative input, current permissions, stale/concurrent/restart cases and actual UX; this assessment does not claim those changes are implemented. No application tests/build were run for this documentation-only review. YAML/path/hash/diff checks validate these artifacts; no exploit development or broad re-audit.

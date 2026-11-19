@@ -1236,3 +1236,11 @@ Status: accepted. Authority: confirmed PO-FEEDBACK-2026-11-18-001, published fee
 The owner-approved scope is the single white persistent Settings footer; credential availability wording and separate bordered credential cards with named configuration removal; concise policy explanations and plain access actions; shared Activity comparison chips, time presets, Search/Clear, count-adjacent filtered export; and the three agreed evidence-export destinations. UX8-ACTIVITY-SEMANTICS supplies the expressly delegated predicate details, now adopted in AUDIT-02.a/b. Product UX may compose these settled changes using the approved UX7 visual family without reopening them as a new design choice. Prior approved concepts remain the appearance baseline except these explicit deltas. No implementation or deployment is authorized by this definition decision; the current workflow continues into separately authorized delivery planning only.
 
 No outstanding owner question. Existing roles, write-only values, SMTP staged Set/Replace and independent dependency-blocked Clear, service value immediate actions, atomic Settings activation, and policy evaluation semantics remain unchanged.
+
+## PO-REFINEMENT-014 — Service editing and independent imports
+
+Status: accepted. Source: confirmed PO-FEEDBACK-2026-11-18-002, PO-FB-238–264, published df64aab/307202c. Accepted existing-pattern changes require no new design approval: direct tabs, persistent Settings-style actions, incomplete non-activatable review, precise blockers, lifecycle labels separate from Draft, no redundant Back, independent imports and no imported identity authority.
+
+UX9-SERVICE-SEMANTICS is an accepted delegated PRD resolution (S9-01–05), adopted by REC-RUN-014: saved-new discard retains named Inactive identity and independent values/audit; fresh setup does not restore discarded content. Empty assignments are valid but confer no execution. Legacy import retirement clears import-derived/ambiguous pending grants with notice and preserves proved later explicit selections and current live grants. Archive is a separate mutation, not implied by Discard. No owner question remains; no new permission or automatic grant is inferred.
+
+Definition revalidation and delivery qualification remain required. Canonical producer: workflow/reconciliation/REC-RUN-014/reconciliation-result.yaml.

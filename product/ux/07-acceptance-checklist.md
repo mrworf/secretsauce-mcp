@@ -26,7 +26,7 @@ These criteria specify the approved experience; they are not release certificati
 | UX-C20 | Narrow/zoomed views preserve content/status/actions and account/logout; lists/diffs stack with labels; routine tasks reflow at 320 CSS px. | UX-R01/02, UX-A03 | UX-04 |
 | UX-C21 | Keyboard, skip/focus order, dialog return, errors, disclosure, current navigation and status announcements remain coherent without hover/drag dependence. | UX-A01/02/03, UX-R02 | UX-04 |
 | UX-C22 | Readable hierarchy, moderate density, restrained brand, concrete action labels and text/icon status match approved concepts across new surfaces. | UX-G02, UX-V01/02/03 | UX-01/02/03 |
-| UX-C23 | Configuration import/history reports missing fields/credentials/mappings and uses a fresh permitted draft; history never claims to restore secrets or revoked access. | UX-IA04, UX-IN02/03 | MIGRATE-01–04, CONFIG-04, STATE-03 |
+| UX-C23 | Configuration import/history reports missing fields/credentials and uses a fresh permitted draft; history never claims to restore secrets or revoked access. | UX-IA04, UX-IN02/03 | MIGRATE-01–04, CONFIG-04, STATE-03 |
 | UX-C24 | Health/limits/retention use units, consumption, consequence and impact; role permissions and inherited-source labels remain clear. | UX-IA03, UX-IN05/07 | OPS-02/03/04 |
 | UX-C25 | Representative task evaluation measures first straightforward service within 15 minutes, denial investigation within 2 minutes and user disable within 1 minute without bypassing safeguards. | UX-IA02/04, UX-IN02/03/04 | PRD usability targets |
 
@@ -69,7 +69,7 @@ UX-C42 requires visual implementation evidence, not new release or platform cert
 
 | ID | Observable check | Governing UX rules | Product trace |
 | --- | --- | --- | --- |
-| UX-C43 | Service rows expose real links and independent action targets, Active plus Draft changes/readiness, explicit unavailable activation and confirmed Delete with retained archive/history and restore-as-Disabled consequence. | UX-IA09, UX-A07, UX-V06 | CONFIG-05, UX-01/03, REC-DEC-010 |
+| UX-C43 | Service rows expose real links and independent action targets, Active/Inactive/Archived plus saved Draft/list readiness, explicit unavailable activation and confirmed Delete with retained archive/history and restore-as-Inactive consequence. | UX-IA09, UX-A07, UX-V06 | CONFIG-05, UX-01/03, REC-DEC-010 |
 | UX-C44 | Overview shows grouped actual current values; Configuration shows one populated section with a single full-service Guided/Advanced switch; all exact literals/custom options and imported references survive representation changes. | UX-IA09, UX-IN15 | CONFIG-01/03, BASE-01, POLICY-02 |
 | UX-C45 | Creation steps and browser Back/Forward restore safe input/location; adding repeated items focuses the new item; unchanged navigation/testing produces no false dirty warning. | UX-IN15, UX-A07 | CONFIG-01/03, UX-03/04 |
 | UX-C46 | Destinations explain matching and visibly scope certificate defaults/overrides; focused advanced settings retain all options without nested fold-outs; API-doc and placement help explains its purpose with secret-free examples. | UX-IN15, UX-IA09 | BASE-01, CONFIG-01, AUTHZ-04 |
@@ -77,7 +77,7 @@ UX-C42 requires visual implementation evidence, not new release or platform cert
 | UX-C48 | Referenced Delete confirms clear-only and retained key; applied missing value blocks new execution without lifecycle change, draft-only absence blocks activation only; stale confirmation requires renewed review and uncertainty is not success. | UX-IN14 | CONFIG-02/03, STATE-09, SECRES-08 |
 | UX-C49 | Rules form a compact list with consistent Add/Edit dialogs, contextual actions, selected common methods and preserved custom methods/options; default policy, priority and movement boundaries are explained. | UX-IN16 | POLICY-01/02, BASE-01 |
 | UX-C50 | Policy tester is focused, has no downstream effect and returns to exact editing context without dirtying it; no modal stacking or lost safe work. | UX-IN04/16, UX-A07 | POLICY-03, UX-03/04 |
-| UX-C51 | Imported identity errors name original subject/source/affected services and link to explicit local mapping; mapping preserves work, proposes no implicit grant and yields an actionable review path. | UX-IA10, UX-A07 | MIGRATE-01–04, AUTHZ-01 |
+| UX-C51 | Imported services are separate, initially unassigned and require no identity mapping; legacy retirement preserves live grants and useful work with a visible pending-access reset when needed. | UX-IN24 | MIGRATE-01–04, AUTHZ-02 |
 | UX-C52 | Existing-service access distinguishes immediate assignments from proposed first-activation grants; shared settings links name their destination/scope and guard local work. | UX-IA10 | AUTHZ-01/02, CONFIG-03 |
 | UX-C53 | Matching-state screenshots cover service list, focused sections, dialogs, import recovery and narrow transformations against approved feedback 003 evidence; material drift is corrected or explicitly scoped and accepted. | UX-G05, UX-V06, UX-R06 | UX-02/04, UX-DESIGN-004 |
 
@@ -114,7 +114,7 @@ These are observable future conformance checks, not executed acceptance. The opt
 | ID | Observable check | Governing UX rules | Product trace |
 | --- | --- | --- | --- |
 | UX-C64 | List attention is concise, filters align at top, Overview names exact blockers, and only affected sections/fields get visible accessible attention. Missing credentials have a direct correction action; value presence never claims connectivity. | UX-IA02/09, UX-IN15/19, UX-V09, UX-A10 | UX-01/03, PO-FB-150/153/154/156/157/169/170 |
-| UX-C65 | New/imported/existing guided work has four sections, Continue on the first three and Review & apply on the last; no placeholder fifth step. Ready overview shortcut opens actual review, incomplete shortcut cannot proceed; direct navigation/history preserve safe work. | UX-IA02/09, UX-IN19 | CONFIG-03, PO-FB-162/164/166/168 |
+| UX-C65 | Four directly navigable guided sections share the service footer; actual review opens incomplete proposals with exact fix links and unavailable approval; navigation/history preserve safe work. | UX-IN19/23 | CONFIG-01/03 |
 | UX-C66 | Sanitized export downloads import-compatible YAML and applicable optional catalogs with clear import targets; no secret/authority transfer or auto-activation. Console history/reuse entry points are hidden while underlying retained history/reuse remains. | UX-IA03/04, UX-IN19 | CONFIG-04, PO-FB-174/175 |
 | UX-C67 | Settings effects, health and audit retention are directly visible; equal comparison values share formatting/units/order; one meaningful heading remains. Backup hour offers only 00:00–23:00, externally invalid values stay explicit, and retention labels days. | UX-IN18/19, UX-V09 | UX-02/03, PO-FB-177/179/194/195/196/197 |
 | UX-C68 | SMTP summary is visible; Set/Replace opens username-prefilled/password-blank Save/Cancel. Blank Replace retains saved value, Set absent requires value; Save is pending not active, Clear is independently confirmed and dependency-checked. Not configured is yellow with text. | UX-IN09/13/19, UX-EX03, UX-A10 | IDENT-04, PO-FB-186/187/188/191 |
@@ -137,3 +137,16 @@ These are future observable checks, not executed acceptance. Keep audit coverage
 | UX-C78 | Matching desktop/narrow/enlarged-text screenshots preserve prior approved style plus UX-G09 delta; footer, multiple credentials, policy panel, chips/duplicate dialog and export destinations have no overlap/hidden actions and keyboard/focus checks pass. | UX-G09, UX-R10, UX-V10, UX-A11 | UX-C42, UX-04 |
 
 These checks are future conformance requirements, not executed runtime acceptance. Preserve all prior security, draft/immediate timing and incomplete audit-coverage obligations.
+
+
+## UX9 service refinement checks
+
+| ID | Observable requirement | Rules | Source |
+| --- | --- | --- | --- |
+| UX-C79 | All four service tabs share name, lifecycle and independent saved Draft state; no Back to Services controls; parent Configuration summarizes child blockers without internal Needs configuration badge. | UX-G10, UX-IA09, UX-A12 | PO-FB-239/257–262 |
+| UX-C80 | Guided/Advanced new/imported/existing editors share persistent status/Discard/Save for later/Review changes and direct sections; no Continue, obscured focus, lost navigation save or extra sequential step. | UX-IN23, UX-R11 | PO-FB-241/243/252 |
+| UX-C81 | Incomplete actual review preserves grouped New settings/Changes, shows exact issues/fix links and prevents approval; zero access is allowed and clearly means nobody can execute. | UX-IN23 | PO-FB-244/255 |
+| UX-C82 | Scoped discard distinguishes unsaved and saved, cancel/stale/unknown and never-saved abandonment; saved never-active identity/name/values survive Inactive without Draft; active/applied state and independent actions survive. | UX-IN23, UX-A12 | PO-FB-245–247, S9-01 |
+| UX-C83 | Colliding imports visibly create separate names/identities and empty access; no mapping flow; old imported drafts recover without live access change or lost unrelated work, and pending resets are explained. | UX-IN24 | PO-FB-253–255/263–264, S9-03/04 |
+
+Delivery must inspect actual matching desktop/narrow/enlarged-text states against unchanged approved appearance plus UX-G10 delta. These are requirements, not completed browser evidence.

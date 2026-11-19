@@ -1,0 +1,150 @@
+stage: software-architect-review
+status: PASS
+mode: targeted_revalidation
+validated_inputs:
+- path: docs/web-console-prd.md
+  revision: sha256:05a8cc6436b4b9d7f71c7b04e06367bc92c80f23a46604a58c5e273c955e1691
+- path: product/architecture/web-console-state-contract.md
+  revision: sha256:c8e22b5013d89090cc451cb2ef0290d7517b05bebae746faa15b65f10fca9848
+- path: product/security/web-console-security-contract.md
+  revision: sha256:8f66520798094a2638f006c9f3145e263e96008fdf63480fc6b98c2b0ccddc35
+- path: workflow/reconciliation/REC-RUN-013/reconciliation-result.yaml
+  revision: sha256:91571dfad36655a45a4149b0d8518429f9ece3e2c4903178a6caf6864302aa43
+- path: workflow/definition/decisions.md
+  revision: sha256:1dbd51a9efdbfa39aa5cb6b1aaca734096866e56bfb41ddf810dfbf7774068fa
+- path: product/ux/manifest.yaml
+  revision: sha256:5f453b1f369134cb22c3da53142a6bacf650700704c50fc8ed76130b1e2480fe
+- path: product/ux/01-information-architecture.md
+  revision: sha256:a1729436988ed6de93fc66baf6c6e24d6b60577e8041620cb3f0d3583a2a0bd1
+- path: product/ux/02-interaction-patterns.md
+  revision: sha256:1d5b184e282ca1972996095acccc8d6b2e267053c8782cfbbfd3e6f5d7332331
+- path: product/ux/05-accessibility.md
+  revision: sha256:6e75d741491d2f25f2642cf8acdb170c3b2eec458412318e8a25415d19fb658f
+- path: product/ux/06-feature-exceptions.md
+  revision: sha256:427142201d4c4d0e6fc17c19d957f6f4eb8355c651554f0892aefcc1590468cd
+- path: product/ux/07-acceptance-checklist.md
+  revision: sha256:530ac61db856b1403d3cebd8be31c73c9528481bf5f1124f424e4dc08bd6c3b0
+- path: src/consoleEvidence.ts
+  revision: sha256:538a862ee690ffc71026d3b43036a746bf0ef58780185784c318593fdc540223
+- path: src/consoleEvidencePage.ts
+  revision: sha256:8965083dce7423af259c6c08431c9b68c5f8cd83a69707d13a05f6e007d8c810
+- path: test/console-evidence.test.ts
+  revision: sha256:5da331ae1d70045234f393dac98919a2fbd266c5c6c37a70151f7b4222efedbb
+artifact_changes:
+- path: product/architecture/web-console-architecture-review.md
+  summary: REC013 bounded definition revalidation; prior conclusions preserved, no new authority or runtime
+    claim.
+  revision: sha256:74763e93b4b64477c6e43b37aeb1ecb0334e21b605041be25d3a4f07184f73f3
+changed_paths:
+- product/architecture/web-console-architecture-review.md
+- workflow/definition/results/architecture.yaml
+findings:
+- id: ARCH-OBS-01
+  significance: OBSERVATION
+  summary: 'Historical baseline observation: Configuration activation needs explicit runtime snapshot/resource
+    lifecycle'
+  affected_requirement: CONFIG-03
+  affected_artifact: docs/web-console-prd.md
+  evidence: 'Original 2026-10-09 baseline only: src/runtime.ts:26; src/server.ts:34; STATE-02'
+  why_it_matters: Mutable console state can mix configuration or retire protection resources too early
+    unless admitted operations retain their coherent context.
+  local_correction_possible: false
+  reconciliation_required: false
+  resolution: Preserved architectural obligation from the original pre-console baseline. Not a current
+    implementation defect or reopened acceptance claim; this targeted definition pass found no new authority
+    gap.
+- id: ARCH-OBS-02
+  significance: OBSERVATION
+  summary: 'Historical baseline observation: mandatory durable audit admission is a preservation obligation'
+  affected_requirement: AUDIT-04
+  affected_artifact: docs/web-console-prd.md
+  evidence: 'Original 2026-10-09 baseline only: src/audit.ts:110; test/audit.test.ts:222; BASE-02; SECRES-04'
+  why_it_matters: A successful in-memory event or file write is insufficient proof for the new mandatory
+    durable-before-effect contract.
+  local_correction_possible: false
+  reconciliation_required: false
+  resolution: Preserved architectural obligation from the original pre-console baseline. Not a current
+    implementation defect or reopened acceptance claim; this targeted definition pass found no new authority
+    gap.
+- id: ARCH-OBS-03
+  significance: OBSERVATION
+  summary: 'Historical baseline observation: Persistence projections must distinguish live access, history,
+    managed secrets and recovery'
+  affected_requirement: BACKUP-01
+  affected_artifact: docs/web-console-prd.md
+  evidence: 'Original 2026-10-09 baseline only: src/tokens.ts:73; src/builtinOAuth.ts:909; src/config.ts:233;
+    STATE-03/04/06'
+  why_it_matters: Serializing one runtime object would violate declared backup exclusions and could revive
+    revoked access.
+  local_correction_possible: false
+  reconciliation_required: false
+  resolution: Preserved architectural obligation from the original pre-console baseline. Not a current
+    implementation defect or reopened acceptance claim; this targeted definition pass found no new authority
+    gap.
+- id: ARCH-OBS-04
+  significance: OBSERVATION
+  summary: 'Historical baseline observation: Restore installation must preserve its independent rollback
+    source and audit tail'
+  affected_requirement: BACKUP-04
+  affected_artifact: docs/web-console-prd.md
+  evidence: 'Original 2026-10-09 baseline only: STATE-05/06; J-HOST-RESTORE; J-OWNER-RESUME; UX-IN07'
+  why_it_matters: Archive validity alone does not establish crash-safe replacement or evidence continuity.
+  local_correction_possible: false
+  reconciliation_required: false
+  resolution: Preserved architectural obligation from the original pre-console baseline. Not a current
+    implementation defect or reopened acceptance claim; this targeted definition pass found no new authority
+    gap.
+- id: ARCH-OBS-05
+  significance: OBSERVATION
+  summary: 'Historical baseline observation: Capacity validation must include audit and expensive configurable
+    input workloads'
+  affected_requirement: OPS-01
+  affected_artifact: docs/web-console-prd.md
+  evidence: 'Original 2026-10-09 baseline only: src/policy.ts:48; src/serviceRequestLimiter.ts:4; OPS-02/04;
+    external-input acceptance contract'
+  why_it_matters: User/service counts alone do not bound retained audit data, regular-expression work
+    or archive processing.
+  local_correction_possible: false
+  reconciliation_required: false
+  resolution: Preserved architectural obligation from the original pre-console baseline. Not a current
+    implementation defect or reopened acceptance claim; this targeted definition pass found no new authority
+    gap.
+questions: []
+affected_requirements:
+- CONFIG-02
+- CONFIG-03
+- POLICY-01
+- UX-02
+- AUTHZ-02
+- AUDIT-02.a
+- AUDIT-02.b
+- AUDIT-03
+- AUDIT-04
+affected_artifacts:
+- product/architecture/web-console-architecture-review.md
+reconciliation_required: false
+change_impact:
+  product: false
+  user_journeys: false
+  ux: false
+  architecture: false
+  security: false
+validation:
+  scope: REC013 five adopted outcomes and direct Activity input/scope/export boundaries; UX8 alignment
+    checked. Unchanged prior domains preserved; no broad review.
+  checks:
+  - Finite literal predicates and exclusion algebra with bounded external inputs and legacy compatibility.
+  - Current authorization and immutable context shared by search/detail/paging/export, including Member
+    denial and Clear.
+  - Last successful searched criteria separate from edited/failed filters; current-snapshot bounded export
+    disclosed.
+  - Nested metadata sanitization, audited exports, unchanged role reachability and no new storage.
+  - Shared footer/card/policy patterns preserve atomic activation, immediate service values and staged
+    SMTP exception.
+  application_tests: 'Not run: documentation-only definition review; source tests inspected, future implementation
+    evidence required.'
+  upstream_authority_changes: false
+  commit_owner: product-definition-orchestrator
+preservation_basis:
+  baseline: workflow/definition/history/web-console-ux-7-completed/results/architecture.yaml
+  scope: Unchanged historical conclusions; no runtime requalification.

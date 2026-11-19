@@ -5,68 +5,68 @@ generated_from_state: workflow/definition/state.yaml
 artifacts:
   prd:
     path: docs/web-console-prd.md
-    revision: sha256:05a8cc6436b4b9d7f71c7b04e06367bc92c80f23a46604a58c5e273c955e1691
+    revision: sha256:dab49dc650ecbc55c3319532ad8ee590767d3938e8772676da9a6ddf047ad32d
   security_contract:
     path: product/security/web-console-security-contract.md
-    revision: sha256:8f66520798094a2638f006c9f3145e263e96008fdf63480fc6b98c2b0ccddc35
+    revision: sha256:b6afd24f5789b0f8738ca952000f8fc3433d82967f2f8bce42df81fbc23c61d5
   architecture_contract:
     path: product/architecture/web-console-state-contract.md
-    revision: sha256:c8e22b5013d89090cc451cb2ef0290d7517b05bebae746faa15b65f10fca9848
+    revision: sha256:3d7ed28c8335a6d142533c253e061e14a30ada5b9e25be341fb1c172d706c955
   coverage:
     path: docs/web-console-prd-coverage.md
-    revision: sha256:b7c6b4109af2c71b91305de84c2467886d4e4197cbbefc4250e9172c46232e96
+    revision: sha256:819366039171c186656ea2efaa569d0b8b23ef5b1004118ed91a6cd0cd4e09fb
   journeys:
     path: docs/web-console-prd-user-journey-audit.md
-    revision: sha256:8d466d968faebe2d9f245b5bf72d1210438b25bd02c0f0159a8c606b6dd7d40a
+    revision: sha256:30f765a025f65df67a5139e02933f3843943ec85ccd0de48c2c2e46a564c0a77
   ux:
     path: product/ux/manifest.yaml
-    revision: sha256:5f453b1f369134cb22c3da53142a6bacf650700704c50fc8ed76130b1e2480fe
-    declared_revision: web-console-ux-8
+    revision: sha256:e23bf3fef2a825a14573d919007c8cdcf42a717cedff18ec10093b11537d6f1e
+    declared_revision: web-console-ux-9
     manifest: product/ux/manifest.yaml
   ux_experience_brief:
     path: product/ux/experience-brief.yaml
-    revision: sha256:216fcf96b37e6554ee25e3f624d890a5a9fe2a1c308b0ad5c9b4cc0c40f6e51e
+    revision: sha256:1360d5f4976f21adeacb02d311e3076cafa04b069e29fc4abbef169ce0583601
   ux_overview:
     path: product/ux/00-overview.md
-    revision: sha256:5614ac2253fe17c2b821b36eb207258cdd4a1e5480f9dba39d8cbdda0b5bb3a5
+    revision: sha256:23f3eac7f496580c8bdde20d175c7bf3f362ae5852eea4fda67d1fa33b5abdd4
   ux_information_architecture:
     path: product/ux/01-information-architecture.md
-    revision: sha256:a1729436988ed6de93fc66baf6c6e24d6b60577e8041620cb3f0d3583a2a0bd1
+    revision: sha256:2e091bfd97582805d4e8dd8367bddf2a4a40f1e0352e6494a73107a9f3575060
   ux_interaction_patterns:
     path: product/ux/02-interaction-patterns.md
-    revision: sha256:1d5b184e282ca1972996095acccc8d6b2e267053c8782cfbbfd3e6f5d7332331
+    revision: sha256:5ec48e51de819eb34ca65ca2a9882eecac4131d435e0890d755e10d06e5f9539
   ux_responsive_and_platform:
     path: product/ux/03-responsive-and-platform.md
-    revision: sha256:75d7b83b7b34d3be6507faa2f869a65f136fab6936a1ba4b390cd67004a057f3
+    revision: sha256:cbdd1fd1012d684a78c060e036ce79c32d06f432b8acb674c914244ecffa3566
   ux_visual_system:
     path: product/ux/04-visual-system.md
     revision: sha256:dfa3d9525b3b35d1e2e7d8731ab6ca2fcb4d1df2783567cf8d8d36efd548e463
   ux_accessibility:
     path: product/ux/05-accessibility.md
-    revision: sha256:6e75d741491d2f25f2642cf8acdb170c3b2eec458412318e8a25415d19fb658f
+    revision: sha256:cc93165d518497dc80ba145546ba182f53b7145ab2179d35cc3f9aa28a9de3b9
   ux_feature_exceptions:
     path: product/ux/06-feature-exceptions.md
     revision: sha256:427142201d4c4d0e6fc17c19d957f6f4eb8355c651554f0892aefcc1590468cd
   ux_acceptance_checklist:
     path: product/ux/07-acceptance-checklist.md
-    revision: sha256:530ac61db856b1403d3cebd8be31c73c9528481bf5f1124f424e4dc08bd6c3b0
+    revision: sha256:a7f25c6f6d217dcfe1cfce38ea8c503c74b7fecb9684884f67851b24931d4e6e
   security:
     path: product/security/web-console-security-review.md
-    revision: sha256:62cad1a25d864c09abef739db6edeed7df0bf38e42253f9fca8a908ec65f085e
+    revision: sha256:d0784d2d656c7774c73348fd78df3be7e8e8572d6d487936f8b6511144752040
   architecture:
     path: product/architecture/web-console-architecture-review.md
-    revision: sha256:74763e93b4b64477c6e43b37aeb1ecb0334e21b605041be25d3a4f07184f73f3
+    revision: sha256:434c8f00fdbf873d37558c7bbb30c60fda106fbe1c29aaf7c3ce7b79a4bcd4c5
 decisions:
   path: workflow/definition/decisions.md
 accepted_risks:
 - id: SEC-DEF-001
-  summary: Trusted destination authors and best-effort response scanning are not universal credential
-    non-exfiltration controls.
+  summary: Trusted destination authors and best-effort response scanning are not universal credential non-exfiltration
+    controls.
   decision_refs:
   - D-012
   result: workflow/definition/results/security.yaml
 validation:
-  repository_commit: 80edc3f0b720b3a5bf7b49a8585817a38072ed54
+  repository_commit: null
   prd:
     status: passed
     result: workflow/definition/results/prd.yaml

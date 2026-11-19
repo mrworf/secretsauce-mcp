@@ -165,3 +165,21 @@ Scope is the adopted AUDIT-02.a/b input and evidence boundaries plus preservatio
 | Shared presentation | Named configuration removal remains draft-only; immediate service Clear/Delete retains dependency and generation checks, attribution and audit. SMTP Set/Replace remains staged and Clear independently dependency-blocked. Footer Discard never reverses immediate operations; atomic full Settings apply and stale-dependency checks remain. Policy and access wording changes no evaluation, eligibility or confirmation authority. |
 
 No unresolved material security definition issue was found in these bounded contracts. Existing SEC-DEF-001 accepted trusted-destination/best-effort-scanning risk remains unchanged, as do prior observations and unrelated security domains. The future implementation must demonstrate the listed positive/negative cases; no new confirmed vulnerability, CVSS score, exploit proof or SOC 2 certification is claimed. Final input hashes and UX alignment are recorded in the stage adapter. No live instance, credentials or downstream responses were accessed.
+
+## Targeted revalidation — REC014 service proposals and import isolation (2026-11-19T06:11:21Z)
+
+### Metadata, scope and executive summary
+
+Definition-only review at5838ff5 of adopted REC0141b7c051, PRD CONFIG-01/03/05, MIGRATE-01/03, STATE-10 and S9 derivation. Implementation read-only baseline8181af4; relevant sources `src/consoleServices.ts` actor/candidate/review/apply/value boundaries, `src/consoleMigration.ts` import/mapping commit, service guard/navigation, and service/migration tests. Current approved UX patterns remain constrained by these security boundaries. SECRES-09 adds only the owned security derivation; no code or foreign authority changed. Verdict PASS for this bounded definition scope, no new unresolved product choice or demonstrated vulnerability.
+
+### Threat model and assessment
+
+The relevant actor is a currently authenticated configuration administrator or a stale/forged browser request targeting another service/generation. Imported YAML names, identifiers and legacy subjects are untrusted input. Assets are live assignments, applied configuration, stored credentials and review authority. The boundary is proposal/metadata versus current execution authority, not a new tenant or network trust model.
+
+Positive controls: current actor checks, independent live assignments, generation-bound review and mandatory audit support the intended behavior. Empty grants reduce execution eligibility rather than opening public access. Separate imported identities avoid modifying pre-existing authority. Known implementation changes are required: current same-ID reuse and mapping targets must not survive as hidden authority after the UI is removed. Incomplete preview is not a reason to issue an otherwise-invalid approval token.
+
+SECRES-09 requires authorized proposal-only discard, no secret cleanup side effects, exact live-grant preservation, scoped import allocation, retired mapping request rejection and review invalidation. Any legacy ambiguous pending selection reset is visible and affects only the proposal; current grants cannot be removed by that migration. Old state/archive readers cannot restore obsolete authority, and restore remains explicitly reviewed. These requirements derive existing product intent and current failure controls; they introduce no approval chain.
+
+### Findings, risk and validation
+
+No new confirmed/likely vulnerability is asserted from this definition delta; CVSS is not applicable. SEC-DEF-001 accepted trusted-author/scanning boundary and prior observations/closed findings remain unchanged. No exploit chain, PoC or live request was developed. Required future positive/negative fixtures cover role/target/generation, collisions, no-grant activation, incomplete preview, old mapping/review, audit failure and durable uncertainty, using synthetic local data. Source inspection and documentation/YAML/hash checks support this review only; runtime acceptance, penetration testing and SOC2 certification are not claimed.

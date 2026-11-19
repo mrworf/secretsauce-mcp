@@ -55,3 +55,8 @@ Compare approved feedback 007 desktop 1440px and narrow 390px states, plus 320 C
 Settings footer stays visible while editing without covering the final field, errors, dialogs or keyboard focus. Reserve layout space; at narrow widths wrap status/actions in logical reading order rather than clipping labels or reducing reachable actions. White footer, existing border/spacing and restrained primary button remain consistent across Settings; exceptional audit/recovery notices stay visible independently.
 
 Credential cards stack vertically with their own removal/value controls; Add follows the last card. Policy default/explanation use two useful columns when space permits and stack control then explanation on narrow screens. Activity Field/Comparison/Value/Add align as a compact form on desktop and stack in the same order when narrow; chips wrap, long literals remain inspectable and each removal target is reachable. Time fields/presets and Search/Clear wrap without overlap. Count and Export activity remain visually associated. Duplicate modal fits the viewport with clear return focus. Verify 320 CSS px, 390px, desktop and enlarged text using document and text-range overflow checks.
+
+
+## UX-R11 — Service footer and shared header
+
+Apply UX-R10 footer clearance to service editing at desktop, 390px and 320CSSpx/200% text: every focused field, error and final action can scroll above persistent controls. Stack actions with readable whole-word labels rather than squeezing them; retain all three actions. Shared name/lifecycle/Draft and parent/section issue indicators wrap without clipping on every service tab. No duplicate footer/top actions or service-specific navigation workaround.

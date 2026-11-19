@@ -1,0 +1,8 @@
+{
+  "result": "PASS",
+  "checks": [
+    "Actual isolated Docker encrypted backup worker and restore installation: post-cleanup snapshot excludes value; older explicit restore recovers it Disabled with fresh incarnation; restart old cleanup intent cannot replay onto restored state.",
+    "Real browser saved-draft-only remove/cancel/save/review/approval-cancel/Apply; exact cleanup leaves applied key and unrelated orphan unchanged.",
+    "Actual1440/390/320/text200 modal/review screenshots, keyboard focus return, non-color readable effects and New settings default."
+  ]
+}

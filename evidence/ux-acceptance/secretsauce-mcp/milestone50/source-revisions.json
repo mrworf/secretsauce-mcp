@@ -1,0 +1,15 @@
+{
+  "src/consoleRemovalState.ts": "d8d73041fd36a2635a83ab3e9dd38b39ecba9d0701ee3e91fa039b768febe5c7",
+  "src/consoleServices.ts": "8440d9d3bf4a08c3c399bbe52ebace808be5ca9c1528bc20c1c3aca04100892a",
+  "src/consoleStore.ts": "cdbc608a1b83893cf4342b363f4506fd8c34c8397e71d8f547ba8aaaf95f3bb5",
+  "src/consoleHistory.ts": "feafe2a24938b1b61dfe05f758e70ed536cd273e54cc9041c155fd3b4bd85301",
+  "src/consoleBackupSchema.ts": "046c749f2af2830d867b40e6aa5f8ec3ce1af0d2a51f27e0d8253348329b473e",
+  "src/consoleRestore.ts": "9862d5034d8bcc8c6219caaec2f6b95159fd0fffc81b2264925d9bf6d70ccd4b",
+  "src/consoleRestoreInstall.ts": "2fc433618cf458bfadc51ca4909fa58da419a015d64958242b3f447777e811c5",
+  "src/consoleMigration.ts": "47202fd9cc28b7d36fa58ee0d7e249833498ed2d5523dc5cdf81f055b30c08d6",
+  "src/consoleServicePage.ts": "23241e0b95525500a34f8517335bb34ce8d19e6310a6c23159acd24a2261bf78",
+  "src/consoleServiceReview.ts": "4cf4ba9209bdeba84afe4205999ee57961337c5d116d0500da2884f71ec46545",
+  "src/consolePresentation.ts": "258ddb09e1d79a270b12d58c47d6c4661c5818c36b90cc9493602087cfe80bcf",
+  "scripts/verify-console-credential-dialogs-browser.mjs": "caaced109f07f0fbd1883162024e37fa28abc4244744b9600d8e4be9c8ea8bda",
+  "test/console-credential-removal.test.ts": "e0fa19c7f7afe125c7a5aa246c57e583e43421505a8d5aefcb64efef98e3201d"
+}

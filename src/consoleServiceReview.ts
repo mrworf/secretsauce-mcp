@@ -25,7 +25,7 @@ export function reviewChanges(before: unknown, after: unknown): ReviewChange[] {
   return rows;
 }
 export function reviewSection(key:string):string {
-  if(['type','name','description','api_docs_url'].includes(key))return 'Details';
+  if(['type','name','description','api_docs_url','mcp_reference'].includes(key))return 'Details';
   if(['destinations','tls'].includes(key))return 'Allowed servers';
   if(['credentials','no_auth'].includes(key))return 'Authentication';
   if(['policy','access'].includes(key))return 'Request rules';
@@ -56,7 +56,7 @@ const reviewChanges=${reviewChanges.toString()};
 const reviewSection=${reviewSection.toString()};
 const reviewChangeTitle=${reviewChangeTitle.toString()};
 const reviewSectionOrder=['Details','Allowed servers','Authentication','Request rules','Secret detection','Additional configuration'];
-function reviewFieldLabel(key){const labels={destinations:'Servers',base_url:'Server address',id:'Identifier',name:'Name',type:'Type',description:'Description',api_docs_url:'API documentation',schemes:'Allowed schemes',hosts:'Host matching',ports:'Allowed ports',tls:'Server certificate',verify:'Verify certificate',no_auth:'No downstream authentication',credentials:'Credentials',usage:'Send credential',kind:'Placement',prefix:'Text before value',suffix:'Text after value',enforce:'Replace matching caller header',policy:'Request policy',mode:'Default action',rules:'Rules',access:'Initial access configuration',users:'Users',methods:'HTTP methods',paths:'Paths',reason:'Explanation',effect:'Action',priority:'Priority',binary_response:'Binary responses',scan:'Scan response',max_size:'Maximum scan size',secretlint:'Secret detection',disabled_rules:'Disabled rules',enabled:'Enabled',exact:'Exact match',regex:'Regular expression'};return Object.hasOwn(labels,key)?labels[key]:key;}
+function reviewFieldLabel(key){const labels={mcp_reference:'MCP service reference',destinations:'Servers',base_url:'Server address',id:'Identifier',name:'Name',type:'Type',description:'Description',api_docs_url:'API documentation',schemes:'Allowed schemes',hosts:'Host matching',ports:'Allowed ports',tls:'Server certificate',verify:'Verify certificate',no_auth:'No downstream authentication',credentials:'Credentials',usage:'Send credential',kind:'Placement',prefix:'Text before value',suffix:'Text after value',enforce:'Replace matching caller header',policy:'Request policy',mode:'Default action',rules:'Rules',access:'Initial access configuration',users:'Users',methods:'HTTP methods',paths:'Paths',reason:'Explanation',effect:'Action',priority:'Priority',binary_response:'Binary responses',scan:'Scan response',max_size:'Maximum scan size',secretlint:'Secret detection',disabled_rules:'Disabled rules',enabled:'Enabled',exact:'Exact match',regex:'Regular expression'};return Object.hasOwn(labels,key)?labels[key]:key;}
 function reviewValue(parent,value){
  if(value===null||typeof value!=='object'){const n=el('code',typeof value==='string'?JSON.stringify(value):String(value));n.className='review-literal';parent.append(n);return;}
  const entries=Object.entries(value);if(!entries.length){parent.append(el('code',Array.isArray(value)?'[]':'{}'));return;}

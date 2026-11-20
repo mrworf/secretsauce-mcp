@@ -33,7 +33,7 @@ export class ConsoleEvidence {
   const done=new Map(operations.filter(r=>r.phase==='complete').map(r=>[r.id,r]));
   const started=new Set(operations.filter(r=>r.phase==='start').map(r=>r.id));
   const entries:EvidenceEntry[]=operations.filter(r=>r.phase!=='complete'||!started.has(r.id)).map(r=>{
-   const completion=done.get(r.id);return {...(r.details?.serviceIdentity?{serviceIdentity:r.details.serviceIdentity,serviceIncarnation:r.details.serviceIncarnation}:{}),id:'operation:'+r.id,operation:r.id,time:r.time,actor:r.actor,service:/^(service|credential)\./.test(r.action)?r.target:'',action:r.action,result:completion?.result??(r.phase==='start'?'uncertain':r.result??'success'),revision:r.revision,reason:r.target+(r.details?.smtpMode?' · SMTP: '+(r.details.smtpMode==='none'?'None (unencrypted)':'TLS (encrypted)')+(r.details.unencryptedAcknowledged?' · Risk acknowledged':''):''),provenance:'local'};
+   const completion=done.get(r.id);return {...(r.details?.serviceIdentity?{serviceIdentity:r.details.serviceIdentity,serviceIncarnation:r.details.serviceIncarnation}:{}),id:'operation:'+r.id,operation:r.id,time:r.time,actor:r.actor,service:Object.hasOwn(this.store.state.managed?.services??{},r.target)||/^(service|credential)\./.test(r.action)?r.target:'',action:r.action,result:completion?.result??(r.phase==='start'?'uncertain':r.result??'success'),revision:r.revision,reason:r.target+(r.details?.smtpMode?' · SMTP: '+(r.details.smtpMode==='none'?'None (unencrypted)':'TLS (encrypted)')+(r.details.unencryptedAcknowledged?' · Risk acknowledged':''):''),provenance:'local'};
   });
   for(const [index,event] of (gateway?.events??[]).entries()){
    const e=event as unknown as Record<string,unknown>;
@@ -49,7 +49,7 @@ export class ConsoleEvidence {
   const predicates=[...(f.chips??[]),...filterFields.flatMap(field=>f[field]===undefined?[]:[{field,comparison:'equals' as const,value:f[field]!}])];
   if(user.role==='Member'){
    for(const c of predicates)if(c.comparison==='equals'&&c.field==='actor'&&c.value!==user.id)throw new Error('Forbidden.');
-   for(const id of [f.contextService,...predicates.filter(c=>c.field==='service'&&c.comparison==='equals').map(c=>c.value)].filter((v):v is string=>v!==undefined)){const service=Object.hasOwn(this.store.state.managed?.services??{},id)?this.store.state.managed!.services[id]:undefined;if(!service?.assignments.includes(user.id))throw new Error('Forbidden.');}
+   const owned=Object.entries(this.store.state.managed?.services??{}).filter(([,s])=>s.assignments.includes(user.id));if(f.contextService!==undefined&&!owned.some(([id])=>id===f.contextService))throw new Error('Forbidden.');const labels=new Set(owned.flatMap(([id,s])=>[id,s.reference??id]));for(const p of predicates)if(p.field==='service'&&p.comparison==='equals'&&!labels.has(p.value))throw new Error('Forbidden.');
   }
   const groups=filterFields.map(field=>({field,positive:predicates.filter(c=>c.field===field&&['equals','contains'].includes(c.comparison)),negative:predicates.filter(c=>c.field===field&&['notEquals','notContains'].includes(c.comparison))}));
   const deadline=performance.now()+2000,rows=this.rows(deadline),matches:EvidenceEntry[]=[];

@@ -188,7 +188,7 @@ export class ConsoleServices {
     const {id}=this.parse(reviewSchema,input),service=own(this.state.services,id);
     if(!service?.draft)throw new ServiceManagementError('Save a service draft before review.');
     if(service.draft.settings&&this.store.authorize(session,'own').role!=='Owner')throw Error('Forbidden.');
-    return {proposalBaseline:this.proposalBaseline(id),scope:{services:[id],settings:service.draft.settings?['instance.name']:[]},base:this.state.revision,current:service.applied?{...service.applied,mcp_reference:this.reference(id)}:null,proposed:service.draft.content,settings:service.draft.settings,grants:service.applied?[]:service.draft.content.access?.users??[],exceptions:exceptions(service.draft.content),issues:this.configurationIssues(id),removedCredentials:removalEffects(service),inspection:true};
+    return {proposalBaseline:this.proposalBaseline(id),scope:{services:[id],settings:service.draft.settings?['instance.name']:[]},base:this.state.revision,current:service.applied?{...service.applied,mcp_reference:this.reference(id)}:null,proposed:{...service.draft.content,mcp_reference:service.draft.content.mcp_reference??this.reference(id)},settings:service.draft.settings,grants:service.applied?[]:service.draft.content.access?.users??[],exceptions:exceptions(service.draft.content),issues:this.configurationIssues(id),removedCredentials:removalEffects(service),inspection:true};
   }
   private stale(session: ConsoleSession, id: string): ServiceManagementError {
     return new ServiceManagementError('Stale review or dependencies. Compare current and proposed configuration, reload, save and review again.', own(this.state.services, id) ? this.detail(session, id) : { revision: this.state.revision });
@@ -226,7 +226,7 @@ export class ConsoleServices {
     const risks = exceptions(c.draft.content);if(c.s.recoveryReviewRequired)risks.push('Recovered service: reviewed current credentials, policy and access'); const review = { session:session.id, removedCredentials:removalEffects(c.s), id: randomUUID(), actor: c.actor.id, fingerprint: this.fingerprint(id), candidate: c.draft.content, base: this.state.revision, draftGeneration: c.draft.generation, exceptions: risks, ...(c.draft.settings ? { settings: c.draft.settings } : {}) };
     const operation = this.store.commit(c.actor.id, 'service.review', id, state => { state.managed!.services[id]!.review = review; });
     return { proposalBaseline:this.proposalBaseline(id), operation, review: review.id, scope: { services: [id], settings: c.draft.settings ? ['instance.name'] : [] }, base: review.base,
-      removedCredentials:review.removedCredentials, current: c.s.applied ? {...c.s.applied,mcp_reference:this.reference(id)} : null, proposed: review.candidate, settings: review.settings, grants: c.s.applied ? [] : c.draft.content.access?.users ?? [], exceptions: risks,
+      removedCredentials:review.removedCredentials, current: c.s.applied ? {...c.s.applied,mcp_reference:this.reference(id)} : null, proposed: {...review.candidate,mcp_reference:review.candidate.mcp_reference??this.reference(id)}, settings: review.settings, grants: c.s.applied ? [] : c.draft.content.access?.users ?? [], exceptions: risks,
       disruption: 'Affected service references are invalidated. Already-dispatched work may complete with admitted protection. Trusted administrators control destinations; response scanning is best-effort.' };
   }
   apply(session: ConsoleSession, input: unknown) {
@@ -235,7 +235,7 @@ export class ConsoleServices {
     if (review.exceptions.some(r => !data.acknowledgments.includes(r)) || data.acknowledgments.some(r => !review.exceptions.includes(r))) throw new ServiceManagementError('Acknowledge each listed security exception before apply.');
     const cleanup=review.removedCredentials??[],mutation=randomUUID(),oldReference=this.reference(data.id),newReference=review.candidate.mcp_reference??oldReference,renaming=oldReference!==newReference;
     const stripReference=(value:ManagedServiceDraft)=>{const {mcp_reference:_r,access:_a,...rest}=value;return rest;};
-    const keepInactive=renaming&&c.s.lifecycle==='Disabled'&&Boolean(c.s.applied)&&isDeepStrictEqual(stripReference(c.s.applied!),stripReference(review.candidate));
+    const keepInactive=renaming&&!review.settings&&c.s.lifecycle==='Disabled'&&Boolean(c.s.applied)&&isDeepStrictEqual(stripReference(c.s.applied!),stripReference(review.candidate));
     let operation: string;
     try { operation = this.store.commit(c.actor.id, renaming?'service.reference_apply':cleanup.length?'service.apply_cleanup':'service.apply', data.id, state => {
       const m = state.managed!, s = m.services[data.id]!;delete s.recoveryReviewRequired;

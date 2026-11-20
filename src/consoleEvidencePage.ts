@@ -4,7 +4,7 @@ const activityFields=[['service','Service'],['actor','Actor'],['action','Action'
 async function activity(service){
  const context=typeof service==='string'?service:undefined;if(!context){currentNav('activity-nav');form(workspaceState.user.role==='Member'?'My activity':'Activity').remove();}
  let chips=[],searched=null,response=null,offset=0,loading=false;
- if(context){content.append(el('p','This service scope remains when filters are cleared.'));action(content,'View instance Activity',()=>activity());}
+ if(context){content.append(el('p','This service scope remains when filters are cleared. Older records without a proven service identity remain in instance Activity with their original labels.'));action(content,'View instance Activity',()=>activity());}
  const info=el('div'),f=el('form');f.className='activity-filter-card card';const times=el('div');times.className='activity-time-controls';
  const presetBox=el('div'),fromBox=el('div'),toBox=el('div');times.append(presetBox,fromBox,toBox);
  const from=field(fromBox,'From (UTC)','activity-from','datetime-local'),to=field(toBox,'To (UTC)','activity-to','datetime-local');from.required=to.required=false;from.step=to.step='0.001';

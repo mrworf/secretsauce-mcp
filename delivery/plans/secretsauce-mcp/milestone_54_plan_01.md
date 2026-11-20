@@ -16,8 +16,8 @@ Own affected service/reference helper, store/schema/recovery/history/migration/r
 
 | Slice | Outcome | Dependencies | Status | Commit |
 |---|---|---|---|---|
-| 01 | Authorized reviewed reference publication through API/runtime with complete compatibility, import/history/recovery and revocation | M53 | accepted | pending commit |
-| 02 | Accessible guided/Advanced change task and actual joined browser qualification | 01 | pending | |
+| 01 | Authorized reviewed reference publication through API/runtime with complete compatibility, import/history/recovery and revocation | M53 | accepted | f22ae49 |
+| 02 | Accessible guided/Advanced change task and actual joined browser qualification | 01 | accepted | slice02 (this commit) |
 
 ### Slice01 contract
 
@@ -33,10 +33,16 @@ Focused tests/build per changed contract. No full suite during iteration. Parent
 
 ## Execution notes
 
-Plan saved before production edits. No new owner questions; detailed mechanisms remain within settled contract. Implementation pending.
+Plan saved before production edits. No new owner questions; detailed mechanisms remain within settled contract. Both slices implemented; targeted acceptance below.
 
 ### Slice01 validation
 
 Build passed. Focused reference12, runtime18, history6, backup-domain4, restore-provenance3 passed; HTTP8 passed after correcting its new assertion to the existing message envelope. One additional actual renamed-format recovery test passed (other21 cases not rerun). Runtime positive/negative evidence includes actual downstream in-flight protection, old/queued key and token rejection, retained limiter occupancy, namespace collision/own keys, four old/new uncertain Apply boundaries, actual pinned format9 reader rejection and owned portable validation. Existing history/runtime/backup helpers now send current proposal generations introduced by M53; no assertions weakened. Parent's clean-host Docker branch M54_REFERENCE_RECOVERY=1 is prepared and syntax-checked, not yet executed.
 
 Legacy scoped evidence uses positive retained incarnation history to establish a pre-upgrade attribution window; records without a provable boundary remain globally visible with their original labels but are omitted from service scope. Restored historical rows retain source metadata and use explicit source-instance/incarnation links, including same-host journal deduplication. No current-name lookup reattributes historical public keys. Final frozen full suite and actual-image recovery remain parent-owned.
+
+### Slice02 acceptance
+
+Actual sanitized Playwright HTTPS scenario PASS on final source hashes in milestone54/browser-report.json. Guided/Advanced share server confirmation; new creation consumes returned stable ID; current/proposed copy and old/new grouped review are exact. Inactive reference-only (excluding mixed instance settings) remains inactive. Member evidence equality authorizes only current assigned identity/public labels with separate actor/context fences. Readonly and true conflicts preserve prior behavior. Focused review/navigation11, evidence/Member9 and mixed-change lifecycle1 tests PASS; scoped discard/history/archive/reuse regression also included. Browser screenshots inspected by implementer and parent at desktop390/320200; enlarged warning action and focused reference field remain reachable.
+
+Initial whole-repository Docker mount was rejected by automatic approval review because unrelated untracked files could be exposed. The accepted safer run used a sanitized tracked-source export with only owned overlays, read-only dependencies and scoped writable evidence. Original files were not read/mounted. Runtime source hashes match workspace exactly. No final full suite, image build or deployment performed by this companion; parent owns UX12-INTEGRATED.

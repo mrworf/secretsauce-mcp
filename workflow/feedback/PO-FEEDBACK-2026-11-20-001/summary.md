@@ -16,4 +16,6 @@ Product Owner feedback from the local M52 review. Status **CONFIRMED**.
 
 Confirmed directives establish product intent. Preferences are advisory. Observations record evidence. Ideas and questions are exploratory.
 
-Reconciliation ready **false**.
+Reconciliation ready **true**.
+
+Run product-reconciliation using `workflow/feedback/PO-FEEDBACK-2026-11-20-001/feedback.yaml`.

@@ -20,7 +20,7 @@ async function downstream(secret: string) {
 }
 function configure(f: ReturnType<typeof managedFixture>, url = 'https://api.example.org', credential = false, id = 'service') {
  const user = f.store.state.users[0]!.id;
- const save = () => f.manager.save(f.session, { id, base: f.manager.state.revision, generation: f.manager.state.services[id]?.draft?.generation ?? 0, service: { name: 'Managed example', no_auth: !credential, destinations: [{ id: 'primary', base_url: url }], credentials: credential ? [{ id: 'key', usage: { kind: 'header', name: 'X-Api-Key', enforce: true } }] : [], access: { users: [user] }, policy: { mode: 'allow', rules: [] } } });
+ const save = () => f.manager.save(f.session, { id, base: f.manager.state.revision, generation: f.manager.state.services[id]?.draft?.generation ?? f.manager.state.services[id]?.proposalGeneration ?? 0, service: { name: 'Managed example', no_auth: !credential, destinations: [{ id: 'primary', base_url: url }], credentials: credential ? [{ id: 'key', usage: { kind: 'header', name: 'X-Api-Key', enforce: true } }] : [], access: { users: [user] }, policy: { mode: 'allow', rules: [] } } });
  save(); if (credential) { f.manager.credential(f.session,{id,credential:'key',action:'create',value:'synthetic-original-secret',confirmed:true}); save(); }
  const r = f.manager.review(f.session,{id});f.manager.apply(f.session,{id,review:r.review,acknowledgments:r.exceptions});
  return user;
@@ -50,7 +50,7 @@ describe('immediate managed credentials, access and lifecycle', () => {
    f.manager.lifecycle(f.session,{id:'service',action:'disable',confirmed:true});expect(()=>getService(f.cfg,'service',auth(user))).toThrow();expect(()=>broker.validateServiceReferenceUse(auth(user),{service:'service'},token)).toThrow();
    f.manager.lifecycle(f.session,{id:'service',action:'archive',confirmed:true});f.manager.lifecycle(f.session,{id:'service',action:'unarchive',confirmed:true});expect(f.manager.detail(f.session,'service').lifecycle).toBe('Disabled');expect(f.cfg.services.service).toBeUndefined();
    expect(()=>f.manager.review(f.session,{id:'service'})).toThrow('Save');
-   const old=f.manager.state.services.service!.applied!;f.manager.save(f.session,{id:'service',base:f.manager.state.revision,generation:0,service:old});const reviewed=f.manager.review(f.session,{id:'service'});
+   const old=f.manager.state.services.service!.applied!;f.manager.save(f.session,{id:'service',base:f.manager.state.revision,generation:f.manager.detail(f.session,'service').generation,service:old});const reviewed=f.manager.review(f.session,{id:'service'});
    f.manager.access(f.session,{id:'service',user,action:'remove',confirmed:true});expect(()=>f.manager.apply(f.session,{id:'service',review:reviewed.review,acknowledgments:reviewed.exceptions})).toThrow();expect(f.manager.state.services.service!.assignments).toEqual([]);
    for(const patch of [{confirmed:false},{action:'enable'},{id:'absent'},{extra:true}])expect(()=>f.manager.lifecycle(f.session,{id:'service',action:'disable',confirmed:true,...patch})).toThrow();
    for(const patch of [{confirmed:false},{action:'all'},{user:'absent'},{extra:true}])expect(()=>f.manager.access(f.session,{id:'service',user,action:'grant',confirmed:true,...patch})).toThrow();
@@ -114,7 +114,7 @@ describe('immediate managed credentials, access and lifecycle', () => {
    if(action==='rotate')m.credential(f.session,{id:'service',credential:'key',action:'replace',confirmation:m.credentialConfirmation('service','key'),value:'synthetic-replaced',confirmed:true});
    if(action==='clear')m.credential(f.session,{id:'service',credential:'key',action:'delete',confirmation:m.credentialConfirmation('service','key'),confirmed:true});
    if(action==='revoke')m.access(f.session,{id:'service',user:'bearer-dev',action:'remove',confirmed:true});
-   if(action==='apply'){const next=structuredClone(m.state.services.service!.applied!);next.policy={mode:'deny',rules:[]};m.save(f.session,{id:'service',base:m.state.revision,generation:0,service:next});const review=m.review(f.session,{id:'service'});m.apply(f.session,{id:'service',review:review.review,acknowledgments:review.exceptions});}
+   if(action==='apply'){const next=structuredClone(m.state.services.service!.applied!);next.policy={mode:'deny',rules:[]};m.save(f.session,{id:'service',base:m.state.revision,generation:m.detail(f.session,'service').generation,service:next});const review=m.review(f.session,{id:'service'});m.apply(f.session,{id:'service',review:review.review,acknowledgments:review.exceptions});}
    outgoing!.end(payload.slice(20));if(action==='unchanged'){await d.admitted;d.finish();}const body=await completion;if(action==='unchanged'){expect(body).toContain('status_code');expect(d.count()).toBe(1);}else{expect(body).toContain('isError');expect(body).toMatch(/(reference|Current service access unavailable|policy)/i);expect(d.count()).toBe(0);}
   }finally{await new Promise<void>(resolve=>server.close(()=>resolve()));await rt.close();await d.close();f.close();}
  });
@@ -135,4 +135,17 @@ describe('immediate managed credentials, access and lifecycle', () => {
    f.manager.save(f.session,{id:'new',base:0,generation:0,service:{name:'New',no_auth:true,destinations:[{id:'primary',base_url:'https://api.example.org'}],access:{users:[]},policy:{mode:'deny',rules:[]}}});const review=f.manager.review(f.session,{id:'new'});const finish=vi.spyOn(f.store.journal,'finish').mockImplementation(()=>{throw Error('completion unavailable');});expect(()=>f.manager.apply(f.session,{id:'new',review:review.review,acknowledgments:[]})).toThrow('uncertain');finish.mockRestore();expect(f.cfg.services.new?.name).toBe('New');expect(f.manager.detail(f.session,'new').lifecycle).toBe('Active');
   }finally{f.close();}
  });
+});
+
+it('publishes a renamed public binding, rejects queued old references, and fences actual in-flight completions without releasing capacity',async()=>{
+ const f=managedFixture(),d=await downstream('synthetic-original-secret');const user=configure(f,d.url,true),r=runtime(f);try{
+  const broker=r.capabilities.tokenBroker,ref=broker.issueTokens(auth(user),{service:'service',access_ids:['key'],reason:'reference change'}).tokens[0]!.token;
+  const pending=executeServiceRequest(f.cfg,auth(user),{service:'service',method:'GET',path:'/',headers:{'X-Api-Key':ref},reason:'admitted before rename'},r);await d.admitted;
+  const original=f.manager.state.services.service!,identity=original.incarnation,values=structuredClone(original.values),limiter=r.capabilities.serviceRequestLimiter;
+  let detail=f.manager.detail(f.session,'service');f.manager.save(f.session,{id:'service',base:detail.revision,generation:detail.generation,service:{...detail.applied!,mcp_reference:'renamed'},referenceConfirmation:detail.referenceConfirmation});detail=f.manager.detail(f.session,'service');const review=f.manager.review(f.session,{id:'service',referenceConfirmation:detail.referenceConfirmation});f.manager.apply(f.session,{id:'service',review:review.review,acknowledgments:review.exceptions});
+  expect(f.manager.state.services.service!.incarnation).toBe(identity);expect(f.manager.state.services.service!.values).toEqual(values);expect(r.capabilities.serviceRequestLimiter).toBe(limiter);expect(limiter.stats().services).toBe(1);
+  expect(()=>broker.issueTokens(auth(user),{service:'service',access_ids:['key'],reason:'old queued name'})).toThrow();expect(()=>broker.validateTokenUse(auth(user),{service:'renamed'},ref)).toThrow();await expect(executeServiceRequest(f.cfg,auth(user),{service:'service',method:'GET',path:'/',headers:{'X-Api-Key':ref},reason:'queued old binding'},r)).rejects.toThrow();expect(d.count()).toBe(1);
+  const before=broker.stats();d.finish();const response=await pending;expect(response.body).not.toContain('synthetic-original-secret');expect(broker.stats()).toEqual(before);expect(limiter.stats().services).toBe(0);
+  const fresh=broker.issueTokens(auth(user),{service:'renamed',access_ids:['key'],reason:'new current name'}).tokens[0]!.token;expect(()=>broker.validateTokenUse(auth(user),{service:'renamed'},fresh)).not.toThrow();
+ }finally{d.finish();await r.close();await d.close();f.close();}
 });

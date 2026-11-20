@@ -20,7 +20,7 @@ import {
 } from "./binaryResponse.js";
 import { decodeDeclaredBase64Bytes, encodeBase64Bytes } from "./base64Body.js";
 import { enforceCredentialHeaderUsage } from "./headerEnforcement.js";
-import { acquireServiceRequest } from "./serviceRequestLimiter.js";
+import { acquireServiceRequest,serviceCapacityIdentity } from "./serviceRequestLimiter.js";
 import { createRequestId } from "./requestId.js";
 import { createRequestDependencies, type RequestDependencies } from "./requestDependencies.js";
 
@@ -95,6 +95,7 @@ export async function executeServiceRequest(
       request_id: denial.request_id,
       subject: auth.subject,
       service: service.id,
+    ...(service.managedIdentity&&service.managedIncarnation?{service_identity:service.managedIdentity,service_incarnation:service.managedIncarnation}:{}),
       destination: target.destination.id,
       access_ids: [],
       internal_reference_ids: [],
@@ -114,6 +115,7 @@ export async function executeServiceRequest(
       request_id: denial.request_id,
       subject: auth.subject,
       service: service.id,
+    ...(service.managedIdentity&&service.managedIncarnation?{service_identity:service.managedIdentity,service_incarnation:service.managedIncarnation}:{}),
       destination: target.destination.id,
       method: input.method.toUpperCase(),
       target_host: target.url.hostname,
@@ -128,7 +130,7 @@ export async function executeServiceRequest(
 
   let releaseCapacity: () => void;
   try {
-    releaseCapacity = acquireServiceRequest(dependencies.capabilities.serviceRequestLimiter, auth.subject, service.id);
+    releaseCapacity = acquireServiceRequest(dependencies.capabilities.serviceRequestLimiter, auth.subject, serviceCapacityIdentity(service));
   } catch (error) {
     if (!(error instanceof GatewayError) || error.code !== "capacity_exceeded") throw error;
     audit({
@@ -137,6 +139,7 @@ export async function executeServiceRequest(
       request_id: requestId,
       subject: auth.subject,
       service: service.id,
+    ...(service.managedIdentity&&service.managedIncarnation?{service_identity:service.managedIdentity,service_incarnation:service.managedIncarnation}:{}),
       destination: target.destination.id,
       access_ids: [],
       internal_reference_ids: [],
@@ -156,6 +159,7 @@ export async function executeServiceRequest(
       request_id: requestId,
       subject: auth.subject,
       service: service.id,
+    ...(service.managedIdentity&&service.managedIncarnation?{service_identity:service.managedIdentity,service_incarnation:service.managedIncarnation}:{}),
       destination: target.destination.id,
       method: input.method.toUpperCase(),
       target_host: target.url.hostname,
@@ -213,6 +217,7 @@ export async function executeServiceRequest(
   logger.debug("service_request.downstream_ready", {
     subject: auth.subject,
     service: service.id,
+    ...(service.managedIdentity&&service.managedIncarnation?{service_identity:service.managedIdentity,service_incarnation:service.managedIncarnation}:{}),
     destination: target.destination.id,
     method: input.method.toUpperCase(),
     target_scheme: target.url.protocol.replace(/:$/, ""),
@@ -257,6 +262,7 @@ export async function executeServiceRequest(
       logger.warn("service_request.binary_response_rejected", {
         request_id: requestId,
         service: service.id,
+    ...(service.managedIdentity&&service.managedIncarnation?{service_identity:service.managedIdentity,service_incarnation:service.managedIncarnation}:{}),
         destination: target.destination.id,
         matched_policy_rule: policy.matchedRule,
         content_type: responseMimeType(responseHeaders),
@@ -272,6 +278,7 @@ export async function executeServiceRequest(
         logger.warn("service_request.binary_response_rejected", {
           request_id: requestId,
           service: service.id,
+    ...(service.managedIdentity&&service.managedIncarnation?{service_identity:service.managedIdentity,service_incarnation:service.managedIncarnation}:{}),
           destination: target.destination.id,
           matched_policy_rule: policy.matchedRule,
           content_type: responseMimeType(responseHeaders),
@@ -286,6 +293,7 @@ export async function executeServiceRequest(
       logger.warn("service_request.binary_scan_bypassed", {
         request_id: requestId,
         service: service.id,
+    ...(service.managedIdentity&&service.managedIncarnation?{service_identity:service.managedIdentity,service_incarnation:service.managedIncarnation}:{}),
         destination: target.destination.id,
         matched_policy_rule: policy.matchedRule,
         content_type: responseMimeType(responseHeaders),
@@ -311,6 +319,7 @@ export async function executeServiceRequest(
     request_id: requestId,
     subject: auth.subject,
     service: service.id,
+    ...(service.managedIdentity&&service.managedIncarnation?{service_identity:service.managedIdentity,service_incarnation:service.managedIncarnation}:{}),
     destination: target.destination.id,
     access_ids: [...new Set(tokenRecords.map((record) => record.accessId))],
     internal_reference_ids: [...new Set(tokenRecords.map((record) => record.id))],
@@ -335,6 +344,7 @@ export async function executeServiceRequest(
       request_id: requestId,
       subject: auth.subject,
       service: service.id,
+    ...(service.managedIdentity&&service.managedIncarnation?{service_identity:service.managedIdentity,service_incarnation:service.managedIncarnation}:{}),
       destination: target.destination.id,
       warnings: tokenized.warnings,
       timestamp: new Date().toISOString(),
@@ -345,6 +355,7 @@ export async function executeServiceRequest(
     request_id: requestId,
     subject: auth.subject,
     service: service.id,
+    ...(service.managedIdentity&&service.managedIncarnation?{service_identity:service.managedIdentity,service_incarnation:service.managedIncarnation}:{}),
     destination: target.destination.id,
     method: input.method.toUpperCase(),
     target_host: target.url.host,

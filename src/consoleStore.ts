@@ -1,3 +1,4 @@
+import {initializeReferenceState,validateReferenceState} from './consoleReferenceState.js';
 import {initializeRemovalIdentities,validateRemovalIdentities} from './consoleRemovalState.js';
 import {hasLegacyImportMappings,retireLegacyImportMappings} from './consoleImportState.js';
 import { credentialIdentity, projectCredentialService } from './consoleCredentialState.js';
@@ -55,7 +56,7 @@ export interface ConsoleState {
     gatewayAuditIdentity?: string;
     operating?: import("./consoleOperations.js").OperatingState;
     retention?: import("./consoleEvidence.js").RetentionState;
-    v: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+    v: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
     id: string;
     revision: number;
     initialized: boolean;
@@ -142,9 +143,9 @@ export class ConsoleStore {
             if (existsSync(join(directory, 'managed')) && !existsSync(this.file))
                 throw new Error('Managed state missing');
             this.state = existsSync(this.file) ? decrypt<ConsoleState>(readFileSync(this.file, 'utf8'), this.key) : { v: 1, id: randomUUID(), revision: 0, initialized: false, origin: '', name: '', users: [], sessions: [], ...(options.config ? { config: options.config } : {}) };
-            if (![1,2,3,4,5,6,7,8,9].includes(this.state.v) || !Array.isArray(this.state.users) || !Array.isArray(this.state.sessions))
+            if (![1,2,3,4,5,6,7,8,9,10].includes(this.state.v) || !Array.isArray(this.state.users) || !Array.isArray(this.state.sessions))
                 throw new Error('Invalid managed state');
-            validateRemovalIdentities(this.state);
+            validateRemovalIdentities(this.state);validateReferenceState(this.state);
             normalizeNotifications(this.state.notifications);
             if (this.state.config) { if(this.state.managed?.protection)this.state.config.responseProtection=validateProtection(this.state.managed.protection.applied).effective;hydrateManagedConfig(this.state.config);normalizeManagedOAuthPath(this.state.config,this.directory); }
             this.journal = new ConsoleJournal(join(directory, 'audit.chain'), this.key, options.faultAudit);
@@ -176,11 +177,11 @@ export class ConsoleStore {
                 }
             }
             // An unfinished cleanup is one coherent encrypted Apply, never a separate delete replay.
-            for(const intent of records.filter(r=>r.phase==='start'&&r.action==='service.apply_cleanup'&&!completed.has(r.id))){
+            for(const intent of records.filter(r=>r.phase==='start'&&['service.apply_cleanup','service.reference_apply'].includes(r.action)&&!completed.has(r.id))){
                 if(this.journal.degraded)break;
                 try {
                 const entry=Object.entries(this.state.managed?.services??{}).find(([,s])=>s.incarnation===intent.details?.identity);
-                const applied=entry?.[1].lastCleanupMutation===intent.details?.mutation;
+                const applied=(intent.action==='service.reference_apply'?entry?.[1].lastReferenceMutation:entry?.[1].lastCleanupMutation)===intent.details?.mutation;
                 if(entry&&!applied)this.commit('system','service.cleanup_review_invalidated',entry[0],state=>{delete state.managed!.services[entry[0]]!.review;state.managed!.revision++;});
                 this.journal.finish(intent.id,'system',intent.action,intent.target,this.state.revision,applied?'success':'failed',intent.details);
                 }catch(error){if(!this.storageReliable)throw error;this.journal.degraded=true;}
@@ -239,6 +240,8 @@ export class ConsoleStore {
         if (this.externalAudit?.degraded || !this.materialAvailable())
             throw new Error('Durable audit unavailable');
         const secrets = [...Object.values(this.state.config?.services ?? {}).flatMap(s => s.credentials.map(c => c.secret)), ...Object.values(this.state.managed?.services ?? {}).flatMap(s => Object.values(s.values).map(v => v.value))].filter(Boolean);
+        const serviceTarget=this.state.v>=10&&Object.hasOwn(this.state.managed?.services??{},target)?this.state.managed!.services[target]:undefined;
+        if(serviceTarget)details={...details,serviceIdentity:target,serviceIncarnation:serviceTarget.incarnation!};
         const safeDetails = details ? Object.fromEntries(Object.entries(details).map(([key,value]) => [key, typeof value === 'string' ? sanitizeAuditText(value, secrets) : value])) : undefined;
         target = sanitizeAuditText(target, secrets);
         const id = this.journal.start(actor, action, target, this.state.revision, safeDetails);
@@ -246,8 +249,8 @@ export class ConsoleStore {
         try {
             change(next);
             next.v=Math.max(next.v,this.state.v) as ConsoleState['v'];
-            initializeRemovalIdentities(next);
-            validateRemovalIdentities(next);
+            initializeRemovalIdentities(next);initializeReferenceState(next);
+            validateRemovalIdentities(next);validateReferenceState(next);
         }
         catch (error) {
             try {
@@ -480,7 +483,7 @@ export function loadManagedConfig(directory: string, keyFile: string): GatewayCo
     if (!existsSync(join(directory, 'managed')))
         throw new Error('Managed marker missing');
     const key=readConsoleKey(keyFile);const state = pendingRecoveryState(directory,key)??decrypt<ConsoleState>(readFileSync(join(directory, 'state.enc'), 'utf8'),key);
-    if (![1,2,3,4,5,6,7,8,9].includes(state.v) || !state.config)
+    if (![1,2,3,4,5,6,7,8,9,10].includes(state.v) || !state.config)
         throw new Error('Managed configuration missing');
     const config=hydrateManagedConfig(state.config);
     normalizeManagedOAuthPath(config,directory);

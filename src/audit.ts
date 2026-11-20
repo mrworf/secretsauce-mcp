@@ -13,6 +13,8 @@ export interface ReferenceIssuedAuditEvent {
   type: "reference_issued";
   subject: string;
   service: string;
+  service_identity?:string;
+  service_incarnation?:string;
   destination: string;
   access_ids: string[];
   internal_reference_ids: string[];
@@ -26,6 +28,8 @@ export interface ServiceRequestAuditEvent {
   request_id: string;
   subject: string;
   service: string;
+  service_identity?:string;
+  service_incarnation?:string;
   destination: string;
   access_ids: string[];
   internal_reference_ids: string[];
@@ -51,6 +55,8 @@ export interface InvalidOpaqueResponseReferencesAuditEvent {
   request_id: string;
   subject: string;
   service: string;
+  service_identity?:string;
+  service_incarnation?:string;
   destination: string;
   warnings: Array<{ prefix: "gref" | "sec"; reason: "unknown" | "expired" | "wrong_subject" | "wrong_service"; count: number }>;
   timestamp: string;
@@ -62,6 +68,8 @@ export interface ToolInvocationAuditEvent {
   tool: "list_services" | "describe_service_policy" | "get_gateway_service_references" | "service_request" | "explain_denial";
   outcome: "allow" | "deny" | "error";
   service?: string;
+  service_identity?:string;
+  service_incarnation?:string;
   request_id?: string;
   error_code?: string;
   timestamp: string;

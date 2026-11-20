@@ -1,6 +1,11 @@
 import { GatewayError } from "./errors.js";
 import { InflightLimiter } from "./inflightLimiter.js";
 
+// Runtime-only identity: never serialized into configuration or portable archives.
+const managedCapacity=new WeakMap<object,string>();
+export function bindServiceCapacity(service:object,key:string){managedCapacity.set(service,key);}
+export function serviceCapacityIdentity(service:{id:string}):string{return managedCapacity.get(service)??service.id;}
+
 export class ServiceRequestLimiter {
   private readonly overall: InflightLimiter;
   private readonly byService = new Map<string, number>();

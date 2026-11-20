@@ -784,6 +784,7 @@ function parseSize(value: string, label: string, path: ConfigPath = label.split(
 // Console drafts reuse the gateway schema and normalizer without resolving host
 // files/environment. Credential values are supplied only by the encrypted store.
 export const managedDraftSchema = z.object(serviceSchema.shape).partial().extend({
+  mcp_reference: z.string().min(1).max(1024).regex(/^[^\u0000-\u001f\u007f]+$/).optional(),
   name: z.string().max(200).optional(),
   destinations: z.array(serviceSchema.shape.destinations.element.partial()).max(100).optional(),
   credentials: z.array(z.object({ id: z.string().min(1).max(100), usage: credentialUsageSchema }).strict()).max(100).optional(),
@@ -795,7 +796,8 @@ export function normalizeManagedService(id: string, draft: ManagedServiceDraft, 
     const key = 'MANAGED_' + i; env[key] = values[c.id];
     return { ...c, source: { kind: 'env' as const, name: key } };
   });
-  const parsed = serviceSchema.parse({ ...draft, credentials });
+  const {mcp_reference:_reference,...configuration}=draft;
+  const parsed = serviceSchema.parse({ ...configuration, credentials });
   return normalizeServices({ [id]: parsed }, env, [], [])[id]!;
 }
 export function serviceDraft(service: ServiceConfig): ManagedServiceDraft {

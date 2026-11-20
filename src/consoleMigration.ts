@@ -1,3 +1,4 @@
+import {referenceClaims,retiredReferences,publicReference,upgradeReferenceState} from './consoleReferenceState.js';
 import { randomUUID } from 'node:crypto';
 import { LineCounter,parseDocument,stringify } from 'yaml';
 import { z } from 'zod';
@@ -21,24 +22,25 @@ export function importConfiguration(manager:ConsoleServices,session:ConsoleSessi
  if(!result.success){const issue=result.error.issues[0]!;const suffix=issue.code==='unrecognized_keys'?'.'+issue.keys.filter(k=>/^[a-zA-Z0-9_-]{1,80}$/.test(k)).join('.') : '';throw new ServiceManagementError('gateway.'+safePath(issue.path)+suffix+': Invalid or unsupported field.');}
  const config=result.data;try{validateMigrationGlobals(config);}catch(error){const path=(error as {diagnostics?:Array<{path?:string}>}).diagnostics?.[0]?.path;throw new ServiceManagementError('gateway.'+(path?.replace(/[^a-zA-Z0-9_.\[\]-]/g,'')??'settings')+': Invalid global setting or trust URL.');}if(actor.role!=='Owner'){const baseline=rawConfigSchema.parse({...currentGlobalConfiguration(manager),services:config.services});for(const key of ['server','auth','tokens','limits','logging','audit'] as const)if(JSON.stringify(config[key])!==JSON.stringify(baseline[key]))throw new ServiceManagementError('gateway.'+key+': Owner permission required for changed instance proposals. Export current configuration and retain those fields for an Administrator service/scanner import.');}const defaults=bundledProtection();const catalogs:ProtectionCatalogs={secretlint:d.secretlint.trim()?parseMigrationYaml(d.secretlint,'secretlint'):defaults.secretlint,sensitiveNames:d.sensitiveNames.trim()?parseMigrationYaml(d.sensitiveNames,'sensitiveNames'):defaults.sensitiveNames};validateProtection(catalogs);
  const values=new Map<string,string>();for(const c of d.credentials){const service=Object.hasOwn(config.services,c.service)?config.services[c.service]:undefined;if(!service?.credentials.some(v=>v.id===c.credential)||values.has(JSON.stringify([c.service,c.credential]))||c.value.trim()!==c.value||/[\r\n\0]/.test(c.value)||/^(Bearer|Basic)\s/i.test(c.value))throw new ServiceManagementError('credentials: Supply each declared canonical value once, without protocol prefix or control characters.');values.set(JSON.stringify([c.service,c.credential]),c.value);}
- const reservedIds=new Set(Object.keys(manager.state.services));
+ const reservedIds=new Set(Object.keys(manager.state.services)),claims=referenceClaims(manager.state),retired=retiredReferences(manager.state);
  const names=new Set(Object.entries(manager.state.services).flatMap(([key,s])=>[s.applied?.name,s.draft?.content.name,s.applied?.name??s.draft?.content.name??s.displayName??key].filter((n):n is string=>typeof n==='string')));
  const drafts:Array<{id:string;sourceId:string;content:ManagedServiceDraft;missingCredentials:string[]}>=[];
  for(const [key,source] of Object.entries(config.services)){
   if(!key.length||key.length>1024||/[\u0000-\u001f\u007f]/.test(key))throw new ServiceManagementError('gateway.services.field: Invalid legacy service identifier.');
-  let target=key;if(reservedIds.has(target))target='import-'+randomUUID();
+  let reference=key;if(claims.has(reference)){reference='import-'+randomUUID();while(claims.has(reference)||retired.has(reference))reference='import-'+randomUUID();}claims.set(reference,'import');
+  let target=reference;if(reservedIds.has(target))target='import-'+randomUUID();
   if(reservedIds.has(target))throw new ServiceManagementError('Import identity collision. Reload Services before retrying.');reservedIds.add(target);
   let name=source.name;if(names.has(name)){const prefix='Imported '+source.name;name=prefix;let suffix=2;while(names.has(name)&&suffix<=names.size+2)name=prefix+' ('+(suffix++)+')';}
   if(name.length>200)throw new ServiceManagementError('gateway.services.field: Imported service name exceeds 200 characters. Shorten the source name before importing.');names.add(name);
-  const content:ManagedServiceDraft={...source,name,credentials:source.credentials.map(({source:ignored,...c})=>c),access:{users:[]}};
+  const content:ManagedServiceDraft={...source,...(manager.store.state.v>=10||reference!==target?{mcp_reference:reference}:{}),name,credentials:source.credentials.map(({source:ignored,...c})=>c),access:{users:[]}};
   const missingCredentials=source.credentials.filter(c=>!values.has(JSON.stringify([key,c.id]))).map(c=>c.id);
   validateDraftBounds(content);try{normalizeManagedService(target,content,Object.fromEntries(source.credentials.map(c=>[c.id,'migration-placeholder'])));}catch{throw new ServiceManagementError('gateway.services.field: Invalid destination, credential placement or policy.');}
   drafts.push({id:target,sourceId:key,content,missingCredentials});
  }
  const sourceRevision=manager.store.state.revision;const mutation=randomUUID();let operation:string;try{operation=manager.store.commit(actor.id,'configuration.import','configuration',state=>{
-  const m=state.managed!;if(sourceRevision!==manager.store.state.revision||d.base!==m.revision||drafts.some(d=>Object.hasOwn(m.services,d.id)))throw new ServiceManagementError('Stale import. Reload Services before retrying.');manager.actor(session,true);state.v=Math.max(state.v,7) as typeof state.v;m.migrationGlobals={server:config.server,auth:config.auth,tokens:config.tokens,limits:config.limits,logging:config.logging,audit:config.audit};
+  const m=state.managed!;if(sourceRevision!==manager.store.state.revision||d.base!==m.revision||drafts.some(d=>Object.hasOwn(m.services,d.id)))throw new ServiceManagementError('Stale import. Reload Services before retrying.');manager.actor(session,true);state.v=Math.max(state.v,7) as typeof state.v;if(drafts.some(d=>d.content.mcp_reference!==undefined))upgradeReferenceState(state);m.migrationGlobals={server:config.server,auth:config.auth,tokens:config.tokens,limits:config.limits,logging:config.logging,audit:config.audit};
   m.protection??={applied:bundledProtection()};m.protection.draft={content:catalogs,base:m.revision,generation:(m.protection.draft?.generation??0)+1};delete m.protection.review;
-  for(const draft of drafts){const s:import('./consoleServices.js').ManagedService={lifecycle:'Draft',displayName:draft.content.name!,values:{},assignments:[]};Object.defineProperty(m.services,draft.id,{value:s,writable:true,enumerable:true,configurable:true});
+  for(const draft of drafts){const s:import('./consoleServices.js').ManagedService={...(state.v>=10?{reference:draft.content.mcp_reference??draft.id}:{}),lifecycle:'Draft',displayName:draft.content.name!,values:{},assignments:[]};Object.defineProperty(m.services,draft.id,{value:s,writable:true,enumerable:true,configurable:true});
    for(const c of config.services[draft.sourceId]!.credentials){const value=values.get(JSON.stringify([draft.sourceId,c.id]));if(value!==undefined)Object.defineProperty(s.values,c.id,{value:{value,version:1,generation:manager.store.state.revision+1,changed:Date.now(),changeAction:'set',actor:actor.id,mutation},writable:true,enumerable:true,configurable:true});}
    s.draft={content:draft.content,base:m.revision,generation:1};
   }
@@ -48,7 +50,7 @@ export function importConfiguration(manager:ConsoleServices,session:ConsoleSessi
 export function exportConfiguration(manager:ConsoleServices,session:ConsoleSession){
  const actor=manager.actor(session);manager.store.requireSensitive(session);
  const globals=currentGlobalConfiguration(manager);
- const services=Object.fromEntries(Object.entries(manager.state.services).filter(([,s])=>s.applied).map(([id,s])=>[id,{...s.applied,access:{users:[]},credentials:(s.applied!.credentials??[]).map(c=>({...c,source:{kind:'env',name:'MIGRATION_CREDENTIAL_REQUIRED'}}))}]));
+ const services=Object.fromEntries(Object.entries(manager.state.services).filter(([,s])=>s.applied).map(([id,s])=>{const {mcp_reference:_reference,...applied}=s.applied!;return[publicReference(id,s),{...applied,access:{users:[]},credentials:(s.applied!.credentials??[]).map(c=>({...c,source:{kind:'env',name:'MIGRATION_CREDENTIAL_REQUIRED'}}))}];}));
  const protection=consoleProtection(manager).read(session).applied;
  const operation=manager.store.commit(actor.id,'configuration.export','configuration',()=>{});
  return {operation,inactiveImportedGlobals:manager.state.migrationGlobals??null,gateway:stringify({...globals,services}),secretlint:stringify(protection.secretlint),sensitiveNames:stringify(protection.sensitiveNames),missingSecretMaterial:true,notice:'Sanitized configuration only. Secret values, live access, identities, lifecycle, sessions and grants are excluded. This is not a restore archive. Migration source globals may be preserved but inactive; current Settings remain authoritative.'};

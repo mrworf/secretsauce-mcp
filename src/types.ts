@@ -132,6 +132,8 @@ export interface AuditConfig {
 }
 
 export interface ServiceConfig {
+  managedIdentity?: string;
+  managedIncarnation?: string;
   id: string;
   type: "http";
   name: string;

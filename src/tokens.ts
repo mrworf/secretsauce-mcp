@@ -168,6 +168,7 @@ export class TokenBroker {
     }
 
     const audit = referenceIssuedAuditEvent({
+      ...(service.managedIdentity&&service.managedIncarnation?{service_identity:service.managedIdentity,service_incarnation:service.managedIncarnation}:{}),
       type: "reference_issued",
       subject: auth.subject,
       service: service.id,

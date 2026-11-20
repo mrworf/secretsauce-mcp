@@ -13,7 +13,7 @@ const results=['success','failed','uncertain','allow','deny','error'] as const;
 const chip=z.object({field:z.enum(filterFields),comparison:z.enum(['equals','notEquals','contains','notContains']),value:label}).strict().refine(v=>v.field!=='result'||!['equals','notEquals'].includes(v.comparison)||results.includes(v.value as typeof results[number]));
 const filters=z.object({from:z.number().int().nonnegative().optional(),to:z.number().int().nonnegative().optional(),contextService:label.optional(),chips:z.array(chip).max(32).optional(),actor:label.optional(),service:label.optional(),action:label.optional(),result:z.enum(results).optional(),requestId:label.optional(),offset:z.number().int().min(0).max(100000).default(0),limit:z.number().int().min(1).max(100).default(50)}).strict().refine(v=>v.from===undefined||v.to===undefined||v.from<=v.to).refine(v=>{const seen=new Set<string>();return (v.chips??[]).every(c=>{const key=JSON.stringify([c.field,c.value]);if(seen.has(key)||v[c.field]!==undefined)return false;seen.add(key);return true;});});
 export type EvidenceFilter=z.input<typeof filters>;
-export interface EvidenceEntry {id:string;operation?:string;time:number;actor:string;service:string;action:string;result:string;requestId?:string;revision:number;reason:string;provenance:'local'|'imported';sourceInstance?:string;sourceArchive?:string;recoveryPoint?:number;}
+export interface EvidenceEntry {serviceIdentity?:string;serviceIncarnation?:string;id:string;operation?:string;time:number;actor:string;service:string;action:string;result:string;requestId?:string;revision:number;reason:string;provenance:'local'|'imported';sourceInstance?:string;sourceArchive?:string;recoveryPoint?:number;}
 export interface RetentionState {days:number;draft?:{days:number;base:number;generation:number;baseDays?:number};review?:{id:string;actor:string;base:number;generation:number;cutoff:number;impact:number;};}
 function parse<T>(schema:z.ZodType<T>,input:unknown):T {if(input&&typeof input==='object'&&(Object.hasOwn(input,'__proto__')||Object.hasOwn(input,'constructor')||Object.hasOwn(input,'prototype')))throw new EvidenceError('Invalid evidence input.');const p=schema.safeParse(input);if(!p.success)throw new EvidenceError('Invalid evidence input. Check filters, bounds and supported fields.');return p.data;}
 export function evidenceSanitizer(store:ConsoleStore):(value:string)=>string {
@@ -33,11 +33,11 @@ export class ConsoleEvidence {
   const done=new Map(operations.filter(r=>r.phase==='complete').map(r=>[r.id,r]));
   const started=new Set(operations.filter(r=>r.phase==='start').map(r=>r.id));
   const entries:EvidenceEntry[]=operations.filter(r=>r.phase!=='complete'||!started.has(r.id)).map(r=>{
-   const completion=done.get(r.id);return {id:'operation:'+r.id,operation:r.id,time:r.time,actor:r.actor,service:Object.hasOwn(this.store.state.managed?.services??{},r.target)?r.target:'',action:r.action,result:completion?.result??(r.phase==='start'?'uncertain':r.result??'success'),revision:r.revision,reason:r.target+(r.details?.smtpMode?' · SMTP: '+(r.details.smtpMode==='none'?'None (unencrypted)':'TLS (encrypted)')+(r.details.unencryptedAcknowledged?' · Risk acknowledged':''):''),provenance:'local'};
+   const completion=done.get(r.id);return {...(r.details?.serviceIdentity?{serviceIdentity:r.details.serviceIdentity,serviceIncarnation:r.details.serviceIncarnation}:{}),id:'operation:'+r.id,operation:r.id,time:r.time,actor:r.actor,service:/^(service|credential)\./.test(r.action)?r.target:'',action:r.action,result:completion?.result??(r.phase==='start'?'uncertain':r.result??'success'),revision:r.revision,reason:r.target+(r.details?.smtpMode?' · SMTP: '+(r.details.smtpMode==='none'?'None (unencrypted)':'TLS (encrypted)')+(r.details.unencryptedAcknowledged?' · Risk acknowledged':''):''),provenance:'local'};
   });
   for(const [index,event] of (gateway?.events??[]).entries()){
    const e=event as unknown as Record<string,unknown>;
-   entries.push({id:'gateway:'+digest(JSON.stringify(event)),time:Date.parse(String(e.timestamp??e.request_timestamp)),actor:String(e.subject??''),service:String(e.service??''),action:String(e.tool??e.type),result:String(e.error_code?(e.policy_decision==='deny'?'deny':'error'):e.outcome??e.policy_decision??'success'),...(typeof e.request_id==='string'?{requestId:e.request_id}:{}),revision:typeof e.admitted_revision==='number'?e.admitted_revision:0,reason:String(e.error_message??e.error_code??e.matched_policy_rule??e.reason??''),provenance:'local'});
+   entries.push({...((typeof e.service_identity==='string'&&typeof e.service_incarnation==='string')?{serviceIdentity:e.service_identity,serviceIncarnation:e.service_incarnation}:{}),id:'gateway:'+digest(JSON.stringify(event)),time:Date.parse(String(e.timestamp??e.request_timestamp)),actor:String(e.subject??''),service:String(e.service??''),action:String(e.tool??e.type),result:String(e.error_code?(e.policy_decision==='deny'?'deny':'error'):e.outcome??e.policy_decision??'success'),...(typeof e.request_id==='string'?{requestId:e.request_id}:{}),revision:typeof e.admitted_revision==='number'?e.admitted_revision:0,reason:String(e.error_message??e.error_code??e.matched_policy_rule??e.reason??''),provenance:'local'});
   }
   const localIds=new Set([...journalEntries.map(e=>this.store.journal.identity()+':operation:'+e.id),...(gateway?.operations??[]).map(e=>(this.store.state.gatewayAuditIdentity??'')+':operation:'+e.id),...(gateway?.events??[]).map(e=>(this.store.state.gatewayAuditIdentity??'')+':gateway:'+digest(JSON.stringify(e)))]);
   const importedIds=new Set<string>();for(const d of this.store.state.importedAudit??[])for(const e of d.entries){const key=d.data.identity+':'+e.id;if(localIds.has(key)||importedIds.has(key))continue;importedIds.add(key);entries.push({...e,id:'imported:'+key,provenance:'imported',sourceInstance:d.instance,sourceArchive:d.archive,recoveryPoint:d.recoveryPoint});}
@@ -54,12 +54,20 @@ export class ConsoleEvidence {
   const groups=filterFields.map(field=>({field,positive:predicates.filter(c=>c.field===field&&['equals','contains'].includes(c.comparison)),negative:predicates.filter(c=>c.field===field&&['notEquals','notContains'].includes(c.comparison))}));
   const deadline=performance.now()+2000,rows=this.rows(deadline),matches:EvidenceEntry[]=[];
   const check=()=>{if(performance.now()>deadline)throw new EvidenceError('Evidence scan reached its bounded work limit. Narrow retained storage with reviewed retention.');};
-  for(const e of rows.entries){check();if(user.role==='Member'&&e.actor!==user.id||f.contextService!==undefined&&e.service!==f.contextService||f.from!==undefined&&e.time<f.from||f.to!==undefined&&e.time>f.to)continue;
+  for(const e of rows.entries){check();if(user.role==='Member'&&e.actor!==user.id||f.contextService!==undefined&&(!this.matchesService(e,f.contextService))||f.from!==undefined&&e.time<f.from||f.to!==undefined&&e.time>f.to)continue;
    if(groups.every(g=>{const value=e[g.field],present=typeof value==='string'&&value.length>0;return (!g.positive.length||g.positive.some(c=>present&&(c.comparison==='equals'?value===c.value:value.includes(c.value))))&&g.negative.every(c=>!present||(c.comparison==='notEquals'?value!==c.value:!value.includes(c.value)));}))matches.push(e);
   }check();
   return {user,f,matches,verified:rows.verified};
  }
- private sanitize(entries:EvidenceEntry[],safe:(value:string)=>string){return entries.map(e=>({...e,actor:safe(e.actor),service:safe(e.service),action:safe(e.action),reason:safe(e.reason),...(e.requestId?{requestId:safe(e.requestId)}:{})}));}
+ private matchesService(e:EvidenceEntry,id:string):boolean {
+  const s=Object.hasOwn(this.store.state.managed?.services??{},id)?this.store.state.managed!.services[id]:undefined;if(!s)return false;
+  if(e.serviceIdentity!==undefined)return e.serviceIdentity===id&&(e.serviceIncarnation===s.incarnation||Boolean(s.recoveredEvidence?.some(link=>link.instance===(e.provenance==='imported'?e.sourceInstance:this.store.state.id)&&link.incarnation===e.serviceIncarnation)));
+  if(this.store.state.v<10)return e.service===id;
+  // Captured at the one-way upgrade, not inferred from today's public route.
+  // New/reused managed identities do not inherit this legacy attribution window.
+  return e.service===id&&s.legacyEvidenceThrough!==undefined&&e.time<=s.legacyEvidenceThrough&&(s.legacyEvidenceAfter===undefined||e.time>s.legacyEvidenceAfter);
+ }
+ private sanitize(entries:EvidenceEntry[],safe:(value:string)=>string){return entries.map(e=>({...e,...(e.serviceIdentity?{serviceIdentity:safe(e.serviceIdentity)}:{}),actor:safe(e.actor),service:safe(e.service),action:safe(e.action),reason:safe(e.reason),...(e.requestId?{requestId:safe(e.requestId)}:{})}));}
  private present(entries:EvidenceEntry[],safe:(value:string)=>string){
   const emails=new Map(this.store.state.users.map(user=>[user.id,user.email]));
   return this.sanitize(entries,safe).map((entry,index)=>{

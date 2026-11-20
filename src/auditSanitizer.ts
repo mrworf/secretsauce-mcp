@@ -12,7 +12,7 @@ const credentialPatterns = [
   /\beyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/g,
 ];
 const structuralStringKeys = new Set([
-  "type", "tool", "outcome", "service", "destination", "access_ids", "internal_reference_ids",
+  "type", "tool", "outcome", "service", "service_identity", "service_incarnation", "destination", "access_ids", "internal_reference_ids",
   "response_internal_reference_ids", "method", "policy_decision", "matched_policy_rule", "error_code",
   "request_id", "timestamp", "request_timestamp", "secret_rule_ids", "prefix",
 ]);

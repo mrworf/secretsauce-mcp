@@ -1,20 +1,21 @@
-# Web console delivery milestones — UX11 remaining delta
+# Web console delivery milestones — UX12 remaining delta
 
-Input mode **PRODUCT_BUILD**. Published ready UX11 package `workflow/definition/definition-package.yaml` at `sha256:7d26ddded7fdb3cad794bee6c9b646d2c19e301ea39d89d7b1e051a6bebc4a50`, payload `681b71870514865f1ed6f89b366aca527d514e16`, closeout f6443a5 governs. Passed definition validations and explicit product/architecture/security preservation bridges consumed, not rerun. Adopted REC016 supplies four resolved outcomes, not a live unrevalidated CHANGE_PLAN gate. Completed M10–51 and prior goals/regression history remain unchanged.
+Input mode **PRODUCT_BUILD**. Ready UX12 package `workflow/definition/definition-package.yaml` payload428bae3/closeout077b71b is primary authority; its indexed passed validations are consumed, not rerun. REC017 is adopted provenance, not an unrevalidated standalone CHANGE_PLAN. Completed M10–52 contracts, records, goals and qualification history remain unchanged.
 
-## Current outcome
+## Current outcomes
 
 | Milestone | Outcome | Dependencies | Status |
-| --- | --- | --- | --- |
-| [M52](52-consistent-service-access.md) | Configure service access in one consistent place, with coherent service form/help/confirmation presentation | M47, M48, M49, M51 | pending |
+|---|---|---|---|
+| [M53](53-service-list-and-review-entry.md) | Aligned Services and safe direct review entry | M52 | pending |
+| [M54](54-editable-public-service-reference.md) | Reviewed public-reference change with stable managed identity and safe runtime/recovery | M53 | pending |
 
 ## Granularity and dependency assessment
 
-One finite service-workflow outcome consolidates REC-RM-064–067. The substantial change is one Access destination across initial/current state; width/helper/quote are small repairs within the same service shell and review/task family. They introduce no distinct trust or rollout model, so separate milestones would duplicate gates. This is not a general UI cleanup bucket: acceptance enumerates only those four outcomes. No foundation, per-finding milestones, implementation slices or milestone-count target. Dependencies consume existing draft/history, import, compact-form and typed-deletion contracts. Earliest integrated demonstration is new unsaved service → Access → Configuration/Advanced → review/Apply, followed by current Access independent of a draft.
+Two vertical outcomes. M53 consolidates row alignment and ordinary review-entry repair within the existing service journey; splitting these small refinements would duplicate gates. M54 is independently substantial: public namespace publication changes runtime trust, persistence and recovery. Combining it with M53 obscures that distinct rollout boundary. No one-finding-per-milestone rule, generic foundation or implementation slices. M54 consumes M53's safe review-entry contract for its new proposal. Earliest integrated demonstration: mixed lifecycle list→Review changes after an unrelated revision→precise missing-value blocker→correct value→fresh review, before introducing routing migration.
 
 ## Validation and handoff
 
-Focused affected tests/build and inspected actual matching browser evidence at M52; separately planned **UX11-INTEGRATED** requires full bounded-worker regression and joined final-source qualification before deployment/final acceptance. Conditional recovery/transport checks apply only if their boundaries change; mandatory project gates remain. First unexpected external regression widens focused scope; second distinct regression/spread triggers full regression after repairs. No tests/code/bootstrap probes/readiness work run in compilation. All8 feedback dispositions and4 remediations mapped; none blocked/deferred/unmapped. Packet complete for milestone-readiness, not yet READY or implemented. Parent owns publication.
+Focused affected checks/build and inspected actual browser evidence per outcome; one separate **UX12-INTEGRATED** frozen full-suite/build and final joined browser/affected old-reader/recovery/Docker qualification before final acceptance/deployment. No concurrent browser/Docker during full suite; npm test pretest satisfies the build gate. Reuse current final-source source-in-Playwright browser evidence. Build one exact stable candidate application image afterward for mandatory affected recovery/launcher drills. First confirmed unexpected out-of-area regression expands focused checks; second distinct regression/spread triggers full suite after repair. All9 feedback dispositions and3 remediations map; no deferred, blocked or unmapped required scope. No runtime or readiness probes run during compilation. Packet complete for milestone-readiness, not yet READY or implemented. Parent owns publication.
 
 ## Completed history
 
@@ -62,3 +63,5 @@ Focused affected tests/build and inspected actual matching browser evidence at M
 | M49 | [Use clear shared sign-in, Settings and service tasks](49-clear-shared-console-tasks.md) | completed |
 | M50 | [Remove credential configuration and eligible saved values on Apply](50-reviewed-credential-removal.md) | completed |
 | M51 | [Permanently delete an Archived service with retained evidence](51-archived-service-permanent-deletion.md) | completed |
+
+| M52 | [Configure service access in one consistent place](52-consistent-service-access.md) | completed |

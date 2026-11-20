@@ -269,3 +269,27 @@ Primary authority: published ready UX10 definition package; PRD/UX/STATE-11/SECR
 | PO-FB-281 | DIRECTIVE / FULLY_RESOLVED | M51 | REC-RM-059 |
 
 Shared constraints intentionally map repeatedly: current authorization/audit/write-only values and scoped UX in all three; STATE-11/SECRES-10 incarnation/uncertainty/recovery across M50/51. Excluded: new authentication flows/roles/vault, unrelated orphan sweep, bulk purge, backup destruction, and reimplementation of completed behavior. Advisory compact login is included only as adopted UX-R05/R12 interpretation; no independent optional idea promoted. Deferred required work: none. Blocked: none. Unmapped: none. All17items and six remediations covered. Implementation qualification remains pending, not established by planning.
+
+## REC017 / UX12 bounded delta
+
+Primary implementation authority is the ready UX12 package and adopted PRD CONFIG-01/05/06. STATE-12/SECRES-11 and UX-G13/IN28/R14/C94–97 govern; historical findings and original observations/questions are evidence only. Prior traceability remains historical.
+
+| Remediation | Milestone | Adopted outcome |
+|---|---|---|
+| REC-RM-068 | M53 | Shared lifecycle tracks |
+| REC-RM-069 | M53 | Proven one-shot review refresh and precise blockers |
+| REC-RM-070 | M54 | Public reference editing with stable identity, namespace, revocation and recovery |
+
+| Feedback | Class / disposition | Milestone | Remediation |
+|---|---|---|---|
+| PO-FB-290 | OBSERVATION / EVIDENCE_CORRELATED | M53 | REC-RM-068 |
+| PO-FB-291 | DIRECTIVE / FULLY_RESOLVED | M53 | REC-RM-068 |
+| PO-FB-292 | OBSERVATION / EVIDENCE_CORRELATED | M53 | REC-RM-069 |
+| PO-FB-293 | DIRECTIVE / FULLY_RESOLVED | M53 | REC-RM-069 |
+| PO-FB-294 | OBSERVATION / EVIDENCE_CORRELATED | M54 | REC-RM-070 |
+| PO-FB-295 | IDEA_OR_QUESTION / EXPLORATORY_RECORDED | M54 | REC-RM-070 |
+| PO-FB-296 | DIRECTIVE / FULLY_RESOLVED | M54 | REC-RM-070 |
+| PO-FB-297 | DIRECTIVE / FULLY_RESOLVED | M54 | REC-RM-070 |
+| PO-FB-298 | DIRECTIVE / FULLY_RESOLVED | M54 | REC-RM-070 |
+
+Shared authorization/audit/unsaved-state/visual constraints map to both; M54 additionally consumes safe review while delivering CONFIG-06. Coverage UX12-C01–06 and ACT-150–154 map exactly. Excluded: automatic Apply/retry, aliases, permanent reservation, authentication changes, SMTP timing, unrelated rebuilds, deployment and already-completed behavior. Accepted SEC-DEF-001 is preserved. No optional observation/question creates an independent milestone. Deferred required work: none. Blocked: none. Unmapped: none.

@@ -3,35 +3,31 @@ workflow: delivery-planning
 product_id: secretsauce-mcp
 status: ready
 transaction:
-  parent_commit: f6443a54aee249c51f27ed33d16b450531b1d750
-  repository_commit: 4b96ae4cd758b94bf4f2700752620e0d57352e2f
+  parent_commit: 077b71bd56f595b75ed0f667ed60d137a2281240
+  repository_commit: null
   pre_existing_dirty_paths:
   - passwd
   - codex-session-01a122f7-e70f-7440-b1ce-ca88b955e519.md
   - test-results/
-  owned_paths:
-  - delivery/milestones/secretsauce-mcp/
-  - delivery/readiness/secretsauce-mcp/
-  - workflow/delivery-planning/
 source:
   mode: PRODUCT_BUILD
   type: definition-package
   path: workflow/definition/definition-package.yaml
-  revision: sha256:7d26ddded7fdb3cad794bee6c9b646d2c19e301ea39d89d7b1e051a6bebc4a50
-  repository_commit: 681b71870514865f1ed6f89b366aca527d514e16
+  revision: sha256:c3efb4da84917fb92ae80a70566a9f6cf383363291c47ff87c67ca1c2b81daeb
+  repository_commit: 428bae3dfb8e3881afda540a70f9d6a38a83b960
+  reconciliation: workflow/reconciliation/REC-RUN-017/reconciliation-result.yaml
 stages:
   compilation:
     status: passed
     result: workflow/delivery-planning/results/compiler.yaml
-    normalized_outcome: COMPILED
     packet_manifest: delivery/milestones/secretsauce-mcp/status.yaml
-    packet_revision: sha256:1b2a5216cfb6df80d1e432309102fd759447f91545c5b2c46c43753a11085b9d
+    packet_revision: sha256:54e2034d8ee283a17bedfbdbae760c7426163597bfe60a47f3b4eb6a7ef01e41
   readiness:
     status: READY
     prerequisite_manifest: delivery/readiness/secretsauce-mcp/prerequisite-manifest.md
     result: delivery/readiness/secretsauce-mcp/readiness-report.md
     adapter: workflow/delivery-planning/results/readiness.yaml
-    packet_revision: sha256:1b2a5216cfb6df80d1e432309102fd759447f91545c5b2c46c43753a11085b9d
+    packet_revision: sha256:54e2034d8ee283a17bedfbdbae760c7426163597bfe60a47f3b4eb6a7ef01e41
 blockers: []
 corrections: []
 resume:
@@ -39,7 +35,7 @@ resume:
 handoff:
   status: ready_for_implementation
   path: workflow/delivery-planning/handoff.yaml
-  packet_revision: sha256:1b2a5216cfb6df80d1e432309102fd759447f91545c5b2c46c43753a11085b9d
+  packet_revision: sha256:54e2034d8ee283a17bedfbdbae760c7426163597bfe60a47f3b4eb6a7ef01e41
 previous_source:
   mode: PRODUCT_BUILD
   type: definition-package

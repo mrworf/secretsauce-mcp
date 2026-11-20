@@ -1,5 +1,5 @@
 product_id: secretsauce-mcp
-scope: "UX11 remaining M52; completed M10\u201351 preserved"
+scope: UX12 remaining M53–54; completed M10–52 preserved
 status_values:
 - pending
 - in_progress
@@ -8,62 +8,60 @@ status_values:
 compiled_from:
   product_id: secretsauce-mcp
   input_mode: PRODUCT_BUILD
-  mode_reason: Published ready UX11 definition package is primary PRODUCT_BUILD; REC016 is adopted provenance.
-    Its historical revalidation gate is discharged by current passed validation and explicit canonical
-    false-impact preservation bridges, not waived as standalone CHANGE_PLAN.
+  mode_reason: Published ready UX12 package is primary PRODUCT_BUILD. REC017 is adopted provenance; its historical
+    revalidation gate was discharged by current validated definition, not bypassed as standalone CHANGE_PLAN.
   definition_package:
     path: workflow/definition/definition-package.yaml
-    revision: sha256:7d26ddded7fdb3cad794bee6c9b646d2c19e301ea39d89d7b1e051a6bebc4a50
-    repository_commit: 681b71870514865f1ed6f89b366aca527d514e16
+    revision: sha256:c3efb4da84917fb92ae80a70566a9f6cf383363291c47ff87c67ca1c2b81daeb
+    repository_commit: 428bae3dfb8e3881afda540a70f9d6a38a83b960
   reconciliation:
-    result: workflow/reconciliation/REC-RUN-016/reconciliation-result.yaml
-    revision: sha256:29e16acb1cc7aa1b40d7b15d32125d48acb89a900050a9ed83b027ae9e38e305
-    repository_commit: a9f99d6bf2690267430c8f3541661d4997547772
+    result: workflow/reconciliation/REC-RUN-017/reconciliation-result.yaml
+    revision: sha256:a7d0112c9186d80f1058931e888db3187ca02f67d593291c819499675e04e9db
+    repository_commit: '2866591'
     schema_version: 1
-    reconciliation_id: REC-RUN-016
-    change_id: REC-IMPACT-016
+    reconciliation_id: REC-RUN-017
+    change_id: REC-IMPACT-017
     role: adopted provenance; validated package governs
     remediation_ids:
-    - REC-RM-064
-    - REC-RM-065
-    - REC-RM-066
-    - REC-RM-067
+    - REC-RM-068
+    - REC-RM-069
+    - REC-RM-070
   authoritative_artifacts:
     prd:
       path: docs/web-console-prd.md
-      revision: sha256:7f09e428b920b10daccb98f69c8988cc3e37d7a92483297bc0175a130fc38116
+      revision: sha256:373ab761709d04f93e839d5ef053d7634c8cf7ed602a143acc1dd2544b5998ae
     security_contract:
       path: product/security/web-console-security-contract.md
-      revision: sha256:f02d7b7bdedb1108c7461f15a0d3cffeab93150ecac34fa0ff9c66b2e24c8268
+      revision: sha256:50cb40de4c045eb6cab49b5f93c2a0a49718ceae454cc76a2ed80646b64db7de
     architecture_contract:
       path: product/architecture/web-console-state-contract.md
-      revision: sha256:1c7642c7b87bba4c7b55c8a5520eac002bd2727d8729f9eb0c51ecec31f3f9c6
+      revision: sha256:146d9cf35d375bfa9e86584cba387977f0c55fd2a35b8ec83f4f0336a9bd5481
     coverage:
       path: docs/web-console-prd-coverage.md
-      revision: sha256:46f141ab512d820f73a6ac78bc068ee7be285e3cc070219f5c20c1924cfdb915
+      revision: sha256:0d6b0e9537de0cd8ac2222b6283e72a8eeaa8741716ea6fa966b7b9b650fba1f
     journeys:
       path: docs/web-console-prd-user-journey-audit.md
-      revision: sha256:93557c4a8de28e7b11eedd9c0fbf21f0f43e27283d8d4a491c018f914d40c16c
+      revision: sha256:dbe00237e608d6021aad935fe58ba0ac22f0e73054e4336e12d686883accbc81
     ux:
       path: product/ux/manifest.yaml
-      revision: sha256:10342f67f66523b0688e58ef51a56058e3b7505562ecf5f72776c33f2ab15592
-      declared_revision: web-console-ux-11
+      revision: sha256:23aa41b8f834545f50fde4f81748544df0fdc75026bb16142b1b117ef5ac8e16
+      declared_revision: web-console-ux-12
       manifest: product/ux/manifest.yaml
     ux_experience_brief:
       path: product/ux/experience-brief.yaml
-      revision: sha256:f2a10490409e699b35769135b190571b3d4fd01f5d5c1a6bf28ad05ea2335fa7
+      revision: sha256:17390d07d6335e6ab32dabaece1802bd5e7481261cdc6524b0d7cd1cb66d856d
     ux_overview:
       path: product/ux/00-overview.md
-      revision: sha256:ed66982c9c737e03e994f6c06a0095b670cd395319f9a457b837c3e3c181bfa7
+      revision: sha256:161471ef11ddffe19805b935e55e56f507171fa46b2dadeadba81125e044d78e
     ux_information_architecture:
       path: product/ux/01-information-architecture.md
-      revision: sha256:7de93261573c014d59b8c2fd66e51627df6a9c1a5c4c7a5d24c995d1cdab9c3c
+      revision: sha256:f5ac7a5cabc75fd697be04f4d8dffae541da375598bf7cc54d4c72991df3608e
     ux_interaction_patterns:
       path: product/ux/02-interaction-patterns.md
-      revision: sha256:158afa3ab5900cf45aca940b670497d52ef14e4b803af98282f2825186cae42b
+      revision: sha256:baeb55f11e2cf31ada9ea999d819d1ce6694714d6e45c35171ba675ac1827b84
     ux_responsive_and_platform:
       path: product/ux/03-responsive-and-platform.md
-      revision: sha256:3a8e72500dda4b830115e9b92ad193ceb9272c250c43e7c439b1129d616d04a5
+      revision: sha256:90cefaa3f0d2ffcfc7934861273d2e44ae4283dbe765c325fddf5de21e045f70
     ux_visual_system:
       path: product/ux/04-visual-system.md
       revision: sha256:8f1e26ebd3d7e6d70314c4959cdfbf51732353135bbadb9a609697a04a58a4f6
@@ -75,17 +73,17 @@ compiled_from:
       revision: sha256:90a697a80b380a70d83cbffc7cd1409fe381c2051a877da901c7e4b3c2a30b48
     ux_acceptance_checklist:
       path: product/ux/07-acceptance-checklist.md
-      revision: sha256:98df01c67ed06367217f048a86141a84db4fd007756f03ea164cb1d6cc9eb167
+      revision: sha256:43e640c86cc2c4f82b584a68ee1b96c41a26e8090cb9f9dca37595c3f0fab542
     security:
       path: product/security/web-console-security-review.md
-      revision: sha256:b4e024c0c5abed4cd2c3dca53bfe71c109c2a97451403fb90ba3c521f344c8b7
+      revision: sha256:b5301f58b45656e725bad3558eef663c4001fcc63cd120743165a65d83f25e7b
     architecture:
       path: product/architecture/web-console-architecture-review.md
-      revision: sha256:def5cdf63b4074f914365d254752739b1eb24ca1fc0c98acba33fa96b3fae968
+      revision: sha256:ccda90e822b4b7916deb5ac4be3d5858d02f212366423c3a926aa0c06f251a45
   accepted_risks:
   - id: SEC-DEF-001
-    summary: Trusted destination authors and best-effort response scanning are not universal credential
-      non-exfiltration controls.
+    summary: Trusted destination authors and best-effort response scanning are not universal credential non-exfiltration
+      controls.
     decision_refs:
     - D-012
     result: workflow/definition/results/security.yaml
@@ -97,9 +95,9 @@ milestones:
   dependencies: []
   completed_at: 2026-10-10 04:27:14.850000+00:00
   commit_hash: 53bd2a4
-  notes: '406 tests/37 files, build and diff check passed; actual HTTPS Chromium keyboard/320px browser
-    checks passed. Acceptance: evidence/qa/secretsauce-mcp/milestone10/acceptance.md. Slice commits: 42128e5,
-    1c3f10f, 53bd2a4.'
+  notes: '406 tests/37 files, build and diff check passed; actual HTTPS Chromium keyboard/320px browser checks
+    passed. Acceptance: evidence/qa/secretsauce-mcp/milestone10/acceptance.md. Slice commits: 42128e5, 1c3f10f,
+    53bd2a4.'
   started_at: 2026-10-10 03:43:12.099000+00:00
 - id: '11'
   title: Configure and activate services safely
@@ -111,8 +109,7 @@ milestones:
   commit_hash: d038170a7c0ab5d7bfe3d1a93c28743cb15f1183
   notes: 'All four acceptance criteria verified: 427 tests across 41 files, build, 7 service browser groups
     and 7 retained authentication browser groups; keyboard and 320px checks. Evidence: evidence/qa/secretsauce-mcp/milestone11/acceptance.md.
-    Slice commits: cd3872440b060a726ff129e83a409989048fda68, 419e42e6784e09151a305275701aacbfad7bc87d,
-    d038170a7c0ab5d7bfe3d1a93c28743cb15f1183.'
+    Slice commits: cd3872440b060a726ff129e83a409989048fda68, 419e42e6784e09151a305275701aacbfad7bc87d, d038170a7c0ab5d7bfe3d1a93c28743cb15f1183.'
   started_at: 2026-10-10 04:27:14.851000+00:00
 - id: '12'
   title: Manage people and recover accounts
@@ -124,8 +121,7 @@ milestones:
   commit_hash: fb89017fd3b6cec1cf01bc14f639b3eebc4680ca
   notes: 'All four acceptance criteria verified: 452 tests across45files, build, 8 actualHTTPS keyboard/320px
     browser checks, 6 protected host-recovery checks and syntheticTLS SMTP. Evidence: evidence/qa/secretsauce-mcp/milestone12/acceptance.md.
-    Slice commits: bb1281082c59273fc494c8575ef748c030af7e89, c30dc9e7383ce722ed1b7082528d0a8071aec9ec,
-    fb89017fd3b6cec1cf01bc14f639b3eebc4680ca.'
+    Slice commits: bb1281082c59273fc494c8575ef748c030af7e89, c30dc9e7383ce722ed1b7082528d0a8071aec9ec, fb89017fd3b6cec1cf01bc14f639b3eebc4680ca.'
   started_at: 2026-10-10 04:58:27.685000+00:00
 - id: '13'
   title: Author advanced policy and migrate configuration
@@ -135,10 +131,9 @@ milestones:
   - '12'
   completed_at: 2026-10-10 05:59:52.467000+00:00
   commit_hash: 851bda679771d4b3d9bfa7decc7f60adcff8166f
-  notes: 'All four acceptance criteria verified: 481 tests across48files, build, 6 actualHTTPS browser
-    taskgroups/eight320px screenshots. Evidence: evidence/qa/secretsauce-mcp/milestone13/acceptance.md.
-    Slice commits: 698b051634fb156679defbed85793296447ab2f3, b4a60344deccf11e8912b7de9a7ce442cfc157e1,
-    5e3f0eb6efe4edb1dc0131e4120f0de05db266e6, 851bda679771d4b3d9bfa7decc7f60adcff8166f.'
+  notes: 'All four acceptance criteria verified: 481 tests across48files, build, 6 actualHTTPS browser taskgroups/eight320px
+    screenshots. Evidence: evidence/qa/secretsauce-mcp/milestone13/acceptance.md. Slice commits: 698b051634fb156679defbed85793296447ab2f3,
+    b4a60344deccf11e8912b7de9a7ce442cfc157e1, 5e3f0eb6efe4edb1dc0131e4120f0de05db266e6, 851bda679771d4b3d9bfa7decc7f60adcff8166f.'
   started_at: 2026-10-10 05:29:02.951000+00:00
 - id: '14'
   title: Connect and govern MCP clients
@@ -148,10 +143,10 @@ milestones:
   - '12'
   completed_at: 2026-10-10 17:07:13.336000+00:00
   commit_hash: 1eb00d117664858d81252543b46c53cb8b46638d
-  notes: 'Local acceptance passed: four slice commits, 511 tests/53 files, build, actual HTTPS headless
-    browser five groups/fourteen sanitized screens. User authorized local delivery and deferred actual
-    LLM/MCP connections on 2026-10-10. PRE-015 real ChatGPT/Codex checks remain NOT RUN under explicit
-    goal-specific exception workflow/delivery/local-validation-authorization.md. Evidence: evidence/qa/secretsauce-mcp/milestone14/local-coverage.md
+  notes: 'Local acceptance passed: four slice commits, 511 tests/53 files, build, actual HTTPS headless browser
+    five groups/fourteen sanitized screens. User authorized local delivery and deferred actual LLM/MCP connections
+    on 2026-10-10. PRE-015 real ChatGPT/Codex checks remain NOT RUN under explicit goal-specific exception
+    workflow/delivery/local-validation-authorization.md. Evidence: evidence/qa/secretsauce-mcp/milestone14/local-coverage.md
     and acceptance-status.md.'
   started_at: 2026-10-10 05:59:52.467000+00:00
   implementation_commit_hash: 1eb00d117664858d81252543b46c53cb8b46638d
@@ -180,10 +175,10 @@ milestones:
   - '15'
   completed_at: 2026-10-10 18:53:12.145000+00:00
   commit_hash: 87a87f2fab8d5b5ea6e38c731414f78263e826c6
-  notes: All four acceptance criteria verified:585 tests/61 files and build; HTTPS backup7 groups plus17
-    preserved-flow groups; Docker11 groups including independent clean-container decryption and5 SIGKILL
-    boundaries. Root acceptance:evidence/qa/secretsauce-mcp/milestone16/acceptance.md. Three independent
-    slice commits preserved; actual LLM checks deferred under user exception.
+  notes: All four acceptance criteria verified:585 tests/61 files and build; HTTPS backup7 groups plus17 preserved-flow
+    groups; Docker11 groups including independent clean-container decryption and5 SIGKILL boundaries. Root
+    acceptance:evidence/qa/secretsauce-mcp/milestone16/acceptance.md. Three independent slice commits preserved;
+    actual LLM checks deferred under user exception.
   started_at: 2026-10-10 18:03:04.154000+00:00
 - id: '17'
   title: Restore and resume an instance safely
@@ -193,9 +188,9 @@ milestones:
   - '16'
   completed_at: 2026-10-10 20:27:28.440000+00:00
   commit_hash: 987b3996ab4e87eb365ac2df57edb6233dd3ade4
-  notes: All four acceptance criteria verified:620 tests/67 files and build;50 HTTPS browser groups with
-    keyboard/320px/200% recovery text; final-image Docker94 actual SIGKILL,9 launcher and5 clean-host
-    groups. One reviewed service usable in55.970s with99Disabled. Root acceptance:evidence/qa/secretsauce-mcp/milestone17/acceptance.md.
+  notes: All four acceptance criteria verified:620 tests/67 files and build;50 HTTPS browser groups with keyboard/320px/200%
+    recovery text; final-image Docker94 actual SIGKILL,9 launcher and5 clean-host groups. One reviewed service
+    usable in55.970s with99Disabled. Root acceptance:evidence/qa/secretsauce-mcp/milestone17/acceptance.md.
     Three independent slice commits preserved; actual LLM connections deferred under user exception.
   started_at: 2026-10-10 18:53:12.145000+00:00
   acceptance_exception: workflow/delivery/local-validation-authorization.md
@@ -232,8 +227,8 @@ milestones:
   - '17'
   completed_at: '2026-10-11T23:38:05.308529+00:00'
   commit_hash: abf03d02746922ce5a524ff105e13595acd7b999
-  notes: Three committed slices; 662 tests/71 files and build pass; nine acceptance clauses mapped with
-    focused HTTPS and retained regressions in evidence/qa/secretsauce-mcp/milestone20/acceptance.md.
+  notes: Three committed slices; 662 tests/71 files and build pass; nine acceptance clauses mapped with focused
+    HTTPS and retained regressions in evidence/qa/secretsauce-mcp/milestone20/acceptance.md.
   started_at: '2026-10-11T23:15:18.518804+00:00'
 - id: '21'
   title: Configure all capabilities with forms and lossless import
@@ -243,8 +238,8 @@ milestones:
   - '20'
   completed_at: '2026-10-12T00:03:46.337293+00:00'
   commit_hash: c0aba3904a9039d650d913445ac0bc63c6fdfd4b
-  notes: Three committed slices; 668 tests/71 files and build pass; nine actual HTTPS scenarios pass.
-    All20 UX-IA06 rows and ten acceptance criteria mapped in evidence/qa/secretsauce-mcp/milestone21/capability-coverage.md;
+  notes: Three committed slices; 668 tests/71 files and build pass; nine actual HTTPS scenarios pass. All20
+    UX-IA06 rows and ten acceptance criteria mapped in evidence/qa/secretsauce-mcp/milestone21/capability-coverage.md;
     exact source/report revisions in validation.json.
   started_at: '2026-10-11T23:38:05.308547+00:00'
 - id: '22'
@@ -257,8 +252,8 @@ milestones:
   commit_hash: 16426e09394e216e2699bb8258205b653cfdf507
   notes: Two slices; 668 tests/71 files, build and five isolated HTTPS browser harnesses pass; actual/reference
     visual comparison including six overlap states and 320px/200% text. evidence/qa/secretsauce-mcp/milestone22/acceptance.md
-    and evidence/ux-acceptance/secretsauce-mcp/milestone22/comparison.md. Root verified source hashes
-    and inspected desktop/narrow captures.
+    and evidence/ux-acceptance/secretsauce-mcp/milestone22/comparison.md. Root verified source hashes and inspected
+    desktop/narrow captures.
   started_at: '2026-10-13T01:47:48.051815+00:00'
 - id: '23'
   title: Manage accounts through clear People details
@@ -270,9 +265,9 @@ milestones:
   completed_at: '2026-10-13T02:56:44.270644+00:00'
   commit_hash: 7f9b64c733d5fa22b28a1d5e0e0e913596b5860f
   notes: One slice; 710 tests/72 files, build, four HTTPS browser harnesses and eight Docker recovery/downgrade
-    checks pass. All six criteria mapped in evidence/qa/secretsauce-mcp/milestone23/acceptance.md; root
-    verified source/report hashes and final matching reference visuals. Unchanged timing fixture requires
-    two-worker full suite under host load.
+    checks pass. All six criteria mapped in evidence/qa/secretsauce-mcp/milestone23/acceptance.md; root verified
+    source/report hashes and final matching reference visuals. Unchanged timing fixture requires two-worker
+    full suite under host load.
   started_at: '2026-10-13T02:16:54.276749+00:00'
 - id: '24'
   title: Use populated Settings with explicit email transport
@@ -286,8 +281,8 @@ milestones:
   commit_hash: 5ce3d32cddb7a1d2f4bb297d48f8aded471d9736
   notes: Two committed slices; 721 tests/73 files, build, seven HTTPS browser suites and eight final-image
     Docker downgrade/SIGKILL recovery checks pass. All seven acceptance criteria mapped in evidence/qa/secretsauce-mcp/milestone24/acceptance.md.
-    Root inspected seven actual/reference visual pairs, verified 210 source hashes, 45 evidence hashes
-    and current packet authority. No required work deferred.
+    Root inspected seven actual/reference visual pairs, verified 210 source hashes, 45 evidence hashes and
+    current packet authority. No required work deferred.
   started_at: '2026-10-13T02:56:44.270644+00:00'
 - id: '25'
   title: Resolve imported identities without reupload
@@ -297,8 +292,8 @@ milestones:
   - '21'
   completed_at: '2026-10-18T15:18:14.297451+00:00'
   evidence: evidence/qa/secretsauce-mcp/milestone25/acceptance.md
-  notes: M25 single slice complete; 728 tests/73 files + build + actual HTTPS visual/keyboard/narrow/200%
-    checks PASS. No implicit grants; legacy source-index absence explicit.
+  notes: M25 single slice complete; 728 tests/73 files + build + actual HTTPS visual/keyboard/narrow/200% checks
+    PASS. No implicit grants; legacy source-index absence explicit.
   started_at: '2026-10-18T15:00:58.296201+00:00'
   commit_hash: 721712567d22f0a8974381859f6c6805201727ca
 - id: '26'
@@ -320,8 +315,8 @@ milestones:
   - '22'
   completed_at: '2026-10-18T15:46:06.992752+00:00'
   evidence: evidence/ux-acceptance/secretsauce-mcp/milestone27/acceptance.md
-  notes: Two slices 46528c5/58686d0; 730 tests across 73 files, build, six browser suites and matching
-    visual checks passed.
+  notes: Two slices 46528c5/58686d0; 730 tests across 73 files, build, six browser suites and matching visual
+    checks passed.
   started_at: '2026-10-18T15:28:48.533589+00:00'
   commit_hash: 58686d04b39880df3b86f0634d5bd7d4a874a0b7
 - id: '28'
@@ -343,8 +338,8 @@ milestones:
   - '11'
   completed_at: '2026-10-18T16:19:56.784270+00:00'
   evidence: evidence/qa/secretsauce-mcp/milestone29/acceptance.md
-  notes: One vertical slice; 748 tests across 74 files, build, HTTPS browser, fault/restart/old-reader
-    tests and matching visual checks passed.
+  notes: One vertical slice; 748 tests across 74 files, build, HTTPS browser, fault/restart/old-reader tests
+    and matching visual checks passed.
   started_at: '2026-10-18T15:58:38.666173+00:00'
   commit_hash: 6d4b0187451554d96f0c700b3d5eca7389c04e15
 - id: '30'
@@ -411,9 +406,9 @@ milestones:
   - '33'
   completed_at: '2026-10-18T17:28:50.590742+00:00'
   evidence: evidence/qa/secretsauce-mcp/milestone34/acceptance.md
-  notes: 'Accepted coherent credential recovery and final integrated local validation: 757 tests across
-    75 files, build, ten browser suites, clean-host 7 groups, launcher 9 cases and 94 SIGKILL boundaries
-    passed. External real-client connection exception retained; no live deployment changed.'
+  notes: 'Accepted coherent credential recovery and final integrated local validation: 757 tests across 75
+    files, build, ten browser suites, clean-host 7 groups, launcher 9 cases and 94 SIGKILL boundaries passed.
+    External real-client connection exception retained; no live deployment changed.'
   started_at: '2026-10-18T17:05:36.166527+00:00'
   commit_hash: ff20d0e773bab4e84ef5e98db2c8d44767ab6f1e
 - id: '35'
@@ -425,9 +420,8 @@ milestones:
   - '33'
   completed_at: '2026-10-18T21:50:53.846410+00:00'
   evidence: evidence/qa/secretsauce-mcp/milestone35/acceptance.md
-  notes: 'All five criteria accepted: grouped comparison and complete sanitized proposal; actual HTTPS
-    visual, keyboard, narrow and text enlargement checks; 765 tests and build passed on frozen source.
-    No live deployment.'
+  notes: 'All five criteria accepted: grouped comparison and complete sanitized proposal; actual HTTPS visual,
+    keyboard, narrow and text enlargement checks; 765 tests and build passed on frozen source. No live deployment.'
   started_at: '2026-10-18T21:31:08.141046+00:00'
   commit_hash: 4ccf40f9d5d2e826c229aa959a74a75a0e1ab3f0
 - id: '36'
@@ -439,9 +433,9 @@ milestones:
   - '28'
   completed_at: '2026-10-18T22:09:49.538299+00:00'
   evidence: evidence/qa/secretsauce-mcp/milestone36/acceptance.md
-  notes: 'All seven criteria accepted: confirmation dialog, exact risk acknowledgments and TLS scope,
-    truthful unknown outcome inspection; actual HTTPS visual/keyboard/narrow/text200 joined flow, 772
-    tests and build passed with 13 frozen hashes verified. No live deployment.'
+  notes: 'All seven criteria accepted: confirmation dialog, exact risk acknowledgments and TLS scope, truthful
+    unknown outcome inspection; actual HTTPS visual/keyboard/narrow/text200 joined flow, 772 tests and build
+    passed with 13 frozen hashes verified. No live deployment.'
   started_at: '2026-10-18T21:50:53.846410+00:00'
   commit_hash: c7b2a1dd9c9542f922d49549907d7f62be5c29d0
 - id: '37'
@@ -453,8 +447,8 @@ milestones:
   - '36'
   completed_at: '2026-10-19T03:28:34.234572+00:00'
   evidence: evidence/qa/secretsauce-mcp/milestone37/acceptance.md
-  notes: 'All four criteria accepted: first/default New settings, keyboard and readonly/cancel behavior,
-    exact values, actual HTTPS visual/reflow checks; 772 tests and build PASS on frozen source. No deployment.'
+  notes: 'All four criteria accepted: first/default New settings, keyboard and readonly/cancel behavior, exact
+    values, actual HTTPS visual/reflow checks; 772 tests and build PASS on frozen source. No deployment.'
   started_at: '2026-10-19T03:24:08.050362+00:00'
   commit_hash: 3b2119310bfb6078762be44c3078666a73bc7c15
 - id: '38'
@@ -465,8 +459,8 @@ milestones:
   - '36'
   completed_at: '2026-10-19T03:33:42.877084+00:00'
   evidence: evidence/qa/secretsauce-mcp/milestone38/acceptance.md
-  notes: Accepted concrete exception bullets, unchanged acknowledgment controls, focused/browser visual
-    validation, 772 tests and build PASS.
+  notes: Accepted concrete exception bullets, unchanged acknowledgment controls, focused/browser visual validation,
+    772 tests and build PASS.
   started_at: '2026-10-19T03:28:34.234572+00:00'
   commit_hash: b4038b7ac169b0db1bc0ec0ae2057dc211c0f6a1
 - id: '39'
@@ -490,8 +484,8 @@ milestones:
   - '31'
   completed_at: '2026-10-19T03:49:14.495596+00:00'
   evidence: evidence/qa/secretsauce-mcp/milestone40/acceptance.md
-  notes: "Accepted neutral presence-based scanning override markers; 25 focused tests, both HTTPS browser\
-    \ flows, visual checks, final775 tests and build PASS. Fixed M37\u201340 goal complete; no deployment."
+  notes: Accepted neutral presence-based scanning override markers; 25 focused tests, both HTTPS browser flows,
+    visual checks, final775 tests and build PASS. Fixed M37–40 goal complete; no deployment.
   started_at: '2026-10-19T03:43:01.456973+00:00'
   commit_hash: 678da0aafd6e45959a990cb1e66ac69845671297
 - id: '41'
@@ -506,8 +500,8 @@ milestones:
   - '39'
   completed_at: '2026-11-17T03:38:24.773445+00:00'
   evidence: evidence/ux-acceptance/secretsauce-mcp/milestone41/acceptance.md
-  notes: 45 distinct focused tests, build and synthetic HTTPS browser PASS; inspected desktop/narrow/text
-    enlargement. Full integrated qualification remains due.
+  notes: 45 distinct focused tests, build and synthetic HTTPS browser PASS; inspected desktop/narrow/text enlargement.
+    Full integrated qualification remains due.
   started_at: '2026-11-17T03:21:55.972467+00:00'
   commit_hash: e124af917ddde61b6007823cbc2c78426f59e5b0
 - id: '42'
@@ -519,8 +513,8 @@ milestones:
   - '25'
   completed_at: '2026-11-17T03:45:50.883040+00:00'
   evidence: evidence/ux-acceptance/secretsauce-mcp/milestone42/acceptance.md
-  notes: Focused acceptance and actual browser visual evidence passed; UX7-INTEGRATED remains due before
-    goal completion.
+  notes: Focused acceptance and actual browser visual evidence passed; UX7-INTEGRATED remains due before goal
+    completion.
   started_at: '2026-11-17T03:38:24.773445+00:00'
   commit_hash: 912a2a81aa929e8939a8cb80170d5d56c8d9d896
 - id: '43'
@@ -532,8 +526,8 @@ milestones:
   - '24'
   completed_at: '2026-11-17T03:56:50.538585+00:00'
   evidence: evidence/ux-acceptance/secretsauce-mcp/milestone43/acceptance.md
-  notes: Focused acceptance and actual browser visual evidence passed; UX7-INTEGRATED remains due before
-    goal completion.
+  notes: Focused acceptance and actual browser visual evidence passed; UX7-INTEGRATED remains due before goal
+    completion.
   started_at: '2026-11-17T03:45:50.883040+00:00'
   commit_hash: 062871f6cdd5f820678baef313ca07a76e2e5fbc
 - id: '44'
@@ -546,8 +540,8 @@ milestones:
   - '30'
   completed_at: '2026-11-17T04:04:28.393683+00:00'
   evidence: evidence/ux-acceptance/secretsauce-mcp/milestone44/acceptance.md
-  notes: Focused acceptance and actual browser visual evidence passed; UX7-INTEGRATED remains due before
-    goal completion.
+  notes: Focused acceptance and actual browser visual evidence passed; UX7-INTEGRATED remains due before goal
+    completion.
   started_at: '2026-11-17T03:56:50.538585+00:00'
   commit_hash: a70c8987647c2a0c631f0ecc2d1576ae8b9b03ac
 - id: '45'
@@ -562,8 +556,8 @@ milestones:
   - '44'
   completed_at: '2026-11-19T03:51:15.662130+00:00'
   evidence: evidence/ux-acceptance/secretsauce-mcp/milestone45/acceptance.md
-  notes: Focused acceptance and actual browser visual evidence passed; UX8-INTEGRATED remains due before
-    goal completion.
+  notes: Focused acceptance and actual browser visual evidence passed; UX8-INTEGRATED remains due before goal
+    completion.
   started_at: '2026-11-19T03:42:26.490782+00:00'
   commit_hash: 586f007ce36b295f71788faf889d43d111c23bc5
 - id: '46'
@@ -576,8 +570,8 @@ milestones:
   - '43'
   completed_at: '2026-11-19T04:02:56.514072+00:00'
   evidence: evidence/ux-acceptance/secretsauce-mcp/milestone46/acceptance.md
-  notes: Focused acceptance and actual browser visual evidence passed; UX8-INTEGRATED remains due before
-    goal completion.
+  notes: Focused acceptance and actual browser visual evidence passed; UX8-INTEGRATED remains due before goal
+    completion.
   started_at: '2026-11-19T03:51:15.662130+00:00'
   commit_hash: d14741626ec65233a92933b86735714d74832f78
 - id: '47'
@@ -591,8 +585,8 @@ milestones:
   - '46'
   completed_at: '2026-11-19T06:46:47.416097+00:00'
   evidence: evidence/ux-acceptance/secretsauce-mcp/milestone47/acceptance.md
-  notes: Focused acceptance and actual browser visual evidence passed; UX9-INTEGRATED remains due before
-    goal completion.
+  notes: Focused acceptance and actual browser visual evidence passed; UX9-INTEGRATED remains due before goal
+    completion.
   started_at: '2026-11-19T06:27:38.646485+00:00'
   commit_hash: de9fdc2d6cb90b6fbcdcb8807242c19483b7c064
 - id: '48'
@@ -604,8 +598,8 @@ milestones:
   - '42'
   completed_at: '2026-11-19T07:02:40.257638+00:00'
   evidence: evidence/ux-acceptance/secretsauce-mcp/milestone48/acceptance.md
-  notes: Focused acceptance and actual browser visual evidence passed; UX9-INTEGRATED remains due before
-    goal completion.
+  notes: Focused acceptance and actual browser visual evidence passed; UX9-INTEGRATED remains due before goal
+    completion.
   started_at: '2026-11-19T06:46:47.416097+00:00'
   commit_hash: 88aaac64e64336f1c274fd1194e8943bb5c41c6b
 - id: '49'
@@ -618,8 +612,8 @@ milestones:
   - '48'
   completed_at: '2026-11-19T18:06:13.702845+00:00'
   evidence: evidence/ux-acceptance/secretsauce-mcp/milestone49/acceptance.md
-  notes: Focused acceptance and actual browser visual evidence passed; UX10-INTEGRATED remains due before
-    goal completion.
+  notes: Focused acceptance and actual browser visual evidence passed; UX10-INTEGRATED remains due before goal
+    completion.
   started_at: '2026-11-19T17:55:05.817958+00:00'
   commit_hash: 155136f5eb06363a551ff06bf3a3db532996899a
 - id: '50'
@@ -633,8 +627,8 @@ milestones:
   - '47'
   completed_at: '2026-11-19T18:18:05.627292+00:00'
   evidence: evidence/ux-acceptance/secretsauce-mcp/milestone50/acceptance.md
-  notes: Focused acceptance and actual browser visual evidence passed; UX10-INTEGRATED remains due before
-    goal completion.
+  notes: Focused acceptance and actual browser visual evidence passed; UX10-INTEGRATED remains due before goal
+    completion.
   started_at: '2026-11-19T18:06:13.702845+00:00'
   commit_hash: d782860c41c4b49fbcae27f9600951ccc9ee3c28
 - id: '51'
@@ -645,8 +639,8 @@ milestones:
   - '50'
   completed_at: '2026-11-19T18:35:21.910309+00:00'
   evidence: evidence/ux-acceptance/secretsauce-mcp/milestone51/acceptance.md
-  notes: Focused acceptance and actual browser visual evidence passed; UX10-INTEGRATED remains due before
-    goal completion.
+  notes: Focused acceptance and actual browser visual evidence passed; UX10-INTEGRATED remains due before goal
+    completion.
   started_at: '2026-11-19T18:18:05.627292+00:00'
   commit_hash: d2496150d81a37b9c49b04e2918a0ac803269dfb
 - id: '52'
@@ -660,10 +654,28 @@ milestones:
   - '51'
   completed_at: '2026-11-19T20:11:25.216004+00:00'
   evidence: evidence/ux-acceptance/secretsauce-mcp/milestone52/final/acceptance.md
-  notes: Focused acceptance and actual browser visual evidence passed; UX11-INTEGRATED remains due before
-    goal completion.
+  notes: Focused acceptance and actual browser visual evidence passed; UX11-INTEGRATED remains due before goal
+    completion.
   started_at: '2026-11-19T20:02:04.162445+00:00'
   commit_hash: f4ae3fb780ff1b1676704c40a505066661ef9f39
+- id: '53'
+  title: Find services and enter review without a stale-revision detour
+  file: delivery/milestones/secretsauce-mcp/53-service-list-and-review-entry.md
+  status: pending
+  dependencies:
+  - '52'
+  completed_at: null
+  evidence: null
+  notes: null
+- id: '54'
+  title: Change the public MCP service reference without changing managed identity
+  file: delivery/milestones/secretsauce-mcp/54-editable-public-service-reference.md
+  status: pending
+  dependencies:
+  - '53'
+  completed_at: null
+  evidence: null
+  notes: null
 delivery_goal:
   product_id: secretsauce-mcp
   status: completed
@@ -849,8 +861,8 @@ compiled_from_history:
     revision: sha256:e01485496c7d0fa914f1349967f0b2e819f4a32bc5f33001c92e8f8af22cdf7e
   accepted_risks:
   - id: SEC-DEF-001
-    summary: Trusted destination authors and best-effort response scanning are not universal credential
-      non-exfiltration controls.
+    summary: Trusted destination authors and best-effort response scanning are not universal credential non-exfiltration
+      controls.
     decision_refs:
     - D-012
     result: workflow/definition/results/security.yaml
@@ -882,8 +894,7 @@ compiled_from_history:
     definition_revalidation_satisfied: true
     delivery_planning_ready: true
     explanation: Committed definition adoption restores validated package and explicitly satisfies REC-RUN-003
-      pending architecture/security gate; immutable reconciliation remains provenance, not standalone
-      entry.
+      pending architecture/security gate; immutable reconciliation remains provenance, not standalone entry.
   reconciliation:
     result: workflow/reconciliation/REC-RUN-003/reconciliation-result.yaml
     revision: sha256:2f24571fcc26f6819689dc241fc4214a2979569e1d06a1ca9d72201659f001e2
@@ -959,8 +970,8 @@ compiled_from_history:
     revision: sha256:ba86caeb840d8fbe1b0e6f28b5a3d5099da8654fa5cb5828a4d96ed7e226faf2
   accepted_risks:
   - id: SEC-DEF-001
-    summary: Trusted destination authors and best-effort response scanning are not universal credential
-      non-exfiltration controls.
+    summary: Trusted destination authors and best-effort response scanning are not universal credential non-exfiltration
+      controls.
     decision_refs:
     - D-012
     result: workflow/definition/results/security.yaml
@@ -1067,8 +1078,8 @@ compiled_from_history:
     revision: sha256:b995316b9e860e62cd77af4b8f581acfc4a0adf67a9c83274fe8f4d41c96b911
   accepted_risks:
   - id: SEC-DEF-001
-    summary: Trusted destination authors and best-effort response scanning are not universal credential
-      non-exfiltration controls.
+    summary: Trusted destination authors and best-effort response scanning are not universal credential non-exfiltration
+      controls.
     decision_refs:
     - D-012
     result: workflow/definition/results/security.yaml
@@ -1098,8 +1109,7 @@ compiled_from_history:
     path: workflow/definition/state.yaml#next_handoff
     revision: sha256:7b304512140ce6cacef69af4c5a8903bef53967d0489aff3930c9d3275492b56
     revalidation_resolution: All six definition stages passed and committed in d0dffc6; immutable REC-RUN-008
-      historical definition/source gate fulfilled. Compile effective validated handoff, not stale raw
-      handoff.
+      historical definition/source gate fulfilled. Compile effective validated handoff, not stale raw handoff.
   reconciliation:
     result: workflow/reconciliation/REC-RUN-008/reconciliation-result.yaml
     revision: sha256:1018e24f89041935175c94108faa5339c6d09f2c4f9a15c244df5378d4177432
@@ -1192,8 +1202,8 @@ compiled_from_history:
     path: workflow/definition/state.yaml#next_handoff
     revision: sha256:4c272ab7c00811e70c74b72183de927be880e0b70e1d4f716b4ac9bf169cebdd
     revalidation_resolution: Committed selective journeys/UX revalidation and UX-DESIGN-005 approval satisfy
-      immutable REC009 historical revalidation gate; unchanged domains retain documented preservation
-      bases. Compile effective current handoff, preserve canonical result unchanged.
+      immutable REC009 historical revalidation gate; unchanged domains retain documented preservation bases.
+      Compile effective current handoff, preserve canonical result unchanged.
   reconciliation:
     result: workflow/reconciliation/REC-RUN-009/reconciliation-result.yaml
     revision: sha256:abe2992d0c00437f54a8770d353c1da255188d7aeee123046407d4c403d97185
@@ -1302,9 +1312,9 @@ compiled_from_history:
   effective_handoff:
     path: workflow/definition/state.yaml#next_handoff
     revision: sha256:854a08a1b1161e1575550d562d15a5b82bf20ffc33e68acc2b5ff463936fc98d
-    revalidation_resolution: Committed UX6 and targeted journey revalidation satisfy immutable REC010
-      historical definition gate. Compile only the current effective definition handoff; preserve canonical
-      reconciliation unchanged.
+    revalidation_resolution: Committed UX6 and targeted journey revalidation satisfy immutable REC010 historical
+      definition gate. Compile only the current effective definition handoff; preserve canonical reconciliation
+      unchanged.
   reconciliation:
     result: workflow/reconciliation/REC-RUN-010/reconciliation-result.yaml
     revision: sha256:59c2d7ba9f4b05500ceed7ae781c243fba0a7e05269dec92826709c4c08d85a3
@@ -1409,9 +1419,9 @@ compiled_from_history:
     prior_manifest: docs/milestones/status.yaml
 - product_id: secretsauce-mcp
   input_mode: PRODUCT_BUILD
-  mode_reason: "Current validated UX7 definition package is the primary new authority; compile only remaining\
-    \ scope after completed M10\u201340. Historical REC012 gate was discharged by committed definition\
-    \ handoff, not edited or consumed as a live unready CHANGE_PLAN."
+  mode_reason: Current validated UX7 definition package is the primary new authority; compile only remaining
+    scope after completed M10–40. Historical REC012 gate was discharged by committed definition handoff, not
+    edited or consumed as a live unready CHANGE_PLAN.
   definition_package:
     path: workflow/definition/definition-package.yaml
     revision: sha256:5cbab67a72563abc911de8c314ad900dd9da2614118a27fc4e3500d502ac5732
@@ -1536,9 +1546,9 @@ compiled_from_history:
     prior_manifest: docs/milestones/status.yaml
 - product_id: secretsauce-mcp
   input_mode: PRODUCT_BUILD
-  mode_reason: "Current published UX8 definition package is primary authority; compile only remaining\
-    \ REC013 delta after completed M10\u201344. Historical REC013 pending revalidation flags were discharged\
-    \ by six current definition passes; no unready standalone CHANGE_PLAN is consumed."
+  mode_reason: Current published UX8 definition package is primary authority; compile only remaining REC013
+    delta after completed M10–44. Historical REC013 pending revalidation flags were discharged by six current
+    definition passes; no unready standalone CHANGE_PLAN is consumed.
   definition_package:
     path: workflow/definition/definition-package.yaml
     revision: sha256:781ffaf28362e1189a5e7f7353bbf8d9b89f1d4928b98e1f060f7022d3cf9548
@@ -1615,16 +1625,16 @@ compiled_from_history:
     path: workflow/definition/decisions.md
   accepted_risks:
   - id: SEC-DEF-001
-    summary: Trusted destination authors and best-effort response scanning are not universal credential
-      non-exfiltration controls.
+    summary: Trusted destination authors and best-effort response scanning are not universal credential non-exfiltration
+      controls.
     decision_refs:
     - D-012
     result: workflow/definition/results/security.yaml
 - product_id: secretsauce-mcp
   input_mode: PRODUCT_BUILD
-  mode_reason: Published validated UX9 PRODUCT_BUILD package is primary; compile only remaining REC014
-    delta. Historical producer revalidation flags are discharged by current package passes, not consumed
-    as a fresh standalone CHANGE_PLAN.
+  mode_reason: Published validated UX9 PRODUCT_BUILD package is primary; compile only remaining REC014 delta.
+    Historical producer revalidation flags are discharged by current package passes, not consumed as a fresh
+    standalone CHANGE_PLAN.
   definition_package:
     path: workflow/definition/definition-package.yaml
     revision: sha256:d253b2e79042338dc726d74066f69105acf6e742d4759ab73e366b29afc4c72c
@@ -1699,9 +1709,8 @@ compiled_from_history:
       revision: sha256:434c8f00fdbf873d37558c7bbb30c60fda106fbe1c29aaf7c3ce7b79a4bcd4c5
 - product_id: secretsauce-mcp
   input_mode: PRODUCT_BUILD
-  mode_reason: Published validated UX10 package is primary; compile remaining adopted REC015 delta only.
-    Historical producer revalidation gate was discharged by the current six passed stages; not a standalone
-    CHANGE_PLAN.
+  mode_reason: Published validated UX10 package is primary; compile remaining adopted REC015 delta only. Historical
+    producer revalidation gate was discharged by the current six passed stages; not a standalone CHANGE_PLAN.
   definition_package:
     path: workflow/definition/definition-package.yaml
     revision: sha256:6ac2a12358abf60bee58ee1f5377ff7c119e06895d099b255cbac78182599b2c
@@ -1775,6 +1784,89 @@ compiled_from_history:
     architecture:
       path: product/architecture/web-console-architecture-review.md
       revision: sha256:def5cdf63b4074f914365d254752739b1eb24ca1fc0c98acba33fa96b3fae968
+- product_id: secretsauce-mcp
+  input_mode: PRODUCT_BUILD
+  mode_reason: Published ready UX11 definition package is primary PRODUCT_BUILD; REC016 is adopted provenance.
+    Its historical revalidation gate is discharged by current passed validation and explicit canonical false-impact
+    preservation bridges, not waived as standalone CHANGE_PLAN.
+  definition_package:
+    path: workflow/definition/definition-package.yaml
+    revision: sha256:7d26ddded7fdb3cad794bee6c9b646d2c19e301ea39d89d7b1e051a6bebc4a50
+    repository_commit: 681b71870514865f1ed6f89b366aca527d514e16
+  reconciliation:
+    result: workflow/reconciliation/REC-RUN-016/reconciliation-result.yaml
+    revision: sha256:29e16acb1cc7aa1b40d7b15d32125d48acb89a900050a9ed83b027ae9e38e305
+    repository_commit: a9f99d6bf2690267430c8f3541661d4997547772
+    schema_version: 1
+    reconciliation_id: REC-RUN-016
+    change_id: REC-IMPACT-016
+    role: adopted provenance; validated package governs
+    remediation_ids:
+    - REC-RM-064
+    - REC-RM-065
+    - REC-RM-066
+    - REC-RM-067
+  authoritative_artifacts:
+    prd:
+      path: docs/web-console-prd.md
+      revision: sha256:7f09e428b920b10daccb98f69c8988cc3e37d7a92483297bc0175a130fc38116
+    security_contract:
+      path: product/security/web-console-security-contract.md
+      revision: sha256:f02d7b7bdedb1108c7461f15a0d3cffeab93150ecac34fa0ff9c66b2e24c8268
+    architecture_contract:
+      path: product/architecture/web-console-state-contract.md
+      revision: sha256:1c7642c7b87bba4c7b55c8a5520eac002bd2727d8729f9eb0c51ecec31f3f9c6
+    coverage:
+      path: docs/web-console-prd-coverage.md
+      revision: sha256:46f141ab512d820f73a6ac78bc068ee7be285e3cc070219f5c20c1924cfdb915
+    journeys:
+      path: docs/web-console-prd-user-journey-audit.md
+      revision: sha256:93557c4a8de28e7b11eedd9c0fbf21f0f43e27283d8d4a491c018f914d40c16c
+    ux:
+      path: product/ux/manifest.yaml
+      revision: sha256:10342f67f66523b0688e58ef51a56058e3b7505562ecf5f72776c33f2ab15592
+      declared_revision: web-console-ux-11
+      manifest: product/ux/manifest.yaml
+    ux_experience_brief:
+      path: product/ux/experience-brief.yaml
+      revision: sha256:f2a10490409e699b35769135b190571b3d4fd01f5d5c1a6bf28ad05ea2335fa7
+    ux_overview:
+      path: product/ux/00-overview.md
+      revision: sha256:ed66982c9c737e03e994f6c06a0095b670cd395319f9a457b837c3e3c181bfa7
+    ux_information_architecture:
+      path: product/ux/01-information-architecture.md
+      revision: sha256:7de93261573c014d59b8c2fd66e51627df6a9c1a5c4c7a5d24c995d1cdab9c3c
+    ux_interaction_patterns:
+      path: product/ux/02-interaction-patterns.md
+      revision: sha256:158afa3ab5900cf45aca940b670497d52ef14e4b803af98282f2825186cae42b
+    ux_responsive_and_platform:
+      path: product/ux/03-responsive-and-platform.md
+      revision: sha256:3a8e72500dda4b830115e9b92ad193ceb9272c250c43e7c439b1129d616d04a5
+    ux_visual_system:
+      path: product/ux/04-visual-system.md
+      revision: sha256:8f1e26ebd3d7e6d70314c4959cdfbf51732353135bbadb9a609697a04a58a4f6
+    ux_accessibility:
+      path: product/ux/05-accessibility.md
+      revision: sha256:bd45cbba1e5ad7c8c210ef9c18ee88272f81a00da22dc1ba0db6242f7c9a8db8
+    ux_feature_exceptions:
+      path: product/ux/06-feature-exceptions.md
+      revision: sha256:90a697a80b380a70d83cbffc7cd1409fe381c2051a877da901c7e4b3c2a30b48
+    ux_acceptance_checklist:
+      path: product/ux/07-acceptance-checklist.md
+      revision: sha256:98df01c67ed06367217f048a86141a84db4fd007756f03ea164cb1d6cc9eb167
+    security:
+      path: product/security/web-console-security-review.md
+      revision: sha256:b4e024c0c5abed4cd2c3dca53bfe71c109c2a97451403fb90ba3c521f344c8b7
+    architecture:
+      path: product/architecture/web-console-architecture-review.md
+      revision: sha256:def5cdf63b4074f914365d254752739b1eb24ca1fc0c98acba33fa96b3fae968
+  accepted_risks:
+  - id: SEC-DEF-001
+    summary: Trusted destination authors and best-effort response scanning are not universal credential non-exfiltration
+      controls.
+    decision_refs:
+    - D-012
+    result: workflow/definition/results/security.yaml
 delivery_goal_history:
 - product_id: secretsauce-mcp
   status: completed
@@ -1825,18 +1917,17 @@ delivery_goal_history:
   current_milestone: null
   governing_plan: delivery/plans/secretsauce-mcp/milestone_17_plan_01.md
   blockers: []
-  resume_point: "Fixed M10\u2013M17 goal completed with committed implementation and local acceptance.\
-    \ Actual ChatGPT/Codex connection/reconnect remains NOT RUN under the recorded user exception; inherited\
-    \ dependency advisories remain separate follow-up."
+  resume_point: Fixed M10–M17 goal completed with committed implementation and local acceptance. Actual ChatGPT/Codex
+    connection/reconnect remains NOT RUN under the recorded user exception; inherited dependency advisories
+    remain separate follow-up.
   prerequisite_observations:
   - evidence_id: PRE-016
     checked_at: 2026-10-10 18:03:04.154000+00:00
     client_version: 29.9.0
     server_version: 29.8.1
     compose_version: 5.6.0
-    result: Actual permitted Docker/nginx runtime validation passed12groups on isolated loopback-only
-      synthetic mounts; containers and temporary mounts cleaned. M16/17 own remaining backup/recovery
-      drills.
+    result: Actual permitted Docker/nginx runtime validation passed12groups on isolated loopback-only synthetic
+      mounts; containers and temporary mounts cleaned. M16/17 own remaining backup/recovery drills.
     evidence: evidence/platform/secretsauce-mcp/milestone15/docker-report.json
   resolved_blockers:
   - type: EXTERNAL_OR_USER_ACTION
@@ -1846,11 +1937,10 @@ delivery_goal_history:
     slice: 04 (external acceptance only)
     requirement: Authorized tester and reachable isolated HTTPS synthetic service; real consent/discovery/reference/request/denial/revoke/normal
       restart/reconnect on BOTH ChatGPT and Codex.
-    expected_artifact: evidence/platform/secretsauce-mcp/milestone14/ dated authorized sanitized client
-      records
-    required_action: Run docs/m14-real-client-verification.md on an already authorized isolated endpoint
-      with synthetic identities/services. Provide both dated records and safe screenshots/results; never
-      share credentials, tokens, cookies, opaque references or raw bodies.
+    expected_artifact: evidence/platform/secretsauce-mcp/milestone14/ dated authorized sanitized client records
+    required_action: Run docs/m14-real-client-verification.md on an already authorized isolated endpoint with
+      synthetic identities/services. Provide both dated records and safe screenshots/results; never share credentials,
+      tokens, cookies, opaque references or raw bodies.
     unblock_condition: Both actual authorized platform records cover PRE-015 against the delivered implementation
       revision and pass targeted acceptance review.
     implementation_commit: 1eb00d117664858d81252543b46c53cb8b46638d
@@ -1920,9 +2010,9 @@ delivery_goal_history:
   current_milestone: null
   governing_plan: delivery/plans/secretsauce-mcp/milestone_21_plan_01.md
   blockers: []
-  resume_point: "GOAL_COMPLETE: fixed M18\u2013M21 scope delivered in nine implementation slices with\
-    \ committed local acceptance. No required work remains. Running user instance was not redeployed;\
-    \ actual external ChatGPT/Codex validation retains the recorded exception."
+  resume_point: 'GOAL_COMPLETE: fixed M18–M21 scope delivered in nine implementation slices with committed
+    local acceptance. No required work remains. Running user instance was not redeployed; actual external ChatGPT/Codex
+    validation retains the recorded exception.'
   completed_at: '2026-10-12T00:03:46.337315+00:00'
 - product_id: secretsauce-mcp
   status: completed
@@ -1982,10 +2072,10 @@ delivery_goal_history:
   current_milestone: null
   governing_plan: delivery/plans/secretsauce-mcp/milestone_24_plan_01.md
   blockers: []
-  resume_point: "GOAL_COMPLETE: fixed M22\u2013M24 scope delivered in five implementation slices with\
-    \ committed acceptance. All required local browser/transport/Docker/recovery checks passed; actual\
-    \ external ChatGPT/Codex validation retains the existing recorded exception. Running local review\
-    \ instance remains on its previous version; deployment is separate."
+  resume_point: 'GOAL_COMPLETE: fixed M22–M24 scope delivered in five implementation slices with committed
+    acceptance. All required local browser/transport/Docker/recovery checks passed; actual external ChatGPT/Codex
+    validation retains the existing recorded exception. Running local review instance remains on its previous
+    version; deployment is separate.'
   completed_at: '2026-10-13T03:53:48.528155+00:00'
 - product_id: secretsauce-mcp
   status: completed
@@ -2354,7 +2444,7 @@ delivery_goal_history:
   current_milestone: null
   governing_plan: delivery/plans/secretsauce-mcp/milestone_44_plan_01.md
   blockers: []
-  resume_point: "All fixed M41\u201344 outcomes and UX7-INTEGRATED qualification accepted. No deployment."
+  resume_point: All fixed M41–44 outcomes and UX7-INTEGRATED qualification accepted. No deployment.
   started_at: '2026-11-17T03:21:55.972439+00:00'
   completed_at: '2026-11-17T04:12:08.708278+00:00'
   evidence: evidence/qa/secretsauce-mcp/ux7-integrated/acceptance.md
@@ -2461,7 +2551,7 @@ delivery_goal_history:
   current_milestone: null
   governing_plan: delivery/plans/secretsauce-mcp/milestone_46_plan_01.md
   blockers: []
-  resume_point: "All fixed M45\u201346 outcomes and UX8-INTEGRATED qualification accepted. No deployment."
+  resume_point: All fixed M45–46 outcomes and UX8-INTEGRATED qualification accepted. No deployment.
   started_at: '2026-11-19T03:42:26.490782+00:00'
   completed_at: '2026-11-19T04:05:46.080881+00:00'
   evidence: evidence/qa/secretsauce-mcp/ux8-integrated/acceptance.md
@@ -2572,7 +2662,7 @@ delivery_goal_history:
   current_milestone: null
   governing_plan: delivery/plans/secretsauce-mcp/milestone_48_plan_01.md
   blockers: []
-  resume_point: "All fixed M47\u2013M48 outcomes and UX9-INTEGRATED qualification accepted. No deployment."
+  resume_point: All fixed M47–M48 outcomes and UX9-INTEGRATED qualification accepted. No deployment.
   started_at: '2026-11-19T06:27:38.646485+00:00'
   completed_at: '2026-11-19T07:09:42.822203+00:00'
   evidence: evidence/qa/secretsauce-mcp/ux9-integrated/acceptance.md
@@ -2690,7 +2780,7 @@ delivery_goal_history:
   current_milestone: null
   governing_plan: delivery/plans/secretsauce-mcp/milestone_51_plan_01.md
   blockers: []
-  resume_point: "All fixed M49\u2013M51 outcomes and UX10-INTEGRATED qualification accepted. No deployment."
+  resume_point: All fixed M49–M51 outcomes and UX10-INTEGRATED qualification accepted. No deployment.
   started_at: '2026-11-19T17:55:05.817958+00:00'
   completed_at: '2026-11-19T18:45:45.480265+00:00'
   evidence: evidence/qa/secretsauce-mcp/ux10-integrated/acceptance.md
@@ -2716,8 +2806,8 @@ regression_checkpoints:
     execution: Frozen source, no concurrent browser/Docker workloads during full suite. Run browser checks
       separately with synthetic isolated HTTPS fixtures.
     evidence: evidence/qa/secretsauce-mcp/ux7-integrated/acceptance.md
-    escalation: First confirmed out-of-area regression expands focused scope; second distinct regression
-      or further spread requires full suite after focused repair.
+    escalation: First confirmed out-of-area regression expands focused scope; second distinct regression or
+      further spread requires full suite after focused repair.
     conditional: Transport changes require actual self-signed HTTPS test; recovery/launcher changes require
       existing Docker restart/recovery gates. No new external LLM dependency for presentation-only scope.
     completed_at: '2026-11-17T04:12:08.708278+00:00'
@@ -2730,8 +2820,8 @@ regression_checkpoints:
     - '45'
     - '46'
     status: passed
-    due: After both outcomes and before deployment/final packet acceptance; bounded stop leaves broader
-      qualification pending.
+    due: After both outcomes and before deployment/final packet acceptance; bounded stop leaves broader qualification
+      pending.
     categories:
     - full unit/integration suite and build
     - joined service/Settings edit-state and Activity search-detail-export browser qualification
@@ -2743,8 +2833,8 @@ regression_checkpoints:
     execution: Frozen sources; no concurrent browser/Docker workloads during full suite. Synthetic isolated
       HTTPS browser checks separately.
     evidence: evidence/qa/secretsauce-mcp/ux8-integrated/acceptance.md
-    escalation: First confirmed unexpected out-of-area regression expands focused scope; second distinct
-      regression or spread requires full regression after focused repairs.
+    escalation: First confirmed unexpected out-of-area regression expands focused scope; second distinct regression
+      or spread requires full regression after focused repairs.
     conditional: Actual self-signed HTTPS if transport changes; existing Docker recovery gates if recovery/launcher
       changes; no new external LLM dependency.
     source_commit: d14741626ec65233a92933b86735714d74832f78
@@ -2755,8 +2845,7 @@ regression_checkpoints:
     - '47'
     - '48'
     status: passed
-    due: After both outcomes and before deployment/final acceptance; bounded stop leaves this obligation
-      pending.
+    due: After both outcomes and before deployment/final acceptance; bounded stop leaves this obligation pending.
     categories:
     - full unit/integration suite and build
     - joined service edit/discard/import/review browser journey
@@ -2765,12 +2854,12 @@ regression_checkpoints:
     commands:
     - npm test -- --maxWorkers=2
     - npm run build
-    execution: Frozen source, no concurrent browser/Docker workload during full suite; isolated synthetic
-      HTTPS browser checks separately.
+    execution: Frozen source, no concurrent browser/Docker workload during full suite; isolated synthetic HTTPS
+      browser checks separately.
     escalation: First confirmed out-of-area regression expands focused checks; second distinct regression/spread
       requires full suite after repairs.
-    conditional: Changed transport requires actual self-signed HTTPS; changed recovery/launcher requires
-      existing Docker/recovery gates.
+    conditional: Changed transport requires actual self-signed HTTPS; changed recovery/launcher requires existing
+      Docker/recovery gates.
     evidence: evidence/qa/secretsauce-mcp/ux9-integrated/acceptance.md
     source_commit: 88aaac64e64336f1c274fd1194e8943bb5c41c6b
     completed_at: '2026-11-19T07:09:42.822203+00:00'
@@ -2781,8 +2870,7 @@ regression_checkpoints:
     - '50'
     - '51'
     status: passed
-    due: "After M49\u201351 and before deployment/final acceptance; explicit bounded stops retain this\
-      \ obligation."
+    due: After M49–51 and before deployment/final acceptance; explicit bounded stops retain this obligation.
     categories:
     - full unit/integration suite and build
     - joined sign-in/Settings/service removal/review/Archived deletion browser journey
@@ -2792,10 +2880,10 @@ regression_checkpoints:
     commands:
     - npm test -- --maxWorkers=2
     - npm run build
-    execution: Clean frozen tracked source; no concurrent browser/Docker during full suite. Synthetic
-      disposable HTTPS qualification separately.
-    escalation: First confirmed unexpected out-of-area regression expands focused scope; second distinct
-      regression/spread triggers full suite after focused repairs.
+    execution: Clean frozen tracked source; no concurrent browser/Docker during full suite. Synthetic disposable
+      HTTPS qualification separately.
+    escalation: First confirmed unexpected out-of-area regression expands focused scope; second distinct regression/spread
+      triggers full suite after focused repairs.
     conditional: Changed transport requires actual self-signed HTTPS; changed recovery/launcher uses mandatory
       existing recovery/Docker gates.
     evidence: evidence/qa/secretsauce-mcp/ux10-integrated/acceptance.md
@@ -2815,8 +2903,8 @@ regression_checkpoints:
     commands:
     - npm test -- --maxWorkers=2
     - npm run build
-    execution: Clean frozen tracked source; no concurrent browser/Docker during full suite. Disposable
-      synthetic HTTPS browser separately.
+    execution: Clean frozen tracked source; no concurrent browser/Docker during full suite. Disposable synthetic
+      HTTPS browser separately.
     conditional: Actual self-signed HTTPS if transport changes; existing old-reader/recovery/backup/restart/Docker
       gates only if those boundaries change. No state format assumed for UI.
     escalation: First unexpected out-of-area regression expands focused checks; second distinct regression
@@ -2825,3 +2913,27 @@ regression_checkpoints:
     source_commit: f4ae3fb780ff1b1676704c40a505066661ef9f39
     result: evidence/qa/secretsauce-mcp/ux11-integrated/regression-result.json
     completed_at: '2026-11-19T20:13:57.757218+00:00'
+  UX12-INTEGRATED:
+    covered_milestones:
+    - '53'
+    - '54'
+    status: pending
+    due: After M53/M54 and before final acceptance or deployment
+    categories:
+    - full unit/integration suite and build
+    - joined Services safe-review and public-reference browser/MCP qualification
+    - authorization/namespace/revocation/uncertainty and identity preservation
+    - changed format actual prior-reader, restart, owned backup and explicit restore/Docker gates
+    - matching UX12 desktop/narrow/enlarged-text keyboard visual comparison
+    commands:
+    - npm test -- --maxWorkers=2
+    execution: Freeze clean tracked candidate; npm test pretest satisfies the build gate. No concurrent Docker/browser
+      during full suite. Reuse current final-source browser evidence from the existing source-in-Playwright
+      harness. Build one exact application image after the stable suite and reuse it for mandatory affected
+      recovery/launcher drills and relevant backup/restore qualification; retain changed-boundary actual prior-reader
+      checks.
+    conditional: Actual self-signed HTTPS if downstream transport changes; existing recovery/launcher gates
+      at all affected storage/recovery boundaries, with no waiver of mandatory project gates.
+    escalation: First confirmed out-of-area regression expands focused checks; second distinct regression or
+      spread requires full suite after repairs.
+    evidence: null

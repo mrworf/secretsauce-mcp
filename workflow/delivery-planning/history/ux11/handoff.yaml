@@ -1,0 +1,84 @@
+schema_version: 1
+workflow: delivery-planning
+product_id: secretsauce-mcp
+status: ready_for_implementation
+source:
+  mode: PRODUCT_BUILD
+  type: definition-package
+  path: workflow/definition/definition-package.yaml
+  revision: sha256:7d26ddded7fdb3cad794bee6c9b646d2c19e301ea39d89d7b1e051a6bebc4a50
+  repository_commit: 681b71870514865f1ed6f89b366aca527d514e16
+planning:
+  parent_commit: f6443a54aee249c51f27ed33d16b450531b1d750
+  repository_commit: 4b96ae4cd758b94bf4f2700752620e0d57352e2f
+milestones:
+  manifest: delivery/milestones/secretsauce-mcp/status.yaml
+  packet_revision: sha256:1b2a5216cfb6df80d1e432309102fd759447f91545c5b2c46c43753a11085b9d
+  active_milestones:
+  - '52'
+readiness:
+  status: READY
+  prerequisite_manifest: delivery/readiness/secretsauce-mcp/prerequisite-manifest.md
+  result: delivery/readiness/secretsauce-mcp/readiness-report.md
+  adapter: workflow/delivery-planning/results/readiness.yaml
+  packet_revision: sha256:1b2a5216cfb6df80d1e432309102fd759447f91545c5b2c46c43753a11085b9d
+m0:
+  present: false
+  milestone: null
+  rationale: Current repository and synthetic harness prerequisites suffice.
+external_dependencies: []
+delivery_constraints:
+  granularity: coherent_integrated_outcomes
+  slice_boundary: one_independently_verifiable_behavior
+  split_trigger: distinct_substantial_outcome_or_material_risk_boundary
+  validation: focused_during_iteration_broader_at_required_checkpoint
+  contract:
+  - Before production edits, minimal-slice-delivery records each observable behavior, exclusions, focused positive/negative
+    evidence and commit boundary; keep necessary layers and related same-pattern support together.
+  - Revise remaining slice plans before absorbing another behavior; tests and fixes proving the same behavior remain
+    together. Complete and commit verified outcomes without relabeling remaining acceptance.
+  - Slice refinements stay within milestone authority; scope/dependency changes return to planning and preserve
+    completed history.
+  - Run focused checks during iteration and broader regression at its planned stable boundary; repeat passing checks
+    only for relevant changes, failures, unresolved risks or required gates.
+  - Demonstrate integrated behavior at the earliest dependency-safe checkpoint. Synthetic fixtures do not prove
+    real external interoperability.
+  - First confirmed out-of-area regression expands focused scope; second distinct regression or further spread requires
+    full regression after focused repair.
+  regression_plan:
+    source: delivery/milestones/secretsauce-mcp/status.yaml#regression_checkpoints
+    checkpoints:
+      UX11-INTEGRATED:
+        covered_milestones:
+        - '52'
+        status: pending
+        due: After M52 and before deployment/final acceptance; bounded stops retain this obligation.
+        categories:
+        - full unit/integration suite and build
+        - joined initial/current Access and preserved complete-draft navigation browser qualification
+        - role/CSRF/eligibility/stale/unknown and current-grant preservation
+        - matching UX11 width/dialog/keyboard/narrow/enlarged-text visual comparison
+        commands:
+        - npm test -- --maxWorkers=2
+        - npm run build
+        execution: Clean frozen tracked source; no concurrent browser/Docker during full suite. Disposable synthetic
+          HTTPS browser separately.
+        conditional: Actual self-signed HTTPS if transport changes; existing old-reader/recovery/backup/restart/Docker
+          gates only if those boundaries change. No state format assumed for UI.
+        escalation: First unexpected out-of-area regression expands focused checks; second distinct regression or
+          spread triggers full regression after repairs.
+        evidence: null
+visual_acceptance:
+  approved_reference: product/ux/manifest.yaml
+  revision: web-console-ux-11
+  required: Compare actual browser screenshots at matching states/viewports against approved references and exact
+    UX11 delta; preserve unaffected appearance and behavior. Functional tests alone are insufficient.
+  requirements:
+  - UX-V05
+  - UX-C42
+  - "UX-C90\u201393"
+next:
+  workflow: implementation
+  recommended_skill: milestone-delivery-orchestrator
+  start_milestone: '45'
+implementation_started: false

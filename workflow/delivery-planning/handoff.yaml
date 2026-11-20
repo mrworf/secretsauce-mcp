@@ -6,22 +6,24 @@ source:
   mode: PRODUCT_BUILD
   type: definition-package
   path: workflow/definition/definition-package.yaml
-  revision: sha256:7d26ddded7fdb3cad794bee6c9b646d2c19e301ea39d89d7b1e051a6bebc4a50
-  repository_commit: 681b71870514865f1ed6f89b366aca527d514e16
+  revision: sha256:c3efb4da84917fb92ae80a70566a9f6cf383363291c47ff87c67ca1c2b81daeb
+  repository_commit: 428bae3dfb8e3881afda540a70f9d6a38a83b960
+  reconciliation: workflow/reconciliation/REC-RUN-017/reconciliation-result.yaml
 planning:
-  parent_commit: f6443a54aee249c51f27ed33d16b450531b1d750
-  repository_commit: 4b96ae4cd758b94bf4f2700752620e0d57352e2f
+  parent_commit: 077b71bd56f595b75ed0f667ed60d137a2281240
+  repository_commit: null
 milestones:
   manifest: delivery/milestones/secretsauce-mcp/status.yaml
-  packet_revision: sha256:1b2a5216cfb6df80d1e432309102fd759447f91545c5b2c46c43753a11085b9d
+  packet_revision: sha256:54e2034d8ee283a17bedfbdbae760c7426163597bfe60a47f3b4eb6a7ef01e41
   active_milestones:
-  - '52'
+  - '53'
+  - '54'
 readiness:
   status: READY
   prerequisite_manifest: delivery/readiness/secretsauce-mcp/prerequisite-manifest.md
   result: delivery/readiness/secretsauce-mcp/readiness-report.md
   adapter: workflow/delivery-planning/results/readiness.yaml
-  packet_revision: sha256:1b2a5216cfb6df80d1e432309102fd759447f91545c5b2c46c43753a11085b9d
+  packet_revision: sha256:54e2034d8ee283a17bedfbdbae760c7426163597bfe60a47f3b4eb6a7ef01e41
 m0:
   present: false
   milestone: null
@@ -48,35 +50,39 @@ delivery_constraints:
   regression_plan:
     source: delivery/milestones/secretsauce-mcp/status.yaml#regression_checkpoints
     checkpoints:
-      UX11-INTEGRATED:
+      UX12-INTEGRATED:
         covered_milestones:
-        - '52'
+        - '53'
+        - '54'
         status: pending
-        due: After M52 and before deployment/final acceptance; bounded stops retain this obligation.
+        due: After M53/M54 and before final acceptance or deployment
         categories:
         - full unit/integration suite and build
-        - joined initial/current Access and preserved complete-draft navigation browser qualification
-        - role/CSRF/eligibility/stale/unknown and current-grant preservation
-        - matching UX11 width/dialog/keyboard/narrow/enlarged-text visual comparison
+        - joined Services safe-review and public-reference browser/MCP qualification
+        - authorization/namespace/revocation/uncertainty and identity preservation
+        - changed format actual prior-reader, restart, owned backup and explicit restore/Docker gates
+        - matching UX12 desktop/narrow/enlarged-text keyboard visual comparison
         commands:
         - npm test -- --maxWorkers=2
-        - npm run build
-        execution: Clean frozen tracked source; no concurrent browser/Docker during full suite. Disposable synthetic
-          HTTPS browser separately.
-        conditional: Actual self-signed HTTPS if transport changes; existing old-reader/recovery/backup/restart/Docker
-          gates only if those boundaries change. No state format assumed for UI.
-        escalation: First unexpected out-of-area regression expands focused checks; second distinct regression or
-          spread triggers full regression after repairs.
+        execution: Freeze clean tracked candidate; npm test pretest satisfies the build gate. No concurrent Docker/browser
+          during full suite. Reuse current final-source browser evidence from the existing source-in-Playwright
+          harness. Build one exact application image after the stable suite and reuse it for mandatory affected
+          recovery/launcher drills and relevant backup/restore qualification; retain changed-boundary actual prior-reader
+          checks.
+        conditional: Actual self-signed HTTPS if downstream transport changes; existing recovery/launcher gates
+          at all affected storage/recovery boundaries, with no waiver of mandatory project gates.
+        escalation: First confirmed out-of-area regression expands focused checks; second distinct regression or
+          spread requires full suite after repairs.
         evidence: null
 visual_acceptance:
   approved_reference: product/ux/manifest.yaml
-  revision: web-console-ux-11
+  revision: web-console-ux-12
   required: Compare actual browser screenshots at matching states/viewports against approved references and exact
-    UX11 delta; preserve unaffected appearance and behavior. Functional tests alone are insufficient.
+    UX12 delta; preserve unaffected appearance and behavior. Functional tests alone are insufficient.
   requirements:
   - UX-V05
   - UX-C42
-  - "UX-C90\u201393"
+  - "UX-C94\u201397"
 next:
   workflow: implementation
   recommended_skill: milestone-delivery-orchestrator

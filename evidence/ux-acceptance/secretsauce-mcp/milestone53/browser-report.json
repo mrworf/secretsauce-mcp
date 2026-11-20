@@ -1,0 +1,16 @@
+{
+  "result": "PASS",
+  "checks": [
+    "Compact ultrawide/desktop/narrow sign-in, separate replacement task with blank proofs, ordinary recovery-code login succeeds; generic password helper absent.",
+    "Overview/footer safe single refresh; precise missing value; local edits during refresh, inspection and review retained; real competing proposal and unknown save not retried.",
+    "Mixed Active/Inactive/Archived shared columns match; desktop390/320200 readable reflow and editor focus/footer checks.",
+    "A competing saved proposal after save is rejected before displaying inspection; named credential blocker uses the proposed credential identity."
+  ],
+  "source_hashes": {
+    "src/consoleServicePage.ts": "5dc610e15260367356904e2f45277a4dd2433209da136eaedc0953c6ceccca8e",
+    "src/consoleServices.ts": "17b13f930332e456aadc3278209f0cc6e9164d25d16d4e9d1d2909f1a07e6ee4",
+    "src/consolePresentation.ts": "a78342073b5cfe5e8919563c190d9ec3ff28f6b9f6e910e3fde1009891ee7722",
+    "scripts/lib/verify-review-entry.mjs": "dbfdf547e690f9b0392c6b642aa09b077013f9754390887851e4b12cb914fcf8"
+  },
+  "report_note": "Harness closeout now omits unrelated legacy scenario claims; same executed assertions/product and screenshots retained."
+}

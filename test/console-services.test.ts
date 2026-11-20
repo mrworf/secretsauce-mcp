@@ -15,7 +15,7 @@ function apply(f: ReturnType<typeof managedFixture>) { const r = f.manager.revie
 describe('managed service drafts and scoped publication', () => {
  it('exposes a proposal baseline stable across independent state but fences proposal and incarnation ABA', () => {
   const f=managedFixture();try {
-   save(f);const baseline=f.manager.detail(f.session,'new').proposalBaseline;expect(baseline).toBeTruthy();
+   save(f);const baseline=f.manager.detail(f.session,'new').proposalBaseline;expect(baseline).toBeTruthy();expect(f.manager.inspect(f.session,{id:'new'}).proposalBaseline).toBe(baseline);expect(f.manager.review(f.session,{id:'new'}).proposalBaseline).toBe(baseline);
    f.manager.state.revision++;f.manager.state.services.new!.values.extra={value:'synthetic',version:1,changed:Date.now()};
    expect(f.manager.detail(f.session,'new').proposalBaseline).toBe(baseline);
    const original=structuredClone(f.manager.state.services.new!);

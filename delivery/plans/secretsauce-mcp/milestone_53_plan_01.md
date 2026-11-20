@@ -16,8 +16,8 @@ Source changes limited to console service detail/browser presentation and focuse
 
 | Slice | Outcome | Dependencies | Status | Commit |
 |---|---|---|---|---|
-| 01 | Proven safe review entry with actual blockers and conflict preservation | existing M52 | pending | |
-| 02 | Aligned lifecycle rows and joined graphical qualification | 01 | pending | |
+| 01 | Proven safe review entry with actual blockers and conflict preservation | existing M52 | completed | b72e318 |
+| 02 | Aligned lifecycle rows and joined graphical qualification | 01 | completed | this commit |
 
 ### Slice01 contract
 
@@ -36,3 +36,7 @@ No new format, auth, grants, routing, credential timing or automatic mutation re
 Plan persisted before production edits. Implementation/acceptance pending.
 
 Slice01 implementation: detail/save return proposal baseline; browser safely retries only explicit409 after unchanged proof, retains newer local edits through asynchronous inspect/review. Actual Apply/resave ABA investigation required advancing the existing durable proposal floor on Apply; no new format. 29 focused model/HTTP/navigation tests passed with pretest build after unchanged loopback-permission rerun; original EPERM was environment-only. Browser concurrent-read and final graphics qualification proceeds in slice02. No unrelated regressions observed.
+
+Slice02 also includes a narrow slice01 corrective: inspect/review responses expose their exact non-secret proposal baseline, compared to the successful save before displaying review. A different tab replacing the proposal after save cannot be presented as the local proposal. No writable API field was added; ordinary authorization remains unchanged. Focused29tests/build passed again after this correction; concurrent replacement is exercised by the joined browser.
+
+Final focused19 model tests (including detail/inspect/review baseline parity) and pretest build PASS; prior unchanged10 HTTP/navigation tests remain current. Final Docker browser scenario PASS. Inspected actual desktop/390/320200 against approved service visual family: aligned tracks; final narrow actions stack readable whole words; named missing-value review; footer focus unobscured. Initial harness failures were expected-label/count mismatches, repaired without weakened behavior. No product out-of-area regression. Outer UX12-INTEGRATED remains pending after M54. See milestone53 acceptance.md.

@@ -170,7 +170,7 @@ export class ConsoleServices {
     const {id}=this.parse(reviewSchema,input),service=own(this.state.services,id);
     if(!service?.draft)throw new ServiceManagementError('Save a service draft before review.');
     if(service.draft.settings&&this.store.authorize(session,'own').role!=='Owner')throw Error('Forbidden.');
-    return {scope:{services:[id],settings:service.draft.settings?['instance.name']:[]},base:this.state.revision,current:service.applied??null,proposed:service.draft.content,settings:service.draft.settings,grants:service.applied?[]:service.draft.content.access?.users??[],exceptions:exceptions(service.draft.content),issues:this.configurationIssues(id),removedCredentials:removalEffects(service),inspection:true};
+    return {proposalBaseline:this.proposalBaseline(id),scope:{services:[id],settings:service.draft.settings?['instance.name']:[]},base:this.state.revision,current:service.applied??null,proposed:service.draft.content,settings:service.draft.settings,grants:service.applied?[]:service.draft.content.access?.users??[],exceptions:exceptions(service.draft.content),issues:this.configurationIssues(id),removedCredentials:removalEffects(service),inspection:true};
   }
   private stale(session: ConsoleSession, id: string): ServiceManagementError {
     return new ServiceManagementError('Stale review or dependencies. Compare current and proposed configuration, reload, save and review again.', own(this.state.services, id) ? this.detail(session, id) : { revision: this.state.revision });
@@ -205,7 +205,7 @@ export class ConsoleServices {
     if(c.s.recoveryReviewRequired&&c.actor.role!=='Owner')throw new ServiceManagementError('Only an Owner may review a recovered service before its first reactivation.');
     const risks = exceptions(c.draft.content);if(c.s.recoveryReviewRequired)risks.push('Recovered service: reviewed current credentials, policy and access'); const review = { session:session.id, removedCredentials:removalEffects(c.s), id: randomUUID(), actor: c.actor.id, fingerprint: this.fingerprint(id), candidate: c.draft.content, base: this.state.revision, draftGeneration: c.draft.generation, exceptions: risks, ...(c.draft.settings ? { settings: c.draft.settings } : {}) };
     const operation = this.store.commit(c.actor.id, 'service.review', id, state => { state.managed!.services[id]!.review = review; });
-    return { operation, review: review.id, scope: { services: [id], settings: c.draft.settings ? ['instance.name'] : [] }, base: review.base,
+    return { proposalBaseline:this.proposalBaseline(id), operation, review: review.id, scope: { services: [id], settings: c.draft.settings ? ['instance.name'] : [] }, base: review.base,
       removedCredentials:review.removedCredentials, current: c.s.applied ?? null, proposed: review.candidate, settings: review.settings, grants: c.s.applied ? [] : c.draft.content.access?.users ?? [], exceptions: risks,
       disruption: 'Affected service references are invalidated. Already-dispatched work may complete with admitted protection. Trusted administrators control destinations; response scanning is best-effort.' };
   }

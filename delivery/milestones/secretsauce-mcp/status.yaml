@@ -678,13 +678,15 @@ milestones:
 - id: '54'
   title: Change the public MCP service reference without changing managed identity
   file: delivery/milestones/secretsauce-mcp/54-editable-public-service-reference.md
-  status: in_progress
+  status: completed
   dependencies:
   - '53'
-  completed_at: null
-  evidence: null
-  notes: null
+  completed_at: '2026-11-20T17:44:47.314885+00:00'
+  evidence: evidence/ux-acceptance/secretsauce-mcp/milestone54/acceptance.md
+  notes: Focused acceptance and actual browser visual evidence passed; UX12-INTEGRATED remains due before
+    goal completion.
   started_at: '2026-11-20T17:20:41.992427+00:00'
+  commit_hash: ae167fedeae654b0d87d2435d636356583f06ab2
 delivery_goal:
   product_id: secretsauce-mcp
   status: in_progress
@@ -802,10 +804,10 @@ delivery_goal:
   - '53'
   - '54'
   execution: autonomous
-  current_milestone: '54'
+  current_milestone: null
   governing_plan: delivery/plans/secretsauce-mcp/milestone_54_plan_01.md
   blockers: []
-  resume_point: M54 governing plan before implementation
+  resume_point: UX12-INTEGRATED final qualification due
   started_at: '2026-11-20T17:13:47.810229+00:00'
 compiled_from_history:
 - product_id: secretsauce-mcp

@@ -13,6 +13,31 @@ import { managedFixture } from './consoleManagementFixtures.js';
 function save(f: ReturnType<typeof managedFixture>, service: unknown = draft(), settings?: unknown) { return f.manager.save(f.session, { id: 'new', base: f.manager.state.revision, generation: f.manager.state.services.new?.draft?.generation ?? f.manager.state.services.new?.proposalGeneration ?? 0, service, ...(settings ? { settings } : {}) }); }
 function apply(f: ReturnType<typeof managedFixture>) { const r = f.manager.review(f.session, { id: 'new' }); return f.manager.apply(f.session, { id: 'new', review: r.review, acknowledgments: r.exceptions }); }
 describe('managed service drafts and scoped publication', () => {
+ it('exposes a proposal baseline stable across independent state but fences proposal and incarnation ABA', () => {
+  const f=managedFixture();try {
+   save(f);const baseline=f.manager.detail(f.session,'new').proposalBaseline;expect(baseline).toBeTruthy();
+   f.manager.state.revision++;f.manager.state.services.new!.values.extra={value:'synthetic',version:1,changed:Date.now()};
+   expect(f.manager.detail(f.session,'new').proposalBaseline).toBe(baseline);
+   const original=structuredClone(f.manager.state.services.new!);
+   f.manager.state.services.new!.draft!.content.description='Competing change';
+   expect(f.manager.detail(f.session,'new').proposalBaseline).not.toBe(baseline);
+   f.manager.state.services.new=structuredClone(original);f.manager.state.services.new!.draft!.removedCredentials=[{id:'extra',incarnation:'different'}];
+   expect(f.manager.detail(f.session,'new').proposalBaseline).not.toBe(baseline);
+   f.manager.state.services.new=structuredClone(original);f.manager.state.services.new!.incarnation='replacement';
+   expect(f.manager.detail(f.session,'new').proposalBaseline).not.toBe(baseline);
+   f.manager.state.services.new=structuredClone(original);delete f.manager.state.services.new!.draft;
+   expect(f.manager.detail(f.session,'new').proposalBaseline).not.toBe(baseline);
+   f.manager.state.services.new=original;save(f);apply(f);
+   const applied=f.manager.detail(f.session,'new').proposalBaseline;
+   f.manager.state.services.new!.assignments=['current'];f.manager.state.services.new!.applied!.access={users:['current']};
+   expect(f.manager.detail(f.session,'new').proposalBaseline).toBe(applied);
+   f.manager.state.services.new!.lifecycle='Disabled';expect(f.manager.detail(f.session,'new').proposalBaseline).not.toBe(applied);
+  }finally{f.close();}
+ });
+
+ it('fences identical proposals recreated after Apply through the durable generation floor',()=>{
+  const f=managedFixture();try{save(f);apply(f);save(f);const first=f.manager.detail(f.session,'new');apply(f);save(f);const second=f.manager.detail(f.session,'new');expect(second.generation).toBeGreaterThan(first.generation);expect(second.draft!.content).toEqual(first.draft!.content);expect(second.proposalBaseline).not.toBe(first.proposalBaseline);}finally{f.close();}
+ });
  it('saves incomplete non-executing work, reviews exact sanitized scope and activates no-auth without restart', () => {
   const f = managedFixture(); try {
    save(f, { name: 'Incomplete' }); expect(f.cfg.services.new).toBeUndefined(); expect(() => f.manager.review(f.session, { id: 'new' })).toThrow('incomplete');

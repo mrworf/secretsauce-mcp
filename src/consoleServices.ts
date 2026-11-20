@@ -86,6 +86,16 @@ export class ConsoleServices {
       values: Object.entries(s?.values ?? {}).map(([key, v]) => [key, v.version, v.generation, v.incarnation, Boolean(v.value)]),
       users: this.store.state.users.map(u => ({ id: u.id, role: u.role, active: u.active, enrolled:u.enrolled, authorizationGeneration:u.authorizationGeneration??0 })), external:this.store.state.people?.external.map(e=>({id:e.id,issuer:e.issuer,subject:e.subject,active:e.active,authorizationGeneration:e.authorizationGeneration??0})) }));
   }
+  private proposalBaseline(id: string): string | null {
+    const s=own(this.state.services,id);
+    // Legacy records without a durable incarnation cannot prove identity across reuse.
+    if(!s?.incarnation)return null;
+    const applied=s.applied?{...s.applied,access:undefined}:undefined;
+    return digest(JSON.stringify({id,incarnation:s.incarnation,lifecycle:s.lifecycle,
+      generation:s.draft?.generation??s.proposalGeneration??0,
+      draft:s.draft?{content:s.draft.content,removedCredentials:s.draft.removedCredentials,settings:s.draft.settings}:null,
+      applied}));
+  }
   readiness(id: string) {
     const s = own(this.state.services, id)!;
     const missing = (c?: ManagedServiceDraft) => (c?.credentials ?? []).some(v => !own(s.values, v.id)?.value);
@@ -109,7 +119,7 @@ export class ConsoleServices {
   detail(session: ConsoleSession, id: unknown) {
     this.actor(session); const key = this.parse(idSchema, id); const s = own(this.state.services, key);
     if (!s) throw new ServiceManagementError('Service unavailable. Reload Services.');
-    return { id: key, name: s.applied?.name ?? s.draft?.content.name ?? s.displayName ?? key, revision: this.state.revision, generation: s.draft?.generation ?? s.proposalGeneration ?? 0, lifecycle: s.lifecycle, applied: s.applied, draft: s.draft,
+    return { proposalBaseline:this.proposalBaseline(key), id: key, name: s.applied?.name ?? s.draft?.content.name ?? s.displayName ?? key, revision: this.state.revision, generation: s.draft?.generation ?? s.proposalGeneration ?? 0, lifecycle: s.lifecycle, applied: s.applied, draft: s.draft,
       deletion: s.lifecycle==='Archived'&&['Owner','Administrator'].includes(this.actor(session).role)&&!session.restricted&&!this.store.journal.degraded&&!this.store.externalAudit?.degraded?{label:this.deletionLabel(key),confirmation:this.deletionConfirmation(session,key)}:null, configurationIssues: this.configurationIssues(key), ...this.readiness(key), mappingFingerprint: this.fingerprint(key), mappingIssues: this.mappingIssues(key), importAccessReset: s.importAccessReset??false, assignments: s.assignments, credentials: Object.entries(s.values).map(([id, v]) => ({ id, available: !v.missing && Boolean(v.value), version: v.version, ...this.credentialAttribution(v), confirmation: this.credentialConfirmation(key,id), inUse: this.credentialInUse(s,id), appliedUse: Boolean(s.applied?.credentials?.some(c=>c.id===id)) })),
       exceptions: s.applied ? exceptions(s.applied) : [], activity: this.store.journal.entries().filter(e => e.target === key).map(e => ({ action: e.action, time: e.time, result: e.result, revision: e.revision, details: e.details })) };
   }
@@ -134,7 +144,7 @@ export class ConsoleServices {
       const m = state.managed!; let s = own(m.services, data.id); if (!s) { s = { lifecycle: 'Draft', values: {}, assignments: [] }; Object.defineProperty(m.services, data.id, { value: s, enumerable: true, configurable: true, writable: true }); }
       s.draft = { removedCredentials:removalIntent(s,data.service), content: data.service, base: data.base, generation: data.generation + 1, ...(data.settings ? { settings: data.settings } : {}) }; delete s.review;
     });
-    return { operation, status: 'saved', generation: own(this.state.services, data.id)!.draft!.generation, revision: this.state.revision };
+    return { operation, status: 'saved', proposalBaseline:this.proposalBaseline(data.id), generation: own(this.state.services, data.id)!.draft!.generation, revision: this.state.revision };
   }
   mappingIssues(_id: string): Array<{subject:string;source:string;affectedServices:Array<{id:string;name:string}>}> { return []; }
   resolveMappings(session: ConsoleSession, _input: unknown) {
@@ -209,7 +219,7 @@ export class ConsoleServices {
       const m = state.managed!, s = m.services[data.id]!;delete s.recoveryReviewRequired;
       if(cleanup.length)s.lastCleanupMutation=mutation;
       s.applied = structuredClone(review.candidate); s.assignments = [...(c.s.applied ? c.s.assignments : review.candidate.access?.users ?? [])];
-      s.applied.access = { users: s.assignments }; s.lifecycle = 'Active'; delete s.draft; delete s.review;
+      s.applied.access = { users: s.assignments }; s.lifecycle = 'Active'; s.proposalGeneration=Math.max(s.proposalGeneration??0,c.draft.generation)+1; delete s.draft; delete s.review;
       state.config!.services = { ...state.config!.services, [data.id]: c.service }; m.revision++;
       if (review.settings) state.name = review.settings.name;
       captureConfigurationRevision(state,c.actor.id,'Service configuration applied');

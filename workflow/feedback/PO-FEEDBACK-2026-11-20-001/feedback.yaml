@@ -1,0 +1,155 @@
+schema_version: 1
+feedback_id: PO-FEEDBACK-2026-11-20-001
+product_id: secretsauce-mcp
+source:
+  type: product_owner
+  captured_from: prompt
+  references:
+  - Services list and Configuration → Details feedback after M52
+status: CONFIRMED
+transaction:
+  parent_commit: 57465e6e2df09898717d3927cc09282560c764a4
+  repository_commit: null
+items:
+- id: PO-FB-290
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: In the services overview, for some reason, archived services don't align
+    with the rest, meaning that the badge is offset to the left and so are the remaining
+    items on that row.
+  normalized: Archived row badges and the following items sit farther left than on
+    other service rows.
+  scope:
+  - services-list
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-291
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: All services, regardless of lifecycle state must align visually.
+  normalized: Align corresponding columns across service rows in every lifecycle state.
+  scope:
+  - services-list
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-292
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: Next, if I got  a service which has, for example, missing credentials,
+    and from the overview (or bottom button in other tabs) press review changes, I
+    get a weird "stale review or dependency" in red, and if I scroll through it, there's
+    a button called "Reload current revision for review", if I click that, I go back
+    to overview but now when I press review, it works as expected.
+  normalized: Review changes from Overview or an editor footer can show a stale error;
+    manual reload returns to Overview and a second review succeeds. Missing credentials
+    were present in the example.
+  scope:
+  - service-review
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-293
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: I don't want to see this odd state, if the revision is stale, it should
+    automatically reload and then show the normal review screen. This intermediate
+    step was just confusing and didn't provide any value.
+  normalized: For a stale revision on entry to Review changes, automatically reload
+    and open the normal review screen without the intermediate reload step.
+  scope:
+  - service-review
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-294
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: 'Lastly, in configuration > details, the "Copy MCP service reference"
+    is first of all confusing, I don''t know why it''
+
+    it''s here or what I am supposed to do with it, also, where does that value come
+    from?'
+  normalized: The purpose and use of Copy MCP service reference in Details are unclear.
+  scope:
+  - service-reference
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-295
+  classification: IDEA_OR_QUESTION
+  confirmation: CONFIRMED
+  original: 'Lastly, in configuration > details, the "Copy MCP service reference"
+    is first of all confusing, I don''t know why it''
+
+    it''s here or what I am supposed to do with it, also, where does that value come
+    from?'
+  normalized: Where does the MCP service reference come from and when should someone
+    use or copy it?
+  scope:
+  - service-reference
+  tags: []
+  authority:
+    product_intent: exploratory
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-296
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: That key must be editable, but with the caveat that if you do it on an
+    active service, it will prompt you that the change may break existing client's
+    use of that service.
+  normalized: Allow editing the MCP service reference, with a warning for active services
+    that clients already using the service may break.
+  scope:
+  - service-reference
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+  clarifies: PO-FB-086
+- id: PO-FB-297
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: So inactive, it's just a field that can be edited, for an active service,
+    it's locked and it has a button next to it to change it, which shows a modal,
+    explaining the concern and they must confirm before change is allowed.
+  normalized: Expose the reference as an editable field for an inactive service.
+  scope:
+  - service-reference
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-298
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: So inactive, it's just a field that can be edited, for an active service,
+    it's locked and it has a button next to it to change it, which shows a modal,
+    explaining the concern and they must confirm before change is allowed.
+  normalized: For an active service, start with the reference locked. A button beside
+    the field opens a warning dialog. Require confirmation before allowing editing.
+  scope:
+  - service-reference
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+unresolved: []
+handoff:
+  reconciliation_ready: false
+  next_workflow: null

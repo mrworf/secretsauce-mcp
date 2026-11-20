@@ -138,3 +138,7 @@ Only filtered activity export remains in Activity. Place **Access inventory** wi
 
 
 UX11 task orientation: the dedicated Access tab carries a distinct **No access assigned** advisory when its effective assignment selection is empty; it is not a missing-information blocker and does not disable valid review/Apply. Ordinary sign-in retains its authenticator/recovery-code selector. The separate **Replace authenticator** entry starts the existing replacement/enrollment task with its own consequence explanation, not a second recovery-code sign-in path. All same-purpose Settings section transitions preserve the chosen section and content region throughout loading.
+
+## UX12 service-reference placement
+
+Details contains the actual MCP service reference alongside its purpose and current/proposed distinction. Inactive editable services expose editing; Active services require adjacent Change reference warning confirmation before editing. This is an ordinary draft field thereafter, not a new navigation area or alias registry. Archived/read-only roles preserve restrictions. Internal managed identity remains stable and is not substituted for the public reference in user instructions.

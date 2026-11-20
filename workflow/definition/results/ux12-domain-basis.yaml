@@ -1,0 +1,66 @@
+stage: ux12-domain-specialist-resolution
+status: PASS
+scope: Output-only Product UX, architecture and security bounded resolution; canonical
+  adoption remains with reconciliation
+validated_inputs:
+- path: workflow/feedback/PO-FEEDBACK-2026-11-20-001/feedback.yaml
+  revision: sha256:ec0762f41d25d3d655fb040a892d82c752cdc681c3f1e277f355e130c2ee6762
+- path: docs/web-console-prd.md
+  revision: sha256:7f09e428b920b10daccb98f69c8988cc3e37d7a92483297bc0175a130fc38116
+- path: product/ux/manifest.yaml
+  revision: sha256:10342f67f66523b0688e58ef51a56058e3b7505562ecf5f72776c33f2ab15592
+- path: product/ux/02-interaction-patterns.md
+  revision: sha256:158afa3ab5900cf45aca940b670497d52ef14e4b803af98282f2825186cae42b
+- path: product/architecture/web-console-state-contract.md
+  revision: sha256:1c7642c7b87bba4c7b55c8a5520eac002bd2727d8729f9eb0c51ecec31f3f9c6
+- path: product/security/web-console-security-contract.md
+  revision: sha256:f02d7b7bdedb1108c7461f15a0d3cffeab93150ecac34fa0ff9c66b2e24c8268
+- path: src/consoleServicePage.ts
+  revision: sha256:bba6e72fb58e4e1eb16bc2d84661775b475bbbcc1ca4716db4ba8dbba3338098
+- path: src/consolePresentation.ts
+  revision: sha256:42667d8c6a6da00acef44336bc6a03842edb4948ee8d09c34953a9423c38c1ef
+- path: src/consoleServices.ts
+  revision: sha256:57a0774576d2528f059475a318c44107be47568286c3801cb80adb32987bf15c
+- path: src/registry.ts
+  revision: sha256:24a022199f50b666d0f2d3521f7ea3907c2a64c6608b42fc3f18cb69b86f8f7c
+- path: src/tokens.ts
+  revision: sha256:31b13f4ab3b4c2bc37583c824165230bb9f8f804e5f7265187f6bb85b1bfd69c
+- path: src/consoleMigration.ts
+  revision: sha256:47202fd9cc28b7d36fa58ee0d7e249833498ed2d5523dc5cdf81f055b30c08d6
+- path: src/consoleBackupArchive.ts
+  revision: sha256:40277b7b6a1e9f9afabae67dde2573be9f4786eab3d1a1caef5c50507a19da19
+artifact_changes:
+- path: workflow/definition/results/ux12-domain-basis.md
+  summary: "U12-01\u201303 and D12-01\u201302 proposed bounded contracts"
+changed_paths:
+- workflow/definition/results/ux12-domain-basis.md
+- workflow/definition/results/ux12-domain-basis.yaml
+findings: []
+questions: []
+affected_requirements:
+- PO-FB-290
+- PO-FB-291
+- PO-FB-292
+- PO-FB-293
+- PO-FB-294
+- PO-FB-295
+- PO-FB-296
+- PO-FB-297
+- PO-FB-298
+affected_artifacts:
+- docs/web-console-prd.md
+- product/ux/02-interaction-patterns.md
+- product/ux/03-responsive-and-platform.md
+- product/ux/07-acceptance-checklist.md
+- product/architecture/web-console-state-contract.md
+- product/security/web-console-security-contract.md
+reconciliation_required: false
+change_impact:
+  product: true
+  user_journeys: true
+  ux: true
+  architecture: true
+  security: true
+validation_boundary: Proposed specialist semantics only; no canonical edits, code,
+  runtime audit, acceptance, or commits. Impact flags describe required adoption/revalidation,
+  not changes already published.

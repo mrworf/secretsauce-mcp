@@ -71,3 +71,9 @@ Settings keeps the same rail/content geometry during loading, loaded and failed 
 ## UX-R13 — Service forms and short identity tasks
 
 Service Authentication fills the same available service editor content column as Details, Destinations and Request rules; it must not inherit compact identity-form width. Preserve wide two-column credential fields where useful and single-column narrow reflow, multi-credential grouping, footer alignment and focused-control clearance. Ordinary sign-in and Replace authenticator remain deliberately compact short forms, including ultrawide screens. Access uses the shared wide service task/card family with responsive rows and its appropriate draft or immediate action context. Quoted deletion challenges wrap without clipping exact contents and retain usable controls at320px/200% text.
+
+## UX-R14 — Shared lifecycle tracks
+
+Use shared column tracks for corresponding name/status/draft/action content across Active, Inactive and Archived rows. A longer archived action must not shift its badge or preceding columns independently. Preserve existing responsive stacking, full action labels, keyboard reachability and status meaning. This applies to the whole Services list, not a special archived-row offset. Existing desktop appearance and narrow reflow remain the approved family.
+
+Reference fields, adjacent Change reference and copy actions reflow without clipping exact reference text or hiding labels behind persistent bars. Warning dialog cancel/confirm and focused field remain reachable at 390px and 320px with 200% text. Use existing dialog, focus return and warning styling.

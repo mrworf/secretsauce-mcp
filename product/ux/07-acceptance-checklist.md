@@ -173,3 +173,10 @@ Delivery evidence must compare actual matching wide/narrow populated states, no-
 | UX-C91 | Configuration and read-only grouping use Request rules without an Access card/link/selector. Nonblocking No access assigned marker belongs to Access and never blocks valid zero-access Apply. | UX-IN27, UX-G12 | UX-03, MIGRATE-01 |
 | UX-C92 | Authentication fills its sibling editor column for no-auth/missing-value/multiple-credential states; sign-in/replacement remain compact. Actual matching desktop/narrow/enlarged screenshots and focused controls establish conformance. | UX-R13 | UX-02, PO-FB-283/284 |
 | UX-C93 | Deletion label quotes exact required text and excludes decorative delimiters from input; embedded quotes/long text preserve exact matching. Redundant Default policy helper is absent while meaningful rule evaluation help remains. | UX-IN25/27, UX-R13 | CONFIG-05, POLICY-01, PO-FB-282/289 |
+
+## UX12 bounded conformance
+
+- **UX-C94:** Populated Active/Inactive/Archived rows share corresponding desktop tracks and readable narrow stacking; long archived actions do not shift status independently.
+- **UX-C95:** Overview/footer enter the same actual incomplete or complete review. Safe one-shot refreshed baselines retain local edits; true competing edits, unknown writes and replaced targets retain explicit recovery; no automatic Apply.
+- **UX-C96:** Details explains and edits the real public reference; Active warning only unlocks, Inactive editing is direct, cancel/discard preserve current routing, and reviewed before/after clearly identifies disruption.
+- **UX-C97:** Same managed identity, grants, values and history survive rename; already-published Inactive reference-only Apply stays Inactive. Direct/Advanced, read-only, history, keyboard, narrow/enlarged and unknown-outcome cases match STATE-12/SECRES-11. Historical screenshots preserve appearance only; actual new-state browser evidence remains a delivery obligation.

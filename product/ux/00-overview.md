@@ -100,3 +100,7 @@ No new visual concept or authentication flow is introduced. Login uses the exist
 ## UX-G12 — Bounded UX11 refinement precedence
 
 REC016 and U11-01–05 supersede only prior assignment location, service Authentication width, deletion challenge delimiters and redundant Default policy helper. Dedicated Access owns proposed initial assignments and current immediate assignments without changing their timing. Configuration section four is Request rules. Preserve all earlier approved appearance references and unrelated UX10 semantics; historical prototype Access & policy labels are not current navigation authority. Delivery must compare actual affected states; this definition revision is not runtime acceptance.
+
+## UX-G13 — Bounded public-reference and review refinement
+
+UX12 preserves UX11 appearance and all unaffected approved patterns. U12-01–03 refine shared lifecycle-row alignment, safe automatic review entry, and the actual editable public MCP reference. Public reference and immutable managed identity are distinct under STATE-12/SECRES-11. These clauses override earlier immutable-public-reference wording only; they do not relax initial-versus-current Access timing, SMTP exceptions, review gates or unknown-outcome handling.

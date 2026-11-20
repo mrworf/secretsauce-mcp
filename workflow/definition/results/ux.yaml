@@ -1,42 +1,50 @@
 stage: product-ux
 status: PASS
-scope: Targeted REC016 four outcomes/eight feedback items; preserve prior inventories
-  and unaffected findings
+mode: targeted_revalidation
+scope: REC017 three outcomes/nine items; preserve prior unaffected findings and approved
+  patterns
 validated_inputs:
 - path: docs/web-console-prd.md
-  revision: sha256:7f09e428b920b10daccb98f69c8988cc3e37d7a92483297bc0175a130fc38116
-- path: workflow/reconciliation/REC-RUN-016/reconciliation-result.yaml
-  revision: sha256:29e16acb1cc7aa1b40d7b15d32125d48acb89a900050a9ed83b027ae9e38e305
-- path: workflow/reconciliation/REC-RUN-016/design-basis.md
-  revision: sha256:ee4e81f5c8ead4e6444db00f8fec5cbe999ab56b361a2cfab2ea0f37721eab3b
-- path: workflow/feedback/PO-FEEDBACK-2026-11-19-002/feedback.yaml
-  revision: sha256:8219700323e1a8ceb0bfc2246aada8f2e7d46ed23e468a66a026363408b6d733
+  revision: sha256:373ab761709d04f93e839d5ef053d7634c8cf7ed602a143acc1dd2544b5998ae
+- path: workflow/reconciliation/REC-RUN-017/reconciliation-result.yaml
+  revision: sha256:a7d0112c9186d80f1058931e888db3187ca02f67d593291c819499675e04e9db
+- path: workflow/reconciliation/REC-RUN-017/domain-basis.md
+  revision: sha256:5ba18660db2b9ba2897783a82824071016cde322b438932e33d4b1b934d24cba
+- path: workflow/feedback/PO-FEEDBACK-2026-11-20-001/feedback.yaml
+  revision: sha256:ec0762f41d25d3d655fb040a892d82c752cdc681c3f1e277f355e130c2ee6762
 - path: workflow/definition/decisions.md
-  revision: sha256:c855c05692e2dc3a9638f4f6e4c44d54fa112992ef0531fc7168d37ca23ea3ae
+  revision: sha256:2198e83cdb539134e9ffd39e08b3682deed48d47dc64b5a7e4aa2d73760b6f1f
 - path: docs/web-console-prd-coverage.md
-  revision: sha256:46f141ab512d820f73a6ac78bc068ee7be285e3cc070219f5c20c1924cfdb915
+  revision: sha256:0d6b0e9537de0cd8ac2222b6283e72a8eeaa8741716ea6fa966b7b9b650fba1f
 - path: docs/web-console-prd-user-journey-audit.md
-  revision: sha256:93557c4a8de28e7b11eedd9c0fbf21f0f43e27283d8d4a491c018f914d40c16c
+  revision: sha256:dbe00237e608d6021aad935fe58ba0ac22f0e73054e4336e12d686883accbc81
 - path: product/architecture/web-console-state-contract.md
-  revision: sha256:1c7642c7b87bba4c7b55c8a5520eac002bd2727d8729f9eb0c51ecec31f3f9c6
+  revision: sha256:146d9cf35d375bfa9e86584cba387977f0c55fd2a35b8ec83f4f0336a9bd5481
 - path: product/security/web-console-security-contract.md
-  revision: sha256:f02d7b7bdedb1108c7461f15a0d3cffeab93150ecac34fa0ff9c66b2e24c8268
+  revision: sha256:50cb40de4c045eb6cab49b5f93c2a0a49718ceae454cc76a2ed80646b64db7de
 artifact_changes:
 - path: product/ux/00-overview.md
-  summary: Bounded UX11 Access location, width and copy refinement
+  revision: sha256:161471ef11ddffe19805b935e55e56f507171fa46b2dadeadba81125e044d78e
+  summary: Bounded UX12 reference identity, safe review and alignment adoption
 - path: product/ux/01-information-architecture.md
-  summary: Bounded UX11 Access location, width and copy refinement
+  revision: sha256:f5ac7a5cabc75fd697be04f4d8dffae541da375598bf7cc54d4c72991df3608e
+  summary: Bounded UX12 reference identity, safe review and alignment adoption
 - path: product/ux/02-interaction-patterns.md
-  summary: Bounded UX11 Access location, width and copy refinement
+  revision: sha256:baeb55f11e2cf31ada9ea999d819d1ce6694714d6e45c35171ba675ac1827b84
+  summary: Bounded UX12 reference identity, safe review and alignment adoption
 - path: product/ux/03-responsive-and-platform.md
-  summary: Bounded UX11 Access location, width and copy refinement
+  revision: sha256:90cefaa3f0d2ffcfc7934861273d2e44ae4283dbe765c325fddf5de21e045f70
+  summary: Bounded UX12 reference identity, safe review and alignment adoption
 - path: product/ux/07-acceptance-checklist.md
-  summary: Bounded UX11 Access location, width and copy refinement
+  revision: sha256:43e640c86cc2c4f82b584a68ee1b96c41a26e8090cb9f9dca37595c3f0fab542
+  summary: Bounded UX12 reference identity, safe review and alignment adoption
 - path: product/ux/experience-brief.yaml
-  summary: Bounded UX11 Access location, width and copy refinement
+  revision: sha256:17390d07d6335e6ab32dabaece1802bd5e7481261cdc6524b0d7cd1cb66d856d
+  summary: Bounded UX12 reference identity, safe review and alignment adoption
 - path: product/ux/manifest.yaml
-  summary: Bounded UX11 Access location, width and copy refinement
-changed_paths: &id001
+  revision: sha256:23aa41b8f834545f50fde4f81748544df0fdc75026bb16142b1b117ef5ac8e16
+  summary: Bounded UX12 reference identity, safe review and alignment adoption
+changed_paths:
 - product/ux/00-overview.md
 - product/ux/01-information-architecture.md
 - product/ux/02-interaction-patterns.md
@@ -44,41 +52,51 @@ changed_paths: &id001
 - product/ux/07-acceptance-checklist.md
 - product/ux/experience-brief.yaml
 - product/ux/manifest.yaml
+- workflow/definition/results/ux.yaml
 findings: []
 questions: []
 affected_requirements:
-- CONFIG-01
-- CONFIG-05
-- AUTHZ-02
-- POLICY-01
+- CONFIG-06
+- CONFIG-03
 - UX-02
 - UX-03
-- MIGRATE-01
-affected_artifacts: *id001
+- PO-FB-290
+- PO-FB-291
+- PO-FB-292
+- PO-FB-293
+- PO-FB-294
+- PO-FB-295
+- PO-FB-296
+- PO-FB-297
+- PO-FB-298
+affected_artifacts: &id001
+- product/ux/00-overview.md
+- product/ux/01-information-architecture.md
+- product/ux/02-interaction-patterns.md
+- product/ux/03-responsive-and-platform.md
+- product/ux/07-acceptance-checklist.md
+- product/ux/experience-brief.yaml
+- product/ux/manifest.yaml
 reconciliation_required: false
 change_impact:
   product: false
   user_journeys: false
   ux: true
-  architecture: false
-  security: false
-validation_boundary: Definition-only; prior implementation evidence remains historical.
-  No new runtime verification, tests, release acceptance, product/architecture/security
-  authority changes or commits.
+  architecture: true
+  security: true
+validation_boundary: Definition-only bounded adoption. Existing findings/accepted
+  risks preserved; no new runtime audit, implementation, tests or release certification.
 ux_handoff:
   manifest:
     path: product/ux/manifest.yaml
-    revision: web-console-ux-11
+    revision: web-console-ux-12
   experience_brief:
     path: product/ux/experience-brief.yaml
-    revision: web-console-ux-11
+    revision: web-console-ux-12
   approval:
     status: approved
     decision_refs:
-    - PO-REFINEMENT-016
+    - PO-REFINEMENT-017
   authoritative_artifacts_changed: *id001
-  downstream_freshness:
-    affected_domains: []
-    potentially_stale_artifacts: []
-  impact_hints: Canonical UX11 adopts resolved REC016; parent owns definition freshness.
-    Runtime visual acceptance remains required.
+  impact_hints: Parent owns cross-domain freshness and downstream handoff; new-state
+    visual acceptance required.

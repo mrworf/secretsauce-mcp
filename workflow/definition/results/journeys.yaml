@@ -1,45 +1,54 @@
 stage: prd-to-user-journey-audit
 status: PASS
-scope: Targeted REC016 four outcomes/eight feedback items; preserve prior inventories
-  and unaffected findings
+scope: Targeted REC017 three outcomes/nine feedback items; preserve prior inventories
+  and historical dispositions
 validated_inputs:
 - path: docs/web-console-prd.md
-  revision: sha256:7f09e428b920b10daccb98f69c8988cc3e37d7a92483297bc0175a130fc38116
-- path: workflow/reconciliation/REC-RUN-016/reconciliation-result.yaml
-  revision: sha256:29e16acb1cc7aa1b40d7b15d32125d48acb89a900050a9ed83b027ae9e38e305
-- path: workflow/reconciliation/REC-RUN-016/design-basis.md
-  revision: sha256:ee4e81f5c8ead4e6444db00f8fec5cbe999ab56b361a2cfab2ea0f37721eab3b
-- path: workflow/feedback/PO-FEEDBACK-2026-11-19-002/feedback.yaml
-  revision: sha256:8219700323e1a8ceb0bfc2246aada8f2e7d46ed23e468a66a026363408b6d733
-- path: workflow/definition/decisions.md
-  revision: sha256:c855c05692e2dc3a9638f4f6e4c44d54fa112992ef0531fc7168d37ca23ea3ae
-- path: docs/web-console-prd-coverage.md
-  revision: sha256:46f141ab512d820f73a6ac78bc068ee7be285e3cc070219f5c20c1924cfdb915
-- path: product/ux/manifest.yaml
-  revision: sha256:10342f67f66523b0688e58ef51a56058e3b7505562ecf5f72776c33f2ab15592
+  revision: sha256:373ab761709d04f93e839d5ef053d7634c8cf7ed602a143acc1dd2544b5998ae
+- path: workflow/reconciliation/REC-RUN-017/reconciliation-result.yaml
+  revision: sha256:a7d0112c9186d80f1058931e888db3187ca02f67d593291c819499675e04e9db
+- path: workflow/reconciliation/REC-RUN-017/domain-basis.md
+  revision: sha256:5ba18660db2b9ba2897783a82824071016cde322b438932e33d4b1b934d24cba
+- path: workflow/feedback/PO-FEEDBACK-2026-11-20-001/feedback.yaml
+  revision: sha256:ec0762f41d25d3d655fb040a892d82c752cdc681c3f1e277f355e130c2ee6762
 artifact_changes:
 - path: docs/web-console-prd-user-journey-audit.md
-  summary: Bounded UX11 Access location, width and copy refinement
-changed_paths: &id001
+  summary: Bounded UX12 lifecycle alignment, safe review entry and public reference
+    actor/lifecycle mapping
+changed_paths:
 - docs/web-console-prd-user-journey-audit.md
 findings: []
 questions: []
 affected_requirements:
 - CONFIG-01
+- CONFIG-03
 - CONFIG-05
+- CONFIG-06
 - AUTHZ-02
-- POLICY-01
-- UX-02
-- UX-03
+- BASE-01
 - MIGRATE-01
-affected_artifacts: *id001
+- MIGRATE-03
+- MIGRATE-04
+- BACKUP-01
+- BACKUP-05
+- AUDIT-01
+- UX-04
+affected_artifacts:
+- docs/web-console-prd-user-journey-audit.md
 reconciliation_required: false
 change_impact:
   product: false
-  user_journeys: true
+  user_journeys: false
   ux: false
   architecture: false
   security: false
-validation_boundary: Definition-only; prior implementation evidence remains historical.
-  No new runtime verification, tests, release acceptance, product/architecture/security
-  authority changes or commits.
+validation_boundary: Definition-only scoped mapping; no runtime tests, release acceptance,
+  unchanged-inventory recertification or authority changes. Current UX/domain adapters
+  independently validate canonical adoption.
+coverage_summary:
+  feedback_items: 9
+  remediation_ids:
+  - REC-RM-068
+  - REC-RM-069
+  - REC-RM-070
+  unmapped_affected_requirements: []

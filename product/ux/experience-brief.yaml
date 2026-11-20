@@ -2,25 +2,25 @@ status: approved
 product_id: secretsauce-mcp
 sources:
 - path: docs/web-console-prd.md
-  revision: sha256:7f09e428b920b10daccb98f69c8988cc3e37d7a92483297bc0175a130fc38116
-- path: product/architecture/web-console-state-contract.md
-  revision: sha256:1c7642c7b87bba4c7b55c8a5520eac002bd2727d8729f9eb0c51ecec31f3f9c6
-- path: product/security/web-console-security-contract.md
-  revision: sha256:f02d7b7bdedb1108c7461f15a0d3cffeab93150ecac34fa0ff9c66b2e24c8268
-- path: workflow/feedback/PO-FEEDBACK-2026-11-19-002/feedback.yaml
-  revision: sha256:8219700323e1a8ceb0bfc2246aada8f2e7d46ed23e468a66a026363408b6d733
-- path: workflow/reconciliation/REC-RUN-016/reconciliation-result.yaml
-  revision: sha256:29e16acb1cc7aa1b40d7b15d32125d48acb89a900050a9ed83b027ae9e38e305
+  revision: sha256:373ab761709d04f93e839d5ef053d7634c8cf7ed602a143acc1dd2544b5998ae
+- path: workflow/reconciliation/REC-RUN-017/reconciliation-result.yaml
+  revision: sha256:a7d0112c9186d80f1058931e888db3187ca02f67d593291c819499675e04e9db
+- path: workflow/reconciliation/REC-RUN-017/domain-basis.md
+  revision: sha256:5ba18660db2b9ba2897783a82824071016cde322b438932e33d4b1b934d24cba
+- path: workflow/feedback/PO-FEEDBACK-2026-11-20-001/feedback.yaml
+  revision: sha256:ec0762f41d25d3d655fb040a892d82c752cdc681c3f1e277f355e130c2ee6762
 - path: workflow/definition/decisions.md
-  revision: sha256:c855c05692e2dc3a9638f4f6e4c44d54fa112992ef0531fc7168d37ca23ea3ae
+  revision: sha256:2198e83cdb539134e9ffd39e08b3682deed48d47dc64b5a7e4aa2d73760b6f1f
 - path: docs/web-console-prd-coverage.md
-  revision: sha256:46f141ab512d820f73a6ac78bc068ee7be285e3cc070219f5c20c1924cfdb915
+  revision: sha256:0d6b0e9537de0cd8ac2222b6283e72a8eeaa8741716ea6fa966b7b9b650fba1f
 - path: docs/web-console-prd-user-journey-audit.md
-  revision: sha256:93557c4a8de28e7b11eedd9c0fbf21f0f43e27283d8d4a491c018f914d40c16c
-- path: workflow/reconciliation/REC-RUN-016/design-basis.md
-  revision: sha256:ee4e81f5c8ead4e6444db00f8fec5cbe999ab56b361a2cfab2ea0f37721eab3b
+  revision: sha256:dbe00237e608d6021aad935fe58ba0ac22f0e73054e4336e12d686883accbc81
+- path: product/architecture/web-console-state-contract.md
+  revision: sha256:146d9cf35d375bfa9e86584cba387977f0c55fd2a35b8ec83f4f0336a9bd5481
+- path: product/security/web-console-security-contract.md
+  revision: sha256:50cb40de4c045eb6cab49b5f93c2a0a49718ceae454cc76a2ed80646b64db7de
 experience:
-  revision: web-console-ux-11
+  revision: web-console-ux-12
   audience:
     primary:
     - Owners
@@ -77,6 +77,11 @@ experience:
       retained audit/backups and explicit restore remain separate.
     sign_in: Compact task form; ordinary recovery-code sign-in remains distinct from
       Replace authenticator.
+    service_reference: Actual public routing reference staged in ordinary proposal,
+      Active warning unlock, stable internal identity; Inactive reference-only Apply
+      stays Inactive.
+    service_review_refresh: Single proven unchanged-baseline refresh preserves local
+      work; fresh current dependencies inspected, never automatic approval.
   responsive_priority: Use columns on wide screens, reflow forms and keep compact
     account rows linked to complete detail on narrow screens
   explicit_po_preferences:
@@ -161,8 +166,8 @@ experience:
     appearance
   - Minor rendering differences that do not change composition, hierarchy, density
     or accessibility
-  - "Compact sign-in geometry within short-input pattern and existing recovery task\
-    \ naming, based on PO-FB-271\u2013274; no new authentication flow."
+  - Compact sign-in geometry within short-input pattern and existing recovery task
+    naming, based on PO-FB-271–274; no new authentication flow.
   approval:
     approved: true
     decision_refs:
@@ -179,8 +184,9 @@ experience:
     - PO-REFINEMENT-015
     - UX10-DELETION-SEMANTICS
     - PO-REFINEMENT-016
-    scope: REC016 bounded UX11 refinement; preserve prior approved appearance and
-      unaffected behavior.
+    - PO-REFINEMENT-017
+    scope: REC017 bounded reference/review/alignment refinement; preserve approved
+      visual family and unaffected behavior.
 historical_source_revisions:
 - path: docs/web-console-prd.md
   revision: sha256:dab49dc650ecbc55c3319532ad8ee590767d3938e8772676da9a6ddf047ad32d
@@ -196,3 +202,21 @@ historical_source_revisions:
   revision: sha256:eb6f3e4433b6fecac9e42e9673caeeef196b1164d433a6cb4e3c18f0ce2c5cb9
 - path: workflow/definition/decisions.md
   revision: sha256:a70e4ec8f97e4fd9cce2a9eab49a3706adc48ad05fbb4a5a6d1edeec6506c7b4
+- path: docs/web-console-prd.md
+  revision: sha256:7f09e428b920b10daccb98f69c8988cc3e37d7a92483297bc0175a130fc38116
+- path: product/architecture/web-console-state-contract.md
+  revision: sha256:1c7642c7b87bba4c7b55c8a5520eac002bd2727d8729f9eb0c51ecec31f3f9c6
+- path: product/security/web-console-security-contract.md
+  revision: sha256:f02d7b7bdedb1108c7461f15a0d3cffeab93150ecac34fa0ff9c66b2e24c8268
+- path: workflow/feedback/PO-FEEDBACK-2026-11-19-002/feedback.yaml
+  revision: sha256:8219700323e1a8ceb0bfc2246aada8f2e7d46ed23e468a66a026363408b6d733
+- path: workflow/reconciliation/REC-RUN-016/reconciliation-result.yaml
+  revision: sha256:29e16acb1cc7aa1b40d7b15d32125d48acb89a900050a9ed83b027ae9e38e305
+- path: workflow/definition/decisions.md
+  revision: sha256:c855c05692e2dc3a9638f4f6e4c44d54fa112992ef0531fc7168d37ca23ea3ae
+- path: docs/web-console-prd-coverage.md
+  revision: sha256:46f141ab512d820f73a6ac78bc068ee7be285e3cc070219f5c20c1924cfdb915
+- path: docs/web-console-prd-user-journey-audit.md
+  revision: sha256:93557c4a8de28e7b11eedd9c0fbf21f0f43e27283d8d4a491c018f914d40c16c
+- path: workflow/reconciliation/REC-RUN-016/design-basis.md
+  revision: sha256:ee4e81f5c8ead4e6444db00f8fec5cbe999ab56b361a2cfab2ea0f37721eab3b

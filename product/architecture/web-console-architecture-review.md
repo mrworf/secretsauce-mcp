@@ -231,3 +231,7 @@ Do not add distributed transactions, an external vault, purge jobs, backup destr
 ### Overall Opinion
 
 The scoped architecture definition is consistent with the adopted PRD. This is definition readiness only; implementation and visual acceptance remain outstanding.
+
+## UX12 bounded definition review
+
+The confirmed public-reference change is substantive state/routing behavior, not a display alias. STATE-12 adopts stable managed identity, namespace claims, staged publication, Inactive rename-only preservation, fresh authorization and revocation fences, coherent unknown outcomes, older-reader rejection and explicit recovery/import/export boundaries. Safe review entry is limited to proven unchanged proposal baselines and new inspection, not blind generation adoption. Prior findings, accepted risks and unaffected conclusions remain unchanged. Required positive/negative and recovery/visual checks are delivery obligations; this review does not certify new implementation or runtime evidence. No unresolved product choice remains in this bounded scope.

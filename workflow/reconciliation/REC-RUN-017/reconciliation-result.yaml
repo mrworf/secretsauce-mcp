@@ -1,0 +1,383 @@
+schema_version: 1
+reconciliation_id: REC-RUN-017
+product_id: secretsauce-mcp
+status: RESOLVED
+transaction:
+  parent_commit: 930086f61c574fe84e911f3706008670c0665ac2
+  repository_commit: null
+  owned_paths:
+  - workflow/reconciliation/REC-RUN-017/
+  - docs/web-console-prd.md
+  publication: payload pending; exact producer provenance closeout required
+  pre_existing_dirty_paths:
+  - workflow/definition/state.yaml
+  - workflow/definition/history/web-console-ux-11-completed/
+  - passwd
+  - codex-session-01a122f7-e70f-7440-b1ce-ca88b955e519.md
+  - test-results/
+source:
+  invocation: product-definition-orchestrator
+  originating_stage: product
+  triggering_findings: []
+  affected_requirements:
+  - CONFIG-05
+  - UX-01
+  - CONFIG-01
+  - CONFIG-03
+  - UX-03
+  - CONFIG-06
+  - BASE-01
+  - MCP-04
+  - MIGRATE-01
+  - MIGRATE-03
+  artifact_revisions:
+  - artifact: workflow/feedback/PO-FEEDBACK-2026-11-20-001/feedback.yaml
+    revision: sha256:ec0762f41d25d3d655fb040a892d82c752cdc681c3f1e277f355e130c2ee6762
+  - artifact: docs/web-console-prd.md
+    revision: sha256:373ab761709d04f93e839d5ef053d7634c8cf7ed602a143acc1dd2544b5998ae
+  - artifact: product/ux/manifest.yaml
+    revision: sha256:10342f67f66523b0688e58ef51a56058e3b7505562ecf5f72776c33f2ab15592
+  - artifact: product/ux/01-information-architecture.md
+    revision: sha256:7de93261573c014d59b8c2fd66e51627df6a9c1a5c4c7a5d24c995d1cdab9c3c
+  - artifact: product/ux/02-interaction-patterns.md
+    revision: sha256:158afa3ab5900cf45aca940b670497d52ef14e4b803af98282f2825186cae42b
+  - artifact: product/ux/03-responsive-and-platform.md
+    revision: sha256:3a8e72500dda4b830115e9b92ad193ceb9272c250c43e7c439b1129d616d04a5
+  - artifact: product/architecture/web-console-state-contract.md
+    revision: sha256:1c7642c7b87bba4c7b55c8a5520eac002bd2727d8729f9eb0c51ecec31f3f9c6
+  - artifact: product/security/web-console-security-contract.md
+    revision: sha256:f02d7b7bdedb1108c7461f15a0d3cffeab93150ecac34fa0ff9c66b2e24c8268
+  - artifact: workflow/reconciliation/REC-RUN-017/domain-basis.md
+    revision: sha256:5ba18660db2b9ba2897783a82824071016cde322b438932e33d4b1b934d24cba
+  product_owner_feedback:
+  - feedback_id: PO-FEEDBACK-2026-11-20-001
+    path: workflow/feedback/PO-FEEDBACK-2026-11-20-001/feedback.yaml
+    schema_version: 1
+    status: CONFIRMED
+  implementation_revision: M52 qualified57465e6; inspected930086f adds feedback only
+  specialist_resolution: Bounded UX12 domain basis adopted via producer-owned domain-basis.md; no owner question
+  revision_basis: product/* hashes identify inspected published baseline at930086f; PRD and producer-owned basis
+    hashes identify adopted current corrections. Concurrent definition-owned specialist drafts are excluded from
+    producer authority.
+findings:
+  resolved: &id001
+  - REC-074
+  - REC-075
+  - REC-076
+  unresolved: []
+feedback_dispositions:
+- feedback_id: PO-FEEDBACK-2026-11-20-001
+  item_id: PO-FB-290
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  product_intent_authority: evidence
+  original: In the services overview, for some reason, archived services don't align with the rest, meaning that
+    the badge is offset to the left and so are the remaining items on that row.
+  normalized: Archived row badges and the following items sit farther left than on other service rows.
+  disposition: EVIDENCE_CORRELATED
+  source_findings:
+  - REC-074
+  source_changes:
+  - REC-CHANGE-074
+  remediation:
+  - REC-RM-068
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Confirmed exact direction adopted with bounded specialist semantics; observations/questions retain
+    evidence/exploratory authority, not independent requirements.
+  scope:
+  - services-list
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-11-20-001
+  item_id: PO-FB-291
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: All services, regardless of lifecycle state must align visually.
+  normalized: Align corresponding columns across service rows in every lifecycle state.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-074
+  source_changes:
+  - REC-CHANGE-074
+  remediation:
+  - REC-RM-068
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Confirmed exact direction adopted with bounded specialist semantics; observations/questions retain
+    evidence/exploratory authority, not independent requirements.
+  scope:
+  - services-list
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-11-20-001
+  item_id: PO-FB-292
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  product_intent_authority: evidence
+  original: Next, if I got  a service which has, for example, missing credentials, and from the overview (or bottom
+    button in other tabs) press review changes, I get a weird "stale review or dependency" in red, and if I scroll
+    through it, there's a button called "Reload current revision for review", if I click that, I go back to overview
+    but now when I press review, it works as expected.
+  normalized: Review changes from Overview or an editor footer can show a stale error; manual reload returns to
+    Overview and a second review succeeds. Missing credentials were present in the example.
+  disposition: EVIDENCE_CORRELATED
+  source_findings:
+  - REC-075
+  source_changes:
+  - REC-CHANGE-075
+  remediation:
+  - REC-RM-069
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Confirmed exact direction adopted with bounded specialist semantics; observations/questions retain
+    evidence/exploratory authority, not independent requirements.
+  scope:
+  - service-review
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-11-20-001
+  item_id: PO-FB-293
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: I don't want to see this odd state, if the revision is stale, it should automatically reload and then
+    show the normal review screen. This intermediate step was just confusing and didn't provide any value.
+  normalized: For a stale revision on entry to Review changes, automatically reload and open the normal review screen
+    without the intermediate reload step.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-075
+  source_changes:
+  - REC-CHANGE-075
+  remediation:
+  - REC-RM-069
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Confirmed exact direction adopted with bounded specialist semantics; observations/questions retain
+    evidence/exploratory authority, not independent requirements.
+  scope:
+  - service-review
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-11-20-001
+  item_id: PO-FB-294
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  product_intent_authority: evidence
+  original: 'Lastly, in configuration > details, the "Copy MCP service reference" is first of all confusing, I don''t
+    know why it''
+
+    it''s here or what I am supposed to do with it, also, where does that value come from?'
+  normalized: The purpose and use of Copy MCP service reference in Details are unclear.
+  disposition: EVIDENCE_CORRELATED
+  source_findings:
+  - REC-076
+  source_changes:
+  - REC-CHANGE-076
+  remediation:
+  - REC-RM-070
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Confirmed exact direction adopted with bounded specialist semantics; observations/questions retain
+    evidence/exploratory authority, not independent requirements.
+  scope:
+  - service-reference
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-11-20-001
+  item_id: PO-FB-295
+  classification: IDEA_OR_QUESTION
+  confirmation: CONFIRMED
+  product_intent_authority: exploratory
+  original: 'Lastly, in configuration > details, the "Copy MCP service reference" is first of all confusing, I don''t
+    know why it''
+
+    it''s here or what I am supposed to do with it, also, where does that value come from?'
+  normalized: Where does the MCP service reference come from and when should someone use or copy it?
+  disposition: EXPLORATORY_RECORDED
+  source_findings:
+  - REC-076
+  source_changes:
+  - REC-CHANGE-076
+  remediation:
+  - REC-RM-070
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Confirmed exact direction adopted with bounded specialist semantics; observations/questions retain
+    evidence/exploratory authority, not independent requirements.
+  scope:
+  - service-reference
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-11-20-001
+  item_id: PO-FB-296
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: That key must be editable, but with the caveat that if you do it on an active service, it will prompt
+    you that the change may break existing client's use of that service.
+  normalized: Allow editing the MCP service reference, with a warning for active services that clients already using
+    the service may break.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-076
+  source_changes:
+  - REC-CHANGE-076
+  remediation:
+  - REC-RM-070
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Confirmed exact direction adopted with bounded specialist semantics; observations/questions retain
+    evidence/exploratory authority, not independent requirements.
+  scope:
+  - service-reference
+  tags: []
+  suggestions: []
+  ambiguity: []
+  clarifies: PO-FB-086
+- feedback_id: PO-FEEDBACK-2026-11-20-001
+  item_id: PO-FB-297
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: So inactive, it's just a field that can be edited, for an active service, it's locked and it has a button
+    next to it to change it, which shows a modal, explaining the concern and they must confirm before change is
+    allowed.
+  normalized: Expose the reference as an editable field for an inactive service.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-076
+  source_changes:
+  - REC-CHANGE-076
+  remediation:
+  - REC-RM-070
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Confirmed exact direction adopted with bounded specialist semantics; observations/questions retain
+    evidence/exploratory authority, not independent requirements.
+  scope:
+  - service-reference
+  tags: []
+  suggestions: []
+  ambiguity: []
+- feedback_id: PO-FEEDBACK-2026-11-20-001
+  item_id: PO-FB-298
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  product_intent_authority: authoritative
+  original: So inactive, it's just a field that can be edited, for an active service, it's locked and it has a button
+    next to it to change it, which shows a modal, explaining the concern and they must confirm before change is
+    allowed.
+  normalized: For an active service, start with the reference locked. A button beside the field opens a warning
+    dialog. Require confirmation before allowing editing.
+  disposition: FULLY_RESOLVED
+  source_findings:
+  - REC-076
+  source_changes:
+  - REC-CHANGE-076
+  remediation:
+  - REC-RM-070
+  decisions_required: []
+  affected_artifacts:
+  - docs/web-console-prd.md
+  rationale: Confirmed exact direction adopted with bounded specialist semantics; observations/questions retain
+    evidence/exploratory authority, not independent requirements.
+  scope:
+  - service-reference
+  tags: []
+  suggestions: []
+  ambiguity: []
+authoritative_changes:
+  changed: true
+  entries:
+  - change_id: REC-CHANGE-074
+    source_findings:
+    - REC-074
+    path: docs/web-console-prd.md
+    requirements:
+    - CONFIG-05
+    - UX-01
+    status: APPLIED_AFTER_DECISION
+  - change_id: REC-CHANGE-075
+    source_findings:
+    - REC-075
+    path: docs/web-console-prd.md
+    requirements:
+    - CONFIG-01
+    - CONFIG-03
+    - UX-03
+    status: APPLIED_AFTER_DECISION
+  - change_id: REC-CHANGE-076
+    source_findings:
+    - REC-076
+    path: docs/web-console-prd.md
+    requirements:
+    - CONFIG-06
+    - BASE-01
+    - CONFIG-01
+    - CONFIG-03
+    - CONFIG-05
+    - MCP-04
+    - MIGRATE-01
+    - MIGRATE-03
+    status: APPLIED_AFTER_DECISION
+definition_changed: true
+implementation_required: true
+implementation_ready: true
+decisions_required: []
+change_impact:
+  change_id: REC-IMPACT-017
+  source_findings: *id001
+  changed_artifacts:
+  - docs/web-console-prd.md
+  changed_requirements:
+  - CONFIG-01
+  - CONFIG-05
+  - CONFIG-06
+  change_types:
+  - ux_interaction
+  - user_behavior
+  - api_contract
+  - data_model
+  - migration
+  - security_control
+  affected_domains:
+    product: false
+    user_journeys: true
+    ux: true
+    architecture: true
+    security: true
+  potentially_stale:
+  - docs/web-console-prd-coverage.md
+  - docs/web-console-prd-user-journey-audit.md
+  - product/ux/manifest.yaml
+  - product/ux/01-information-architecture.md
+  - product/ux/02-interaction-patterns.md
+  - product/ux/03-responsive-and-platform.md
+  - product/ux/04-visual-system.md
+  - product/ux/05-accessibility.md
+  - product/ux/07-acceptance-checklist.md
+  - product/architecture/web-console-state-contract.md
+  - product/security/web-console-security-contract.md
+  revalidation_required: true
+handoff:
+  category: DEFINITION_REVALIDATION
+  definition_revalidation_required: true
+  delivery_planning_ready: false
+  next_workflow: product-definition-orchestrator

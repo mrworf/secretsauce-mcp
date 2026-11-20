@@ -1,0 +1,28 @@
+{
+  "result": "PASS",
+  "source_commit": "e8c1adee341a64b910c7ee3cb079561dc1898703",
+  "source_tree": "5cf832ff3e82641a434f2622e2509fd347e8976d",
+  "full_suite": {
+    "command": "npm test -- --maxWorkers=2",
+    "environment": "Frozen tracked export; existing locked dependencies; loopback permission; no concurrent browser/Docker workload",
+    "files_passed": 83,
+    "tests_passed": 837,
+    "tests_failed": 0,
+    "duration_seconds": 124.91
+  },
+  "build": {
+    "command": "npm run build (npm test pretest)",
+    "result": "PASS"
+  },
+  "browser_evidence": [
+    "evidence/ux-acceptance/secretsauce-mcp/milestone53/acceptance.md",
+    "evidence/ux-acceptance/secretsauce-mcp/milestone54/acceptance.md"
+  ],
+  "storage_format": 10,
+  "image_tag": "secretsauce-local-review:m54",
+  "image_id": "sha256:5e65f09a6cecd6c853d18a2718988c2882cb1fb3978a61cd1a61288772a89f72",
+  "recovery_evidence": "evidence/platform/secretsauce-mcp/milestone54/docker-cleanhost-report.json",
+  "deployment_performed": false,
+  "recovery_harness_commit": "96a68384dd3c6f42eb52f7cb52b4053fe773fbf6",
+  "harness_only_change": "Legacy seed without incarnation initializes valid UUIDs; existing identities and other metadata must remain exact. Application source/image/full-suite source unchanged."
+}

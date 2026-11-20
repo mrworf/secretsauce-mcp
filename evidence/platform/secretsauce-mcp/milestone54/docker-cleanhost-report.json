@@ -1,0 +1,27 @@
+{
+  "result": "PASS",
+  "image": "sha256:5e65f09a6cecd6c853d18a2718988c2882cb1fb3978a61cd1a61288772a89f72",
+  "metrics": {
+    "backupAndDownloadMs": 8877.237638,
+    "archiveBytes": 12352454,
+    "services": 100,
+    "retainedAudit": 10000,
+    "restoreThroughFreshLoginMs": 24245.587543999998,
+    "snapshotAgeAtDrillMs": 8854,
+    "restoreThroughOneUsableServiceMs": 55756.080910000004
+  },
+  "checks": [
+    "Reviewed Active public-reference change publishes format10 before backup while retaining stable managed service, existing incarnations, assignments and credential (initializing absent legacy incarnations); old public binding removed",
+    "Original host stopped and original synthetic master key physically deleted after encrypted archive plus independent material retained; new host mounts separate app/audit/key storage only",
+    "Wrong host proof and independent material leave new host unchanged; archive import establishes current new local audit binding, separate authenticated source provenance, all100servicesDisabled; old bearer/session/password/TOTP denied over real HTTP",
+    "Format10 encrypted clean-host recovery retains the applied public reference and stable managed target, assigns fresh incarnation, preserves credential ownership, and requires explicit reactivation",
+    "Actual missing audit key blocks fresh enrollment; quiesced protectedTTY recover-restore reissues archive-bound continuation, old continuation denied; fresh password/TOTP/codes completion singleuse then freshlogin; real restart preserves enrolled Owner/review and disabled services rather than recopying staged unenrolled state",
+    "Recovered provenance and explicit last-source-to-first-local interval visible through authenticated activity; fresh Owner separately reactivates write-only bearer, reviews current credential/policy/access/destination for one service; actual new MCP reference+downstream request200 while99servicesDisabled and old bearer still401",
+    "After real restart and explicit review, MCP uses the restored new public reference successfully; the obsolete public name is rejected without an alias",
+    "Independent PID namespace with same app/audit mounts cannot steal running new-host writer leases"
+  ],
+  "transport": "Actual HTTP on host loopback behind configured HTTPS origin; HTTPS rendered browser independently exercised",
+  "recoveryTargets": "Observed conditional RTO4h/RPO24h under100service/10k-audit synthetic workload and intact independent material/archive/new deployment inputs; no unconditional disaster guarantee",
+  "realLLM": "NOT RUN under authorized local-validation exception",
+  "cleanup": "Only own ephemeral containers and synthetic mounts deleted; no original key copied into new host"
+}

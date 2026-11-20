@@ -689,7 +689,7 @@ milestones:
   commit_hash: ae167fedeae654b0d87d2435d636356583f06ab2
 delivery_goal:
   product_id: secretsauce-mcp
-  status: in_progress
+  status: completed
   packet: delivery/milestones/secretsauce-mcp/status.yaml
   packet_revision: sha256:54e2034d8ee283a17bedfbdbae760c7426163597bfe60a47f3b4eb6a7ef01e41
   packet_contract_revisions:
@@ -807,8 +807,10 @@ delivery_goal:
   current_milestone: null
   governing_plan: delivery/plans/secretsauce-mcp/milestone_54_plan_01.md
   blockers: []
-  resume_point: UX12-INTEGRATED final qualification due
+  resume_point: "M53\u201354 and UX12-INTEGRATED accepted; no deployment."
   started_at: '2026-11-20T17:13:47.810229+00:00'
+  completed_at: '2026-11-20T17:55:27.340320+00:00'
+  evidence: evidence/qa/secretsauce-mcp/ux12-integrated/acceptance.md
 compiled_from_history:
 - product_id: secretsauce-mcp
   input_mode: PRODUCT_BUILD
@@ -3056,7 +3058,7 @@ regression_checkpoints:
     covered_milestones:
     - '53'
     - '54'
-    status: pending
+    status: passed
     due: After M53/M54 and before final acceptance or deployment
     categories:
     - full unit/integration suite and build
@@ -3075,4 +3077,7 @@ regression_checkpoints:
       gates at all affected storage/recovery boundaries, with no waiver of mandatory project gates.
     escalation: First confirmed out-of-area regression expands focused checks; second distinct regression
       or spread requires full suite after repairs.
-    evidence: null
+    evidence: evidence/qa/secretsauce-mcp/ux12-integrated/acceptance.md
+    source_commit: e8c1adee341a64b910c7ee3cb079561dc1898703
+    result: evidence/qa/secretsauce-mcp/ux12-integrated/regression-result.json
+    completed_at: '2026-11-20T17:55:27.340320+00:00'

@@ -6,7 +6,7 @@ source:
   captured_from: realtime transcript
   references:
   - Local M54 console feedback round
-status: NEEDS_CONFIRMATION
+status: CONFIRMED
 transaction:
   parent_commit: 0062f8aa2d670adb15eae1425c956b0de79b2eaa
   repository_commit: null
@@ -494,18 +494,16 @@ items:
   ambiguity: []
 - id: PO-FB-337
   classification: DIRECTIVE
-  confirmation: NEEDS_CONFIRMATION
+  confirmation: CONFIRMED
   original: I mean, we're never support supposed to import evidence. Never
-  normalized: The owner objects to importing evidence. Whether that includes showing verified backup-restore history
-    in Activity requires confirmation.
+  normalized: Do not import Activity records as part of backup restore.
   scope:
   - activity
   tags: []
   authority:
-    product_intent: unresolved
+    product_intent: authoritative
   suggestions: []
-  ambiguity:
-  - The feedback may refer to standalone import or to viewing history recovered from verified backups.
+  ambiguity: []
 - id: PO-FB-338
   classification: OBSERVATION
   confirmation: CONFIRMED
@@ -661,22 +659,23 @@ items:
     product_intent: authoritative
   suggestions: []
   ambiguity: []
-unresolved:
-- id: PO-UNRESOLVED-001
-  item_ids:
+- id: PO-FB-350
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: backup should not include activity as one of the sources it imports. It can be part of the export, but
+    we don't want it imported again
+  normalized: Backup restore must not import Activity records. Exports may contain Activity records.
+  scope:
+  - activity
+  - backup-restore
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+  clarifies:
   - PO-FB-337
-  issue: behavior
-  question: Should verified audit history carried over by a backup restore remain visible and clearly labeled in
-    Activity, or should Activity show only events recorded on the current instance?
-  options:
-  - id: A
-    meaning: Keep verified restored audit history visible and labeled in Activity. General-purpose evidence import
-      remains unavailable.
-    classification: DIRECTIVE
-  - id: B
-    meaning: Show only current-instance events in Activity, excluding verified restored history from that view.
-    classification: DIRECTIVE
-  blocking_reconciliation: true
+unresolved: []
 handoff:
   reconciliation_ready: false
   next_workflow: null

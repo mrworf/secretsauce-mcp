@@ -1,6 +1,6 @@
 # PO-FEEDBACK-2026-11-20-002
 
-Product Owner feedback from the local M54 review. Status **NEEDS_CONFIRMATION**.
+Product Owner feedback from the local M54 review. Status **CONFIRMED**.
 
 | ID | Classification | Confirmation | Meaning |
 | --- | --- | --- | --- |
@@ -42,7 +42,7 @@ Product Owner feedback from the local M54 review. Status **NEEDS_CONFIRMATION**.
 | PO-FB-334 | DIRECTIVE | CONFIRMED | Remove the generic uncertain-outcome instruction from the Activity screen. |
 | PO-FB-335 | OBSERVATION | CONFIRMED | The Activity description implies an evidence importing function the owner does not recognize. |
 | PO-FB-336 | DIRECTIVE | CONFIRMED | Activity must have no general-purpose evidence upload or import. |
-| PO-FB-337 | DIRECTIVE | NEEDS_CONFIRMATION | The owner objects to importing evidence. Whether that includes showing verified backup-restore history in Activity requires confirmation. |
+| PO-FB-337 | DIRECTIVE | CONFIRMED | Do not import Activity records as part of backup restore. |
 | PO-FB-338 | OBSERVATION | CONFIRMED | A retention-only edit triggered an apparently unrelated Secret Detection error and an ineffective manual reload. |
 | PO-FB-339 | OBSERVATION | CONFIRMED | The error and its navigation point to different settings sections. |
 | PO-FB-340 | DIRECTIVE | CONFIRMED | Test the settings edit-through-review flow, including the reported retention-only scenario. |
@@ -55,14 +55,8 @@ Product Owner feedback from the local M54 review. Status **NEEDS_CONFIRMATION**.
 | PO-FB-347 | DIRECTIVE | CONFIRMED | Use the Services Apply confirmation dialog pattern for Settings, with acknowledgment visible in the dialog. |
 | PO-FB-348 | DIRECTIVE | CONFIRMED | Remove the generic Security and operational effects box from the review page. |
 | PO-FB-349 | DIRECTIVE | CONFIRMED | After a successful Apply, return to the Settings section where review started instead of leaving the user on a separate confirmation screen. |
+| PO-FB-350 | DIRECTIVE | CONFIRMED | Backup restore must not import Activity records. Exports may contain Activity records. |
 
 Confirmed directives establish product intent. Preferences are advisory. Observations record evidence. Ideas and questions are exploratory.
-
-## Open decision
-
-Should verified audit history carried over by a backup restore remain visible and clearly labeled in Activity, or should Activity show only events recorded on the current instance?
-
-- Keep verified restored audit history visible and labeled in Activity. General-purpose evidence import remains unavailable.
-- Show only current-instance events in Activity, excluding verified restored history from that view.
 
 Reconciliation ready **false**.

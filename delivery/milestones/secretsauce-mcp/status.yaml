@@ -716,22 +716,25 @@ milestones:
 - id: '57'
   title: Review and apply only genuine Settings changes
   file: delivery/milestones/secretsauce-mcp/57-reliable-settings-review.md
-  status: in_progress
+  status: completed
   dependencies:
   - '55'
-  completed_at: null
-  evidence: null
-  notes: null
+  completed_at: '2026-11-21T01:20:25.618173+00:00'
+  evidence: evidence/ux-acceptance/secretsauce-mcp/milestone57/acceptance.md
+  notes: Focused acceptance and actual browser visual evidence passed; UX13-INTEGRATED remains due before
+    goal completion.
   started_at: '2026-11-21T01:03:58.826479+00:00'
+  commit_hash: 4e436e18ab8a12d19a450d3f51c97a63c23f947e
 - id: '58'
   title: Restore configuration without importing archived Activity
   file: delivery/milestones/secretsauce-mcp/58-restore-without-activity-import.md
-  status: pending
+  status: in_progress
   dependencies:
   - '56'
   completed_at: null
   evidence: null
   notes: null
+  started_at: '2026-11-21T01:20:25.618173+00:00'
 delivery_goal:
   product_id: secretsauce-mcp
   status: in_progress
@@ -859,10 +862,10 @@ delivery_goal:
   - '57'
   - '58'
   execution: autonomous
-  current_milestone: '57'
-  governing_plan: delivery/plans/secretsauce-mcp/milestone_57_plan_01.md
+  current_milestone: '58'
+  governing_plan: delivery/plans/secretsauce-mcp/milestone_58_plan_01.md
   blockers: []
-  resume_point: M57 governing plan before implementation
+  resume_point: M58 governing plan before implementation
   started_at: '2026-11-21T00:27:51.903524+00:00'
 compiled_from_history:
 - product_id: secretsauce-mcp

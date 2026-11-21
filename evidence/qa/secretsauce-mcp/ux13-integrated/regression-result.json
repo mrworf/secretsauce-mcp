@@ -1,0 +1,33 @@
+{
+  "result": "PASS",
+  "source_commit": "23b70484709ff1b0f23d6888141e8cf07788c7b9",
+  "source_tree": "a7583d82c3464ccb75b3f3f28dbdf983b1cb6bb8",
+  "full_suite": {
+    "command": "npm test -- --maxWorkers=2",
+    "environment": "Frozen tracked export; locked dependencies; loopback permission; no concurrent browser/Docker workload",
+    "files_passed": 87,
+    "tests_passed": 858,
+    "tests_failed": 0,
+    "duration_seconds": 129.84
+  },
+  "build": {
+    "command": "npm run build (npm test pretest)",
+    "result": "PASS"
+  },
+  "browser_evidence": [
+    "evidence/ux-acceptance/secretsauce-mcp/milestone55/forms/acceptance.md",
+    "evidence/ux-acceptance/secretsauce-mcp/milestone55/feedback/acceptance.md",
+    "evidence/ux-acceptance/secretsauce-mcp/milestone56/acceptance.md",
+    "evidence/ux-acceptance/secretsauce-mcp/milestone57/acceptance.md"
+  ],
+  "storage_format": 10,
+  "image_tag": "secretsauce-local-review:m58",
+  "image_id": "sha256:056fc10c7a4edb29b00250486af9bbd6f7c12a628204276b3a54b6aa71dd9bf6",
+  "recovery_evidence": "evidence/platform/secretsauce-mcp/ux13-integrated/docker-cleanhost-report.json",
+  "deployment_performed": false,
+  "recovery_reports": [
+    "evidence/platform/secretsauce-mcp/ux13-integrated/docker-cleanhost-report.json",
+    "evidence/platform/secretsauce-mcp/ux13-integrated/docker-crash-report.json",
+    "evidence/platform/secretsauce-mcp/ux13-integrated/docker-launcher-report.json"
+  ]
+}

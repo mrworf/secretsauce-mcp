@@ -697,8 +697,7 @@ milestones:
   - '54'
   completed_at: '2026-11-21T00:49:55.213203+00:00'
   evidence: evidence/ux-acceptance/secretsauce-mcp/milestone55
-  notes: Focused acceptance and actual browser visual evidence passed; UX13-INTEGRATED remains due before
-    goal completion.
+  notes: Targeted acceptance and UX13-INTEGRATED passed; no deployment.
   started_at: '2026-11-21T00:27:51.903524+00:00'
   commit_hash: 7e6e7daf1239f6d1a31698247852d299ae81c22d
 - id: '56'
@@ -709,8 +708,7 @@ milestones:
   - '55'
   completed_at: '2026-11-21T01:03:58.826479+00:00'
   evidence: evidence/ux-acceptance/secretsauce-mcp/milestone56/acceptance.md
-  notes: Focused acceptance and actual browser visual evidence passed; UX13-INTEGRATED remains due before
-    goal completion.
+  notes: Targeted acceptance and UX13-INTEGRATED passed; no deployment.
   started_at: '2026-11-21T00:49:55.213203+00:00'
   commit_hash: 7b2814fd6b35148ae968296c1258fde411d85e2b
 - id: '57'
@@ -721,8 +719,7 @@ milestones:
   - '55'
   completed_at: '2026-11-21T01:20:25.618173+00:00'
   evidence: evidence/ux-acceptance/secretsauce-mcp/milestone57/acceptance.md
-  notes: Focused acceptance and actual browser visual evidence passed; UX13-INTEGRATED remains due before
-    goal completion.
+  notes: Targeted acceptance and UX13-INTEGRATED passed; no deployment.
   started_at: '2026-11-21T01:03:58.826479+00:00'
   commit_hash: 4e436e18ab8a12d19a450d3f51c97a63c23f947e
 - id: '58'
@@ -733,13 +730,12 @@ milestones:
   - '56'
   completed_at: '2026-11-21T01:29:23.294119+00:00'
   evidence: evidence/qa/secretsauce-mcp/milestone58/targeted-acceptance.md
-  notes: Focused recovery/API acceptance passed; no new graphical surface; actual same-image recovery
-    remains due at UX13-INTEGRATED.
+  notes: Targeted acceptance and UX13-INTEGRATED passed; no deployment.
   started_at: '2026-11-21T01:20:25.618173+00:00'
   commit_hash: 057bd191f484eb5025141e744e23351a4a4581b9
 delivery_goal:
   product_id: secretsauce-mcp
-  status: in_progress
+  status: completed
   packet: delivery/milestones/secretsauce-mcp/status.yaml
   packet_revision: sha256:05fbd37fcc4204627df6e4f7096bbda7aeecd3e4964f20f88b239326e95abe38
   packet_contract_revisions:
@@ -867,8 +863,10 @@ delivery_goal:
   current_milestone: null
   governing_plan: delivery/plans/secretsauce-mcp/milestone_58_plan_01.md
   blockers: []
-  resume_point: UX13-INTEGRATED final qualification due
+  resume_point: "M55\u201358 and UX13-INTEGRATED accepted; no deployment."
   started_at: '2026-11-21T00:27:51.903524+00:00'
+  completed_at: '2026-11-21T01:38:54.930756+00:00'
+  evidence: evidence/qa/secretsauce-mcp/ux13-integrated/acceptance.md
 compiled_from_history:
 - product_id: secretsauce-mcp
   input_mode: PRODUCT_BUILD
@@ -3350,7 +3348,7 @@ regression_checkpoints:
     - '56'
     - '57'
     - '58'
-    status: pending
+    status: passed
     due: "After M55\u201358 before final goal acceptance or deployment"
     categories:
     - full unit/integration/build
@@ -3367,3 +3365,7 @@ regression_checkpoints:
       regression requires full suite after repairs.
     conditional: Actual self-signed HTTPS if downstream transport changes. Existing required recovery
       and security gates remain mandatory.
+    source_commit: 23b70484709ff1b0f23d6888141e8cf07788c7b9
+    evidence: evidence/qa/secretsauce-mcp/ux13-integrated/acceptance.md
+    result: evidence/qa/secretsauce-mcp/ux13-integrated/regression-result.json
+    completed_at: '2026-11-21T01:38:54.930756+00:00'

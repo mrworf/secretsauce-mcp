@@ -18,13 +18,15 @@ const { parentPort } = require("node:worker_threads");
 let runtime;
 async function getRuntime() {
   if (runtime) return runtime;
-  const [{ lintSource }, preset, pattern] = await Promise.all([
+  const [{ lintSource }, { recommendedRules, getBuiltinRule }] = await Promise.all([
     import("@secretlint/core"),
-    import("@secretlint/secretlint-rule-preset-recommend"),
-    import("@secretlint/secretlint-rule-pattern"),
+    import("@secretlint/core/builtin"),
   ]);
-  const catalog = new Map(preset.rules.map((rule) => [rule.meta.id, rule]));
-  catalog.set("@secretlint/secretlint-rule-pattern", pattern.creator);
+  const patternId = "@secretlint/secretlint-rule-pattern";
+  const pattern = getBuiltinRule(patternId);
+  if (!pattern) throw new Error("Secretlint pattern rule unavailable");
+  const catalog = new Map(recommendedRules.map((rule) => [rule.meta.id, rule]));
+  catalog.set(patternId, pattern);
   runtime = { lintSource, catalog };
   return runtime;
 }

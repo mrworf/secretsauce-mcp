@@ -59,23 +59,31 @@ describe("Docker CI metadata", () => {
     }
   });
 
-  it("uses local metadata generation and Node 24 Docker action majors", () => {
+  it("uses local metadata generation and pins all CI actions to immutable commits", () => {
     const source = readFileSync(".github/workflows/ci.yml", "utf8");
     const workflow = parse(source) as any;
     const steps = workflow.jobs["docker-image"].steps as Array<Record<string, unknown>>;
 
     expect(source).not.toContain("docker/metadata-action");
-    expect(source).toContain("docker/setup-qemu-action@v4");
-    expect(source).toContain("docker/setup-buildx-action@v4");
-    expect(source).toContain("docker/login-action@v4");
-    expect(source).toContain("docker/build-push-action@v6");
-    expect(steps.some((step) => step.uses === "actions/setup-node@v5")).toBe(true);
+    const references = Object.values(workflow.jobs).flatMap((job) =>
+      (job as { steps: Array<{ uses?: string }> }).steps.flatMap((step) => step.uses ? [step.uses] : []),
+    );
+    expect(references.map((reference) => reference.split("@")[0])).toEqual(expect.arrayContaining([
+      "actions/checkout", "actions/setup-node", "docker/setup-qemu-action",
+      "docker/setup-buildx-action", "docker/login-action", "docker/build-push-action",
+    ]));
+    for (const reference of references) expect(reference).toMatch(/@[0-9a-f]{40}$/);
+    const qualityCommands = workflow.jobs["quality-gates"].steps.map((step: { run?: string }) => step.run);
+    expect(qualityCommands.filter(Boolean).slice(0, 2)).toEqual([
+      "npm audit --include=dev --audit-level=low",
+      "npm ci",
+    ]);
     expect(steps.find((step) => step.id === "meta")?.run).toBe("node scripts/docker-metadata.mjs");
   });
 
   it("includes package metadata beside compiled server files in the runtime image", () => {
     const source = readFileSync("Dockerfile", "utf8");
-    const runtimeStage = source.slice(source.lastIndexOf("FROM node:22-alpine"));
+    const runtimeStage = source.slice(source.lastIndexOf("FROM base AS runtime"));
 
     expect(runtimeStage).toContain("COPY --from=build /app/dist ./dist");
     expect(runtimeStage).toContain("COPY package.json ./");

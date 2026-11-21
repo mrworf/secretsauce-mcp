@@ -2,7 +2,7 @@ import {describe,it,expect,vi} from 'vitest';
 import {readFileSync,writeFileSync,rmSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
 import {resolve} from 'node:path';
-import ts from 'typescript';
+import { compilePriorReader } from './fixtures/compile-prior-reader.js';
 import {managedFixture} from './consoleManagementFixtures.js';
 import {ConsoleStore} from '../src/consoleStore.js';
 import {projectRecoveryState} from '../src/consoleBackupArchive.js';
@@ -28,8 +28,8 @@ describe('saved proposal dependency fencing',()=>{
  f.manager.save(f.session,{id:'first',base:0,generation:0,service:{name:'Retained label'}});f.store.commit(f.session.userId,'service.proposal_format_upgrade','instance',state=>{state.v=6;});
  const finish=vi.spyOn(f.store.journal,'finish').mockImplementation(()=>{throw Error('synthetic completion failure');});expect(()=>f.manager.discard(f.session,{id:'first',base:0,generation:1,confirmed:true})).toThrow('uncertain');finish.mockRestore();f.store.close();const reopened=new ConsoleStore(f.directory,f.keyFile);expect(reopened.state.managed!.services.first).toMatchObject({displayName:'Retained label',proposalGeneration:2});expect(reopened.state.managed!.services.first!.draft).toBeUndefined();reopened.close();
  }finally{f.close();}});
- it('reaches the pinned prior reader and rejects v6 without modifying the envelope',()=>{const f=managedFixture(),old=resolve('dist/consoleStore-m47-old.js');try{
- f.manager.save(f.session,{id:'first',base:0,generation:0,service:{name:'Retained label'}});f.manager.discard(f.session,{id:'first',base:0,generation:1,confirmed:true});f.store.close();const before=readFileSync(f.store.file,'utf8');writeFileSync(old,ts.transpileModule(readFileSync('test/fixtures/m47/consoleStore-v5.ts.txt','utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ES2022}}).outputText);
+ it('reaches the pinned prior reader and rejects v6 without modifying the envelope',async()=>{const f=managedFixture(),old=resolve('dist/consoleStore-m47-old.js');try{
+ f.manager.save(f.session,{id:'first',base:0,generation:0,service:{name:'Retained label'}});f.manager.discard(f.session,{id:'first',base:0,generation:1,confirmed:true});f.store.close();const before=readFileSync(f.store.file,'utf8');writeFileSync(old,await compilePriorReader('test/fixtures/m47/consoleStore-v5.ts.txt'));
  const result=execFileSync(process.execPath,['--input-type=module','-e',`import {ConsoleStore} from ${JSON.stringify('file://'+old)};console.log('reader reached');try{new ConsoleStore(process.argv[1],process.argv[2]);process.exit(9);}catch(e){if(!e.message.includes('Managed storage unavailable'))throw e;console.log('unsupported format rejected');}`,f.directory,f.keyFile],{encoding:'utf8'});expect(result).toContain('reader reached');expect(result).toContain('unsupported format rejected');expect(readFileSync(f.store.file,'utf8')).toBe(before);
  }finally{rmSync(old,{force:true});f.close();}});
 });

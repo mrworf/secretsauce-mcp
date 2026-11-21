@@ -81,7 +81,9 @@ ghcr.io/mrworf/secretsauce-mcp
 
 Package page: [github.com/mrworf/secretsauce-mcp/pkgs/container/secretsauce-mcp](https://github.com/mrworf/secretsauce-mcp/pkgs/container/secretsauce-mcp)
 
-The CI workflow runs `npm ci`, `npm run build`, and `npm test` first. The Docker image job depends on those quality gates, so a failing build or test run prevents image publishing. Pull requests validate the Docker build without pushing an image; pushes to `main` publish the GHCR image.
+The CI workflow audits the npm lockfile, including development dependencies, before installing, building, and testing. The Docker job depends on these checks. Pull requests validate the Docker build. Pushes to `main` publish the GHCR image.
+
+Run `npm audit --include=dev --audit-level=low` before submitting a dependency change. To block changes on GitHub, require pull requests and the `quality-gates` status check on `main`. Dependabot checks for npm, base-image, and GitHub Actions updates weekly. [GitHub rulesets](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets)
 
 ## Merge Protection
 

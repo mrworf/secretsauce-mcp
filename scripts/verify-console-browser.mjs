@@ -43,7 +43,9 @@ try {
  clock+=30000;await type('#email','owner@example.org');await type('#password',password);await type('#code',totp(seed,clock));await submit('Sign in');await expect(page.getByRole('heading',{name:'Services',exact:true})).toBeVisible();await submit('My account');await expect(page.getByRole('heading',{name:'My account',exact:true})).toBeVisible();await shot('account-desktop');
  const cookies=await context.cookies();if(!cookies.some(c=>c.name==='__Host-ss-console'&&c.secure&&c.httpOnly&&c.sameSite==='Strict'))throw Error('Cookie flags missing');
  if(!await page.evaluate(()=>localStorage.length===0&&sessionStorage.length===0))throw Error('Persistent browser state');
- if(page.url()!==origin+'/console')throw Error('URL changed');
+ const accountLocation=new URL(page.url());
+ if(accountLocation.origin!==origin||accountLocation.pathname!=='/console'||accountLocation.hash
+    ||!['','?services'].includes(accountLocation.search))throw Error('Unexpected console URL');
  await page.setViewportSize({width:320,height:800});await bounded();await shot('account-320');
  await submit('Sign out');await expect(page.getByRole('heading',{name:'Sign in',exact:true})).toBeVisible();await shot('login-320');
  await type('#email','owner@example.org');await type('#password','incorrect synthetic password');await type('#code','123456');await submit('Sign in');await expect(page.locator('#errors')).toBeFocused();await shot('safe-error-320',true);

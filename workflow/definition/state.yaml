@@ -5,7 +5,7 @@ scope: 'PO-FEEDBACK-2026-11-20-001: lifecycle alignment, automatic stale review 
   reference'
 transaction:
   parent_commit: af12c415c24cefd958e239d4fe9a8cdbf55da2b5
-  repository_commit: null
+  repository_commit: 3a186acf6fd7aa14589e869992701855a5f096bf
   pre_existing_dirty_paths:
   - passwd
   - codex-session-01a122f7-e70f-7440-b1ce-ca88b955e519.md
@@ -576,7 +576,7 @@ last_reconciliation:
   definition_package:
     status: current
     path: workflow/definition/definition-package.yaml
-    revision: sha256:44c6489cdb987b7a27f5b6965bd4fccb8168f6de06f673762c71852cafcd8edd
+    revision: sha256:88336bf42b4013e80842d511d52496cba87ed568fd3a838f014d68caff65af5a
 feedback_source:
   feedback_id: PO-FEEDBACK-2026-11-20-002
   path: workflow/feedback/PO-FEEDBACK-2026-11-20-002/feedback.yaml
@@ -917,6 +917,7 @@ next_handoff:
   definition_action: TARGETED_REVALIDATION
   implementation_ready: true
   delivery_planning_ready: true
+  source_commit: 3a186acf6fd7aa14589e869992701855a5f096bf
 evidence_collection:
   status: complete
   owner: product-ux

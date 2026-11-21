@@ -1,0 +1,14 @@
+{
+  "base": "d016301",
+  "method": "SHA256 exact owned bytes; sanitized tracked export with explicit owned overlays",
+  "files": {
+    "scripts/lib/verify-console-settings-review.mjs": "3192cb89a90eba6cf45fcbae3606e2ef688274725d30f653bf51bc5827a16fb4",
+    "scripts/verify-console-service-editor-browser.mjs": "54f1f7fa139c17181dd4d3d8ed99ce346aced0b00bc6f54762a4828ea9abbada",
+    "src/consolePage.ts": "d316be4de4b1583334a4617575ec64f28f162b01f881c9c7b19f369a7b737739",
+    "src/consolePeoplePage.ts": "77131be89cdc95705d728f1bf21d7747d07d059bb0ec5e915af6c990ed8d14d5",
+    "src/consolePresentation.ts": "4cef8a1a5a9b8d85fdf4cd450bf70c18596a1240d92917ea7f1a65c2cb85cab5",
+    "src/consoleServicePage.ts": "672db76b6d1f80ef3b0536225cf831d268dd2f5abbf1ceb2115e3d334f6c0cc3",
+    "src/consoleSettingsPage.ts": "85547271456667563e17cf69151e27012a0554f136635539470d922ea5f17f38",
+    "test/console-settings-refresh.test.ts": "28d1c216259324135b1d00dfd248d1680e83b98fd811fd7ad372f0f2c00032a1"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "result": "PASS",
+  "checks": [
+    "Compact ultrawide/desktop/narrow sign-in, separate replacement task with blank proofs, ordinary recovery-code login succeeds; generic password helper absent.",
+    "Retention-only no phantom protection; rail-free complete review; cancel/no mutation, required full-scope and SMTP risk gates, recent auth, origin success; delayed Save/Review preserve newer local edits; semantic units, unvisited drafts, explicit stale repair, bullet discard, independent cleanup failure and unknown Apply."
+  ]
+}

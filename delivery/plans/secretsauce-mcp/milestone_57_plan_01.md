@@ -16,7 +16,11 @@ Sanitized tracked archive plus explicit owned overlays; read-only node_modules a
 
 | Slice | Status | Commit/evidence |
 |---|---|---|
-|1|completed|evidence/qa/secretsauce-mcp/milestone57/candidates.md; commit in Git history|
-|2|in_progress|pending|
+|1|completed|d016301; evidence/qa/secretsauce-mcp/milestone57/candidates.md|
+|2|completed|evidence/ux-acceptance/secretsauce-mcp/milestone57/acceptance.md; commit in Git history|
 
 Slice1 boundary refinement: comparison helper and monotonic writer fixes are independently checked; current-editor retry and explicit legacy repair stay with their UI interaction in slice2, avoiding new durable proof metadata/schema.
+
+## Completion
+
+Build/23 focused tests and actual HTTPS Settings journey PASS. Exact source hashes and desktop/narrow/enlarged visual evidence recorded under milestone57. Explicit legacy repair replaces unsupported saved-proposal auto-rebase; only absent-proposal current-editor proof admits one known-stale retry. Delayed-save finding repaired by retaining submitted snapshots and refreshing all captured read contexts. Delayed review and canceled reauthentication cannot apply/erase later work. All genuine drafts remain in full review. Narrow comparison and modal focus verified. No deployment or full-suite run; M58 and outer integrated qualification remain.

@@ -26,3 +26,5 @@ docker run --rm --user 1000:1000 --mount type=bind,src=/tmp/m56-browser-source,d
 ```
 
 Synthetic HTTPS only, no live store or unrelated working-tree files mounted. Request call logs and form values omitted from failures. All browser workloads stopped. No full suite, application image, recovery drill or deployment run here; outer UX13-INTEGRATED retains those gates after M58.
+
+Bottom-paging corrective slice: after a7c92e6, the parent traced the explicit placement request. The single page-size/Previous/Next group now follows the final event card; total/export remains above. Actual DOM-order assertion and regenerated enlarged paging image pass. Final build/browser PASS includes the real hidden #success-notification assertion and history revisit check. No core/export behavior changed; browser workloads stopped.

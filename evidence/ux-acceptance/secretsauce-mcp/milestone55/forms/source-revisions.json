@@ -1,0 +1,7 @@
+{
+  "src/consoleServicePage.ts": "b03d89eaa3de6b7554bdf94be2890e1493ef31555b095d933eea84d2227e965f",
+  "src/consoleSettingsPage.ts": "9aae5cd32df8e9e04f07ceec4cb791ebd541be8ef5066bbec9d713042fdd3aa0",
+  "src/consolePresentation.ts": "ef0bf53849eea9a3f0eddb3dc47d14e1f1501be42cf5437a413fae597bd37487",
+  "scripts/verify-console-service-editor-browser.mjs": "db95967ea0cb1eb139e2e3234726d855cb4a88cc625731e05f23aa72b41b6c22",
+  "scripts/lib/verify-console-clean-states.mjs": "c7c7ec6f11791775a6eed665486bff4dfc9a8300be9a417d8a5537580bb4d0a2"
+}

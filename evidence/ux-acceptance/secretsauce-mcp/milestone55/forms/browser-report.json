@@ -1,0 +1,7 @@
+{
+  "result": "PASS",
+  "checks": [
+    "Compact ultrawide/desktop/narrow sign-in, separate replacement task with blank proofs, ordinary recovery-code login succeeds; generic password helper absent.",
+    "Clean/saved/local/reverted service and Settings bars; same-layout archived sections and Advanced/Access navigation without mutations; field required semantics without legends; actual narrow/enlarged layout."
+  ]
+}

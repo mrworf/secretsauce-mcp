@@ -1,0 +1,21 @@
+{
+  "parentCommit": "33671055c6410f853c1a407cb4fcd839bf083594",
+  "sourceHashes": {
+    "AGENTS.md": "beedcbd798fb0776a193f833bfaae0dc89b1262fe025731a6881d4707ed6ddb4",
+    "src/consoleBackupExecutor.ts": "f803c0c0955a72ea909a2498360a47a1848b5caca7e22004531fae0cdcb22c03",
+    "src/consoleBackupWorker.ts": "fad35a37c90dfbe51e9ca9e7be0a2119dffda8120215037d7e330ff68ea7b816",
+    "src/consoleRestore.ts": "1d6c9babb62d31a645873574709a837074b75091c8a89706944cab82b4c7930d",
+    "src/consoleRestoreProvenance.ts": "d0f2bf77d3ca1b6861b8f27f1b5f6e1d247cd83e6b7853f9a1c1324925bbb3db",
+    "test/console-restore-recovery.test.ts": "9b8442d6b0602c37d3ee617e3b520c33ff01f52b3e0e4560fe4842a343083b7a",
+    "scripts/console-recovery-docker-fixture.mjs": "a6e319c50c82dcf4e47bb08828bd99b22a24a9c0d457a384377c1e35ee9f3514",
+    "scripts/verify-console-recovery-crashes-docker.mjs": "71f269a6447331d0ec8d9abf5cc051fe803bf0037ca595dec3f06bd6ca25cae8",
+    "scripts/verify-console-recovery-cleanhost-docker.mjs": "fdcd4668e1c5451fcf22dbccf2abc771691b3420753fc3158d7dfae8dc7bb50b"
+  },
+  "focusedValidation": {
+    "result": "PASS",
+    "files": 5,
+    "tests": 47,
+    "build": "PASS"
+  },
+  "finalSameImageQualification": "PENDING outer UX13-INTEGRATED"
+}

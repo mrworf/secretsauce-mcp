@@ -24,3 +24,25 @@ export function importedAudit(payload:RecoveryPayload,archive:string,currentSecr
  }
  if(performance.now()>deadline)throw Error('Imported audit work deadline');if(result.length>32||result.reduce((n,v)=>n+v.entries.length,0)>100000||Buffer.byteLength(JSON.stringify(result))>64*1024*1024)throw Error('Imported audit capacity reached; inspect retained source evidence.');return result;
 }
+
+/** Validate historical evidence semantics without constructing live Activity projections. */
+export function validateArchivedEvidence(payload:RecoveryPayload):void {
+ const deadline=performance.now()+2000;
+ const sources=[...(payload.state.importedAudit??[]).map(s=>({domain:s.domain,data:s.data})),...Object.entries(payload.audit).map(([domain,data])=>({domain,data}))];
+ const retained:Array<(typeof sources)[number]&{first:string}>=[];
+ for(const item of sources){
+  if(performance.now()>deadline)throw Error('Archived evidence work deadline');
+  const source={...item,first:item.data.chain.slice(0,item.data.chain.indexOf('\n'))};
+  const prior=retained.find(s=>s.domain===source.domain&&s.data.identity===source.data.identity&&s.first===source.first);
+  if(prior&&prior.data.chain.startsWith(source.data.chain))continue;
+  if(prior&&!source.data.chain.startsWith(prior.data.chain))throw Error('Conflicting archived audit ancestry');
+  if(prior)retained[retained.indexOf(prior)]=source;else retained.push(source);
+ }
+ let count=0;
+ for(const {data} of retained){
+  const records=data.chain.trim().split('\n').map(line=>JSON.parse(line).record as Record<string,unknown>),started=new Set(records.filter(r=>r.phase==='start').map(r=>r.id));
+  for(const r of records){if(!r||typeof r.id!=='string'||typeof r.actor!=='string'||typeof r.action!=='string'||typeof r.target!=='string'||!['start','complete','recovery'].includes(String(r.phase))||!Number.isFinite(r.time)||!Number.isSafeInteger(r.revision)||Number(r.revision)<0)throw Error('Invalid archived audit record');if(r.action!=='audit.event'&&(r.phase!=='complete'||!started.has(r.id)))count++;if(performance.now()>deadline)throw Error('Archived evidence work deadline');}
+  for(const line of data.events?.trim().split('\n').filter(Boolean)??[]){const e=JSON.parse(line);if(!Number.isFinite(Date.parse(String(e.timestamp??e.request_timestamp)))||!Number.isSafeInteger(Number(e.admitted_revision??0))||Number(e.admitted_revision??0)<0)throw Error('Invalid archived evidence record');count++;if(performance.now()>deadline)throw Error('Archived evidence work deadline');}
+ }
+ if(retained.length>32||count>100000||performance.now()>deadline)throw Error('Archived evidence capacity');
+}

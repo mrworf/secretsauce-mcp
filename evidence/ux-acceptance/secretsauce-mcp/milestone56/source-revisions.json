@@ -1,0 +1,11 @@
+{
+  "baseCommit": "3856259",
+  "sourceHashes": {
+    "src/consoleEvidence.ts": "42f7b864efb2dd71607961dad24b472e3c6dda3fd7e0c466cfbde259676d5ea9",
+    "src/consoleHttp.ts": "fd8b3858b1ddf55001225d485a93f2a191e54974f0f5c10c9cd3f6da3f590a40",
+    "src/consoleEvidencePage.ts": "8f1cc9fe69bf2b40ad5cc926abd024345c6f3f74cf48a6c19429e1d5fee35320",
+    "src/consolePresentation.ts": "ef0bf53849eea9a3f0eddb3dc47d14e1f1501be42cf5437a413fae597bd37487",
+    "scripts/verify-console-activity-browser.mjs": "98ce468e26f1408de13f95433d1f0e5e2cb11bed7842c44c0f6af09526370faf",
+    "scripts/verify-console-envelope.mjs": "336949d5009b7681a9aa7291e6f74514c8e1ff223ff3a3ffed269639924af336"
+  }
+}

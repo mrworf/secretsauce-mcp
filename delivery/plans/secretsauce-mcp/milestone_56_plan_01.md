@@ -12,8 +12,8 @@ Existing authenticated POST export has256KiB input/CSRF fences, but Activity sli
 
 | Slice | Observable outcome | Dependencies | Status | Commit |
 |---|---|---|---|---|
-|01|Authorized complete Activity download independent of page, bounded and cancelable|Existing selection/auth/audit|targeted pass|this slice commit|
-|02|Deliberate search/time/paging and actual browser acceptance of integrated download|01 and M55|pending|pending|
+|01|Authorized complete Activity download independent of page, bounded and cancelable|Existing selection/auth/audit|complete|3856259|
+|02|Deliberate search/time/paging and actual browser acceptance of integrated download|01 and M55|complete|this slice commit|
 
 ### Slice01 contract
 
@@ -32,3 +32,5 @@ Reuse existing tests/harness; positive/negative external inputs required. No ful
 Plan persisted before production edits. Pending focused validation; no acceptance claim yet.
 
 Slice01: build PASS; evidence unit/HTTP22 tests PASS after identical loopback-permission rerun (initial EPERM was environment). Complete700-row/>2MiB streaming,10000-row snapshot, offset ignored, cancellation/no closing frame, shared-slot release/concurrency, role loss and deadline covered. Existing invalid/maxescapedinput/Origin/CSRF/Member and predicate semantics retained. Synchronous internal Activity export now explicitly rejects to prevent a second unbounded path; production existing POST uses the bounded writer. One per-store output slot,30-second total output deadline, bounded single-row writes/backpressure, fresh authority/context/revision checks; errors after headers destroy transport. No full suite run.
+
+Slice02: final sanitized-source build and actual HTTPS browser PASS. Search edits clear old result authority, pending responses cannot restore it, fixed searched bounds support25/50/100 pages, a shrunken offset gets one bounded page1 retry, and revisited Activity requires deliberate Search when no matching result context is retained. Complete735-row download from page2 and interrupted framing/no-download are exercised. Existing operating-envelope harness now uses the bounded writer/full-count assertions (syntax checked, workload not rerun here). Final screenshots inspected at1440/390/320 and200% text, including paging controls. Browser workloads stopped. Acceptance/source hashes are under evidence/ux-acceptance/secretsauce-mcp/milestone56; no full suite or deployment.

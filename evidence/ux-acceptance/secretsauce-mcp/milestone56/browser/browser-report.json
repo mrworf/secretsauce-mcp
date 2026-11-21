@@ -1,0 +1,9 @@
+{
+  "result": "PASS",
+  "checks": [
+    {
+      "check": "Actual HTTPS: Last24h/local dates; deliberate edits clear result authority; fixed interval paging25/50; shrinking results reset; custom reversed range; pending and failed search; complete735-row export from page2; broken framing produces no download; no download toast; service scope; Auditor export and Member denial; desktop390/320text200 reflow"
+    }
+  ],
+  "transport": "Disposable synthetic HTTPS; server-owned delays/failures; no request call logs"
+}

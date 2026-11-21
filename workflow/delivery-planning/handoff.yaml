@@ -11,7 +11,7 @@ source:
   reconciliation: workflow/reconciliation/REC-RUN-018/reconciliation-result.yaml
 planning:
   parent_commit: c09639198b073fc03159d875c77f81e095fa9e15
-  repository_commit: null
+  repository_commit: cbc824c88226cf10067f7b23c7a152baf1354596
 milestones:
   manifest: delivery/milestones/secretsauce-mcp/status.yaml
   packet_revision: sha256:05fbd37fcc4204627df6e4f7096bbda7aeecd3e4964f20f88b239326e95abe38

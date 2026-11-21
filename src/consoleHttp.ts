@@ -177,7 +177,17 @@ export async function handleConsoleRequest(store: ConsoleStore, request: Incomin
         if(path==='/console/api/limits/apply'){reply(200,consoleOperations(store).apply(session,data));return;}
         if(path==='/console/api/activity/search'){reply(200,consoleEvidence(store).query(session,data));return;}
         if(path==='/console/api/activity/detail'){reply(200,consoleEvidence(store).detail(session,data));return;}
-        if(path==='/console/api/evidence/export'){reply(200,consoleEvidence(store).export(session,data));return;}
+        if(path==='/console/api/evidence/export'){
+            if(data?.kind!=='activity'){reply(200,consoleEvidence(store).export(session,data));return;}
+            const controller=new AbortController(),abort=()=>controller.abort();response.once('close',abort);
+            const timer=setTimeout(abort,30000);timer.unref();
+            try{await consoleEvidence(store).writeActivity(session,data,controller.signal,async chunk=>{
+                if(controller.signal.aborted||response.destroyed)throw new EvidenceError('Activity export interrupted.');
+                if(!response.headersSent)response.writeHead(200,{'content-type':'application/json','content-disposition':'attachment; filename="secretsauce-activity.json"'});
+                if(!response.write(chunk))await new Promise<void>((resolve,reject)=>{const cleanup=()=>{response.off('drain',drain);controller.signal.removeEventListener('abort',cancel);};const drain=()=>{cleanup();resolve();};const cancel=()=>{cleanup();reject(new EvidenceError('Activity export interrupted.'));};response.once('drain',drain);controller.signal.addEventListener('abort',cancel,{once:true});if(controller.signal.aborted)cancel();});
+            });response.end();}catch(error){if(response.headersSent){response.destroy();return;}throw error;}finally{clearTimeout(timer);response.off('close',abort);}
+            return;
+        }
         if(path==='/console/api/retention/save'){reply(200,consoleEvidence(store).saveRetention(session,data));return;}
         if(path==='/console/api/retention/review'){reply(200,consoleEvidence(store).reviewRetention(session,data));return;}
         if(path==='/console/api/retention/apply'){reply(200,consoleEvidence(store).applyRetention(session,data));return;}

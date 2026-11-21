@@ -1,3 +1,4 @@
+import {setImmediate as yieldTurn} from 'node:timers/promises';
 import {digest} from './consoleCrypto.js';
 import {consoleBackups} from './consoleBackups.js';
 import { randomUUID } from 'node:crypto';
@@ -22,6 +23,7 @@ export function evidenceSanitizer(store:ConsoleStore):(value:string)=>string {
 }
 export function safeEvidenceText(store:ConsoleStore,value:string):string{return evidenceSanitizer(store)(value);}
 export class ConsoleEvidence {
+ private exporting=false;
  constructor(readonly store:ConsoleStore){}
  get retention():RetentionState{return this.store.state.retention??{days:365};}
  private expiredImported(cutoff:number){return (this.store.state.importedAudit??[]).filter(d=>d.lastEvidenceTime<cutoff&&d.entries.every(e=>e.time<cutoff&&e.result!=='uncertain'));}
@@ -81,15 +83,41 @@ export class ConsoleEvidence {
   return {scope:user.role==='Member'?'Own activity':'Instance activity',verified,entries:this.present(matches.slice(f.offset,f.offset+f.limit),safe),total:matches.length,next:f.offset+f.limit<matches.length?f.offset+f.limit:null,retentionDays:this.retention.days,recovery:this.store.state.recovery?{phase:this.store.state.recovery.phase,recoveryPoint:this.store.state.recovery.recoveryPoint,installedAt:this.store.state.recovery.installedAt??null,notice:this.store.state.recovery.notice,unknownInterval:this.store.state.recovery.unknownInterval}:undefined,exportable:user.role!=='Member'&&!session.restricted&&!this.store.journal.degraded&&!this.store.externalAudit?.degraded};
  }
  detail(session:ConsoleSession,input:unknown){const d=parse(z.object({id:label,filters:filters.default({offset:0,limit:50})}).strict(),input);const q=this.select(session,d.filters),item=q.matches.find(e=>e.id===d.id);if(!item)throw new Error('Forbidden.');return {scope:q.user.role==='Member'?'Own activity':'Instance activity',entry:this.present([item],evidenceSanitizer(this.store))[0],verified:q.verified};}
+ /** Incremental complete JSON on the authenticated route. No partial document can finish successfully. */
+ async writeActivity(session:ConsoleSession,input:unknown,signal:AbortSignal,write:(chunk:string)=>Promise<void>){
+  const actor=this.store.requireSensitive(session);if(actor.role==='Member')throw new Error('Forbidden.');
+  const data=parse(z.object({kind:z.literal('activity'),filters:filters.default({offset:0,limit:50})}).strict(),input);
+  if(this.exporting)throw new EvidenceError('An activity export is already running. Wait for it to finish.');
+  this.exporting=true;let operation:string|undefined,finished=false;
+  const deadline=performance.now()+30000,revision=this.store.state.revision,role=actor.role,generation=actor.authorizationGeneration;
+  const context=data.filters.contextService,service=context===undefined||!Object.hasOwn(this.store.state.managed?.services??{},context)?undefined:this.store.state.managed!.services[context];
+  const incarnation=service?.incarnation;
+  const check=()=>{if(signal.aborted)throw new EvidenceError('Activity export canceled. No complete file was produced.');if(performance.now()>deadline)throw new EvidenceError('Activity export reached its bounded delivery time. No complete file was produced.');const current=this.store.requireSensitive(session);if(current.role!==role||current.authorizationGeneration!==generation||this.store.state.revision!==revision)throw new EvidenceError('Activity export authority or settings changed. Search and export again.');if(context!==undefined&&(!Object.hasOwn(this.store.state.managed?.services??{},context)||this.store.state.managed!.services[context]!.incarnation!==incarnation))throw new EvidenceError('Activity service scope changed. Search again.');};
+  try{
+   check();operation=this.store.journal.start(actor.id,'evidence.export','activity',revision);check();
+   const q=this.select(session,data.filters),safe=evidenceSanitizer(this.store);
+   const metadata={bounded:true,maximumRows:100000,truncated:false,total:q.matches.length,startOffset:0,snapshot:'Current retained matching events',filters:Object.fromEntries(Object.entries(data.filters).filter(([key])=>key!=='offset'&&key!=='limit').map(([key,value])=>[key,key==='chips'?(value as z.infer<typeof chip>[]).map(c=>({...c,value:safe(c.value)})):typeof value==='string'?safe(value):value]))};
+   // Yield before the first byte so revoked authority cannot acquire output after selection.
+   await yieldTurn();check();await write('{"operation":'+JSON.stringify(operation)+',"kind":"activity","report":'+JSON.stringify(metadata).slice(0,-1)+',"entries":[');
+   for(let i=0;i<q.matches.length;i++){
+    if(i%32===0){await yieldTurn();check();}
+    const row=JSON.stringify(this.sanitize([q.matches[i]!],safe)[0]);check();await write((i?',':'')+row);
+   }
+   check();this.store.journal.finish(operation,actor.id,'evidence.export','activity',revision);finished=true;
+   // Closing framing is released only after every row and durable completion succeeded.
+   check();await write(']}}');
+  }catch(error){if(operation&&!finished){try{this.store.journal.finish(operation,actor.id,'evidence.export','activity',revision,'failed');}catch{/* Retain admitted uncertain operation if completion cannot be persisted. */}}throw error;}
+  finally{this.exporting=false;}
+ }
  export(session:ConsoleSession,input:unknown){
   const actor=this.store.requireSensitive(session);if(actor.role==='Member')throw new Error('Forbidden.');
   const data=parse(z.object({kind:z.enum(['activity','access','configuration','version']),filters:filters.default({offset:0,limit:50})}).strict(),input);
+  if(data.kind==='activity')throw new EvidenceError('Activity export requires the bounded response writer.');
   const operation=this.store.journal.start(actor.id,'evidence.export',data.kind,this.store.state.revision);
   this.store.requireSensitive(session);this.store.authorize(session,'instance');
   const safe=evidenceSanitizer(this.store);
   let report:unknown;
-  if(data.kind==='activity'){const q=this.select(session,data.filters);report={entries:this.sanitize(q.matches.slice(data.filters.offset,data.filters.offset+500),safe),bounded:true,maximumRows:500,truncated:q.matches.length>data.filters.offset+500,total:q.matches.length,startOffset:data.filters.offset,snapshot:'Current retained matching events',filters:Object.fromEntries(Object.entries(data.filters).map(([key,value])=>[key,key==='chips'?(value as z.infer<typeof chip>[]).map(c=>({...c,value:safe(c.value)})):typeof value==='string'?safe(value):value]))};}
-  else if(data.kind==='access'){report={users:this.store.state.users.map(u=>({id:safe(u.id),contact:safe(u.email),role:u.role,active:u.active,enrolled:u.enrolled!==false})),external:(this.store.state.people?.external??[]).map(e=>({id:safe(e.id),label:safe(e.label),active:e.active})),services:Object.entries(this.store.state.managed?.services??{}).map(([id,s])=>({id:safe(id),lifecycle:s.lifecycle,assignments:s.assignments.map(safe)}))};}
+  if(data.kind==='access'){report={users:this.store.state.users.map(u=>({id:safe(u.id),contact:safe(u.email),role:u.role,active:u.active,enrolled:u.enrolled!==false})),external:(this.store.state.people?.external??[]).map(e=>({id:safe(e.id),label:safe(e.label),active:e.active})),services:Object.entries(this.store.state.managed?.services??{}).map(([id,s])=>({id:safe(id),lifecycle:s.lifecycle,assignments:s.assignments.map(safe)}))};}
   else if(data.kind==='configuration'){const manager=consoleServices(this.store);report={revision:manager.state.revision,services:manager.list(session).services.map(s=>({id:safe(s.id),name:safe(s.name),lifecycle:s.lifecycle,exceptions:s.exceptions.map(e=>safe(e))})),limits:this.store.state.config?.limits,retentionDays:this.retention.days,authenticationMode:this.store.state.config?.auth.mode,responseProtectionSource:'Settings',backup:consoleBackups(this.store).health(),restore:{phase:this.store.state.recovery?.phase??'not restored',recoveryPoint:this.store.state.recovery?.recoveryPoint??null,importedDomains:this.store.state.importedAudit?.length??0,notice:this.store.state.recovery?.notice??'Whole-instance recovery requires independent material and current Owner or protected host authority.'}};}
   else report={version:PACKAGE_VERSION,instance:this.store.state.id,backup:consoleBackups(this.store).health(),restore:{phase:this.store.state.recovery?.phase??'not restored',recoveryPoint:this.store.state.recovery?.recoveryPoint??null}};
   const result={operation,kind:data.kind,report};if(Buffer.byteLength(JSON.stringify(result))>2*1024*1024){this.store.journal.finish(operation,actor.id,'evidence.export',data.kind,this.store.state.revision,'failed');throw new EvidenceError('Export exceeds 2 MiB. Narrow the scope.');}

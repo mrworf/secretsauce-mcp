@@ -1,0 +1,17 @@
+import {it,expect} from 'vitest';
+import {managedFixture} from './consoleManagementFixtures.js';
+import {ConsoleStore} from '../src/consoleStore.js';
+import {consoleNotifications} from '../src/consoleNotifications.js';
+import {applySettings,reviewSettings} from '../src/consoleSettings.js';
+import {consoleServices} from '../src/consoleServices.js';
+it.each(['tls','none'] as const)('preserves format10 public reference state through %s SMTP Save and both Apply paths/reload',encryption=>{
+ const f=managedFixture();let reloaded:ConsoleStore|undefined;try{
+  const d=f.manager.detail(f.session,'baseline');f.manager.save(f.session,{id:'baseline',base:d.revision,generation:d.generation,service:{...d.applied,mcp_reference:'renamed-service'},referenceConfirmation:d.referenceConfirmation});const sr=f.manager.review(f.session,{id:'baseline',referenceConfirmation:f.manager.detail(f.session,'baseline').referenceConfirmation});f.manager.apply(f.session,{id:'baseline',review:sr.review,acknowledgments:sr.exceptions});
+  const identity=structuredClone(f.manager.state.services.baseline),n=consoleNotifications(f.store);
+  const save=()=>n.save(f.session,{base:n.state.revision,generation:0,credentialVersion:n.state.credentialVersion??0,settings:{enabled:true,authentication:'password',encryption,host:'smtp.example.org',port:encryption==='none'?25:465,sender:'console@example.org',username:'synthetic-user',password:'synthetic-value'}});
+  save();expect(f.store.state.v).toBe(10);let r=n.review(f.session);f.store.state.sessions[0]!.recent={action:'notifications.apply',expires:Date.now()+300000};if(encryption==='none')expect(()=>n.apply(f.session,{review:r.review,confirmed:true})).toThrow(/Acknowledge/);n.apply(f.session,{review:r.review,confirmed:true,...(encryption==='none'?{unencryptedAcknowledged:true}:{})});expect(f.store.state.v).toBe(10);
+  save();const all=reviewSettings(f.store,f.session,{});f.store.state.sessions[0]!.recent={action:'settings.apply',expires:Date.now()+300000};applySettings(f.store,f.session,{review:all.review,confirmed:true,acknowledged:true,...(encryption==='none'?{unencryptedAcknowledged:true}:{})});expect(f.store.state.v).toBe(10);expect(f.manager.state.services.baseline).toEqual(identity);
+  f.store.close();reloaded=new ConsoleStore(f.directory,f.keyFile);expect(reloaded.state.v).toBe(10);expect(consoleServices(reloaded).reference('baseline')).toBe('renamed-service');expect(reloaded.state.notifications!.applied!.encryption).toBe(encryption);
+ }finally{reloaded?.close();f.close();}
+});
+it('future format values are never reduced by affected SMTP writers',()=>{const f=managedFixture();try{(f.store.state as {v:number}).v=11;const n=consoleNotifications(f.store);n.save(f.session,{base:0,generation:0,credentialVersion:0,settings:{enabled:false,authentication:'none',encryption:'none',host:'smtp.example.org',port:25,sender:'console@example.org',username:'',password:''}});expect(f.store.state.v).toBe(11);const r=n.review(f.session);f.store.state.sessions[0]!.recent={action:'notifications.apply',expires:Date.now()+300000};n.apply(f.session,{review:r.review,confirmed:true});expect(f.store.state.v).toBe(11);n.save(f.session,{base:n.state.revision,generation:0,credentialVersion:0,settings:{...n.state.applied!,host:'smtp2.example.org'}});const all=reviewSettings(f.store,f.session,{});f.store.state.sessions[0]!.recent={action:'settings.apply',expires:Date.now()+300000};applySettings(f.store,f.session,{review:all.review,confirmed:true,acknowledged:true});expect(f.store.state.v).toBe(11);}finally{f.close();}});

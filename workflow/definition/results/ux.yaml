@@ -1,54 +1,76 @@
 stage: product-ux
 status: PASS
-mode: targeted_revalidation
-scope: REC017 three outcomes/nine items; preserve prior unaffected findings and approved
-  patterns
+scope: REC018 six outcomes/all52items, bounded canonical adoption
 validated_inputs:
 - path: docs/web-console-prd.md
-  revision: sha256:373ab761709d04f93e839d5ef053d7634c8cf7ed602a143acc1dd2544b5998ae
-- path: workflow/reconciliation/REC-RUN-017/reconciliation-result.yaml
-  revision: sha256:a7d0112c9186d80f1058931e888db3187ca02f67d593291c819499675e04e9db
-- path: workflow/reconciliation/REC-RUN-017/domain-basis.md
-  revision: sha256:5ba18660db2b9ba2897783a82824071016cde322b438932e33d4b1b934d24cba
-- path: workflow/feedback/PO-FEEDBACK-2026-11-20-001/feedback.yaml
-  revision: sha256:ec0762f41d25d3d655fb040a892d82c752cdc681c3f1e277f355e130c2ee6762
+  revision: sha256:532c259b1d2cf9f4674bf9b557dd2924dd27e448e50ae57a58fd6a5d95a4ea0c
+- path: workflow/reconciliation/REC-RUN-018/reconciliation-result.yaml
+  revision: sha256:a9cb5e09040e10592cc090bd35ae06e8f1693b5f6a9e16681cd1744368b06a32
+- path: workflow/reconciliation/REC-RUN-018/ux-basis.md
+  revision: sha256:4212b352563c3522e8ebc6e286cae7452ac5f1ed6df5f5fecc38d7d4e0bd2f6b
+- path: workflow/reconciliation/REC-RUN-018/domain-basis.md
+  revision: sha256:891da496521b0bce2cdbc63368f4b70fdd7754b5a0e0291faf0c9b00fae40911
+- path: workflow/feedback/PO-FEEDBACK-2026-11-20-002/feedback.yaml
+  revision: sha256:92722069d76efc9841811f6b0f5e6d5907b48a79e6a6b946a87b5000da941671
 - path: workflow/definition/decisions.md
-  revision: sha256:2198e83cdb539134e9ffd39e08b3682deed48d47dc64b5a7e4aa2d73760b6f1f
+  revision: sha256:7c3631a62a1f42aacb14b22d6777cd88c0da1cde4c4765a4e5ea25f09938c1b8
 - path: docs/web-console-prd-coverage.md
-  revision: sha256:0d6b0e9537de0cd8ac2222b6283e72a8eeaa8741716ea6fa966b7b9b650fba1f
+  revision: sha256:f92feb87ca17405e5a68ff45f925399131b583fe7766ba44f6355aaed78cacdc
 - path: docs/web-console-prd-user-journey-audit.md
-  revision: sha256:dbe00237e608d6021aad935fe58ba0ac22f0e73054e4336e12d686883accbc81
-- path: product/architecture/web-console-state-contract.md
-  revision: sha256:146d9cf35d375bfa9e86584cba387977f0c55fd2a35b8ec83f4f0336a9bd5481
-- path: product/security/web-console-security-contract.md
-  revision: sha256:50cb40de4c045eb6cab49b5f93c2a0a49718ceae454cc76a2ed80646b64db7de
+  revision: sha256:362ec62f03f1ea4186df3cc022b5158c14ebab739b4866d3e3662783bab5c0a8
+- path: product/ux/00-overview.md
+  revision: sha256:b5997a3a7ea38e1ad30e99f53626215dcf276e6c7b06e5327ee5f383fa3fbbac
+- path: product/ux/01-information-architecture.md
+  revision: sha256:f934082b052cd28588a8650f639507c99fe93422eb250cc5fbe34d2c816fb659
+- path: product/ux/02-interaction-patterns.md
+  revision: sha256:a55cb94e0b8f739a27311e8cca25c62c6066658ae69412acc8fc740f35c1b034
+- path: product/ux/03-responsive-and-platform.md
+  revision: sha256:043a5dc7db6153a0bc5809fd55f56db820930224131fef2f8f3e99043cee9a41
+- path: product/ux/05-accessibility.md
+  revision: sha256:e0145433301d299e8c3458eb6b14a3c16d1aa6fce02245ca0c4f7728f888f071
+- path: product/ux/06-feature-exceptions.md
+  revision: sha256:6bee1f093593cd6da1f0a30d87393195d5483764258bbfc2aa15635a5121d727
+- path: product/ux/07-acceptance-checklist.md
+  revision: sha256:17f8dc4ec1c13274683c20b84d8081da90a6a8ae64ae3ed8c8f75755243e8535
+- path: product/ux/experience-brief.yaml
+  revision: sha256:9b38ca78f69706cc4e594967dfe2f9ca71554530b82b61497507c7fb31d6fc6d
+- path: product/ux/manifest.yaml
+  revision: sha256:572120f20eda45e822e46a3b1bcd1ab7448e29a93f6e7750048b282a5fff9802
 artifact_changes:
 - path: product/ux/00-overview.md
-  revision: sha256:161471ef11ddffe19805b935e55e56f507171fa46b2dadeadba81125e044d78e
-  summary: Bounded UX12 reference identity, safe review and alignment adoption
+  revision: sha256:b5997a3a7ea38e1ad30e99f53626215dcf276e6c7b06e5327ee5f383fa3fbbac
+  summary: UX13 bounded shared patterns and precise supersessions
 - path: product/ux/01-information-architecture.md
-  revision: sha256:f5ac7a5cabc75fd697be04f4d8dffae541da375598bf7cc54d4c72991df3608e
-  summary: Bounded UX12 reference identity, safe review and alignment adoption
+  revision: sha256:f934082b052cd28588a8650f639507c99fe93422eb250cc5fbe34d2c816fb659
+  summary: UX13 bounded shared patterns and precise supersessions
 - path: product/ux/02-interaction-patterns.md
-  revision: sha256:baeb55f11e2cf31ada9ea999d819d1ce6694714d6e45c35171ba675ac1827b84
-  summary: Bounded UX12 reference identity, safe review and alignment adoption
+  revision: sha256:a55cb94e0b8f739a27311e8cca25c62c6066658ae69412acc8fc740f35c1b034
+  summary: UX13 bounded shared patterns and precise supersessions
 - path: product/ux/03-responsive-and-platform.md
-  revision: sha256:90cefaa3f0d2ffcfc7934861273d2e44ae4283dbe765c325fddf5de21e045f70
-  summary: Bounded UX12 reference identity, safe review and alignment adoption
+  revision: sha256:043a5dc7db6153a0bc5809fd55f56db820930224131fef2f8f3e99043cee9a41
+  summary: UX13 bounded shared patterns and precise supersessions
+- path: product/ux/05-accessibility.md
+  revision: sha256:e0145433301d299e8c3458eb6b14a3c16d1aa6fce02245ca0c4f7728f888f071
+  summary: UX13 bounded shared patterns and precise supersessions
+- path: product/ux/06-feature-exceptions.md
+  revision: sha256:6bee1f093593cd6da1f0a30d87393195d5483764258bbfc2aa15635a5121d727
+  summary: UX13 bounded shared patterns and precise supersessions
 - path: product/ux/07-acceptance-checklist.md
-  revision: sha256:43e640c86cc2c4f82b584a68ee1b96c41a26e8090cb9f9dca37595c3f0fab542
-  summary: Bounded UX12 reference identity, safe review and alignment adoption
+  revision: sha256:17f8dc4ec1c13274683c20b84d8081da90a6a8ae64ae3ed8c8f75755243e8535
+  summary: UX13 bounded shared patterns and precise supersessions
 - path: product/ux/experience-brief.yaml
-  revision: sha256:17390d07d6335e6ab32dabaece1802bd5e7481261cdc6524b0d7cd1cb66d856d
-  summary: Bounded UX12 reference identity, safe review and alignment adoption
+  revision: sha256:9b38ca78f69706cc4e594967dfe2f9ca71554530b82b61497507c7fb31d6fc6d
+  summary: UX13 bounded shared patterns and precise supersessions
 - path: product/ux/manifest.yaml
-  revision: sha256:23aa41b8f834545f50fde4f81748544df0fdc75026bb16142b1b117ef5ac8e16
-  summary: Bounded UX12 reference identity, safe review and alignment adoption
+  revision: sha256:572120f20eda45e822e46a3b1bcd1ab7448e29a93f6e7750048b282a5fff9802
+  summary: UX13 bounded shared patterns and precise supersessions
 changed_paths:
 - product/ux/00-overview.md
 - product/ux/01-information-architecture.md
 - product/ux/02-interaction-patterns.md
 - product/ux/03-responsive-and-platform.md
+- product/ux/05-accessibility.md
+- product/ux/06-feature-exceptions.md
 - product/ux/07-acceptance-checklist.md
 - product/ux/experience-brief.yaml
 - product/ux/manifest.yaml
@@ -56,24 +78,70 @@ changed_paths:
 findings: []
 questions: []
 affected_requirements:
-- CONFIG-06
-- CONFIG-03
-- UX-02
-- UX-03
-- PO-FB-290
-- PO-FB-291
-- PO-FB-292
-- PO-FB-293
-- PO-FB-294
-- PO-FB-295
-- PO-FB-296
-- PO-FB-297
-- PO-FB-298
+- UX-06
+- UX-07
+- CONFIG-01
+- AUDIT-02
+- BACKUP-06
+- PO-FB-299
+- PO-FB-300
+- PO-FB-301
+- PO-FB-302
+- PO-FB-303
+- PO-FB-304
+- PO-FB-305
+- PO-FB-306
+- PO-FB-307
+- PO-FB-308
+- PO-FB-309
+- PO-FB-310
+- PO-FB-311
+- PO-FB-312
+- PO-FB-313
+- PO-FB-314
+- PO-FB-315
+- PO-FB-316
+- PO-FB-317
+- PO-FB-318
+- PO-FB-319
+- PO-FB-320
+- PO-FB-321
+- PO-FB-322
+- PO-FB-323
+- PO-FB-324
+- PO-FB-325
+- PO-FB-326
+- PO-FB-327
+- PO-FB-328
+- PO-FB-329
+- PO-FB-330
+- PO-FB-331
+- PO-FB-332
+- PO-FB-333
+- PO-FB-334
+- PO-FB-335
+- PO-FB-336
+- PO-FB-337
+- PO-FB-338
+- PO-FB-339
+- PO-FB-340
+- PO-FB-341
+- PO-FB-342
+- PO-FB-343
+- PO-FB-344
+- PO-FB-345
+- PO-FB-346
+- PO-FB-347
+- PO-FB-348
+- PO-FB-349
+- PO-FB-350
 affected_artifacts: &id001
 - product/ux/00-overview.md
 - product/ux/01-information-architecture.md
 - product/ux/02-interaction-patterns.md
 - product/ux/03-responsive-and-platform.md
+- product/ux/05-accessibility.md
+- product/ux/06-feature-exceptions.md
 - product/ux/07-acceptance-checklist.md
 - product/ux/experience-brief.yaml
 - product/ux/manifest.yaml
@@ -82,21 +150,24 @@ change_impact:
   product: false
   user_journeys: false
   ux: true
-  architecture: true
-  security: true
-validation_boundary: Definition-only bounded adoption. Existing findings/accepted
-  risks preserved; no new runtime audit, implementation, tests or release certification.
+  architecture: false
+  security: false
+validation_boundary: Definition only. Stable REC018 domain basis governs changed export/restore
+  boundaries; prior architecture/security contracts inspected for preservation, not
+  certified fresh while their stages run. No code, tests, new screenshots, runtime
+  acceptance or commits.
 ux_handoff:
   manifest:
     path: product/ux/manifest.yaml
-    revision: web-console-ux-12
+    revision: web-console-ux-13
   experience_brief:
     path: product/ux/experience-brief.yaml
-    revision: web-console-ux-12
+    revision: web-console-ux-13
   approval:
     status: approved
     decision_refs:
-    - PO-REFINEMENT-017
+    - PO-REFINEMENT-018
   authoritative_artifacts_changed: *id001
-  impact_hints: Parent owns cross-domain freshness and downstream handoff; new-state
-    visual acceptance required.
+  impact_hints: Parent owns cross-domain freshness. SMTP timing, current-host legacy
+    visibility and unaffected appearance retained; actual visual and behavioral acceptance
+    pending.

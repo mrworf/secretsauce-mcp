@@ -4,8 +4,8 @@ status: ready_for_delivery_planning
 scope: 'PO-FEEDBACK-2026-11-20-001: lifecycle alignment, automatic stale review recovery, editable public MCP service
   reference'
 transaction:
-  parent_commit: 930086f61c574fe84e911f3706008670c0665ac2
-  repository_commit: 428bae3dfb8e3881afda540a70f9d6a38a83b960
+  parent_commit: af12c415c24cefd958e239d4fe9a8cdbf55da2b5
+  repository_commit: null
   pre_existing_dirty_paths:
   - passwd
   - codex-session-01a122f7-e70f-7440-b1ce-ca88b955e519.md
@@ -13,56 +13,56 @@ transaction:
 authoritative_artifacts:
   product:
     path: docs/web-console-prd.md
-    revision: sha256:373ab761709d04f93e839d5ef053d7634c8cf7ed602a143acc1dd2544b5998ae
+    revision: sha256:532c259b1d2cf9f4674bf9b557dd2924dd27e448e50ae57a58fd6a5d95a4ea0c
   security_contract:
     path: product/security/web-console-security-contract.md
-    revision: sha256:50cb40de4c045eb6cab49b5f93c2a0a49718ceae454cc76a2ed80646b64db7de
+    revision: sha256:5b1542702b4cb6d8fe1a3fd9f1ca99a7c8615a74626978397889ac7bdd7af05d
   architecture_contract:
     path: product/architecture/web-console-state-contract.md
-    revision: sha256:146d9cf35d375bfa9e86584cba387977f0c55fd2a35b8ec83f4f0336a9bd5481
+    revision: sha256:62eeda5968950069603fcde0e41601066e855bc4aa2a5613188d5fab501dd3e5
   coverage:
     path: docs/web-console-prd-coverage.md
-    revision: sha256:0d6b0e9537de0cd8ac2222b6283e72a8eeaa8741716ea6fa966b7b9b650fba1f
+    revision: sha256:f92feb87ca17405e5a68ff45f925399131b583fe7766ba44f6355aaed78cacdc
   journeys:
     path: docs/web-console-prd-user-journey-audit.md
-    revision: sha256:dbe00237e608d6021aad935fe58ba0ac22f0e73054e4336e12d686883accbc81
+    revision: sha256:362ec62f03f1ea4186df3cc022b5158c14ebab739b4866d3e3662783bab5c0a8
   ux:
     path: product/ux/manifest.yaml
-    revision: sha256:23aa41b8f834545f50fde4f81748544df0fdc75026bb16142b1b117ef5ac8e16
-    declared_revision: web-console-ux-12
+    revision: sha256:572120f20eda45e822e46a3b1bcd1ab7448e29a93f6e7750048b282a5fff9802
+    declared_revision: web-console-ux-13
   ux_experience_brief:
     path: product/ux/experience-brief.yaml
-    revision: sha256:17390d07d6335e6ab32dabaece1802bd5e7481261cdc6524b0d7cd1cb66d856d
+    revision: sha256:9b38ca78f69706cc4e594967dfe2f9ca71554530b82b61497507c7fb31d6fc6d
   ux_overview:
     path: product/ux/00-overview.md
-    revision: sha256:161471ef11ddffe19805b935e55e56f507171fa46b2dadeadba81125e044d78e
+    revision: sha256:b5997a3a7ea38e1ad30e99f53626215dcf276e6c7b06e5327ee5f383fa3fbbac
   ux_information_architecture:
     path: product/ux/01-information-architecture.md
-    revision: sha256:f5ac7a5cabc75fd697be04f4d8dffae541da375598bf7cc54d4c72991df3608e
+    revision: sha256:f934082b052cd28588a8650f639507c99fe93422eb250cc5fbe34d2c816fb659
   ux_interaction_patterns:
     path: product/ux/02-interaction-patterns.md
-    revision: sha256:baeb55f11e2cf31ada9ea999d819d1ce6694714d6e45c35171ba675ac1827b84
+    revision: sha256:a55cb94e0b8f739a27311e8cca25c62c6066658ae69412acc8fc740f35c1b034
   ux_responsive_and_platform:
     path: product/ux/03-responsive-and-platform.md
-    revision: sha256:90cefaa3f0d2ffcfc7934861273d2e44ae4283dbe765c325fddf5de21e045f70
+    revision: sha256:043a5dc7db6153a0bc5809fd55f56db820930224131fef2f8f3e99043cee9a41
   ux_visual_system:
     path: product/ux/04-visual-system.md
     revision: sha256:8f1e26ebd3d7e6d70314c4959cdfbf51732353135bbadb9a609697a04a58a4f6
   ux_accessibility:
     path: product/ux/05-accessibility.md
-    revision: sha256:bd45cbba1e5ad7c8c210ef9c18ee88272f81a00da22dc1ba0db6242f7c9a8db8
+    revision: sha256:e0145433301d299e8c3458eb6b14a3c16d1aa6fce02245ca0c4f7728f888f071
   ux_feature_exceptions:
     path: product/ux/06-feature-exceptions.md
-    revision: sha256:90a697a80b380a70d83cbffc7cd1409fe381c2051a877da901c7e4b3c2a30b48
+    revision: sha256:6bee1f093593cd6da1f0a30d87393195d5483764258bbfc2aa15635a5121d727
   ux_acceptance_checklist:
     path: product/ux/07-acceptance-checklist.md
-    revision: sha256:43e640c86cc2c4f82b584a68ee1b96c41a26e8090cb9f9dca37595c3f0fab542
+    revision: sha256:17f8dc4ec1c13274683c20b84d8081da90a6a8ae64ae3ed8c8f75755243e8535
   security:
     path: product/security/web-console-security-review.md
-    revision: sha256:b5301f58b45656e725bad3558eef663c4001fcc63cd120743165a65d83f25e7b
+    revision: sha256:1702de49fe0a613f92f80583684843c50a21113bc159d00d5779fded204f217b
   architecture:
     path: product/architecture/web-console-architecture-review.md
-    revision: sha256:ccda90e822b4b7916deb5ac4be3d5858d02f212366423c3a926aa0c06f251a45
+    revision: sha256:713c33eee4a4347887a9319a58c69e543d080c8dcdf88b4d5d14bd4aed876f26
 specialists:
   prd: /home/ha/.codex/skills/prd-development-partner/SKILL.md
   coverage: /home/ha/.codex/skills/generate-prd-coverage-matrix/SKILL.md
@@ -91,152 +91,177 @@ stages:
       basis: "D10-01\u201305"
       mode: targeted_revalidation
     preservation:
-      basis: workflow/reconciliation/REC-RUN-017/reconciliation-result.yaml
-      revision: sha256:a7d0112c9186d80f1058931e888db3187ca02f67d593291c819499675e04e9db
+      basis: workflow/reconciliation/REC-RUN-018/reconciliation-result.yaml
+      revision: sha256:a9cb5e09040e10592cc090bd35ae06e8f1693b5f6a9e16681cd1744368b06a32
       semantic_domain: product
       affected: false
       prior_result_revision: sha256:b704080718792e3d98b5935ede9c278c5854e944aaee595c39c0b4d16b2f967c
-      prior_definition_commit: 681b71870514865f1ed6f89b366aca527d514e16
-      current_prd_revision: sha256:373ab761709d04f93e839d5ef053d7634c8cf7ed602a143acc1dd2544b5998ae
-      note: REC017 adopted settled directives and specialist basis into CONFIG01/05/06 and resolved the source product
-        domain. Preserve prior PRD review with this canonical false-impact bridge; changed derived domains are separately
-        revalidated. Historical validated_inputs remain historical evidence.
+      prior_definition_commit: 428bae3dfb8e3881afda540a70f9d6a38a83b960
+      current_prd_revision: sha256:532c259b1d2cf9f4674bf9b557dd2924dd27e448e50ae57a58fd6a5d95a4ea0c
+      note: REC018 adopted settled directives and specialist basis into CONFIG01/03, UX06/07, AUDIT02/04 and BACKUP01/03/06
+        and resolved the source product domain. Preserve prior PRD review with this canonical false-impact bridge;
+        changed derived domains are separately revalidated. Historical validated_inputs remain historical evidence.
   coverage:
     status: passed
     validated_inputs:
     - path: docs/web-console-prd.md
-      revision: sha256:373ab761709d04f93e839d5ef053d7634c8cf7ed602a143acc1dd2544b5998ae
-    - path: workflow/reconciliation/REC-RUN-017/reconciliation-result.yaml
-      revision: sha256:a7d0112c9186d80f1058931e888db3187ca02f67d593291c819499675e04e9db
-    - path: workflow/reconciliation/REC-RUN-017/domain-basis.md
-      revision: sha256:5ba18660db2b9ba2897783a82824071016cde322b438932e33d4b1b934d24cba
-    - path: workflow/feedback/PO-FEEDBACK-2026-11-20-001/feedback.yaml
-      revision: sha256:ec0762f41d25d3d655fb040a892d82c752cdc681c3f1e277f355e130c2ee6762
+      revision: sha256:532c259b1d2cf9f4674bf9b557dd2924dd27e448e50ae57a58fd6a5d95a4ea0c
+    - path: workflow/reconciliation/REC-RUN-018/reconciliation-result.yaml
+      revision: sha256:a9cb5e09040e10592cc090bd35ae06e8f1693b5f6a9e16681cd1744368b06a32
+    - path: workflow/reconciliation/REC-RUN-018/domain-basis.md
+      revision: sha256:891da496521b0bce2cdbc63368f4b70fdd7754b5a0e0291faf0c9b00fae40911
+    - path: workflow/reconciliation/REC-RUN-018/ux-basis.md
+      revision: sha256:4212b352563c3522e8ebc6e286cae7452ac5f1ed6df5f5fecc38d7d4e0bd2f6b
+    - path: workflow/feedback/PO-FEEDBACK-2026-11-20-002/feedback.yaml
+      revision: sha256:92722069d76efc9841811f6b0f5e6d5907b48a79e6a6b946a87b5000da941671
     result: workflow/definition/results/coverage.yaml
     mode: targeted_revalidation
     target_scope:
       feedback: "PO-FB-265\u2013281"
       basis: "D10-01\u201305"
       mode: targeted_revalidation
+    stale_reasons: &id001
+    - REC-077
+    - REC-078
+    - REC-079
+    - REC-080
+    - REC-081
+    - REC-082
   journeys:
     status: passed
     validated_inputs:
     - path: docs/web-console-prd.md
-      revision: sha256:373ab761709d04f93e839d5ef053d7634c8cf7ed602a143acc1dd2544b5998ae
-    - path: workflow/reconciliation/REC-RUN-017/reconciliation-result.yaml
-      revision: sha256:a7d0112c9186d80f1058931e888db3187ca02f67d593291c819499675e04e9db
-    - path: workflow/reconciliation/REC-RUN-017/domain-basis.md
-      revision: sha256:5ba18660db2b9ba2897783a82824071016cde322b438932e33d4b1b934d24cba
-    - path: workflow/feedback/PO-FEEDBACK-2026-11-20-001/feedback.yaml
-      revision: sha256:ec0762f41d25d3d655fb040a892d82c752cdc681c3f1e277f355e130c2ee6762
+      revision: sha256:532c259b1d2cf9f4674bf9b557dd2924dd27e448e50ae57a58fd6a5d95a4ea0c
+    - path: workflow/reconciliation/REC-RUN-018/reconciliation-result.yaml
+      revision: sha256:a9cb5e09040e10592cc090bd35ae06e8f1693b5f6a9e16681cd1744368b06a32
+    - path: workflow/reconciliation/REC-RUN-018/domain-basis.md
+      revision: sha256:891da496521b0bce2cdbc63368f4b70fdd7754b5a0e0291faf0c9b00fae40911
+    - path: workflow/reconciliation/REC-RUN-018/ux-basis.md
+      revision: sha256:4212b352563c3522e8ebc6e286cae7452ac5f1ed6df5f5fecc38d7d4e0bd2f6b
+    - path: workflow/feedback/PO-FEEDBACK-2026-11-20-002/feedback.yaml
+      revision: sha256:92722069d76efc9841811f6b0f5e6d5907b48a79e6a6b946a87b5000da941671
     result: workflow/definition/results/journeys.yaml
     mode: targeted_revalidation
     target_scope:
       feedback: "PO-FB-265\u2013281"
       basis: "D10-01\u201305"
       mode: targeted_revalidation
+    stale_reasons: *id001
   ux:
     status: passed
     mode: targeted_revalidation
     validated_inputs:
     - path: docs/web-console-prd.md
-      revision: sha256:373ab761709d04f93e839d5ef053d7634c8cf7ed602a143acc1dd2544b5998ae
-    - path: workflow/reconciliation/REC-RUN-017/reconciliation-result.yaml
-      revision: sha256:a7d0112c9186d80f1058931e888db3187ca02f67d593291c819499675e04e9db
-    - path: workflow/reconciliation/REC-RUN-017/domain-basis.md
-      revision: sha256:5ba18660db2b9ba2897783a82824071016cde322b438932e33d4b1b934d24cba
-    - path: workflow/feedback/PO-FEEDBACK-2026-11-20-001/feedback.yaml
-      revision: sha256:ec0762f41d25d3d655fb040a892d82c752cdc681c3f1e277f355e130c2ee6762
+      revision: sha256:532c259b1d2cf9f4674bf9b557dd2924dd27e448e50ae57a58fd6a5d95a4ea0c
+    - path: workflow/reconciliation/REC-RUN-018/reconciliation-result.yaml
+      revision: sha256:a9cb5e09040e10592cc090bd35ae06e8f1693b5f6a9e16681cd1744368b06a32
+    - path: workflow/reconciliation/REC-RUN-018/ux-basis.md
+      revision: sha256:4212b352563c3522e8ebc6e286cae7452ac5f1ed6df5f5fecc38d7d4e0bd2f6b
+    - path: workflow/reconciliation/REC-RUN-018/domain-basis.md
+      revision: sha256:891da496521b0bce2cdbc63368f4b70fdd7754b5a0e0291faf0c9b00fae40911
+    - path: workflow/feedback/PO-FEEDBACK-2026-11-20-002/feedback.yaml
+      revision: sha256:92722069d76efc9841811f6b0f5e6d5907b48a79e6a6b946a87b5000da941671
     - path: workflow/definition/decisions.md
-      revision: sha256:2198e83cdb539134e9ffd39e08b3682deed48d47dc64b5a7e4aa2d73760b6f1f
+      revision: sha256:7c3631a62a1f42aacb14b22d6777cd88c0da1cde4c4765a4e5ea25f09938c1b8
     - path: docs/web-console-prd-coverage.md
-      revision: sha256:0d6b0e9537de0cd8ac2222b6283e72a8eeaa8741716ea6fa966b7b9b650fba1f
+      revision: sha256:f92feb87ca17405e5a68ff45f925399131b583fe7766ba44f6355aaed78cacdc
     - path: docs/web-console-prd-user-journey-audit.md
-      revision: sha256:dbe00237e608d6021aad935fe58ba0ac22f0e73054e4336e12d686883accbc81
-    - path: product/architecture/web-console-state-contract.md
-      revision: sha256:146d9cf35d375bfa9e86584cba387977f0c55fd2a35b8ec83f4f0336a9bd5481
-    - path: product/security/web-console-security-contract.md
-      revision: sha256:50cb40de4c045eb6cab49b5f93c2a0a49718ceae454cc76a2ed80646b64db7de
+      revision: sha256:362ec62f03f1ea4186df3cc022b5158c14ebab739b4866d3e3662783bab5c0a8
+    - path: product/ux/00-overview.md
+      revision: sha256:b5997a3a7ea38e1ad30e99f53626215dcf276e6c7b06e5327ee5f383fa3fbbac
+    - path: product/ux/01-information-architecture.md
+      revision: sha256:f934082b052cd28588a8650f639507c99fe93422eb250cc5fbe34d2c816fb659
+    - path: product/ux/02-interaction-patterns.md
+      revision: sha256:a55cb94e0b8f739a27311e8cca25c62c6066658ae69412acc8fc740f35c1b034
+    - path: product/ux/03-responsive-and-platform.md
+      revision: sha256:043a5dc7db6153a0bc5809fd55f56db820930224131fef2f8f3e99043cee9a41
+    - path: product/ux/05-accessibility.md
+      revision: sha256:e0145433301d299e8c3458eb6b14a3c16d1aa6fce02245ca0c4f7728f888f071
+    - path: product/ux/06-feature-exceptions.md
+      revision: sha256:6bee1f093593cd6da1f0a30d87393195d5483764258bbfc2aa15635a5121d727
+    - path: product/ux/07-acceptance-checklist.md
+      revision: sha256:17f8dc4ec1c13274683c20b84d8081da90a6a8ae64ae3ed8c8f75755243e8535
+    - path: product/ux/experience-brief.yaml
+      revision: sha256:9b38ca78f69706cc4e594967dfe2f9ca71554530b82b61497507c7fb31d6fc6d
+    - path: product/ux/manifest.yaml
+      revision: sha256:572120f20eda45e822e46a3b1bcd1ab7448e29a93f6e7750048b282a5fff9802
     result: workflow/definition/results/ux.yaml
     target_scope:
-      finding_ids: &id001
+      finding_ids: &id002
       - REC-054
       - REC-055
       - REC-056
       - REC-057
       - REC-058
-      requirement_ids: &id002
+      requirement_ids: &id003
       - CONFIG-02
       - POLICY-01
       - UX-02
       - AUDIT-02.a
       - AUDIT-02.b
-    stale_reasons:
-    - REC-IMPACT-015
+    stale_reasons: *id001
   architecture:
     status: passed
     mode: targeted_revalidation
     validated_inputs:
     - path: docs/web-console-prd.md
-      revision: sha256:373ab761709d04f93e839d5ef053d7634c8cf7ed602a143acc1dd2544b5998ae
-    - path: workflow/reconciliation/REC-RUN-017/reconciliation-result.yaml
-      revision: sha256:a7d0112c9186d80f1058931e888db3187ca02f67d593291c819499675e04e9db
-    - path: workflow/reconciliation/REC-RUN-017/domain-basis.md
-      revision: sha256:5ba18660db2b9ba2897783a82824071016cde322b438932e33d4b1b934d24cba
-    - path: workflow/feedback/PO-FEEDBACK-2026-11-20-001/feedback.yaml
-      revision: sha256:ec0762f41d25d3d655fb040a892d82c752cdc681c3f1e277f355e130c2ee6762
+      revision: sha256:532c259b1d2cf9f4674bf9b557dd2924dd27e448e50ae57a58fd6a5d95a4ea0c
+    - path: workflow/reconciliation/REC-RUN-018/reconciliation-result.yaml
+      revision: sha256:a9cb5e09040e10592cc090bd35ae06e8f1693b5f6a9e16681cd1744368b06a32
+    - path: workflow/reconciliation/REC-RUN-018/domain-basis.md
+      revision: sha256:891da496521b0bce2cdbc63368f4b70fdd7754b5a0e0291faf0c9b00fae40911
+    - path: workflow/reconciliation/REC-RUN-018/ux-basis.md
+      revision: sha256:4212b352563c3522e8ebc6e286cae7452ac5f1ed6df5f5fecc38d7d4e0bd2f6b
     - path: workflow/definition/decisions.md
-      revision: sha256:2198e83cdb539134e9ffd39e08b3682deed48d47dc64b5a7e4aa2d73760b6f1f
+      revision: sha256:7c3631a62a1f42aacb14b22d6777cd88c0da1cde4c4765a4e5ea25f09938c1b8
     - path: docs/web-console-prd-coverage.md
-      revision: sha256:0d6b0e9537de0cd8ac2222b6283e72a8eeaa8741716ea6fa966b7b9b650fba1f
+      revision: sha256:f92feb87ca17405e5a68ff45f925399131b583fe7766ba44f6355aaed78cacdc
     - path: docs/web-console-prd-user-journey-audit.md
-      revision: sha256:dbe00237e608d6021aad935fe58ba0ac22f0e73054e4336e12d686883accbc81
+      revision: sha256:362ec62f03f1ea4186df3cc022b5158c14ebab739b4866d3e3662783bab5c0a8
     - path: product/architecture/web-console-state-contract.md
-      revision: sha256:146d9cf35d375bfa9e86584cba387977f0c55fd2a35b8ec83f4f0336a9bd5481
+      revision: sha256:62eeda5968950069603fcde0e41601066e855bc4aa2a5613188d5fab501dd3e5
     - path: product/security/web-console-security-contract.md
-      revision: sha256:50cb40de4c045eb6cab49b5f93c2a0a49718ceae454cc76a2ed80646b64db7de
+      revision: sha256:5b1542702b4cb6d8fe1a3fd9f1ca99a7c8615a74626978397889ac7bdd7af05d
     - path: product/ux/manifest.yaml
-      revision: sha256:23aa41b8f834545f50fde4f81748544df0fdc75026bb16142b1b117ef5ac8e16
+      revision: sha256:572120f20eda45e822e46a3b1bcd1ab7448e29a93f6e7750048b282a5fff9802
     - path: product/ux/02-interaction-patterns.md
-      revision: sha256:baeb55f11e2cf31ada9ea999d819d1ce6694714d6e45c35171ba675ac1827b84
+      revision: sha256:a55cb94e0b8f739a27311e8cca25c62c6066658ae69412acc8fc740f35c1b034
     result: workflow/definition/results/architecture.yaml
     target_scope:
-      finding_ids: *id001
-      requirement_ids: *id002
-    stale_reasons:
-    - REC-IMPACT-015
+      finding_ids: *id002
+      requirement_ids: *id003
+    stale_reasons: *id001
   security:
     status: passed
     mode: targeted_revalidation
     validated_inputs:
     - path: docs/web-console-prd.md
-      revision: sha256:373ab761709d04f93e839d5ef053d7634c8cf7ed602a143acc1dd2544b5998ae
-    - path: workflow/reconciliation/REC-RUN-017/reconciliation-result.yaml
-      revision: sha256:a7d0112c9186d80f1058931e888db3187ca02f67d593291c819499675e04e9db
-    - path: workflow/reconciliation/REC-RUN-017/domain-basis.md
-      revision: sha256:5ba18660db2b9ba2897783a82824071016cde322b438932e33d4b1b934d24cba
-    - path: workflow/feedback/PO-FEEDBACK-2026-11-20-001/feedback.yaml
-      revision: sha256:ec0762f41d25d3d655fb040a892d82c752cdc681c3f1e277f355e130c2ee6762
+      revision: sha256:532c259b1d2cf9f4674bf9b557dd2924dd27e448e50ae57a58fd6a5d95a4ea0c
+    - path: workflow/reconciliation/REC-RUN-018/reconciliation-result.yaml
+      revision: sha256:a9cb5e09040e10592cc090bd35ae06e8f1693b5f6a9e16681cd1744368b06a32
+    - path: workflow/reconciliation/REC-RUN-018/domain-basis.md
+      revision: sha256:891da496521b0bce2cdbc63368f4b70fdd7754b5a0e0291faf0c9b00fae40911
+    - path: workflow/reconciliation/REC-RUN-018/ux-basis.md
+      revision: sha256:4212b352563c3522e8ebc6e286cae7452ac5f1ed6df5f5fecc38d7d4e0bd2f6b
     - path: workflow/definition/decisions.md
-      revision: sha256:2198e83cdb539134e9ffd39e08b3682deed48d47dc64b5a7e4aa2d73760b6f1f
+      revision: sha256:7c3631a62a1f42aacb14b22d6777cd88c0da1cde4c4765a4e5ea25f09938c1b8
     - path: docs/web-console-prd-coverage.md
-      revision: sha256:0d6b0e9537de0cd8ac2222b6283e72a8eeaa8741716ea6fa966b7b9b650fba1f
+      revision: sha256:f92feb87ca17405e5a68ff45f925399131b583fe7766ba44f6355aaed78cacdc
     - path: docs/web-console-prd-user-journey-audit.md
-      revision: sha256:dbe00237e608d6021aad935fe58ba0ac22f0e73054e4336e12d686883accbc81
+      revision: sha256:362ec62f03f1ea4186df3cc022b5158c14ebab739b4866d3e3662783bab5c0a8
     - path: product/architecture/web-console-state-contract.md
-      revision: sha256:146d9cf35d375bfa9e86584cba387977f0c55fd2a35b8ec83f4f0336a9bd5481
+      revision: sha256:62eeda5968950069603fcde0e41601066e855bc4aa2a5613188d5fab501dd3e5
     - path: product/security/web-console-security-contract.md
-      revision: sha256:50cb40de4c045eb6cab49b5f93c2a0a49718ceae454cc76a2ed80646b64db7de
+      revision: sha256:5b1542702b4cb6d8fe1a3fd9f1ca99a7c8615a74626978397889ac7bdd7af05d
     - path: product/ux/manifest.yaml
-      revision: sha256:23aa41b8f834545f50fde4f81748544df0fdc75026bb16142b1b117ef5ac8e16
+      revision: sha256:572120f20eda45e822e46a3b1bcd1ab7448e29a93f6e7750048b282a5fff9802
     - path: product/ux/02-interaction-patterns.md
-      revision: sha256:baeb55f11e2cf31ada9ea999d819d1ce6694714d6e45c35171ba675ac1827b84
+      revision: sha256:a55cb94e0b8f739a27311e8cca25c62c6066658ae69412acc8fc740f35c1b034
     result: workflow/definition/results/security.yaml
     target_scope:
-      finding_ids: *id001
-      requirement_ids: *id002
-    stale_reasons:
-    - REC-IMPACT-015
+      finding_ids: *id002
+      requirement_ids: *id003
+    stale_reasons: *id001
 reconciliation_cycles:
   F-PRD-001:
     attempts: 1
@@ -345,7 +370,7 @@ blockers: []
 transaction_history:
 - parent_commit: 9c4fcb28144efa0f39de91ff20660fbae4cd8de1
   repository_commit: 5128ac3b4cdf1a1a9f5af1d6f6d96d1dea0885f2
-  pre_existing_dirty_paths: &id003
+  pre_existing_dirty_paths: &id004
   - test-results/
   owned_paths:
   - docs/web-console-prd.md
@@ -362,7 +387,7 @@ transaction_history:
   - product/security/web-console-security-review.md
 - parent_commit: 9889bfe1d17a5c326046421e40367077c4e45bf3
   repository_commit: 06dd0ee59defd1a75db121f1d8133c7100238b80
-  pre_existing_dirty_paths: *id003
+  pre_existing_dirty_paths: *id004
   owned_paths:
   - docs/web-console-prd.md
   - workflow/definition/
@@ -526,33 +551,36 @@ transaction_history:
   - workflow/definition/results/feedback7-ux-resolution.yaml
   - workflow/definition/drafts/product-ux/web-console-feedback-007/
 last_reconciliation:
-  id: REC-RUN-017
-  path: workflow/reconciliation/REC-RUN-017/reconciliation-result.yaml
+  id: REC-RUN-018
+  path: workflow/reconciliation/REC-RUN-018/reconciliation-result.yaml
   schema_version: 1
-  result_revision: sha256:a7d0112c9186d80f1058931e888db3187ca02f67d593291c819499675e04e9db
-  repository_commit: 2866591fbee1857384cbd45efd24e3ba82bd0799
+  result_revision: sha256:a9cb5e09040e10592cc090bd35ae06e8f1693b5f6a9e16681cd1744368b06a32
+  repository_commit: bfacd51641e0eaa568f916be8f1a90f2ed859970
   status: RESOLVED
   adoption_status: complete
   definition_action: TARGETED_REVALIDATION
   change_ids:
-  - REC-IMPACT-017
+  - REC-IMPACT-018
   remediation_ids:
-  - REC-RM-068
-  - REC-RM-069
-  - REC-RM-070
+  - REC-RM-071
+  - REC-RM-072
+  - REC-RM-073
+  - REC-RM-074
+  - REC-RM-075
+  - REC-RM-076
   implementation_required: true
   implementation_ready: true
   delivery_planning_ready: true
-  readiness_basis: REC017 resolved; bounded coverage, journeys, UX, architecture and security validated; source
+  readiness_basis: REC018 resolved; bounded coverage, journeys, UX, architecture and security validated; source
     PRD preserved through canonical resolved-product bridge.
   definition_package:
     status: current
     path: workflow/definition/definition-package.yaml
-    revision: sha256:c3efb4da84917fb92ae80a70566a9f6cf383363291c47ff87c67ca1c2b81daeb
+    revision: sha256:44c6489cdb987b7a27f5b6965bd4fccb8168f6de06f673762c71852cafcd8edd
 feedback_source:
-  feedback_id: PO-FEEDBACK-2026-11-20-001
-  path: workflow/feedback/PO-FEEDBACK-2026-11-20-001/feedback.yaml
-  revision: sha256:ec0762f41d25d3d655fb040a892d82c752cdc681c3f1e277f355e130c2ee6762
+  feedback_id: PO-FEEDBACK-2026-11-20-002
+  path: workflow/feedback/PO-FEEDBACK-2026-11-20-002/feedback.yaml
+  revision: sha256:92722069d76efc9841811f6b0f5e6d5907b48a79e6a6b946a87b5000da941671
 reconciliation_history:
 - id: REC-RUN-001
   path: workflow/reconciliation/REC-RUN-001/reconciliation-result.yaml
@@ -837,14 +865,37 @@ reconciliation_history:
     status: current
     path: workflow/definition/definition-package.yaml
     revision: sha256:7d26ddded7fdb3cad794bee6c9b646d2c19e301ea39d89d7b1e051a6bebc4a50
+- id: REC-RUN-017
+  path: workflow/reconciliation/REC-RUN-017/reconciliation-result.yaml
+  schema_version: 1
+  result_revision: sha256:a7d0112c9186d80f1058931e888db3187ca02f67d593291c819499675e04e9db
+  repository_commit: 2866591fbee1857384cbd45efd24e3ba82bd0799
+  status: RESOLVED
+  adoption_status: complete
+  definition_action: TARGETED_REVALIDATION
+  change_ids:
+  - REC-IMPACT-017
+  remediation_ids:
+  - REC-RM-068
+  - REC-RM-069
+  - REC-RM-070
+  implementation_required: true
+  implementation_ready: true
+  delivery_planning_ready: true
+  readiness_basis: REC017 resolved; bounded coverage, journeys, UX, architecture and security validated; source
+    PRD preserved through canonical resolved-product bridge.
+  definition_package:
+    status: current
+    path: workflow/definition/definition-package.yaml
+    revision: sha256:c3efb4da84917fb92ae80a70566a9f6cf383363291c47ff87c67ca1c2b81daeb
 checkpoint:
-  reason: UX12 bounded definition passed; nine feedback dispositions resolved and no questions.
+  reason: UX13 bounded definition passed; 52 feedback dispositions resolved and no questions.
   product_code_changed: false
   delivery_planning_ready: true
   validation:
   - Five targeted exact-source adapters
   - Resolved source-product false-impact bridge
-  - Nine exact dispositions and producer ancestry
+  - 52 exact dispositions and producer ancestry
   - Approved visual family retained; state/security/runtime acceptance deferred to delivery
 next_actions:
 - Proceed through authorized delivery planning and milestone delivery; root handles local restart only after qualification.
@@ -853,13 +904,16 @@ next_handoff:
   status: ready
   mode: PRODUCT_BUILD
   primary_input: workflow/definition/definition-package.yaml
-  reconciliation: workflow/reconciliation/REC-RUN-017/reconciliation-result.yaml
+  reconciliation: workflow/reconciliation/REC-RUN-018/reconciliation-result.yaml
   change_ids:
-  - REC-IMPACT-017
+  - REC-IMPACT-018
   remediation_ids:
-  - REC-RM-068
-  - REC-RM-069
-  - REC-RM-070
+  - REC-RM-071
+  - REC-RM-072
+  - REC-RM-073
+  - REC-RM-074
+  - REC-RM-075
+  - REC-RM-076
   definition_action: TARGETED_REVALIDATION
   implementation_ready: true
   delivery_planning_ready: true
@@ -870,8 +924,10 @@ evidence_collection:
     or activation gate
   result: workflow/definition/results/ux11-design-basis.yaml
 active_feedback:
-  path: workflow/feedback/PO-FEEDBACK-2026-11-20-001/feedback.yaml
-  publication_commit: 930086f
+  id: PO-FEEDBACK-2026-11-20-002
+  path: workflow/feedback/PO-FEEDBACK-2026-11-20-002/feedback.yaml
+  revision: sha256:92722069d76efc9841811f6b0f5e6d5907b48a79e6a6b946a87b5000da941671
+  publication_commit: af12c415c24cefd958e239d4fe9a8cdbf55da2b5
   status: complete
 prior_feedback_adoption:
   feedback_id: PO-FEEDBACK-2026-10-18-003
@@ -893,7 +949,7 @@ prior_feedback_adoption:
     response: Agreed, do both
     scope: Both feedback-007-draft-1 navigation refinements
 active_feedback_adoption:
-  reconciliation: REC-RUN-017
+  reconciliation: REC-RUN-018
   status: complete
   preserved_domains:
   - product
@@ -918,3 +974,15 @@ specialist_resolutions:
     scope: public MCP reference change; staged Apply, stable managed identity, lifecycle preservation, stale work
       and recovery boundaries
     result: workflow/definition/results/ux12-domain-basis.yaml
+  ux13_shared_patterns:
+    status: resolved
+    owner: product-ux
+    source: workflow/feedback/PO-FEEDBACK-2026-11-20-002/feedback.yaml
+    result: workflow/definition/results/ux13-ux-basis.yaml
+    scope: Bounded shared notification, clean-state, readonly, Activity search/time/page/export and Settings review
+      patterns; no stage pass until reconciled stable authority
+    ask_user: false
+    result_revision: sha256:90ec50ac157c03acc05440e62ffa6d7ecd643a0f7832b0cac73a1494c35f03ed
+    basis: workflow/definition/results/ux13-ux-basis.md
+    note: Proposed bounded interpretation complete; no owner question; canonical reconciliation/adoption and final
+      exact-input stage validation pending

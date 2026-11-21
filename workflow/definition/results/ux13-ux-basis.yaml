@@ -1,0 +1,97 @@
+stage: product-ux
+status: PASS
+scope: Output-only bounded UX13 interpretation; reconciliation and canonical adoption
+  pending
+validated_inputs:
+- path: workflow/feedback/PO-FEEDBACK-2026-11-20-002/feedback.yaml
+  revision: sha256:92722069d76efc9841811f6b0f5e6d5907b48a79e6a6b946a87b5000da941671
+- path: product/ux/manifest.yaml
+  revision: sha256:23aa41b8f834545f50fde4f81748544df0fdc75026bb16142b1b117ef5ac8e16
+- path: product/ux/02-interaction-patterns.md
+  revision: sha256:baeb55f11e2cf31ada9ea999d819d1ce6694714d6e45c35171ba675ac1827b84
+- path: product/ux/05-accessibility.md
+  revision: sha256:bd45cbba1e5ad7c8c210ef9c18ee88272f81a00da22dc1ba0db6242f7c9a8db8
+- path: src/consoleServicePage.ts
+  revision: sha256:aaf3a4efff5a1f0b3f28823a092b45da760ebaed11ec2f157d6451c028f2ca33
+- path: src/consoleSettingsPage.ts
+  revision: sha256:c4598a0a2a69155a3a4b94a506febd6686ca7ce7011711bbae793b0227ca2f30
+- path: src/consoleEvidencePage.ts
+  revision: sha256:b5a5f2fdbec5f71df582649e5cfee8259052a289ce09831143ee5a1504c11ae4
+- path: src/consolePresentation.ts
+  revision: sha256:a78342073b5cfe5e8919563c190d9ec3ff28f6b9f6e910e3fde1009891ee7722
+artifact_changes:
+- path: workflow/definition/results/ux13-ux-basis.md
+  summary: U13-01–04 shared pattern resolution and primary-source notification research
+changed_paths:
+- workflow/definition/results/ux13-ux-basis.md
+- workflow/definition/results/ux13-ux-basis.yaml
+findings: []
+questions: []
+affected_requirements:
+- PO-FB-299
+- PO-FB-300
+- PO-FB-301
+- PO-FB-302
+- PO-FB-303
+- PO-FB-304
+- PO-FB-305
+- PO-FB-306
+- PO-FB-307
+- PO-FB-308
+- PO-FB-309
+- PO-FB-310
+- PO-FB-311
+- PO-FB-312
+- PO-FB-313
+- PO-FB-314
+- PO-FB-315
+- PO-FB-316
+- PO-FB-317
+- PO-FB-318
+- PO-FB-319
+- PO-FB-320
+- PO-FB-321
+- PO-FB-322
+- PO-FB-323
+- PO-FB-324
+- PO-FB-325
+- PO-FB-326
+- PO-FB-327
+- PO-FB-328
+- PO-FB-329
+- PO-FB-330
+- PO-FB-331
+- PO-FB-332
+- PO-FB-333
+- PO-FB-334
+- PO-FB-335
+- PO-FB-336
+- PO-FB-337
+- PO-FB-338
+- PO-FB-339
+- PO-FB-340
+- PO-FB-341
+- PO-FB-342
+- PO-FB-343
+- PO-FB-344
+- PO-FB-345
+- PO-FB-346
+- PO-FB-347
+- PO-FB-348
+- PO-FB-349
+- PO-FB-350
+affected_artifacts:
+- product/ux/02-interaction-patterns.md
+- product/ux/03-responsive-and-platform.md
+- product/ux/05-accessibility.md
+- product/ux/07-acceptance-checklist.md
+reconciliation_required: false
+change_impact:
+  product: false
+  user_journeys: false
+  ux: false
+  architecture: false
+  security: false
+validation_boundary: No canonical authority, implementation, runtime acceptance or
+  commits; impact flags describe no authority mutation in this output-only task. Proposed
+  changes require downstream reconciliation.

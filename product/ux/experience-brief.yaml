@@ -2,25 +2,23 @@ status: approved
 product_id: secretsauce-mcp
 sources:
 - path: docs/web-console-prd.md
-  revision: sha256:373ab761709d04f93e839d5ef053d7634c8cf7ed602a143acc1dd2544b5998ae
-- path: workflow/reconciliation/REC-RUN-017/reconciliation-result.yaml
-  revision: sha256:a7d0112c9186d80f1058931e888db3187ca02f67d593291c819499675e04e9db
-- path: workflow/reconciliation/REC-RUN-017/domain-basis.md
-  revision: sha256:5ba18660db2b9ba2897783a82824071016cde322b438932e33d4b1b934d24cba
-- path: workflow/feedback/PO-FEEDBACK-2026-11-20-001/feedback.yaml
-  revision: sha256:ec0762f41d25d3d655fb040a892d82c752cdc681c3f1e277f355e130c2ee6762
+  revision: sha256:532c259b1d2cf9f4674bf9b557dd2924dd27e448e50ae57a58fd6a5d95a4ea0c
+- path: workflow/reconciliation/REC-RUN-018/reconciliation-result.yaml
+  revision: sha256:a9cb5e09040e10592cc090bd35ae06e8f1693b5f6a9e16681cd1744368b06a32
+- path: workflow/reconciliation/REC-RUN-018/ux-basis.md
+  revision: sha256:4212b352563c3522e8ebc6e286cae7452ac5f1ed6df5f5fecc38d7d4e0bd2f6b
+- path: workflow/reconciliation/REC-RUN-018/domain-basis.md
+  revision: sha256:891da496521b0bce2cdbc63368f4b70fdd7754b5a0e0291faf0c9b00fae40911
+- path: workflow/feedback/PO-FEEDBACK-2026-11-20-002/feedback.yaml
+  revision: sha256:92722069d76efc9841811f6b0f5e6d5907b48a79e6a6b946a87b5000da941671
 - path: workflow/definition/decisions.md
-  revision: sha256:2198e83cdb539134e9ffd39e08b3682deed48d47dc64b5a7e4aa2d73760b6f1f
+  revision: sha256:7c3631a62a1f42aacb14b22d6777cd88c0da1cde4c4765a4e5ea25f09938c1b8
 - path: docs/web-console-prd-coverage.md
-  revision: sha256:0d6b0e9537de0cd8ac2222b6283e72a8eeaa8741716ea6fa966b7b9b650fba1f
+  revision: sha256:f92feb87ca17405e5a68ff45f925399131b583fe7766ba44f6355aaed78cacdc
 - path: docs/web-console-prd-user-journey-audit.md
-  revision: sha256:dbe00237e608d6021aad935fe58ba0ac22f0e73054e4336e12d686883accbc81
-- path: product/architecture/web-console-state-contract.md
-  revision: sha256:146d9cf35d375bfa9e86584cba387977f0c55fd2a35b8ec83f4f0336a9bd5481
-- path: product/security/web-console-security-contract.md
-  revision: sha256:50cb40de4c045eb6cab49b5f93c2a0a49718ceae454cc76a2ed80646b64db7de
+  revision: sha256:362ec62f03f1ea4186df3cc022b5158c14ebab739b4866d3e3662783bab5c0a8
 experience:
-  revision: web-console-ux-12
+  revision: web-console-ux-13
   audience:
     primary:
     - Owners
@@ -50,8 +48,9 @@ experience:
   interaction_direction:
     navigation: Preserve four primary areas and six Settings sections; five Limits
       categories and persistent search dialog under UX-DESIGN-006.
-    routine_actions: Populated forms; Review changes saves pending work then opens
-      complete-scope review; Save for later retains existing persistence-only option
+    routine_actions: Clean editors hide their action bar; genuine saved/unsaved proposals
+      retain it. Confirmed successes use brief dismissible feedback with durable equivalent;
+      failures remain actionable.
     consequential_actions: Apply reviewed Settings atomically; confirm immediate account
       operations separately
     progressive_disclosure: Preserve all advanced capabilities without putting raw
@@ -62,10 +61,10 @@ experience:
     service_review: New settings first/default with complete section cards; Changes
       retains paired Before/After; actual exception bullets precede Approve changes
       and separate required modal acknowledgments
-    settings_actions: One persistent white bottom bar with status, Discard, Save for
-      later and Review changes; safe multi-form state retained.
-    activity: Shared removable chips with positive alternatives and veto exclusions;
-      fixed contextual scope and last-successful-query export.
+    settings_actions: One white action bar only for changed state; dedicated complete-scope
+      review with modal acknowledgments, successful return to originating section.
+    activity: Default Last24h; explicit Search after filter edits; coherent range/count/paging
+      and complete filtered export independent of page.
     service_lifecycle: Shared name and Active/Inactive/Archived lifecycle, independent
       saved Draft and parent/section issue markers; no Back to Services controls.
     service_import: Create separate initially unassigned drafts with readable collision
@@ -185,8 +184,9 @@ experience:
     - UX10-DELETION-SEMANTICS
     - PO-REFINEMENT-016
     - PO-REFINEMENT-017
-    scope: REC017 bounded reference/review/alignment refinement; preserve approved
-      visual family and unaffected behavior.
+    - PO-REFINEMENT-018
+    scope: REC018 bounded UX13 shared state/Activity/Settings refinement; preserve
+      approved appearance and unaffected exceptions.
 historical_source_revisions:
 - path: docs/web-console-prd.md
   revision: sha256:dab49dc650ecbc55c3319532ad8ee590767d3938e8772676da9a6ddf047ad32d
@@ -220,3 +220,21 @@ historical_source_revisions:
   revision: sha256:93557c4a8de28e7b11eedd9c0fbf21f0f43e27283d8d4a491c018f914d40c16c
 - path: workflow/reconciliation/REC-RUN-016/design-basis.md
   revision: sha256:ee4e81f5c8ead4e6444db00f8fec5cbe999ab56b361a2cfab2ea0f37721eab3b
+- path: docs/web-console-prd.md
+  revision: sha256:373ab761709d04f93e839d5ef053d7634c8cf7ed602a143acc1dd2544b5998ae
+- path: workflow/reconciliation/REC-RUN-017/reconciliation-result.yaml
+  revision: sha256:a7d0112c9186d80f1058931e888db3187ca02f67d593291c819499675e04e9db
+- path: workflow/reconciliation/REC-RUN-017/domain-basis.md
+  revision: sha256:5ba18660db2b9ba2897783a82824071016cde322b438932e33d4b1b934d24cba
+- path: workflow/feedback/PO-FEEDBACK-2026-11-20-001/feedback.yaml
+  revision: sha256:ec0762f41d25d3d655fb040a892d82c752cdc681c3f1e277f355e130c2ee6762
+- path: workflow/definition/decisions.md
+  revision: sha256:2198e83cdb539134e9ffd39e08b3682deed48d47dc64b5a7e4aa2d73760b6f1f
+- path: docs/web-console-prd-coverage.md
+  revision: sha256:0d6b0e9537de0cd8ac2222b6283e72a8eeaa8741716ea6fa966b7b9b650fba1f
+- path: docs/web-console-prd-user-journey-audit.md
+  revision: sha256:dbe00237e608d6021aad935fe58ba0ac22f0e73054e4336e12d686883accbc81
+- path: product/architecture/web-console-state-contract.md
+  revision: sha256:146d9cf35d375bfa9e86584cba387977f0c55fd2a35b8ec83f4f0336a9bd5481
+- path: product/security/web-console-security-contract.md
+  revision: sha256:50cb40de4c045eb6cab49b5f93c2a0a49718ceae454cc76a2ed80646b64db7de

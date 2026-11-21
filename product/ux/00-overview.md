@@ -104,3 +104,7 @@ REC016 and U11-01–05 supersede only prior assignment location, service Authent
 ## UX-G13 — Bounded public-reference and review refinement
 
 UX12 preserves UX11 appearance and all unaffected approved patterns. U12-01–03 refine shared lifecycle-row alignment, safe automatic review entry, and the actual editable public MCP reference. Public reference and immutable managed identity are distinct under STATE-12/SECRES-11. These clauses override earlier immutable-public-reference wording only; they do not relax initial-versus-current Access timing, SMTP exceptions, review gates or unknown-outcome handling.
+
+## UX-G14 — Shared clean states and focused investigation
+
+UX13 adopts REC018 U13-01–04 and D13-01–03 within the approved appearance family. It supersedes clean visible action bars, standalone Required legends, old retained-stale-results/offset-export Activity rules, generic Settings effects/acknowledgment layout and incoming archive-to-Activity installation only. All other prior rules and justified timing/role/recovery exceptions remain. Current-host legacy evidence retains authorized query/export/retention; it is not retroactively hidden or purged. No new visual concept or permission model is introduced.

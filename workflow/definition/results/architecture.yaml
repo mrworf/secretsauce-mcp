@@ -1,38 +1,38 @@
 stage: software-architect-review
 status: PASS
 mode: targeted_revalidation
-scope: REC017 three outcomes/nine items; preserve prior unaffected findings and approved
-  patterns
+scope: REC018 D13 complete export, incoming archive Activity exclusion, truthful Settings and monotonic SMTP writers;
+  prior findings retained
 validated_inputs:
 - path: docs/web-console-prd.md
-  revision: sha256:373ab761709d04f93e839d5ef053d7634c8cf7ed602a143acc1dd2544b5998ae
-- path: workflow/reconciliation/REC-RUN-017/reconciliation-result.yaml
-  revision: sha256:a7d0112c9186d80f1058931e888db3187ca02f67d593291c819499675e04e9db
-- path: workflow/reconciliation/REC-RUN-017/domain-basis.md
-  revision: sha256:5ba18660db2b9ba2897783a82824071016cde322b438932e33d4b1b934d24cba
-- path: workflow/feedback/PO-FEEDBACK-2026-11-20-001/feedback.yaml
-  revision: sha256:ec0762f41d25d3d655fb040a892d82c752cdc681c3f1e277f355e130c2ee6762
+  revision: sha256:532c259b1d2cf9f4674bf9b557dd2924dd27e448e50ae57a58fd6a5d95a4ea0c
+- path: workflow/reconciliation/REC-RUN-018/reconciliation-result.yaml
+  revision: sha256:a9cb5e09040e10592cc090bd35ae06e8f1693b5f6a9e16681cd1744368b06a32
+- path: workflow/reconciliation/REC-RUN-018/domain-basis.md
+  revision: sha256:891da496521b0bce2cdbc63368f4b70fdd7754b5a0e0291faf0c9b00fae40911
+- path: workflow/reconciliation/REC-RUN-018/ux-basis.md
+  revision: sha256:4212b352563c3522e8ebc6e286cae7452ac5f1ed6df5f5fecc38d7d4e0bd2f6b
 - path: workflow/definition/decisions.md
-  revision: sha256:2198e83cdb539134e9ffd39e08b3682deed48d47dc64b5a7e4aa2d73760b6f1f
+  revision: sha256:7c3631a62a1f42aacb14b22d6777cd88c0da1cde4c4765a4e5ea25f09938c1b8
 - path: docs/web-console-prd-coverage.md
-  revision: sha256:0d6b0e9537de0cd8ac2222b6283e72a8eeaa8741716ea6fa966b7b9b650fba1f
+  revision: sha256:f92feb87ca17405e5a68ff45f925399131b583fe7766ba44f6355aaed78cacdc
 - path: docs/web-console-prd-user-journey-audit.md
-  revision: sha256:dbe00237e608d6021aad935fe58ba0ac22f0e73054e4336e12d686883accbc81
+  revision: sha256:362ec62f03f1ea4186df3cc022b5158c14ebab739b4866d3e3662783bab5c0a8
 - path: product/architecture/web-console-state-contract.md
-  revision: sha256:146d9cf35d375bfa9e86584cba387977f0c55fd2a35b8ec83f4f0336a9bd5481
+  revision: sha256:62eeda5968950069603fcde0e41601066e855bc4aa2a5613188d5fab501dd3e5
 - path: product/security/web-console-security-contract.md
-  revision: sha256:50cb40de4c045eb6cab49b5f93c2a0a49718ceae454cc76a2ed80646b64db7de
+  revision: sha256:5b1542702b4cb6d8fe1a3fd9f1ca99a7c8615a74626978397889ac7bdd7af05d
 - path: product/ux/manifest.yaml
-  revision: sha256:23aa41b8f834545f50fde4f81748544df0fdc75026bb16142b1b117ef5ac8e16
+  revision: sha256:572120f20eda45e822e46a3b1bcd1ab7448e29a93f6e7750048b282a5fff9802
 - path: product/ux/02-interaction-patterns.md
-  revision: sha256:baeb55f11e2cf31ada9ea999d819d1ce6694714d6e45c35171ba675ac1827b84
+  revision: sha256:a55cb94e0b8f739a27311e8cca25c62c6066658ae69412acc8fc740f35c1b034
 artifact_changes:
 - path: product/architecture/web-console-state-contract.md
-  revision: sha256:146d9cf35d375bfa9e86584cba387977f0c55fd2a35b8ec83f4f0336a9bd5481
-  summary: Bounded UX12 reference identity, safe review and alignment adoption
+  revision: sha256:62eeda5968950069603fcde0e41601066e855bc4aa2a5613188d5fab501dd3e5
+  summary: Bounded UX13 adopted-state contract and review, preserving prior findings/risks
 - path: product/architecture/web-console-architecture-review.md
-  revision: sha256:ccda90e822b4b7916deb5ac4be3d5858d02f212366423c3a926aa0c06f251a45
-  summary: Bounded UX12 reference identity, safe review and alignment adoption
+  revision: sha256:713c33eee4a4347887a9319a58c69e543d080c8dcdf88b4d5d14bd4aed876f26
+  summary: Bounded UX13 adopted-state contract and review, preserving prior findings/risks
 changed_paths:
 - product/architecture/web-console-state-contract.md
 - product/architecture/web-console-architecture-review.md
@@ -40,94 +40,80 @@ changed_paths:
 findings:
 - id: ARCH-OBS-01
   significance: OBSERVATION
-  summary: 'Historical baseline observation: Configuration activation needs explicit
-    runtime snapshot/resource lifecycle'
+  summary: 'Historical baseline observation: Configuration activation needs explicit runtime snapshot/resource lifecycle'
   affected_requirement: CONFIG-03
   affected_artifact: docs/web-console-prd.md
-  evidence: 'Original 2026-10-09 baseline only: src/runtime.ts:26; src/server.ts:34;
-    STATE-02'
-  why_it_matters: Mutable console state can mix configuration or retire protection
-    resources too early unless admitted operations retain their coherent context.
+  evidence: 'Original 2026-10-09 baseline only: src/runtime.ts:26; src/server.ts:34; STATE-02'
+  why_it_matters: Mutable console state can mix configuration or retire protection resources too early unless admitted
+    operations retain their coherent context.
   local_correction_possible: false
   reconciliation_required: false
-  resolution: Preserved architectural obligation from the original pre-console baseline.
-    Not a current implementation defect or reopened acceptance claim; this targeted
-    definition pass found no new authority gap.
+  resolution: Preserved architectural obligation from the original pre-console baseline. Not a current implementation
+    defect or reopened acceptance claim; this targeted definition pass found no new authority gap.
 - id: ARCH-OBS-02
   significance: OBSERVATION
-  summary: 'Historical baseline observation: mandatory durable audit admission is
-    a preservation obligation'
+  summary: 'Historical baseline observation: mandatory durable audit admission is a preservation obligation'
   affected_requirement: AUDIT-04
   affected_artifact: docs/web-console-prd.md
-  evidence: 'Original 2026-10-09 baseline only: src/audit.ts:110; test/audit.test.ts:222;
-    BASE-02; SECRES-04'
-  why_it_matters: A successful in-memory event or file write is insufficient proof
-    for the new mandatory durable-before-effect contract.
+  evidence: 'Original 2026-10-09 baseline only: src/audit.ts:110; test/audit.test.ts:222; BASE-02; SECRES-04'
+  why_it_matters: A successful in-memory event or file write is insufficient proof for the new mandatory durable-before-effect
+    contract.
   local_correction_possible: false
   reconciliation_required: false
-  resolution: Preserved architectural obligation from the original pre-console baseline.
-    Not a current implementation defect or reopened acceptance claim; this targeted
-    definition pass found no new authority gap.
+  resolution: Preserved architectural obligation from the original pre-console baseline. Not a current implementation
+    defect or reopened acceptance claim; this targeted definition pass found no new authority gap.
 - id: ARCH-OBS-03
   significance: OBSERVATION
-  summary: 'Historical baseline observation: Persistence projections must distinguish
-    live access, history, managed secrets and recovery'
+  summary: 'Historical baseline observation: Persistence projections must distinguish live access, history, managed
+    secrets and recovery'
   affected_requirement: BACKUP-01
   affected_artifact: docs/web-console-prd.md
-  evidence: 'Original 2026-10-09 baseline only: src/tokens.ts:73; src/builtinOAuth.ts:909;
-    src/config.ts:233; STATE-03/04/06'
-  why_it_matters: Serializing one runtime object would violate declared backup exclusions
-    and could revive revoked access.
+  evidence: 'Original 2026-10-09 baseline only: src/tokens.ts:73; src/builtinOAuth.ts:909; src/config.ts:233; STATE-03/04/06'
+  why_it_matters: Serializing one runtime object would violate declared backup exclusions and could revive revoked
+    access.
   local_correction_possible: false
   reconciliation_required: false
-  resolution: Preserved architectural obligation from the original pre-console baseline.
-    Not a current implementation defect or reopened acceptance claim; this targeted
-    definition pass found no new authority gap.
+  resolution: Preserved architectural obligation from the original pre-console baseline. Not a current implementation
+    defect or reopened acceptance claim; this targeted definition pass found no new authority gap.
 - id: ARCH-OBS-04
   significance: OBSERVATION
-  summary: 'Historical baseline observation: Restore installation must preserve its
-    independent rollback source and audit tail'
+  summary: 'Historical baseline observation: Restore installation must preserve its independent rollback source
+    and audit tail'
   affected_requirement: BACKUP-04
   affected_artifact: docs/web-console-prd.md
-  evidence: 'Original 2026-10-09 baseline only: STATE-05/06; J-HOST-RESTORE; J-OWNER-RESUME;
-    UX-IN07'
-  why_it_matters: Archive validity alone does not establish crash-safe replacement
-    or evidence continuity.
+  evidence: 'Original 2026-10-09 baseline only: STATE-05/06; J-HOST-RESTORE; J-OWNER-RESUME; UX-IN07'
+  why_it_matters: Archive validity alone does not establish crash-safe replacement or evidence continuity.
   local_correction_possible: false
   reconciliation_required: false
-  resolution: Preserved architectural obligation from the original pre-console baseline.
-    Not a current implementation defect or reopened acceptance claim; this targeted
-    definition pass found no new authority gap.
+  resolution: Preserved architectural obligation from the original pre-console baseline. Not a current implementation
+    defect or reopened acceptance claim; this targeted definition pass found no new authority gap.
 - id: ARCH-OBS-05
   significance: OBSERVATION
-  summary: 'Historical baseline observation: Capacity validation must include audit
-    and expensive configurable input workloads'
+  summary: 'Historical baseline observation: Capacity validation must include audit and expensive configurable input
+    workloads'
   affected_requirement: OPS-01
   affected_artifact: docs/web-console-prd.md
-  evidence: 'Original 2026-10-09 baseline only: src/policy.ts:48; src/serviceRequestLimiter.ts:4;
-    OPS-02/04; external-input acceptance contract'
-  why_it_matters: User/service counts alone do not bound retained audit data, regular-expression
-    work or archive processing.
+  evidence: 'Original 2026-10-09 baseline only: src/policy.ts:48; src/serviceRequestLimiter.ts:4; OPS-02/04; external-input
+    acceptance contract'
+  why_it_matters: User/service counts alone do not bound retained audit data, regular-expression work or archive
+    processing.
   local_correction_possible: false
   reconciliation_required: false
-  resolution: Preserved architectural obligation from the original pre-console baseline.
-    Not a current implementation defect or reopened acceptance claim; this targeted
-    definition pass found no new authority gap.
+  resolution: Preserved architectural obligation from the original pre-console baseline. Not a current implementation
+    defect or reopened acceptance claim; this targeted definition pass found no new authority gap.
 questions: []
 affected_requirements:
-- CONFIG-06
+- CONFIG-01
+- UX-06
+- AUDIT-02.b
+- AUDIT-02.a
+- BACKUP-01
+- BACKUP-03
+- BACKUP-06
+- AUDIT-02
+- UX-07
 - CONFIG-03
-- UX-02
-- UX-03
-- PO-FB-290
-- PO-FB-291
-- PO-FB-292
-- PO-FB-293
-- PO-FB-294
-- PO-FB-295
-- PO-FB-296
-- PO-FB-297
-- PO-FB-298
+- AUDIT-04
 affected_artifacts:
 - product/architecture/web-console-state-contract.md
 - product/architecture/web-console-architecture-review.md
@@ -135,8 +121,9 @@ reconciliation_required: false
 change_impact:
   product: false
   user_journeys: false
-  ux: true
-  architecture: true
-  security: true
-validation_boundary: Definition-only bounded adoption. Existing findings/accepted
-  risks preserved; no new runtime audit, implementation, tests or release certification.
+  ux: false
+  architecture: false
+  security: false
+validation_boundary: Definition-only bounded adoption against current PRD, maps and UX13; no implementation or runtime
+  acceptance. Unrelated prior findings and accepted risks preserved. Monotonic SMTP source defects remain explicitly
+  required delivery regression under REC-RM076.

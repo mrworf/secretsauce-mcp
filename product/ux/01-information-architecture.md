@@ -142,3 +142,7 @@ UX11 task orientation: the dedicated Access tab carries a distinct **No access a
 ## UX12 service-reference placement
 
 Details contains the actual MCP service reference alongside its purpose and current/proposed distinction. Inactive editable services expose editing; Active services require adjacent Change reference warning confirmation before editing. This is an ordinary draft field thereafter, not a new navigation area or alias registry. Archived/read-only roles preserve restrictions. Internal managed identity remains stable and is not substituted for the public reference in user instructions.
+
+## UX13 task placement and language
+
+Use Export service assignments for the People & Access download and Export filtered activity for Activity. Settings review is a dedicated workspace task without subsection rail; retain main navigation, originating-section return and guarded history. Archived Configuration retains ordinary sections in read-only form. Reference purpose, dedicated Access, immediate/current versus proposed timing and shared service header remain unchanged. Activity separates Last 24 hours, All time and Custom; deliberate Search owns changed criteria.

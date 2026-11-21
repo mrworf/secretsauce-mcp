@@ -235,3 +235,15 @@ The scoped architecture definition is consistent with the adopted PRD. This is d
 ## UX12 bounded definition review
 
 The confirmed public-reference change is substantive state/routing behavior, not a display alias. STATE-12 adopts stable managed identity, namespace claims, staged publication, Inactive rename-only preservation, fresh authorization and revocation fences, coherent unknown outcomes, older-reader rejection and explicit recovery/import/export boundaries. Safe review entry is limited to proven unchanged proposal baselines and new inspection, not blind generation adoption. Prior findings, accepted risks and unaffected conclusions remain unchanged. Required positive/negative and recovery/visual checks are delivery obligations; this review does not certify new implementation or runtime evidence. No unresolved product choice remains in this bounded scope.
+
+## UX13 bounded definition review
+
+**Scope:** REC018 six outcomes; adopted PRD/UX13 and D13-01–03. Source inspected at352df68 in evidence selection/export, backup worker/provenance/restore installation and Settings/SMTP writes; no runtime suite or broad architecture audit. Existing findings and accepted decisions above remain.
+
+**Executive summary / overall opinion:** desired state is coherent and implementation-ready after bounded STATE-13 adoption. No consequential question or new subsystem is required. Definition PASS is not implementation acceptance.
+
+**What is good:** exact authorization/predicate matching, immutable current context, separate current-host audit and atomic prepared Settings scope are suitable and retained. **What is risky:** partial offset export cannot satisfy complete-file intent; removing provenance validation with installation would weaken recovery; dropping real drafts or blind rebase would hide work. The three unguarded format4 writers are a concrete preservation obligation under existing STATE-12.
+
+**What should change:** STATE-13 separates complete bounded export from pagination; separates archive verification from Activity installation for all accepted formats; preserves current-host legacy sources; requires truthful semantic dirty/diff, safe full-scope review and monotonic SMTP writes. Relevant evidence is `consoleEvidence.ts` select/export, `consoleBackupWorker.ts` open/provenance, `consoleRestore.ts` recoveredState/install, `consoleSettings.ts:46`, `consoleNotifications.ts:126/131`. Required positive/negative and actual recovery boundaries are enumerated in STATE-13 and REC-RM074–076.
+
+**What I would not change yet:** storage architecture, cryptography, audit retention, authentication, independent mutation timing or job orchestration. Bounded export buffering/transport can be implemented proportionately without a new persistent jobs product. No unrelated runtime finding is reopened.

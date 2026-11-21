@@ -180,3 +180,16 @@ Delivery evidence must compare actual matching wide/narrow populated states, no-
 - **UX-C95:** Overview/footer enter the same actual incomplete or complete review. Safe one-shot refreshed baselines retain local edits; true competing edits, unknown writes and replaced targets retain explicit recovery; no automatic Apply.
 - **UX-C96:** Details explains and edits the real public reference; Active warning only unlocks, Inactive editing is direct, cancel/discard preserve current routing, and reviewed before/after clearly identifies disruption.
 - **UX-C97:** Same managed identity, grants, values and history survive rename; already-published Inactive reference-only Apply stays Inactive. Direct/Advanced, read-only, history, keyboard, narrow/enlarged and unknown-outcome cases match STATE-12/SECRES-11. Historical screenshots preserve appearance only; actual new-state browser evidence remains a delivery obligation.
+
+## UX13 bounded conformance
+
+- **UX-C98:** Clean service/Settings bars and reserved space disappear, while actual saved/unsaved work and errors remain reachable; archived Configuration matches editable geometry read-only.
+- **UX-C99:** Equivalent forms/dialogs use only local required cues; Access removes redundant assignment qualifier without implying role-based execution.
+- **UX-C100:** Routine confirmed success is concise, dismissible and non-obstructing with durable equivalent/polite announcement; persistent errors/unknown/security remain; downloads have no success toast.
+- **UX-C101:** Browser-local dates identify zone across equivalent timestamp surfaces; UTC storage/exports and explicitly UTC schedules remain unchanged; DST cases are unambiguous.
+- **UX-C102:** Activity defaults to Last24h; filter edits clear results/count/paging/export until Search; cancel/history/stale responses preserve exact context; paging and25/50/100 size retain searched interval and display honest range/total/pages.
+- **UX-C103:** Complete filtered export ignores pagination, binds current searched criteria/scope and never claims truncated success. Current-host legacy evidence remains authorized; incoming archived records never become Activity sources.
+- **UX-C104:** Retention-only review creates no phantom drafts/diffs; actual multi-section drafts remain; meaningful literals preserved and comparisons consistent.
+- **UX-C105:** Dedicated Settings review hides subsection rail and generic effects; existing required acknowledgments are visible in Services-style modal, cancellation is safe, success returns to origin, unknown/cleanup failure persists, discard lists sections as bullets.
+
+Compare matching populated/empty/read-only/error/dialog states at desktop/narrow/enlarged text to inherited appearance references. These criteria require delivery evidence, not an inference from code or this definition pass.

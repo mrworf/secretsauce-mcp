@@ -704,22 +704,25 @@ milestones:
 - id: '56'
   title: Search and export complete filtered Activity coherently
   file: delivery/milestones/secretsauce-mcp/56-complete-filtered-activity.md
+  status: completed
+  dependencies:
+  - '55'
+  completed_at: '2026-11-21T01:03:58.826479+00:00'
+  evidence: evidence/ux-acceptance/secretsauce-mcp/milestone56/acceptance.md
+  notes: Focused acceptance and actual browser visual evidence passed; UX13-INTEGRATED remains due before
+    goal completion.
+  started_at: '2026-11-21T00:49:55.213203+00:00'
+  commit_hash: 7b2814fd6b35148ae968296c1258fde411d85e2b
+- id: '57'
+  title: Review and apply only genuine Settings changes
+  file: delivery/milestones/secretsauce-mcp/57-reliable-settings-review.md
   status: in_progress
   dependencies:
   - '55'
   completed_at: null
   evidence: null
   notes: null
-  started_at: '2026-11-21T00:49:55.213203+00:00'
-- id: '57'
-  title: Review and apply only genuine Settings changes
-  file: delivery/milestones/secretsauce-mcp/57-reliable-settings-review.md
-  status: pending
-  dependencies:
-  - '55'
-  completed_at: null
-  evidence: null
-  notes: null
+  started_at: '2026-11-21T01:03:58.826479+00:00'
 - id: '58'
   title: Restore configuration without importing archived Activity
   file: delivery/milestones/secretsauce-mcp/58-restore-without-activity-import.md
@@ -856,10 +859,10 @@ delivery_goal:
   - '57'
   - '58'
   execution: autonomous
-  current_milestone: '56'
-  governing_plan: delivery/plans/secretsauce-mcp/milestone_56_plan_01.md
+  current_milestone: '57'
+  governing_plan: delivery/plans/secretsauce-mcp/milestone_57_plan_01.md
   blockers: []
-  resume_point: M56 governing plan before implementation
+  resume_point: M57 governing plan before implementation
   started_at: '2026-11-21T00:27:51.903524+00:00'
 compiled_from_history:
 - product_id: secretsauce-mcp

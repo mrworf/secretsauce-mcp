@@ -728,13 +728,15 @@ milestones:
 - id: '58'
   title: Restore configuration without importing archived Activity
   file: delivery/milestones/secretsauce-mcp/58-restore-without-activity-import.md
-  status: in_progress
+  status: completed
   dependencies:
   - '56'
-  completed_at: null
-  evidence: null
-  notes: null
+  completed_at: '2026-11-21T01:29:23.294119+00:00'
+  evidence: evidence/qa/secretsauce-mcp/milestone58/targeted-acceptance.md
+  notes: Focused recovery/API acceptance passed; no new graphical surface; actual same-image recovery
+    remains due at UX13-INTEGRATED.
   started_at: '2026-11-21T01:20:25.618173+00:00'
+  commit_hash: 057bd191f484eb5025141e744e23351a4a4581b9
 delivery_goal:
   product_id: secretsauce-mcp
   status: in_progress
@@ -862,10 +864,10 @@ delivery_goal:
   - '57'
   - '58'
   execution: autonomous
-  current_milestone: '58'
+  current_milestone: null
   governing_plan: delivery/plans/secretsauce-mcp/milestone_58_plan_01.md
   blockers: []
-  resume_point: M58 governing plan before implementation
+  resume_point: UX13-INTEGRATED final qualification due
   started_at: '2026-11-21T00:27:51.903524+00:00'
 compiled_from_history:
 - product_id: secretsauce-mcp

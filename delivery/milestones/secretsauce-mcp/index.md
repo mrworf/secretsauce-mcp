@@ -1,21 +1,25 @@
-# Web console delivery milestones — UX12 remaining delta
+# Web console delivery milestones — UX13 delta
 
-Input mode **PRODUCT_BUILD**. Ready UX12 package `workflow/definition/definition-package.yaml` payload428bae3/closeout077b71b is primary authority; its indexed passed validations are consumed, not rerun. REC017 is adopted provenance, not an unrevalidated standalone CHANGE_PLAN. Completed M10–52 contracts, records, goals and qualification history remain unchanged.
+PRODUCT_BUILD from ready package3a186ac/c096391; REC018 bfacd51/352df68 adopted provenance. Existing45 completed M10–54 records/contracts/goals/checkpoints preserved; old source validation is not rerun.
 
 ## Current outcomes
 
 | Milestone | Outcome | Dependencies | Status |
 |---|---|---|---|
-| [M53](53-service-list-and-review-entry.md) | Aligned Services and safe direct review entry | M52 | pending |
-| [M54](54-editable-public-service-reference.md) | Reviewed public-reference change with stable managed identity and safe runtime/recovery | M53 | pending |
+| [M55](55-consistent-console-states.md) | Use consistent clean, read-only and feedback states | M54 | pending |
+| [M56](56-complete-filtered-activity.md) | Search and export complete filtered Activity coherently | M55 | pending |
+| [M57](57-reliable-settings-review.md) | Review and apply only genuine Settings changes | M55 | pending |
+| [M58](58-restore-without-activity-import.md) | Restore configuration without importing archived Activity | M56 | pending |
 
-## Granularity and dependency assessment
+## Granularity and integration
 
-Two vertical outcomes. M53 consolidates row alignment and ordinary review-entry repair within the existing service journey; splitting these small refinements would duplicate gates. M54 is independently substantial: public namespace publication changes runtime trust, persistence and recovery. Combining it with M53 obscures that distinct rollout boundary. No one-finding-per-milestone rule, generic foundation or implementation slices. M54 consumes M53's safe review-entry contract for its new proposal. Earliest integrated demonstration: mixed lifecycle list→Review changes after an unrelated revision→precise missing-value blocker→correct value→fresh review, before introducing routing migration.
+Four coherent vertical outcomes, not six remediation or52 feedback milestones. M55 groups shared console components and local dates; M56 keeps full investigation and download together; M57 has a distinct multi-section transaction/confirmation journey; M58 isolates material restore trust change. M56/M57 consume M55 shared feedback/forms/time; M58 consumes M56 query/export semantics to establish absence and current-host preservation. M57 and M56 are otherwise independent. Earliest demonstration is clean→edit→save/read-only and task-bound success in M55, followed by a full Activity query/download. No persistence-only foundation, implementation slices or M0.
 
-## Validation and handoff
+## Validation and blockers
 
-Focused affected checks/build and inspected actual browser evidence per outcome; one separate **UX12-INTEGRATED** frozen full-suite/build and final joined browser/affected old-reader/recovery/Docker qualification before final acceptance/deployment. No concurrent browser/Docker during full suite; npm test pretest satisfies the build gate. Reuse current final-source source-in-Playwright browser evidence. Build one exact stable candidate application image afterward for mandatory affected recovery/launcher drills. First confirmed unexpected out-of-area regression expands focused checks; second distinct regression/spread triggers full suite after repair. All9 feedback dispositions and3 remediations map; no deferred, blocked or unmapped required scope. No runtime or readiness probes run during compilation. Packet complete for milestone-readiness, not yet READY or implemented. Parent owns publication.
+Focused evidence per outcome; one UX13-INTEGRATED frozen bounded-worker suite/build, matching final-source joined browser and exact same-image affected recovery drills before acceptance/deployment. Format10/newer SMTP/all-writer preservation is mandatory. No unresolved, blocked, deferred or unmapped required scope. Readiness owns environment validation; compiler does not certify execution or release.
+
+## Preserved earlier packet index (historical)
 
 ## Completed history
 

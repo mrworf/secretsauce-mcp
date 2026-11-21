@@ -6,24 +6,26 @@ source:
   mode: PRODUCT_BUILD
   type: definition-package
   path: workflow/definition/definition-package.yaml
-  revision: sha256:c3efb4da84917fb92ae80a70566a9f6cf383363291c47ff87c67ca1c2b81daeb
-  repository_commit: 428bae3dfb8e3881afda540a70f9d6a38a83b960
-  reconciliation: workflow/reconciliation/REC-RUN-017/reconciliation-result.yaml
+  revision: sha256:88336bf42b4013e80842d511d52496cba87ed568fd3a838f014d68caff65af5a
+  repository_commit: 3a186acf6fd7aa14589e869992701855a5f096bf
+  reconciliation: workflow/reconciliation/REC-RUN-018/reconciliation-result.yaml
 planning:
-  parent_commit: 077b71bd56f595b75ed0f667ed60d137a2281240
-  repository_commit: 8d853fbc1b8c4a3c18ef849e5ec772fdf5fea4d6
+  parent_commit: c09639198b073fc03159d875c77f81e095fa9e15
+  repository_commit: null
 milestones:
   manifest: delivery/milestones/secretsauce-mcp/status.yaml
-  packet_revision: sha256:54e2034d8ee283a17bedfbdbae760c7426163597bfe60a47f3b4eb6a7ef01e41
+  packet_revision: sha256:05fbd37fcc4204627df6e4f7096bbda7aeecd3e4964f20f88b239326e95abe38
   active_milestones:
-  - '53'
-  - '54'
+  - '55'
+  - '56'
+  - '57'
+  - '58'
 readiness:
   status: READY
   prerequisite_manifest: delivery/readiness/secretsauce-mcp/prerequisite-manifest.md
   result: delivery/readiness/secretsauce-mcp/readiness-report.md
   adapter: workflow/delivery-planning/results/readiness.yaml
-  packet_revision: sha256:54e2034d8ee283a17bedfbdbae760c7426163597bfe60a47f3b4eb6a7ef01e41
+  packet_revision: sha256:05fbd37fcc4204627df6e4f7096bbda7aeecd3e4964f20f88b239326e95abe38
 m0:
   present: false
   milestone: null
@@ -50,39 +52,38 @@ delivery_constraints:
   regression_plan:
     source: delivery/milestones/secretsauce-mcp/status.yaml#regression_checkpoints
     checkpoints:
-      UX12-INTEGRATED:
+      UX13-INTEGRATED:
         covered_milestones:
-        - '53'
-        - '54'
+        - '55'
+        - '56'
+        - '57'
+        - '58'
         status: pending
-        due: After M53/M54 and before final acceptance or deployment
+        due: "After M55\u201358 before final goal acceptance or deployment"
         categories:
-        - full unit/integration suite and build
-        - joined Services safe-review and public-reference browser/MCP qualification
-        - authorization/namespace/revocation/uncertainty and identity preservation
-        - changed format actual prior-reader, restart, owned backup and explicit restore/Docker gates
-        - matching UX12 desktop/narrow/enlarged-text keyboard visual comparison
+        - full unit/integration/build
+        - joined shared console/Activity/Settings browser with actual visual comparison
+        - complete export resource/auth/scope failures
+        - SMTP and all-writer format10 monotonicity
+        - old/new archive exclusion and current-host legacy continuity, crash/restart/rollback/clean-host/launcher
         commands:
         - npm test -- --maxWorkers=2
-        execution: Freeze clean tracked candidate; npm test pretest satisfies the build gate. No concurrent Docker/browser
-          during full suite. Reuse current final-source browser evidence from the existing source-in-Playwright
-          harness. Build one exact application image after the stable suite and reuse it for mandatory affected
-          recovery/launcher drills and relevant backup/restore qualification; retain changed-boundary actual prior-reader
-          checks.
-        conditional: Actual self-signed HTTPS if downstream transport changes; existing recovery/launcher gates
-          at all affected storage/recovery boundaries, with no waiver of mandatory project gates.
-        escalation: First confirmed out-of-area regression expands focused checks; second distinct regression or
-          spread requires full suite after repairs.
-        evidence: null
+        execution: Freeze clean tracked source; npm test pretest satisfies build; no concurrent browser/Docker.
+          Reuse current final-source browser evidence. Build one exact application image after stable suite for
+          affected recovery/launcher drills. No automatic full-suite per milestone.
+        escalation: First distinct out-of-area regression expands focused scope; second distinct or spreading regression
+          requires full suite after repairs.
+        conditional: Actual self-signed HTTPS if downstream transport changes. Existing required recovery and security
+          gates remain mandatory.
 visual_acceptance:
   approved_reference: product/ux/manifest.yaml
-  revision: web-console-ux-12
+  revision: web-console-ux-13
   required: Compare actual browser screenshots at matching states/viewports against approved references and exact
-    UX12 delta; preserve unaffected appearance and behavior. Functional tests alone are insufficient.
+    UX13 delta; preserve unaffected appearance and behavior. Functional tests alone are insufficient.
   requirements:
   - UX-V05
   - UX-C42
-  - "UX-C94\u201397"
+  - "UX-C98\u2013105"
 next:
   workflow: implementation
   recommended_skill: milestone-delivery-orchestrator

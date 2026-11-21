@@ -1,0 +1,90 @@
+schema_version: 1
+workflow: delivery-planning
+product_id: secretsauce-mcp
+status: ready_for_implementation
+source:
+  mode: PRODUCT_BUILD
+  type: definition-package
+  path: workflow/definition/definition-package.yaml
+  revision: sha256:c3efb4da84917fb92ae80a70566a9f6cf383363291c47ff87c67ca1c2b81daeb
+  repository_commit: 428bae3dfb8e3881afda540a70f9d6a38a83b960
+  reconciliation: workflow/reconciliation/REC-RUN-017/reconciliation-result.yaml
+planning:
+  parent_commit: 077b71bd56f595b75ed0f667ed60d137a2281240
+  repository_commit: 8d853fbc1b8c4a3c18ef849e5ec772fdf5fea4d6
+milestones:
+  manifest: delivery/milestones/secretsauce-mcp/status.yaml
+  packet_revision: sha256:54e2034d8ee283a17bedfbdbae760c7426163597bfe60a47f3b4eb6a7ef01e41
+  active_milestones:
+  - '53'
+  - '54'
+readiness:
+  status: READY
+  prerequisite_manifest: delivery/readiness/secretsauce-mcp/prerequisite-manifest.md
+  result: delivery/readiness/secretsauce-mcp/readiness-report.md
+  adapter: workflow/delivery-planning/results/readiness.yaml
+  packet_revision: sha256:54e2034d8ee283a17bedfbdbae760c7426163597bfe60a47f3b4eb6a7ef01e41
+m0:
+  present: false
+  milestone: null
+  rationale: Current repository and synthetic harness prerequisites suffice.
+external_dependencies: []
+delivery_constraints:
+  granularity: coherent_integrated_outcomes
+  slice_boundary: one_independently_verifiable_behavior
+  split_trigger: distinct_substantial_outcome_or_material_risk_boundary
+  validation: focused_during_iteration_broader_at_required_checkpoint
+  contract:
+  - Before production edits, minimal-slice-delivery records each observable behavior, exclusions, focused positive/negative
+    evidence and commit boundary; keep necessary layers and related same-pattern support together.
+  - Revise remaining slice plans before absorbing another behavior; tests and fixes proving the same behavior remain
+    together. Complete and commit verified outcomes without relabeling remaining acceptance.
+  - Slice refinements stay within milestone authority; scope/dependency changes return to planning and preserve
+    completed history.
+  - Run focused checks during iteration and broader regression at its planned stable boundary; repeat passing checks
+    only for relevant changes, failures, unresolved risks or required gates.
+  - Demonstrate integrated behavior at the earliest dependency-safe checkpoint. Synthetic fixtures do not prove
+    real external interoperability.
+  - First confirmed out-of-area regression expands focused scope; second distinct regression or further spread requires
+    full regression after focused repair.
+  regression_plan:
+    source: delivery/milestones/secretsauce-mcp/status.yaml#regression_checkpoints
+    checkpoints:
+      UX12-INTEGRATED:
+        covered_milestones:
+        - '53'
+        - '54'
+        status: pending
+        due: After M53/M54 and before final acceptance or deployment
+        categories:
+        - full unit/integration suite and build
+        - joined Services safe-review and public-reference browser/MCP qualification
+        - authorization/namespace/revocation/uncertainty and identity preservation
+        - changed format actual prior-reader, restart, owned backup and explicit restore/Docker gates
+        - matching UX12 desktop/narrow/enlarged-text keyboard visual comparison
+        commands:
+        - npm test -- --maxWorkers=2
+        execution: Freeze clean tracked candidate; npm test pretest satisfies the build gate. No concurrent Docker/browser
+          during full suite. Reuse current final-source browser evidence from the existing source-in-Playwright
+          harness. Build one exact application image after the stable suite and reuse it for mandatory affected
+          recovery/launcher drills and relevant backup/restore qualification; retain changed-boundary actual prior-reader
+          checks.
+        conditional: Actual self-signed HTTPS if downstream transport changes; existing recovery/launcher gates
+          at all affected storage/recovery boundaries, with no waiver of mandatory project gates.
+        escalation: First confirmed out-of-area regression expands focused checks; second distinct regression or
+          spread requires full suite after repairs.
+        evidence: null
+visual_acceptance:
+  approved_reference: product/ux/manifest.yaml
+  revision: web-console-ux-12
+  required: Compare actual browser screenshots at matching states/viewports against approved references and exact
+    UX12 delta; preserve unaffected appearance and behavior. Functional tests alone are insufficient.
+  requirements:
+  - UX-V05
+  - UX-C42
+  - "UX-C94\u201397"
+next:
+  workflow: implementation
+  recommended_skill: milestone-delivery-orchestrator
+  start_milestone: '45'
+implementation_started: false

@@ -293,3 +293,74 @@ Primary implementation authority is the ready UX12 package and adopted PRD CONFI
 | PO-FB-298 | DIRECTIVE / FULLY_RESOLVED | M54 | REC-RM-070 |
 
 Shared authorization/audit/unsaved-state/visual constraints map to both; M54 additionally consumes safe review while delivering CONFIG-06. Coverage UX12-C01–06 and ACT-150–154 map exactly. Excluded: automatic Apply/retry, aliases, permanent reservation, authentication changes, SMTP timing, unrelated rebuilds, deployment and already-completed behavior. Accepted SEC-DEF-001 is preserved. No optional observation/question creates an independent milestone. Deferred required work: none. Blocked: none. Unmapped: none.
+
+
+# UX13 current delta traceability
+
+Ready package3a186ac/c096391 governs; REC018 dispositions retain original directive/preference/observation authority. No observation creates a standalone milestone.
+
+| Remediation | Milestone |
+|---|---|
+| REC-RM-071 | M55 |
+| REC-RM-072 | M55 |
+| REC-RM-073 | M55, M56 |
+| REC-RM-074 | M56 |
+| REC-RM-075 | M58 |
+| REC-RM-076 | M57 |
+
+| Feedback | Classification | Disposition | Milestone |
+|---|---|---|---|
+| PO-FB-299 | DIRECTIVE | FULLY_RESOLVED | M55 |
+| PO-FB-300 | OBSERVATION | EVIDENCE_CORRELATED | M55 |
+| PO-FB-301 | DIRECTIVE | FULLY_RESOLVED | M55 |
+| PO-FB-302 | OBSERVATION | EVIDENCE_CORRELATED | M55 |
+| PO-FB-303 | DIRECTIVE | FULLY_RESOLVED | M55 |
+| PO-FB-304 | DIRECTIVE | FULLY_RESOLVED | M55 |
+| PO-FB-305 | OBSERVATION | EVIDENCE_CORRELATED | M55 |
+| PO-FB-306 | IDEA_OR_QUESTION | EXPLORATORY_RECORDED | M55 |
+| PO-FB-307 | OBSERVATION | EVIDENCE_CORRELATED | M55 |
+| PO-FB-308 | OBSERVATION | EVIDENCE_CORRELATED | M55 |
+| PO-FB-309 | DIRECTIVE | FULLY_RESOLVED | M55 |
+| PO-FB-310 | PREFERENCE | ADVISORY_CONSIDERED | M55 |
+| PO-FB-311 | IDEA_OR_QUESTION | EXPLORATORY_RECORDED | M55 |
+| PO-FB-312 | OBSERVATION | EVIDENCE_CORRELATED | M55 |
+| PO-FB-313 | DIRECTIVE | FULLY_RESOLVED | M55 |
+| PO-FB-314 | OBSERVATION | EVIDENCE_CORRELATED | M55 |
+| PO-FB-315 | DIRECTIVE | FULLY_RESOLVED | M55 |
+| PO-FB-316 | OBSERVATION | EVIDENCE_CORRELATED | M55, M56 |
+| PO-FB-317 | DIRECTIVE | FULLY_RESOLVED | M55, M56 |
+| PO-FB-318 | DIRECTIVE | FULLY_RESOLVED | M55, M56 |
+| PO-FB-319 | OBSERVATION | EVIDENCE_CORRELATED | M56 |
+| PO-FB-320 | DIRECTIVE | FULLY_RESOLVED | M56 |
+| PO-FB-321 | DIRECTIVE | FULLY_RESOLVED | M56 |
+| PO-FB-322 | OBSERVATION | EVIDENCE_CORRELATED | M56 |
+| PO-FB-323 | DIRECTIVE | FULLY_RESOLVED | M56 |
+| PO-FB-324 | DIRECTIVE | FULLY_RESOLVED | M56 |
+| PO-FB-325 | DIRECTIVE | FULLY_RESOLVED | M56 |
+| PO-FB-326 | OBSERVATION | EVIDENCE_CORRELATED | M56 |
+| PO-FB-327 | DIRECTIVE | FULLY_RESOLVED | M56 |
+| PO-FB-328 | PREFERENCE | ADVISORY_CONSIDERED | M56 |
+| PO-FB-329 | DIRECTIVE | FULLY_RESOLVED | M56 |
+| PO-FB-330 | PREFERENCE | ADVISORY_CONSIDERED | M56 |
+| PO-FB-331 | OBSERVATION | EVIDENCE_CORRELATED | M56 |
+| PO-FB-332 | DIRECTIVE | FULLY_RESOLVED | M56 |
+| PO-FB-333 | IDEA_OR_QUESTION | EXPLORATORY_RECORDED | M56 |
+| PO-FB-334 | DIRECTIVE | FULLY_RESOLVED | M56 |
+| PO-FB-335 | OBSERVATION | EVIDENCE_CORRELATED | M58 |
+| PO-FB-336 | DIRECTIVE | FULLY_RESOLVED | M58 |
+| PO-FB-337 | DIRECTIVE | FULLY_RESOLVED | M58 |
+| PO-FB-338 | OBSERVATION | EVIDENCE_CORRELATED | M57 |
+| PO-FB-339 | OBSERVATION | EVIDENCE_CORRELATED | M57 |
+| PO-FB-340 | DIRECTIVE | FULLY_RESOLVED | M57 |
+| PO-FB-341 | OBSERVATION | EVIDENCE_CORRELATED | M57 |
+| PO-FB-342 | DIRECTIVE | FULLY_RESOLVED | M57 |
+| PO-FB-343 | DIRECTIVE | FULLY_RESOLVED | M57 |
+| PO-FB-344 | PREFERENCE | ADVISORY_CONSIDERED | M57 |
+| PO-FB-345 | DIRECTIVE | FULLY_RESOLVED | M57 |
+| PO-FB-346 | OBSERVATION | EVIDENCE_CORRELATED | M57 |
+| PO-FB-347 | DIRECTIVE | FULLY_RESOLVED | M57 |
+| PO-FB-348 | DIRECTIVE | FULLY_RESOLVED | M57 |
+| PO-FB-349 | DIRECTIVE | FULLY_RESOLVED | M57 |
+| PO-FB-350 | DIRECTIVE | FULLY_RESOLVED | M58 |
+
+Cross-cutting: UX-G14/IN29–32/R15/A13/C98–105 and STATE-13/SECRES-12 govern all affected surfaces. D13-01→M56; D13-02→M58; D13-03→M57. U13-01/02→M55; U13-03→M55/M56/M58 (source visibility); U13-04→M57. SMTP format10/newer and all writers→M57/M58, finalcheckpoint. Preserve SEC-DEF-001, immediate service values/current Access and staged SMTP/confirmed Clear. Excluded: notification center, durable export jobs, live deployment, generic evidence upload, retroactive legacy purge, authorization redesign and unaffected completedwork. Deferred/blocked/unmapped required items: None. UX13-INTEGRATED covers all four outcomes.

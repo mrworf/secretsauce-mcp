@@ -59,7 +59,7 @@ function openServiceApproval(review,editor,opener){
  }
  pending=false;d.removeAttribute('aria-busy');close();editorDirty=false;serviceEditor=null;
  try{servicesSnapshot=await api('services');await serviceDetail(editor.id);}catch(e){showError('Changes were applied, but the current view could not be loaded. Refresh to inspect the active configuration.');}
- banner.textContent='Applied '+(review.proposed.name||editor.id)+' · active revision '+result.revision+'.';
+ notifySuccess('Applied '+(review.proposed.name||editor.id)+' · active revision '+result.revision+'.');
  };document.body.append(d);d.showModal();title.focus();
 }
 `;

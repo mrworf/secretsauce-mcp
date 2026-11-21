@@ -1,0 +1,7 @@
+{
+  "result": "PASS",
+  "checks": [
+    "Compact ultrawide/desktop/narrow sign-in, separate replacement task with blank proofs, ordinary recovery-code login succeeds; generic password helper absent.",
+    "Actual save notification, durable equivalent, timeout/hover/focus pause/dismiss, route cleanup, persistent unknown error and silent assignment download; late committed response fenced after navigation; browser-local zone/offset/milliseconds/DST-invalid inputs with UTC schedule preserved."
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "base": "2520af4",
+  "method": "SHA256 of exact owned file bytes; browser export git archive base plus explicit overlays; focused test file runs in repository",
+  "files": {
+    "scripts/lib/verify-console-feedback-time.mjs": "2a760eab7f4da04d26602a156bc917bfc24c6307868a39839192c8beaacbce19",
+    "scripts/verify-console-service-editor-browser.mjs": "ca65d478fa6ebfe24b7717ffbac5c51f649dffe9e0a3e175fa859c70cfefad0d",
+    "src/consoleAuthenticationPage.ts": "204fc5cc15dd4d847c459f494b41f57473b8d3858e402819483c78d56da0c99c",
+    "src/consoleBackupsPage.ts": "e9a0704a053133d6368e917761e34ddb21b970fe772ae17442ef093f7f8a563a",
+    "src/consoleEvidencePage.ts": "266a5911773d7cbde96d027cdeccb16b121efead84a574a57057bdf96d8604ec",
+    "src/consoleOperationsPage.ts": "2632c85f84ef21925ab629ae388cb7078cd236283eb6ad49872930bfe9f421f3",
+    "src/consolePage.ts": "09020a451bc1e3d352fc675c0491bcf51978d4e5d781a6e7e90c027444beb22b",
+    "src/consolePeoplePage.ts": "3b77412d50e16753a33083b7a48ff4e965f341b9a77e187642e3416a54adaf12",
+    "src/consoleRestorePage.ts": "54fcb61f1ca34eb6f592d5de4cca76e43ef24cb8eb04d79369540fbaae7a7876",
+    "src/consoleServiceApproval.ts": "2f69ab497d2e104cd7d5d6024616a91baece4c92586790af9dc3b0323d311f9b",
+    "src/consoleServicePage.ts": "df799ec4e19a424a064fc6242e431c3b54d8e81c5941778caf143a38715d7511",
+    "src/consoleSettingsPage.ts": "e3ef925f665efdd9e57333d239deec89e2db53adeb27e0d047f6ab5b9cbf9984",
+    "src/consoleTime.ts": "bf6f8d208a57d5b696be85b2500e5128df9190d2d61745924c60a90c23db526f",
+    "test/console-time.test.ts": "0327aeba1069271ea8c6d971608125e21c0b11e6a837dc58817bb4daba91fb81"
+  }
+}

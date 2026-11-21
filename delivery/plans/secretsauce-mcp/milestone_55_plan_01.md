@@ -18,5 +18,9 @@ Reuse current harnesses; no new assertion quota or whole-suite run. Browser rece
 
 | Slice | Status | Commit/evidence |
 |---|---|---|
-|1|completed|forms/acceptance.md; commit recorded by Git history|
-|2|in_progress|pending|
+|1|completed|2520af4; forms/acceptance.md|
+|2|completed|feedback/acceptance.md; commit recorded by Git history|
+
+## M55 completion
+
+Both slices pass their focused contracts: slice1 build/20 affected checks and clean-state browser; slice2 build/5 time-navigation checks and feedback-time browser. See evidence/ux-acceptance/secretsauce-mcp/milestone55/{forms,feedback}/acceptance.md and exact source-revisions.json. Slice2 additionally fences all late API responses from a replaced view; its real committed mutation remains durable without stale continuation, and reviewed Apply retains legitimate return-task feedback. No auth/format/runtime policy change. Existing full browser scenario assertions were aligned with Overview-only archived discard and shared deletion success notification, without claiming that entire historical scenario was rerun. Final full suite/image/recovery and M56–58 remain outer-owned. No deployment; browser workloads stopped.

@@ -1,0 +1,682 @@
+schema_version: 1
+feedback_id: PO-FEEDBACK-2026-11-20-002
+product_id: secretsauce-mcp
+source:
+  type: product_owner
+  captured_from: realtime transcript
+  references:
+  - Local M54 console feedback round
+status: NEEDS_CONFIRMATION
+transaction:
+  parent_commit: 0062f8aa2d670adb15eae1425c956b0de79b2eaa
+  repository_commit: null
+items:
+- id: PO-FB-299
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: If there isn't any changes, don't have that bar. This applies both to the services area and the settings
+    area.
+  normalized: Hide the Discard / Save for later / Review changes bar in Services and Settings when there are no
+    changes.
+  scope:
+  - shared-console
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-300
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: if I'm looking at the archived one, uh, it, it looks very different from an inactive and active one.
+  normalized: The archived service configuration looks different from active and inactive service configuration.
+  scope:
+  - service-configuration
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-301
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: I would have preferred that archive looked exactly the same way as inactive or active, but the only
+    difference is that everything is read-only. You can't make changes.
+  normalized: Give archived services the same configuration layout as active and inactive services, with all settings
+    read-only.
+  scope:
+  - service-configuration
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-302
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: If we go to authentication, it's inside the box.
+  normalized: The separate Required legend appears in different positions across service sections.
+  scope:
+  - service-configuration
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-303
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: So if I go to details, destination, authentication, don't show star required anywhere.
+  normalized: Remove the standalone Required legend from service Details, Destinations and Authentication.
+  scope:
+  - service-configuration
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-304
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: I would actually prefer you did that everywhere. So if I go to details, destination, authentication,
+    don't show star required anywhere.
+  normalized: Use field-level required asterisks without a separate explanatory legend across equivalent console
+    forms.
+  scope:
+  - shared-console
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-305
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: So in my case it says owner explicitly as a as assigned. I don't understand what is so special here,
+    why is the owner explicitly assigned?
+  normalized: The Explicitly assigned row label alongside Owner is confusing.
+  scope:
+  - service-access
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-306
+  classification: IDEA_OR_QUESTION
+  confirmation: CONFIRMED
+  original: Explicitly assigned means that I gave I added that user to the service. When. When is that not the case
+  normalized: Clarify when a person can have use of a service without being added to its Access list.
+  scope:
+  - service-access
+  tags: []
+  authority:
+    product_intent: exploratory
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-307
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: it's right below the title of the service.
+  normalized: The grant-success notification appears beneath the service title.
+  scope:
+  - notifications
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-308
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: Yeah, it keeps showing it for quite some time. It takes a while before it disappears.
+  normalized: The grant-success notification remains visible for a long time.
+  scope:
+  - notifications
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-309
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: it would just be a notification and it would time out by itself or I can dismiss it.
+  normalized: Make routine success notifications dismissible and self-expiring.
+  scope:
+  - notifications
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-310
+  classification: PREFERENCE
+  confirmation: CONFIRMED
+  original: in this case it would probably be below the secret sauce menu bar and it wouldn't cover the left bar
+  normalized: Prefer placement that leaves the left navigation clear.
+  scope:
+  - notifications
+  tags: []
+  authority:
+    product_intent: advisory
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-311
+  classification: IDEA_OR_QUESTION
+  confirmation: CONFIRMED
+  original: You could also just show it at the bottom. Oh, or well, somewhere, I mean, look up best practices around
+    this, but the way you're doing it now is not not good.
+  normalized: Consider a notification area below the top bar or at the bottom and research established patterns.
+  scope:
+  - notifications
+  tags: []
+  authority:
+    product_intent: exploratory
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-312
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: it just immediately downloaded it and then it said Uh, bounded access export recorded. External copies
+    are your responsibility.
+  normalized: The Access inventory download also displays a verbose confirmation.
+  scope:
+  - people-access-export
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-313
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: This looks like a toast, but quite frankly, we don't need it at all.
+  normalized: Remove the Access inventory success confirmation after download.
+  scope:
+  - people-access-export
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-314
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: access inventory, I feel that that is a very misleading name for the button.
+  normalized: The Access inventory button does not explain what is in the download.
+  scope:
+  - people-access-export
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-315
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: Okay, so this shows me who's assigned to what apps. That makes sense, but maybe Call it something else
+    that makes more sense.
+  normalized: Label the download so it is clear that it contains service assignments.
+  scope:
+  - people-access-export
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-316
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: But then when I look at the records, I see three forty two p.m., which is uh, Pacific Time. So you're
+    mixing and matching things here.
+  normalized: Activity date fields and results use different time zones.
+  scope:
+  - activity
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-317
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: you need to translate that into the local time. of my browser and you need to include the time zone
+  normalized: Show Activity filter dates and event timestamps in the browser time zone and identify that zone.
+  scope:
+  - activity
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-318
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: internally we should have everything stored in UTC, but whenever you represent it in a web UI, you need
+    to translate it into The time zone that the browser is in, and you need to show me which time zone that you're
+    using to represent time and date.
+  normalized: Use browser-local time and an identified zone for displayed dates and times, with UTC internally.
+  scope:
+  - shared-console
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-319
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: right now it shows hundred and thirty five matching retained events, and the time range is set to custom.
+    custom all time, okay.
+  normalized: Activity opens with a combined Custom / All time selection.
+  scope:
+  - activity
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-320
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: We can't have you come to activity and not have a range.
+  normalized: Open Activity with a defined initial time range.
+  scope:
+  - activity
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-321
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: If I choose all time, you should just gray out from and to, so I can't set it. And if I choose custom,
+    then I can set it.
+  normalized: Separate All time and Custom, disabling From and To for All time and making them editable for Custom.
+  scope:
+  - activity
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-322
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: You are still showing me time range last five minutes. But you're actually- as the filter, but you're
+    actually showing me events from any from all time.
+  normalized: Pagination showed all-time results under the displayed five-minute filter.
+  scope:
+  - activity
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-323
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: And And I think actually I will reverse what I said before. If you change any of the filtering, remove
+    all the results, forcing the user to click search. Don't auto search.
+  normalized: Clear visible results after any filter change and wait for Search before showing results again.
+  scope:
+  - activity
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-324
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: You need to show me How many pages I have to scroll through and you also need to have a selector at
+    the bottom where you have previous and next event Uh To select how many to show per page.
+  normalized: Show page counts, Previous and Next controls, and a page-size selector.
+  scope:
+  - activity
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-325
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: you should also say which records you're showing on screen now, meaning are you showing me records fifty
+    through sixty
+  normalized: Show the visible event range and matching total.
+  scope:
+  - activity
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-326
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: you're you're you're showing it Export reads currently retain matching event from position fifty.
+  normalized: The export appears tied to the current results position.
+  scope:
+  - activity
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-327
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: if there's a hundred and thirty five matching retained events, when I click export activity, I expect
+    to get all 135 matching and retained events.
+  normalized: Export all retained events matching the selected filters and time range irrespective of pagination.
+  scope:
+  - activity
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-328
+  classification: PREFERENCE
+  confirmation: CONFIRMED
+  original: if export activity, we probably should say export filtered activity or something, some- something that
+    ties back into the filter we has- we have active.
+  normalized: Prefer a label such as Export filtered activity that ties the download to the filters.
+  scope:
+  - activity
+  tags: []
+  authority:
+    product_intent: advisory
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-329
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: We can ditch displayed search, no user filters, UTC open to open. That's debug information. Don't show
+    the user that.
+  normalized: Remove the Displayed search debug line.
+  scope:
+  - activity
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-330
+  classification: PREFERENCE
+  confirmation: CONFIRMED
+  original: I do like that you're showing me what retention we are running at three hundred and sixty five day retention.
+  normalized: Keep displaying the applied audit retention duration in Activity.
+  scope:
+  - activity
+  tags: []
+  authority:
+    product_intent: advisory
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-331
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: So now I went back to activity. I can see that there's three hundred and sixty six day retention now.
+    Good. I like that.
+  normalized: Activity reflected the applied 366-day audit retention after successful Apply.
+  scope:
+  - activity
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-332
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: I would ditch line two, integrity verified against protected checkpoints.
+  normalized: Remove the standing integrity-checkpoints explanation from Activity.
+  scope:
+  - activity
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-333
+  classification: IDEA_OR_QUESTION
+  confirmation: CONFIRMED
+  original: That seems like some- that there should be something that we maybe write in documentation and explain
+    what that means.
+  normalized: Consider documenting audit integrity checks outside the Activity screen.
+  scope:
+  - activity
+  tags: []
+  authority:
+    product_intent: exploratory
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-334
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: I would ditch recorded starts without completion have uncertain outcome, never repeat downstream action
+    because it's completion is unknown.
+  normalized: Remove the generic uncertain-outcome instruction from the Activity screen.
+  scope:
+  - activity
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-335
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: What what does local and imported retained evidence mean? How do we import evidence?
+  normalized: The Activity description implies an evidence importing function the owner does not recognize.
+  scope:
+  - activity
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-336
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: An activity log should not allow you to import random evidence
+  normalized: Activity must have no general-purpose evidence upload or import.
+  scope:
+  - activity
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-337
+  classification: DIRECTIVE
+  confirmation: NEEDS_CONFIRMATION
+  original: I mean, we're never support supposed to import evidence. Never
+  normalized: The owner objects to importing evidence. Whether that includes showing verified backup-restore history
+    in Activity requires confirmation.
+  scope:
+  - activity
+  tags: []
+  authority:
+    product_intent: unresolved
+  suggestions: []
+  ambiguity:
+  - The feedback may refer to standalone import or to viewing history recovered from verified backups.
+- id: PO-FB-338
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: when I clicked on review, I got "retention draft saved, secret detection stale or invalid save draft,
+    reloading this section and save against against current state."
+  normalized: A retention-only edit triggered an apparently unrelated Secret Detection error and an ineffective
+    manual reload.
+  scope:
+  - settings-review
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-339
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: and then it says return to health and retention. What is it complaining about?
+  normalized: The error and its navigation point to different settings sections.
+  scope:
+  - settings-review
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-340
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: I think you need to test. I think we're missing unit tests for when you change settings and you click
+    review.
+  normalized: Test the settings edit-through-review flow, including the reported retention-only scenario.
+  scope:
+  - settings-review
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-341
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: Five thousand milliseconds, now it's five seconds. I think that's some kind of weirdness. And then the
+    allowed message ID there's some formatting here that's changing.
+  normalized: Review showed apparent Secret Detection differences involving equivalent units and formatting.
+  scope:
+  - settings-review
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-342
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: I think it's merely formatting that's changes.
+  normalized: Keep review comparisons consistent and distinguish actual setting changes from formatting differences.
+  scope:
+  - settings-review
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-343
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: maybe you should make it the bullet list instead, because now you just concatenating it with a comma
+    in between so it just becomes a blurb.
+  normalized: Show affected saved sections as a bulleted list in the discard confirmation.
+  scope:
+  - settings-review
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-344
+  classification: PREFERENCE
+  confirmation: CONFIRMED
+  original: and a new line, settings in use stay unt-unchanged, okay?
+  normalized: Retain the explanation that discarding saved changes leaves settings in use as they were.
+  scope:
+  - settings-review
+  tags: []
+  authority:
+    product_intent: advisory
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-345
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: When we go to review settings change, you should probably not show the side menu with secret detection
+    MCPE authentication limits email backups so on
+  normalized: Hide the Settings subsection menu during settings review.
+  scope:
+  - settings-review
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-346
+  classification: OBSERVATION
+  confirmation: CONFIRMED
+  original: I've reviewed every listed section and acknowledge the security and retention effects that was hidden
+    by the the button at the bottom that said apply one change
+  normalized: The required review acknowledgment checkbox was obscured by the bottom Apply action.
+  scope:
+  - settings-review
+  tags: []
+  authority:
+    product_intent: evidence
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-347
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: you should copy the way we do it for services where when I click apply a window pops up and I have to
+    confirm things.
+  normalized: Use the Services Apply confirmation dialog pattern for Settings, with acknowledgment visible in the
+    dialog.
+  scope:
+  - settings-review
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-348
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: also the security and operational effects. That whole box Drop it.
+  normalized: Remove the generic Security and operational effects box from the review page.
+  scope:
+  - settings-review
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+- id: PO-FB-349
+  classification: DIRECTIVE
+  confirmation: CONFIRMED
+  original: I wouldn't bother showing this screen, I would just take me back to whatever screen I was standing at
+    when I clicked the review changes.
+  normalized: After a successful Apply, return to the Settings section where review started instead of leaving the
+    user on a separate confirmation screen.
+  scope:
+  - settings-review
+  tags: []
+  authority:
+    product_intent: authoritative
+  suggestions: []
+  ambiguity: []
+unresolved:
+- id: PO-UNRESOLVED-001
+  item_ids:
+  - PO-FB-337
+  issue: behavior
+  question: Should verified audit history carried over by a backup restore remain visible and clearly labeled in
+    Activity, or should Activity show only events recorded on the current instance?
+  options:
+  - id: A
+    meaning: Keep verified restored audit history visible and labeled in Activity. General-purpose evidence import
+      remains unavailable.
+    classification: DIRECTIVE
+  - id: B
+    meaning: Show only current-instance events in Activity, excluding verified restored history from that view.
+    classification: DIRECTIVE
+  blocking_reconciliation: true
+handoff:
+  reconciliation_ready: false
+  next_workflow: null
